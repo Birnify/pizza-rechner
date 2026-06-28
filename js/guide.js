@@ -47,15 +47,15 @@
         `Für den ${isBiga ? 'Biga' : 'Poolish'}: <b>${g(R.pf)} g Mehl</b>, <b>${g(R.pw)} g Wasser</b> (${isBiga ? state.bhyd + '%' : '100% — also 1:1'}) und <b>${g(R.pYeast)} g Hefe ${R.yWord}</b>.`,
         tip('Wasser hier <b>zimmerwarm</b> (nicht eisgekühlt) – der Vorteig soll ja in Ruhe arbeiten.'), 5);
       if (isBiga) {
-        st('Biga grob mischen', 'wichtig',
-          `Hefe im Wasser auflösen, übers Mehl geben und nur <b>grob verkneten</b> – die Biga bleibt krümelig-stückig, <b>nicht glatt kneten</b>.`,
-          warn('Zu festes Kneten = falsche Struktur. Es soll wie nasse Brösel aussehen.'), 10);
+        st('Biga grob mischen', 'mit der Hand',
+          `Hefe im Wasser auflösen, übers Mehl geben und <b>mit den Händen nur grob vermengen</b> – ca. <b>1–2 min</b>, bis keine trockenen Mehlnester mehr da sind. Die Biga bleibt krümelig-stückig, <b>nicht glatt kneten</b>. (Hier keine Maschine nutzen – zu festes Kneten zerstört die Struktur.)`,
+          warn('Es soll aussehen wie nasse Brösel oder grober Streusel, nicht wie ein normaler Teig.'), 10);
         st('Biga reifen lassen', '16–20 h',
           `Abgedeckt bei <b>ca. 18 °C</b> reifen lassen. Sie lockert sich auf und duftet säuerlich-hefig. Bei 21–22 °C reichen 14–16 h.`,
           tip('Keller, Speisekammer oder Kühlschranktür treffen die 18 °C oft gut.'), 1080);
       } else {
-        st('Poolish verrühren', 'wichtig',
-          `Hefe im Wasser auflösen, Mehl einrühren bis ein <b>zäher Pfannkuchenteig</b> ohne Klümpchen entsteht. Abdecken.`, '', 10);
+        st('Poolish verrühren', 'mit Löffel / Schneebesen',
+          `Hefe im Wasser auflösen, dann Mehl einrühren – <b>mit einem Löffel oder Schneebesen ca. 2–3 min rühren</b>, bis ein <b>zäher, klumpenfreier Pfannkuchenteig</b> entsteht. Abdecken.`, '', 10);
         st('Poolish reifen lassen', '12–24 h',
           `<b>1 h</b> bei Raumtemp anspringen lassen, dann kühl stellen. Reif = Oberfläche <b>voller Blasen</b>, kurz bevor er wieder einfällt.`,
           tip('Fingertest: riecht angenehm nach Hefe/Joghurt, nicht stechend nach Alkohol.'), 960);
@@ -65,9 +65,15 @@
         `<b>${g(R.mWater)} g Wasser</b> auf <b>${R.wT} °C</b> bringen${iceTxt}. Das ist das Restwasser für den Hauptteig.`,
         R.ice > 0 ? tip('Eis vorher exakt abwiegen und auflösen, bis die Zieltemperatur steht.') : '', 5);
       st('Vorteig + Wasser + Mehl', '~5 min',
-        `Den ganzen ${isBiga ? 'Biga' : 'Poolish'} mit dem <b>${g(R.mWater)} g Wasser</b> lösen, dann <b>${g(R.mFlour)} g Mehl</b>${R.mYeast >= 0.05 ? ` und <b>${g(R.mYeast)} g Hefe ${R.yWord}</b>` : ''} zugeben und vermengen.`, '', 5);
+        `Den ganzen ${isBiga ? 'Biga' : 'Poolish'} mit dem <b>${g(R.mWater)} g Wasser</b> lösen, dann <b>${g(R.mFlour)} g Mehl</b>${R.mYeast >= 0.05 ? ` und <b>${g(R.mYeast)} g Hefe ${R.yWord}</b>` : ''} zugeben und `
+        + (state.knead === '6'
+          ? `<b>in der Maschine ca. 2–3 min auf niedriger Stufe vermengen</b>, bis ein grober Teig entsteht.`
+          : `<b>von Hand ca. 3–5 min vermengen</b> (drücken, falten, drehen), bis kein trockenes Mehl mehr sichtbar ist.`), '', 5);
       st('Salz zugeben', 'nach 2–3 min',
-        `Erst wenn alles grob zusammenhängt, <b>${g(R.salt)} g Salz</b> einarbeiten.`,
+        `Erst wenn alles grob zusammenhängt, <b>${g(R.salt)} g Salz</b> `
+        + (state.knead === '6'
+          ? `zugeben und <b>weitere 2–3 min auf mittlerer Stufe einarbeiten</b>.`
+          : `einstreuen und <b>von Hand ca. 2–3 min einkneten</b>.`),
         warn('Salz nie direkt auf die Hefe – es bremst sie. Immer zeitversetzt zugeben.'), 3);
     }
 
@@ -90,7 +96,9 @@
       }
       sec('Kneten');
       st('Mischen & Salz', 'nach 2–3 min',
-        `Alles vermengen, dann <b>${g(R.salt)} g Salz</b> zugeben.`,
+        (state.knead === '6'
+          ? `Alle Zutaten in die Maschine geben und <b>ca. 2–3 min auf niedriger Stufe vermengen</b>, dann <b>${g(R.salt)} g Salz zugeben und weitere 2–3 min auf mittlerer Stufe einarbeiten</b>.`
+          : `Alle Zutaten <b>von Hand ca. 3–5 min grob vermengen</b> (bis kein trockenes Mehl mehr bleibt), dann <b>${g(R.salt)} g Salz einstreuen und weitere 2–3 min einkneten</b>.`),
         warn('Salz zeitversetzt zur Hefe zugeben – nie direkt aufeinander.'), 5);
     }
 

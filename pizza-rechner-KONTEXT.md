@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-06-28 · Aktuelle Version: v2.1.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-06-28 · Aktuelle Version: v2.2.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -164,7 +164,8 @@ schedule → guide → ui → presets → storage → main.
 - **Bisherige Schnappschüsse:**
   - v1.0.0 — Ausgangsstand (Single-File, alles inline in einer `pizza-rechner.html`)
   - v2.0.0 — Modulare Struktur (HTML + `css/styles.css` + `js/`-Module)
-  - **v2.1.0 — Tests, README, Git, Cache-Busting** = aktueller Stand
+  - v2.1.0 — Tests, README, Git, Cache-Busting
+  - **v2.2.0 — Misch-Schritte mit Maschine-vs-Hand-Anweisung** = aktueller Stand
 - (Angelehnt an das identische Versionsschema der Food-Bot-App: `…/Claude/Food Bot/Versionen/`.)
 
 ## Verlauf / Reihenfolge der Entwicklung
