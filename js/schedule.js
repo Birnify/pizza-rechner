@@ -5,12 +5,28 @@
 
   function schedule() {
     const state = PZ.state;
-    // Bei Vorteig ist die Hauptgare kürzer (die lange Reife steckt im Vorteig)
+    // Bei Vorteig: Stockgare ist kürzer (Reife steckt im Vorteig), aber Stückgare skaliert mit Hefemenge
     if (state.method !== 'direct') {
-      return {
-        label: 'Reifung nach Vorteig',
+      const y = state.yeast;
+      if (y >= 1.2) return {
+        label: 'Vorteig · Schnelle Hauptgare',
+        bulk: '<b>1–2 h</b> bei Raumtemp (Stockgare)', bulkMin: 90,
+        proof: '<b>2–3 h</b> bei Raumtemp · Fingertest', proofMin: 150, cold: false
+      };
+      if (y >= 0.5) return {
+        label: 'Vorteig · Mittlere Hauptgare',
+        bulk: '<b>2 h</b> bei Raumtemp (Stockgare)', bulkMin: 120,
+        proof: '<b>3–5 h</b> bei Raumtemp · Fingertest', proofMin: 240, cold: false
+      };
+      if (y >= 0.18) return {
+        label: 'Vorteig · Lange Hauptgare',
         bulk: '<b>2–3 h</b> bei Raumtemp (Stockgare)', bulkMin: 150,
-        proof: '<b>4–6 h</b> bei Raumtemp · Fingertest', proofMin: 300, cold: false
+        proof: '<b>5–7 h</b> bei Raumtemp · Fingertest', proofMin: 360, cold: false
+      };
+      return {
+        label: 'Vorteig · Sehr lange Hauptgare',
+        bulk: '<b>2–3 h</b> Raumtemp, dann <b>12–18 h</b> Kühlschrank', bulkMin: 960,
+        proof: 'Teiglinge <b>4–5 h</b> vor dem Backen temperieren', proofMin: 270, cold: true
       };
     }
     const y = state.yeast;
