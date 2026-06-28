@@ -1,0 +1,36 @@
+/* storage.js — Speichern/Laden des Zustands in localStorage */
+(function (global) {
+  'use strict';
+  const PZ = global.PZ || (global.PZ = {});
+  const $ = PZ.$;
+  const KEY = 'pizzaRechner';
+
+  function save() {
+    localStorage.setItem(KEY, JSON.stringify(PZ.state));
+  }
+
+  function load() {
+    const state = PZ.state, set = PZ.set;
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return;
+    try {
+      const o = JSON.parse(raw);
+      Object.assign(state, o);
+      // Werte in UI schreiben
+      set.balls(state.balls); set.ballw(state.ballw); set.hyd(state.hyd); set.salt(state.salt);
+      set.pref(state.pref); set.bhyd(state.bhyd); set.yeast(state.yeast);
+      set.ddt(state.ddt); set.room(state.room);
+      // Segmente
+      PZ.selectSeg('method', 'm', state.method);
+      PZ.selectSeg('yeastType', 'y', state.yeastType);
+      PZ.selectSeg('knead', 'k', state.knead);
+      PZ.selectSeg('timeMode', 'tm', state.timeMode || 'start');
+      if (state.timeISO) $('timeISO').value = state.timeISO;
+      PZ.updateTimeLabel();
+      PZ.applyMethod();
+    } catch (e) { /* defekter Eintrag wird ignoriert */ }
+  }
+
+  PZ.save = save;
+  PZ.load = load;
+})(window);

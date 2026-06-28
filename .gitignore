@@ -1,0 +1,9 @@
+# Versions-Schnappschüsse (eigene Ordner-Historie, nicht in Git)
+Versionen/
+
+# Lokale Tool-/Editor-Configs
+.claude/
+
+# Windows
+Thumbs.db
+desktop.ini
