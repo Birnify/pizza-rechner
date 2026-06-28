@@ -94,6 +94,12 @@ README.md            kurzer Einstieg (was/starten/struktur/tests/versionen)
 Browser nach einer Änderung garantiert die neuen Dateien lädt statt gecachter.
 
 ## Entwicklungsweise / Mitarbeit
+- **Kontext-Datei IMMER aktuell halten — nach JEDER Eingabe:** Diese Datei
+  (`pizza-rechner-KONTEXT.md`) am Ende jeder Anweisung/Änderung so hinterlassen, dass eine
+  **komplett frische Session allein damit nahtlos weiterarbeiten** könnte. Heißt: Stand-Datum
+  und aktuelle Versionsnummer oben aktualisieren, neue Funktionen/Dateien eintragen, getroffene
+  Entscheidungen und Eigenheiten festhalten. Pflicht, nicht optional — die Datei ist die
+  „einzige Quelle", die für die Weiterarbeit gebraucht wird.
 - **Tests:** `tests/test.html` per Doppelklick öffnen — grün = alle Prüfungen bestanden.
   Deckt Bäckerprozente, DDT-Wassertemperatur, Eismenge, Biga-Vorteig-Aufteilung und
   Trockenhefe-Umrechnung ab. Nach Logik-Änderungen kurz prüfen; bei neuer Rechenlogik
