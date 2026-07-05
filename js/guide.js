@@ -64,9 +64,12 @@
     // ===== VORTEIG (Biga / Poolish) =====
     if (pref) {
       sec(isBiga ? 'Vorteig — Biga ansetzen' : 'Vorteig — Poolish ansetzen');
+      const clampNote = R.prefClamped
+        ? warn(`Der Vorteig-Anteil wurde automatisch auf <b>${Math.round(R.prefEff)} %</b> begrenzt: bei ${state.hyd} % Hydration passt nicht mehr Wasser in den ${isBiga ? 'Biga' : 'Poolish (1:1)'} als insgesamt im Teig ist.`)
+        : '';
       st('Vorteig abwiegen', '~5 min',
         `Für den ${isBiga ? 'Biga' : 'Poolish'}: <b>${g(R.pf)} g Mehl</b>, <b>${g(R.pw)} g Wasser</b> (${isBiga ? state.bhyd + '%' : '100% — also 1:1'}) und <b>${g(R.pYeast)} g Hefe ${R.yWord}</b>.`,
-        tip('Wasser hier <b>zimmerwarm</b> (nicht eisgekühlt) – der Vorteig soll ja in Ruhe arbeiten.'), 5);
+        clampNote + tip('Wasser hier <b>zimmerwarm</b> (nicht eisgekühlt) – der Vorteig soll ja in Ruhe arbeiten.'), 5);
       if (isBiga) {
         st('Biga grob mischen', 'mit der Hand',
           `Hefe im Wasser auflösen, übers Mehl geben und <b>mit den Händen nur grob vermengen</b> – ca. <b>1–2 min</b>, bis keine trockenen Mehlnester mehr da sind. Die Biga bleibt krümelig-stückig, <b>nicht glatt kneten</b>. (Hier keine Maschine nutzen – zu festes Kneten zerstört die Struktur.)`,
@@ -82,11 +85,17 @@
           tip('Fingertest: riecht angenehm nach Hefe/Joghurt, nicht stechend nach Alkohol.'), 960);
       }
       sec('Hauptteig');
-      st('Schüttwasser temperieren', `${R.wT} °C`,
-        `<b>${g(R.mWater)} g Wasser</b> auf <b>${R.wT} °C</b> bringen${iceTxt}. Das ist das Restwasser für den Hauptteig.`,
-        R.ice > 0 ? tip('Eis vorher exakt abwiegen und auflösen, bis die Zieltemperatur steht.') : '', 5);
-      st('Vorteig + Wasser + Mehl', '~5 min',
-        `Den ganzen ${isBiga ? 'Biga' : 'Poolish'} mit dem <b>${g(R.mWater)} g Wasser</b> lösen, dann <b>${g(R.mFlour)} g Mehl</b>${R.mYeast >= 0.05 ? ` und <b>${g(R.mYeast)} g Hefe ${R.yWord}</b>` : ''} zugeben und `
+      const hasMW = R.mWater >= 1, hasMF = R.mFlour >= 1;
+      if (hasMW) {
+        st('Schüttwasser temperieren', `${R.wT} °C`,
+          `<b>${g(R.mWater)} g Wasser</b> auf <b>${R.wT} °C</b> bringen${iceTxt}. Das ist das Restwasser für den Hauptteig.`,
+          R.ice > 0 ? tip('Eis vorher exakt abwiegen und auflösen, bis die Zieltemperatur steht.') : '', 5);
+      }
+      const addParts = [];
+      if (hasMW) addParts.push(`mit dem <b>${g(R.mWater)} g Wasser</b> lösen`);
+      if (hasMF) addParts.push(`<b>${g(R.mFlour)} g Mehl</b>${R.mYeast >= 0.05 ? ` und <b>${g(R.mYeast)} g Hefe ${R.yWord}</b>` : ''} zugeben`);
+      st('Vorteig' + (hasMW ? ' + Wasser' : '') + (hasMF ? ' + Mehl' : ''), '~5 min',
+        `Den ganzen ${isBiga ? 'Biga' : 'Poolish'} ` + (addParts.length ? addParts.join(', dann ') : 'in die Schüssel geben') + ' und '
         + (state.knead === '6'
           ? `<b>in der Maschine ca. 2–3 min auf niedriger Stufe vermengen</b>, bis ein grober Teig entsteht.`
           : `<b>von Hand ca. 3–5 min vermengen</b> (drücken, falten, drehen), bis kein trockenes Mehl mehr sichtbar ist.`), '', 5);

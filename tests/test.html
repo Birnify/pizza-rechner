@@ -253,6 +253,27 @@
     ['pw = pf (1:1)',         R.pw,     R.pf,           0.05],
     ['pYeast = gesamte Hefe', R.pYeast, R.yeast,        0.001],
     ['mYeast = 0',            R.mYeast, 0,              0.001],
+    ['nicht begrenzt',        R.prefClamped, false],
+  ]);
+
+  // Regression: Poolish pref 100 % bei hyd 65 % → Vorteig-Wasser würde Gesamtwasser
+  // übersteigen (negatives Restwasser). Muss auf hyd-% begrenzt werden.
+  testCase('Poolish · pref 100 %, hyd 65 % — wird auf 65 % begrenzt, kein negatives Wasser', {
+    method: 'poolish', pref: 100, hyd: 65
+  }, R => [
+    ['prefClamped',            R.prefClamped, true],
+    ['prefEff = hyd',          R.prefEff, 65, 0.5],
+    ['pw ≤ Gesamtwasser',      Math.min(R.pw, R.water), R.pw, 0.001],
+    ['mWater ≥ 0',             Math.max(0, R.mWater), R.mWater, 0.001],
+    ['mFlour = Rest',          R.mFlour, R.flour - R.pf, 0.05],
+  ]);
+
+  // Biga bleibt bei pref 100 % unbegrenzt, solange bhyd < hyd
+  testCase('Biga · pref 100 %, bhyd 45 %, hyd 62 % — keine Begrenzung nötig', {
+    method: 'biga', pref: 100, bhyd: 45, hyd: 62
+  }, R => [
+    ['nicht begrenzt', R.prefClamped, false],
+    ['mWater ≥ 0',     Math.max(0, R.mWater), R.mWater, 0.001],
   ]);
 
   // ─────────────────────────────────────────────────────────────

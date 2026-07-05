@@ -34,9 +34,14 @@
     $('yLabel').textContent = yWord;
 
     // --- Vorteig-Aufteilung ---
+    let prefEff = state.pref, prefClamped = false;
     if (state.method !== 'direct') {
-      pf = flour * (state.pref / 100);
       const pHyd = state.method === 'poolish' ? 1 : state.bhyd / 100;
+      // Das Vorteig-Wasser (pf × pHyd) darf das Gesamtwasser (flour × h) nie übersteigen —
+      // sonst wird das Hauptteig-Restwasser negativ. Max-Anteil: hyd / pHyd.
+      const maxPref = Math.min(100, (h / pHyd) * 100);
+      if (prefEff > maxPref) { prefEff = Math.floor(maxPref); prefClamped = true; }
+      pf = flour * (prefEff / 100);
       pw = pf * pHyd;
       // Alle Hefe in den Vorteig (klassische Biga/Poolish-Methode)
       pYeast = yeast;
@@ -83,7 +88,7 @@
     $('iceAmt').textContent = ice;
     $('iceNote').innerHTML = note;
 
-    PZ.R = { N, W, total, flour, water, salt, yeast, yWord, pf, pw, pYeast, mYeast, mFlour, mWater, wT, ice, Ttap };
+    PZ.R = { N, W, total, flour, water, salt, yeast, yWord, pf, pw, pYeast, mYeast, mFlour, mWater, wT, ice, Ttap, prefEff, prefClamped };
     PZ.buildGuide();
   }
 

@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-05 · Aktuelle Version: v3.0.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-05 · Aktuelle Version: v3.0.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -155,12 +155,19 @@ ui → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur
 - v2.6.0 — Mehlliste aus pizza1.de (13 Mehle); Warnung auch bei W zu hoch (minH)
 - v2.7.0 — 72 h+ Gäroption (Hefe-Pill 0,05 % + Schedule-Zweig)
 - v2.8.0 — 6 Plausibilitäts-Korrekturen + erweiterte Tests
-- **v3.0.0 — Grundüberarbeitung** = aktueller Stand:
+- v3.0.0 — Grundüberarbeitung:
   - Kaltgare-Stufe wählbar (`coldStage`: Teiglinge [Standard] vs. im Stück)
   - Hefe/Autolyse-Widerspruch behoben (Hefe-Schritt nach der Autolyse)
   - Presets empfehlen Mehl + 3 Preset-Korrekturen (napoli_kalt 65 %, poolish→Monica, teglia→Nuvola Super)
   - Mehl-Warnung zählt Vorteig-Reife mit; Cuoco/Nuvola Super/Tipo 1 minH auf 24 h entschärft
   - Mehl-Dropdown aus FLOURS generiert; Karten-Reihenfolge = Arbeitsablauf; .selectbox-CSS
+- **v3.0.1 — Poolish-Wasser-Bugfix** = aktueller Stand:
+  - Vorteig-Anteil wird in calc() automatisch begrenzt, damit das Vorteig-Wasser
+    (pf × pHyd) nie das Gesamtwasser übersteigt (Poolish: max pref = hyd %).
+    Vorher: Poolish 100 % bei 65 % Hydration → −312 g Restwasser in der Anleitung.
+  - `R.prefEff` / `R.prefClamped` in PZ.R; ⚠️-Hinweis im Schritt „Vorteig abwiegen"
+  - Hauptteig-Schritte blenden 0-g-Wasser/-Mehl sauber aus
+  - Poolish-Hint unter dem Anteil-Slider erklärt die Grenze
 
 ## Mögliche nächste Schritte (offen / Ideen)
 

@@ -73,7 +73,7 @@
     $('prefTitle').textContent = m === 'biga' ? 'Biga (Vortag)' : 'Poolish (Vortag)';
     $('prefHint').innerHTML = m === 'biga'
       ? 'Biga klassisch: 70–100 % des Mehls.'
-      : 'Poolish: meist 30–50 % des Mehls (Wasser 1:1 dazu).';
+      : 'Poolish: meist 30–50 % des Mehls (Wasser 1:1 dazu). Mehr als die Hydration-% geht nicht — sonst wäre mehr Wasser im Poolish als im ganzen Teig.';
   }
 
   // --- Zeitplan-Eingaben ---
