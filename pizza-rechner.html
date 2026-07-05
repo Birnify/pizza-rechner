@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pizzateig-Rechner</title>
-<link rel="stylesheet" href="css/styles.css?v=2.3.0">
+<link rel="stylesheet" href="css/styles.css?v=3.0.0">
 </head>
 <body>
 <header>
@@ -19,7 +19,7 @@
     <div class="card">
       <h2><span class="ic">📖</span> Fertiges Rezept wählen</h2>
       <div class="field" style="margin-bottom:0;">
-        <select id="preset" style="width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:14.5px;font-weight:600;color:var(--ink);background:#fff;cursor:pointer;">
+        <select id="preset" class="selectbox selectbox-lg">
           <option value="">— Eigene Einstellung —</option>
           <optgroup label="Neapolitanisch · Direkt">
             <option value="napoli_klassisch">Napoli Klassisch (AVPN) · 24 h</option>
@@ -40,26 +40,13 @@
     </div>
 
     <div class="card">
-      <h2><span class="ic">🕐</span> Zeitplan</h2>
-      <div class="field">
-        <label>Bezugspunkt</label>
-        <div class="seg" id="timeMode">
-          <button data-tm="start" class="active">Ich starte um…</button>
-          <button data-tm="target">Fertig sein um…</button>
-        </div>
-      </div>
-      <div class="field" style="margin-bottom:0;">
-        <label id="timeLabel">Startzeitpunkt</label>
-        <div class="row">
-          <input type="datetime-local" id="timeISO" style="flex:1;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:14px;color:var(--ink);">
-          <button id="nowBtn" type="button" style="padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;font-weight:600;font-size:13px;">Jetzt</button>
-        </div>
-        <div class="hint" id="timeHint">Trag eine Uhrzeit ein — dann bekommt jeder Schritt der Anleitung unten eine konkrete Uhrzeit.</div>
-      </div>
-    </div>
-
-    <div class="card">
       <h2><span class="ic">⚙️</span> Grundeinstellungen</h2>
+
+      <div class="field">
+        <label>Mehl</label>
+        <select id="flour" class="selectbox"></select>
+        <div class="hint">W-Wert = Glutenstärke. Schwaches Mehl verträgt keine langen Gärzeiten — sehr starkes Mehl braucht sie. Wird per Preset mitgesetzt.</div>
+      </div>
 
       <div class="field">
         <label>Anzahl Teiglinge <span class="val"><span id="ballsV">4</span></span></label>
@@ -149,11 +136,21 @@
         </div>
         <div class="hint" id="yeastHint">Prozent bezogen auf Frischhefe. Lange/warme Gare = weniger.</div>
         <div class="pills">
+          <button data-yeast="0.05">Extrem lang (72h+)</button>
           <button data-yeast="0.1">Sehr lang (48h kühl)</button>
           <button data-yeast="0.3">Lang (24h)</button>
           <button data-yeast="1">Mittel (8h RT)</button>
           <button data-yeast="2.5">Schnell (4h)</button>
         </div>
+      </div>
+
+      <div class="field" style="margin-bottom:0;">
+        <label>Kalte Gare — wo verbringt der Teig die Kühlschrank-Zeit?</label>
+        <div class="seg" id="coldStage">
+          <button data-cs="balls" class="active">Als Teiglinge (praktisch)</button>
+          <button data-cs="bulk">Im Stück (klassisch)</button>
+        </div>
+        <div class="hint">Greift nur bei kühlen Führungen (24 h+). <b>Teiglinge:</b> nach 2 h formen, dann kalt — am Backtag nur noch temperieren &amp; backen. <b>Im Stück:</b> der ganze Teig gärt kalt, Formen und Stückgare erst am Backtag.</div>
       </div>
     </div>
 
@@ -181,6 +178,25 @@
           <button data-k="6">Maschine</button>
         </div>
         <div class="hint">Maschine erzeugt Reibungswärme → kälteres Wasser nötig.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="ic">🕐</span> Zeitplan</h2>
+      <div class="field">
+        <label>Bezugspunkt</label>
+        <div class="seg" id="timeMode">
+          <button data-tm="start" class="active">Ich starte um…</button>
+          <button data-tm="target">Fertig sein um…</button>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label id="timeLabel">Startzeitpunkt</label>
+        <div class="row">
+          <input type="datetime-local" id="timeISO" style="flex:1;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:14px;color:var(--ink);">
+          <button id="nowBtn" type="button" style="padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;font-weight:600;font-size:13px;">Jetzt</button>
+        </div>
+        <div class="hint" id="timeHint">Trag eine Uhrzeit ein — dann bekommt jeder Schritt der Anleitung unten eine konkrete Uhrzeit.</div>
       </div>
     </div>
 
@@ -243,6 +259,7 @@
     <h2><span class="ic">📝</span> Schritt-für-Schritt-Anleitung</h2>
     <span class="hint" id="guideSummary" style="font-size:12px;"></span>
   </div>
+  <div id="flourWarn" style="margin-bottom:8px;"></div>
   <div id="guideSteps"></div>
 </section>
 
@@ -252,14 +269,15 @@
 </footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=2.3.0"></script>
-<script src="js/state.js?v=2.3.0"></script>
-<script src="js/calc.js?v=2.3.0"></script>
-<script src="js/schedule.js?v=2.3.0"></script>
-<script src="js/guide.js?v=2.3.0"></script>
-<script src="js/ui.js?v=2.3.0"></script>
-<script src="js/presets.js?v=2.3.0"></script>
-<script src="js/storage.js?v=2.3.0"></script>
-<script src="js/main.js?v=2.3.0"></script>
+<script src="js/dom.js?v=3.0.0"></script>
+<script src="js/state.js?v=3.0.0"></script>
+<script src="js/flour.js?v=3.0.0"></script>
+<script src="js/calc.js?v=3.0.0"></script>
+<script src="js/schedule.js?v=3.0.0"></script>
+<script src="js/guide.js?v=3.0.0"></script>
+<script src="js/ui.js?v=3.0.0"></script>
+<script src="js/presets.js?v=3.0.0"></script>
+<script src="js/storage.js?v=3.0.0"></script>
+<script src="js/main.js?v=3.0.0"></script>
 </body>
 </html>

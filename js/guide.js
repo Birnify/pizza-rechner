@@ -35,6 +35,27 @@
     const R = PZ.R;
     if (!R.flour) return;
     const f = PZ.schedule();
+
+    // Mehl-Warnung (bei Vorteig zählt die Reifezeit des Vorteigs mit zur Gesamtgärzeit)
+    if (PZ.getFlour) {
+      const fl = PZ.getFlour();
+      const prefH = state.method === 'biga' ? 18 : state.method === 'poolish' ? 16 : 0;
+      const totalH = (f.bulkMin + f.proofMin) / 60 + prefH;
+      const warnMsgs = [];
+      if (totalH > fl.maxH) {
+        warnMsgs.push(`Gärzeit zu lang für <b>${fl.name}</b> (W${fl.w}): ~${Math.round(totalH)} h geplant, max. ${fl.maxH} h empfohlen. Das Gluten baut ab — Teig wird klebrig und reißt. Entweder stärkeres Mehl wählen oder Hefemenge erhöhen.`);
+      } else if (fl.minH > 0 && totalH < fl.minH) {
+        warnMsgs.push(`Gärzeit zu kurz für <b>${fl.name}</b> (W${fl.w}): ~${Math.round(totalH)} h geplant, mind. ${fl.minH} h empfohlen. Das Gluten hat keine Zeit sich auszuentspannen — der Teig federt zurück und lässt sich kaum ausziehen. Entweder schwächeres Mehl wählen oder Hefemenge reduzieren.`);
+      }
+      if (state.hyd > fl.hydMax) {
+        warnMsgs.push(`Hydration zu hoch für <b>${fl.name}</b>: ${state.hyd} % gewählt, max. ${fl.hydMax} % empfohlen. Der Teig kann sehr klebrig werden und schwer zu formen sein.`);
+      } else if (state.hyd < fl.hydMin) {
+        warnMsgs.push(`Hydration etwas niedrig für <b>${fl.name}</b>: ${state.hyd} % gewählt, ${fl.hydMin}–${fl.hydMax} % wären ideal.`);
+      }
+      const warnEl = document.getElementById('flourWarn');
+      if (warnEl) warnEl.innerHTML = warnMsgs.map(w => `<div class="warn">⚠️ ${w}</div>`).join('');
+    }
+
     const m = state.method, isBiga = m === 'biga', pref = m !== 'direct';
     const hi = state.hyd >= 70;               // hohe Hydration → Stretch & Fold
     const iceTxt = R.ice > 0 ? ` (davon <b>${R.ice} g Eis</b>)` : '';
@@ -86,13 +107,20 @@
       st('Schüttwasser temperieren', `${R.wT} °C`,
         `Das <b>${g(R.water)} g Wasser</b> auf <b>${R.wT} °C</b> bringen${iceTxt}. So landet der Teig nach dem Kneten bei ~${state.ddt} °C.`,
         R.ice > 0 ? tip('Eis abwiegen, im Wasser auflösen bis die Temperatur passt – dann erst loslegen.') : '', 5);
-      st('Hefe lösen', '',
-        state.yeastType === 'dry'
-          ? `Trockenhefe <b>direkt ins Mehl</b> mischen – sie muss nicht vorgelöst werden.`
-          : `Frischhefe im <b>temperierten Wasser auflösen</b>, bis keine Stückchen mehr da sind.`, '', 2);
-      if (state.yeast < 0.5) {
+      if (state.yeast < 1.2) {
+        // Autolyse: Hefe kommt erst DANACH in den Teig — kein Widerspruch in der Reihenfolge
         st('Autolyse (empfohlen)', '20–40 min',
-          `Nur <b>Mehl + Wasser</b> grob mischen (Salz/Hefe noch nicht), abdecken, ruhen lassen. Weniger Knetarbeit, dehnbarerer Teig.`, '', 30);
+          `Nur <b>Mehl + Wasser</b> grob mischen (Salz und Hefe kommen erst später), abdecken, ruhen lassen. Weniger Knetarbeit, dehnbarerer Teig.`,
+          state.yeastType === 'dry' ? '' : tip('Behalte <b>2–3 EL vom Schüttwasser</b> zurück, um danach die Frischhefe darin zu lösen.'), 30);
+        st('Hefe zugeben', '~2 min',
+          state.yeastType === 'dry'
+            ? `Trockenhefe gleichmäßig <b>über den Autolyse-Teig streuen</b> und kurz einarbeiten.`
+            : `Frischhefe im <b>zurückbehaltenen Wasser auflösen</b> und über den Teig geben.`, '', 2);
+      } else {
+        st('Hefe lösen', '~2 min',
+          state.yeastType === 'dry'
+            ? `Trockenhefe <b>direkt ins Mehl</b> mischen – sie muss nicht vorgelöst werden.`
+            : `Frischhefe im <b>temperierten Wasser auflösen</b>, bis keine Stückchen mehr da sind.`, '', 2);
       }
       sec('Kneten');
       st('Mischen & Salz', 'nach 2–3 min',
@@ -114,29 +142,31 @@
     st('Teigtemperatur prüfen', 'Ziel 23–25 °C',
       `Thermometer in den Teig: <b>${state.ddt} °C</b> angepeilt. Wärmer → schnellere Gare, kälter → langsamer.`, '', 2);
 
+    const ballsCold = f.cold && state.coldStage !== 'bulk';
     sec('Gare & Formen');
-    st('Stockgare (im Stück)', f.cold ? 'Raumtemp + kühl' : 'Raumtemp',
+    st('Stockgare (im Stück)', f.cold && !ballsCold ? 'Raumtemp + kühl' : 'Raumtemp',
       `Teig zur Kugel formen, in eine geölte/abgedeckte Schüssel. ${f.bulk}.`, '', f.bulkMin);
     st('Teiglinge formen', `${R.N} × ${R.W} g`,
-      `In <b>${R.N} Stücke à ${R.W} g</b> teilen. Jedes zu einer <b>straffen Kugel</b> formen (Oberfläche spannen, Schluss nach unten). Mit Abstand in eine Box.`,
+      `In <b>${R.N} Stücke à ${R.W} g</b> teilen. Jedes zu einer <b>straffen Kugel</b> formen (Oberfläche spannen, Schluss nach unten). Mit Abstand in eine ${ballsCold ? 'kühlschranktaugliche, dicht schließende Box' : 'Box'}.`,
       tip('Straff geformte Kugeln = runde Pizzen mit gleichmäßigem Rand (Cornicione).'), 10);
-    st('Stückgare (Teiglinge)', 'Fingertest',
+    st('Stückgare (Teiglinge)', ballsCold ? 'kühl · Fingertest' : 'Fingertest',
       `${f.proof}. <b>Fertig</b>, wenn ein leichter Fingerdruck <b>langsam</b> zurückfedert (eine kleine Delle bleibt).`,
       f.cold ? tip('Teiglinge vor dem Backen wirklich auf Raumtemperatur kommen lassen – kalter Teig reißt beim Ausziehen.') : '', f.proofMin);
 
     sec('Backen');
     st('Ofen vorheizen', '30–45 min',
       `Pizzastein/-stahl auf <b>höchste Stufe</b> vorheizen. Pizzaofen (Gas/Holz) <b>430–480 °C</b>; Haushaltsofen Maximum (250–300 °C) + Grill, Stein ganz oben.`,
-      tip('Der Stein muss richtig durchglühen – lieber 10 min länger. (Startzeit = 40 min vor dem Backen.)'), 0, { back: 40 });
+      tip('Der Stein muss richtig durchglühen – lieber 10 min länger. (Startzeit = 50 min vor dem Backen.)'), 0, { back: 50 });
     st('Pizza ausziehen', 'kein Nudelholz!',
       `Teigling in Mehl/Grieß betten, von der Mitte mit den <b>Fingerspitzen flachdrücken</b>, Rand (~1,5 cm) stehen lassen, über die Handrücken auf Größe ziehen.`,
       warn('Nie ein Nudelholz – das drückt die Luft aus dem Rand. Der Cornicione lebt von der Gärblase.'), 5);
     const bakeTxt = state.ballw <= 260
       ? 'Pizzaofen bei ~450 °C: <b>60–90 Sekunden</b> (einmal drehen). Haushaltsofen: <b>5–8 min</b> unter dem Grill.'
       : 'Größere Teiglinge: Pizzaofen <b>~2 min</b>, Haushaltsofen <b>8–12 min</b>.';
+    const bakeDur = Math.max(10, R.N * (state.ballw <= 260 ? 5 : 7));
     st('Belegen & Backen', '',
       `Zügig belegen (wenig Sauce, gut abgetropfter Mozzarella), sofort einschießen. ${bakeTxt} Fertig beim <b>aufgegangenen, gefleckten Rand</b> (Leoparding).`,
-      tip('Alles vorher bereitstellen – ab dem Ausziehen geht es schnell.'), 15);
+      tip('Alles vorher bereitstellen – ab dem Ausziehen geht es schnell.'), bakeDur);
 
     // ===== Zeiten berechnen =====
     const steps = _items.filter(i => !i.sec);

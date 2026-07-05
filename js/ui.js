@@ -88,6 +88,7 @@
   seg('method', 'm', 'method', applyMethod);
   seg('yeastType', 'y', 'yeastType');
   seg('knead', 'k', 'knead');
+  seg('coldStage', 'cs', 'coldStage');
   seg('timeMode', 'tm', 'timeMode', updateTimeLabel);
 
   $('timeISO').addEventListener('input', () => { state.timeISO = $('timeISO').value; PZ.calc(); });

@@ -12,6 +12,8 @@
     method: 'direct', pref: 70, bhyd: 45,
     yeastType: 'fresh', yeast: 0.30,
     ddt: 24, room: 21, knead: 3,
-    timeMode: 'start', timeISO: ''
+    timeMode: 'start', timeISO: '',
+    flour: 'caputo_pizzeria',
+    coldStage: 'balls'   // Kühlschrank-Phase: 'balls' = als Teiglinge (praktisch), 'bulk' = im Stück (klassisch)
   };
 })(window);

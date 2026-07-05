@@ -24,8 +24,10 @@
       PZ.selectSeg('method', 'm', state.method);
       PZ.selectSeg('yeastType', 'y', state.yeastType);
       PZ.selectSeg('knead', 'k', state.knead);
+      PZ.selectSeg('coldStage', 'cs', state.coldStage || 'balls');
       PZ.selectSeg('timeMode', 'tm', state.timeMode || 'start');
       if (state.timeISO) $('timeISO').value = state.timeISO;
+      if (state.flour && $('flour')) $('flour').value = state.flour;
       PZ.updateTimeLabel();
       PZ.applyMethod();
     } catch (e) { /* defekter Eintrag wird ignoriert */ }

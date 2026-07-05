@@ -38,9 +38,9 @@
       pf = flour * (state.pref / 100);
       const pHyd = state.method === 'poolish' ? 1 : state.bhyd / 100;
       pw = pf * pHyd;
-      // Hefe größtenteils in den Vorteig
-      pYeast = yeast * 0.9;
-      mYeast = yeast - pYeast;
+      // Alle Hefe in den Vorteig (klassische Biga/Poolish-Methode)
+      pYeast = yeast;
+      mYeast = 0;
       mFlour = flour - pf;
       mWater = water - pw;
       $('pFlour').textContent = Math.round(pf);

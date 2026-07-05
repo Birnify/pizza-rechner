@@ -28,6 +28,12 @@ header p{margin:4px 0 0;opacity:.9;font-size:13px;}
   background:var(--card);border-radius:14px;padding:20px;box-shadow:var(--shadow);
   border:1px solid var(--line);
 }
+.selectbox{
+  width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;
+  font-size:14px;color:var(--ink);background:#fff;cursor:pointer;
+}
+.selectbox:focus{outline:2px solid var(--crust);outline-offset:1px;}
+.selectbox-lg{padding:11px 12px;border-radius:10px;font-size:14.5px;font-weight:600;}
 .card h2{
   margin:0 0 16px;font-size:15px;text-transform:uppercase;letter-spacing:1px;
   color:var(--tomato);display:flex;align-items:center;gap:8px;

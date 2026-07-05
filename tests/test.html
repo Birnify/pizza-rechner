@@ -6,6 +6,7 @@
 <style>
   body{font-family:-apple-system,"Segoe UI",Roboto,sans-serif;background:#faf6f0;color:#2b2420;margin:0;padding:24px;line-height:1.5;}
   h1{font-size:20px;}
+  h2{font-size:15px;margin:24px 0 8px;color:#8a7f76;border-bottom:1px solid #ece3d8;padding-bottom:4px;}
   #summary{font-size:16px;font-weight:700;padding:10px 14px;border-radius:10px;margin:14px 0;display:inline-block;}
   #summary.ok{background:#e7f3e9;color:#2f6b38;}
   #summary.fail{background:#fdeceb;color:#a8341f;}
@@ -15,31 +16,31 @@
   .assert.pass::before{content:"✓ ";color:#2f6b38;}
   .assert.fail{color:#a8341f;font-weight:700;}
   .assert.fail::before{content:"✗ ";}
-  /* Versteckte DOM-Stubs: calc()/buildGuide() schreiben in diese Elemente. */
   #stubs{position:absolute;left:-9999px;top:-9999px;}
 </style>
 </head>
 <body>
 <h1>🍕 Pizzateig-Rechner — Rechenlogik-Tests</h1>
-<p>Per Doppelklick öffnen. Testet die echten Module (<code>js/calc.js</code>, <code>schedule.js</code>,
-<code>guide.js</code>) gegen erwartete Werte — ohne Server, ohne Installation.</p>
+<p>Per Doppelklick öffnen. Testet die echten Module gegen erwartete Werte — ohne Server, ohne Installation.</p>
 <div id="summary">läuft…</div>
 <div id="results"></div>
 
-<!-- Nur die Ausgabe-Elemente, in die calc()/buildGuide() schreiben (Eingabe-UI wird hier nicht geladen) -->
 <div id="stubs">
   <span id="totalW"></span><span id="ballsOut"></span><span id="ballwOut"></span>
-  <span id="gFlour"></span><span id="gWater"></span><span id="gSalt"></span><span id="gYeast"></span><span id="yLabel"></span>
+  <span id="gFlour"></span><span id="gWater"></span><span id="gSalt"></span>
+  <span id="gYeast"></span><span id="yLabel"></span>
   <span id="pFlour"></span><span id="pWater"></span><span id="pYeast"></span><span id="pyLabel"></span>
   <span id="mFlour"></span><span id="mWater"></span><span id="mSalt"></span><span id="mYeast"></span>
   <div id="mYeastRow"></div>
   <span id="waterTemp"></span><span id="iceAmt"></span><div id="iceNote"></div>
   <div id="guideSummary"></div><div id="guideSteps"></div>
+  <div id="flourWarn"></div>
+  <select id="flour"><option value="caputo_pizzeria" selected></option></select>
 </div>
 
-<!-- Produktions-Module (ohne ui/presets/storage/main: die brauchen die volle Eingabe-UI) -->
 <script src="../js/dom.js"></script>
 <script src="../js/state.js"></script>
+<script src="../js/flour.js"></script>
 <script src="../js/schedule.js"></script>
 <script src="../js/guide.js"></script>
 <script src="../js/calc.js"></script>
@@ -50,81 +51,390 @@
   const results = document.getElementById('results');
   let passed = 0, failed = 0;
 
+  // Basis-Zustand für alle Tests
   const BASE = {
     balls: 4, ballw: 250, hyd: 62, salt: 2.8,
     method: 'direct', pref: 70, bhyd: 45,
     yeastType: 'fresh', yeast: 0.30,
     ddt: 24, room: 21, knead: '3',
-    timeMode: 'start', timeISO: ''
+    timeMode: 'start', timeISO: '',
+    flour: 'caputo_pizzeria',
+    coldStage: 'balls'
   };
 
   function round(x) { return typeof x === 'number' ? Math.round(x * 1000) / 1000 : x; }
 
-  // overrides -> kompletter Zustand, einmal rechnen, dann Checks aus R bauen.
-  // buildChecks(R) liefert [label, actual, expected, tol?]; tol weggelassen = strikte Gleichheit.
+  // Stellt sicher dass die Option im Select existiert (für Mehl-Tests)
+  function setFlour(key) {
+    const sel = document.getElementById('flour');
+    if (!sel.querySelector('option[value="' + key + '"]')) {
+      const o = document.createElement('option');
+      o.value = key;
+      sel.appendChild(o);
+    }
+    sel.value = key;
+  }
+
+  // --- Haupt-Testfall: setzt state, rechnet, prüft R-Werte ---
   function testCase(name, overrides, buildChecks) {
-    Object.assign(PZ.state, BASE, overrides);
+    const state = Object.assign({}, BASE, overrides);
+    Object.assign(PZ.state, state);
+    if (state.flour) setFlour(state.flour);
     PZ.calc();
     const checks = buildChecks(PZ.R);
+    renderBox(name, checks.map(([label, actual, expected, tol]) => {
+      const ok = (tol == null) ? actual === expected : Math.abs(actual - expected) <= tol;
+      return { label, actual, expected, tol, ok };
+    }));
+  }
 
+  // --- Schedule-Testfall: setzt state, ruft PZ.schedule(), prüft Felder ---
+  // Für string-expected: prüft ob actual den string enthält (Label-Checks).
+  // Für number-expected mit tol: Absolutdifferenz ≤ tol.
+  // Für boolean/exact: ===
+  function testScheduleCase(name, overrides, buildChecks) {
+    Object.assign(PZ.state, BASE, overrides);
+    const f = PZ.schedule();
+    const checks = buildChecks(f);
+    renderBox(name, checks.map(([label, actual, expected, tol]) => {
+      let ok;
+      if (typeof expected === 'string') {
+        ok = String(actual).includes(expected);
+      } else if (tol == null) {
+        ok = actual === expected;
+      } else {
+        ok = Math.abs(actual - expected) <= tol;
+      }
+      return { label, actual, expected, tol, ok };
+    }));
+  }
+
+  // --- Mehl-Warn-Testfall: prüft innerHTML von #flourWarn ---
+  function testFlourWarn(name, overrides, buildChecks) {
+    const state = Object.assign({}, BASE, overrides);
+    Object.assign(PZ.state, state);
+    if (state.flour) setFlour(state.flour);
+    PZ.calc();
+    const html = (document.getElementById('flourWarn') || {}).innerHTML || '';
+    const checks = buildChecks(html);
+    renderBox(name, checks.map(([label, ok]) => ({ label, ok, actual: ok ? 'ja' : 'nein', expected: 'ja', tol: null })));
+  }
+
+  function renderBox(name, checks) {
     const box = document.createElement('div');
     box.className = 'case';
     const h = document.createElement('h3');
     h.textContent = name;
     box.appendChild(h);
-
-    checks.forEach(([label, actual, expected, tol]) => {
-      const ok = (tol == null) ? actual === expected : Math.abs(actual - expected) <= tol;
+    checks.forEach(({ label, actual, expected, tol, ok }) => {
       const line = document.createElement('div');
       line.className = 'assert ' + (ok ? 'pass' : 'fail');
       line.textContent = ok
-        ? `${label} = ${round(actual)}`
-        : `${label}: erwartet ${expected}${tol != null ? ' ±' + tol : ''}, war ${round(actual)}`;
+        ? label + ' = ' + round(actual)
+        : label + ': erwartet ' + JSON.stringify(expected) + (tol != null ? ' ±' + tol : '') + ', war ' + JSON.stringify(round(actual));
       box.appendChild(line);
       ok ? passed++ : failed++;
     });
     results.appendChild(box);
   }
 
-  // 1) Direkt, Standardwerte: Bäckerprozente (Mehl = Total / (1+Hyd+Salz+Hefe))
-  testCase('Direkt · Standard (4×250, 62% Hyd, 2,8% Salz, 0,30% Hefe frisch)', {}, R => [
-    ['total', R.total, 1000, 0],
-    ['flour', R.flour, 605.69, 0.05],
-    ['water', R.water, 375.53, 0.05],
-    ['salt',  R.salt, 16.96, 0.05],
-    ['yeast', R.yeast, 1.817, 0.01],
-    ['wT (Schüttwasser)', R.wT, 27, 0],
-    ['ice', R.ice, 0, 0]
+  function heading(text) {
+    const h = document.createElement('h2');
+    h.textContent = text;
+    results.appendChild(h);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  heading('1 · Bäckerprozente');
+
+  testCase('Direkt · Standard (4×250 g, 62 % Hyd, 2,8 % Salz, 0,30 % Hefe frisch)', {}, R => {
+    // flour = 1000 / (1 + 0.62 + 0.028 + 0.003) = 1000 / 1.651 = 605.69
+    return [
+      ['total', R.total, 1000, 0],
+      ['flour', R.flour, 605.69, 0.05],
+      ['water', R.water, 375.53, 0.05],
+      ['salt',  R.salt,  16.96,  0.05],
+      ['yeast', R.yeast, 1.817,  0.01],
+    ];
+  });
+
+  testCase('Direkt · Skalierung 6×280 g, 65 % Hyd, 0,3 % Hefe', {
+    balls: 6, ballw: 280, hyd: 65, yeast: 0.3
+  }, R => {
+    // total = 1680; flour = 1680 / (1 + 0.65 + 0.028 + 0.003) = 1680 / 1.681 = 999.4
+    const expFlour = 1680 / (1 + 0.65 + 0.028 + 0.003);
+    return [
+      ['total', R.total, 1680, 0],
+      ['flour', R.flour, expFlour, 0.1],
+      ['water', R.water, expFlour * 0.65, 0.1],
+      ['salt',  R.salt,  expFlour * 0.028, 0.05],
+    ];
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  heading('2 · Wassertemperatur & Eismenge (DDT-Methode)');
+
+  testCase('DDT · Hand, Normalraum (room 21, ddt 24)', { room: 21, ddt: 24, knead: '3' }, R => [
+    // wT = 24*3 - 21 - 21 - 3 = 27
+    ['wT', R.wT, 27, 0],
+    ['ice', R.ice, 0, 0],
   ]);
 
-  // 2) Eiswasser nötig (warm + Maschine): DDT-Wassertemp + Eismenge (Energiebilanz)
-  testCase('Eiswasser · room 28°, ddt 22°, Maschine', { room: 28, ddt: 22, knead: '6' }, R => [
+  testCase('DDT · Maschine, Normalraum (room 21, ddt 24)', { room: 21, ddt: 24, knead: '6' }, R => [
+    // wT = 24*3 - 21 - 21 - 6 = 24
+    ['wT', R.wT, 24, 0],
+    ['ice', R.ice, 0, 0],
+  ]);
+
+  testCase('DDT · Hand, warmer Raum (room 25, ddt 24)', { room: 25, ddt: 24, knead: '3' }, R => [
+    // wT = 24*3 - 25 - 25 - 3 = 19
+    ['wT', R.wT, 19, 0],
+    ['ice', R.ice, 0, 0],
+  ]);
+
+  testCase('Eiswasser · Maschine, Sommer (room 28, ddt 22)', { room: 28, ddt: 22, knead: '6' }, R => [
+    // wT = 22*3 - 28 - 28 - 6 = 4
+    // ice ≈ 375.53 * 4.18 * (28-4) / (334 + 4.18*4 + 4.18*(28-4)) ≈ 84 g
     ['wT', R.wT, 4, 0],
-    ['ice', R.ice, 84, 0]
+    ['ice', R.ice, 84, 2],
   ]);
 
-  // 3) Biga-Vorteig-Aufteilung (100% Mehl im Vorteig, 45% Biga-Hydration, 90% der Hefe in den Vorteig)
-  testCase('Biga · pref 100%, bhyd 45%, hyd 65%', { method: 'biga', pref: 100, bhyd: 45, hyd: 65 }, R => [
-    ['pf (Vorteig-Mehl)',    R.pf, 594.88, 0.05],
-    ['pw (Vorteig-Wasser)',  R.pw, 267.70, 0.05],
-    ['pYeast (90% der Hefe)',R.pYeast, 1.606, 0.01],
-    ['mFlour (Rest = 0)',    R.mFlour, 0, 0.001],
-    ['mWater (Restwasser)',  R.mWater, 118.98, 0.05]
+  testCase('Eiswasser · Maschine, Extremsommer (room 32, ddt 23)', { room: 32, ddt: 23, knead: '6' }, R => {
+    // wT = 23*3 - 32 - 32 - 6 = -1
+    // M = water = flour*0.62; x = M*c*(32-(-1)) / (334 + c*(-1) + c*(32-(-1)))
+    //   = M*4.18*33 / (334 - 4.18 + 137.94) = M*137.94/467.76 = M*0.2948
+    // flour = 1000/1.651 = 605.69; water = 375.53
+    // ice ≈ 375.53 * 0.2948 ≈ 111 g
+    return [
+      ['wT', R.wT, -1, 0],
+      ['ice', R.ice, 111, 5],
+    ];
+  });
+
+  testCase('Kein Eis wenn Leitungswasser kälter als wT', { room: 15, ddt: 23, knead: '3' }, R => [
+    // wT = 23*3 - 15 - 15 - 3 = 36 > 15 → kein Eis, Wasser anwärmen
+    ['wT', R.wT, 36, 0],
+    ['ice', R.ice, 0, 0],
   ]);
 
-  // 4) Trockenhefe = 1/3 der Frischhefemenge
-  testCase('Trockenhefe-Umrechnung (0,30% → 1/3)', { yeastType: 'dry', yeast: 0.30 }, R => [
-    ['yeast', R.yeast, 0.6057, 0.005],
-    ['yWord', R.yWord, '(trocken)']
+  // ─────────────────────────────────────────────────────────────
+  heading('3 · Vorteig-Aufteilung');
+
+  testCase('Biga · pref 100 %, bhyd 45 %, hyd 65 % — 100 % Hefe in Vorteig', {
+    method: 'biga', pref: 100, bhyd: 45, hyd: 65
+  }, R => {
+    // flour = 1000/1.681 = 594.88; pf = flour; pw = pf*0.45 = 267.70
+    // pYeast = yeast (100 %); mFlour = 0; mYeast = 0
+    // water = flour*0.65 = 386.67; mWater = water - pw = 118.97
+    return [
+      ['pf',     R.pf,     594.88, 0.05],
+      ['pw',     R.pw,     267.70, 0.05],
+      ['pYeast', R.pYeast, 1.785,  0.01],
+      ['mFlour', R.mFlour, 0,      0.001],
+      ['mWater', R.mWater, 118.97, 0.05],
+      ['mYeast', R.mYeast, 0,      0.001],
+    ];
+  });
+
+  testCase('Biga · pref 70 % — 100 % Hefe in Vorteig, 30 % Mehl im Hauptteig', {
+    method: 'biga', pref: 70, bhyd: 45, hyd: 62
+  }, R => [
+    ['pf = flour × 0,7',          R.pf,     R.flour * 0.7,  0.05],
+    ['pw = pf × 0,45',            R.pw,     R.flour * 0.7 * 0.45, 0.05],
+    ['pYeast = gesamte Hefe',     R.pYeast, R.yeast,        0.001],
+    ['mYeast = 0',                R.mYeast, 0,              0.001],
+    ['mFlour = flour × 0,3',      R.mFlour, R.flour * 0.3,  0.05],
   ]);
 
-  // Zusammenfassung
+  testCase('Poolish · pref 50 %, hyd 66 % — Poolish-Wasser ist 1:1 (100 %)', {
+    method: 'poolish', pref: 50, hyd: 66
+  }, R => [
+    ['pf = flour / 2',        R.pf,     R.flour * 0.5, 0.05],
+    ['pw = pf (1:1)',         R.pw,     R.pf,           0.05],
+    ['pYeast = gesamte Hefe', R.pYeast, R.yeast,        0.001],
+    ['mYeast = 0',            R.mYeast, 0,              0.001],
+  ]);
+
+  // ─────────────────────────────────────────────────────────────
+  heading('4 · Trockenhefe-Umrechnung');
+
+  testCase('Trockenhefe = 1/3 der Frischhefemenge', { yeastType: 'dry', yeast: 0.30 }, R => [
+    ['yeast (trocken)', R.yeast, R.flour * 0.003 * (1 / 3), 0.005],
+    ['yWord', R.yWord, '(trocken)'],
+  ]);
+
+  testCase('Trockenhefe in Biga — 100 % in Vorteig', {
+    yeastType: 'dry', yeast: 0.30, method: 'biga', pref: 70
+  }, R => [
+    ['pYeast = gesamte Trockenhefe', R.pYeast, R.yeast, 0.001],
+    ['mYeast = 0',                   R.mYeast, 0,        0.001],
+  ]);
+
+  // ─────────────────────────────────────────────────────────────
+  heading('5 · Gärzeit-Schedule (Schwellenwerte)');
+
+  testScheduleCase('Direkt · Schnellgare (y ≥ 1,2 %)', { method: 'direct', yeast: 2.5 }, f => [
+    ['label', f.label, 'Schnellgare'],
+    ['bulkMin', f.bulkMin, 105, 0],
+    ['proofMin', f.proofMin, 150, 0],
+    ['cold', f.cold, false],
+  ]);
+
+  testScheduleCase('Direkt · Mittlere Gare (0,5 % ≤ y < 1,2 %)', { method: 'direct', yeast: 0.5 }, f => [
+    ['label', f.label, 'Mittlere'],
+    ['bulkMin', f.bulkMin, 120, 0],
+    ['proofMin', f.proofMin, 300, 0],
+    ['cold', f.cold, false],
+  ]);
+
+  // Kaltgare als Teiglinge (Standard 'balls'): kurze Stockgare, lange kalte Stückgare.
+  // Die Gesamtdauer (bulk+proof) ist in beiden Varianten identisch.
+  testScheduleCase('Direkt · Lange Gare ~24 h · Teiglinge kalt (Standard)', { method: 'direct', yeast: 0.18, coldStage: 'balls' }, f => [
+    ['label', f.label, 'Lange Gare'],
+    ['bulkMin', f.bulkMin, 120, 0],
+    ['proofMin', f.proofMin, 1440, 0],
+    ['cold', f.cold, true],
+  ]);
+
+  testScheduleCase('Direkt · Lange Gare ~24 h · im Stück kalt (klassisch)', { method: 'direct', yeast: 0.18, coldStage: 'bulk' }, f => [
+    ['bulkMin', f.bulkMin, 1260, 0],
+    ['proofMin', f.proofMin, 300, 0],
+    ['Summe wie Teiglinge-Variante', f.bulkMin + f.proofMin, 120 + 1440, 0],
+  ]);
+
+  testScheduleCase('Direkt · Sehr lange ~48 h · Teiglinge kalt', { method: 'direct', yeast: 0.08, coldStage: 'balls' }, f => [
+    ['label', f.label, 'Sehr lange'],
+    ['bulkMin', f.bulkMin, 120, 0],
+    ['proofMin', f.proofMin, 2460, 0],
+    ['cold', f.cold, true],
+  ]);
+
+  testScheduleCase('Direkt · Sehr lange ~48 h · im Stück kalt', { method: 'direct', yeast: 0.08, coldStage: 'bulk' }, f => [
+    ['bulkMin', f.bulkMin, 2250, 0],
+    ['proofMin', f.proofMin, 330, 0],
+    ['Summe wie Teiglinge-Variante', f.bulkMin + f.proofMin, 120 + 2460, 0],
+  ]);
+
+  testScheduleCase('Direkt · Extrem lang 72 h+ · Teiglinge kalt', { method: 'direct', yeast: 0.05, coldStage: 'balls' }, f => [
+    ['label', f.label, 'Extrem'],
+    ['bulkMin', f.bulkMin, 120, 0],
+    ['proofMin', f.proofMin, 4530, 0],
+    ['cold', f.cold, true],
+  ]);
+
+  testScheduleCase('Direkt · Extrem lang 72 h+ · im Stück kalt', { method: 'direct', yeast: 0.05, coldStage: 'bulk' }, f => [
+    ['bulkMin', f.bulkMin, 4320, 0],
+    ['proofMin', f.proofMin, 330, 0],
+    ['Summe wie Teiglinge-Variante', f.bulkMin + f.proofMin, 120 + 4530, 0],
+  ]);
+
+  testScheduleCase('Vorteig · Schnelle Hauptgare (y ≥ 1,2 %)', { method: 'biga', yeast: 1.5 }, f => [
+    ['label', f.label, 'Schnelle Hauptgare'],
+    ['bulkMin', f.bulkMin, 90, 0],
+    ['cold', f.cold, false],
+  ]);
+
+  testScheduleCase('Vorteig · Mittlere Hauptgare (0,5 % ≤ y < 1,2 %)', { method: 'biga', yeast: 0.5 }, f => [
+    ['label', f.label, 'Mittlere Hauptgare'],
+    ['bulkMin', f.bulkMin, 120, 0],
+  ]);
+
+  testScheduleCase('Vorteig · Lange Hauptgare (0,18 % ≤ y < 0,5 %)', { method: 'biga', yeast: 0.18 }, f => [
+    ['label', f.label, 'Lange Hauptgare'],
+    ['bulkMin', f.bulkMin, 150, 0],
+  ]);
+
+  testScheduleCase('Vorteig · Sehr lange Hauptgare · Teiglinge kalt', { method: 'biga', yeast: 0.05, coldStage: 'balls' }, f => [
+    ['label', f.label, 'Sehr lange Hauptgare'],
+    ['bulkMin', f.bulkMin, 150, 0],
+    ['proofMin', f.proofMin, 1080, 0],
+    ['cold', f.cold, true],
+  ]);
+
+  testScheduleCase('Vorteig · Sehr lange Hauptgare · im Stück kalt', { method: 'biga', yeast: 0.05, coldStage: 'bulk' }, f => [
+    ['bulkMin', f.bulkMin, 960, 0],
+    ['proofMin', f.proofMin, 270, 0],
+    ['Summe wie Teiglinge-Variante', f.bulkMin + f.proofMin, 150 + 1080, 0],
+  ]);
+
+  // ─────────────────────────────────────────────────────────────
+  heading('6 · Mehl-Warnung');
+
+  // Caputo Pizzeria: maxH 48. Extrem lang → totalH = (4320+330)/60 = 77.5 h > 48 → zu lang
+  testFlourWarn('Gärzeit zu lang — Caputo Pizzeria + Extrem lang (77 h > max 48 h)', {
+    flour: 'caputo_pizzeria', yeast: 0.05, hyd: 63
+  }, html => [
+    ['"zu lang" in Warnung', html.includes('zu lang')],
+    ['kein "zu kurz"',       !html.includes('zu kurz')],
+  ]);
+
+  // Caputo Cuoco: minH 24. Mittlere → totalH = (120+300)/60 = 7 h < 24 → zu kurz
+  testFlourWarn('Gärzeit zu kurz — Caputo Cuoco + Mittlere Gare (7 h < min 24 h)', {
+    flour: 'caputo_cuoco', yeast: 0.5, hyd: 65
+  }, html => [
+    ['"zu kurz" in Warnung', html.includes('zu kurz')],
+    ['kein "zu lang"',       !html.includes('zu lang')],
+  ]);
+
+  // Vorteig-Reife zählt mit: Biga (+18 h) + Lange Hauptgare (8,5 h) = 26,5 h ≥ minH 24 → OK
+  testFlourWarn('Keine Warnung — Biga-Reife zählt zur Gärzeit (Cuoco + Biga)', {
+    flour: 'caputo_cuoco', method: 'biga', yeast: 0.3, hyd: 65
+  }, html => [
+    ['kein Warn-HTML', html.trim() === ''],
+  ]);
+
+  // Caputo Cuoco: minH 72. Extrem lang → totalH = 77.5 h, passt. hyd 65 = hydMin → kein Warn
+  testFlourWarn('Keine Warnung — Caputo Cuoco + Extrem lang + hyd 65 %', {
+    flour: 'caputo_cuoco', yeast: 0.05, hyd: 65
+  }, html => [
+    ['kein Warn-HTML', html.trim() === ''],
+  ]);
+
+  // Caputo Pizzeria: hydMax 65. hyd 70 → zu hoch
+  testFlourWarn('Hydration zu hoch — Caputo Pizzeria + 70 %', {
+    flour: 'caputo_pizzeria', hyd: 70, yeast: 0.3
+  }, html => [
+    ['"zu hoch" in Warnung', html.includes('zu hoch')],
+  ]);
+
+  // Dallagiovanna Sofia: hydMin 60. hyd 55 → zu niedrig
+  testFlourWarn('Hydration zu niedrig — Dallagiovanna Sofia + 55 %', {
+    flour: 'dallag_sofia', hyd: 55, yeast: 1.5
+  }, html => [
+    ['"niedrig" in Warnung', html.includes('niedrig')],
+  ]);
+
+  // Caputo Nuvola: maxH 48, minH 24, hyd 60–65. Lange Gare (~26 h) + hyd 63 → alles OK
+  testFlourWarn('Keine Warnung — Caputo Nuvola + Lange Gare + hyd 63 %', {
+    flour: 'caputo_nuvola', hyd: 63, yeast: 0.3
+  }, html => [
+    ['kein Warn-HTML', html.trim() === ''],
+  ]);
+
+  // ─────────────────────────────────────────────────────────────
+  heading('7 · Backzeit (skaliert mit Teiglingszahl)');
+
+  // Erwartung: Math.max(10, N * (W<=260 ? 5 : 7))
+  testCase('Backzeit · 4 × 250 g → 20 min', { balls: 4, ballw: 250 }, R => [
+    ['bakeDur', Math.max(10, R.N * (R.W <= 260 ? 5 : 7)), 20, 0],
+  ]);
+  testCase('Backzeit · 1 × 250 g → min. 10 min', { balls: 1, ballw: 250 }, R => [
+    ['bakeDur', Math.max(10, R.N * (R.W <= 260 ? 5 : 7)), 10, 0],
+  ]);
+  testCase('Backzeit · 8 × 250 g → 40 min', { balls: 8, ballw: 250 }, R => [
+    ['bakeDur', Math.max(10, R.N * (R.W <= 260 ? 5 : 7)), 40, 0],
+  ]);
+  testCase('Backzeit · 4 × 320 g (Teglia) → 28 min', { balls: 4, ballw: 320 }, R => [
+    ['bakeDur', Math.max(10, R.N * (R.W <= 260 ? 5 : 7)), 28, 0],
+  ]);
+
+  // ─────────────────────────────────────────────────────────────
   const s = document.getElementById('summary');
   s.textContent = failed === 0
-    ? `✓ Alle ${passed} Prüfungen bestanden`
-    : `✗ ${failed} von ${passed + failed} Prüfungen fehlgeschlagen`;
+    ? '✓ Alle ' + passed + ' Prüfungen bestanden'
+    : '✗ ' + failed + ' von ' + (passed + failed) + ' Prüfungen fehlgeschlagen';
   s.className = failed === 0 ? 'ok' : 'fail';
-  console.log(`[Tests] ${passed} passed, ${failed} failed`);
+  console.log('[Tests] ' + passed + ' passed, ' + failed + ' failed');
 })();
 </script>
 </body>
