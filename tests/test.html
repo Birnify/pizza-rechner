@@ -54,7 +54,7 @@
   // Basis-Zustand für alle Tests
   const BASE = {
     balls: 4, ballw: 250, hyd: 62, salt: 2.8,
-    method: 'direct', pref: 70, bhyd: 45, prefMature: 18,
+    method: 'direct', pref: 70, bhyd: 45, prefMature: 24, prefStage: 'b24',
     yeastType: 'fresh', yeast: 0.30,
     ddt: 24, room: 21, knead: '3',
     timeMode: 'start', timeISO: '',
@@ -389,15 +389,16 @@
     ['kein "zu kurz"',       !html.includes('zu kurz')],
   ]);
 
-  // Caputo Cuoco: minH 24. Mittlere → totalH = (120+300)/60 = 7 h < 24 → zu kurz
-  testFlourWarn('Gärzeit zu kurz — Caputo Cuoco + Mittlere Gare (7 h < min 24 h)', {
-    flour: 'caputo_cuoco', yeast: 0.5, hyd: 65
+  // Caputo Manitoba Oro (W380): minH 48. Mittlere → totalH = (120+300)/60 = 7 h < 48 → zu kurz
+  // hyd 72 liegt im Fenster [70,85], damit nur die Gärzeit-Warnung anschlägt.
+  testFlourWarn('Gärzeit zu kurz — Manitoba Oro + Mittlere Gare (7 h < min 48 h)', {
+    flour: 'caputo_manitoba', yeast: 0.5, hyd: 72
   }, html => [
     ['"zu kurz" in Warnung', html.includes('zu kurz')],
     ['kein "zu lang"',       !html.includes('zu lang')],
   ]);
 
-  // Vorteig-Reife zählt mit: Biga (+18 h) + Lange Hauptgare (8,5 h) = 26,5 h ≥ minH 24 → OK
+  // Vorteig-Reife zählt mit: Biga (+24 h) + Lange Hauptgare (8,5 h) = 32,5 h ≥ minH 16 → OK
   testFlourWarn('Keine Warnung — Biga-Reife zählt zur Gärzeit (Cuoco + Biga)', {
     flour: 'caputo_cuoco', method: 'biga', yeast: 0.3, hyd: 65
   }, html => [
@@ -425,12 +426,29 @@
     ['"niedrig" in Warnung', html.includes('niedrig')],
   ]);
 
-  // Caputo Nuvola: maxH 48, minH 24, hyd 60–65. Lange Gare (~26 h) + hyd 63 → alles OK
+  // Caputo Nuvola: maxH 48, minH 12, hyd 60–65. Lange Gare (~26 h) + hyd 63 → alles OK
   testFlourWarn('Keine Warnung — Caputo Nuvola + Lange Gare + hyd 63 %', {
     flour: 'caputo_nuvola', hyd: 63, yeast: 0.3
   }, html => [
     ['kein Warn-HTML', html.trim() === ''],
   ]);
+
+  // Preset-Plausibilität: die effektiven Werte jedes Presets dürfen KEINE Mehl-Warnung auslösen.
+  // (Spiegelt js/presets.js wider — bei Preset-Änderungen hier mitziehen.)
+  const PRESET_STATES = {
+    'napoli_klassisch': { method: 'direct', hyd: 60, yeast: 0.2, flour: 'caputo_pizzeria' },
+    'napoli_65':        { method: 'direct', hyd: 65, yeast: 0.3, flour: 'caputo_pizzeria' },
+    'napoli_kalt':      { method: 'direct', hyd: 65, yeast: 0.1, flour: 'caputo_cuoco' },
+    'schnell':          { method: 'direct', hyd: 62, yeast: 1.5, flour: 'caputo_pizzeria' },
+    'napoli_biga':      { method: 'biga', hyd: 65, yeast: 0.3, pref: 100, bhyd: 45, prefMature: 24, flour: 'caputo_cuoco' },
+    'napoli_poolish':   { method: 'poolish', hyd: 66, yeast: 0.2, pref: 66, prefMature: 14, flour: 'dallag_monica' },
+    'teglia':           { method: 'direct', hyd: 75, yeast: 0.3, ballw: 320, flour: 'caputo_nuvola_super' }
+  };
+  Object.keys(PRESET_STATES).forEach(key => {
+    testFlourWarn('Preset „' + key + '" löst keine Mehl-Warnung aus', PRESET_STATES[key], html => [
+      ['kein Warn-HTML', html.trim() === ''],
+    ]);
+  });
 
   // ─────────────────────────────────────────────────────────────
   heading('7 · Backzeit (skaliert mit Teiglingszahl)');

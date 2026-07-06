@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-06 · Aktuelle Version: v3.1.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-06 · Aktuelle Version: v3.2.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -36,8 +36,8 @@ Wasser, Salz, Hefe sind immer **relativ zur Mehlmenge (= 100 %)**.
 2. **Grundeinstellungen**: **Mehl-Dropdown** (13 Sorten, wird per JS aus `PZ.FLOURS` generiert),
    Anzahl Teiglinge, Gewicht/Teigling (Pills), Hydration %, Salz %
 3. **Methode & Hefe**: Direkt/Biga/Poolish, Vorteig-Mehlanteil %, Biga-Hydration %,
-   **Vorteig-Reifezeit** (Slider, nur bei Biga/Poolish), Frisch-/Trockenhefe,
-   Hefemenge % (Pills: 72h+ / 48h / 24h / 8h / 4h),
+   **Vorteig-Reife-Stufen** (Pills, nur bei Biga/Poolish — koppeln Reifezeit + Hefe),
+   Frisch-/Trockenhefe, Hefemenge % (Pills 72h+…4h nur bei Direkt sichtbar),
    **Kaltgare-Stufe** (Segment): „Als Teiglinge (praktisch)" [Standard] / „Im Stück (klassisch)"
 4. **Teigtemperatur & Eiswasser**: Ziel-Teigtemperatur (DDT), Raum-/Mehltemperatur, Knetart Hand/Maschine
 5. **Zeitplan**: „Ich starte um…" / „Fertig sein um…" + datetime + „Jetzt"-Button
@@ -61,20 +61,31 @@ Wasser, Salz, Hefe sind immer **relativ zur Mehlmenge (= 100 %)**.
 - Backzeit skaliert mit Teiglingszahl: `max(10, N × (ballw≤260 ? 5 : 7))` Minuten
 - Ofen-Vorheizen überlappt die Stückgare (`back: 50` = 50 min vor Backbeginn)
 
-## Vorteig-Reifezeit (v3.1.0)
+## Vorteig-Reife-Stufen (v3.2.0 — ersetzt den Slider aus v3.1.0)
 
-`state.prefMature` (Stunden). Slider erscheint nur bei Biga/Poolish (`applyMethod` togglet
-`#prefMatureBlock`). **Methodenabhängige Range** (in `applyMethod` gesetzt):
-- **Biga: 12–48 h** (Default 18) — Biga lässt sich weit dehnen (warm kurz → kühl/Kühlschrank lang).
-- **Poolish: 8–24 h** (Default 14) — reißt über ~24 h über (fällt zusammen), daher enger.
-Beim Methodenwechsel wird der Wert auf die neue Range geclamped, sonst auf den Default gesetzt.
+Reifezeit und Hefemenge hängen physikalisch zusammen (länger = weniger Hefe / kühler).
+Deshalb **keine freien Regler**, sondern **diskrete Stufen**, die beides koppeln.
+Datenquelle: `PZ.PREF_STAGES` in `js/ui.js`:
+- **Biga:** `b16` (16 h · 0,4 %) · `b24` (24 h · 0,3 %, Default) · `b48` (48 h · 0,2 %)
+- **Poolish:** `p8` (8 h · 0,4 %) · `p14` (14 h · 0,2 %, Default) · `p24` (24 h · 0,18 %)
 
-Der Slider **ersetzt die vorher fixe Reifezeit** (war hart 18 h/16 h in guide.js). `buildGuide`
-rechnet `matureMin = prefMature × 60`, nutzt sie als Dauer des „…reifen lassen"-Schritts und
-passt den Temperatur-Text an (länger = kühler). Die **Mehl-Warnung zählt `prefMature` als
-Vorteig-Reife** mit zur Gesamtgärzeit. `buildGuide` schreibt `R.totalMin` und `R.matureMin`
-(für Zeitplan-Banner und Tests). **Hintergrund der Idee:** die Hefe-Pills (72h+ etc.) steuern
-nur die Hauptteig-Gare; bei Vorteig dominiert die Reifezeit die Gesamtzeit — daher eigener Regler.
+`yeast` ist % vom Gesamtmehl (geht bei Vorteig komplett in den Vorteig). Alle Stufen-Hefewerte
+liegen bei ≥ 0,18 %, damit die Hauptteig-Gare (`schedule()`) im „Lange Hauptgare"-Rahmen (~8,5 h)
+bleibt — die Differenzierung steckt in der **Reifezeit**, nicht in der Hauptgare.
+
+- State: `state.prefStage` (aktive Stufe) + `state.prefMature` (h, von der Stufe gesetzt).
+- `applyMethod()` (ui.js): rendert die Pills der Methode (`renderPrefStages`), blendet bei Vorteig
+  die generischen Hefe-Pills (`#yeastPills`) aus, wählt eine gültige Stufe (`selectPrefStage`).
+- `selectPrefStage(m, key)` setzt `prefStage` + `prefMature` **und** `PZ.set.yeast(stage.yeast)`.
+  Nutzer-Klick auf eine Pill setzt zusätzlich `#preset` zurück auf „Eigene"; der **programmatische**
+  Aufruf (Load/Preset) nicht.
+- `buildGuide` nutzt `matureMin = prefMature × 60` als Dauer des „…reifen lassen"-Schritts,
+  adaptiver Temperatur-Text (länger = kühler), schreibt `R.totalMin` / `R.matureMin`.
+- **Mehl-Warnung** zählt `prefMature` als Vorteig-Reife zur Gesamtgärzeit.
+- **Hintergrund:** die Hefe-Pills (72h+ etc.) steuern nur die Hauptteig-Gare; bei Vorteig dominiert
+  die Reifezeit — daher eigene, gekoppelte Stufen statt der (irreführenden) Zeit-Hefe-Trennung.
+
+**CSS:** `.pills button.active` (tomatenrot gefüllt) zeigt die aktive Stufe.
 
 ## Kaltgare-Stufe (v3.0.0)
 
@@ -105,8 +116,10 @@ poolish braucht hydMax ≥ 66 → Monica; teglia braucht hydMax ≥ 75 → Nuvol
 13 Mehle in 3 Gruppen (Molino Caputo / Molino Dallagiovanna / Teichners Beste).
 Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - `minH` = Mindest-Gärzeit (0 = keine), `maxH` = Maximum (168 = praktisch unbegrenzt, Anzeige „72 h+")
-- W380-Mehle (Manitoba Oro, leDevine Anna, UNIQUA Blu, Teichners Beste 1): minH 72
-- Cuoco/Nuvola Super/Tipo 1: minH 24 (profitieren von länger, brauchen es nicht zwingend)
+- **minH bewusst konservativ** (v3.2.0 reckalibriert): nur wirklich starke Mehle „brauchen"
+  lange Gare, sonst 0 — sonst würden kurze Presets (z. B. „schnell" ~4 h) fälschlich warnen.
+  W380 (Manitoba Oro, Anna, UNIQUA Blu): minH 48 · W330 (Nuvola Super): 24 ·
+  W300–310 (Cuoco, Napoletana): 16 · Monica/Nuvola/Teichner 1 (~W280–300): 12 · Rest: 0.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
@@ -184,13 +197,14 @@ ui → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur
   - `R.prefEff` / `R.prefClamped` in PZ.R; ⚠️-Hinweis im Schritt „Vorteig abwiegen"
   - Hauptteig-Schritte blenden 0-g-Wasser/-Mehl sauber aus
   - Poolish-Hint unter dem Anteil-Slider erklärt die Grenze
-- **v3.1.0 — Vorteig-Reifezeit als Slider** = aktueller Stand:
-  - Neuer Regler `prefMature` (nur Biga/Poolish), methodenabhängige Range
-    (Biga 12–48 h, Poolish 8–24 h); ersetzt die vorher fixe Reifezeit
-  - `buildGuide` nutzt matureMin = prefMature×60, adaptiver Temperatur-Text,
-    schreibt R.totalMin/R.matureMin; Mehl-Warnung zählt die Reifezeit mit
-  - Presets setzen prefMature (Biga 18, Poolish 14); storage restauriert es
-  - Tests: neue Kategorie 8 (Reifezeit → matureMin/totalMin + Mehl-Warnung)
+- v3.1.0 — Vorteig-Reifezeit als (stufenloser) Slider (in v3.2.0 ersetzt)
+- **v3.2.0 — Vorteig-Reife als gekoppelte Stufen** = aktueller Stand:
+  - Stufenloser Slider raus → diskrete Pills (`PZ.PREF_STAGES`), die Reifezeit **und**
+    Hefemenge zusammen setzen (weil physikalisch abhängig). Biga b16/b24/b48, Poolish p8/p14/p24.
+  - Generische Hefe-Pills werden bei Vorteig ausgeblendet; Hefe-Regler bleibt (Feintuning).
+  - `minH` der Mehle konservativ rekalibriert → keine False-Positive-Warnungen mehr.
+  - Neue Preset-Plausibilitäts-Tests: jedes Preset darf keine Mehl-Warnung auslösen.
+  - `.pills button.active`-CSS für die aktive Stufe.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 

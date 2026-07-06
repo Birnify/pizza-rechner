@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pizzateig-Rechner</title>
-<link rel="stylesheet" href="css/styles.css?v=3.1.0">
+<link rel="stylesheet" href="css/styles.css?v=3.2.0">
 </head>
 <body>
 <header>
@@ -120,13 +120,10 @@
         <div class="hint">Steife Biga: 44–48 %. Poolish ist fix 100 % (1:1).</div>
       </div>
 
-      <div class="field collapse" id="prefMatureBlock">
-        <label>Vorteig-Reifezeit <span class="val"><span id="prefMatureV">18</span> h</span></label>
-        <div class="row">
-          <input type="range" id="prefMature" min="12" max="48" step="1" value="18">
-          <input type="number" id="prefMatureN" min="8" max="48" value="18">
-        </div>
-        <div class="hint" id="prefMatureHint">Biga: 16–18 h bei ~18 °C. Länger nur kühler &amp; mit weniger Hefe.</div>
+      <div class="field collapse" id="prefStageBlock">
+        <label>Vorteig-Reife <span class="val" id="prefStageVal">24 h</span></label>
+        <div class="pills" id="prefStage"></div>
+        <div class="hint" id="prefStageHint">Reifezeit und Hefemenge hängen zusammen — die Stufe setzt beides passend. Längere Reife = weniger Hefe + kühler stellen (steht in der Anleitung).</div>
       </div>
 
       <div class="field">
@@ -144,7 +141,7 @@
           <input type="number" id="yeastN" min="0.01" max="5" step="0.01" value="0.30">
         </div>
         <div class="hint" id="yeastHint">Prozent bezogen auf Frischhefe. Lange/warme Gare = weniger.</div>
-        <div class="pills">
+        <div class="pills" id="yeastPills">
           <button data-yeast="0.05">Extrem lang (72h+)</button>
           <button data-yeast="0.1">Sehr lang (48h kühl)</button>
           <button data-yeast="0.3">Lang (24h)</button>
@@ -278,15 +275,15 @@
 </footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.1.0"></script>
-<script src="js/state.js?v=3.1.0"></script>
-<script src="js/flour.js?v=3.1.0"></script>
-<script src="js/calc.js?v=3.1.0"></script>
-<script src="js/schedule.js?v=3.1.0"></script>
-<script src="js/guide.js?v=3.1.0"></script>
-<script src="js/ui.js?v=3.1.0"></script>
-<script src="js/presets.js?v=3.1.0"></script>
-<script src="js/storage.js?v=3.1.0"></script>
-<script src="js/main.js?v=3.1.0"></script>
+<script src="js/dom.js?v=3.2.0"></script>
+<script src="js/state.js?v=3.2.0"></script>
+<script src="js/flour.js?v=3.2.0"></script>
+<script src="js/calc.js?v=3.2.0"></script>
+<script src="js/schedule.js?v=3.2.0"></script>
+<script src="js/guide.js?v=3.2.0"></script>
+<script src="js/ui.js?v=3.2.0"></script>
+<script src="js/presets.js?v=3.2.0"></script>
+<script src="js/storage.js?v=3.2.0"></script>
+<script src="js/main.js?v=3.2.0"></script>
 </body>
 </html>

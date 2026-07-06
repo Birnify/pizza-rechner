@@ -30,7 +30,6 @@
     salt:  link('salt', 'saltN', 'salt', 1),
     pref:  link('pref', 'prefN', 'pref', 0),
     bhyd:  link('bhyd', 'bhydN', 'bhyd', 0),
-    prefMature: link('prefMature', 'prefMatureN', 'prefMature', 0),
     yeast: link('yeast', 'yeastN', 'yeast', 2),
     ddt:   link('ddt', 'ddtN', 'ddt', 1),
     room:  link('room', 'roomN', 'room', 0)
@@ -39,6 +38,57 @@
   // --- Quick-Pills ---
   document.querySelectorAll('[data-ballw]').forEach(b => b.onclick = () => PZ.set.ballw(b.dataset.ballw));
   document.querySelectorAll('[data-yeast]').forEach(b => b.onclick = () => PZ.set.yeast(b.dataset.yeast));
+
+  // --- Vorteig-Reife-Stufen: koppeln Reifezeit + Hefemenge (physikalisch abhängig) ---
+  // yeast = % bezogen auf Gesamtmehl (geht bei Vorteig komplett in den Vorteig).
+  // Werte >= 0,18 % halten die Hauptteig-Gare in einem praktikablen Rahmen.
+  PZ.PREF_STAGES = {
+    biga: [
+      { key: 'b16', label: '16 h · 0,4 %', mature: 16, yeast: 0.4 },
+      { key: 'b24', label: '24 h · 0,3 %', mature: 24, yeast: 0.3 },
+      { key: 'b48', label: '48 h · 0,2 %', mature: 48, yeast: 0.2 }
+    ],
+    poolish: [
+      { key: 'p8',  label: '8 h · 0,4 %',  mature: 8,  yeast: 0.4 },
+      { key: 'p14', label: '14 h · 0,2 %', mature: 14, yeast: 0.2 },
+      { key: 'p24', label: '24 h · 0,18 %', mature: 24, yeast: 0.18 }
+    ]
+  };
+  const PREF_DEFAULT = { biga: 'b24', poolish: 'p14' };
+
+  function renderPrefStages(m) {
+    const wrap = $('prefStage');
+    const stages = PZ.PREF_STAGES[m] || [];
+    wrap.innerHTML = '';
+    stages.forEach(s => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.ps = s.key;
+      b.textContent = s.label;
+      b.onclick = () => { const p = $('preset'); if (p) p.value = ''; selectPrefStage(m, s.key); };
+      wrap.appendChild(b);
+    });
+  }
+  function highlightPrefStage(key) {
+    const wrap = $('prefStage');
+    let matured = '';
+    wrap.querySelectorAll('button').forEach(b => {
+      const on = b.dataset.ps === key;
+      b.classList.toggle('active', on);
+      if (on) matured = b.textContent.split(' ·')[0];
+    });
+    if (matured) $('prefStageVal').textContent = matured;
+  }
+  function selectPrefStage(m, key) {
+    const stages = PZ.PREF_STAGES[m] || [];
+    const s = stages.find(x => x.key === key) || stages[0];
+    if (!s) return;
+    state.prefStage = s.key;
+    state.prefMature = s.mature;
+    highlightPrefStage(s.key);
+    PZ.set.yeast(s.yeast);   // setzt Hefe + löst calc() aus
+  }
+  PZ.selectPrefStage = selectPrefStage;
 
   // --- Segment-Buttons ---
   function seg(containerId, attr, key, after) {
@@ -68,26 +118,25 @@
     const isPref = m !== 'direct';
     $('prefBlock').classList.toggle('show', isPref);
     $('bigaHydBlock').classList.toggle('show', m === 'biga');
-    $('prefMatureBlock').classList.toggle('show', isPref);
+    $('prefStageBlock').classList.toggle('show', isPref);
     $('stagePref').classList.toggle('show', isPref);
     $('stageMain').classList.toggle('show', isPref);
+    // Bei Vorteig steuert die Reife-Stufe die Hefe → generische Hefe-Pills ausblenden
+    $('yeastPills').style.display = isPref ? 'none' : '';
+    $('yeastHint').innerHTML = isPref
+      ? 'Wird von der <b>Vorteig-Reife</b> oben gesetzt. Feintuning per Regler möglich.'
+      : 'Prozent bezogen auf Frischhefe. Lange/warme Gare = weniger.';
     $('methodHint').innerHTML = methodHints[m];
     $('prefTitle').textContent = m === 'biga' ? 'Biga (Vortag)' : 'Poolish (Vortag)';
     $('prefHint').innerHTML = m === 'biga'
       ? 'Biga klassisch: 70–100 % des Mehls.'
       : 'Poolish: meist 30–50 % des Mehls (Wasser 1:1 dazu). Mehr als die Hydration-% geht nicht — sonst wäre mehr Wasser im Poolish als im ganzen Teig.';
-    // Vorteig-Reifezeit: Biga lässt sich weit dehnen (12–48 h), Poolish reißt früher über (8–24 h)
+    // Reife-Stufen für die gewählte Methode rendern und eine gültige Stufe aktivieren
     if (isPref) {
-      const s = $('prefMature'), n = $('prefMatureN');
-      const min = m === 'biga' ? 12 : 8;
-      const max = m === 'biga' ? 48 : 24;
-      s.min = min; s.max = max; n.min = min; n.max = max;
-      $('prefMatureHint').innerHTML = m === 'biga'
-        ? 'Biga: 16–18 h bei ~18 °C. Länger (24–48 h) nur <b>kühler stellen &amp; weniger Hefe</b> im Vorteig.'
-        : 'Poolish: 12–16 h bei Raumtemp. Mehr als ~24 h geht nicht — der Poolish <b>reißt über</b> (fällt zusammen).';
-      let v = state.prefMature;
-      if (v == null || v < min || v > max) v = (m === 'biga' ? 18 : 14);
-      PZ.set.prefMature(v);
+      renderPrefStages(m);
+      const stages = PZ.PREF_STAGES[m];
+      const valid = stages.some(s => s.key === state.prefStage);
+      selectPrefStage(m, valid ? state.prefStage : PREF_DEFAULT[m]);
     }
   }
 
