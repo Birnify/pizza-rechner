@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-05 · Aktuelle Version: v3.0.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-06 · Aktuelle Version: v3.1.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -36,7 +36,8 @@ Wasser, Salz, Hefe sind immer **relativ zur Mehlmenge (= 100 %)**.
 2. **Grundeinstellungen**: **Mehl-Dropdown** (13 Sorten, wird per JS aus `PZ.FLOURS` generiert),
    Anzahl Teiglinge, Gewicht/Teigling (Pills), Hydration %, Salz %
 3. **Methode & Hefe**: Direkt/Biga/Poolish, Vorteig-Mehlanteil %, Biga-Hydration %,
-   Frisch-/Trockenhefe, Hefemenge % (Pills: 72h+ / 48h / 24h / 8h / 4h),
+   **Vorteig-Reifezeit** (Slider, nur bei Biga/Poolish), Frisch-/Trockenhefe,
+   Hefemenge % (Pills: 72h+ / 48h / 24h / 8h / 4h),
    **Kaltgare-Stufe** (Segment): „Als Teiglinge (praktisch)" [Standard] / „Im Stück (klassisch)"
 4. **Teigtemperatur & Eiswasser**: Ziel-Teigtemperatur (DDT), Raum-/Mehltemperatur, Knetart Hand/Maschine
 5. **Zeitplan**: „Ich starte um…" / „Fertig sein um…" + datetime + „Jetzt"-Button
@@ -60,7 +61,22 @@ Wasser, Salz, Hefe sind immer **relativ zur Mehlmenge (= 100 %)**.
 - Backzeit skaliert mit Teiglingszahl: `max(10, N × (ballw≤260 ? 5 : 7))` Minuten
 - Ofen-Vorheizen überlappt die Stückgare (`back: 50` = 50 min vor Backbeginn)
 
-## Kaltgare-Stufe (v3.0.0, wichtigste Neuerung)
+## Vorteig-Reifezeit (v3.1.0)
+
+`state.prefMature` (Stunden). Slider erscheint nur bei Biga/Poolish (`applyMethod` togglet
+`#prefMatureBlock`). **Methodenabhängige Range** (in `applyMethod` gesetzt):
+- **Biga: 12–48 h** (Default 18) — Biga lässt sich weit dehnen (warm kurz → kühl/Kühlschrank lang).
+- **Poolish: 8–24 h** (Default 14) — reißt über ~24 h über (fällt zusammen), daher enger.
+Beim Methodenwechsel wird der Wert auf die neue Range geclamped, sonst auf den Default gesetzt.
+
+Der Slider **ersetzt die vorher fixe Reifezeit** (war hart 18 h/16 h in guide.js). `buildGuide`
+rechnet `matureMin = prefMature × 60`, nutzt sie als Dauer des „…reifen lassen"-Schritts und
+passt den Temperatur-Text an (länger = kühler). Die **Mehl-Warnung zählt `prefMature` als
+Vorteig-Reife** mit zur Gesamtgärzeit. `buildGuide` schreibt `R.totalMin` und `R.matureMin`
+(für Zeitplan-Banner und Tests). **Hintergrund der Idee:** die Hefe-Pills (72h+ etc.) steuern
+nur die Hauptteig-Gare; bei Vorteig dominiert die Reifezeit die Gesamtzeit — daher eigener Regler.
+
+## Kaltgare-Stufe (v3.0.0)
 
 `state.coldStage`: `'balls'` (Standard) oder `'bulk'`. Greift nur bei kalten Führungen (cold: true).
 - **'balls' (praktisch)**: kurze Stockgare bei RT (~2 h), dann Teiglinge formen und
@@ -101,7 +117,7 @@ pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.0.0)
 index.html           Weiterleitung auf pizza-rechner.html
 css/styles.css       komplettes Stylesheet (inkl. .selectbox / .selectbox-lg)
 js/dom.js            $-Helfer, legt globalen Namespace window.PZ an
-js/state.js          PZ.state (inkl. flour, coldStage) + PZ.FRESH_TO_DRY (1/3)
+js/state.js          PZ.state (inkl. flour, coldStage, prefMature) + PZ.FRESH_TO_DRY (1/3)
 js/flour.js          PZ.FLOURS (13 Mehle) + PZ.getFlour() + Dropdown-Befüllung
 js/calc.js           PZ.calc() Hauptberechnung, schreibt PZ.R, ruft PZ.buildGuide()
 js/schedule.js       PZ.schedule() — Gärzeit-Fahrplan (berücksichtigt coldStage)
@@ -161,13 +177,20 @@ ui → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur
   - Presets empfehlen Mehl + 3 Preset-Korrekturen (napoli_kalt 65 %, poolish→Monica, teglia→Nuvola Super)
   - Mehl-Warnung zählt Vorteig-Reife mit; Cuoco/Nuvola Super/Tipo 1 minH auf 24 h entschärft
   - Mehl-Dropdown aus FLOURS generiert; Karten-Reihenfolge = Arbeitsablauf; .selectbox-CSS
-- **v3.0.1 — Poolish-Wasser-Bugfix** = aktueller Stand:
+- v3.0.1 — Poolish-Wasser-Bugfix:
   - Vorteig-Anteil wird in calc() automatisch begrenzt, damit das Vorteig-Wasser
     (pf × pHyd) nie das Gesamtwasser übersteigt (Poolish: max pref = hyd %).
     Vorher: Poolish 100 % bei 65 % Hydration → −312 g Restwasser in der Anleitung.
   - `R.prefEff` / `R.prefClamped` in PZ.R; ⚠️-Hinweis im Schritt „Vorteig abwiegen"
   - Hauptteig-Schritte blenden 0-g-Wasser/-Mehl sauber aus
   - Poolish-Hint unter dem Anteil-Slider erklärt die Grenze
+- **v3.1.0 — Vorteig-Reifezeit als Slider** = aktueller Stand:
+  - Neuer Regler `prefMature` (nur Biga/Poolish), methodenabhängige Range
+    (Biga 12–48 h, Poolish 8–24 h); ersetzt die vorher fixe Reifezeit
+  - `buildGuide` nutzt matureMin = prefMature×60, adaptiver Temperatur-Text,
+    schreibt R.totalMin/R.matureMin; Mehl-Warnung zählt die Reifezeit mit
+  - Presets setzen prefMature (Biga 18, Poolish 14); storage restauriert es
+  - Tests: neue Kategorie 8 (Reifezeit → matureMin/totalMin + Mehl-Warnung)
 
 ## Mögliche nächste Schritte (offen / Ideen)
 

@@ -36,10 +36,10 @@
     if (!R.flour) return;
     const f = PZ.schedule();
 
-    // Mehl-Warnung (bei Vorteig zählt die Reifezeit des Vorteigs mit zur Gesamtgärzeit)
+    // Mehl-Warnung (bei Vorteig zählt die eingestellte Reifezeit mit zur Gesamtgärzeit)
     if (PZ.getFlour) {
       const fl = PZ.getFlour();
-      const prefH = state.method === 'biga' ? 18 : state.method === 'poolish' ? 16 : 0;
+      const prefH = state.method !== 'direct' ? state.prefMature : 0;
       const totalH = (f.bulkMin + f.proofMin) / 60 + prefH;
       const warnMsgs = [];
       if (totalH > fl.maxH) {
@@ -59,10 +59,12 @@
     const m = state.method, isBiga = m === 'biga', pref = m !== 'direct';
     const hi = state.hyd >= 70;               // hohe Hydration → Stretch & Fold
     const iceTxt = R.ice > 0 ? ` (davon <b>${R.ice} g Eis</b>)` : '';
+    let matureMin = 0;                        // Vorteig-Reifezeit (nur bei Biga/Poolish)
     _items = [];
 
     // ===== VORTEIG (Biga / Poolish) =====
     if (pref) {
+      matureMin = Math.round(state.prefMature * 60);
       sec(isBiga ? 'Vorteig — Biga ansetzen' : 'Vorteig — Poolish ansetzen');
       const clampNote = R.prefClamped
         ? warn(`Der Vorteig-Anteil wurde automatisch auf <b>${Math.round(R.prefEff)} %</b> begrenzt: bei ${state.hyd} % Hydration passt nicht mehr Wasser in den ${isBiga ? 'Biga' : 'Poolish (1:1)'} als insgesamt im Teig ist.`)
@@ -74,15 +76,23 @@
         st('Biga grob mischen', 'mit der Hand',
           `Hefe im Wasser auflösen, übers Mehl geben und <b>mit den Händen nur grob vermengen</b> – ca. <b>1–2 min</b>, bis keine trockenen Mehlnester mehr da sind. Die Biga bleibt krümelig-stückig, <b>nicht glatt kneten</b>. (Hier keine Maschine nutzen – zu festes Kneten zerstört die Struktur.)`,
           warn('Es soll aussehen wie nasse Brösel oder grober Streusel, nicht wie ein normaler Teig.'), 10);
-        st('Biga reifen lassen', '16–20 h',
-          `Abgedeckt bei <b>ca. 18 °C</b> reifen lassen. Sie lockert sich auf und duftet säuerlich-hefig. Bei 21–22 °C reichen 14–16 h.`,
-          tip('Keller, Speisekammer oder Kühlschranktür treffen die 18 °C oft gut.'), 1080);
+        const bigaTempTxt = state.prefMature <= 20
+          ? 'Abgedeckt bei <b>ca. 18 °C</b> reifen lassen (Keller, Speisekammer, Kühlschranktür).'
+          : state.prefMature <= 32
+            ? 'Abgedeckt <b>kühl bei ~14–16 °C</b> reifen lassen (kühler Keller / Kühlschranktür).'
+            : '<b>2 h</b> bei Raumtemp anspringen lassen, dann in den <b>Kühlschrank (4–6 °C)</b>.';
+        st('Biga reifen lassen', `${state.prefMature} h`,
+          `${bigaTempTxt} Sie lockert sich auf und duftet säuerlich-hefig.`,
+          tip('Längere Reife braucht <b>weniger Hefe</b> im Vorteig und/oder <b>kühlere</b> Lagerung. Fertig = luftig-schwammig, gerade eben eingefallen.'), matureMin);
       } else {
         st('Poolish verrühren', 'mit Löffel / Schneebesen',
           `Hefe im Wasser auflösen, dann Mehl einrühren – <b>mit einem Löffel oder Schneebesen ca. 2–3 min rühren</b>, bis ein <b>zäher, klumpenfreier Pfannkuchenteig</b> entsteht. Abdecken.`, '', 10);
-        st('Poolish reifen lassen', '12–24 h',
-          `<b>1 h</b> bei Raumtemp anspringen lassen, dann kühl stellen. Reif = Oberfläche <b>voller Blasen</b>, kurz bevor er wieder einfällt.`,
-          tip('Fingertest: riecht angenehm nach Hefe/Joghurt, nicht stechend nach Alkohol.'), 960);
+        const poolishTempTxt = state.prefMature <= 14
+          ? '<b>1 h</b> bei Raumtemp anspringen lassen, dann bei <b>~20 °C</b> ausreifen.'
+          : '<b>1 h</b> bei Raumtemp anspringen lassen, dann <b>kühl stellen (Kühlschrank)</b> und langsam ausreifen.';
+        st('Poolish reifen lassen', `${state.prefMature} h`,
+          `${poolishTempTxt} Reif = Oberfläche <b>voller Blasen</b>, kurz bevor er wieder einfällt.`,
+          tip('Fingertest: riecht angenehm nach Hefe/Joghurt, nicht stechend nach Alkohol. Länger als ~24 h zieht er nicht durch.'), matureMin);
       }
       sec('Hauptteig');
       const hasMW = R.mWater >= 1, hasMF = R.mFlour >= 1;
@@ -182,6 +192,8 @@
     let totalMin = 0, cum = 0;
     steps.forEach(s => { s._min = cum; cum += s.dur; });
     totalMin = cum;
+    R.totalMin = totalMin;      // Gesamtdauer (für Zeitplan-Banner & Tests)
+    R.matureMin = matureMin;    // Vorteig-Reifezeit (0 bei Direkt)
     let base = null, valid = false;
     if (state.timeISO) {
       const t = new Date(state.timeISO);

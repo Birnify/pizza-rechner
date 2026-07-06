@@ -19,6 +19,7 @@
       // Werte in UI schreiben
       set.balls(state.balls); set.ballw(state.ballw); set.hyd(state.hyd); set.salt(state.salt);
       set.pref(state.pref); set.bhyd(state.bhyd); set.yeast(state.yeast);
+      if (state.prefMature != null) set.prefMature(state.prefMature);
       set.ddt(state.ddt); set.room(state.room);
       // Segmente
       PZ.selectSeg('method', 'm', state.method);

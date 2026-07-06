@@ -26,11 +26,11 @@
       desc: 'Gleicher Tag: ~2 h Stockgare + 2–3 h Stückgare bei warmer Raumtemp (24–26 °C). Mehr Hefe, weniger Aroma — aber spontan.'
     },
     napoli_biga: {
-      method: 'biga', hyd: 65, salt: 2.8, pref: 100, bhyd: 45, yeastType: 'fresh', yeast: 0.3, ballw: 250, ddt: 24, flour: 'caputo_cuoco',
+      method: 'biga', hyd: 65, salt: 2.8, pref: 100, bhyd: 45, prefMature: 18, yeastType: 'fresh', yeast: 0.3, ballw: 250, ddt: 24, flour: 'caputo_cuoco',
       desc: '100 % Biga (steifer Vorteig, 45 % Hydration). 16–20 h bei ~18 °C reifen lassen, dann Hauptteig mit Restwasser & Salz. Sehr offene Krume.'
     },
     napoli_poolish: {
-      method: 'poolish', hyd: 66, salt: 2.5, pref: 66, yeastType: 'fresh', yeast: 0.2, ballw: 250, ddt: 24, flour: 'dallag_monica',
+      method: 'poolish', hyd: 66, salt: 2.5, pref: 66, prefMature: 14, yeastType: 'fresh', yeast: 0.2, ballw: 250, ddt: 24, flour: 'dallag_monica',
       desc: 'Poolish (flüssig 1:1) mit ~66 % des Mehls. 1 h Raumtemp + 12–16 h kühl reifen, dann Hauptteig — ~24 h Gesamtreife. Milder, luftiger Teig.'
     },
     teglia: {
@@ -51,6 +51,7 @@
     if (p.salt != null)  set.salt(p.salt);
     if (p.pref != null)  set.pref(p.pref);
     if (p.bhyd != null)  set.bhyd(p.bhyd);
+    if (p.prefMature != null) set.prefMature(p.prefMature);
     if (p.yeast != null) set.yeast(p.yeast);
     if (p.ddt != null)   set.ddt(p.ddt);
     if (p.room != null)  set.room(p.room);
@@ -62,7 +63,7 @@
   $('preset').addEventListener('change', e => applyPreset(e.target.value));
 
   // Manuelle Änderung an einem Regler → Auswahl zurück auf "Eigene Einstellung"
-  ['hyd', 'salt', 'yeast', 'pref', 'bhyd', 'ballw', 'ddt', 'room', 'hydN', 'saltN', 'yeastN'].forEach(id => {
+  ['hyd', 'salt', 'yeast', 'pref', 'bhyd', 'prefMature', 'prefMatureN', 'ballw', 'ddt', 'room', 'hydN', 'saltN', 'yeastN'].forEach(id => {
     const el = $(id);
     if (el) el.addEventListener('input', () => { $('preset').value = ''; });
   });

@@ -30,6 +30,7 @@
     salt:  link('salt', 'saltN', 'salt', 1),
     pref:  link('pref', 'prefN', 'pref', 0),
     bhyd:  link('bhyd', 'bhydN', 'bhyd', 0),
+    prefMature: link('prefMature', 'prefMatureN', 'prefMature', 0),
     yeast: link('yeast', 'yeastN', 'yeast', 2),
     ddt:   link('ddt', 'ddtN', 'ddt', 1),
     room:  link('room', 'roomN', 'room', 0)
@@ -67,6 +68,7 @@
     const isPref = m !== 'direct';
     $('prefBlock').classList.toggle('show', isPref);
     $('bigaHydBlock').classList.toggle('show', m === 'biga');
+    $('prefMatureBlock').classList.toggle('show', isPref);
     $('stagePref').classList.toggle('show', isPref);
     $('stageMain').classList.toggle('show', isPref);
     $('methodHint').innerHTML = methodHints[m];
@@ -74,6 +76,19 @@
     $('prefHint').innerHTML = m === 'biga'
       ? 'Biga klassisch: 70–100 % des Mehls.'
       : 'Poolish: meist 30–50 % des Mehls (Wasser 1:1 dazu). Mehr als die Hydration-% geht nicht — sonst wäre mehr Wasser im Poolish als im ganzen Teig.';
+    // Vorteig-Reifezeit: Biga lässt sich weit dehnen (12–48 h), Poolish reißt früher über (8–24 h)
+    if (isPref) {
+      const s = $('prefMature'), n = $('prefMatureN');
+      const min = m === 'biga' ? 12 : 8;
+      const max = m === 'biga' ? 48 : 24;
+      s.min = min; s.max = max; n.min = min; n.max = max;
+      $('prefMatureHint').innerHTML = m === 'biga'
+        ? 'Biga: 16–18 h bei ~18 °C. Länger (24–48 h) nur <b>kühler stellen &amp; weniger Hefe</b> im Vorteig.'
+        : 'Poolish: 12–16 h bei Raumtemp. Mehr als ~24 h geht nicht — der Poolish <b>reißt über</b> (fällt zusammen).';
+      let v = state.prefMature;
+      if (v == null || v < min || v > max) v = (m === 'biga' ? 18 : 14);
+      PZ.set.prefMature(v);
+    }
   }
 
   // --- Zeitplan-Eingaben ---

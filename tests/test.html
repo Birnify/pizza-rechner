@@ -54,7 +54,7 @@
   // Basis-Zustand für alle Tests
   const BASE = {
     balls: 4, ballw: 250, hyd: 62, salt: 2.8,
-    method: 'direct', pref: 70, bhyd: 45,
+    method: 'direct', pref: 70, bhyd: 45, prefMature: 18,
     yeastType: 'fresh', yeast: 0.30,
     ddt: 24, room: 21, knead: '3',
     timeMode: 'start', timeISO: '',
@@ -447,6 +447,50 @@
   ]);
   testCase('Backzeit · 4 × 320 g (Teglia) → 28 min', { balls: 4, ballw: 320 }, R => [
     ['bakeDur', Math.max(10, R.N * (R.W <= 260 ? 5 : 7)), 28, 0],
+  ]);
+
+  // ─────────────────────────────────────────────────────────────
+  heading('8 · Vorteig-Reifezeit (fließt in die Gesamtdauer)');
+
+  // matureMin = prefMature × 60; totalMin enthält diese Reifezeit
+  let bigaTotal18 = 0, bigaTotal48 = 0;
+
+  testCase('Biga · Reifezeit 18 h → matureMin 1080', {
+    method: 'biga', prefMature: 18, pref: 70, hyd: 65
+  }, R => {
+    bigaTotal18 = R.totalMin;
+    return [
+      ['matureMin', R.matureMin, 1080, 0],
+      ['totalMin ist Zahl', typeof R.totalMin === 'number', true],
+    ];
+  });
+
+  testCase('Biga · Reifezeit 48 h → matureMin 2880 · Total 30 h länger', {
+    method: 'biga', prefMature: 48, pref: 70, hyd: 65
+  }, R => {
+    bigaTotal48 = R.totalMin;
+    return [
+      ['matureMin', R.matureMin, 2880, 0],
+      ['Total +1800 min (= 30 h)', bigaTotal48 - bigaTotal18, 1800, 0],
+    ];
+  });
+
+  testCase('Poolish · Reifezeit 14 h → matureMin 840', {
+    method: 'poolish', prefMature: 14, pref: 50, hyd: 66
+  }, R => [
+    ['matureMin', R.matureMin, 840, 0],
+  ]);
+
+  testCase('Direkt · keine Vorteig-Reifezeit (matureMin 0)', { method: 'direct' }, R => [
+    ['matureMin', R.matureMin, 0, 0],
+  ]);
+
+  // Reifezeit zählt zur Mehl-Warnung: schwaches Mehl + lange Biga-Reife → "zu lang"
+  // Dallag Sofia maxH 24. Biga 48 h Reife + Hauptteig-Gare → deutlich > 24 h
+  testFlourWarn('Mehl-Warn · lange Biga-Reife überschreitet schwaches Mehl', {
+    flour: 'dallag_sofia', method: 'biga', prefMature: 48, yeast: 0.3, hyd: 62
+  }, html => [
+    ['"zu lang" in Warnung', html.includes('zu lang')],
   ]);
 
   // ─────────────────────────────────────────────────────────────
