@@ -58,6 +58,14 @@
 
     const m = state.method, isBiga = m === 'biga', pref = m !== 'direct';
     const hi = state.hyd >= 70;               // hohe Hydration → Stretch & Fold
+    const hasOil = R.oil >= 0.05;             // Öl im Rezept?
+    // Öl kommt spät zum Teig (nach dem Salz, wenn das Gluten steht) — als Satzbaustein
+    const oilStep = hasOil
+      ? ` Zum Schluss <b>${g(R.oil)} g Olivenöl</b> nach und nach einarbeiten, bis der Teig es vollständig aufgenommen hat und wieder glatt ist.`
+      : '';
+    const oilTip = hasOil
+      ? tip('Öl <b>erst nach dem Salz</b> zugeben — kommt es zu früh, umhüllt es das Mehl und stört die Glutenbildung. Langsam einarbeiten, dann wird der Teig geschmeidig.')
+      : '';
     const iceTxt = R.ice > 0 ? ` (davon <b>${R.ice} g Eis</b>)` : '';
     let matureMin = 0;                        // Vorteig-Reifezeit (nur bei Biga/Poolish)
     _items = [];
@@ -109,32 +117,40 @@
         + (state.knead === '6'
           ? `<b>in der Maschine ca. 2–3 min auf niedriger Stufe vermengen</b>, bis ein grober Teig entsteht.`
           : `<b>von Hand ca. 3–5 min vermengen</b> (drücken, falten, drehen), bis kein trockenes Mehl mehr sichtbar ist.`), '', 5);
-      st('Salz zugeben', 'nach 2–3 min',
+      st('Salz zugeben' + (hasOil ? ' & Öl' : ''), 'nach 2–3 min',
         `Erst wenn alles grob zusammenhängt, <b>${g(R.salt)} g Salz</b> `
         + (state.knead === '6'
           ? `zugeben und <b>weitere 2–3 min auf mittlerer Stufe einarbeiten</b>.`
-          : `einstreuen und <b>von Hand ca. 2–3 min einkneten</b>.`),
-        warn('Salz nie direkt auf die Hefe – es bremst sie. Immer zeitversetzt zugeben.'), 3);
+          : `einstreuen und <b>von Hand ca. 2–3 min einkneten</b>.`)
+        + oilStep,
+        warn('Salz nie direkt auf die Hefe – es bremst sie. Immer zeitversetzt zugeben.') + oilTip, 3);
     }
 
     // ===== DIREKT =====
     if (!pref) {
       sec('Vorbereitung');
       st('Zutaten abwiegen', '~5 min',
-        `<b>${g(R.flour)} g Mehl</b> · <b>${g(R.water)} g Wasser</b> · <b>${g(R.salt)} g Salz</b> · <b>${g(R.yeast)} g Hefe ${R.yWord}</b>.`,
+        `<b>${g(R.flour)} g Mehl</b> · <b>${g(R.water)} g Wasser</b> · <b>${g(R.salt)} g Salz</b> · <b>${g(R.yeast)} g Hefe ${R.yWord}</b>${hasOil ? ` · <b>${g(R.oil)} g Olivenöl</b>` : ''}.`,
         tip('Für Hefe & Salz eine <b>0,1-g-Feinwaage</b> nutzen – bei diesen kleinen Mengen entscheidend.'), 5);
       st('Schüttwasser temperieren', `${R.wT} °C`,
         `Das <b>${g(R.water)} g Wasser</b> auf <b>${R.wT} °C</b> bringen${iceTxt}. So landet der Teig nach dem Kneten bei ~${state.ddt} °C.`,
         R.ice > 0 ? tip('Eis abwiegen, im Wasser auflösen bis die Temperatur passt – dann erst loslegen.') : '', 5);
       if (state.yeast < 1.2) {
         // Autolyse: Hefe kommt erst DANACH in den Teig — kein Widerspruch in der Reihenfolge
+        const tinyYeast = R.yeast < 1;   // < 1 g lässt sich trocken kaum gleichmäßig verteilen
+        const reserveWaterTip = (state.yeastType !== 'dry' || tinyYeast)
+          ? tip('Behalte <b>2–3 EL vom Schüttwasser</b> zurück, um danach die Hefe darin aufzulösen.')
+          : '';
         st('Autolyse (empfohlen)', '20–40 min',
           `Nur <b>Mehl + Wasser</b> grob mischen (Salz und Hefe kommen erst später), abdecken, ruhen lassen. Weniger Knetarbeit, dehnbarerer Teig.`,
-          state.yeastType === 'dry' ? '' : tip('Behalte <b>2–3 EL vom Schüttwasser</b> zurück, um danach die Frischhefe darin zu lösen.'), 30);
+          warn('Ohne Salz arbeiten die Enzyme im Mehl ungebremst – <b>Autolyse nicht über ~40–60 min ausdehnen</b>. Länger baut das Klebergerüst eher ab als auf (Teig wird zunehmend klebrig-schwach statt elastisch).') + reserveWaterTip, 30);
         st('Hefe zugeben', '~2 min',
-          state.yeastType === 'dry'
-            ? `Trockenhefe gleichmäßig <b>über den Autolyse-Teig streuen</b> und kurz einarbeiten.`
-            : `Frischhefe im <b>zurückbehaltenen Wasser auflösen</b> und über den Teig geben.`, '', 2);
+          tinyYeast
+            ? `Bei dieser sehr kleinen Menge (<b>${g(R.yeast)} g</b>) die ${state.yeastType === 'dry' ? 'Trockenhefe' : 'Frischhefe'} im <b>zurückbehaltenen Wasser auflösen</b> und gleichmäßig über den Teig geben – trocken eingestreut verteilt sie sich bei so wenig Menge kaum gleichmäßig.`
+            : (state.yeastType === 'dry'
+                ? `Trockenhefe gleichmäßig <b>über den Autolyse-Teig streuen</b> und kurz einarbeiten.`
+                : `Frischhefe im <b>zurückbehaltenen Wasser auflösen</b> und über den Teig geben.`),
+          tinyYeast ? tip('Für so kleine Mengen eine <b>0,01-g-Feinwaage</b> nutzen – normale Küchenwaagen liegen hier schnell 30 % daneben.') : '', 2);
       } else {
         st('Hefe lösen', '~2 min',
           state.yeastType === 'dry'
@@ -142,11 +158,11 @@
             : `Frischhefe im <b>temperierten Wasser auflösen</b>, bis keine Stückchen mehr da sind.`, '', 2);
       }
       sec('Kneten');
-      st('Mischen & Salz', 'nach 2–3 min',
+      st('Mischen & Salz' + (hasOil ? ' & Öl' : ''), 'nach 2–3 min',
         (state.knead === '6'
-          ? `Alle Zutaten in die Maschine geben und <b>ca. 2–3 min auf niedriger Stufe vermengen</b>, dann <b>${g(R.salt)} g Salz zugeben und weitere 2–3 min auf mittlerer Stufe einarbeiten</b>.`
-          : `Alle Zutaten <b>von Hand ca. 3–5 min grob vermengen</b> (bis kein trockenes Mehl mehr bleibt), dann <b>${g(R.salt)} g Salz einstreuen und weitere 2–3 min einkneten</b>.`),
-        warn('Salz zeitversetzt zur Hefe zugeben – nie direkt aufeinander.'), 5);
+          ? `Mehl, Wasser & Hefe in die Maschine geben und <b>ca. 2–3 min auf niedriger Stufe vermengen</b>, dann <b>${g(R.salt)} g Salz zugeben und weitere 2–3 min auf mittlerer Stufe einarbeiten</b>.`
+          : `Mehl, Wasser & Hefe <b>von Hand ca. 3–5 min grob vermengen</b> (bis kein trockenes Mehl mehr bleibt), dann <b>${g(R.salt)} g Salz einstreuen und weitere 2–3 min einkneten</b>.`) + oilStep,
+        warn('Salz zeitversetzt zur Hefe zugeben – nie direkt aufeinander.') + oilTip, 5);
     }
 
     // ===== GEMEINSAME SCHRITTE (Kneten → Backen) =====

@@ -8,7 +8,7 @@
 
   // Zentrales Objekt mit allen Eingaben
   PZ.state = {
-    balls: 4, ballw: 250, hyd: 62, salt: 2.8,
+    balls: 4, ballw: 250, hyd: 62, salt: 2.8, oil: 2,
     method: 'direct', pref: 70, bhyd: 45, prefMature: 24, prefStage: 'b24',
     yeastType: 'fresh', yeast: 0.30,
     ddt: 24, room: 21, knead: 3,

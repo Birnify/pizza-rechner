@@ -28,9 +28,10 @@
 <div id="stubs">
   <span id="totalW"></span><span id="ballsOut"></span><span id="ballwOut"></span>
   <span id="gFlour"></span><span id="gWater"></span><span id="gSalt"></span>
-  <span id="gYeast"></span><span id="yLabel"></span>
+  <span id="gYeast"></span><span id="yLabel"></span><span id="gOil"></span><div id="gOilRow"></div>
   <span id="pFlour"></span><span id="pWater"></span><span id="pYeast"></span><span id="pyLabel"></span>
   <span id="mFlour"></span><span id="mWater"></span><span id="mSalt"></span><span id="mYeast"></span>
+  <span id="mOil"></span><div id="mOilRow"></div>
   <div id="mYeastRow"></div>
   <span id="waterTemp"></span><span id="iceAmt"></span><div id="iceNote"></div>
   <div id="guideSummary"></div><div id="guideSteps"></div>
@@ -53,7 +54,7 @@
 
   // Basis-Zustand für alle Tests
   const BASE = {
-    balls: 4, ballw: 250, hyd: 62, salt: 2.8,
+    balls: 4, ballw: 250, hyd: 62, salt: 2.8, oil: 0,
     method: 'direct', pref: 70, bhyd: 45, prefMature: 24, prefStage: 'b24',
     yeastType: 'fresh', yeast: 0.30,
     ddt: 24, room: 21, knead: '3',
@@ -187,9 +188,10 @@
   ]);
 
   testCase('DDT · Hand, warmer Raum (room 25, ddt 24)', { room: 25, ddt: 24, knead: '3' }, R => [
-    // wT = 24*3 - 25 - 25 - 3 = 19
+    // wT = 24*3 - 25 - 25 - 3 = 19 — kälter als Ttap (25°), also wird Eis gebraucht (nicht 0!)
+    // x = 375.53*4.18*(25-19) / (334 + 4.18*19 + 4.18*6) ≈ 21 g
     ['wT', R.wT, 19, 0],
-    ['ice', R.ice, 0, 0],
+    ['ice', R.ice, 21, 2],
   ]);
 
   testCase('Eiswasser · Maschine, Sommer (room 28, ddt 22)', { room: 28, ddt: 22, knead: '6' }, R => [
@@ -436,13 +438,13 @@
   // Preset-Plausibilität: die effektiven Werte jedes Presets dürfen KEINE Mehl-Warnung auslösen.
   // (Spiegelt js/presets.js wider — bei Preset-Änderungen hier mitziehen.)
   const PRESET_STATES = {
-    'napoli_klassisch': { method: 'direct', hyd: 60, yeast: 0.2, flour: 'caputo_pizzeria' },
-    'napoli_65':        { method: 'direct', hyd: 65, yeast: 0.3, flour: 'caputo_pizzeria' },
-    'napoli_kalt':      { method: 'direct', hyd: 65, yeast: 0.1, flour: 'caputo_cuoco' },
-    'schnell':          { method: 'direct', hyd: 62, yeast: 1.5, flour: 'caputo_pizzeria' },
-    'napoli_biga':      { method: 'biga', hyd: 65, yeast: 0.3, pref: 100, bhyd: 45, prefMature: 24, flour: 'caputo_cuoco' },
-    'napoli_poolish':   { method: 'poolish', hyd: 66, yeast: 0.2, pref: 66, prefMature: 14, flour: 'dallag_monica' },
-    'teglia':           { method: 'direct', hyd: 75, yeast: 0.3, ballw: 320, flour: 'caputo_nuvola_super' }
+    'napoli_klassisch': { method: 'direct', hyd: 60, salt: 2.8, oil: 2, yeast: 0.2, flour: 'caputo_pizzeria' },
+    'napoli_65':        { method: 'direct', hyd: 65, salt: 2.8, oil: 2, yeast: 0.3, flour: 'caputo_pizzeria' },
+    'napoli_kalt':      { method: 'direct', hyd: 65, salt: 3.0, oil: 2, yeast: 0.1, flour: 'caputo_cuoco' },
+    'schnell':          { method: 'direct', hyd: 62, salt: 2.5, oil: 2, yeast: 1.5, flour: 'caputo_pizzeria' },
+    'napoli_biga':      { method: 'biga', hyd: 65, salt: 2.8, oil: 2, yeast: 0.3, pref: 100, bhyd: 45, prefMature: 24, flour: 'caputo_cuoco' },
+    'napoli_poolish':   { method: 'poolish', hyd: 66, salt: 2.5, oil: 2, yeast: 0.2, pref: 66, prefMature: 14, flour: 'dallag_monica' },
+    'teglia':           { method: 'direct', hyd: 75, salt: 2.5, oil: 4, ballw: 320, yeast: 0.3, flour: 'caputo_nuvola_super' }
   };
   Object.keys(PRESET_STATES).forEach(key => {
     testFlourWarn('Preset „' + key + '" löst keine Mehl-Warnung aus', PRESET_STATES[key], html => [
@@ -509,6 +511,66 @@
     flour: 'dallag_sofia', method: 'biga', prefMature: 48, yeast: 0.3, hyd: 62
   }, html => [
     ['"zu lang" in Warnung', html.includes('zu lang')],
+  ]);
+
+  // ─────────────────────────────────────────────────────────────
+  heading('9 · Olivenöl (Bäckerprozent, Masse bleibt erhalten)');
+
+  // Öl ist ein Bäckerprozent wie Salz/Hefe: flour = total/(1+h+s+y+o), oil = flour*o.
+  // Wichtig: flour+water+salt+yeast(frisch)+oil MUSS exakt das Gesamtgewicht ergeben.
+  testCase('Direkt · 62 % Hyd, 2 % Öl — Mehl sinkt, Masse bleibt N×W', { oil: 2 }, R => {
+    const expFlour = 1000 / (1 + 0.62 + 0.028 + 0.003 + 0.02); // = 598.44
+    return [
+      ['total', R.total, 1000, 0],
+      ['flour', R.flour, expFlour, 0.05],
+      ['oil = flour × 0,02', R.oil, expFlour * 0.02, 0.02],
+      ['Summe = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil, 1000, 0.01],
+    ];
+  });
+
+  testCase('Direkt · 0 % Öl — oil = 0, Formel wie zuvor', { oil: 0 }, R => [
+    ['oil', R.oil, 0, 0.001],
+    ['flour = total/1,651', R.flour, 1000 / 1.651, 0.05],
+  ]);
+
+  testCase('Teglia · 75 % Hyd, 4 % Öl — höhere Ölmenge', { hyd: 75, oil: 4, ballw: 320, balls: 4 }, R => {
+    const total = 1280;
+    const expFlour = total / (1 + 0.75 + 0.028 + 0.003 + 0.04);
+    return [
+      ['total', R.total, total, 0],
+      ['flour', R.flour, expFlour, 0.1],
+      ['oil = flour × 0,04', R.oil, expFlour * 0.04, 0.05],
+      ['Summe = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil, total, 0.01],
+    ];
+  });
+
+  // Bei Vorteig kommt das Öl komplett in den Hauptteig, nie in Biga/Poolish.
+  testCase('Biga · Öl geht komplett in den Hauptteig (Vorteig ölfrei)', {
+    method: 'biga', pref: 70, bhyd: 45, hyd: 65, oil: 2
+  }, R => [
+    ['oil > 0', R.oil > 0, true],
+    ['mOil-Anzeige = Gesamtöl', parseFloat(document.getElementById('mOil').textContent), R.oil, 0.05],
+    ['Summe = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil, 1000, 0.01],
+  ]);
+
+  // ─────────────────────────────────────────────────────────────
+  heading('10 · Anleitungs-Hinweise (Autolyse-Dauer & Hefe-Präzision)');
+
+  // Autolyse ohne Salz: Enzym-Warnung muss erscheinen, sobald der Autolyse-Schritt aktiv ist (yeast < 1,2 %)
+  testCase('Autolyse-Enzymhinweis erscheint bei Direkt + Hefe < 1,2 %', { method: 'direct', yeast: 0.3 }, () => [
+    ['Hinweis "Autolyse nicht über" in Anleitung', document.getElementById('guideSteps').innerHTML.includes('Autolyse nicht über'), true],
+  ]);
+
+  // Sehr kleine Hefemenge (< 1 g absolut) → Feinwaage-/Auflöse-Hinweis muss erscheinen
+  testCase('Feinwaage-Hinweis bei sehr kleiner Hefemenge (< 1 g)', { method: 'direct', yeast: 0.03 }, R => [
+    ['yeast < 1 g (Testvoraussetzung)', R.yeast < 1, true],
+    ['0,01-g-Feinwaage-Hinweis in Anleitung', document.getElementById('guideSteps').innerHTML.includes('0,01-g-Feinwaage'), true],
+  ]);
+
+  // Normale Hefemenge (Standard-Preset-Bereich) → kein Feinwaage-Hinweis nötig
+  testCase('Kein Feinwaage-Hinweis bei normaler Hefemenge', { method: 'direct', yeast: 0.3 }, R => [
+    ['yeast ≥ 1 g (Testvoraussetzung)', R.yeast >= 1, true],
+    ['kein 0,01-g-Feinwaage-Hinweis', !document.getElementById('guideSteps').innerHTML.includes('0,01-g-Feinwaage'), true],
   ]);
 
   // ─────────────────────────────────────────────────────────────

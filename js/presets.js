@@ -10,32 +10,32 @@
   // Warnlogik in guide.js: keine der Kombinationen löst eine Mehl-Warnung aus.
   const PRESETS = {
     napoli_klassisch: {
-      method: 'direct', hyd: 60, salt: 2.8, yeastType: 'fresh', yeast: 0.2, ballw: 250, ddt: 24, flour: 'caputo_pizzeria',
-      desc: 'AVPN-Standard: 60 % Hydration, Tipo 00. ~24 h Gesamtgare. Wenig Hefe, klassischer Geschmack.'
+      method: 'direct', hyd: 60, salt: 2.8, oil: 2, yeastType: 'fresh', yeast: 0.2, ballw: 250, ddt: 24, flour: 'caputo_pizzeria',
+      desc: 'AVPN-Standard: 60 % Hydration, Tipo 00, 2 % Olivenöl. ~24 h Gesamtgare. Wenig Hefe, klassischer Geschmack.'
     },
     napoli_65: {
-      method: 'direct', hyd: 65, salt: 2.8, yeastType: 'fresh', yeast: 0.3, ballw: 250, ddt: 24, flour: 'caputo_pizzeria',
-      desc: '65 % macht den Teig dehnbarer & verzeihlicher. ~24 h: 2 h Raumtemp, dann kühl, vor dem Backen temperieren.'
+      method: 'direct', hyd: 65, salt: 2.8, oil: 2, yeastType: 'fresh', yeast: 0.3, ballw: 250, ddt: 24, flour: 'caputo_pizzeria',
+      desc: '65 % macht den Teig dehnbarer & verzeihlicher, 2 % Olivenöl. ~24 h: 2 h Raumtemp, dann kühl, vor dem Backen temperieren.'
     },
     napoli_kalt: {
-      method: 'direct', hyd: 65, salt: 3.0, yeastType: 'fresh', yeast: 0.1, ballw: 250, ddt: 23, flour: 'caputo_cuoco',
-      desc: 'Lange Kaltgare ~48 h im Kühlschrank (4 °C). Sehr wenig Hefe, maximales Aroma. Braucht ein starkes Mehl (W300+).'
+      method: 'direct', hyd: 65, salt: 3.0, oil: 2, yeastType: 'fresh', yeast: 0.1, ballw: 250, ddt: 23, flour: 'caputo_cuoco',
+      desc: 'Lange Kaltgare ~48 h im Kühlschrank (4 °C), 2 % Olivenöl. Sehr wenig Hefe, maximales Aroma. Braucht ein starkes Mehl (W300+).'
     },
     schnell: {
-      method: 'direct', hyd: 62, salt: 2.5, yeastType: 'fresh', yeast: 1.5, ballw: 250, ddt: 25, flour: 'caputo_pizzeria',
-      desc: 'Gleicher Tag: ~2 h Stockgare + 2–3 h Stückgare bei warmer Raumtemp (24–26 °C). Mehr Hefe, weniger Aroma — aber spontan.'
+      method: 'direct', hyd: 62, salt: 2.5, oil: 2, yeastType: 'fresh', yeast: 1.5, ballw: 250, ddt: 25, flour: 'caputo_pizzeria',
+      desc: 'Gleicher Tag: ~2 h Stockgare + 2–3 h Stückgare bei warmer Raumtemp (24–26 °C), 2 % Olivenöl. Mehr Hefe, weniger Aroma — aber spontan.'
     },
     napoli_biga: {
-      method: 'biga', hyd: 65, salt: 2.8, pref: 100, bhyd: 45, prefStage: 'b24', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'caputo_cuoco',
-      desc: '100 % Biga (steifer Vorteig, 45 % Hydration). 24 h reifen lassen, dann Hauptteig mit Restwasser & Salz. Sehr offene Krume.'
+      method: 'biga', hyd: 65, salt: 2.8, oil: 2, pref: 100, bhyd: 45, prefStage: 'b24', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'caputo_cuoco',
+      desc: '100 % Biga (steifer Vorteig, 45 % Hydration). 24 h reifen lassen, dann Hauptteig mit Restwasser, Salz & 2 % Öl. Sehr offene Krume.'
     },
     napoli_poolish: {
-      method: 'poolish', hyd: 66, salt: 2.5, pref: 66, prefStage: 'p14', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'dallag_monica',
-      desc: 'Poolish (flüssig 1:1) mit ~66 % des Mehls. 14 h reifen, dann Hauptteig — ~22 h Gesamtreife. Milder, luftiger Teig.'
+      method: 'poolish', hyd: 66, salt: 2.5, oil: 2, pref: 66, prefStage: 'p14', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'dallag_monica',
+      desc: 'Poolish (flüssig 1:1) mit ~66 % des Mehls. 14 h reifen, dann Hauptteig (mit 2 % Öl) — ~22 h Gesamtreife. Milder, luftiger Teig.'
     },
     teglia: {
-      method: 'direct', hyd: 75, salt: 2.5, yeastType: 'fresh', yeast: 0.3, ballw: 320, ddt: 24, flour: 'caputo_nuvola_super',
-      desc: 'Römische Blechpizza: 75 % Hydration, sehr lockere Krume. Teig ist klebrig — mit Stretch & Fold statt langem Kneten arbeiten. 24 h kühl. Braucht sehr starkes Mehl (W330+).'
+      method: 'direct', hyd: 75, salt: 2.5, oil: 4, yeastType: 'fresh', yeast: 0.3, ballw: 320, ddt: 24, flour: 'caputo_nuvola_super',
+      desc: 'Römische Blechpizza: 75 % Hydration, 4 % Olivenöl, sehr lockere Krume. Teig ist klebrig — mit Stretch & Fold statt langem Kneten arbeiten. 24 h kühl. Braucht sehr starkes Mehl (W330+).'
     }
   };
 
@@ -49,6 +49,7 @@
     if (p.ballw != null) set.ballw(p.ballw);
     if (p.hyd != null)   set.hyd(p.hyd);
     if (p.salt != null)  set.salt(p.salt);
+    if (p.oil != null)   set.oil(p.oil);
     if (p.pref != null)  set.pref(p.pref);
     if (p.bhyd != null)  set.bhyd(p.bhyd);
     if (p.yeast != null) set.yeast(p.yeast);
@@ -64,7 +65,7 @@
   $('preset').addEventListener('change', e => applyPreset(e.target.value));
 
   // Manuelle Änderung an einem Regler → Auswahl zurück auf "Eigene Einstellung"
-  ['hyd', 'salt', 'yeast', 'pref', 'bhyd', 'ballw', 'ddt', 'room', 'hydN', 'saltN', 'yeastN'].forEach(id => {
+  ['hyd', 'salt', 'oil', 'yeast', 'pref', 'bhyd', 'ballw', 'ddt', 'room', 'hydN', 'saltN', 'oilN', 'yeastN'].forEach(id => {
     const el = $(id);
     if (el) el.addEventListener('input', () => { $('preset').value = ''; });
   });

@@ -18,6 +18,7 @@
       Object.assign(state, o);
       // Werte in UI schreiben
       set.balls(state.balls); set.ballw(state.ballw); set.hyd(state.hyd); set.salt(state.salt);
+      if (state.oil != null) set.oil(state.oil);
       set.pref(state.pref); set.bhyd(state.bhyd); set.yeast(state.yeast);
       // prefMature/prefStage werden von applyMethod() unten aus state.prefStage gesetzt
       set.ddt(state.ddt); set.room(state.room);

@@ -28,6 +28,7 @@
     ballw: link('ballw', 'ballwN', 'ballw', 0),
     hyd:   link('hyd', 'hydN', 'hyd', 0),
     salt:  link('salt', 'saltN', 'salt', 1),
+    oil:   link('oil', 'oilN', 'oil', 1),
     pref:  link('pref', 'prefN', 'pref', 0),
     bhyd:  link('bhyd', 'bhydN', 'bhyd', 0),
     yeast: link('yeast', 'yeastN', 'yeast', 2),
