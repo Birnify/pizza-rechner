@@ -1,0 +1,47 @@
+/* mobile.css — Ergänzungen nur für pizza-rechner-mobile.html (Akkordeon, größere Touch-Ziele) */
+
+/* Immer einspaltig, egal wie breit der Screen ist */
+.wrap{grid-template-columns:1fr!important;padding-bottom:76px;}
+.result{position:static;}
+
+/* Karten als <details>-Akkordeon */
+details.card{padding:0;overflow:hidden;}
+details.card summary{
+  list-style:none;cursor:pointer;padding:18px 20px;display:flex;align-items:center;
+  justify-content:space-between;gap:10px;-webkit-tap-highlight-color:transparent;
+  min-height:44px;
+}
+details.card summary::-webkit-details-marker{display:none;}
+details.card summary h2{margin:0;}
+details.card summary::after{
+  content:'▾';color:var(--muted);font-size:16px;transition:transform .18s;flex-shrink:0;
+}
+details.card[open] summary::after{transform:rotate(180deg);}
+details.card summary:active{background:var(--bg);}
+details.card .acc-body{padding:0 20px 20px;}
+
+/* Größere Touch-Ziele */
+.seg button,.pills button{min-height:44px;}
+input[type=range]{height:10px;}
+input[type=range]::-webkit-slider-thumb{width:26px;height:26px;}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;}
+input[type=number]{min-height:40px;font-size:16px;width:86px;}
+.selectbox{min-height:44px;font-size:16px;}
+.actions button{min-height:48px;font-size:14px;}
+
+/* Sticky Quick-Bar unten: springt zum Ergebnis */
+.quickbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:20;
+  background:linear-gradient(135deg,var(--tomato),var(--tomato-dark));color:#fff;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 18px calc(12px + env(safe-area-inset-bottom));
+  box-shadow:0 -2px 14px rgba(120,90,60,.25);
+  text-decoration:none;
+}
+.quickbar .qb-total{font-size:15px;font-weight:800;}
+.quickbar .qb-total small{font-weight:500;opacity:.85;font-size:11px;margin-left:4px;}
+.quickbar .qb-arrow{font-size:13px;font-weight:700;}
+
+#result{scroll-margin-top:16px;}
+
+@media print{.quickbar{display:none;}}

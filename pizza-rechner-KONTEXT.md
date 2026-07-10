@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-06 · Aktuelle Version: v3.2.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-10 · Aktuelle Version: v3.5.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -15,26 +15,29 @@ Alles ist Vanilla HTML + CSS + JavaScript; die Module werden als **klassische
 jedem Windows-11-Rechner in Edge/Chrome/Firefox ohne Server läuft.
 
 - **Einstieg:** `pizza-rechner.html` (oder `index.html`, leitet dorthin weiter)
+- **Mobil:** `pizza-rechner-mobile.html` — eigene Akkordeon-Ansicht fürs Handy (v3.5.0), s. u.
 - **Ordner:** `C:\Users\soere\OneDrive\Dokumente\Claude\Pizza\`
 - **Sprache der UI:** Deutsch
-- **Persistenz:** `localStorage` (Key: `pizzaRechner`) speichert den `state`
+- **Persistenz:** `localStorage` (Key: `pizzaRechner`) speichert den `state` — gemeinsam für Desktop- und Mobil-Seite (gleicher Key, gleiche Domain/Ordner)
 
 ## Warum keine KI / kein Internet?
 
 Teigberechnung ist reine Mathematik (Bäckerprozente). Kernformel:
 
 ```
-Mehl = Gesamtgewicht / (1 + Hydration% + Salz% + Hefe%)
+Mehl = Gesamtgewicht / (1 + Hydration% + Salz% + Hefe% + Öl%)
 ```
 
-Wasser, Salz, Hefe sind immer **relativ zur Mehlmenge (= 100 %)**.
+Wasser, Salz, Hefe **und Olivenöl** sind immer **relativ zur Mehlmenge (= 100 %)**.
+Weil Öl ein Bäckerprozent ist, bleibt das Gesamtgewicht exakt N × Teiglingsgewicht —
+die anderen Mengen sinken nur minimal, weil das Öl seinen Gewichtsanteil bekommt.
 
 ## Funktionsumfang (aktueller Stand v3.0.0)
 
 ### 1. Eingaben (linke Spalte, Reihenfolge = Arbeitsablauf)
 1. **Preset-Auswahl**: 7 erprobte Rezepte (Dropdown), setzt alle Werte **inkl. passendem Mehl**
 2. **Grundeinstellungen**: **Mehl-Dropdown** (13 Sorten, wird per JS aus `PZ.FLOURS` generiert),
-   Anzahl Teiglinge, Gewicht/Teigling (Pills), Hydration %, Salz %
+   Anzahl Teiglinge, Gewicht/Teigling (Pills), Hydration %, Salz %, **Olivenöl %**
 3. **Methode & Hefe**: Direkt/Biga/Poolish, Vorteig-Mehlanteil %, Biga-Hydration %,
    **Vorteig-Reife-Stufen** (Pills, nur bei Biga/Poolish — koppeln Reifezeit + Hefe),
    Frisch-/Trockenhefe, Hefemenge % (Pills 72h+…4h nur bei Direkt sichtbar),
@@ -43,8 +46,9 @@ Wasser, Salz, Hefe sind immer **relativ zur Mehlmenge (= 100 %)**.
 5. **Zeitplan**: „Ich starte um…" / „Fertig sein um…" + datetime + „Jetzt"-Button
 
 ### 2. Ergebnis (rechte Spalte, sticky)
-- Gesamtteig + Gesamtmengen (Mehl, Wasser, Salz, Hefe)
-- Bei Vorteig: Aufteilung Vorteig-Stufe / Hauptteig-Stufe (**100 % der Hefe in den Vorteig**)
+- Gesamtteig + Gesamtmengen (Mehl, Wasser, Salz, Hefe, **Öl** — Öl-Zeile blendet bei 0 % aus)
+- Bei Vorteig: Aufteilung Vorteig-Stufe / Hauptteig-Stufe (**100 % der Hefe in den Vorteig**,
+  **Öl komplett in den Hauptteig** — nie in Biga/Poolish)
 - Wassertemperatur (DDT) + Eismenge (Energiebilanz mit Schmelzwärme 334 J/g)
 - Buttons: Drucken, Speichern
 
@@ -87,6 +91,36 @@ bleibt — die Differenzierung steckt in der **Reifezeit**, nicht in der Hauptga
 
 **CSS:** `.pills button.active` (tomatenrot gefüllt) zeigt die aktive Stufe.
 
+## Autolyse-Warnung & Hefe-Präzisionshinweis (v3.4.0)
+
+Ausgelöst durch einen realen Fehlschlag: Direkt-Teigführung, 2 h Autolyse, 72 h Kaltgare,
+Caputo Cuoco, 0,3 g Hefe/kg Mehl (0,03 %) **trocken** zugegeben → Teig ging schon in der
+Stockgare kaum auf und war beim Formen sehr klebrig. Diagnose: (1) Autolyse ist salzfrei —
+ohne Salz arbeiten Enzyme (v. a. Protease) ungebremst und bauen bei zu langer Ruhezeit
+Klebergerüst eher ab als auf. (2) Bei < 1 g Hefe lässt sich trocken kaum gleichmäßig
+verteilen/abwiegen — normale Küchenwaagen liegen hier schnell 30 % daneben.
+
+In `js/guide.js`, im Autolyse-Zweig (`state.yeast < 1,2 %`, nur Direkt-Methode):
+- **Autolyse-Schritt** bekommt jetzt immer eine `warn()`: nicht über ~40–60 min ausdehnen.
+- `tinyYeast = R.yeast < 1` (absolute Gramm, nicht %): ab hier wird empfohlen, die Hefe
+  **immer in Wasser aufzulösen** (auch Trockenhefe) statt trocken einzustreuen, plus Hinweis
+  auf **0,01-g-Feinwaage**. `reserveWaterTip` reserviert dafür auch bei Trockenhefe Wasser.
+- Bei normaler Hefemenge bleibt das bisherige Verhalten (trocken einstreuen bei Trockenhefe) unverändert.
+- Test-Sektion „10 · Anleitungs-Hinweise" prüft beide Schwellen gegen `guideSteps`-HTML.
+
+## Olivenöl (v3.3.0)
+
+Öl ist ein **Bäckerprozent wie Salz/Hefe** (`state.oil`, Default 2 %, Slider 0–8 %).
+- `calc()`: `flour = total / (1 + h + s + y + o)`, `oil = flour × o`. Dadurch bleibt das
+  **Gesamtgewicht exakt N × W** (Masse erhalten) — Test 9 prüft `flour+water+salt+yeast+oil = total`.
+- **Öl kommt spät zum Teig** (erst nach dem Salz, wenn das Gluten steht) — sonst umhüllt es das
+  Mehl und stört die Glutenbildung. In der Anleitung als Satzbaustein `oilStep`/`oilTip` in den
+  Salz-Schritten (Direkt: „Mischen & Salz & Öl"; Vorteig: „Salz zugeben & Öl").
+- **Bei Vorteig geht das Öl komplett in den Hauptteig**, nie in Biga/Poolish (analog wie Salz).
+  Result-Panel: `#gOilRow` (Gesamtmengen) + `#mOilRow` (Hauptteig), beide bei 0 % ausgeblendet.
+- Öl beeinflusst **nicht** die Eis-/DDT-Rechnung (`M = water` bleibt) — kleine Masse, Raumtemp.
+- Alle 7 Presets haben Öl: neapolitanisch je **2 %**, Teglia/Blech **4 %**. Zucker bewusst **nicht**.
+
 ## Kaltgare-Stufe (v3.0.0)
 
 `state.coldStage`: `'balls'` (Standard) oder `'bulk'`. Greift nur bei kalten Führungen (cold: true).
@@ -98,15 +132,15 @@ bleibt — die Differenzierung steckt in der **Reifezeit**, nicht in der Hauptga
 
 ## Die 7 Presets (alle gegen die Mehl-Warnung geprüft — keine löst eine Warnung aus)
 
-| Key | Methode | Hyd | Salz | Hefe | Mehl (empfohlen) |
-|-----|---------|-----|------|------|------------------|
-| `napoli_klassisch` | direct | 60 % | 2,8 % | 0,2 % | caputo_pizzeria |
-| `napoli_65` | direct | 65 % | 2,8 % | 0,3 % | caputo_pizzeria |
-| `napoli_kalt` | direct | **65 %** | 3,0 % | 0,1 % | **caputo_cuoco** |
-| `schnell` | direct | 62 % | 2,5 % | 1,5 % | caputo_pizzeria |
-| `napoli_biga` | biga (pref 100, bhyd 45) | 65 % | 2,8 % | 0,3 % | caputo_cuoco |
-| `napoli_poolish` | poolish (pref 66) | 66 % | 2,5 % | 0,2 % | **dallag_monica** |
-| `teglia` | direct (ballw 320) | 75 % | 2,5 % | 0,3 % | **caputo_nuvola_super** |
+| Key | Methode | Hyd | Salz | Öl | Hefe | Mehl (empfohlen) |
+|-----|---------|-----|------|------|------|------------------|
+| `napoli_klassisch` | direct | 60 % | 2,8 % | 2 % | 0,2 % | caputo_pizzeria |
+| `napoli_65` | direct | 65 % | 2,8 % | 2 % | 0,3 % | caputo_pizzeria |
+| `napoli_kalt` | direct | **65 %** | 3,0 % | 2 % | 0,1 % | **caputo_cuoco** |
+| `schnell` | direct | 62 % | 2,5 % | 2 % | 1,5 % | caputo_pizzeria |
+| `napoli_biga` | biga (pref 100, bhyd 45) | 65 % | 2,8 % | 2 % | 0,3 % | caputo_cuoco |
+| `napoli_poolish` | poolish (pref 66) | 66 % | 2,5 % | 2 % | 0,2 % | **dallag_monica** |
+| `teglia` | direct (ballw 320) | 75 % | 2,5 % | **4 %** | 0,3 % | **caputo_nuvola_super** |
 
 (napoli_kalt war 62 % → auf 65 % angehoben, damit es zum Cuoco passt;
 poolish braucht hydMax ≥ 66 → Monica; teglia braucht hydMax ≥ 75 → Nuvola Super.)
@@ -123,16 +157,76 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
+## Mobile Ansicht (v3.5.0)
+
+`pizza-rechner-mobile.html` ist eine **komplett separate HTML-Datei** für Handys (auf Wunsch,
+da bewusst mehr Bedienkomfort als reines responsives CSS gewünscht war). Sie bindet
+**dieselben JS-Module unverändert** ein (gleiche Element-IDs wie auf der Desktop-Seite) —
+es gibt also **keine zweite Rechenlogik**, nur ein anderes Markup/CSS drumherum:
+
+- **Akkordeon statt Dauer-Scroll:** jede `.card` ist ein natives `<details>`/`<summary>`
+  (kein eigenes JS nötig). „Fertiges Rezept" + „Grundeinstellungen" starten offen,
+  „Methode & Hefe" / „Temperatur" / „Zeitplan" starten zu.
+- **Größere Touch-Ziele** (`css/mobile.css`): Slider-Thumbs, Pills, Buttons, Zahlenfelder
+  ≥ 44 px Mindesthöhe (Apple-HIG-Empfehlung), Schriftgröße 16 px bei Inputs (verhindert
+  Safari-Auto-Zoom beim Fokussieren).
+- **Sticky Quick-Bar unten** (`.quickbar`): zeigt live das Gesamtgewicht (per
+  `MutationObserver` auf `#totalW` gespiegelt, kleines Inline-Script nur in dieser Datei)
+  und springt per Anker-Link (`#result`) zum Ergebnis-Panel — kein Sidebar-Scrollen nötig.
+- **Ergebnis-Panel nicht mehr sticky** (`css/mobile.css` überschreibt `.result{position:static}`),
+  da es auf Mobil ohnehin unter den Eingaben liegt statt daneben.
+- Kopfzeile jeder Seite verlinkt zur jeweils anderen (`.viewlink`, Klasse liegt in
+  `css/styles.css`, damit sie auf beiden Seiten ohne `mobile.css` funktioniert):
+  Desktop → „📱 Zur Mobil-Ansicht", Mobil → „🖥️ Zur Desktop-Ansicht".
+- Zusätzliche Meta-Tags für „Zum Home-Bildschirm" auf iOS (Vollbild ohne Safari-Leiste,
+  eigener Titel, Theme-Farbe): `apple-mobile-web-app-capable`, `apple-mobile-web-app-title`,
+  `theme-color`. Kein echtes PWA-Manifest/Service-Worker (nicht nötig — Datei liegt eh
+  lokal/offline, z. B. über iCloud Drive synct).
+- **Pflege-Hinweis:** Bei neuen Eingabefeldern/IDs in `pizza-rechner.html` müssen dieselben
+  Felder (gleiche IDs!) auch in `pizza-rechner-mobile.html` ergänzt werden — sonst greift
+  die JS-Logik dort ins Leere. Reine Logik-/Berechnungsänderungen in `js/*` brauchen dagegen
+  **keine** Anpassung an der Mobil-Datei, die lädt dieselben Module.
+
+### Standalone-Datei fürs iPhone (Pflicht, wegen iOS-Einschränkung!)
+
+**Wichtiger Fund aus der Praxis:** iOS blockiert bei HTML-Dateien, die aus iCloud Drive
+(Dateien-App) heraus geöffnet werden, das Nachladen von Geschwister-Dateien (`css/`, `js/`)
+per `file://` — **egal ob Safari oder Edge** (beide nutzen denselben WebKit-Unterbau unter
+iOS). Ergebnis: Seite lädt ungestylt (Serifenschrift, Standard-Regler) und ohne Funktion,
+obwohl alle Dateien nachweislich korrekt in iCloud Drive liegen.
+
+**Lösung:** `build-mobile-standalone.py` (Python, im Projekt-Hauptordner) baut aus
+`pizza-rechner-mobile.html` eine einzige, in sich geschlossene Datei
+**`pizza-rechner-mobile-standalone.html`** — CSS und JS werden per Regex direkt inline in
+`<style>`/`<script>` eingebettet, keine externen `<link>`/`<script src>`-Verweise mehr.
+**Nur diese `-standalone.html`-Datei geht aufs iPhone** (keine `css/`/`js`-Ordner nötig!).
+
+- **Aufruf:** `python build-mobile-standalone.py` im Projektordner — liest
+  `pizza-rechner-mobile.html` + `css/styles.css` + `css/mobile.css` + alle `js/*.js`,
+  schreibt `pizza-rechner-mobile-standalone.html` neu.
+- **Nach JEDER Änderung an `pizza-rechner-mobile.html` oder an `js/*`/`css/*` erneut laufen
+  lassen**, bevor die Datei aufs iPhone synct wird — sonst ist die iPhone-Version veraltet.
+- `pizza-rechner-mobile-standalone.html` selbst **nicht von Hand bearbeiten** (wird
+  überschrieben) — sie ist reines Build-Ergebnis, nicht Quelle.
+- Ist noch nicht ins Cache-Busting/`?v=`-Schema eingebunden (Datei enthält den Code direkt,
+  kein Caching-Problem); trotzdem bei jedem Versions-Bump neu bauen.
+- Für den Desktop-Rechner (`pizza-rechner.html`) besteht dasselbe Risiko NICHT, solange er
+  vom PC per Doppelklick (lokales Dateisystem, kein iCloud-Sandboxing) geöffnet wird.
+
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.0.0)
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.5.0)
+pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle)
+pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
+build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
 index.html           Weiterleitung auf pizza-rechner.html
-css/styles.css       komplettes Stylesheet (inkl. .selectbox / .selectbox-lg)
+css/styles.css       komplettes Stylesheet (inkl. .selectbox / .selectbox-lg / .viewlink)
+css/mobile.css       Ergänzungen NUR für pizza-rechner-mobile.html (Akkordeon, Touch-Ziele, Quick-Bar)
 js/dom.js            $-Helfer, legt globalen Namespace window.PZ an
-js/state.js          PZ.state (inkl. flour, coldStage, prefMature) + PZ.FRESH_TO_DRY (1/3)
+js/state.js          PZ.state (inkl. flour, oil, coldStage, prefMature) + PZ.FRESH_TO_DRY (1/3)
 js/flour.js          PZ.FLOURS (13 Mehle) + PZ.getFlour() + Dropdown-Befüllung
-js/calc.js           PZ.calc() Hauptberechnung, schreibt PZ.R, ruft PZ.buildGuide()
+js/calc.js           PZ.calc() Hauptberechnung (inkl. Öl), schreibt PZ.R, ruft PZ.buildGuide()
 js/schedule.js       PZ.schedule() — Gärzeit-Fahrplan (berücksichtigt coldStage)
 js/guide.js          PZ.buildGuide() — Anleitung + Zeitberechnung + Mehl-Warnung
 js/ui.js             Slider/Segmente/Pills/Zeitplan; PZ.set, selectSeg, applyMethod, updateTimeLabel
@@ -150,8 +244,8 @@ ui → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur
 
 ## Wichtige Berechnungs-Details
 
-- `calc()`: Mehl = total/(1+h+s+y); Trockenhefe = Frischhefe × 1/3
-- Vorteig: `pYeast = yeast` (100 % in den Vorteig), `mYeast = 0`; Poolish-Wasser immer 1:1
+- `calc()`: Mehl = total/(1+h+s+y+o); Öl = Mehl×o; Trockenhefe = Frischhefe × 1/3
+- Vorteig: `pYeast = yeast` (100 % in den Vorteig), `mYeast = 0`, **Öl → Hauptteig**; Poolish-Wasser immer 1:1
 - DDT: `wT = ddt×3 − room − room − friction` (Hand 3 °C, Maschine 6 °C; Mehltemp = Raumtemp angenommen)
 - Eis: Energiebilanz `x = M·c·(Ttap−wT) / (Lf + c·wT + c·(Ttap−wT))`, c=4,18, Lf=334
 - Schedule-Schwellen (yeast %): ≥1,2 Schnell · ≥0,5 Mittel · ≥0,18 ~24 h · ≥0,08 ~48 h · sonst 72 h+
@@ -161,12 +255,25 @@ ui → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur
 
 - **Kontext-Datei IMMER aktuell halten — nach JEDER Eingabe** (diese Datei ist die einzige
   Quelle für eine frische Session; Stand-Datum + Version oben mitziehen).
+- **Desktop + Mobil immer zusammen pflegen (Nutzer-Vorgabe, seit v3.5.0):** Bei
+  **inhaltlichen Änderungen** — neue/geänderte Felder, Berechnungslogik, Presets, Mehle,
+  Texte/Hinweise in der Anleitung, Vorteig-/Kaltgare-Optionen usw. — **immer beide Dateien**
+  anfassen: `pizza-rechner.html` (Desktop) **und** `pizza-rechner-mobile.html` (Mobil), da
+  Letztere ihr eigenes Markup mit denselben Element-IDs hat (kein Auto-Sync). Reine
+  `js/*`-Logikänderungen ohne neue/geänderte IDs wirken automatisch auf beiden Seiten, weil
+  beide dieselben Module laden — **nur bei neuen/umbenannten Feldern** muss das HTML doppelt
+  gepflegt werden.
+  **Ausnahme:** Änderungen, die wirklich nur das Mobil-**Layout** betreffen (Akkordeon-Verhalten,
+  Touch-Ziele, Quick-Bar, `css/mobile.css`) oder nur das Desktop-Layout (`css/styles.css`,
+  Grid-Spalten) betreffen nur die jeweilige Seite — dort reicht eine Datei.
 - **Versionen-Workflow (Pflicht bei jeder Änderung):** kompletten lauffähigen Stand nach
   `Versionen/vX.Y.Z - [Beschreibung]/` kopieren (html, index, css/, js/, README; tests/ optional).
   SemVer: Patch=Fix, Minor=Feature, Major=Umbau. `?v=` in der HTML mitziehen.
 - **Tests:** `tests/test.html` per Doppelklick — grün = OK. Kategorien: Bäckerprozente,
   DDT/Eis, Vorteig-Aufteilung, Trockenhefe, Schedule-Schwellen (beide coldStage-Varianten),
-  Mehl-Warnung (inkl. Vorteig-Reifezeit), Backzeit-Skalierung. Nach Logik-Änderungen laufen lassen.
+  Mehl-Warnung (inkl. Vorteig-Reifezeit), Backzeit-Skalierung, Vorteig-Reifezeit, Olivenöl
+  (Masseerhaltung), **Anleitungs-Hinweise (Autolyse-Dauer, Hefe-Präzision < 1 g)**.
+  Nach Logik-Änderungen laufen lassen. BASE hat `oil: 0` (isoliert die Öl-Tests).
 - **Git:** Repo im Hauptordner, kleine Commits pro Änderungs-Satz. `Versionen/` + `.claude/` gitignored.
 - **Plattform:** Windows / PowerShell. Kein Node, keine Build-Tools.
 - **Preview-Hinweis:** Das Preview-Tool (localhost-Server) war in mehreren Sessions unzuverlässig
@@ -198,18 +305,35 @@ ui → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur
   - Hauptteig-Schritte blenden 0-g-Wasser/-Mehl sauber aus
   - Poolish-Hint unter dem Anteil-Slider erklärt die Grenze
 - v3.1.0 — Vorteig-Reifezeit als (stufenloser) Slider (in v3.2.0 ersetzt)
-- **v3.2.0 — Vorteig-Reife als gekoppelte Stufen** = aktueller Stand:
+- v3.2.0 — Vorteig-Reife als gekoppelte Stufen:
   - Stufenloser Slider raus → diskrete Pills (`PZ.PREF_STAGES`), die Reifezeit **und**
     Hefemenge zusammen setzen (weil physikalisch abhängig). Biga b16/b24/b48, Poolish p8/p14/p24.
   - Generische Hefe-Pills werden bei Vorteig ausgeblendet; Hefe-Regler bleibt (Feintuning).
   - `minH` der Mehle konservativ rekalibriert → keine False-Positive-Warnungen mehr.
   - Neue Preset-Plausibilitäts-Tests: jedes Preset darf keine Mehl-Warnung auslösen.
   - `.pills button.active`-CSS für die aktive Stufe.
+- v3.3.0 — Olivenöl in Formel + allen Presets:
+  - Neuer Öl-Slider (`state.oil`, 0–8 %, Default 2 %); Formel um `+ Öl%` erweitert (Masse bleibt N×W).
+  - Öl kommt spät (nach dem Salz) in die Anleitung; bei Vorteig komplett in den Hauptteig.
+  - Result-Panel: Öl-Zeile in Gesamtmengen (`#gOilRow`) + Hauptteig (`#mOilRow`), bei 0 % versteckt.
+  - Alle 7 Presets bekommen Öl (neapolitanisch 2 %, Teglia 4 %); Zucker bewusst weiterhin nicht.
+  - Neue Test-Sektion „9 · Olivenöl" (Masseerhaltung, Öl im Hauptteig); Preset-Tests um Öl ergänzt.
+- v3.4.0 — Autolyse-Warnung & Hefe-Präzisionshinweis:
+  - Autolyse-Schritt warnt jetzt immer vor zu langer Dauer ohne Salz (Enzym-/Glutenabbau-Risiko).
+  - Bei < 1 g Hefe (absolut): Hinweis, sie in Wasser aufzulösen (auch Trockenhefe) + 0,01-g-Feinwaage.
+  - Neue Test-Sektion „10 · Anleitungs-Hinweise" prüft beide Schwellen.
+- **v3.5.0 — Mobile Ansicht (Akkordeon)** = aktueller Stand:
+  - Neue Datei `pizza-rechner-mobile.html` + `css/mobile.css`, siehe Abschnitt „Mobile Ansicht" oben.
+  - Keine Logik dupliziert — nutzt dieselben `js/*`-Module über identische Element-IDs.
+  - Kopfzeilen verlinken jetzt wechselseitig zwischen Desktop- und Mobil-Ansicht (`.viewlink`).
+  - Anlass: App soll aufs iPhone (z. B. via iCloud Drive + „Zum Home-Bildschirm"); reines
+    responsives CSS wurde als nicht komfortabel genug empfunden — explizit vereinfachte
+    Mobil-Bedienung gewünscht (siehe Nutzer-Entscheidung in der Session).
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
 - Mehl- und Raumtemperatur getrennt einstellbar (aktuell als gleich angenommen)
-- Felder für Öl / Zucker (New York / Teglia mit Öl)
+- Zucker-Feld (New York Style) — bewusst noch nicht drin; Öl ist seit v3.3.0 integriert
 - Einkaufsliste generieren; Druck nur für die Anleitung
 - Gärzeit-Timer / Wecker; Export als PDF / Teilen-Link
 - Mehrere gespeicherte Rezepte (statt einem localStorage-Slot)
