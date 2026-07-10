@@ -213,6 +213,24 @@ obwohl alle Dateien nachweislich korrekt in iCloud Drive liegen.
 - Für den Desktop-Rechner (`pizza-rechner.html`) besteht dasselbe Risiko NICHT, solange er
   vom PC per Doppelklick (lokales Dateisystem, kein iCloud-Sandboxing) geöffnet wird.
 
+### Live-Version via GitHub Pages (seit v3.5.0)
+
+Repo ist auf GitHub gepusht: **`https://github.com/Birnify/pizza-rechner`** (Remote `origin`,
+Branch `master`), GitHub Pages ist aktiv (Settings → Pages → Deploy from branch → master → root).
+
+**Das iPhone nutzt jetzt diese Live-URL statt einer lokalen Datei:**
+`https://birnify.github.io/pizza-rechner/pizza-rechner-mobile-standalone.html`
+
+Grund: „Zum Home-Bildschirm hinzufügen" (System-Funktion, auch aus Chrome/Edge nutzbar)
+braucht eine echte `https://`-URL — funktioniert mit einer lokalen `file://`-Datei nicht.
+Mit der Pages-URL klappt „Zum Home-Bildschirm" zuverlässig in jedem iOS-Browser.
+
+**Bei jeder Version mitziehen:** nach Änderungen an `pizza-rechner-mobile.html`/`js/`/`css/`
+→ `python build-mobile-standalone.py` laufen lassen → committen → `git push` (Remote ist
+bereits gesetzt) → GitHub Pages baut automatisch neu (dauert ~1 Min). Die Desktop-Seite
+(`pizza-rechner.html`) liegt zwar auch im selben Repo/auf Pages, wird aber weiterhin primär
+lokal per Doppelklick genutzt (kein Vorteil durch Pages dort).
+
 ## Dateistruktur (modular)
 
 ```
