@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-11 · Aktuelle Version: v3.7.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-11 · Aktuelle Version: v3.8.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -156,6 +156,27 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
   W300–310 (Cuoco, Napoletana): 16 · Monica/Nuvola/Teichner 1 (~W280–300): 12 · Rest: 0.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
+
+## Einfrier-Hinweis (v3.8.0)
+
+Optionaler, informativer Tipp fürs Einfrieren geformter Teiglinge — kein Pflichtschritt,
+unterbricht den normalen Ablauf (Formen → Stückgare → Backen) nicht und beeinflusst
+`R.totalMin`/die Zeitplan-Rückrechnung nicht (reine Text-Ergänzung im `extra`-Feld des
+Schritts, die Schritt-Dauer `dur: 10` bleibt unverändert).
+
+- **Wo:** In `js/guide.js`, im Schritt „Teiglinge formen" (gemeinsamer Abschnitt
+  „Gare & Formen" — läuft für **alle** Methoden (Direkt/Biga/Poolish) und **beide**
+  `coldStage`-Varianten gleich durch, da der Schritt außerhalb der `pref`/`!pref`-Verzweigung liegt).
+- **Formulierung** (zweiter `tip()`-Block nach dem bestehenden Cornicione-Tipp):
+  „Einfrieren möglich: Teiglinge dünn mit Öl bestreichen, einzeln (nicht berührend)
+  einfrieren – so **2–3 Monate** haltbar. Auftauen: **über Nacht im Kühlschrank**, dann
+  **3–5 h bei Raumtemperatur** und **2–4 h Stückgare** wie gewohnt."
+- Reine `js/guide.js`-Textänderung → wirkt automatisch auf Desktop **und** Mobil (keine
+  neuen IDs/Markup nötig, kein HTML angefasst außer `?v=`-Bump).
+- Neue Tests in Sektion „10 · Anleitungs-Hinweise" (`tests/test.html`): String-Matching auf
+  „Einfrieren möglich" bei Direkt-Standard **und** bei Biga + `coldStage: 'bulk'` (belegt
+  Methoden-/Kaltgare-Unabhängigkeit), plus Kontrollcheck dass `R.totalMin` weiterhin eine
+  positive Zahl ist (keine Zeitplan-Störung).
 
 ## Accessibility (v3.7.0)
 
@@ -325,7 +346,7 @@ js/ui.js             Slider/Segmente/Pills/Zeitplan; PZ.set, selectSeg, applyMet
 js/presets.js        PZ.PRESETS (inkl. flour je Preset) + PZ.applyPreset()
 js/storage.js        PZ.save() / PZ.load() (localStorage, stellt auch flour & coldStage wieder her)
 js/main.js           Start: Speichern-Button, load(), applyMethod(), calc()
-tests/test.html      213 Prüfungen in 14 Kategorien (Doppelklick, kein Server)
+tests/test.html      217 Prüfungen in 14 Kategorien (Doppelklick, kein Server)
 README.md            kurzer Einstieg
 ```
 
@@ -366,7 +387,7 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
 - **Versionen-Workflow (Pflicht bei jeder Änderung):** kompletten lauffähigen Stand nach
   `Versionen/vX.Y.Z - [Beschreibung]/` kopieren (html, index, css/, js/, README; tests/ optional).
   SemVer: Patch=Fix, Minor=Feature, Major=Umbau. `?v=` in der HTML mitziehen.
-- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **213 Prüfungen** in 14 Kategorien:
+- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **217 Prüfungen** in 14 Kategorien:
   Bäckerprozente, DDT/Eis, Vorteig-Aufteilung (inkl. Klemm-Grenzfälle exakt an/über der Grenze,
   auch für Biga wenn `bhyd > hyd`), Trockenhefe, Schedule-Schwellen (beide coldStage-Varianten),
   Mehl-Warnung (inkl. Vorteig-Reifezeit + exakte hydMin/hydMax-Grenzwerte), Backzeit-Skalierung,
@@ -467,12 +488,21 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
     `--crust`→`--tomato` (1,6:1→4,86:1).
   - Slider bekommen `aria-valuetext` mit Einheit (z. B. „62 Prozent Hydration").
   - Reine a11y-Ergänzung, keine Berechnungslogik geändert; Tests unverändert grün.
-- **v3.7.1 — Sichtbare Versionsnummer** = aktueller Stand:
+- v3.7.1 — Sichtbare Versionsnummer:
   - Footer beider Seiten zeigt jetzt `vX.Y.Z` (`<span id="appVersion">`) — Nutzer sieht direkt,
     welche Version aktiv ist (auch auf dem per iCloud/GitHub-Pages synchten iPhone hilfreich,
     um zu prüfen ob die neueste Version geladen wurde).
   - Rein statischer Text, keine JS-Logik. **Muss ab jetzt bei jedem Versionssprung von Hand
     mitgezogen werden** (zusammen mit `?v=`).
+- **v3.8.0 — Einfrier-Hinweis** = aktueller Stand:
+  - Neuer optionaler Tipp im Schritt „Teiglinge formen" (`js/guide.js`): Teiglinge einölen,
+    einzeln einfrieren (2–3 Monate), Auftauen über Nacht Kühlschrank + 3–5 h RT + 2–4 h Stückgare.
+  - Reine Text-Ergänzung, kein Pflichtschritt — beeinflusst `R.totalMin`/Zeitplan nicht, gilt
+    methoden- und kaltgare-unabhängig (liegt im gemeinsamen Schritte-Abschnitt).
+  - Reine `js/guide.js`-Änderung, wirkt automatisch auf Desktop + Mobil; `?v=` auf 3.8.0 gezogen,
+    Standalone-Datei neu gebaut.
+  - Neue Tests in Sektion „10 · Anleitungs-Hinweise" (Direkt-Standard + Biga/`coldStage: bulk`
+    + Kontrollcheck `R.totalMin` unverändert positiv).
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
@@ -481,9 +511,6 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
 - Einkaufsliste generieren; Druck nur für die Anleitung
 - Gärzeit-Timer / Wecker; Export als PDF / Teilen-Link
 - Mehrere gespeicherte Rezepte (statt einem localStorage-Slot)
-- Einfrier-Hinweis in der Anleitung (Wissen dazu steht in der Session-Historie:
-  Teiglinge nach dem Formen einölen, einzeln einfrieren, 2–3 Monate; Auftauen:
-  über Nacht Kühlschrank + 3–5 h RT + 2–4 h Stückgare)
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

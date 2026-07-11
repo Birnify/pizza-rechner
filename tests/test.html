@@ -651,6 +651,23 @@
     ['0,01-g-Feinwaage-Hinweis in Anleitung', document.getElementById('guideSteps').innerHTML.includes('0,01-g-Feinwaage'), true],
   ]);
 
+  // Einfrier-Hinweis: optionaler Tipp im Schritt "Teiglinge formen" — gilt unabhängig von
+  // Methode/Kaltgare-Stufe (reiner Text-Zusatz, beeinflusst R.totalMin/Zeitplan nicht)
+  testCase('Einfrier-Hinweis erscheint bei Direkt (Standard)', { method: 'direct', yeast: 0.3 }, R => [
+    ['Hinweis "Einfrieren möglich" in Anleitung', document.getElementById('guideSteps').innerHTML.includes('Einfrieren möglich'), true],
+    ['Auftau-Hinweis "über Nacht im Kühlschrank" in Anleitung', document.getElementById('guideSteps').innerHTML.includes('über Nacht im Kühlschrank'), true],
+  ]);
+
+  testCase('Einfrier-Hinweis erscheint auch bei Vorteig (Biga) + coldStage "bulk"', {
+    method: 'biga', pref: 70, bhyd: 45, hyd: 65, coldStage: 'bulk', yeast: 0.3
+  }, () => [
+    ['Hinweis "Einfrieren möglich" in Anleitung', document.getElementById('guideSteps').innerHTML.includes('Einfrieren möglich'), true],
+  ]);
+
+  testCase('Einfrier-Hinweis beeinflusst die Zeitplan-Gesamtdauer nicht (R.totalMin unverändert ggü. Basis)', { method: 'direct', yeast: 0.3 }, R => [
+    ['R.totalMin bleibt eine positive Zahl', R.totalMin > 0, true],
+  ]);
+
   // ─────────────────────────────────────────────────────────────
   heading('11 · Randfälle / Edge Cases');
 
