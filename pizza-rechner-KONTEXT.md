@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-11 · Aktuelle Version: v3.6.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-11 · Aktuelle Version: v3.6.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -277,7 +277,7 @@ js/ui.js             Slider/Segmente/Pills/Zeitplan; PZ.set, selectSeg, applyMet
 js/presets.js        PZ.PRESETS (inkl. flour je Preset) + PZ.applyPreset()
 js/storage.js        PZ.save() / PZ.load() (localStorage, stellt auch flour & coldStage wieder her)
 js/main.js           Start: Speichern-Button, load(), applyMethod(), calc()
-tests/test.html      ~50 Prüfungen in 7 Kategorien (Doppelklick, kein Server)
+tests/test.html      213 Prüfungen in 14 Kategorien (Doppelklick, kein Server)
 README.md            kurzer Einstieg
 ```
 
@@ -313,11 +313,19 @@ ui → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur
 - **Versionen-Workflow (Pflicht bei jeder Änderung):** kompletten lauffähigen Stand nach
   `Versionen/vX.Y.Z - [Beschreibung]/` kopieren (html, index, css/, js/, README; tests/ optional).
   SemVer: Patch=Fix, Minor=Feature, Major=Umbau. `?v=` in der HTML mitziehen.
-- **Tests:** `tests/test.html` per Doppelklick — grün = OK. Kategorien: Bäckerprozente,
-  DDT/Eis, Vorteig-Aufteilung, Trockenhefe, Schedule-Schwellen (beide coldStage-Varianten),
-  Mehl-Warnung (inkl. Vorteig-Reifezeit), Backzeit-Skalierung, Vorteig-Reifezeit, Olivenöl
-  (Masseerhaltung), **Anleitungs-Hinweise (Autolyse-Dauer, Hefe-Präzision < 1 g)**.
-  Nach Logik-Änderungen laufen lassen. BASE hat `oil: 0` (isoliert die Öl-Tests).
+- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **213 Prüfungen** in 14 Kategorien:
+  Bäckerprozente, DDT/Eis, Vorteig-Aufteilung (inkl. Klemm-Grenzfälle exakt an/über der Grenze,
+  auch für Biga wenn `bhyd > hyd`), Trockenhefe, Schedule-Schwellen (beide coldStage-Varianten),
+  Mehl-Warnung (inkl. Vorteig-Reifezeit + exakte hydMin/hydMax-Grenzwerte), Backzeit-Skalierung,
+  Vorteig-Reifezeit, Olivenöl (Masseerhaltung), Anleitungs-Hinweise (Autolyse-Dauer,
+  Hefe-Präzision < 1 g, auch bei Trockenhefe), **Randfälle/Edge Cases** (1 bzw. 20 Teiglinge,
+  0 % Öl, Hefemenge exakt an der 1-g-Grenze), **Kombinationen** (Vorteig + Kaltgare-Stufe `bulk`
+  + Öl + Trockenhefe gleichzeitig statt isoliert), **Masseerhaltung für alle Methoden + alle
+  7 Presets** (nicht nur Direkt/Teglia), **Zeitplan-Rückwärtsrechnung** ("Fertig sein um…" —
+  prüft, dass der errechnete Startzeitpunkt im Anleitungstext korrekt erscheint, auch bei Biga
+  mit Vorteig-Reifezeit). Nach Logik-Änderungen laufen lassen. BASE hat `oil: 0` (isoliert die
+  Öl-Tests). v3.6.1: Testsuite von 136 auf 213 Prüfungen gehärtet (reine Test-Erweiterung,
+  keine Logikänderung).
 - **Git:** Repo im Hauptordner, kleine Commits pro Änderungs-Satz. `Versionen/` + `.claude/` gitignored.
 - **Plattform:** Windows / PowerShell. Kein Node, keine Build-Tools.
 - **Preview-Hinweis:** Das Preview-Tool (localhost-Server) war in mehreren Sessions unzuverlässig
@@ -373,7 +381,7 @@ ui → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur
   - Anlass: App soll aufs iPhone (z. B. via iCloud Drive + „Zum Home-Bildschirm"); reines
     responsives CSS wurde als nicht komfortabel genug empfunden — explizit vereinfachte
     Mobil-Bedienung gewünscht (siehe Nutzer-Entscheidung in der Session).
-- **v3.6.0 — Mobile iOS-Feinschliff** = aktueller Stand:
+- v3.6.0 — Mobile iOS-Feinschliff:
   - Safe-Area-Insets (Notch/Statusleiste oben, Home-Indikator + Querformat-Rundungen) für
     Header/Wrap/Guide/Footer/Quick-Bar → Home-Screen-Start liegt nicht mehr unter der Statusleiste.
   - Quick-Bar zweigeteilt: Sprung zum Ergebnis + Daumen-Speichern (`#qbSave` → `saveBtn.click()`,
@@ -382,6 +390,20 @@ ui → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur
   - Touch-Feinschliff: `touch-action:manipulation`, `:active`-Feedback, `overscroll-behavior`.
   - Nur Mobil-Layout betroffen (Desktop-HTML unverändert); `?v=`→3.6.0, Standalone neu gebaut,
     Tests 136/136 grün.
+- **v3.6.1 — Testsuite gehärtet** = aktueller Stand:
+  - Reine Test-Erweiterung (kein Logik-/UI-Code geändert): 136 → 213 Prüfungen.
+  - Poolish/Biga-Klemmgrenze jetzt exakt an der Grenze UND 1 % darüber getestet; erstmals auch
+    der Fall „Biga wird geklemmt" (`bhyd > hyd`) — vorher nur der unbegrenzte Biga-Fall geprüft.
+  - Mehl-Warnung: hydMin/hydMax jetzt exakt auf der Grenze (kein Warn) vs. 0,01 % drüber (Warn) geprüft.
+  - Neue Sektion „11 · Randfälle": 1 und 20 Teiglinge, 0 % Öl, Hefemenge exakt an der 1-g-Schwelle.
+  - Neue Sektion „12 · Kombinationen": Vorteig (Biga/Poolish) + `coldStage: 'bulk'` + Öl +
+    Trockenhefe gleichzeitig (vorher wurden diese Features nur isoliert getestet).
+  - Neue Sektion „13 · Masseerhaltung": Identität `flour+water+salt+yeast+oil=total` jetzt für
+    alle 3 Methoden UND alle 7 Presets geprüft (vorher nur Direkt/Teglia/Biga vereinzelt).
+  - Neue Sektion „14 · Zeitplan-Rückwärtsrechnung": „Fertig sein um…"-Modus war bisher gar nicht
+    getestet — jetzt wird geprüft, dass der zurückgerechnete Startzeitpunkt korrekt im
+    Anleitungstext erscheint (auch mit Vorteig-Reifezeit bei Biga).
+  - Kein Bug gefunden — alle neuen Tests liefen beim ersten Anlauf grün gegen die bestehende Logik.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
