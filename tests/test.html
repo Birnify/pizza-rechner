@@ -278,6 +278,48 @@
     ['mWater ≥ 0',     Math.max(0, R.mWater), R.mWater, 0.001],
   ]);
 
+  // Poolish-Clamp exakt an der Grenze: maxPref = hyd/1 * 100 = 65 % bei hyd 65 %.
+  // pref genau 65 % darf NICHT geklemmt werden, pref 66 % (1 % drüber) MUSS geklemmt werden.
+  testCase('Poolish · pref exakt an der Grenze (65 % bei hyd 65 %) — keine Klemmung', {
+    method: 'poolish', pref: 65, hyd: 65
+  }, R => [
+    ['nicht begrenzt', R.prefClamped, false],
+    ['prefEff = 65',   R.prefEff, 65, 0.001],
+  ]);
+
+  testCase('Poolish · pref 1 % über der Grenze (66 % bei hyd 65 %) — wird geklemmt', {
+    method: 'poolish', pref: 66, hyd: 65
+  }, R => [
+    ['begrenzt',       R.prefClamped, true],
+    ['prefEff = 65',   R.prefEff, 65, 0.001],
+  ]);
+
+  // Regression-Anker: Biga kann ebenfalls geklemmt werden, sobald bhyd > hyd
+  // (bisher nur der unbegrenzte Fall bhyd < hyd getestet — diese Lücke schließen).
+  // bhyd 80 %, hyd 62 % → maxPref = 62/80*100 = 77,5 % → floor = 77.
+  testCase('Biga · bhyd 80 % > hyd 62 % — pref 77 % (an der Grenze) NICHT geklemmt', {
+    method: 'biga', pref: 77, bhyd: 80, hyd: 62
+  }, R => [
+    ['nicht begrenzt', R.prefClamped, false],
+    ['prefEff = 77',   R.prefEff, 77, 0.001],
+    ['mWater ≥ 0',     Math.max(0, R.mWater), R.mWater, 0.001],
+  ]);
+
+  testCase('Biga · bhyd 80 % > hyd 62 % — pref 78 % (1 % drüber) wird geklemmt', {
+    method: 'biga', pref: 78, bhyd: 80, hyd: 62
+  }, R => [
+    ['begrenzt',       R.prefClamped, true],
+    ['prefEff = 77',   R.prefEff, 77, 0.001],
+    ['mWater ≥ 0',     Math.max(0, R.mWater), R.mWater, 0.001],
+  ]);
+
+  testCase('Biga · bhyd 80 % > hyd 62 % — pref 100 % ebenfalls auf 77 % geklemmt', {
+    method: 'biga', pref: 100, bhyd: 80, hyd: 62
+  }, R => [
+    ['begrenzt',       R.prefClamped, true],
+    ['prefEff = 77',   R.prefEff, 77, 0.001],
+  ]);
+
   // ─────────────────────────────────────────────────────────────
   heading('4 · Trockenhefe-Umrechnung');
 
@@ -452,6 +494,34 @@
     ]);
   });
 
+  // Randfall: Hydration exakt an der oberen Grenze (hydMax) darf NICHT warnen (Code prüft >, nicht ≥).
+  // Caputo Nuvola Super: hydMax 85. yeast 0.3 + balls-Kaltgare → Gärzeit 26 h liegt im Fenster [24,168].
+  testFlourWarn('Hydration exakt an hydMax (85 % · Nuvola Super) — keine Warnung', {
+    flour: 'caputo_nuvola_super', hyd: 85, yeast: 0.3, coldStage: 'balls'
+  }, html => [
+    ['kein Warn-HTML', html.trim() === ''],
+  ]);
+
+  testFlourWarn('Hydration 0,01 über hydMax (85,01 % · Nuvola Super) — Warnung "zu hoch"', {
+    flour: 'caputo_nuvola_super', hyd: 85.01, yeast: 0.3, coldStage: 'balls'
+  }, html => [
+    ['"zu hoch" in Warnung', html.includes('zu hoch')],
+  ]);
+
+  // Randfall: Hydration exakt an der unteren Grenze (hydMin) darf NICHT warnen (Code prüft <, nicht ≤).
+  // Dallagiovanna Sofia: hydMin 60, minH 0, maxH 24. Schnellgare (yeast 1,5) hat ~4,25 h Gärzeit.
+  testFlourWarn('Hydration exakt an hydMin (60 % · Dallag Sofia) — keine Warnung', {
+    flour: 'dallag_sofia', hyd: 60, yeast: 1.5
+  }, html => [
+    ['kein Warn-HTML', html.trim() === ''],
+  ]);
+
+  testFlourWarn('Hydration 0,01 unter hydMin (59,99 % · Dallag Sofia) — Warnung "niedrig"', {
+    flour: 'dallag_sofia', hyd: 59.99, yeast: 1.5
+  }, html => [
+    ['"niedrig" in Warnung', html.includes('niedrig')],
+  ]);
+
   // ─────────────────────────────────────────────────────────────
   heading('7 · Backzeit (skaliert mit Teiglingszahl)');
 
@@ -572,6 +642,176 @@
     ['yeast ≥ 1 g (Testvoraussetzung)', R.yeast >= 1, true],
     ['kein 0,01-g-Feinwaage-Hinweis', !document.getElementById('guideSteps').innerHTML.includes('0,01-g-Feinwaage'), true],
   ]);
+
+  // Randfall: sehr kleine Hefemenge gilt AUCH bei Trockenhefe (die Umrechnung × 1/3 macht es noch kleiner)
+  testCase('Feinwaage-Hinweis gilt auch für Trockenhefe unter 1 g', {
+    method: 'direct', yeastType: 'dry', yeast: 0.05
+  }, R => [
+    ['yeast < 1 g (Testvoraussetzung)', R.yeast < 1, true],
+    ['0,01-g-Feinwaage-Hinweis in Anleitung', document.getElementById('guideSteps').innerHTML.includes('0,01-g-Feinwaage'), true],
+  ]);
+
+  // ─────────────────────────────────────────────────────────────
+  heading('11 · Randfälle / Edge Cases');
+
+  // 1 Teigling — kleinste sinnvolle Stückzahl, Formel muss trotzdem sauber aufgehen
+  testCase('1 Teigling à 250 g — Bäckerprozente bleiben korrekt', { balls: 1, ballw: 250 }, R => [
+    ['total', R.total, 250, 0],
+    ['flour', R.flour, 151.42, 0.05],
+    ['water', R.water, 93.88, 0.05],
+    ['salt',  R.salt,  4.24,  0.02],
+    ['Summe = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil, 250, 0.01],
+  ]);
+
+  // Sehr viele Teiglinge — Skalierung darf nicht driften
+  testCase('20 Teiglinge à 250 g — Skalierung bleibt exakt', { balls: 20, ballw: 250 }, R => [
+    ['total', R.total, 5000, 0],
+    ['flour', R.flour, 3028.47, 0.1],
+    ['water', R.water, 1877.65, 0.1],
+    ['Summe = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil, 5000, 0.01],
+  ]);
+
+  // 0 % Öl — Öl-Zeile/-Wert muss sauber auf 0 bleiben (keine NaN/negative Reste)
+  testCase('0 % Öl — oil exakt 0, keine Nebenwirkung auf Mehl/Wasser', { oil: 0 }, R => [
+    ['oil', R.oil, 0, 0.001],
+    ['flour = total/1,651', R.flour, 1000 / 1.651, 0.05],
+  ]);
+
+  // Sehr kleine Hefemenge (< 1 g absolut) — Grenzwert selbst prüfen (nicht nur weit darunter)
+  testCase('Hefemenge knapp unter 1 g löst Feinwaage-Hinweis aus', { method: 'direct', yeast: 0.16 }, R => [
+    ['yeast < 1 g', R.yeast < 1, true],
+    ['0,01-g-Feinwaage-Hinweis', document.getElementById('guideSteps').innerHTML.includes('0,01-g-Feinwaage'), true],
+  ]);
+
+  testCase('Hefemenge knapp über 1 g löst KEINEN Feinwaage-Hinweis aus', { method: 'direct', yeast: 0.17 }, R => [
+    ['yeast ≥ 1 g', R.yeast >= 1, true],
+    ['kein 0,01-g-Feinwaage-Hinweis', !document.getElementById('guideSteps').innerHTML.includes('0,01-g-Feinwaage'), true],
+  ]);
+
+  // ─────────────────────────────────────────────────────────────
+  heading('12 · Kombinationen (Vorteig × Kaltgare-Stufe × Öl gleichzeitig)');
+
+  // Biga + Öl + coldStage 'bulk' (klassisch) gleichzeitig — bisher wurden diese Features
+  // nur isoliert getestet (Öl nur mit Standard-coldStage, coldStage nur ohne Öl/Vorteig).
+  testCase('Biga · Öl 3 % · Kaltgare im Stück (bulk) — alles gleichzeitig korrekt', {
+    method: 'biga', pref: 70, bhyd: 45, hyd: 65, oil: 3, coldStage: 'bulk', yeast: 0.3
+  }, R => [
+    ['oil > 0 im Hauptteig', R.oil > 0, true],
+    ['mOil-Anzeige = Gesamtöl', parseFloat(document.getElementById('mOil').textContent), R.oil, 0.05],
+    ['pYeast = gesamte Hefe (auch mit Öl/bulk)', R.pYeast, R.yeast, 0.001],
+    ['mYeast = 0', R.mYeast, 0, 0.001],
+    ['Summe = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil, 1000, 0.01],
+  ]);
+
+  testScheduleCase('Biga · Kaltgare im Stück (bulk) — Gesamtdauer identisch zu balls-Variante', {
+    method: 'biga', pref: 70, bhyd: 45, hyd: 65, oil: 3, coldStage: 'bulk', yeast: 0.05
+  }, f => [
+    ['cold', f.cold, true],
+    ['Summe bulk+proof = 150+1080 (wie balls-Variante)', f.bulkMin + f.proofMin, 150 + 1080, 0],
+  ]);
+
+  // Poolish + Öl + coldStage 'bulk' gleichzeitig
+  testCase('Poolish · Öl 2 % · Kaltgare im Stück (bulk) — alles gleichzeitig korrekt', {
+    method: 'poolish', pref: 50, hyd: 66, oil: 2, coldStage: 'bulk', yeast: 0.2, salt: 2.5
+  }, R => {
+    return [
+      ['pf = flour × 0,5',   R.pf, R.flour * 0.5, 0.05],
+      ['pw = pf (1:1)',      R.pw, R.pf, 0.05],
+      ['pf + mFlour = flour', R.pf + R.mFlour, R.flour, 0.01],
+      ['pw + mWater = water', R.pw + R.mWater, R.water, 0.01],
+      ['mOil-Anzeige = Gesamtöl', parseFloat(document.getElementById('mOil').textContent), R.oil, 0.05],
+      ['Summe = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil, 1000, 0.01],
+    ];
+  });
+
+  // Poolish mit hoher Hydration nahe der Klemmgrenze + Öl + Trockenhefe gleichzeitig
+  testCase('Poolish · hyd nahe hydMax (66 %) · Öl · Trockenhefe — Kombination bleibt stabil', {
+    method: 'poolish', pref: 66, hyd: 66, oil: 2, yeastType: 'dry', yeast: 0.2, flour: 'dallag_monica'
+  }, R => [
+    ['nicht (fälschlich) begrenzt (66 % Anteil bei 66 % Hyd)', R.prefClamped, false],
+    ['mWater ≥ 0', Math.max(0, R.mWater), R.mWater, 0.001],
+    ['pYeast = Trockenhefe komplett im Vorteig', R.pYeast, R.yeast, 0.001],
+  ]);
+
+  // ─────────────────────────────────────────────────────────────
+  heading('13 · Masseerhaltung (alle Methoden, alle Presets)');
+
+  // Grundidentität flour+water+salt+yeast(frisch)+oil = total muss für JEDE Methode gelten —
+  // die Vorteig-Aufteilung verschiebt nur, wo Mehl/Wasser/Hefe liegen, nie die Summen.
+  ['direct', 'biga', 'poolish'].forEach(method => {
+    testCase('Masseerhaltung · Methode „' + method + '" bei 4 % Öl', {
+      method, pref: 60, bhyd: 50, hyd: 65, oil: 4, yeast: 0.3
+    }, R => [
+      ['flour+water+salt+yeast+oil = total', R.flour + R.water + R.salt + R.yeast + R.oil, R.total, 0.01],
+    ]);
+  });
+
+  Object.keys(PRESET_STATES).forEach(key => {
+    testCase('Masseerhaltung · Preset „' + key + '"', PRESET_STATES[key], R => {
+      const checks = [
+        ['total = N × W', R.total, R.N * R.W, 0],
+        ['flour+water+salt+yeast+oil = total', R.flour + R.water + R.salt + R.yeast + R.oil, R.total, 0.01],
+      ];
+      if (PRESET_STATES[key].method !== 'direct') {
+        checks.push(['pf + mFlour = flour', R.pf + R.mFlour, R.flour, 0.01]);
+        checks.push(['pw + mWater = water', R.pw + R.mWater, R.water, 0.01]);
+      }
+      return checks;
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  heading('14 · Zeitplan-Rückwärtsrechnung ("Fertig sein um…")');
+
+  // fmtClock-Nachbau (aus js/guide.js) — nur zum Prüfen des gerenderten Anleitungstexts,
+  // dupliziert keine Rechenlogik.
+  function fmtClockTest(d) {
+    const wd = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()];
+    const p = n => String(n).padStart(2, '0');
+    return `${wd} ${p(d.getDate())}.${p(d.getMonth() + 1)}. · ${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
+  const FIXED_ISO = '2026-08-01T18:00';
+  let sharedTotalMin = null;
+
+  testCase('Start-Modus ("Ich starte um…") — Start-Chip = eingegebene Zeit', {
+    method: 'direct', yeast: 0.3, coldStage: 'balls', timeMode: 'start', timeISO: FIXED_ISO
+  }, R => {
+    sharedTotalMin = R.totalMin;
+    const start = new Date(FIXED_ISO);
+    const end = new Date(start.getTime() + R.totalMin * 60000);
+    const html = document.getElementById('guideSteps').innerHTML;
+    return [
+      ['Start-Zeit im Banner', html.includes(fmtClockTest(start)), true],
+      ['Fertig-Zeit im Banner', html.includes(fmtClockTest(end)), true],
+    ];
+  });
+
+  testCase('Ziel-Modus ("Fertig sein um…") — Start wird korrekt zurückgerechnet', {
+    method: 'direct', yeast: 0.3, coldStage: 'balls', timeMode: 'target', timeISO: FIXED_ISO
+  }, R => {
+    const target = new Date(FIXED_ISO);
+    const computedStart = new Date(target.getTime() - R.totalMin * 60000);
+    const html = document.getElementById('guideSteps').innerHTML;
+    return [
+      ['totalMin identisch zum Start-Modus (gleiche Zutaten)', R.totalMin, sharedTotalMin, 0],
+      ['errechneter Start-Zeitpunkt im Banner', html.includes(fmtClockTest(computedStart)), true],
+      ['Zielzeit (Fertig) unverändert im Banner', html.includes(fmtClockTest(target)), true],
+    ];
+  });
+
+  // Ziel-Modus bei Vorteig (Biga) — Reifezeit muss in der Rückwärtsrechnung mitzählen
+  testCase('Ziel-Modus bei Biga — Reifezeit fließt in die Rückwärtsrechnung ein', {
+    method: 'biga', pref: 70, bhyd: 45, hyd: 65, prefMature: 24, timeMode: 'target', timeISO: FIXED_ISO
+  }, R => {
+    const target = new Date(FIXED_ISO);
+    const computedStart = new Date(target.getTime() - R.totalMin * 60000);
+    const html = document.getElementById('guideSteps').innerHTML;
+    return [
+      ['totalMin enthält die Vorteig-Reife (matureMin ⊂ totalMin)', R.totalMin >= R.matureMin, true],
+      ['errechneter Start-Zeitpunkt im Banner', html.includes(fmtClockTest(computedStart)), true],
+    ];
+  });
 
   // ─────────────────────────────────────────────────────────────
   const s = document.getElementById('summary');
