@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-11 · Aktuelle Version: v3.14.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-11 · Aktuelle Version: v3.15.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -158,6 +158,70 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
   W300–310 (Cuoco, Napoletana): 16 · Monica/Nuvola/Teichner 1 (~W280–300): 12 · Rest: 0.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
+
+## System-Wecker/Kalender-Anbindung für Gärzeit-Timer (v3.15.0, `js/timer.js`) + Accessibility-Audit = aktueller Stand
+
+Additiv zur bestehenden In-App-Countdown-Logik der Gärzeit-Timer (v3.11.0): solange ein
+Timer noch **nicht** gestartet wurde (Idle-Zustand), rendert `systemTimerHtml()` neben
+dem bestehenden „⏰ Timer starten"-Button einen `<div class="timersys">`-Block mit einer
+kurzen Erklärung (`.timersys-hint`) und ein bis zwei Links (`.timersys-links`):
+- **„📱 Android-Wecker stellen"** — nur wenn `navigator.userAgent` Android erkennt
+  (`isAndroid()`). Öffnet eine `intent:`-URI mit der dokumentierten AlarmClock-Intent-
+  Action `ACTION_SET_TIMER` (`SKIP_UI=true` startet den Timer direkt ohne die Uhr-App zu
+  öffnen) — funktioniert nur in Chrome/Chromium-basierten Android-Browsern.
+- **„📅 Kalender-Erinnerung"** — immer sichtbar (auch iOS/Desktop, die keine vergleichbare
+  Web-API haben). `href` ist eine `data:text/calendar`-URL mit `download="pizza-timer-
+  <key>.ics"`: eine offline generierte `.ics`-Datei mit `VALARM`/`TRIGGER:-PT0M`, die zum
+  exakten Zielzeitpunkt (jetzt + Timerdauer) einen Alarm auslöst — offener Standard, den
+  iOS/Android/Desktop-Kalender nativ unterstützen, ehrlicher Ersatz dort, wo es keine
+  Web-Timer-API gibt.
+- Erscheint **nur im Idle-Zustand**, nicht während des laufenden Countdowns oder im
+  „Fertig!"-Zustand. Identisch auf Desktop + Mobil (beide laden dasselbe `js/timer.js`,
+  keine HTML-Änderung nötig).
+- Neues CSS in `css/styles.css`: `.timerbtn-alt`, `.timersys`, `.timersys-hint`,
+  `.timersys-links`, `a.timerbtn{text-decoration:none;display:inline-block;}`.
+
+**Gezielter WCAG-2.1-AA-Audit nur für diesen neuen `.timersys`-Block**
+(`accessibility-expert`-Agent, Methodik wie v3.7.0/v3.12.0/v3.14.0):
+
+- **Minor — Hint-Text nur visuell neben den Links (1.3.1):** `.timersys-hint` stand als
+  reiner Nachbar-`<span>` neben `.timersys-links`, ohne programmatische Verknüpfung
+  (identisches Muster wie der `#shareHint`-Fund aus v3.14.0). Fix: eindeutige
+  `id="timersys-hint-<key>"` je Timer-Box (mehrere Boxen können gleichzeitig auf der
+  Seite stehen) + `aria-describedby` auf beiden `<a class="timerbtn timerbtn-alt">`-Links.
+- **Geprüft, kein Fix nötig:**
+  - Beide Links sind native `<a>`-Elemente mit aussagekräftigem Linktext (kein
+    Icon-only-Problem, 2.4.4/2.4.9) und tastaturerreichbar; kein `outline:none` auf
+    `.timerbtn`/`a`, Standard-Fokusring bleibt sichtbar.
+  - Kontrast `.timersys-hint` (`--muted` `#6e6359` auf `--bg` `#faf6f0`): rechnerisch
+    **5,55:1**, besteht AA für Normaltext (11,5 px).
+  - Kontrast `.timerbtn-alt` (`--ink` `#2b2420` auf `#fff`): rechnerisch **15,26:1**,
+    weit über AA.
+  - `intent:`/`data:`-URI-Navigation löst keinen Fokus-Verlust im WCAG-Sinn aus — beides
+    ist regulärer, nutzerinitiierter Link-Klick (3.2.5 „change on request"); die
+    `intent:`-URI wechselt ggf. die App (Android-Uhr), die `data:`-URI mit `download`
+    triggert einen Browser-Download, beides ohne Skript-getriebenen Kontextwechsel/
+    Fokus-Trap.
+  - `aria-live="polite"`/`aria-atomic="true"` auf dem äußeren `.timerbox` (aus v3.12.0)
+    bleibt kompatibel — der zusätzliche Idle-Inhalt wird nach demselben, bereits
+    akzeptierten Muster mitgerendert. Bestehende, vorbekannte Einschränkung (nicht neu
+    durch dieses Feature verursacht): weil `.timerbox` bei **jedem** `buildGuide()`-Lauf
+    (also bei jeder Reglerbewegung) komplett per `innerHTML` neu geschrieben wird,
+    könnte der Idle-Inhalt theoretisch bei jedem Re-Render erneut vorgelesen werden —
+    das gilt aber unverändert bereits für den einfachen „Timer starten"-Button seit
+    v3.11.0 und wurde dort bereits geprüft/akzeptiert; dieses Feature vergrößert nur den
+    Textumfang des bestehenden Musters, führt keine neue Fehlerkategorie ein. Eine
+    Neugestaltung (aria-live nur bei echten Zustandswechseln statt bei jedem Render)
+    wäre eine Architekturänderung und außerhalb des minimal-invasiven Scopes dieser
+    Session.
+
+**Tests:** `js/timer.js` wird in `tests/test.html` bewusst nicht geladen (Browser-APIs
+wie `Notification`/`setInterval`/Web Audio sind kein Unit-Test-Ziel, s. v3.11.0) — das
+neue `aria-describedby` kollidiert dort mit nichts. Alle 311 Prüfungen weiterhin grün
+(Headless-Edge-Dump verifiziert). `?v=` bereits bei `3.15.0` (Feature + Audit-Fix als ein
+zusammenhängender Stand, analog v3.14.0). `Versionen/v3.15.0 - System-Wecker-Kalender-
+Anbindung fuer Timer/` enthält den vollständigen Schnappschuss. Berechnungslogik
+(`js/calc.js`, `js/schedule.js`, `js/guide.js`) unangetastet.
 
 ## Teilen-Link (v3.14.0, `js/share.js`) + Accessibility-Audit = aktueller Stand
 

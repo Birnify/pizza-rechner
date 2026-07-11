@@ -114,7 +114,8 @@
           <button type="button" class="timerbtn" data-act="stop">Abbrechen</button>`;
       }
     } else {
-      wrap.innerHTML = `<button type="button" class="timerbtn timerbtn-start" data-act="start">⏰ Timer starten (${fmtDurLabel(defaultMin)})</button>`;
+      wrap.innerHTML = `<button type="button" class="timerbtn timerbtn-start" data-act="start">⏰ Timer starten (${fmtDurLabel(defaultMin)})</button>
+        ${systemTimerHtml(defaultMin, stepLabel(box), key)}`;
     }
     box.appendChild(wrap);
 
@@ -146,8 +147,99 @@
     return r ? `${h} h ${r} min` : `${h} h`;
   }
 
+  function stepLabel(box) {
+    const step = box.closest('.step');
+    const h4 = step && step.querySelector('h4');
+    if (!h4) return box.dataset.timerKey;
+    // Nur der reine Titel-Text (erster Text-Knoten): guide.js hängt Chip-/Zeit-Badges
+    // als <span> direkt ohne Leerzeichen an den Titel an (z. B. "Autolyse<span>...
+    // </span>"), sonst würden sie hier ohne Trenner zusammenlaufen (betrifft
+    // Notification-Body, ICS-Titel und den Android-Wecker-Namen gleichermaßen).
+    for (const node of h4.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) return node.textContent.trim();
+    }
+    return h4.textContent.trim();
+  }
+
+  // --- System-Wecker/Kalender-Anbindung (v3.15.0) ---------------------------
+  // Web-Apps ohne Service Worker/nativen App-Zugriff haben KEINE offizielle,
+  // plattformübergreifende API, um den System-Timer zu stellen. Zwei ehrliche,
+  // realistische Wege:
+  //  - Android: Chrome unterstützt `intent:`-URIs, die die dokumentierte
+  //    AlarmClock-Intent-Action ACTION_SET_TIMER an die Uhr-App weiterreichen
+  //    (SKIP_UI=true startet den Timer direkt, ohne die Uhr-App zu öffnen).
+  //    Funktioniert nur in Chrome/Chromium-basierten Android-Browsern, nicht
+  //    in Firefox Android o.ä. — deshalb nur bei erkanntem Android angeboten.
+  //  - iOS: es gibt keine vergleichbare Web-API (Shortcuts-URL-Schemes würden
+  //    einen vom Nutzer vorinstallierten Shortcut voraussetzen, den eine
+  //    offline laufende file://-App nicht bereitstellen kann — daher bewusst
+  //    NICHT vorgetäuscht). Als ehrlicher Ersatz: Download einer .ics-Datei
+  //    (Kalender-Termin zum exakten Zielzeitpunkt + Erinnerungs-Alarm) — das
+  //    ist ein offener Standard, den iOS/Android/Desktop-Kalender alle nativ
+  //    unterstützen. Wird plattformunabhängig IMMER zusätzlich angeboten.
+  function isAndroid() {
+    return /Android/i.test(navigator.userAgent || '');
+  }
+
+  function androidTimerUrl(minutes, label) {
+    const seconds = Math.max(1, Math.round(minutes * 60));
+    const msg = encodeURIComponent(label || 'Pizza-Teig');
+    return `intent:#Intent;action=android.intent.action.SET_TIMER;` +
+      `S.android.intent.extra.alarm.MESSAGE=${msg};` +
+      `i.android.intent.extra.alarm.LENGTH=${seconds};` +
+      `B.android.intent.extra.alarm.SKIP_UI=true;end`;
+  }
+
+  function icsEscape(s) {
+    return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+  }
+  function icsDate(d) {
+    const p = n => String(n).padStart(2, '0');
+    return d.getUTCFullYear() + p(d.getUTCMonth() + 1) + p(d.getUTCDate()) + 'T' +
+      p(d.getUTCHours()) + p(d.getUTCMinutes()) + p(d.getUTCSeconds()) + 'Z';
+  }
+  // Baut eine .ics-Kalendereinladung mit VALARM als data:-URL — kein Server nötig,
+  // funktioniert offline. TRIGGER:-PT0M lässt den Alarm exakt zum Zielzeitpunkt
+  // (jetzt + Dauer) feuern, nicht zur (irrelevanten) Terminstart-Uhrzeit selbst.
+  function icsDataUrl(minutes, label) {
+    const now = new Date();
+    const target = new Date(now.getTime() + minutes * 60000);
+    const end = new Date(target.getTime() + 60000);
+    const sum = icsEscape('🍕 ' + (label || 'Pizza-Timer'));
+    const desc = icsEscape('Erinnerung vom Pizzateig-Rechner: ' + (label || 'Timer') + ' ist fertig.');
+    const uid = 'pz-' + Date.now() + '-' + Math.random().toString(36).slice(2) + '@pizza-rechner';
+    const lines = [
+      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Pizzateig-Rechner//Timer//DE', 'CALSCALE:GREGORIAN',
+      'BEGIN:VEVENT', 'UID:' + uid, 'DTSTAMP:' + icsDate(now), 'DTSTART:' + icsDate(target),
+      'DTEND:' + icsDate(end), 'SUMMARY:' + sum, 'DESCRIPTION:' + desc,
+      'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + desc, 'TRIGGER:-PT0M', 'END:VALARM',
+      'END:VEVENT', 'END:VCALENDAR'
+    ];
+    return 'data:text/calendar;charset=utf-8,' + encodeURIComponent(lines.join('\r\n'));
+  }
+
+  function systemTimerHtml(defaultMin, label, key) {
+    // aria-describedby verknüpft den erklärenden Hint-Text programmatisch mit beiden
+    // Links (analog zum #shareHint-Fix v3.14.0) — sonst ist der Zusammenhang für
+    // Screenreader-Nutzer nur visuell erkennbar (WCAG 1.3.1). Eindeutige ID je Box
+    // nötig, weil mehrere Timer-Boxen gleichzeitig auf der Seite gerendert werden.
+    const hintId = `timersys-hint-${key}`;
+    const links = [];
+    if (isAndroid()) {
+      links.push(`<a class="timerbtn timerbtn-alt" href="${androidTimerUrl(defaultMin, label)}" aria-describedby="${hintId}">📱 Android-Wecker stellen</a>`);
+    }
+    links.push(`<a class="timerbtn timerbtn-alt" href="${icsDataUrl(defaultMin, label)}" download="pizza-timer-${key}.ics" aria-describedby="${hintId}">📅 Kalender-Erinnerung</a>`);
+    const hint = isAndroid()
+      ? 'Öffnet die Uhr-App mit vorausgefülltem Timer (Chrome) — oder lade alternativ eine Kalender-Erinnerung herunter.'
+      : 'iOS bietet keine Web-Schnittstelle für System-Timer — lade stattdessen eine Kalender-Erinnerung herunter (öffnet die Kalender-App mit Alarm zur richtigen Zeit).';
+    return `<div class="timersys">
+        <span class="timersys-hint" id="${hintId}">${hint}</span>
+        <span class="timersys-links">${links.join(' ')}</span>
+      </div>`;
+  }
+
   function startTimer(key, min, box) {
-    const label = box.closest('.step') ? box.closest('.step').querySelector('h4').textContent.trim() : key;
+    const label = stepLabel(box);
     const endAt = Date.now() + min * 60000;
     setTimer(key, { endAt, label });
     render(box);
