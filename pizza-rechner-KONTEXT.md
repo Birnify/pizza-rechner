@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-10 · Aktuelle Version: v3.5.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-11 · Aktuelle Version: v3.6.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -156,6 +156,32 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
   W300–310 (Cuoco, Napoletana): 16 · Monica/Nuvola/Teichner 1 (~W280–300): 12 · Rest: 0.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
+
+## Mobile iOS-Feinschliff (v3.6.0)
+
+Reiner Mobil-Layout-/UX-Feinschliff (nur `pizza-rechner-mobile.html` + `css/mobile.css` +
+das mobil-eigene Inline-Script — **keine** `js/*`- und **keine** Desktop-Änderung, IDs 1:1 gleich):
+
+- **Safe-Area-Insets (iOS Notch/Home-Indikator):** Bei „Zum Home-Bildschirm" läuft die App
+  mit `black-translucent`-Statusleiste + `viewport-fit=cover` unter die Statusleiste. `header`
+  bekommt jetzt `padding-top: calc(22px + env(safe-area-inset-top))`, `.wrap`/`.guidewrap`/
+  `footer` respektieren seitliche + untere Insets (Querformat-Rundungen, Home-Indikator).
+- **Speichern per Daumen aus der Quick-Bar:** Die untere Sticky-Bar ist jetzt zweigeteilt —
+  links `🍕 … g` als Sprung zum Ergebnis (`a.qb-jump[href="#result"]`), rechts ein Button
+  `#qbSave`. Der löst per `saveBtn.click()` **denselben** bestehenden Speichern-Handler aus
+  (keine Logik dupliziert), inkl. eigenem „✓ Gespeichert"-Feedback. Einhandbedienung.
+- **Akkordeon-Auto-Scroll:** Öffnet man eine `details.card`, deren Kopf gerade nicht oben
+  steht, scrollt das mobile Inline-Script die Summary sanft nach oben (`scrollIntoView`,
+  Schwelle top<0 oder >90 px) — kein Blick mehr am Ende der vorigen Card. `scroll-margin-top`
+  hält Abstand zum Rand.
+- **Touch-Feinschliff:** `touch-action:manipulation` (kein 300 ms-Delay / Doppeltipp-Zoom auf
+  Buttons/Slidern/Selects), `-webkit-tap-highlight-color:transparent`, `:active`-Feedback für
+  Segmente/Pills/Aktionen, `overscroll-behavior-y:contain` gegen den Rubber-Band-Weißblitz.
+- **Pflege:** Das mobil-eigene Inline-Script hängt jetzt drei Glue-Funktionen an (Quick-Total-
+  Spiegel via `MutationObserver`, Quick-Save, Akkordeon-Scroll) — alle nur DOM-Glue, greifen
+  **nicht** in die PZ-Rechenmodule ein. `?v=` in der Mobil-HTML auf 3.6.0 gezogen; Desktop-HTML
+  bewusst unangetastet (nur Mobil-Layout betroffen). Danach `build-mobile-standalone.py` neu
+  gebaut. Tests: 136/136 grün (IDs unverändert).
 
 ## Mobile Ansicht (v3.5.0)
 
@@ -340,13 +366,22 @@ ui → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur
   - Autolyse-Schritt warnt jetzt immer vor zu langer Dauer ohne Salz (Enzym-/Glutenabbau-Risiko).
   - Bei < 1 g Hefe (absolut): Hinweis, sie in Wasser aufzulösen (auch Trockenhefe) + 0,01-g-Feinwaage.
   - Neue Test-Sektion „10 · Anleitungs-Hinweise" prüft beide Schwellen.
-- **v3.5.0 — Mobile Ansicht (Akkordeon)** = aktueller Stand:
+- v3.5.0 — Mobile Ansicht (Akkordeon):
   - Neue Datei `pizza-rechner-mobile.html` + `css/mobile.css`, siehe Abschnitt „Mobile Ansicht" oben.
   - Keine Logik dupliziert — nutzt dieselben `js/*`-Module über identische Element-IDs.
   - Kopfzeilen verlinken jetzt wechselseitig zwischen Desktop- und Mobil-Ansicht (`.viewlink`).
   - Anlass: App soll aufs iPhone (z. B. via iCloud Drive + „Zum Home-Bildschirm"); reines
     responsives CSS wurde als nicht komfortabel genug empfunden — explizit vereinfachte
     Mobil-Bedienung gewünscht (siehe Nutzer-Entscheidung in der Session).
+- **v3.6.0 — Mobile iOS-Feinschliff** = aktueller Stand:
+  - Safe-Area-Insets (Notch/Statusleiste oben, Home-Indikator + Querformat-Rundungen) für
+    Header/Wrap/Guide/Footer/Quick-Bar → Home-Screen-Start liegt nicht mehr unter der Statusleiste.
+  - Quick-Bar zweigeteilt: Sprung zum Ergebnis + Daumen-Speichern (`#qbSave` → `saveBtn.click()`,
+    keine Logik dupliziert).
+  - Akkordeon-Auto-Scroll: geöffnete Card scrollt sanft in den sichtbaren Bereich.
+  - Touch-Feinschliff: `touch-action:manipulation`, `:active`-Feedback, `overscroll-behavior`.
+  - Nur Mobil-Layout betroffen (Desktop-HTML unverändert); `?v=`→3.6.0, Standalone neu gebaut,
+    Tests 136/136 grün.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
