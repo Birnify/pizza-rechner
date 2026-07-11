@@ -182,8 +182,33 @@ footer{text-align:center;font-size:11.5px;color:var(--muted);padding:0 20px 30px
 <style>
 /* mobile.css — Ergänzungen nur für pizza-rechner-mobile.html (Akkordeon, größere Touch-Ziele) */
 
+/* iOS-Eigenheiten: Rubber-Band-Weißblitz abfangen, Doppeltipp-Zoom/300ms-Delay auf
+   Bedienelementen killen, kein grauer Tap-Highlight. */
+html{background:var(--bg);}
+body{overscroll-behavior-y:contain;}
+button,.seg button,.pills button,summary,input[type=range],.selectbox,.quickbar a,.quickbar button{
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+
+/* Safe-Area-Insets (Notch/Statusleiste oben, Rundungen seitlich im Querformat).
+   Kopfzeile liegt unter der black-translucent-Statusleiste — nach unten wegschieben. */
+header{
+  padding-top:calc(22px + env(safe-area-inset-top));
+  padding-left:calc(20px + env(safe-area-inset-left));
+  padding-right:calc(20px + env(safe-area-inset-right));
+}
+
 /* Immer einspaltig, egal wie breit der Screen ist */
-.wrap{grid-template-columns:1fr!important;padding-bottom:76px;}
+.wrap{
+  grid-template-columns:1fr!important;
+  padding-left:calc(20px + env(safe-area-inset-left));
+  padding-right:calc(20px + env(safe-area-inset-right));
+  padding-bottom:calc(84px + env(safe-area-inset-bottom));
+}
+.guidewrap{
+  padding-left:calc(20px + env(safe-area-inset-left));
+  padding-right:calc(20px + env(safe-area-inset-right));
+}
 .result{position:static;}
 
 /* Karten als <details>-Akkordeon */
@@ -201,6 +226,8 @@ details.card summary::after{
 details.card[open] summary::after{transform:rotate(180deg);}
 details.card summary:active{background:var(--bg);}
 details.card .acc-body{padding:0 20px 20px;}
+/* Geöffnete Card beim Auto-Scroll nicht direkt an den Rand kleben lassen */
+details.card{scroll-margin-top:10px;}
 
 /* Größere Touch-Ziele */
 .seg button,.pills button{min-height:44px;}
@@ -211,18 +238,32 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 .selectbox{min-height:44px;font-size:16px;}
 .actions button{min-height:48px;font-size:14px;}
 
-/* Sticky Quick-Bar unten: springt zum Ergebnis */
+/* Sichtbares Touch-Feedback (kein Hover auf Touch) */
+.seg button:active{transform:scale(.97);}
+.pills button:active{background:var(--bg);border-color:var(--tomato);}
+.actions button:active{filter:brightness(.94);}
+
+/* Sticky Quick-Bar unten: links Sprung zum Ergebnis, rechts Speichern (Daumenzone) */
 .quickbar{
   position:fixed;left:0;right:0;bottom:0;z-index:20;
   background:linear-gradient(135deg,var(--tomato),var(--tomato-dark));color:#fff;
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
-  padding:12px 18px calc(12px + env(safe-area-inset-bottom));
+  display:flex;align-items:stretch;gap:10px;
+  padding:10px calc(14px + env(safe-area-inset-right))
+          calc(10px + env(safe-area-inset-bottom))
+          calc(14px + env(safe-area-inset-left));
   box-shadow:0 -2px 14px rgba(120,90,60,.25);
-  text-decoration:none;
 }
-.quickbar .qb-total{font-size:15px;font-weight:800;}
-.quickbar .qb-total small{font-weight:500;opacity:.85;font-size:11px;margin-left:4px;}
-.quickbar .qb-arrow{font-size:13px;font-weight:700;}
+.quickbar .qb-jump{
+  flex:1;display:flex;align-items:center;gap:6px;min-height:44px;
+  color:#fff;text-decoration:none;font-size:15px;font-weight:800;
+}
+.quickbar .qb-jump small{font-weight:500;opacity:.85;font-size:11px;margin-left:2px;}
+.quickbar .qb-save{
+  flex-shrink:0;min-height:44px;padding:0 16px;border:none;border-radius:10px;
+  background:rgba(255,255,255,.18);color:#fff;font-size:14px;font-weight:700;
+  cursor:pointer;-webkit-backdrop-filter:blur(2px);
+}
+.quickbar .qb-save:active{background:rgba(255,255,255,.32);}
 
 #result{scroll-margin-top:16px;}
 
@@ -515,15 +556,15 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
   <div id="guideSteps"></div>
 </section>
 
-<footer style="padding-bottom:80px;">
+<footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
   Alles wird lokal in deinem Browser gerechnet &amp; gespeichert · keine Internetverbindung nötig<br>
   Bäckerprozente — Wasser, Salz &amp; Hefe immer relativ zur Mehlmenge (= 100 %)
 </footer>
 
-<a class="quickbar" href="#result">
-  <span class="qb-total">🍕 <span id="qbTotal">–</span> g<small>Gesamtteig</small></span>
-  <span class="qb-arrow">Ergebnis ↓</span>
-</a>
+<div class="quickbar">
+  <a class="qb-jump" href="#result">🍕 <span id="qbTotal">–</span> g<small>Gesamtteig ↓</small></a>
+  <button type="button" class="qb-save" id="qbSave">💾 Speichern</button>
+</div>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
 <script>
@@ -1390,14 +1431,42 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 
 </script>
 <script>
-  // Mobil-only: Quick-Bar unten spiegelt das Gesamtgewicht (kein Eingriff in PZ-Module)
+  // Mobil-only UI-Glue (kein Eingriff in die PZ-Rechenmodule)
   (function(){
+    // 1) Quick-Bar spiegelt live das Gesamtgewicht aus #totalW
     var src = document.getElementById('totalW');
     var out = document.getElementById('qbTotal');
-    if (!src || !out) return;
-    var sync = function(){ out.textContent = src.textContent; };
-    new MutationObserver(sync).observe(src, { childList: true, characterData: true, subtree: true });
-    sync();
+    if (src && out) {
+      var sync = function(){ out.textContent = src.textContent; };
+      new MutationObserver(sync).observe(src, { childList: true, characterData: true, subtree: true });
+      sync();
+    }
+
+    // 2) Speichern aus der Quick-Bar löst denselben Handler wie #saveBtn aus
+    //    (keine Logik dupliziert — nur der bestehende Klick wird weitergereicht)
+    var qs = document.getElementById('qbSave');
+    var real = document.getElementById('saveBtn');
+    if (qs && real) {
+      qs.addEventListener('click', function(){
+        real.click();
+        var t = qs.textContent;
+        qs.textContent = '✓ Gespeichert';
+        setTimeout(function(){ qs.textContent = t; }, 1400);
+      });
+    }
+
+    // 3) Öffnet man eine Akkordeon-Card, deren Kopf gerade nicht oben steht,
+    //    sanft zur Summary scrollen — sonst landet der Blick am Ende der vorigen Card.
+    var cards = document.querySelectorAll('details.card');
+    Array.prototype.forEach.call(cards, function(d){
+      d.addEventListener('toggle', function(){
+        if (!d.open) return;
+        var top = d.getBoundingClientRect().top;
+        if (top < 0 || top > 90) {
+          d.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
   })();
 </script>
 </body>

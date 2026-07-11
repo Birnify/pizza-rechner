@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-title" content="Pizzateig">
 <meta name="theme-color" content="#c8442e">
 <title>Pizzateig-Rechner · Mobil</title>
-<link rel="stylesheet" href="css/styles.css?v=3.5.0">
-<link rel="stylesheet" href="css/mobile.css?v=3.5.0">
+<link rel="stylesheet" href="css/styles.css?v=3.6.0">
+<link rel="stylesheet" href="css/mobile.css?v=3.6.0">
 </head>
 <body>
 <header>
@@ -296,36 +296,64 @@
   <div id="guideSteps"></div>
 </section>
 
-<footer style="padding-bottom:80px;">
+<footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
   Alles wird lokal in deinem Browser gerechnet &amp; gespeichert · keine Internetverbindung nötig<br>
   Bäckerprozente — Wasser, Salz &amp; Hefe immer relativ zur Mehlmenge (= 100 %)
 </footer>
 
-<a class="quickbar" href="#result">
-  <span class="qb-total">🍕 <span id="qbTotal">–</span> g<small>Gesamtteig</small></span>
-  <span class="qb-arrow">Ergebnis ↓</span>
-</a>
+<div class="quickbar">
+  <a class="qb-jump" href="#result">🍕 <span id="qbTotal">–</span> g<small>Gesamtteig ↓</small></a>
+  <button type="button" class="qb-save" id="qbSave">💾 Speichern</button>
+</div>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.5.0"></script>
-<script src="js/state.js?v=3.5.0"></script>
-<script src="js/flour.js?v=3.5.0"></script>
-<script src="js/calc.js?v=3.5.0"></script>
-<script src="js/schedule.js?v=3.5.0"></script>
-<script src="js/guide.js?v=3.5.0"></script>
-<script src="js/ui.js?v=3.5.0"></script>
-<script src="js/presets.js?v=3.5.0"></script>
-<script src="js/storage.js?v=3.5.0"></script>
-<script src="js/main.js?v=3.5.0"></script>
+<script src="js/dom.js?v=3.6.0"></script>
+<script src="js/state.js?v=3.6.0"></script>
+<script src="js/flour.js?v=3.6.0"></script>
+<script src="js/calc.js?v=3.6.0"></script>
+<script src="js/schedule.js?v=3.6.0"></script>
+<script src="js/guide.js?v=3.6.0"></script>
+<script src="js/ui.js?v=3.6.0"></script>
+<script src="js/presets.js?v=3.6.0"></script>
+<script src="js/storage.js?v=3.6.0"></script>
+<script src="js/main.js?v=3.6.0"></script>
 <script>
-  // Mobil-only: Quick-Bar unten spiegelt das Gesamtgewicht (kein Eingriff in PZ-Module)
+  // Mobil-only UI-Glue (kein Eingriff in die PZ-Rechenmodule)
   (function(){
+    // 1) Quick-Bar spiegelt live das Gesamtgewicht aus #totalW
     var src = document.getElementById('totalW');
     var out = document.getElementById('qbTotal');
-    if (!src || !out) return;
-    var sync = function(){ out.textContent = src.textContent; };
-    new MutationObserver(sync).observe(src, { childList: true, characterData: true, subtree: true });
-    sync();
+    if (src && out) {
+      var sync = function(){ out.textContent = src.textContent; };
+      new MutationObserver(sync).observe(src, { childList: true, characterData: true, subtree: true });
+      sync();
+    }
+
+    // 2) Speichern aus der Quick-Bar löst denselben Handler wie #saveBtn aus
+    //    (keine Logik dupliziert — nur der bestehende Klick wird weitergereicht)
+    var qs = document.getElementById('qbSave');
+    var real = document.getElementById('saveBtn');
+    if (qs && real) {
+      qs.addEventListener('click', function(){
+        real.click();
+        var t = qs.textContent;
+        qs.textContent = '✓ Gespeichert';
+        setTimeout(function(){ qs.textContent = t; }, 1400);
+      });
+    }
+
+    // 3) Öffnet man eine Akkordeon-Card, deren Kopf gerade nicht oben steht,
+    //    sanft zur Summary scrollen — sonst landet der Blick am Ende der vorigen Card.
+    var cards = document.querySelectorAll('details.card');
+    Array.prototype.forEach.call(cards, function(d){
+      d.addEventListener('toggle', function(){
+        if (!d.open) return;
+        var top = d.getBoundingClientRect().top;
+        if (top < 0 || top > 90) {
+          d.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
   })();
 </script>
 </body>
