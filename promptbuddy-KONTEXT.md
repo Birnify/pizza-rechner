@@ -180,14 +180,23 @@ festen, wiederholten 5-Phasen-Zyklus, orchestriert durch den neuen Agenten
 
 1. **Brainstorming** (interaktiv, Nutzer entscheidet aktiv mit — nie automatisch!)
    — offene Punkte aus „Mögliche nächste Schritte" (`pizza-rechner-KONTEXT.md`)
-   auflisten, Aufwand/Nutzen einschätzen, Nutzer wählt den nächsten Punkt.
-2. **Implementieren** (automatisch) — passenden `feature-builder-*` Agenten
-   nutzen oder neu nach etabliertem Muster schreiben.
-3. **Testen** (automatisch) — `test-generator`, Fokus aufs neue Feature.
-4. **Härten** (automatisch, aber gezielt) — `accessibility-expert` immer,
-   `mobile-optimizer`/`performance-profiler` nur bei konkretem Anlass.
-5. **Abschluss** (automatisch) — Version, Kontext-Datei, Backlog abhaken,
-   commit + push, kurze Zusammenfassung, dann zurück zu Phase 1.
+   auflisten, Aufwand/Nutzen einschätzen, Nutzer wählt das nächste Vorhaben.
+   Auch Nicht-Feature-Arbeit (Design-Überarbeitung, Bugfix, Refactoring) ist
+   ein vollwertiges Zyklus-Vorhaben.
+2. **Implementieren** (automatisch) — Standard: der Orchestrator setzt selbst
+   um. Bestehende `feature-builder-*` nur bei genauer Passung aufrufen; neue
+   Agenten-Dateien nur bei absehbarer Wiederverwendung anlegen (Schreiben nach
+   `.claude/agents/` kann eine Permission-Blockade auslösen, die nur der Nutzer
+   direkt freigeben kann).
+3. **Testen** (automatisch) — `tests/test.html` immer grün prüfen;
+   `test-generator` nur bei Logik-Änderungen (`js/calc.js`/`schedule.js`/`guide.js`).
+4. **Härten** (automatisch, aber gezielt) — Audit-Agenten **synchron** aufrufen
+   (nie im Hintergrund hängen lassen, nie doppelt starten): `accessibility-expert`
+   bei UI-/Markup-/Styling-Änderungen, `mobile-optimizer`/`performance-profiler`
+   nur bei konkretem Anlass.
+5. **Abschluss** (automatisch) — ggf. Standalone-Build, Version, Kontext-Datei,
+   Backlog abhaken, commit + push, Zusammenfassung mit Kandidaten für den
+   nächsten Zyklus. Ein Folgezyklus startet erst nach neuer Nutzer-Bestätigung.
 
 **Kernregel:** Nur Phase 1 (Brainstorming/Feature-Auswahl) ist bewusst
 **nicht** autonom — der Nutzer möchte hier aktiv mitentscheiden, alle anderen
