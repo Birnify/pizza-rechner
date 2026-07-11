@@ -49,6 +49,7 @@
 <script src="../js/calc.js"></script>
 <script src="../js/print.js"></script>
 <script src="../js/storage.js"></script>
+<script src="../js/share.js"></script>
 
 <script>
 "use strict";
@@ -1227,6 +1228,98 @@
     // Ursprünglichen Stand (falls vorhanden) wiederherstellen, sonst Testspuren entfernen
     if (backup !== null) localStorage.setItem(STORAGE_KEY, backup);
     else localStorage.removeItem(STORAGE_KEY);
+  })();
+
+  // ─────────────────────────────────────────────────────────────
+  heading('17 · Teilen-Link (js/share.js) — Kodieren, Rundreise, defensive Fehlerbehandlung');
+  (function () {
+    // --- Reine Kodierung/Dekodierung: Base64-JSON-Rundreise liefert 1:1 dasselbe Objekt ---
+    (function () {
+      const original = Object.assign({}, BASE, { balls: 6, hyd: 68, salt: 3.1, flour: 'caputo_cuoco' });
+      const encoded = PZ.encodeShareState(original);
+      const decoded = PZ.decodeShareState(encoded);
+      renderBox('encodeShareState()/decodeShareState() — reine Rundreise ohne Datenverlust', [
+        { label: 'Kodiertes Ergebnis ist ein nicht-leerer String', ok: typeof encoded === 'string' && encoded.length > 0, actual: typeof encoded, expected: 'string', tol: null },
+        { label: 'balls nach Rundreise identisch', ok: decoded.balls === original.balls, actual: decoded.balls, expected: original.balls, tol: null },
+        { label: 'hyd nach Rundreise identisch', ok: decoded.hyd === original.hyd, actual: decoded.hyd, expected: original.hyd, tol: null },
+        { label: 'salt nach Rundreise identisch', ok: decoded.salt === original.salt, actual: decoded.salt, expected: original.salt, tol: null },
+        { label: 'flour (String-Feld) nach Rundreise identisch', ok: decoded.flour === original.flour, actual: decoded.flour, expected: original.flour, tol: null }
+      ]);
+    })();
+
+    // --- Voller Rundreise-Test wie in der Aufgabenstellung gefordert:
+    //     State setzen -> Link bauen -> Link "laden" (URL simulieren) -> State stimmt überein ---
+    (function () {
+      Object.assign(PZ.state, BASE, { balls: 7, hyd: 71, salt: 2.6, oil: 3, flour: 'caputo_cuoco' });
+      const link = PZ.buildShareLink();
+      // buildShareLink() nutzt location.href als Basis (Test läuft von tests/test.html) —
+      // wir extrahieren nur den kodierten Parameter und simulieren damit exakt das, was
+      // tryLoadFromShareLink() beim Öffnen eines solchen Links aus der echten URL läse.
+      const encodedParam = new URL(link).searchParams.get('r');
+
+      // State zurücksetzen (simuliert einen frischen Seitenaufruf mit anderen Werten)
+      Object.assign(PZ.state, BASE, { balls: 1, hyd: 55, salt: 1, oil: 0, flour: 'caputo_pizzeria' });
+
+      // history.replaceState + URLSearchParams über die echte Test-URL ansteuern, indem
+      // wir denselben Parameter an die aktuelle Test-URL anhängen, laden lassen, danach
+      // wieder sauber entfernen (darf die Test-Seite nicht dauerhaft verändern).
+      const originalUrl = location.href;
+      const testUrl = new URL(originalUrl);
+      testUrl.searchParams.set('r', encodedParam);
+      history.replaceState(null, '', testUrl.toString());
+
+      const applied = PZ.tryLoadFromShareLink();
+
+      const balls = PZ.state.balls, hyd = PZ.state.hyd, salt = PZ.state.salt, oil = PZ.state.oil, flour = PZ.state.flour;
+      const urlAfter = location.href;
+
+      // Test-URL wieder auf den Ausgangsstand zurücksetzen
+      history.replaceState(null, '', originalUrl);
+
+      renderBox('Rundreise-Test: State kodieren -> Link "laden" -> State stimmt überein', [
+        { label: 'tryLoadFromShareLink() meldet Erfolg (true)', ok: applied === true, actual: applied, expected: true, tol: null },
+        { label: 'balls nach Link-Laden korrekt übernommen', ok: balls === 7, actual: balls, expected: 7, tol: null },
+        { label: 'hyd nach Link-Laden korrekt übernommen', ok: hyd === 71, actual: hyd, expected: 71, tol: null },
+        { label: 'salt nach Link-Laden korrekt übernommen', ok: salt === 2.6, actual: salt, expected: 2.6, tol: null },
+        { label: 'oil nach Link-Laden korrekt übernommen', ok: oil === 3, actual: oil, expected: 3, tol: null },
+        { label: 'flour nach Link-Laden korrekt übernommen', ok: flour === 'caputo_cuoco', actual: flour, expected: 'caputo_cuoco', tol: null },
+        { label: 'Parameter "r" wird nach dem Laden aus der URL entfernt', ok: !new URL(urlAfter).searchParams.has('r'), actual: new URL(urlAfter).searchParams.has('r'), expected: false, tol: null }
+      ]);
+    })();
+
+    // --- Defensive Fehlerbehandlung: kaputte/alte/fremde Links dürfen NIE abstürzen ---
+    (function () {
+      const originalUrl = location.href;
+
+      function withParam(rawValue, fn) {
+        const u = new URL(originalUrl);
+        if (rawValue === null) u.searchParams.delete('r');
+        else u.searchParams.set('r', rawValue);
+        history.replaceState(null, '', u.toString());
+        let threw = false, result;
+        try { result = PZ.tryLoadFromShareLink(); } catch (e) { threw = true; }
+        history.replaceState(null, '', originalUrl);
+        return { threw, result };
+      }
+
+      const marker = { balls: 42 };
+      Object.assign(PZ.state, marker);
+
+      const noParam = withParam(null);
+      const notBase64 = withParam('%%%nicht-base64%%%');
+      const validBase64ButNotJson = withParam(btoa('das ist kein json'));
+      const validJsonButNotObject = withParam(btoa(JSON.stringify([1, 2, 3])));
+      const validJsonButUnrelatedObject = withParam(btoa(JSON.stringify({ foo: 'bar' })));
+
+      renderBox('Defensive Fehlerbehandlung — kaputte/alte/fremde Links crashen nie', [
+        { label: 'Kein Parameter -> false, kein Fehler', ok: !noParam.threw && noParam.result === false, actual: noParam, expected: '{threw:false,result:false}', tol: null },
+        { label: 'Ungültiges Base64 -> false, kein Fehler', ok: !notBase64.threw && notBase64.result === false, actual: notBase64, expected: '{threw:false,result:false}', tol: null },
+        { label: 'Gültiges Base64, aber kein JSON -> false, kein Fehler', ok: !validBase64ButNotJson.threw && validBase64ButNotJson.result === false, actual: validBase64ButNotJson, expected: '{threw:false,result:false}', tol: null },
+        { label: 'Gültiges JSON, aber ein Array statt Objekt -> false, kein Fehler', ok: !validJsonButNotObject.threw && validJsonButNotObject.result === false, actual: validJsonButNotObject, expected: '{threw:false,result:false}', tol: null },
+        { label: 'Gültiges JSON-Objekt, aber kein plausibler state (keine balls/hyd) -> false, kein Fehler', ok: !validJsonButUnrelatedObject.threw && validJsonButUnrelatedObject.result === false, actual: validJsonButUnrelatedObject, expected: '{threw:false,result:false}', tol: null },
+        { label: 'PZ.state bleibt bei jedem abgelehnten Link unangetastet (Marker balls=42)', ok: PZ.state.balls === 42, actual: PZ.state.balls, expected: 42, tol: null }
+      ]);
+    })();
   })();
 
   // ─────────────────────────────────────────────────────────────

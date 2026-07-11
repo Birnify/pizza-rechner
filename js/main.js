@@ -71,7 +71,12 @@
     };
   }
 
-  PZ.load();
+  // Ein gültiger Teilen-Link (?r=…, js/share.js) hat Vorrang vor dem zuletzt
+  // gespeicherten Rezept — wer einen Link öffnet, will das geteilte Rezept sehen.
+  // Bei fehlendem/kaputtem Link (oder falls js/share.js gar nicht geladen ist)
+  // greift ganz normal PZ.load().
+  const sharedApplied = PZ.tryLoadFromShareLink ? PZ.tryLoadFromShareLink() : false;
+  if (!sharedApplied) PZ.load();
   refreshRecipeSelect();
   PZ.applyMethod();
   PZ.calc();

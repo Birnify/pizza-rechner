@@ -164,6 +164,7 @@
 
   PZ.save = save;
   PZ.load = load;
+  PZ.applyState = applyState;
   PZ.saveAsNew = saveAsNew;
   PZ.renameActive = renameActive;
   PZ.deleteRecipe = deleteRecipe;

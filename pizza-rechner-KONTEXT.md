@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-11 · Aktuelle Version: v3.13.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-11 · Aktuelle Version: v3.14.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -159,7 +159,60 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Mobil-Overflow-Härtung v3.13.1 = aktueller Stand
+## Teilen-Link (v3.14.0, `js/share.js`) + Accessibility-Audit = aktueller Stand
+
+Neues Feature: Button „Link kopieren" (`#shareLinkBtn`, `.actions`-Block, unter dem
+Druck-Button-`row2`, identisch in Desktop + Mobil) kodiert `PZ.state` als Base64-JSON
+in `?r=`-Query-Parameter, kopiert den vollständigen Link in die Zwischenablage
+(`navigator.clipboard.writeText`, Fallback `document.execCommand('copy')` für
+`file://`-Kontexte ohne sicheren Ursprung). Beim Laden übernimmt
+`tryLoadFromShareLink()` einen vorhandenen `?r=`-Parameter über `PZ.applyState()`
+(dieselbe Funktion wie beim Laden eines gespeicherten Rezepts) und entfernt den
+Parameter danach per `history.replaceState`. Defensiv: jeder Fehler (kaputtes
+Base64/JSON, unplausibler Inhalt) führt zu einem stillen no-op, nie zum Absturz.
+
+**Gezielter WCAG-2.1-AA-Audit nur für dieses neue UI-Stück** (nicht die ganze App
+neu geprüft — Methodik/Stil wie v3.7.0/v3.12.0):
+
+- **Major — Kopier-Bestätigung ohne Live-Region (4.1.3 Status Messages):** Der Klick
+  auf „Link kopieren" ändert `btn.textContent` auf „Link kopiert!“/„Kopieren
+  fehlgeschlagen“ für 1,8 s, aber ohne jede ARIA-Live-Eigenschaft — und das Kopieren
+  in die Zwischenablage hat sonst **keinen** anderen sichtbaren Effekt, den
+  Screenreader-Nutzer verifizieren könnten (anders als z. B. `#saveBtn`, dessen
+  Erfolg zusätzlich am aktualisierten Rezept-Dropdown ablesbar wäre — dort besteht
+  dieselbe Lücke, wurde aber bewusst nicht mit angefasst, da außerhalb des Audit-
+  Scopes dieser Session). Fix: neue, dauerhaft im DOM stehende, visuell versteckte
+  Live-Region `<div id="shareLiveMsg" class="visually-hidden" role="status"
+  aria-live="polite">` direkt nach `#shareHint` (Desktop + Mobil identisch).
+  `copyShareLink()` schreibt dieselbe Meldung sowohl in `btn.textContent` (sichtbares
+  Feedback) als auch in `#shareLiveMsg` (Screenreader-Ansage) und leert die
+  Live-Region beim Zurücksetzen wieder. Bewusst **kein** `role="status"` direkt auf
+  den Button selbst gesetzt — das würde dessen native Button-Rolle überschreiben.
+- **Minor — `#shareHint` nur visuell neben dem Button (1.3.1):** Fix:
+  `aria-describedby="shareHint"` auf `#shareLinkBtn`.
+- **Geprüft, kein Fix nötig:**
+  - Button-Text „Link kopieren“ ist selbsterklärend, kein Icon-only-Problem (2.4.6).
+  - `#shareLinkBtn` liegt außerhalb von `.row2` und bekommt daher die Basis-Regel
+    `.actions button` (weißer Hintergrund `#fff`, Text `--ink` `#2b2420`, Rahmen
+    `--line`) statt des transparenten Ghost-Stils der Druck-Buttons — Kontrast
+    Text/Hintergrund weit über AA (>13:1), kein Blocker.
+  - `.hint`-Grauton `#6e6359` auf weißer Karte: rechnerisch **5,84:1**, besteht AA
+    für Normaltext.
+  - Natives `<button>`, kein `outline:none` in `.actions button` → Standard-Fokusring
+    bleibt sichtbar, Tab-Reihenfolge folgt der DOM-Position (nach den Druck-Buttons,
+    vor `#shareHint`).
+
+**Tests:** `tests/test.html` prüft nur die reinen Encode/Decode/Rundreise-Funktionen
+von `share.js` (Abschnitt „17 · Teilen-Link“), ruft `copyShareLink()` nicht auf —
+die neue Live-Region/das `aria-describedby` brechen dort nichts. Alle 311 Prüfungen
+weiterhin grün (Headless-Edge-Dump verifiziert).
+
+Cache-Busting (`?v=`) bewusst bei `3.14.0` belassen (nicht auf `3.14.1` hochgezogen),
+weil Feature + Audit-Fix als ein zusammenhängender Stand behandelt wurden — beides
+kam vor dem ersten Commit dieses Standes zusammen. `Versionen/v3.14.0 - Teilen-Link/`
+enthält den vollständigen Schnappschuss.
+
+## Mobil-Overflow-Härtung v3.13.1
 
 Gezielter Fix für den in v3.13.0 als Nebenbefund notierten horizontalen Overflow auf sehr
 schmalen Mobil-Viewports (~430 px, iPhone SE/Mini). Reine CSS-Änderung, kein Markup/keine
@@ -1045,7 +1098,10 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
 - Mehl- und Raumtemperatur getrennt einstellbar (aktuell als gleich angenommen)
 - Zucker-Feld (New York Style) — bewusst noch nicht drin; Öl ist seit v3.3.0 integriert
 - ~~Einkaufsliste generieren; Druck nur für die Anleitung~~ — **erledigt in v3.9.0**
-- ~~Gärzeit-Timer / Wecker~~ — **erledigt in v3.11.0**; Export als PDF / Teilen-Link (offen)
+- ~~Gärzeit-Timer / Wecker~~ — **erledigt in v3.11.0**
+- ~~Teilen-Link (State als Base64-JSON in der URL)~~ — **erledigt in v3.14.0**; Export
+  als PDF weiterhin offen (bewusst nicht mitgebaut, s. Abschnitt oben — Nutzer wollte
+  nur den reinen Teilen-Link, keinen zusätzlichen PDF-Button)
 - ~~Mehrere gespeicherte Rezepte (statt einem localStorage-Slot)~~ — **erledigt in v3.10.0**
 - ~~Mobil-Overflow bei sehr schmalen Viewports (~430 px)~~ — **untersucht/gehärtet in
   v3.13.1**: kein reproduzierbarer DOM-Overflow in Chromium nachweisbar (ursprünglicher
