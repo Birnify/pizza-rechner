@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-11 · Aktuelle Version: v3.11.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-11 · Aktuelle Version: v3.12.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -159,7 +159,67 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Gärzeit-Timer / Wecker (v3.11.0) = aktueller Stand
+## Accessibility-Nachaudit v3.12.0 (Timer, Rezepte, Einkaufsliste) = aktueller Stand
+
+WCAG-2.1-AA-Nachaudit gezielt für die drei jüngsten Feature-Runden (Einkaufsliste/Druck
+v3.9.0, Mehrfach-Rezepte v3.10.0, Gärzeit-Timer v3.11.0) — dieselbe Methodik/derselbe Stil
+wie beim ursprünglichen Audit in v3.7.0 (s. u.), diesmal mit Fokus auf die neuen
+Custom-Controls. Befundliste: 2 Blocker, 2 Major — alle behoben.
+
+- **Blocker — Timer-Countdown/„Fertig!"-Zustand ohne Live-Region (1.3.1, 4.1.3 Status
+  Messages):** `js/timer.js` aktualisiert `.timerclock-val` per `setInterval` jede Sekunde
+  und schreibt bei Ablauf einen neuen „🔔 Fertig!"-Zustand per `innerHTML` — beides ohne
+  jede ARIA-Live-Eigenschaft. Screenreader-Nutzer bekamen weder den laufenden Countdown
+  noch den Timer-Ablauf mitgeteilt. Fix: `aria-live="polite" aria-atomic="true"` auf dem
+  **statischen** `.timerbox`-Container (identisches Muster wie `#flourWarn` aus v3.7.0 —
+  nicht auf dynamisch ersetzten Kindern, sonst feuert es nicht zuverlässig), gesetzt in
+  `render()` bei jedem Aufruf. Die Sekunden-Ziffern selbst (`.timerclock-val`) bekommen
+  bewusst `aria-hidden="true"`, damit **nicht** jede Sekunde eine Ansage ausgelöst wird
+  (würde bei `aria-live="polite"` zu einer Ansage-Spam-Kaskade führen) — angesagt werden
+  nur die Zustandswechsel Start → Laufend → Fertig (kompletter `.timerwrap`-Austausch via
+  `innerHTML` löst dann die Live-Region aus). `.timerdone` bekam zusätzlich `role="status"`.
+- **Blocker — `#recipeName` ohne Label (1.3.1, 4.1.2):** Das Eingabefeld für den Namen
+  eines neuen Rezepts hatte nur einen `placeholder`, der kein Ersatz für ein Label ist
+  (verschwindet bei Eingabe, wird von vielen AT nicht als Name vorgelesen). Fix: sichtbar
+  verstecktes `<label for="recipeName" class="visually-hidden">Name für neues Rezept</label>`.
+  Neue Utility-Klasse `.visually-hidden` in `css/styles.css` (Standard-Clip-Pattern:
+  Element bleibt für AT lesbar, ist aber optisch nicht sichtbar — hier bewusst gewählt statt
+  eines sichtbaren Labels, weil das Feld durch den Karten-Titel „💾 Meine Rezepte" +
+  `#recipeSaveNew`-Button-Beschriftung „➕ Neu" visuell bereits selbsterklärend ist).
+- **Major — Kontrast `.timerclock` (1.4.3):** Tomatenrot-Text `#c8442e` auf dem
+  Chip-Hintergrund `#fff3e8` kam auf **4,45:1** — knapp unter dem AA-Soll von 4,5:1 für
+  normalen Text (13px, kein „large text"). Fix: Text auf `--tomato-dark` (`#a8341f`)
+  umgestellt → **6,06:1**, deutlich bestanden. `--tomato-dark` existierte bereits als
+  CSS-Variable (Header-Gradient), keine neue Farbe eingeführt.
+- **Major — einmaliger Timer-Hinweistext ohne Live-Region:** `.timerhint` (erscheint beim
+  ersten Timer-Start, verschwindet nach 9 s) hatte keine ARIA-Live-Eigenschaft — AT-Nutzer
+  hätten den informativen Hinweis „Der Timer läuft nur, solange dieser Tab geöffnet ist…"
+  nie mitbekommen. Fix: `role="status" aria-live="polite"` beim Erzeugen des Elements.
+- **Geprüft, kein Fix nötig:**
+  - Keyboard-Durchlauf durch die dynamisch pro Anleitungs-Schritt gerenderten Timer-Buttons
+    (Start/Abbrechen/Zurücksetzen) folgt der DOM-/visuellen Reihenfolge (Timer-Box steht im
+    Markup nach dem `<p>`-Body des Schritts, exakt wie visuell); native `<button>`-Elemente
+    ohne `outline:none`, Standard-Fokusring bleibt sichtbar (Desktop + Mobil).
+  - Einkaufsliste (`#shoppingList`, `js/print.js`): Zeilen (`.ing` mit `.name`/`.amt`) nutzen
+    dasselbe, bereits in v3.7.0 akzeptierte Muster wie das Ergebnis-Panel (Label und Wert im
+    selben Flex-Container, in DOM-Reihenfolge vorlesbar) — kein neuer Fund. Die beiden
+    Druck-Buttons „🛒 Einkaufsliste drucken"/„📝 Anleitung drucken" haben aussagekräftige,
+    eindeutige Textbeschriftungen (kein reines Icon).
+  - `prompt()`/`confirm()`-Dialoge (Umbenennen/Löschen eines Rezepts in `js/main.js`) sind
+    native Browser-Dialoge — Fokus-Management/Tastaturbedienbarkeit liegt beim Browser,
+    kein zusätzlicher Fix nötig.
+  - `#recipeSelect` ist bereits korrekt mit `<label for="recipeSelect">`/`aria-labelledby`
+    verknüpft (identisches Muster wie `#preset`-Karte), keine Nacharbeit nötig.
+- **Nicht angefasst (Test-Risiko):** `js/timer.js` wird in `tests/test.html` bewusst nicht
+  geladen (Browser-APIs wie `Notification`/`setInterval`/Web Audio sind kein sinnvolles
+  Unit-Test-Ziel, s. v3.11.0-Abschnitt) — die neuen ARIA-Attribute darin kollidieren also
+  nicht mit den bestehenden 293 Prüfungen. `js/print.js`/`js/storage.js` wurden nicht
+  verändert (nur HTML-Label + CSS-Klasse ergänzt) — auch dort unverändert grün.
+- Manuell verifiziert per Headless-Edge-Dump (`--dump-dom`) gegen `tests/test.html`: alle
+  293 Prüfungen weiterhin bestanden. `?v=` auf 3.12.0 gezogen (Desktop + Mobil),
+  Standalone-Datei neu gebaut.
+
+## Gärzeit-Timer / Wecker (v3.11.0)
 
 Neues Modul `js/timer.js` (in Ladereihenfolge nach `guide.js`, vor `ui.js` — braucht
 `PZ.$`/DOM, wird von `js/guide.js` nur optional aufgerufen). Rein clientseitig,
@@ -539,14 +599,14 @@ js/storage.js        PZ.save()/PZ.load() + Mehrfach-Rezepte (saveAsNew/renameAct
                      loadRecipe/listRecipes), localStorage-Format {recipes[],activeId}, migriert
                      alten Einzel-Slot-Stand automatisch
 js/main.js           Start: Speichern-Button, Rezept-Auswahl/-Buttons, load(), applyMethod(), calc()
-tests/test.html      248 Prüfungen in 16 Kategorien (Doppelklick, kein Server)
+tests/test.html      293 Prüfungen in 16 Kategorien (Doppelklick, kein Server)
 README.md            kurzer Einstieg
 ```
 
 **Ladereihenfolge** (Abhängigkeiten): dom → state → flour → calc → schedule → guide →
 timer → ui → print → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur über `window.PZ`.
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.11.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.12.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1):** Im `<footer>` beider HTML-Dateien (Desktop +
 Mobil, identisch) steht `<span id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine
@@ -604,6 +664,27 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
   geladenes `js/timer.js`). Manuell verifiziert: Timer-Start/-Countdown/-Ablauf, Notification-
   Permission-Flows (erlaubt/verweigert/„default"), Persistenz über Reload, mehrere parallele
   Timer, Struktur-Check per Headless-Edge-Dump auf allen drei HTML-Dateien.
+  v3.11.1 (reine Test-Erweiterung, kein Feature/keine Logik-Änderung): Sektionen „15 ·
+  Einkaufsliste" und „16 · Speichern & Laden" von 248 auf **293 Prüfungen** gehärtet.
+  Neu in „15": Poolish zeigt ebenfalls Gesamtmengen (bisher nur Biga getestet),
+  Frisch-/Trockenhefe-Label `R.yWord` in der Liste, Hefe-Rundungsgrenze exakt an 10 g
+  (knapp unter → 2 Nachkommastellen, knapp über → gerundete Ganzzahl bei 20 Teiglingen),
+  Extremwerte 1 bzw. 20 Teiglinge (Gesamtteig bleibt exakt N × W), 0 %-Öl-Grenzfall, sowie
+  `buildShoppingList()` ohne `PZ.R` (z. B. vor dem ersten `calc()`) wirft keinen Fehler.
+  Neu in „16": leerer localStorage (kein Key) und korruptes JSON (`JSON.parse` schlägt fehl)
+  werden beide fehlerfrei wie „leer" behandelt (`listRecipes()` = `[]`, `getActiveId()` =
+  `null`); Löschen des **letzten** verbleibenden Rezepts (`activeId` wird `null`); Löschen
+  eines **nicht-aktiven** Rezepts (`activeId` bleibt unverändert); Umbenennen auf einen
+  bereits vergebenen Namen (Duplikate sind erlaubt, keine Dedupe-Logik in `renameActive()`);
+  Umbenennen auf leeren/Leerzeichen-String (No-op, Name bleibt); `saveAsNew()` ohne
+  gültigen Namen erzeugt fortlaufend „Rezept 1"/„Rezept 2"/„Rezept 3"; `loadRecipe()` mit
+  unbekannter id (No-op, weder `activeId` noch `PZ.state` ändern sich); mehrfaches `PZ.save()`
+  auf demselben aktiven Rezept überschreibt (keine Duplikate, gleiche `id`). Verifiziert per
+  Headless-Edge-Dump (`msedge --headless --virtual-time-budget=5000 --dump-dom`, **nicht**
+  das Preview-Tool — Cache-Fehlalarm-Risiko mit alten `js/*`-Ständen): alle 293 Prüfungen grün.
+  v3.12.0 (Accessibility-Nachaudit, s. o.): reine ARIA-/CSS-/Label-Ergänzung, `js/timer.js`
+  wird in `tests/test.html` weiterhin nicht geladen (Browser-APIs, s. o.) — 293 Prüfungen
+  unverändert grün, erneut per Headless-Edge-Dump verifiziert.
 - **Git:** Repo im Hauptordner, kleine Commits pro Änderungs-Satz. `Versionen/` + `.claude/` gitignored.
 - **Plattform:** Windows / PowerShell. Kein Node, keine Build-Tools.
 - **Preview-Hinweis:** Das Preview-Tool (localhost-Server) war in mehreren Sessions unzuverlässig
@@ -682,7 +763,7 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
     getestet — jetzt wird geprüft, dass der zurückgerechnete Startzeitpunkt korrekt im
     Anleitungstext erscheint (auch mit Vorteig-Reifezeit bei Biga).
   - Kein Bug gefunden — alle neuen Tests liefen beim ersten Anlauf grün gegen die bestehende Logik.
-- **v3.7.0 — Accessibility (WCAG 2.1 AA)** = aktueller Stand:
+- **v3.7.0 — Accessibility (WCAG 2.1 AA)**:
   - Alle Slider/Zahlenfelder + Selects + Zeitfeld jetzt programmatisch mit ihrem `<label>`
     verknüpft (`for`/`aria-labelledby`/`aria-label`) — vorher komplett unverknüpft.
   - Segment-Buttons + Vorteig-Reife-Pills bekommen `aria-pressed` (zentral in `js/ui.js`
@@ -719,7 +800,7 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
   - `js/print.js` in beide HTML-Dateien eingebunden, `?v=` auf 3.9.0, Standalone neu gebaut.
   - Neue Test-Sektion „15 · Einkaufsliste" (213 → 222 Prüfungen), bestehende Tests unverändert
     grün (kein bestehendes Modul angefasst).
-- **v3.10.0 — Mehrere gespeicherte Rezepte** = aktueller Stand:
+- **v3.10.0 — Mehrere gespeicherte Rezepte**:
   - `js/storage.js` umgebaut: `localStorage['pizzaRechner']` speichert jetzt beliebig viele
     benannte Rezepte (`{recipes:[{id,name,state,savedAt}], activeId}`) statt eines nackten
     `state`. Alter Einzel-Slot-Stand wird beim ersten `load()` automatisch und verlustfrei zu
@@ -732,7 +813,7 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
   - Neue Test-Sektion „16 · Speichern & Laden" (222 → 248 Prüfungen): Migration + Mehrfach-
     Rezepte, sichert/restauriert einen eventuell vorhandenen echten Speicherstand.
   - `?v=` auf 3.10.0 gezogen (Desktop + Mobil), Standalone-Datei neu gebaut.
-- **v3.11.0 — Gärzeit-Timer / Wecker** = aktueller Stand:
+- **v3.11.0 — Gärzeit-Timer / Wecker**:
   - Neues Modul `js/timer.js`: Timer-Widget je Anleitungs-Schritt mit nennenswerter
     Wartezeit (Autolyse, Stretch & Fold, Vorteig reifen lassen, Stockgare, Stückgare,
     Ofen vorheizen). Rein clientseitig, kein Server/Service-Worker — läuft nur solange
@@ -749,6 +830,31 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
     Dateien ergänzt, `?v=` auf 3.11.0, Standalone neu gebaut.
   - Keine neue Test-Sektion (Browser-APIs nicht sinnvoll unit-testbar); bestehende
     248 Prüfungen unverändert grün, manuell im Browser verifiziert.
+- **v3.11.1 — Testsuite gehärtet (Einkaufsliste & Speichern/Laden)**:
+  - Reine Testergänzung, **keine** Logik-/Feature-Änderung in `js/print.js` oder
+    `js/storage.js` — kein `?v=`-Bump, kein Standalone-Rebuild nötig.
+  - Sektion „15 · Einkaufsliste": Poolish (bisher nur Biga) zeigt ebenfalls Gesamt- statt
+    Vorteig-Mengen, Frisch-/Trockenhefe-Label `R.yWord`, Hefe-Rundungsgrenze exakt an 10 g
+    (2 Nachkommastellen vs. gerundete Ganzzahl), Extremwerte 1/20 Teiglinge, 0 %-Öl-Grenzfall,
+    `buildShoppingList()` ohne `PZ.R` wirft keinen Fehler.
+  - Sektion „16 · Speichern & Laden": leerer localStorage, korruptes JSON (beide fehlerfrei
+    wie „leer" behandelt), Löschen des letzten bzw. eines nicht-aktiven Rezepts, Umbenennen
+    auf Duplikat-Namen bzw. leeren String, `saveAsNew()` ohne Namen (fortlaufende
+    „Rezept N"-Namen), `loadRecipe()` mit unbekannter id, mehrfaches `PZ.save()` auf
+    demselben Rezept (überschreibt, kein Duplikat).
+  - 248 → 293 Prüfungen, alle grün (verifiziert per Headless-Edge-Dump, nicht per
+    Preview-Tool — Cache-Fehlalarm-Risiko).
+- **v3.12.0 — Accessibility-Nachaudit (Timer, Rezepte, Einkaufsliste)** = aktueller Stand:
+  - Gezielter WCAG-2.1-AA-Nachaudit für die drei jüngsten Feature-Runden (v3.9.0–v3.11.0),
+    siehe Abschnitt „Accessibility-Nachaudit v3.12.0" oben für Details. 2 Blocker (Timer-
+    Countdown/„Fertig!" ohne Live-Region, `#recipeName` ohne Label), 2 Major (Kontrast
+    `.timerclock` 4,45:1→6,06:1, Timer-Hinweistext ohne Live-Region) — alle behoben.
+  - Geänderte Dateien: `js/timer.js` (Live-Region + `aria-hidden` auf Sekunden-Countdown),
+    `css/styles.css` (`.timerclock`-Textfarbe, neue `.visually-hidden`-Utility-Klasse),
+    `pizza-rechner.html` + `pizza-rechner-mobile.html` (Label für `#recipeName`).
+  - Keine Logikänderung, `js/print.js`/`js/storage.js` unangetastet. 293 Prüfungen
+    unverändert grün (verifiziert per Headless-Edge-Dump). `?v=` auf 3.12.0 gezogen
+    (Desktop + Mobil), Standalone-Datei neu gebaut.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 

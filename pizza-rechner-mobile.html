@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-title" content="Pizzateig">
 <meta name="theme-color" content="#c8442e">
 <title>Pizzateig-Rechner · Mobil</title>
-<link rel="stylesheet" href="css/styles.css?v=3.11.0">
-<link rel="stylesheet" href="css/mobile.css?v=3.11.0">
+<link rel="stylesheet" href="css/styles.css?v=3.12.0">
+<link rel="stylesheet" href="css/mobile.css?v=3.12.0">
 </head>
 <body>
 <header>
@@ -56,6 +56,7 @@
             <option value="">— noch keins gespeichert —</option>
           </select>
           <div class="row" style="margin-top:8px;gap:8px;">
+            <label for="recipeName" class="visually-hidden">Name für neues Rezept</label>
             <input type="text" id="recipeName" class="selectbox" placeholder="Name für neues Rezept" style="flex:2;">
             <button type="button" id="recipeSaveNew" style="flex:1;">➕ Neu</button>
           </div>
@@ -323,7 +324,7 @@
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
   Alles wird lokal in deinem Browser gerechnet &amp; gespeichert · keine Internetverbindung nötig<br>
   Bäckerprozente — Wasser, Salz &amp; Hefe immer relativ zur Mehlmenge (= 100 %)<br>
-  <span id="appVersion" style="opacity:.7;">v3.11.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.12.0</span>
 </footer>
 
 <div class="quickbar">
@@ -332,18 +333,18 @@
 </div>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.11.0"></script>
-<script src="js/state.js?v=3.11.0"></script>
-<script src="js/flour.js?v=3.11.0"></script>
-<script src="js/calc.js?v=3.11.0"></script>
-<script src="js/schedule.js?v=3.11.0"></script>
-<script src="js/guide.js?v=3.11.0"></script>
-<script src="js/timer.js?v=3.11.0"></script>
-<script src="js/ui.js?v=3.11.0"></script>
-<script src="js/print.js?v=3.11.0"></script>
-<script src="js/presets.js?v=3.11.0"></script>
-<script src="js/storage.js?v=3.11.0"></script>
-<script src="js/main.js?v=3.11.0"></script>
+<script src="js/dom.js?v=3.12.0"></script>
+<script src="js/state.js?v=3.12.0"></script>
+<script src="js/flour.js?v=3.12.0"></script>
+<script src="js/calc.js?v=3.12.0"></script>
+<script src="js/schedule.js?v=3.12.0"></script>
+<script src="js/guide.js?v=3.12.0"></script>
+<script src="js/timer.js?v=3.12.0"></script>
+<script src="js/ui.js?v=3.12.0"></script>
+<script src="js/print.js?v=3.12.0"></script>
+<script src="js/presets.js?v=3.12.0"></script>
+<script src="js/storage.js?v=3.12.0"></script>
+<script src="js/main.js?v=3.12.0"></script>
 <script>
   // Mobil-only UI-Glue (kein Eingriff in die PZ-Rechenmodule)
   (function(){

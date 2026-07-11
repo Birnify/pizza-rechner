@@ -22,6 +22,10 @@
   --shadow:0 2px 14px rgba(120,90,60,.10);
 }
 *{box-sizing:border-box;}
+.visually-hidden{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
 body{
   margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   background:var(--bg);color:var(--ink);line-height:1.5;
@@ -179,7 +183,7 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .timerbtn-start{background:var(--tomato);color:#fff;border-color:var(--tomato);}
 .timerbtn:hover{filter:brightness(.96);}
 .timerclock{
-  font-size:13px;font-weight:800;color:var(--tomato);font-variant-numeric:tabular-nums;
+  font-size:13px;font-weight:800;color:var(--tomato-dark);font-variant-numeric:tabular-nums;
   background:#fff3e8;border:1px solid var(--crust);padding:5px 11px;border-radius:20px;
 }
 .timerdone{
@@ -348,6 +352,7 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
             <option value="">— noch keins gespeichert —</option>
           </select>
           <div class="row" style="margin-top:8px;gap:8px;">
+            <label for="recipeName" class="visually-hidden">Name für neues Rezept</label>
             <input type="text" id="recipeName" class="selectbox" placeholder="Name für neues Rezept" style="flex:2;">
             <button type="button" id="recipeSaveNew" style="flex:1;">➕ Neu</button>
           </div>
@@ -615,7 +620,7 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
   Alles wird lokal in deinem Browser gerechnet &amp; gespeichert · keine Internetverbindung nötig<br>
   Bäckerprozente — Wasser, Salz &amp; Hefe immer relativ zur Mehlmenge (= 100 %)<br>
-  <span id="appVersion" style="opacity:.7;">v3.11.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.12.0</span>
 </footer>
 
 <div class="quickbar">
@@ -1260,6 +1265,8 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
     try { if (localStorage.getItem(HINT_KEY)) return; localStorage.setItem(HINT_KEY, '1'); } catch (e) { /* ignore */ }
     const hint = document.createElement('div');
     hint.className = 'timerhint';
+    hint.setAttribute('role', 'status');
+    hint.setAttribute('aria-live', 'polite');
     hint.innerHTML = 'ℹ️ Der Timer läuft nur, solange dieser Tab/dieses Fenster geöffnet ist — kein Wecker mehr, wenn du den Tab schließt.';
     box.parentNode.insertBefore(hint, box.nextSibling);
     setTimeout(() => hint.remove(), 9000);
@@ -1272,6 +1279,14 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
     const all = readTimers();
     const t = all[key];
 
+    // Live-Region auf dem STATISCHEN .timerbox-Container (nicht auf dynamisch ersetzten
+    // Kindern) — analog zu #flourWarn, sonst feuert es nicht zuverlässig bei jedem Update.
+    // aria-live bewusst nur "polite" + Countdown-Ziffern per aria-hidden: der laufende
+    // Sekunden-Countdown selbst wird NICHT jede Sekunde vorgelesen (würde bei "polite"
+    // zu einer Ansage-Spam-Kaskade führen) — nur Start/Abbruch/Fertig-Zustandswechsel.
+    box.setAttribute('aria-live', 'polite');
+    box.setAttribute('aria-atomic', 'true');
+
     box.innerHTML = '';
     const wrap = document.createElement('div');
     wrap.className = 'timerwrap';
@@ -1279,10 +1294,10 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
     if (t && t.endAt) {
       const remain = t.endAt - Date.now();
       if (remain <= 0) {
-        wrap.innerHTML = `<span class="timerdone">🔔 Fertig!</span>
+        wrap.innerHTML = `<span class="timerdone" role="status">🔔 Fertig!</span>
           <button type="button" class="timerbtn" data-act="dismiss">Zurücksetzen</button>`;
       } else {
-        wrap.innerHTML = `<span class="timerclock">⏳ <span class="timerclock-val"></span> verbleibend</span>
+        wrap.innerHTML = `<span class="timerclock">⏳ <span class="timerclock-val" aria-hidden="true"></span> verbleibend</span>
           <button type="button" class="timerbtn" data-act="stop">Abbrechen</button>`;
       }
     } else {

@@ -78,6 +78,8 @@
     try { if (localStorage.getItem(HINT_KEY)) return; localStorage.setItem(HINT_KEY, '1'); } catch (e) { /* ignore */ }
     const hint = document.createElement('div');
     hint.className = 'timerhint';
+    hint.setAttribute('role', 'status');
+    hint.setAttribute('aria-live', 'polite');
     hint.innerHTML = 'ℹ️ Der Timer läuft nur, solange dieser Tab/dieses Fenster geöffnet ist — kein Wecker mehr, wenn du den Tab schließt.';
     box.parentNode.insertBefore(hint, box.nextSibling);
     setTimeout(() => hint.remove(), 9000);
@@ -90,6 +92,14 @@
     const all = readTimers();
     const t = all[key];
 
+    // Live-Region auf dem STATISCHEN .timerbox-Container (nicht auf dynamisch ersetzten
+    // Kindern) — analog zu #flourWarn, sonst feuert es nicht zuverlässig bei jedem Update.
+    // aria-live bewusst nur "polite" + Countdown-Ziffern per aria-hidden: der laufende
+    // Sekunden-Countdown selbst wird NICHT jede Sekunde vorgelesen (würde bei "polite"
+    // zu einer Ansage-Spam-Kaskade führen) — nur Start/Abbruch/Fertig-Zustandswechsel.
+    box.setAttribute('aria-live', 'polite');
+    box.setAttribute('aria-atomic', 'true');
+
     box.innerHTML = '';
     const wrap = document.createElement('div');
     wrap.className = 'timerwrap';
@@ -97,10 +107,10 @@
     if (t && t.endAt) {
       const remain = t.endAt - Date.now();
       if (remain <= 0) {
-        wrap.innerHTML = `<span class="timerdone">🔔 Fertig!</span>
+        wrap.innerHTML = `<span class="timerdone" role="status">🔔 Fertig!</span>
           <button type="button" class="timerbtn" data-act="dismiss">Zurücksetzen</button>`;
       } else {
-        wrap.innerHTML = `<span class="timerclock">⏳ <span class="timerclock-val"></span> verbleibend</span>
+        wrap.innerHTML = `<span class="timerclock">⏳ <span class="timerclock-val" aria-hidden="true"></span> verbleibend</span>
           <button type="button" class="timerbtn" data-act="stop">Abbrechen</button>`;
       }
     } else {
