@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-11 · Aktuelle Version: v3.7.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-11 · Aktuelle Version: v3.7.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -334,6 +334,11 @@ ui → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur
 
 **Cache-Busting:** CSS/JS werden mit `?v=3.0.0` geladen. **Bei jeder neuen Version mitziehen.**
 
+**Sichtbare Versionsnummer (seit v3.7.1):** Im `<footer>` beider HTML-Dateien (Desktop +
+Mobil, identisch) steht `<span id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine
+JS-Logik dahinter. **Bei jedem Versionssprung von Hand mitziehen** (zusammen mit `?v=` und der
+Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
+
 ## Wichtige Berechnungs-Details
 
 - `calc()`: Mehl = total/(1+h+s+y+o); Öl = Mehl×o; Trockenhefe = Frischhefe × 1/3
@@ -462,6 +467,12 @@ ui → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur
     `--crust`→`--tomato` (1,6:1→4,86:1).
   - Slider bekommen `aria-valuetext` mit Einheit (z. B. „62 Prozent Hydration").
   - Reine a11y-Ergänzung, keine Berechnungslogik geändert; Tests unverändert grün.
+- **v3.7.1 — Sichtbare Versionsnummer** = aktueller Stand:
+  - Footer beider Seiten zeigt jetzt `vX.Y.Z` (`<span id="appVersion">`) — Nutzer sieht direkt,
+    welche Version aktiv ist (auch auf dem per iCloud/GitHub-Pages synchten iPhone hilfreich,
+    um zu prüfen ob die neueste Version geladen wurde).
+  - Rein statischer Text, keine JS-Logik. **Muss ab jetzt bei jedem Versionssprung von Hand
+    mitgezogen werden** (zusammen mit `?v=`).
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
