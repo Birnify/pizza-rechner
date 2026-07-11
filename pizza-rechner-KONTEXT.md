@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-11 · Aktuelle Version: v3.13.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-11 · Aktuelle Version: v3.13.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -159,7 +159,69 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Visuelles Redesign v3.13.0 (gegen den "KI-typischen" Standard-Look) = aktueller Stand
+## Mobil-Overflow-Härtung v3.13.1 = aktueller Stand
+
+Gezielter Fix für den in v3.13.0 als Nebenbefund notierten horizontalen Overflow auf sehr
+schmalen Mobil-Viewports (~430 px, iPhone SE/Mini). Reine CSS-Änderung, kein Markup/keine
+Logik angefasst.
+
+**Untersuchung (wichtig für künftige Sessions):** Der ursprüngliche "Beweis"-Screenshot aus
+v3.13.0 wurde per `msedge --headless --window-size=390,844 --screenshot=…` erzeugt. In dieser
+Session stellte sich heraus, dass die lokale Edge-Headless-Installation `--window-size`-Werte
+unter ~490 px **auf ein Minimum klemmt** (`window.innerWidth` bleibt bei ~492, egal ob 390,
+300 oder 450 angefordert werden — verifiziert per injiziertem Debug-Script), während das
+`--screenshot`-PNG trotzdem in der angeforderten (kleineren) Pixelgröße geschrieben wird. Das
+erzeugt genau das Bild eines rechts abgeschnittenen Layouts, **ohne dass echter DOM-Overflow
+vorliegt** — ein Artefakt des Tools, kein Browser-Rendering. Verifiziert durch einen sauberen
+Messweg: `Emulation.setDeviceMetricsOverride` über die Chrome-DevTools-Protocol-WebSocket-API
+(Python + `websocket-client`, da kein Node/Puppeteer verfügbar) erzwingt einen **echten**
+Viewport unabhängig vom Fenster. Damit gemessen: bei 320/360/375/390/414/430 px — sowohl im
+alten v3.12.0-Stand als auch im aktuellen — `document.documentElement.scrollWidth ===
+window.innerWidth` in jedem Fall, auch mit geöffnetem Akkordeon, Biga-Methode und Preset
+„napoli_biga" aktiv. **Es ließ sich also kein reproduzierbarer Overflow in Chromium
+nachweisen** — möglich, dass der ursprüngliche Befund ausschließlich auf dem beschriebenen
+Tooling-Artefakt beruhte, oder dass es sich um ein iOS-Safari-spezifisches Rendering-Detail
+handelt, das mit den hier verfügbaren Mitteln (kein echtes iOS-Gerät, kein WebKit) nicht
+nachstellbar ist.
+
+**Umgesetzte Härtung (trotzdem sinnvoll, unabhängig vom obigen Befund):**
+- `css/styles.css`: `.field label` (Slider-/Zahlenfeld-Beschriftung + Wertanzeige, z. B.
+  „Anzahl Teiglinge 4") bekommt `flex-wrap:wrap` + `column-gap:8px` statt starrem
+  `justify-content:space-between` ohne Wrap-Möglichkeit — bei zu wenig Platz bricht die
+  Wertanzeige (`.val`) jetzt in eine zweite Zeile um, statt den Container zu sprengen.
+  `.val` bekommt zusätzlich `flex-shrink:0` (bleibt immer vollständig lesbar).
+- `.field .hint` bekommt `overflow-wrap:break-word` (Sicherheitsnetz gegen einzelne lange
+  Wörter).
+- `.row` (Slider + Zahlenfeld nebeneinander) bekommt `.row>*{min-width:0;}` — Standard-Fix
+  gegen das bekannte Flexbox-`min-width:auto`-Verhalten (analog zum CSS-Grid-Fix aus v3.13.0).
+- `.actions .row2 button` (die beiden Druck-Buttons „Einkaufsliste drucken"/„Anleitung
+  drucken") bekommt `min-width:0` — Button-Text bricht bei Platzmangel jetzt zweizeilig um
+  statt den Button zu verbreitern.
+- `css/mobile.css`: `html,body{overflow-x:hidden;max-width:100%;}` als generelles
+  Sicherheitsnetz (nur in der Mobil-CSS, die App ist dort bewusst einspaltig — es gibt
+  keinen legitimen Grund für horizontales Scrollen).
+
+**Accessibility-Nachaudit (gezielt, `accessibility-expert`-Agent):** keine Funde. Geprüft:
+`overflow-x:hidden` verursacht **keinen** echten Reflow-/Fokus-Erreichbarkeits-Verlust
+(WCAG 1.4.10) — Gegenprüfung per DOM-Messung ergab keinen tatsächlichen Overflow, der
+geclippt werden könnte. `min-width:0` erzwingt keine unlesbar schmalen Zahlenfelder (die
+Inputs behalten ihre explizite `width`). `flex-wrap:wrap` auf `.field label` ändert nur die
+visuelle Darstellung, nicht den DOM-Text, den `aria-labelledby` referenziert — Accessible
+Name unverändert.
+
+**Tests:** keine neue Test-Sektion nötig (reine CSS-Änderung, keine `js/*`-Logik/-Texte
+angefasst). 293 Prüfungen unverändert grün, verifiziert per Chrome-DevTools-Protocol
+(`Runtime.evaluate` gegen `#summary`-Text) statt des unzuverlässigen `--window-size`-
+Headless-Wegs. `?v=` auf 3.13.1 gezogen (Desktop + Mobil), Standalone-Datei neu gebaut.
+
+**Erkenntnis fürs Projekt-Vorgehen:** Für künftige Mobil-Layout-Prüfungen bei schmalen
+Breiten **nicht** `msedge --headless --window-size=<schmal>` verwenden (klemmt auf ein
+Minimum von ~490 px CSS-Breite in dieser lokalen Installation) — stattdessen `--remote-
+debugging-port` + CDP `Emulation.setDeviceMetricsOverride` (z. B. per Python-Skript mit
+`websocket-client`) für einen echten erzwungenen Viewport nutzen.
+
+## Visuelles Redesign v3.13.0 (gegen den "KI-typischen" Standard-Look)
+
 
 Reiner Design-Refresh, kein neues Feature, **keine** Änderung an Berechnungslogik
 (`js/calc.js`, `js/schedule.js`, `js/guide.js` u. a. unangetastet) oder Datenmodellen.
@@ -940,7 +1002,7 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
   - Keine Logikänderung, `js/print.js`/`js/storage.js` unangetastet. 293 Prüfungen
     unverändert grün (verifiziert per Headless-Edge-Dump). `?v=` auf 3.12.0 gezogen
     (Desktop + Mobil), Standalone-Datei neu gebaut.
-- **v3.13.0 — Visuelles Redesign (gegen den "KI-typischen" Standard-Look)** = aktueller Stand:
+- **v3.13.0 — Visuelles Redesign (gegen den "KI-typischen" Standard-Look)**:
   - Reiner Design-Refresh, siehe Abschnitt „Visuelles Redesign v3.13.0" oben für Details.
     Keine neue Funktion, keine Änderung an Berechnungslogik/Datenmodellen.
   - Emoji auf 🍕 im Header reduziert; Card-Titel bekommen stattdessen eine CSS-Counter-
@@ -960,6 +1022,23 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
   - Keine neue Test-Sektion nötig (reine CSS-/Markup-Änderung, `js/*`-Texte unangetastet).
     293 Prüfungen unverändert grün. `?v=` auf 3.13.0 gezogen (Desktop + Mobil),
     Standalone-Datei neu gebaut.
+- **v3.13.1 — Mobil-Overflow-Härtung** = aktueller Stand:
+  - Gezielter Fix für den in v3.13.0 notierten Verdacht auf horizontalen Overflow bei sehr
+    schmalen Mobil-Viewports, siehe Abschnitt „Mobil-Overflow-Härtung v3.13.1" oben für Details.
+  - Untersuchung per Chrome-DevTools-Protocol (echter erzwungener Viewport statt des
+    unzuverlässigen `--window-size`-Headless-Wegs) fand **keinen reproduzierbaren
+    DOM-Overflow** in Chromium, weder im alten noch im neuen Stand — der ursprüngliche
+    Screenshot-Befund war vermutlich ein Tooling-Artefakt (Edge-Headless klemmt
+    `--window-size` unter ~490 px auf ein Minimum, das Screenshot-PNG wird aber trotzdem in
+    der angeforderten kleineren Größe geschrieben).
+  - Trotzdem präventive CSS-Härtung ergänzt (`css/styles.css`: `.field label` mit
+    `flex-wrap:wrap`, `.row>*{min-width:0;}`, `.actions .row2 button{min-width:0;}`;
+    `css/mobile.css`: `html,body{overflow-x:hidden;max-width:100%;}`) — reine CSS-Änderung,
+    kein Markup/keine Logik angefasst.
+  - Accessibility-Nachaudit: keine Funde (kein Reflow-/Fokus-Problem durch
+    `overflow-x:hidden`, keine Änderung am Accessible Name durch `flex-wrap`).
+  - Keine neue Test-Sektion nötig. 293 Prüfungen unverändert grün. `?v=` auf 3.13.1 gezogen
+    (Desktop + Mobil), Standalone-Datei neu gebaut.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
@@ -968,11 +1047,12 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
 - ~~Einkaufsliste generieren; Druck nur für die Anleitung~~ — **erledigt in v3.9.0**
 - ~~Gärzeit-Timer / Wecker~~ — **erledigt in v3.11.0**; Export als PDF / Teilen-Link (offen)
 - ~~Mehrere gespeicherte Rezepte (statt einem localStorage-Slot)~~ — **erledigt in v3.10.0**
-- **Neu entdeckt bei v3.13.0 (Design-Refresh):** horizontaler Overflow auf sehr schmalen
-  Mobil-Viewports (~430 px, z. B. iPhone SE/Mini) — einzelne Zeilen (Slider-Wertanzeige,
-  Aktions-Buttons) werden am rechten Rand abgeschnitten. Per Vergleichs-Screenshot gegen
-  den v3.12.0-Stand verifiziert: **existiert bereits vor dem Redesign**, ist keine
-  Regression davon. Kandidat für einen künftigen `mobile-optimizer`-Durchlauf.
+- ~~Mobil-Overflow bei sehr schmalen Viewports (~430 px)~~ — **untersucht/gehärtet in
+  v3.13.1**: kein reproduzierbarer DOM-Overflow in Chromium nachweisbar (ursprünglicher
+  Befund vermutlich ein Headless-Tooling-Artefakt), präventive CSS-Fixes trotzdem ergänzt.
+  Falls auf einem echten iPhone SE/Mini (Safari) doch noch ein sichtbares Abschneiden
+  auftritt, bitte mit Screenshot/genauer iOS-Version melden — dann gezielt mit Safari-
+  spezifischen Workarounds nachfassen (in Chromium nicht nachstellbar).
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

@@ -71,10 +71,11 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 }
 .field{margin-bottom:18px;}
 .field:last-child{margin-bottom:0;}
-.field label{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;font-weight:600;margin-bottom:6px;}
-.field label .val{color:var(--tomato);font-variant-numeric:tabular-nums;font-size:15px;font-family:var(--font-head);}
-.field .hint{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.35;}
+.field label{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;column-gap:8px;font-size:14px;font-weight:600;margin-bottom:6px;}
+.field label .val{color:var(--tomato);font-variant-numeric:tabular-nums;font-size:15px;font-family:var(--font-head);flex-shrink:0;}
+.field .hint{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.35;overflow-wrap:break-word;}
 .row{display:flex;gap:10px;align-items:center;}
+.row>*{min-width:0;}
 input[type=range]{
   -webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:6px;
   background:var(--line);outline:none;cursor:pointer;
@@ -142,7 +143,7 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .actions button.primary{background:var(--basil);color:#fff;border-color:var(--basil);order:-1;padding:13px;font-size:14px;}
 .actions .row2{display:flex;gap:8px;}
-.actions .row2 button{flex:1;background:transparent;font-weight:500;}
+.actions .row2 button{flex:1;min-width:0;background:transparent;font-weight:500;}
 /* Anleitung / Timeline */
 .guidewrap{max-width:980px;margin:0 auto;padding:0 20px 10px;}
 .guidehead{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);}
@@ -238,6 +239,9 @@ footer{text-align:center;font-size:11.5px;color:var(--muted);padding:0 20px 30px
 /* iOS-Eigenheiten: Rubber-Band-Weißblitz abfangen, Doppeltipp-Zoom/300ms-Delay auf
    Bedienelementen killen, kein grauer Tap-Highlight. */
 html{background:var(--bg);}
+/* Sicherheitsnetz gegen horizontalen Overflow auf sehr schmalen Viewports (z. B. iPhone SE/Mini):
+   die App ist bewusst einspaltig, es gibt keinen legitimen Grund für horizontales Scrollen. */
+html,body{overflow-x:hidden;max-width:100%;}
 body{overscroll-behavior-y:contain;}
 button,.seg button,.pills button,summary,input[type=range],.selectbox,.quickbar a,.quickbar button,.timerbtn{
   touch-action:manipulation;-webkit-tap-highlight-color:transparent;
@@ -642,7 +646,7 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
   Alles wird lokal in deinem Browser gerechnet &amp; gespeichert · keine Internetverbindung nötig<br>
   Bäckerprozente — Wasser, Salz &amp; Hefe immer relativ zur Mehlmenge (= 100 %)<br>
-  <span id="appVersion" style="opacity:.7;">v3.13.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.13.1</span>
 </footer>
 
 <div class="quickbar">

@@ -3,6 +3,9 @@
 /* iOS-Eigenheiten: Rubber-Band-Weißblitz abfangen, Doppeltipp-Zoom/300ms-Delay auf
    Bedienelementen killen, kein grauer Tap-Highlight. */
 html{background:var(--bg);}
+/* Sicherheitsnetz gegen horizontalen Overflow auf sehr schmalen Viewports (z. B. iPhone SE/Mini):
+   die App ist bewusst einspaltig, es gibt keinen legitimen Grund für horizontales Scrollen. */
+html,body{overflow-x:hidden;max-width:100%;}
 body{overscroll-behavior-y:contain;}
 button,.seg button,.pills button,summary,input[type=range],.selectbox,.quickbar a,.quickbar button,.timerbtn{
   touch-action:manipulation;-webkit-tap-highlight-color:transparent;
