@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pizzateig-Rechner</title>
-<link rel="stylesheet" href="css/styles.css?v=3.12.0">
+<link rel="stylesheet" href="css/styles.css?v=3.13.0">
 </head>
 <body>
 <header>
   <h1>🍕 Pizzateig-Rechner</h1>
   <p>Neapolitanisch · Biga · Poolish — komplett offline</p>
-  <a class="viewlink" href="pizza-rechner-mobile.html">📱 Zur Mobil-Ansicht</a>
+  <a class="viewlink" href="pizza-rechner-mobile.html">Zur Mobil-Ansicht</a>
 </header>
 
 <div class="wrap">
@@ -18,7 +18,7 @@
   <div class="controls-col" style="display:grid;gap:20px;">
 
     <div class="card">
-      <h2><span class="ic">📖</span> Fertiges Rezept wählen</h2>
+      <h2 aria-label="Fertiges Rezept wählen">Fertiges Rezept wählen</h2>
       <div class="field" style="margin-bottom:0;">
         <select id="preset" class="selectbox selectbox-lg" aria-label="Fertiges Rezept auswählen">
           <option value="">— Eigene Einstellung —</option>
@@ -41,7 +41,7 @@
     </div>
 
     <div class="card">
-      <h2><span class="ic">💾</span> Meine Rezepte</h2>
+      <h2 aria-label="Meine Rezepte">Meine Rezepte</h2>
       <div class="field" style="margin-bottom:0;">
         <label id="myRecipesLabel" for="recipeSelect">Gespeichertes Rezept</label>
         <select id="recipeSelect" class="selectbox" aria-labelledby="myRecipesLabel">
@@ -50,18 +50,18 @@
         <div class="row" style="margin-top:8px;gap:8px;">
           <label for="recipeName" class="visually-hidden">Name für neues Rezept</label>
           <input type="text" id="recipeName" class="selectbox" placeholder="Name für neues Rezept" style="flex:2;">
-          <button type="button" id="recipeSaveNew" style="flex:1;">➕ Neu</button>
+          <button type="button" id="recipeSaveNew" style="flex:1;">Neu</button>
         </div>
         <div class="row" style="margin-top:8px;gap:8px;">
-          <button type="button" id="recipeRename" style="flex:1;">✏️ Umbenennen</button>
-          <button type="button" id="recipeDelete" style="flex:1;">🗑️ Löschen</button>
+          <button type="button" id="recipeRename" style="flex:1;">Umbenennen</button>
+          <button type="button" id="recipeDelete" style="flex:1;">Löschen</button>
         </div>
-        <div class="hint" id="recipeHint" style="margin-top:8px;">Eigene Rezepte sind unabhängig von den Presets oben — hier landen deine per „💾 Speichern" gesicherten Stände.</div>
+        <div class="hint" id="recipeHint" style="margin-top:8px;">Eigene Rezepte sind unabhängig von den Presets oben — hier landen deine per „Speichern" gesicherten Stände.</div>
       </div>
     </div>
 
     <div class="card">
-      <h2><span class="ic">⚙️</span> Grundeinstellungen</h2>
+      <h2 aria-label="Grundeinstellungen">Grundeinstellungen</h2>
 
       <div class="field">
         <label for="flour">Mehl</label>
@@ -120,7 +120,7 @@
     </div>
 
     <div class="card">
-      <h2><span class="ic">🧬</span> Methode &amp; Hefe</h2>
+      <h2 aria-label="Methode &amp; Hefe">Methode &amp; Hefe</h2>
 
       <div class="field">
         <label id="methodLabel">Teigführung</label>
@@ -191,7 +191,7 @@
     </div>
 
     <div class="card">
-      <h2><span class="ic">🌡️</span> Teigtemperatur &amp; Eiswasser</h2>
+      <h2 aria-label="Teigtemperatur &amp; Eiswasser">Teigtemperatur &amp; Eiswasser</h2>
       <div class="field">
         <label id="ddtLabel">Ziel-Teigtemperatur <span class="val"><span id="ddtV">24</span> °C</span></label>
         <div class="row">
@@ -218,7 +218,7 @@
     </div>
 
     <div class="card">
-      <h2><span class="ic">🕐</span> Zeitplan</h2>
+      <h2 aria-label="Zeitplan">Zeitplan</h2>
       <div class="field">
         <label id="timeModeLabel">Bezugspunkt</label>
         <div class="seg" id="timeMode" role="group" aria-labelledby="timeModeLabel">
@@ -241,7 +241,7 @@
   <!-- RECHTE SPALTE: ERGEBNIS -->
   <div class="result">
     <div class="card">
-      <h2><span class="ic">📋</span> Rezept</h2>
+      <h2 aria-label="Rezept">Rezept</h2>
 
       <div class="total">
         <div class="big"><span id="totalW">1018</span> g</div>
@@ -287,9 +287,11 @@
       <div id="shoppingList" class="shoppinglist-card"></div>
 
       <div class="actions">
-        <button onclick="PZ.printShoppingList()">🛒 Einkaufsliste drucken</button>
-        <button onclick="PZ.printGuide()">📝 Anleitung drucken</button>
-        <button class="primary" id="saveBtn">💾 Speichern</button>
+        <button class="primary" id="saveBtn">Speichern</button>
+        <div class="row2">
+          <button onclick="PZ.printShoppingList()">Einkaufsliste drucken</button>
+          <button onclick="PZ.printGuide()">Anleitung drucken</button>
+        </div>
       </div>
     </div>
   </div>
@@ -297,7 +299,7 @@
 
 <section class="guidewrap">
   <div class="guidehead">
-    <h2><span class="ic">📝</span> Schritt-für-Schritt-Anleitung</h2>
+    <h2>Schritt-für-Schritt-Anleitung</h2>
     <span class="hint" id="guideSummary" style="font-size:12px;"></span>
   </div>
   <div id="flourWarn" style="margin-bottom:8px;" aria-live="polite" aria-atomic="true"></div>
@@ -307,21 +309,21 @@
 <footer>
   Alles wird lokal in deinem Browser gerechnet &amp; gespeichert · keine Internetverbindung nötig<br>
   Bäckerprozente — Wasser, Salz &amp; Hefe immer relativ zur Mehlmenge (= 100 %)<br>
-  <span id="appVersion" style="opacity:.7;">v3.12.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.13.0</span>
 </footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.12.0"></script>
-<script src="js/state.js?v=3.12.0"></script>
-<script src="js/flour.js?v=3.12.0"></script>
-<script src="js/calc.js?v=3.12.0"></script>
-<script src="js/schedule.js?v=3.12.0"></script>
-<script src="js/guide.js?v=3.12.0"></script>
-<script src="js/timer.js?v=3.12.0"></script>
-<script src="js/ui.js?v=3.12.0"></script>
-<script src="js/print.js?v=3.12.0"></script>
-<script src="js/presets.js?v=3.12.0"></script>
-<script src="js/storage.js?v=3.12.0"></script>
-<script src="js/main.js?v=3.12.0"></script>
+<script src="js/dom.js?v=3.13.0"></script>
+<script src="js/state.js?v=3.13.0"></script>
+<script src="js/flour.js?v=3.13.0"></script>
+<script src="js/calc.js?v=3.13.0"></script>
+<script src="js/schedule.js?v=3.13.0"></script>
+<script src="js/guide.js?v=3.13.0"></script>
+<script src="js/timer.js?v=3.13.0"></script>
+<script src="js/ui.js?v=3.13.0"></script>
+<script src="js/print.js?v=3.13.0"></script>
+<script src="js/presets.js?v=3.13.0"></script>
+<script src="js/storage.js?v=3.13.0"></script>
+<script src="js/main.js?v=3.13.0"></script>
 </body>
 </html>

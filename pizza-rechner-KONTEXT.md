@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-11 · Aktuelle Version: v3.12.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-11 · Aktuelle Version: v3.13.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -159,7 +159,92 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Accessibility-Nachaudit v3.12.0 (Timer, Rezepte, Einkaufsliste) = aktueller Stand
+## Visuelles Redesign v3.13.0 (gegen den "KI-typischen" Standard-Look) = aktueller Stand
+
+Reiner Design-Refresh, kein neues Feature, **keine** Änderung an Berechnungslogik
+(`js/calc.js`, `js/schedule.js`, `js/guide.js` u. a. unangetastet) oder Datenmodellen.
+Auslöser: Der Nutzer empfand das bisherige Layout als "typisch KI-generiert" — Ziel war,
+ein eigenständigeres, weniger generisches Erscheinungsbild zu schaffen, ohne Bedienbarkeit,
+Barrierefreiheit oder Funktion zu verschlechtern.
+
+**Befund (was generisch wirkte):** Emoji vor praktisch jedem Card-Titel/Button (📖💾⚙️🧬
+🌡️🕐📋📝🛒➕✏️🗑️), durchgängig identischer Border-Radius auf allen Elementen
+(14 px Karten/20 px Pills/10 px Buttons — "alles gleich rund"), eine einzige
+Schatten-Formel (`--shadow`) auf praktisch jeder Karte, 135°-Gradient an drei Stellen
+(Header, Schedbar, mobile Quickbar — klassisches KI-Default-Muster), reiner
+System-Sans-Font-Stack ohne eigene typografische Note, symmetrisches 3-gleich-große-
+Buttons-Layout in `.actions`.
+
+**Umsetzung (`css/styles.css`, `css/mobile.css`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`):**
+- **Emoji auf ein einziges Markenzeichen reduziert:** nur noch 🍕 im `<h1>`-Header bleibt.
+  Alle `<span class="ic">…</span>`-Icon-Präfixe vor Card-Titeln entfernt, alle
+  Emoji-Präfixe in Button-Beschriftungen entfernt („➕ Neu"→„Neu", „💾 Speichern"→
+  „Speichern" usw.). `js/*`-generierte Texte (Anleitung, Timer, Einkaufsliste) bewusst
+  **nicht** angefasst (Test-Risiko durch String-Matching, s. u.).
+- **Nummerierte Kicker-Titel statt Emoji-Icons:** `.card h2::before` erzeugt per CSS
+  Counter (`counter-reset:cardnum` auf `.wrap`, `counter-increment:cardnum` auf `.card`)
+  eine Nummer vor jedem Card-Titel (z. B. „01 · Fertiges Rezept wählen"). Titel-Text
+  selbst unverändert (kein anderer Wortlaut) — nur das visuelle Präfix ist neu.
+- **Border-Radius systemweit verschärft:** `--radius:3px` (Karten, Inputs, Selects,
+  Segmente), `--radius-chip:6px` (Pills, Chips, Timer-Badges) statt vorher 14/20 px —
+  weniger "alles ist eine abgerundete Card"-Optik. Slider-Thumbs leicht eckig (2 px)
+  statt rund.
+- **Schatten durch Akzent-Linie ersetzt:** Karten haben keinen `box-shadow` mehr, dafür
+  `border-left:3px solid var(--tomato)` (Ergebnis-Karte: `var(--basil)`) als Signatur-
+  Element. `.step`-Blöcke in der Anleitung analog (dezenter, kein Schatten mehr).
+- **Gradients durch flache Farbe + Textur ersetzt:** Header und mobile Quickbar nutzen
+  jetzt `var(--tomato-dark)` + eine sehr dezente `repeating-linear-gradient`-Diagonal-
+  Textur (6 % weiße Deckkraft) statt des 135°-Zweifarben-Gradients. `.schedbar` (grüner
+  Zeitplan-Balken in der Anleitung) ebenfalls von Gradient auf flache `var(--basil)`-
+  Fläche mit Akzent-Rahmen umgestellt.
+- **Eigene Typografie-Note:** neue CSS-Variable `--font-head` (Georgia/„Iowan Old
+  Style"/„Palatino Linotype"/„Book Antiqua"/serif — bewusst nur Systemschriften, keine
+  Web-Font-CDN, da die App offline per `file://` laufen muss) für `<h1>`, die große
+  Gesamtgewicht-Zahl (`.result .total .big`), Slider-Wertanzeigen (`.field label .val`)
+  und die Step-Nummern-Kreise in der Anleitung. Body-Text bleibt beim bisherigen
+  System-Sans-Stack (Lesbarkeit der Formulare).
+- **Asymmetrisches `.actions`-Layout:** „Speichern" ist jetzt ein großer, prominenter
+  Button oben (grün, `.primary`, `order:-1`), die beiden Druck-Buttons stehen kleiner/
+  transparent („Ghost"-Stil) in einer `.row2`-Zeile darunter — statt vorher drei gleich
+  große Pillen nebeneinander.
+- **Asymmetrische Temperatur-Boxen:** `.temp-out` zeigt die Schüttwasser-Box jetzt breiter
+  (`flex:1.4`, eigener Farbton) als die Eis-Box (`flex:1`) — spiegelt die inhaltliche
+  Gewichtung (Wassertemperatur ist die Hauptaussage, Eis nur ergänzend).
+- **`.result .total`** (Gesamtgewicht-Anzeige) von abgerundeter gestrichelter Box mit
+  Gradient-Hintergrund auf eine flache Fläche mit oberer/unterer 2-px-Linie umgestellt
+  („Kassenbon"-Anmutung statt "Soft-Card").
+
+**CSS-Grid-Overflow-Fix (Nebenbefund, kein Redesign-Ziel, aber beim Verifizieren
+gefunden):** `.wrap` und `.card` sind Grid-Items ohne explizites `min-width` — CSS-Grid-
+Items haben standardmäßig `min-width:auto`, was bei langen Card-Titeln (jetzt länger durch
+den Kicker-Präfix) zu horizontalem Overflow auf schmalen Mobil-Viewports führen kann.
+`min-width:0` auf `.wrap > *` und `.card` ergänzt (Standard-Fix für dieses bekannte
+CSS-Grid-Verhalten). Ein **davon unabhängiger, bereits in v3.12.0 vorhandener** Overflow
+bei sehr schmalen Mobil-Breiten (~430 px, per Vergleichs-Screenshot gegen den vorherigen
+Commit-Stand verifiziert) bleibt bestehen — **nicht** Teil dieses Redesigns, Kandidat für
+einen künftigen `mobile-optimizer`-Durchlauf.
+
+**Accessibility-Nachaudit (gezielt für dieses Redesign, `accessibility-expert`-Agent):**
+1 Major-Fund — die neue CSS-Counter-Nummerierung (`.card h2::before{content:counter(...)}`)
+konnte je nach Browser/AT in den Accessible Name der Überschrift einfließen und wäre dann
+z. B. als „01 · Fertiges Rezept wählen" statt „Fertiges Rezept wählen" vorgelesen worden.
+Fix: `aria-label="<reiner Titeltext ohne Nummer>"` auf allen `.card h2`-Elementen (Desktop +
+Mobil, je 7 Karten) — die Nummer bleibt visuell für sehende Nutzer sichtbar, der Accessible
+Name ist aber wieder der reine, stabile Titeltext. Kontraste aller geänderten Elemente
+(Kicker-Zahl, Card-Titel-Textfarbe, Ghost-Buttons, Header-Textur, asymmetrische Temp-Boxen)
+geprüft — alle bestanden AA, keine weiteren Fixes nötig.
+
+**Tests:** keine neue Test-Sektion (reine CSS-/Markup-Änderung, keine Logik-/Text-Änderung
+in `js/*`, die von `tests/test.html` per String-Matching geprüfte Anleitungstexte etc. blieben
+unangetastet). 293 Prüfungen unverändert grün, verifiziert per Headless-Edge-Dump (PowerShell-
+Aufruf statt direktem Bash-Aufruf des Binaries — in dieser Session war der direkte
+`msedge.exe … > out.html`-Aufruf über die Bash-Shell mehrfach unzuverlässig/leer, über
+PowerShell `Out-File` lief er zuverlässig durch). `?v=` auf 3.13.0 gezogen (Desktop + Mobil),
+Standalone-Datei neu gebaut. Manuell per Headless-Screenshot auf Desktop- und Mobil-Layout
+gegengeprüft (`--screenshot`-Flag).
+
+## Accessibility-Nachaudit v3.12.0 (Timer, Rezepte, Einkaufsliste)
 
 WCAG-2.1-AA-Nachaudit gezielt für die drei jüngsten Feature-Runden (Einkaufsliste/Druck
 v3.9.0, Mehrfach-Rezepte v3.10.0, Gärzeit-Timer v3.11.0) — dieselbe Methodik/derselbe Stil
@@ -606,7 +691,7 @@ README.md            kurzer Einstieg
 **Ladereihenfolge** (Abhängigkeiten): dom → state → flour → calc → schedule → guide →
 timer → ui → print → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur über `window.PZ`.
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.12.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.13.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1):** Im `<footer>` beider HTML-Dateien (Desktop +
 Mobil, identisch) steht `<span id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine
@@ -844,7 +929,7 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
     demselben Rezept (überschreibt, kein Duplikat).
   - 248 → 293 Prüfungen, alle grün (verifiziert per Headless-Edge-Dump, nicht per
     Preview-Tool — Cache-Fehlalarm-Risiko).
-- **v3.12.0 — Accessibility-Nachaudit (Timer, Rezepte, Einkaufsliste)** = aktueller Stand:
+- **v3.12.0 — Accessibility-Nachaudit (Timer, Rezepte, Einkaufsliste)**:
   - Gezielter WCAG-2.1-AA-Nachaudit für die drei jüngsten Feature-Runden (v3.9.0–v3.11.0),
     siehe Abschnitt „Accessibility-Nachaudit v3.12.0" oben für Details. 2 Blocker (Timer-
     Countdown/„Fertig!" ohne Live-Region, `#recipeName` ohne Label), 2 Major (Kontrast
@@ -855,6 +940,26 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
   - Keine Logikänderung, `js/print.js`/`js/storage.js` unangetastet. 293 Prüfungen
     unverändert grün (verifiziert per Headless-Edge-Dump). `?v=` auf 3.12.0 gezogen
     (Desktop + Mobil), Standalone-Datei neu gebaut.
+- **v3.13.0 — Visuelles Redesign (gegen den "KI-typischen" Standard-Look)** = aktueller Stand:
+  - Reiner Design-Refresh, siehe Abschnitt „Visuelles Redesign v3.13.0" oben für Details.
+    Keine neue Funktion, keine Änderung an Berechnungslogik/Datenmodellen.
+  - Emoji auf 🍕 im Header reduziert; Card-Titel bekommen stattdessen eine CSS-Counter-
+    Nummerierung („01 · …"); Border-Radius systemweit verschärft (14→3 px Karten,
+    20→6 px Pills); Schatten durch `border-left`-Akzentlinie ersetzt; 135°-Gradients
+    (Header/Schedbar/Quickbar) durch flache Farbe + dezente Diagonal-Textur ersetzt; neue
+    Serifenschrift (`--font-head`, offline-sicherer System-Font-Stack) für Headlines/große
+    Zahlen; `.actions`-Buttons asymmetrisch (Speichern groß/prominent, Druck-Buttons klein/
+    transparent); `.temp-out`-Boxen asymmetrisch gewichtet.
+  - CSS-Grid-`min-width:0`-Fix als Nebenbefund ergänzt (Standard-Fix gegen Overflow bei
+    langen Card-Titeln); ein davon unabhängiger, bereits vor diesem Redesign bestehender
+    Mobil-Overflow bei sehr schmalen Breiten (~430 px) bleibt bestehen — Kandidat für einen
+    künftigen `mobile-optimizer`-Durchlauf, nicht Teil dieses Zyklus.
+  - Accessibility-Nachaudit: 1 Major (Counter-Nummerierung floss potenziell in den
+    Accessible Name der Card-Überschriften ein) — Fix: `aria-label` mit reinem Titeltext auf
+    allen `.card h2` (Desktop + Mobil). Kontraste aller geänderten Elemente geprüft, bestanden.
+  - Keine neue Test-Sektion nötig (reine CSS-/Markup-Änderung, `js/*`-Texte unangetastet).
+    293 Prüfungen unverändert grün. `?v=` auf 3.13.0 gezogen (Desktop + Mobil),
+    Standalone-Datei neu gebaut.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
@@ -863,6 +968,11 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
 - ~~Einkaufsliste generieren; Druck nur für die Anleitung~~ — **erledigt in v3.9.0**
 - ~~Gärzeit-Timer / Wecker~~ — **erledigt in v3.11.0**; Export als PDF / Teilen-Link (offen)
 - ~~Mehrere gespeicherte Rezepte (statt einem localStorage-Slot)~~ — **erledigt in v3.10.0**
+- **Neu entdeckt bei v3.13.0 (Design-Refresh):** horizontaler Overflow auf sehr schmalen
+  Mobil-Viewports (~430 px, z. B. iPhone SE/Mini) — einzelne Zeilen (Slider-Wertanzeige,
+  Aktions-Buttons) werden am rechten Rand abgeschnitten. Per Vergleichs-Screenshot gegen
+  den v3.12.0-Stand verifiziert: **existiert bereits vor dem Redesign**, ist keine
+  Regression davon. Kandidat für einen künftigen `mobile-optimizer`-Durchlauf.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

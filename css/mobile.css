@@ -65,24 +65,26 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 /* Sticky Quick-Bar unten: links Sprung zum Ergebnis, rechts Speichern (Daumenzone) */
 .quickbar{
   position:fixed;left:0;right:0;bottom:0;z-index:20;
-  background:linear-gradient(135deg,var(--tomato),var(--tomato-dark));color:#fff;
+  background:var(--tomato-dark)
+    repeating-linear-gradient(-55deg,rgba(255,255,255,.06) 0 2px,transparent 2px 14px);
+  color:#fff;
   display:flex;align-items:stretch;gap:10px;
   padding:10px calc(14px + env(safe-area-inset-right))
           calc(10px + env(safe-area-inset-bottom))
           calc(14px + env(safe-area-inset-left));
-  box-shadow:0 -2px 14px rgba(120,90,60,.25);
+  border-top:2px solid var(--crust);
 }
 .quickbar .qb-jump{
   flex:1;display:flex;align-items:center;gap:6px;min-height:44px;
-  color:#fff;text-decoration:none;font-size:15px;font-weight:800;
+  color:#fff;text-decoration:none;font-size:15px;font-weight:700;font-family:var(--font-head);
 }
-.quickbar .qb-jump small{font-weight:500;opacity:.85;font-size:11px;margin-left:2px;}
+.quickbar .qb-jump small{font-weight:500;opacity:.85;font-size:11px;margin-left:2px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
 .quickbar .qb-save{
-  flex-shrink:0;min-height:44px;padding:0 16px;border:none;border-radius:10px;
-  background:rgba(255,255,255,.18);color:#fff;font-size:14px;font-weight:700;
+  flex-shrink:0;min-height:44px;padding:0 16px;border:1px solid rgba(255,255,255,.4);border-radius:var(--radius);
+  background:rgba(255,255,255,.14);color:#fff;font-size:14px;font-weight:700;
   cursor:pointer;-webkit-backdrop-filter:blur(2px);
 }
-.quickbar .qb-save:active{background:rgba(255,255,255,.32);}
+.quickbar .qb-save:active{background:rgba(255,255,255,.28);}
 
 #result{scroll-margin-top:16px;}
 
