@@ -168,14 +168,45 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   margin-top:7px;font-size:12.5px;color:#9a3a1c;background:#fdf0ec;border-radius:8px;
   padding:7px 10px;border-left:3px solid var(--tomato);
 }
+/* Gärzeit-Timer/Wecker je Schritt (js/timer.js) */
+.timerwrap{
+  margin-top:9px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.timerbtn{
+  font-size:12.5px;font-weight:700;padding:7px 13px;border-radius:20px;cursor:pointer;
+  border:1px solid var(--line);background:#fff;color:var(--ink);
+}
+.timerbtn-start{background:var(--tomato);color:#fff;border-color:var(--tomato);}
+.timerbtn:hover{filter:brightness(.96);}
+.timerclock{
+  font-size:13px;font-weight:800;color:var(--tomato);font-variant-numeric:tabular-nums;
+  background:#fff3e8;border:1px solid var(--crust);padding:5px 11px;border-radius:20px;
+}
+.timerdone{
+  font-size:13px;font-weight:800;color:#fff;background:var(--tomato);
+  padding:5px 11px;border-radius:20px;animation:timerpulse 1s ease-in-out infinite;
+}
+@keyframes timerpulse{0%,100%{opacity:1;}50%{opacity:.55;}}
+.timerhint{
+  margin-top:7px;font-size:12px;color:var(--muted);background:var(--bg);border-radius:8px;
+  padding:7px 10px;border-left:3px solid var(--line);
+}
 footer{text-align:center;font-size:11.5px;color:var(--muted);padding:0 20px 30px;}
 .collapse{display:none;}
 .collapse.show{display:block;}
+#shoppingList{display:none;}
 @media print{
   header,.actions,.controls-col,footer{display:none;}
   .wrap{grid-template-columns:1fr;}
   .result{position:static;}
   body{background:#fff;}
+  .timerbox,.timerhint{display:none;}
+  /* Anleitung drucken: nur die Schritt-für-Schritt-Anleitung bleibt sichtbar */
+  body.print-guide .result{display:none;}
+  /* Einkaufsliste drucken: alles außer der Einkaufsliste ausblenden (inkl. Anleitung + Ergebnis-Panel) */
+  body.print-shopping .result .card > *:not(.shoppinglist-card){display:none;}
+  body.print-shopping .guidewrap{display:none;}
+  body.print-shopping #shoppingList{display:block;}
 }
 
 </style>
@@ -186,7 +217,7 @@ footer{text-align:center;font-size:11.5px;color:var(--muted);padding:0 20px 30px
    Bedienelementen killen, kein grauer Tap-Highlight. */
 html{background:var(--bg);}
 body{overscroll-behavior-y:contain;}
-button,.seg button,.pills button,summary,input[type=range],.selectbox,.quickbar a,.quickbar button{
+button,.seg button,.pills button,summary,input[type=range],.selectbox,.quickbar a,.quickbar button,.timerbtn{
   touch-action:manipulation;-webkit-tap-highlight-color:transparent;
 }
 
@@ -237,6 +268,7 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;}
 input[type=number]{min-height:40px;font-size:16px;width:86px;}
 .selectbox{min-height:44px;font-size:16px;}
 .actions button{min-height:48px;font-size:14px;}
+.timerbtn{min-height:40px;}
 
 /* Sichtbares Touch-Feedback (kein Hover auf Touch) */
 .seg button:active{transform:scale(.97);}
@@ -303,6 +335,27 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
             </optgroup>
           </select>
           <div class="hint" id="presetDesc" style="margin-top:8px;">Wähle ein erprobtes Rezept — alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.</div>
+        </div>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><h2><span class="ic">💾</span> Meine Rezepte</h2></summary>
+      <div class="acc-body">
+        <div class="field" style="margin-bottom:0;">
+          <label id="myRecipesLabel" for="recipeSelect">Gespeichertes Rezept</label>
+          <select id="recipeSelect" class="selectbox" aria-labelledby="myRecipesLabel">
+            <option value="">— noch keins gespeichert —</option>
+          </select>
+          <div class="row" style="margin-top:8px;gap:8px;">
+            <input type="text" id="recipeName" class="selectbox" placeholder="Name für neues Rezept" style="flex:2;">
+            <button type="button" id="recipeSaveNew" style="flex:1;">➕ Neu</button>
+          </div>
+          <div class="row" style="margin-top:8px;gap:8px;">
+            <button type="button" id="recipeRename" style="flex:1;">✏️ Umbenennen</button>
+            <button type="button" id="recipeDelete" style="flex:1;">🗑️ Löschen</button>
+          </div>
+          <div class="hint" id="recipeHint" style="margin-top:8px;">Eigene Rezepte sind unabhängig von den Presets oben — hier landen deine per „💾 Speichern" gesicherten Stände.</div>
         </div>
       </div>
     </details>
@@ -539,8 +592,11 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
         <div class="note" id="iceNote"></div>
       </div>
 
+      <div id="shoppingList" class="shoppinglist-card"></div>
+
       <div class="actions">
-        <button onclick="window.print()">🖨️ Drucken</button>
+        <button onclick="PZ.printShoppingList()">🛒 Einkaufsliste drucken</button>
+        <button onclick="PZ.printGuide()">📝 Anleitung drucken</button>
         <button class="primary" id="saveBtn">💾 Speichern</button>
       </div>
     </div>
@@ -559,7 +615,7 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
   Alles wird lokal in deinem Browser gerechnet &amp; gespeichert · keine Internetverbindung nötig<br>
   Bäckerprozente — Wasser, Salz &amp; Hefe immer relativ zur Mehlmenge (= 100 %)<br>
-  <span id="appVersion" style="opacity:.7;">v3.8.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.11.0</span>
 </footer>
 
 <div class="quickbar">
@@ -897,6 +953,10 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
   }
   function tip(t) { return `<div class="tip">💡 ${t}</div>`; }
   function warn(t) { return `<div class="warn">⚠️ ${t}</div>`; }
+  // Timer-Widget-Platzhalter für Schritte mit nennenswerter Wartezeit (js/timer.js rendert hinein).
+  function timerBox(key, min) {
+    return `<div class="timerbox" data-timer-key="${key}" data-timer-min="${Math.round(min)}"></div>`;
+  }
 
   function buildGuide() {
     const state = PZ.state;
@@ -959,7 +1019,7 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
             : '<b>2 h</b> bei Raumtemp anspringen lassen, dann in den <b>Kühlschrank (4–6 °C)</b>.';
         st('Biga reifen lassen', `${state.prefMature} h`,
           `${bigaTempTxt} Sie lockert sich auf und duftet säuerlich-hefig.`,
-          tip('Längere Reife braucht <b>weniger Hefe</b> im Vorteig und/oder <b>kühlere</b> Lagerung. Fertig = luftig-schwammig, gerade eben eingefallen.'), matureMin);
+          tip('Längere Reife braucht <b>weniger Hefe</b> im Vorteig und/oder <b>kühlere</b> Lagerung. Fertig = luftig-schwammig, gerade eben eingefallen.') + timerBox('biga-reifen', matureMin), matureMin);
       } else {
         st('Poolish verrühren', 'mit Löffel / Schneebesen',
           `Hefe im Wasser auflösen, dann Mehl einrühren – <b>mit einem Löffel oder Schneebesen ca. 2–3 min rühren</b>, bis ein <b>zäher, klumpenfreier Pfannkuchenteig</b> entsteht. Abdecken.`, '', 10);
@@ -968,7 +1028,7 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
           : '<b>1 h</b> bei Raumtemp anspringen lassen, dann <b>kühl stellen (Kühlschrank)</b> und langsam ausreifen.';
         st('Poolish reifen lassen', `${state.prefMature} h`,
           `${poolishTempTxt} Reif = Oberfläche <b>voller Blasen</b>, kurz bevor er wieder einfällt.`,
-          tip('Fingertest: riecht angenehm nach Hefe/Joghurt, nicht stechend nach Alkohol. Länger als ~24 h zieht er nicht durch.'), matureMin);
+          tip('Fingertest: riecht angenehm nach Hefe/Joghurt, nicht stechend nach Alkohol. Länger als ~24 h zieht er nicht durch.') + timerBox('poolish-reifen', matureMin), matureMin);
       }
       sec('Hauptteig');
       const hasMW = R.mWater >= 1, hasMF = R.mFlour >= 1;
@@ -1011,7 +1071,7 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
           : '';
         st('Autolyse (empfohlen)', '20–40 min',
           `Nur <b>Mehl + Wasser</b> grob mischen (Salz und Hefe kommen erst später), abdecken, ruhen lassen. Weniger Knetarbeit, dehnbarerer Teig.`,
-          warn('Ohne Salz arbeiten die Enzyme im Mehl ungebremst – <b>Autolyse nicht über ~40–60 min ausdehnen</b>. Länger baut das Klebergerüst eher ab als auf (Teig wird zunehmend klebrig-schwach statt elastisch).') + reserveWaterTip, 30);
+          warn('Ohne Salz arbeiten die Enzyme im Mehl ungebremst – <b>Autolyse nicht über ~40–60 min ausdehnen</b>. Länger baut das Klebergerüst eher ab als auf (Teig wird zunehmend klebrig-schwach statt elastisch).') + reserveWaterTip + timerBox('autolyse', 30), 30);
         st('Hefe zugeben', '~2 min',
           tinyYeast
             ? `Bei dieser sehr kleinen Menge (<b>${g(R.yeast)} g</b>) die ${state.yeastType === 'dry' ? 'Trockenhefe' : 'Frischhefe'} im <b>zurückbehaltenen Wasser auflösen</b> und gleichmäßig über den Teig geben – trocken eingestreut verteilt sie sich bei so wenig Menge kaum gleichmäßig.`
@@ -1037,7 +1097,7 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
     if (hi) {
       st('Stretch &amp; Fold statt Kneten', '4 × alle 30 min',
         `Bei <b>${state.hyd}% Hydration</b> ist der Teig zu klebrig zum klassischen Kneten. Kurz mischen, dann <b>4 Runden Dehnen & Falten</b> alle 30 min mit <b>nassen Händen</b>.`,
-        tip('Zwischen den Runden abgedeckt ruhen lassen – das Gluten entwickelt sich von selbst.'), 120);
+        tip('Zwischen den Runden abgedeckt ruhen lassen – das Gluten entwickelt sich von selbst.') + timerBox('stretch-fold', 120), 120);
     } else {
       st('Kneten', state.knead === '6' ? '8–12 min' : '10–15 min',
         `${state.knead === '6' ? 'Maschine: <b>8–12 min</b> auf niedriger/mittlerer Stufe' : 'Von Hand: <b>10–15 min</b> (kneten, dehnen, falten)'}, bis der Teig <b>glatt & elastisch</b> ist. Fenstertest: dünn ausziehbar ohne zu reißen.`, '', state.knead === '6' ? 10 : 13);
@@ -1048,19 +1108,19 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
     const ballsCold = f.cold && state.coldStage !== 'bulk';
     sec('Gare & Formen');
     st('Stockgare (im Stück)', f.cold && !ballsCold ? 'Raumtemp + kühl' : 'Raumtemp',
-      `Teig zur Kugel formen, in eine geölte/abgedeckte Schüssel. ${f.bulk}.`, '', f.bulkMin);
+      `Teig zur Kugel formen, in eine geölte/abgedeckte Schüssel. ${f.bulk}.`, timerBox('stockgare', f.bulkMin), f.bulkMin);
     st('Teiglinge formen', `${R.N} × ${R.W} g`,
       `In <b>${R.N} Stücke à ${R.W} g</b> teilen. Jedes zu einer <b>straffen Kugel</b> formen (Oberfläche spannen, Schluss nach unten). Mit Abstand in eine ${ballsCold ? 'kühlschranktaugliche, dicht schließende Box' : 'Box'}.`,
       tip('Straff geformte Kugeln = runde Pizzen mit gleichmäßigem Rand (Cornicione).')
       + tip('Einfrieren möglich: Teiglinge dünn mit Öl bestreichen, einzeln (nicht berührend) einfrieren – so <b>2–3 Monate</b> haltbar. Auftauen: <b>über Nacht im Kühlschrank</b>, dann <b>3–5 h bei Raumtemperatur</b> und <b>2–4 h Stückgare</b> wie gewohnt.'), 10);
     st('Stückgare (Teiglinge)', ballsCold ? 'kühl · Fingertest' : 'Fingertest',
       `${f.proof}. <b>Fertig</b>, wenn ein leichter Fingerdruck <b>langsam</b> zurückfedert (eine kleine Delle bleibt).`,
-      f.cold ? tip('Teiglinge vor dem Backen wirklich auf Raumtemperatur kommen lassen – kalter Teig reißt beim Ausziehen.') : '', f.proofMin);
+      (f.cold ? tip('Teiglinge vor dem Backen wirklich auf Raumtemperatur kommen lassen – kalter Teig reißt beim Ausziehen.') : '') + timerBox('stueckgare', f.proofMin), f.proofMin);
 
     sec('Backen');
     st('Ofen vorheizen', '30–45 min',
       `Pizzastein/-stahl auf <b>höchste Stufe</b> vorheizen. Pizzaofen (Gas/Holz) <b>430–480 °C</b>; Haushaltsofen Maximum (250–300 °C) + Grill, Stein ganz oben.`,
-      tip('Der Stein muss richtig durchglühen – lieber 10 min länger. (Startzeit = 50 min vor dem Backen.)'), 0, { back: 50 });
+      tip('Der Stein muss richtig durchglühen – lieber 10 min länger. (Startzeit = 50 min vor dem Backen.)') + timerBox('ofen-vorheizen', 40), 0, { back: 50 });
     st('Pizza ausziehen', 'kein Nudelholz!',
       `Teigling in Mehl/Grieß betten, von der Mitte mit den <b>Fingerspitzen flachdrücken</b>, Rand (~1,5 cm) stehen lassen, über die Handrücken auf Größe ziehen.`,
       warn('Nie ein Nudelholz – das drückt die Luft aus dem Rand. Der Cornicione lebt von der Gärblase.'), 5);
@@ -1112,9 +1172,202 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
         <p>${i.body}</p>${i.extra}</div></div>`;
     });
     $('guideSteps').innerHTML = html;
+    if (PZ.wireTimers) PZ.wireTimers();
   }
 
   PZ.buildGuide = buildGuide;
+})(window);
+
+</script>
+<script>
+/* timer.js — Gärzeit-Timer/Wecker pro Anleitungs-Schritt.
+   Rein clientseitig, kein Server, kein Service-Worker: läuft nur solange dieser Tab/
+   dieses Fenster offen ist (bewusste Grenze, kein Bug — wird im UI kommuniziert).
+   Persistiert nur Start-Zeitpunkt + Zieldauer in localStorage, damit ein versehentlicher
+   Reload den Countdown nicht auf 0 zurückwirft. Mehrere Timer laufen unabhängig
+   nebeneinander (je Schritt-Key ein eigener Eintrag + eigenes Interval). */
+(function (global) {
+  'use strict';
+  const PZ = global.PZ || (global.PZ = {});
+
+  const LS_KEY = 'pizzaRechnerTimers';
+  const HINT_KEY = 'pizzaRechnerTimerHintShown';
+  let audioCtx = null;
+  let hintShown = false;
+  const intervals = {}; // key -> intervalId
+
+  function readTimers() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+  function writeTimers(obj) {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(obj)); } catch (e) { /* ignore */ }
+  }
+  function setTimer(key, data) {
+    const all = readTimers();
+    if (data === null) delete all[key];
+    else all[key] = data;
+    writeTimers(all);
+  }
+
+  function fmtRemain(ms) {
+    if (ms < 0) ms = 0;
+    const totalSec = Math.floor(ms / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    const p = n => String(n).padStart(2, '0');
+    return h > 0 ? `${h}:${p(m)}:${p(s)}` : `${m}:${p(s)}`;
+  }
+
+  // Synthetischer Beep per Web Audio API (kein <audio>-Tag, keine externe Datei)
+  function beep() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const now = audioCtx.currentTime;
+      [880, 1046.5, 1318.5].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const start = now + i * 0.18;
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(0.35, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(start);
+        osc.stop(start + 0.2);
+      });
+    } catch (e) { /* Web Audio nicht verfügbar — Notification/Sichtbar-Fallback bleiben */ }
+  }
+
+  function notify(label) {
+    let shown = false;
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification('⏰ Timer fertig', { body: label, tag: 'pz-timer-' + label });
+        shown = true;
+      } catch (e) { /* ignore */ }
+    }
+    return shown;
+  }
+
+  function showHintOnce(box) {
+    if (hintShown) return;
+    hintShown = true;
+    try { if (localStorage.getItem(HINT_KEY)) return; localStorage.setItem(HINT_KEY, '1'); } catch (e) { /* ignore */ }
+    const hint = document.createElement('div');
+    hint.className = 'timerhint';
+    hint.innerHTML = 'ℹ️ Der Timer läuft nur, solange dieser Tab/dieses Fenster geöffnet ist — kein Wecker mehr, wenn du den Tab schließt.';
+    box.parentNode.insertBefore(hint, box.nextSibling);
+    setTimeout(() => hint.remove(), 9000);
+  }
+
+  function render(box) {
+    const key = box.dataset.timerKey;
+    const defaultMin = parseFloat(box.dataset.timerMin) || 0;
+    if (defaultMin <= 0) { box.innerHTML = ''; return; }
+    const all = readTimers();
+    const t = all[key];
+
+    box.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'timerwrap';
+
+    if (t && t.endAt) {
+      const remain = t.endAt - Date.now();
+      if (remain <= 0) {
+        wrap.innerHTML = `<span class="timerdone">🔔 Fertig!</span>
+          <button type="button" class="timerbtn" data-act="dismiss">Zurücksetzen</button>`;
+      } else {
+        wrap.innerHTML = `<span class="timerclock">⏳ <span class="timerclock-val"></span> verbleibend</span>
+          <button type="button" class="timerbtn" data-act="stop">Abbrechen</button>`;
+      }
+    } else {
+      wrap.innerHTML = `<button type="button" class="timerbtn timerbtn-start" data-act="start">⏰ Timer starten (${fmtDurLabel(defaultMin)})</button>`;
+    }
+    box.appendChild(wrap);
+
+    wrap.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const act = btn.dataset.act;
+        if (act === 'start') {
+          if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission().finally(() => startTimer(key, defaultMin, box));
+          } else {
+            startTimer(key, defaultMin, box);
+          }
+          showHintOnce(box);
+        } else if (act === 'stop' || act === 'dismiss') {
+          stopTimer(key);
+          render(box);
+        }
+      });
+    });
+
+    clearTick(key);
+    if (t && t.endAt && t.endAt - Date.now() > 0) startTick(key, box, t.endAt, t.label);
+  }
+
+  function fmtDurLabel(min) {
+    min = Math.round(min);
+    if (min < 60) return min + ' min';
+    const h = Math.floor(min / 60), r = min % 60;
+    return r ? `${h} h ${r} min` : `${h} h`;
+  }
+
+  function startTimer(key, min, box) {
+    const label = box.closest('.step') ? box.closest('.step').querySelector('h4').textContent.trim() : key;
+    const endAt = Date.now() + min * 60000;
+    setTimer(key, { endAt, label });
+    render(box);
+  }
+
+  function stopTimer(key) {
+    setTimer(key, null);
+    clearTick(key);
+  }
+
+  function clearTick(key) {
+    if (intervals[key]) { clearInterval(intervals[key]); delete intervals[key]; }
+  }
+
+  function startTick(key, box, endAt, label) {
+    const update = () => {
+      const remain = endAt - Date.now();
+      const valEl = box.querySelector('.timerclock-val');
+      if (remain <= 0) {
+        clearTick(key);
+        onExpire(key, box, label);
+        return;
+      }
+      if (valEl) valEl.textContent = fmtRemain(remain);
+    };
+    update();
+    intervals[key] = setInterval(update, 1000);
+  }
+
+  function onExpire(key, box, label) {
+    beep();
+    notify(label || 'Timer');
+    render(box);
+  }
+
+  // Nach jedem buildGuide()-Rendering die Timer-Boxen (neu) verdrahten/wiederherstellen.
+  // Läuft auch stabil neben dem iOS-Akkordeon: der State lebt in localStorage, nicht im DOM.
+  function wire() {
+    const boxes = document.querySelectorAll('.timerbox');
+    boxes.forEach(render);
+  }
+
+  // Alle 1s auch dann ticken, wenn wire() selten läuft (z. B. keine Reglerbewegung) —
+  // eigentliche Anzeige-Updates laufen über startTick je Box; wire() stellt nach jedem
+  // Neu-Rendern der Anleitung (innerHTML-Ersetzung) den korrekten Reststand wieder her.
+  PZ.wireTimers = wire;
+
+  document.addEventListener('DOMContentLoaded', wire);
 })(window);
 
 </script>
@@ -1303,6 +1556,73 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 
 </script>
 <script>
+/* print.js — Einkaufsliste (abgeleitet aus PZ.R) + zwei Druckvarianten (Einkaufsliste / Anleitung) */
+(function (global) {
+  'use strict';
+  const PZ = global.PZ || (global.PZ = {});
+  const $ = PZ.$;
+
+  // Formatierung 1:1 wie im Ergebnis-Panel (calc.js): Hefe < 10 g → 2 Nachkommastellen,
+  // sonst gerundet; Mehl/Wasser/Eis gerundet; Salz/Öl 1 Nachkommastelle.
+  function fmtYeast(g) {
+    return g < 10 ? g.toFixed(2) : String(Math.round(g));
+  }
+
+  // Baut die Zeilen der Einkaufsliste aus den bereits berechneten Gesamtmengen (PZ.R).
+  // Keine neue Berechnung — reine Darstellung/Formatierung, immer Gesamtmengen
+  // (bei Vorteig NICHT nach Vorteig/Hauptteig aufgeteilt, das ist fürs Einkaufen irrelevant).
+  function buildShoppingList() {
+    const R = PZ.R;
+    if (!R || !R.total) return;
+
+    const rows = [];
+    rows.push({ name: 'Mehl', amt: `${Math.round(R.flour)} g` });
+    rows.push({ name: 'Wasser', amt: `${Math.round(R.water)} g` });
+    if (R.salt > 0) rows.push({ name: 'Salz', amt: `${R.salt.toFixed(1)} g` });
+    if (R.yeast > 0) rows.push({ name: `Hefe ${R.yWord || ''}`.trim(), amt: `${fmtYeast(R.yeast)} g` });
+    if (R.oil >= 0.05) rows.push({ name: 'Olivenöl', amt: `${R.oil.toFixed(1)} g` });
+    if (R.ice > 0) rows.push({ name: 'Eis (für Schüttwasser)', amt: `${Math.round(R.ice)} g` });
+
+    const list = $('shoppingList');
+    if (!list) return;
+    const itemsHtml = rows.map(r =>
+      `<div class="ing"><span class="name">${r.name}</span><span class="amt">${r.amt}</span></div>`
+    ).join('');
+    list.innerHTML = `
+      <h2 style="margin-top:0;">🛒 Einkaufsliste</h2>
+      <div class="total" style="margin-bottom:10px;">
+        <div class="big">${Math.round(R.total)} g</div>
+        <div class="lbl">Gesamtteig · ${R.N} × ${R.W} g</div>
+      </div>
+      ${itemsHtml}
+    `;
+  }
+
+  // Zwei Druckvarianten, ohne den bestehenden window.print()-Mechanismus zu ersetzen:
+  // je eine body-Klasse steuert per @media print, was sichtbar bleibt.
+  function printShoppingList() {
+    buildShoppingList();
+    document.body.classList.add('print-shopping');
+    window.print();
+  }
+
+  function printGuide() {
+    document.body.classList.add('print-guide');
+    window.print();
+  }
+
+  // Klassen nach dem Druckdialog wieder entfernen (afterprint feuert in allen gängigen Browsern).
+  window.addEventListener('afterprint', function () {
+    document.body.classList.remove('print-shopping', 'print-guide');
+  });
+
+  PZ.buildShoppingList = buildShoppingList;
+  PZ.printShoppingList = printShoppingList;
+  PZ.printGuide = printGuide;
+})(window);
+
+</script>
+<script>
 /* presets.js — fertige, erprobte Rezepte + Anwenden auf die Bedienelemente */
 (function (global) {
   'use strict';
@@ -1381,45 +1701,178 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 
 </script>
 <script>
-/* storage.js — Speichern/Laden des Zustands in localStorage */
+/* storage.js — Speichern/Laden mehrerer benannter Rezepte in localStorage
+ *
+ * Format (seit v3.10.0): { recipes: [{id, name, state, savedAt}], activeId }
+ * Migriert automatisch alten Einzel-Slot-Stand (nackter `state`, vor v3.10.0)
+ * zu einem ersten Rezept "Mein Rezept" — keine Datenverluste bestehender Nutzer.
+ */
 (function (global) {
   'use strict';
   const PZ = global.PZ || (global.PZ = {});
   const $ = PZ.$;
   const KEY = 'pizzaRechner';
 
-  function save() {
-    localStorage.setItem(KEY, JSON.stringify(PZ.state));
+  // --- Rohdaten lesen/schreiben ---------------------------------------
+  function readRaw() {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch (e) { return null; }
+  }
+  function writeRaw(data) {
+    localStorage.setItem(KEY, JSON.stringify(data));
   }
 
-  function load() {
+  // Erkennt das alte Format (nackter state: hat z.B. "balls"/"hyd", aber kein "recipes")
+  function isLegacyState(o) {
+    return o && typeof o === 'object' && !Array.isArray(o.recipes) &&
+      (o.balls != null || o.hyd != null);
+  }
+
+  function makeId() {
+    return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  // Liest den localStorage-Inhalt, migriert bei Bedarf ins neue Format
+  // und schreibt das migrierte Ergebnis sofort zurück (einmalig).
+  function readStore() {
+    let data = readRaw();
+    if (!data) {
+      data = { recipes: [], activeId: null };
+      return data;
+    }
+    if (isLegacyState(data)) {
+      // Alter Einzel-Slot-Stand -> erstes Rezept "Mein Rezept"
+      const id = makeId();
+      data = {
+        recipes: [{ id, name: 'Mein Rezept', state: data, savedAt: Date.now() }],
+        activeId: id
+      };
+      writeRaw(data);
+      return data;
+    }
+    if (!Array.isArray(data.recipes)) data.recipes = [];
+    if (data.activeId === undefined) data.activeId = data.recipes[0] ? data.recipes[0].id : null;
+    return data;
+  }
+
+  function listRecipes() {
+    return readStore().recipes.slice();
+  }
+  function getActiveId() {
+    return readStore().activeId;
+  }
+
+  // Aktuellen PZ.state in ein Rezept schreiben (bestehendes überschreiben oder neu anlegen)
+  function saveState(id, name) {
+    const data = readStore();
+    const snapshot = JSON.parse(JSON.stringify(PZ.state));
+    let rec = data.recipes.find(r => r.id === id);
+    if (rec) {
+      rec.state = snapshot;
+      rec.savedAt = Date.now();
+      if (name) rec.name = name;
+    } else {
+      rec = { id: id || makeId(), name: name || nextDefaultName(data.recipes), state: snapshot, savedAt: Date.now() };
+      data.recipes.push(rec);
+    }
+    data.activeId = rec.id;
+    writeRaw(data);
+    return rec;
+  }
+
+  function nextDefaultName(recipes) {
+    let n = recipes.length + 1;
+    const names = new Set(recipes.map(r => r.name));
+    while (names.has('Rezept ' + n)) n++;
+    return 'Rezept ' + n;
+  }
+
+  // --- Öffentliche API ---------------------------------------------------
+
+  // Speichert unter dem aktuell aktiven Rezept (überschreibt); legt beim ersten
+  // Mal automatisch ein neues Rezept an. Bleibt die Basis für #saveBtn/#qbSave
+  // (Quick-Save ohne Dialog).
+  function save() {
+    const data = readStore();
+    const id = data.activeId || makeId();
+    saveState(id);
+  }
+
+  // Legt immer ein neues Rezept mit dem angegebenen Namen an und macht es aktiv.
+  function saveAsNew(name) {
+    const data = readStore();
+    const rec = saveState(makeId(), name && name.trim() ? name.trim() : nextDefaultName(data.recipes));
+    return rec;
+  }
+
+  // Benennt das aktive Rezept um (ohne den Stand neu zu überschreiben).
+  function renameActive(name) {
+    if (!name || !name.trim()) return;
+    const data = readStore();
+    const rec = data.recipes.find(r => r.id === data.activeId);
+    if (!rec) return;
+    rec.name = name.trim();
+    writeRaw(data);
+  }
+
+  function deleteRecipe(id) {
+    const data = readStore();
+    data.recipes = data.recipes.filter(r => r.id !== id);
+    if (data.activeId === id) {
+      data.activeId = data.recipes[0] ? data.recipes[0].id : null;
+    }
+    writeRaw(data);
+    return data.activeId;
+  }
+
+  // Schreibt einen gespeicherten state in PZ.state + UI und macht ihn aktiv
+  function applyState(o) {
     const state = PZ.state, set = PZ.set;
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return;
-    try {
-      const o = JSON.parse(raw);
-      Object.assign(state, o);
-      // Werte in UI schreiben
-      set.balls(state.balls); set.ballw(state.ballw); set.hyd(state.hyd); set.salt(state.salt);
-      if (state.oil != null) set.oil(state.oil);
-      set.pref(state.pref); set.bhyd(state.bhyd); set.yeast(state.yeast);
-      // prefMature/prefStage werden von applyMethod() unten aus state.prefStage gesetzt
-      set.ddt(state.ddt); set.room(state.room);
-      // Segmente
-      PZ.selectSeg('method', 'm', state.method);
-      PZ.selectSeg('yeastType', 'y', state.yeastType);
-      PZ.selectSeg('knead', 'k', state.knead);
-      PZ.selectSeg('coldStage', 'cs', state.coldStage || 'balls');
-      PZ.selectSeg('timeMode', 'tm', state.timeMode || 'start');
-      if (state.timeISO) $('timeISO').value = state.timeISO;
-      if (state.flour && $('flour')) $('flour').value = state.flour;
-      PZ.updateTimeLabel();
-      PZ.applyMethod();
-    } catch (e) { /* defekter Eintrag wird ignoriert */ }
+    Object.assign(state, o);
+    set.balls(state.balls); set.ballw(state.ballw); set.hyd(state.hyd); set.salt(state.salt);
+    if (state.oil != null) set.oil(state.oil);
+    set.pref(state.pref); set.bhyd(state.bhyd); set.yeast(state.yeast);
+    // prefMature/prefStage werden von applyMethod() unten aus state.prefStage gesetzt
+    set.ddt(state.ddt); set.room(state.room);
+    // Segmente
+    PZ.selectSeg('method', 'm', state.method);
+    PZ.selectSeg('yeastType', 'y', state.yeastType);
+    PZ.selectSeg('knead', 'k', state.knead);
+    PZ.selectSeg('coldStage', 'cs', state.coldStage || 'balls');
+    PZ.selectSeg('timeMode', 'tm', state.timeMode || 'start');
+    if (state.timeISO) $('timeISO').value = state.timeISO;
+    if (state.flour && $('flour')) $('flour').value = state.flour;
+    PZ.updateTimeLabel();
+    PZ.applyMethod();
+  }
+
+  function loadRecipe(id) {
+    const data = readStore();
+    const rec = data.recipes.find(r => r.id === id);
+    if (!rec) return;
+    data.activeId = id;
+    writeRaw(data);
+    applyState(rec.state);
+    if (PZ.refreshRecipeSelect) PZ.refreshRecipeSelect();
+  }
+
+  // Lädt beim Start das aktive Rezept (bzw. migriert einen alten Einzel-Slot-Stand)
+  function load() {
+    const data = readStore();
+    const rec = data.recipes.find(r => r.id === data.activeId) || data.recipes[0];
+    if (!rec) return; // noch nichts gespeichert
+    applyState(rec.state);
   }
 
   PZ.save = save;
   PZ.load = load;
+  PZ.saveAsNew = saveAsNew;
+  PZ.renameActive = renameActive;
+  PZ.deleteRecipe = deleteRecipe;
+  PZ.loadRecipe = loadRecipe;
+  PZ.listRecipes = listRecipes;
+  PZ.getActiveId = getActiveId;
 })(window);
 
 </script>
@@ -1432,12 +1885,73 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 
   $('saveBtn').onclick = () => {
     PZ.save();
+    refreshRecipeSelect();
     const b = $('saveBtn'); const t = b.textContent;
     b.textContent = '✓ Gespeichert';
     setTimeout(() => b.textContent = t, 1400);
   };
 
+  // --- Mehrere gespeicherte Rezepte (js/storage.js) ---------------------
+  function refreshRecipeSelect() {
+    const sel = $('recipeSelect');
+    if (!sel) return;
+    const recipes = PZ.listRecipes();
+    const activeId = PZ.getActiveId();
+    sel.innerHTML = '';
+    if (!recipes.length) {
+      sel.appendChild(new Option('— noch keins gespeichert —', ''));
+      return;
+    }
+    recipes.forEach(r => sel.appendChild(new Option(r.name, r.id)));
+    sel.value = activeId || recipes[0].id;
+  }
+  PZ.refreshRecipeSelect = refreshRecipeSelect;
+
+  const recipeSelect = $('recipeSelect');
+  if (recipeSelect) {
+    recipeSelect.addEventListener('change', e => {
+      if (e.target.value) PZ.loadRecipe(e.target.value);
+    });
+  }
+  const recipeSaveNew = $('recipeSaveNew');
+  if (recipeSaveNew) {
+    recipeSaveNew.onclick = () => {
+      const nameEl = $('recipeName');
+      const rec = PZ.saveAsNew(nameEl ? nameEl.value : '');
+      if (nameEl) nameEl.value = '';
+      refreshRecipeSelect();
+      const b = recipeSaveNew; const t = b.textContent;
+      b.textContent = '✓ Gespeichert';
+      setTimeout(() => b.textContent = t, 1400);
+      void rec;
+    };
+  }
+  const recipeRename = $('recipeRename');
+  if (recipeRename) {
+    recipeRename.onclick = () => {
+      const recipes = PZ.listRecipes();
+      if (!recipes.length) return;
+      const current = recipes.find(r => r.id === PZ.getActiveId());
+      const name = prompt('Neuer Name für dieses Rezept:', current ? current.name : '');
+      if (name && name.trim()) { PZ.renameActive(name); refreshRecipeSelect(); }
+    };
+  }
+  const recipeDelete = $('recipeDelete');
+  if (recipeDelete) {
+    recipeDelete.onclick = () => {
+      const recipes = PZ.listRecipes();
+      const id = PZ.getActiveId();
+      if (!recipes.length || !id) return;
+      const current = recipes.find(r => r.id === id);
+      if (!confirm('„' + (current ? current.name : 'Rezept') + '" wirklich löschen?')) return;
+      const nextId = PZ.deleteRecipe(id);
+      refreshRecipeSelect();
+      if (nextId) PZ.loadRecipe(nextId);
+    };
+  }
+
   PZ.load();
+  refreshRecipeSelect();
   PZ.applyMethod();
   PZ.calc();
 })(window);

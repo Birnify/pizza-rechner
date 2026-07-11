@@ -29,6 +29,10 @@
   }
   function tip(t) { return `<div class="tip">💡 ${t}</div>`; }
   function warn(t) { return `<div class="warn">⚠️ ${t}</div>`; }
+  // Timer-Widget-Platzhalter für Schritte mit nennenswerter Wartezeit (js/timer.js rendert hinein).
+  function timerBox(key, min) {
+    return `<div class="timerbox" data-timer-key="${key}" data-timer-min="${Math.round(min)}"></div>`;
+  }
 
   function buildGuide() {
     const state = PZ.state;
@@ -91,7 +95,7 @@
             : '<b>2 h</b> bei Raumtemp anspringen lassen, dann in den <b>Kühlschrank (4–6 °C)</b>.';
         st('Biga reifen lassen', `${state.prefMature} h`,
           `${bigaTempTxt} Sie lockert sich auf und duftet säuerlich-hefig.`,
-          tip('Längere Reife braucht <b>weniger Hefe</b> im Vorteig und/oder <b>kühlere</b> Lagerung. Fertig = luftig-schwammig, gerade eben eingefallen.'), matureMin);
+          tip('Längere Reife braucht <b>weniger Hefe</b> im Vorteig und/oder <b>kühlere</b> Lagerung. Fertig = luftig-schwammig, gerade eben eingefallen.') + timerBox('biga-reifen', matureMin), matureMin);
       } else {
         st('Poolish verrühren', 'mit Löffel / Schneebesen',
           `Hefe im Wasser auflösen, dann Mehl einrühren – <b>mit einem Löffel oder Schneebesen ca. 2–3 min rühren</b>, bis ein <b>zäher, klumpenfreier Pfannkuchenteig</b> entsteht. Abdecken.`, '', 10);
@@ -100,7 +104,7 @@
           : '<b>1 h</b> bei Raumtemp anspringen lassen, dann <b>kühl stellen (Kühlschrank)</b> und langsam ausreifen.';
         st('Poolish reifen lassen', `${state.prefMature} h`,
           `${poolishTempTxt} Reif = Oberfläche <b>voller Blasen</b>, kurz bevor er wieder einfällt.`,
-          tip('Fingertest: riecht angenehm nach Hefe/Joghurt, nicht stechend nach Alkohol. Länger als ~24 h zieht er nicht durch.'), matureMin);
+          tip('Fingertest: riecht angenehm nach Hefe/Joghurt, nicht stechend nach Alkohol. Länger als ~24 h zieht er nicht durch.') + timerBox('poolish-reifen', matureMin), matureMin);
       }
       sec('Hauptteig');
       const hasMW = R.mWater >= 1, hasMF = R.mFlour >= 1;
@@ -143,7 +147,7 @@
           : '';
         st('Autolyse (empfohlen)', '20–40 min',
           `Nur <b>Mehl + Wasser</b> grob mischen (Salz und Hefe kommen erst später), abdecken, ruhen lassen. Weniger Knetarbeit, dehnbarerer Teig.`,
-          warn('Ohne Salz arbeiten die Enzyme im Mehl ungebremst – <b>Autolyse nicht über ~40–60 min ausdehnen</b>. Länger baut das Klebergerüst eher ab als auf (Teig wird zunehmend klebrig-schwach statt elastisch).') + reserveWaterTip, 30);
+          warn('Ohne Salz arbeiten die Enzyme im Mehl ungebremst – <b>Autolyse nicht über ~40–60 min ausdehnen</b>. Länger baut das Klebergerüst eher ab als auf (Teig wird zunehmend klebrig-schwach statt elastisch).') + reserveWaterTip + timerBox('autolyse', 30), 30);
         st('Hefe zugeben', '~2 min',
           tinyYeast
             ? `Bei dieser sehr kleinen Menge (<b>${g(R.yeast)} g</b>) die ${state.yeastType === 'dry' ? 'Trockenhefe' : 'Frischhefe'} im <b>zurückbehaltenen Wasser auflösen</b> und gleichmäßig über den Teig geben – trocken eingestreut verteilt sie sich bei so wenig Menge kaum gleichmäßig.`
@@ -169,7 +173,7 @@
     if (hi) {
       st('Stretch &amp; Fold statt Kneten', '4 × alle 30 min',
         `Bei <b>${state.hyd}% Hydration</b> ist der Teig zu klebrig zum klassischen Kneten. Kurz mischen, dann <b>4 Runden Dehnen & Falten</b> alle 30 min mit <b>nassen Händen</b>.`,
-        tip('Zwischen den Runden abgedeckt ruhen lassen – das Gluten entwickelt sich von selbst.'), 120);
+        tip('Zwischen den Runden abgedeckt ruhen lassen – das Gluten entwickelt sich von selbst.') + timerBox('stretch-fold', 120), 120);
     } else {
       st('Kneten', state.knead === '6' ? '8–12 min' : '10–15 min',
         `${state.knead === '6' ? 'Maschine: <b>8–12 min</b> auf niedriger/mittlerer Stufe' : 'Von Hand: <b>10–15 min</b> (kneten, dehnen, falten)'}, bis der Teig <b>glatt & elastisch</b> ist. Fenstertest: dünn ausziehbar ohne zu reißen.`, '', state.knead === '6' ? 10 : 13);
@@ -180,19 +184,19 @@
     const ballsCold = f.cold && state.coldStage !== 'bulk';
     sec('Gare & Formen');
     st('Stockgare (im Stück)', f.cold && !ballsCold ? 'Raumtemp + kühl' : 'Raumtemp',
-      `Teig zur Kugel formen, in eine geölte/abgedeckte Schüssel. ${f.bulk}.`, '', f.bulkMin);
+      `Teig zur Kugel formen, in eine geölte/abgedeckte Schüssel. ${f.bulk}.`, timerBox('stockgare', f.bulkMin), f.bulkMin);
     st('Teiglinge formen', `${R.N} × ${R.W} g`,
       `In <b>${R.N} Stücke à ${R.W} g</b> teilen. Jedes zu einer <b>straffen Kugel</b> formen (Oberfläche spannen, Schluss nach unten). Mit Abstand in eine ${ballsCold ? 'kühlschranktaugliche, dicht schließende Box' : 'Box'}.`,
       tip('Straff geformte Kugeln = runde Pizzen mit gleichmäßigem Rand (Cornicione).')
       + tip('Einfrieren möglich: Teiglinge dünn mit Öl bestreichen, einzeln (nicht berührend) einfrieren – so <b>2–3 Monate</b> haltbar. Auftauen: <b>über Nacht im Kühlschrank</b>, dann <b>3–5 h bei Raumtemperatur</b> und <b>2–4 h Stückgare</b> wie gewohnt.'), 10);
     st('Stückgare (Teiglinge)', ballsCold ? 'kühl · Fingertest' : 'Fingertest',
       `${f.proof}. <b>Fertig</b>, wenn ein leichter Fingerdruck <b>langsam</b> zurückfedert (eine kleine Delle bleibt).`,
-      f.cold ? tip('Teiglinge vor dem Backen wirklich auf Raumtemperatur kommen lassen – kalter Teig reißt beim Ausziehen.') : '', f.proofMin);
+      (f.cold ? tip('Teiglinge vor dem Backen wirklich auf Raumtemperatur kommen lassen – kalter Teig reißt beim Ausziehen.') : '') + timerBox('stueckgare', f.proofMin), f.proofMin);
 
     sec('Backen');
     st('Ofen vorheizen', '30–45 min',
       `Pizzastein/-stahl auf <b>höchste Stufe</b> vorheizen. Pizzaofen (Gas/Holz) <b>430–480 °C</b>; Haushaltsofen Maximum (250–300 °C) + Grill, Stein ganz oben.`,
-      tip('Der Stein muss richtig durchglühen – lieber 10 min länger. (Startzeit = 50 min vor dem Backen.)'), 0, { back: 50 });
+      tip('Der Stein muss richtig durchglühen – lieber 10 min länger. (Startzeit = 50 min vor dem Backen.)') + timerBox('ofen-vorheizen', 40), 0, { back: 50 });
     st('Pizza ausziehen', 'kein Nudelholz!',
       `Teigling in Mehl/Grieß betten, von der Mitte mit den <b>Fingerspitzen flachdrücken</b>, Rand (~1,5 cm) stehen lassen, über die Handrücken auf Größe ziehen.`,
       warn('Nie ein Nudelholz – das drückt die Luft aus dem Rand. Der Cornicione lebt von der Gärblase.'), 5);
@@ -244,6 +248,7 @@
         <p>${i.body}</p>${i.extra}</div></div>`;
     });
     $('guideSteps').innerHTML = html;
+    if (PZ.wireTimers) PZ.wireTimers();
   }
 
   PZ.buildGuide = buildGuide;

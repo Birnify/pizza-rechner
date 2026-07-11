@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pizzateig-Rechner</title>
-<link rel="stylesheet" href="css/styles.css?v=3.8.0">
+<link rel="stylesheet" href="css/styles.css?v=3.11.0">
 </head>
 <body>
 <header>
@@ -37,6 +37,25 @@
           </optgroup>
         </select>
         <div class="hint" id="presetDesc" style="margin-top:8px;">Wähle ein erprobtes Rezept — alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="ic">💾</span> Meine Rezepte</h2>
+      <div class="field" style="margin-bottom:0;">
+        <label id="myRecipesLabel" for="recipeSelect">Gespeichertes Rezept</label>
+        <select id="recipeSelect" class="selectbox" aria-labelledby="myRecipesLabel">
+          <option value="">— noch keins gespeichert —</option>
+        </select>
+        <div class="row" style="margin-top:8px;gap:8px;">
+          <input type="text" id="recipeName" class="selectbox" placeholder="Name für neues Rezept" style="flex:2;">
+          <button type="button" id="recipeSaveNew" style="flex:1;">➕ Neu</button>
+        </div>
+        <div class="row" style="margin-top:8px;gap:8px;">
+          <button type="button" id="recipeRename" style="flex:1;">✏️ Umbenennen</button>
+          <button type="button" id="recipeDelete" style="flex:1;">🗑️ Löschen</button>
+        </div>
+        <div class="hint" id="recipeHint" style="margin-top:8px;">Eigene Rezepte sind unabhängig von den Presets oben — hier landen deine per „💾 Speichern" gesicherten Stände.</div>
       </div>
     </div>
 
@@ -264,8 +283,11 @@
         <div class="note" id="iceNote"></div>
       </div>
 
+      <div id="shoppingList" class="shoppinglist-card"></div>
+
       <div class="actions">
-        <button onclick="window.print()">🖨️ Drucken</button>
+        <button onclick="PZ.printShoppingList()">🛒 Einkaufsliste drucken</button>
+        <button onclick="PZ.printGuide()">📝 Anleitung drucken</button>
         <button class="primary" id="saveBtn">💾 Speichern</button>
       </div>
     </div>
@@ -284,19 +306,21 @@
 <footer>
   Alles wird lokal in deinem Browser gerechnet &amp; gespeichert · keine Internetverbindung nötig<br>
   Bäckerprozente — Wasser, Salz &amp; Hefe immer relativ zur Mehlmenge (= 100 %)<br>
-  <span id="appVersion" style="opacity:.7;">v3.8.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.11.0</span>
 </footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.8.0"></script>
-<script src="js/state.js?v=3.8.0"></script>
-<script src="js/flour.js?v=3.8.0"></script>
-<script src="js/calc.js?v=3.8.0"></script>
-<script src="js/schedule.js?v=3.8.0"></script>
-<script src="js/guide.js?v=3.8.0"></script>
-<script src="js/ui.js?v=3.8.0"></script>
-<script src="js/presets.js?v=3.8.0"></script>
-<script src="js/storage.js?v=3.8.0"></script>
-<script src="js/main.js?v=3.8.0"></script>
+<script src="js/dom.js?v=3.11.0"></script>
+<script src="js/state.js?v=3.11.0"></script>
+<script src="js/flour.js?v=3.11.0"></script>
+<script src="js/calc.js?v=3.11.0"></script>
+<script src="js/schedule.js?v=3.11.0"></script>
+<script src="js/guide.js?v=3.11.0"></script>
+<script src="js/timer.js?v=3.11.0"></script>
+<script src="js/ui.js?v=3.11.0"></script>
+<script src="js/print.js?v=3.11.0"></script>
+<script src="js/presets.js?v=3.11.0"></script>
+<script src="js/storage.js?v=3.11.0"></script>
+<script src="js/main.js?v=3.11.0"></script>
 </body>
 </html>

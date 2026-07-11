@@ -36,7 +36,9 @@
   <span id="waterTemp"></span><span id="iceAmt"></span><div id="iceNote"></div>
   <div id="guideSummary"></div><div id="guideSteps"></div>
   <div id="flourWarn"></div>
+  <div id="shoppingList"></div>
   <select id="flour"><option value="caputo_pizzeria" selected></option></select>
+  <input type="text" id="timeISO">
 </div>
 
 <script src="../js/dom.js"></script>
@@ -45,6 +47,8 @@
 <script src="../js/schedule.js"></script>
 <script src="../js/guide.js"></script>
 <script src="../js/calc.js"></script>
+<script src="../js/print.js"></script>
+<script src="../js/storage.js"></script>
 
 <script>
 "use strict";
@@ -75,6 +79,15 @@
     }
     sel.value = key;
   }
+
+  // --- Stubs für js/storage.js: ui.js ist hier nicht geladen (kein DOM-Markup
+  // für Slider/Segmente), storage.js ruft aber PZ.set/selectSeg/applyMethod/
+  // updateTimeLabel auf. Diese Stubs übernehmen nur die state-Zuweisung, ohne
+  // echtes UI zu berühren — die Rechenlogik-Module bleiben unverändert getestet.
+  PZ.set = new Proxy({}, { get: () => (val) => { /* no-op, state wird von storage.js direkt per Object.assign gesetzt */ } });
+  PZ.selectSeg = function () {};
+  PZ.applyMethod = function () {};
+  PZ.updateTimeLabel = function () {};
 
   // --- Haupt-Testfall: setzt state, rechnet, prüft R-Werte ---
   function testCase(name, overrides, buildChecks) {
@@ -829,6 +842,392 @@
       ['errechneter Start-Zeitpunkt im Banner', html.includes(fmtClockTest(computedStart)), true],
     ];
   });
+
+  // ─────────────────────────────────────────────────────────────
+  heading('15 · Einkaufsliste (js/print.js)');
+
+  // buildShoppingList() ist eine reine Darstellungs-Funktion auf PZ.R — keine neue Berechnung.
+  // Prüft: Zeilenauswahl (nur > 0), Formatierung identisch zum Ergebnis-Panel, Gesamtmengen bei Vorteig.
+
+  testCase('Direkt · Standard — enthält Mehl/Wasser/Salz/Hefe, kein Öl (0 %), kein Eis', {
+    oil: 0
+  }, R => {
+    PZ.buildShoppingList();
+    const html = document.getElementById('shoppingList').innerHTML;
+    return [
+      ['Mehl-Zeile mit gerundetem Wert', html.includes('' + Math.round(R.flour)), true],
+      ['Wasser-Zeile mit gerundetem Wert', html.includes('' + Math.round(R.water)), true],
+      ['Salz-Zeile mit 1 Nachkommastelle', html.includes(R.salt.toFixed(1)), true],
+      ['Hefe-Zeile mit 2 Nachkommastellen (< 10 g)', html.includes(R.yeast.toFixed(2)), true],
+      ['Keine Öl-Zeile bei 0 %', !html.includes('Olivenöl'), true],
+      ['Gesamtteig-Anzeige', html.includes(Math.round(R.total) + ' g'), true],
+    ];
+  });
+
+  testCase('Mit Öl (Teglia-artig, 4 %) — Öl-Zeile erscheint mit 1 Nachkommastelle', {
+    oil: 4, hyd: 75, ballw: 320
+  }, R => {
+    PZ.buildShoppingList();
+    const html = document.getElementById('shoppingList').innerHTML;
+    return [
+      ['Öl-Zeile vorhanden', html.includes('Olivenöl'), true],
+      ['Öl-Wert wie im Ergebnis-Panel formatiert', html.includes(R.oil.toFixed(1)), true],
+    ];
+  });
+
+  testCase('Biga (Vorteig) — Einkaufsliste zeigt Gesamtmengen, keine Vorteig/Hauptteig-Aufteilung', {
+    method: 'biga', pref: 70, bhyd: 45, hyd: 65, prefMature: 24
+  }, R => {
+    PZ.buildShoppingList();
+    const html = document.getElementById('shoppingList').innerHTML;
+    return [
+      ['Gesamtmehl (nicht Vorteig-Teilmenge) in der Liste', html.includes('' + Math.round(R.flour)), true],
+      ['Kein separater Vorteig-Abschnitt ("Vortag"/"Hauptteig")', !html.includes('Hauptteig') && !html.includes('Vortag'), true],
+    ];
+  });
+
+  testCase('Kein Eis nötig (wT nah an Raumtemp) — keine Eis-Zeile', {
+    ddt: 25, room: 24, knead: '3'
+  }, R => {
+    PZ.buildShoppingList();
+    const html = document.getElementById('shoppingList').innerHTML;
+    return [
+      ['R.ice ist 0 (Kontrollcheck)', R.ice, 0, 0],
+      ['Keine Eis-Zeile in der Liste', !html.includes('Eis'), true],
+    ];
+  });
+
+  testCase('Mit Eisbedarf (kaltes Schüttwasser) — Eis-Zeile erscheint gerundet', {
+    ddt: 22, room: 28, knead: '6'
+  }, R => {
+    PZ.buildShoppingList();
+    const html = document.getElementById('shoppingList').innerHTML;
+    return [
+      ['R.ice > 0 (Kontrollcheck)', R.ice > 0, true],
+      ['Eis-Zeile mit gerundetem Wert', html.includes('' + Math.round(R.ice) + ' g'), true],
+    ];
+  });
+
+  testCase('Poolish (Vorteig) — auch hier Gesamtmengen statt Aufteilung', {
+    method: 'poolish', pref: 50, hyd: 66, prefMature: 14, prefStage: 'p14'
+  }, R => {
+    PZ.buildShoppingList();
+    const html = document.getElementById('shoppingList').innerHTML;
+    return [
+      ['Gesamtmehl (nicht Poolish-Teilmenge) in der Liste', html.includes('' + Math.round(R.flour)), true],
+      ['Gesamtwasser (nicht Poolish-Teilmenge) in der Liste', html.includes('' + Math.round(R.water)), true],
+      ['Kein separater Vorteig-Abschnitt ("Vortag"/"Hauptteig")', !html.includes('Hauptteig') && !html.includes('Vortag'), true],
+    ];
+  });
+
+  testCase('Hefe-Label Frischhefe erscheint in der Einkaufsliste', {
+    yeastType: 'fresh', yeast: 0.3
+  }, R => {
+    PZ.buildShoppingList();
+    const html = document.getElementById('shoppingList').innerHTML;
+    return [
+      ['R.yWord = "(frisch)" (Kontrollcheck)', R.yWord, '(frisch)'],
+      ['Hefe-Zeile enthält "(frisch)"-Label', html.includes('Hefe (frisch)'), true],
+    ];
+  });
+
+  testCase('Hefe-Label Trockenhefe erscheint in der Einkaufsliste', {
+    yeastType: 'dry', yeast: 0.3
+  }, R => {
+    PZ.buildShoppingList();
+    const html = document.getElementById('shoppingList').innerHTML;
+    return [
+      ['R.yWord = "(trocken)" (Kontrollcheck)', R.yWord, '(trocken)'],
+      ['Hefe-Zeile enthält "(trocken)"-Label', html.includes('Hefe (trocken)'), true],
+    ];
+  });
+
+  // Rundungsgrenze der Hefe-Formatierung: < 10 g → 2 Nachkommastellen, ≥ 10 g → gerundete Ganzzahl.
+  // Kleine Charge (1 Teigling) hält die Hefe knapp unter 10 g, große Charge (20 Teiglinge) treibt sie darüber.
+  testCase('Hefe-Rundung knapp UNTER 10 g (kleine Charge) — 2 Nachkommastellen', {
+    balls: 1, ballw: 250, yeast: 3.5
+  }, R => {
+    PZ.buildShoppingList();
+    const html = document.getElementById('shoppingList').innerHTML;
+    return [
+      ['R.yeast < 10 g (Kontrollcheck)', R.yeast < 10, true],
+      ['Hefe-Zeile mit 2 Nachkommastellen', html.includes(R.yeast.toFixed(2) + ' g'), true],
+      ['Kein gerundeter Ganzzahl-Wert stattdessen', html.includes(String(Math.round(R.yeast)) + ' g') && Math.round(R.yeast) !== Number(R.yeast.toFixed(2)), false],
+    ];
+  });
+
+  testCase('Hefe-Rundung ÜBER 10 g (extrem große Charge, 20 Teiglinge) — gerundete Ganzzahl', {
+    balls: 20, ballw: 300, yeast: 1.5, salt: 2.8
+  }, R => {
+    PZ.buildShoppingList();
+    const html = document.getElementById('shoppingList').innerHTML;
+    return [
+      ['R.yeast ≥ 10 g (Kontrollcheck)', R.yeast >= 10, true],
+      ['Hefe-Zeile mit gerundeter Ganzzahl (kein Komma)', html.includes('' + Math.round(R.yeast) + ' g'), true],
+    ];
+  });
+
+  // Extremwerte: 1 Teigling (Mindestmenge) und 20 Teiglinge (Höchstmenge) —
+  // Gesamtteig muss weiterhin exakt N × W ergeben (Masseerhaltung auch in der Liste).
+  testCase('Extremwert 1 Teigling — Einkaufsliste zeigt korrekten Gesamtteig', {
+    balls: 1, ballw: 250
+  }, R => {
+    PZ.buildShoppingList();
+    const html = document.getElementById('shoppingList').innerHTML;
+    return [
+      ['Gesamtteig = N × W', R.total, 250, 0],
+      ['Gesamtteig-Anzeige in der Liste', html.includes('250 g'), true],
+      ['Mehl-Zeile vorhanden', html.includes('' + Math.round(R.flour)), true],
+    ];
+  });
+
+  testCase('Extremwert 20 Teiglinge — Einkaufsliste zeigt korrekten Gesamtteig', {
+    balls: 20, ballw: 280
+  }, R => {
+    PZ.buildShoppingList();
+    const html = document.getElementById('shoppingList').innerHTML;
+    return [
+      ['Gesamtteig = N × W', R.total, 5600, 0],
+      ['Gesamtteig-Anzeige in der Liste', html.includes('5600 g'), true],
+      ['Mehl-Zeile vorhanden', html.includes('' + Math.round(R.flour)), true],
+    ];
+  });
+
+  // 0 % Öl: Öl-Zeile darf nicht erscheinen (Schwelle oil >= 0.05, identisch zu #gOilRow)
+  testCase('0 % Öl — keine Öl-Zeile (Grenzfall exakt 0)', {
+    oil: 0
+  }, R => {
+    PZ.buildShoppingList();
+    const html = document.getElementById('shoppingList').innerHTML;
+    return [
+      ['R.oil = 0 (Kontrollcheck)', R.oil, 0, 0],
+      ['Keine Öl-Zeile', !html.includes('Olivenöl'), true],
+    ];
+  });
+
+  // buildShoppingList() darf nicht crashen, wenn PZ.R (noch) nicht gesetzt ist.
+  (function () {
+    const savedR = PZ.R;
+    PZ.R = undefined;
+    let threw = false;
+    try { PZ.buildShoppingList(); } catch (e) { threw = true; }
+    renderBox('buildShoppingList() ohne PZ.R (z.B. vor dem ersten calc()) wirft keinen Fehler', [
+      { label: 'Kein Fehler beim Aufruf ohne PZ.R', ok: !threw, actual: threw, expected: false, tol: null }
+    ]);
+    PZ.R = savedR;
+  })();
+
+  // ─────────────────────────────────────────────────────────────
+  heading('16 · Speichern & Laden (js/storage.js) — Migration & Mehrfach-Rezepte');
+  (function () {
+    const STORAGE_KEY = 'pizzaRechner';
+    // Sichert einen eventuell vorhandenen echten Stand (falls test.html je dieselbe
+    // Origin/denselben localStorage wie die App teilt) und stellt ihn am Ende wieder her —
+    // die Tests dürfen echte Nutzerdaten niemals überschreiben.
+    const backup = localStorage.getItem(STORAGE_KEY);
+
+    function withCleanStorage(fn) {
+      localStorage.removeItem(STORAGE_KEY);
+      try { fn(); } finally { localStorage.removeItem(STORAGE_KEY); }
+    }
+
+    // --- Migration: alter nackter state-Stand -> neues {recipes,activeId}-Format ---
+    withCleanStorage(() => {
+      const legacy = Object.assign({}, BASE, { balls: 6, hyd: 68 });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(legacy));
+      PZ.load(); // liest den alten Stand, migriert automatisch, schreibt zurück
+      const migrated = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      const recipes = PZ.listRecipes();
+      renderBox('Migration: alter Einzel-Slot-Stand wird automatisch übernommen', [
+        { label: 'Neues Format hat recipes[]', ok: Array.isArray(migrated.recipes), actual: Array.isArray(migrated.recipes), expected: true, tol: null },
+        { label: 'Genau 1 migriertes Rezept', ok: migrated.recipes.length === 1, actual: migrated.recipes.length, expected: 1, tol: null },
+        { label: 'Migriertes Rezept heißt "Mein Rezept"', ok: migrated.recipes[0].name === 'Mein Rezept', actual: migrated.recipes[0].name, expected: 'Mein Rezept', tol: null },
+        { label: 'Alte Werte 1:1 übernommen (balls)', ok: migrated.recipes[0].state.balls === 6, actual: migrated.recipes[0].state.balls, expected: 6, tol: null },
+        { label: 'Alte Werte 1:1 übernommen (hyd)', ok: migrated.recipes[0].state.hyd === 68, actual: migrated.recipes[0].state.hyd, expected: 68, tol: null },
+        { label: 'activeId zeigt auf das migrierte Rezept', ok: migrated.activeId === migrated.recipes[0].id, actual: migrated.activeId, expected: migrated.recipes[0].id, tol: null },
+        { label: 'PZ.state nach load() auf migrierte Werte gesetzt', ok: PZ.state.balls === 6 && PZ.state.hyd === 68, actual: PZ.state.balls + '/' + PZ.state.hyd, expected: '6/68', tol: null },
+        { label: 'PZ.listRecipes() sieht das migrierte Rezept', ok: recipes.length === 1 && recipes[0].name === 'Mein Rezept', actual: recipes.length, expected: 1, tol: null }
+      ]);
+    });
+
+    // --- Speichern/Laden/Umbenennen/Löschen mehrerer Rezepte ---
+    withCleanStorage(() => {
+      Object.assign(PZ.state, BASE, { balls: 4, hyd: 60 });
+      PZ.save(); // erstes Speichern legt automatisch ein Rezept an
+      const afterFirstSave = PZ.listRecipes();
+      const firstId = PZ.getActiveId();
+
+      Object.assign(PZ.state, { balls: 8, hyd: 70 });
+      const rec2 = PZ.saveAsNew('Zweites Rezept');
+      const afterSecondSave = PZ.listRecipes();
+
+      PZ.loadRecipe(firstId);
+      const ballsAfterLoadFirst = PZ.state.balls;
+      const hydAfterLoadFirst = PZ.state.hyd;
+
+      PZ.loadRecipe(rec2.id);
+      const ballsAfterLoadSecond = PZ.state.balls;
+
+      PZ.renameActive('Umbenannt');
+      const afterRename = PZ.listRecipes();
+
+      const nextActive = PZ.deleteRecipe(rec2.id);
+      const afterDelete = PZ.listRecipes();
+
+      renderBox('Mehrfach-Rezepte: Speichern/Laden/Umbenennen/Löschen', [
+        { label: 'save() legt erstes Rezept automatisch an', ok: afterFirstSave.length === 1, actual: afterFirstSave.length, expected: 1, tol: null },
+        { label: 'saveAsNew() legt ein zweites, unabhängiges Rezept an', ok: afterSecondSave.length === 2, actual: afterSecondSave.length, expected: 2, tol: null },
+        { label: 'Zweites Rezept trägt den übergebenen Namen', ok: rec2.name === 'Zweites Rezept', actual: rec2.name, expected: 'Zweites Rezept', tol: null },
+        { label: 'loadRecipe(erstes) stellt dessen Werte wieder her (balls)', ok: ballsAfterLoadFirst === 4, actual: ballsAfterLoadFirst, expected: 4, tol: null },
+        { label: 'loadRecipe(erstes) stellt dessen Werte wieder her (hyd)', ok: hydAfterLoadFirst === 60, actual: hydAfterLoadFirst, expected: 60, tol: null },
+        { label: 'loadRecipe(zweites) lädt unabhängige Werte (balls)', ok: ballsAfterLoadSecond === 8, actual: ballsAfterLoadSecond, expected: 8, tol: null },
+        { label: 'renameActive() ändert nur den Namen, nicht die Anzahl', ok: afterRename.length === 2 && afterRename.some(r => r.name === 'Umbenannt'), actual: afterRename.map(r => r.name).join(','), expected: 'enthält "Umbenannt"', tol: null },
+        { label: 'deleteRecipe() entfernt genau das gewählte Rezept', ok: afterDelete.length === 1 && !afterDelete.some(r => r.id === rec2.id), actual: afterDelete.length, expected: 1, tol: null },
+        { label: 'Nach dem Löschen des aktiven Rezepts wird ein anderes aktiv', ok: nextActive === firstId, actual: nextActive, expected: firstId, tol: null }
+      ]);
+    });
+
+    // --- Leerer localStorage (kein Key vorhanden) — darf nicht crashen ---
+    withCleanStorage(() => {
+      let threw = false;
+      let recipes, activeId;
+      try {
+        recipes = PZ.listRecipes();
+        activeId = PZ.getActiveId();
+      } catch (e) { threw = true; }
+      renderBox('Leerer localStorage (kein Key) — keine Fehler, leere Rezeptliste', [
+        { label: 'Kein Fehler beim Lesen', ok: !threw, actual: threw, expected: false, tol: null },
+        { label: 'listRecipes() ist ein leeres Array', ok: Array.isArray(recipes) && recipes.length === 0, actual: recipes && recipes.length, expected: 0, tol: null },
+        { label: 'getActiveId() ist null', ok: activeId === null, actual: activeId, expected: null, tol: null }
+      ]);
+    });
+
+    // --- Korruptes JSON im localStorage — darf nicht crashen, wird wie "leer" behandelt ---
+    withCleanStorage(() => {
+      localStorage.setItem(STORAGE_KEY, '{ das ist kein gültiges JSON');
+      let threw = false;
+      let recipes, activeId;
+      try {
+        recipes = PZ.listRecipes();
+        activeId = PZ.getActiveId();
+      } catch (e) { threw = true; }
+      renderBox('Korruptes JSON im localStorage — keine Fehler, wird wie leer behandelt', [
+        { label: 'Kein Fehler beim Lesen', ok: !threw, actual: threw, expected: false, tol: null },
+        { label: 'listRecipes() ist ein leeres Array', ok: Array.isArray(recipes) && recipes.length === 0, actual: recipes && recipes.length, expected: 0, tol: null },
+        { label: 'getActiveId() ist null', ok: activeId === null, actual: activeId, expected: null, tol: null }
+      ]);
+    });
+
+    // --- Löschen des letzten verbleibenden Rezepts ---
+    withCleanStorage(() => {
+      Object.assign(PZ.state, BASE, { balls: 4, hyd: 60 });
+      PZ.save();
+      const onlyId = PZ.getActiveId();
+      const nextActive = PZ.deleteRecipe(onlyId);
+      const afterDelete = PZ.listRecipes();
+      renderBox('Löschen des letzten verbleibenden Rezepts — leere Liste, kein aktives Rezept mehr', [
+        { label: 'Rezeptliste danach leer', ok: afterDelete.length === 0, actual: afterDelete.length, expected: 0, tol: null },
+        { label: 'activeId danach null', ok: nextActive === null, actual: nextActive, expected: null, tol: null },
+        { label: 'PZ.getActiveId() bestätigt null', ok: PZ.getActiveId() === null, actual: PZ.getActiveId(), expected: null, tol: null }
+      ]);
+    });
+
+    // --- Löschen eines NICHT-aktiven Rezepts — activeId bleibt unverändert ---
+    withCleanStorage(() => {
+      Object.assign(PZ.state, BASE, { balls: 4, hyd: 60 });
+      PZ.save();
+      const firstId = PZ.getActiveId();
+      Object.assign(PZ.state, { balls: 8, hyd: 70 });
+      const rec2 = PZ.saveAsNew('Zweites Rezept');
+      // rec2 ist jetzt aktiv; wir löschen das ERSTE (nicht-aktive) Rezept
+      const nextActive = PZ.deleteRecipe(firstId);
+      const afterDelete = PZ.listRecipes();
+      renderBox('Löschen eines nicht-aktiven Rezepts — activeId bleibt unverändert', [
+        { label: 'Rezeptliste hat noch genau 1 Eintrag', ok: afterDelete.length === 1, actual: afterDelete.length, expected: 1, tol: null },
+        { label: 'activeId bleibt das zweite (weiterhin aktive) Rezept', ok: nextActive === rec2.id, actual: nextActive, expected: rec2.id, tol: null },
+        { label: 'Verbleibendes Rezept ist das zweite', ok: afterDelete[0].id === rec2.id, actual: afterDelete[0].id, expected: rec2.id, tol: null }
+      ]);
+    });
+
+    // --- Umbenennen auf einen bereits vergebenen Namen (Duplikat) — keine Dedupe-Logik, beide behalten denselben Namen ---
+    withCleanStorage(() => {
+      Object.assign(PZ.state, BASE, { balls: 4, hyd: 60 });
+      PZ.save();
+      const firstId = PZ.getActiveId();
+      Object.assign(PZ.state, { balls: 8, hyd: 70 });
+      const rec2 = PZ.saveAsNew('Zweites Rezept');
+      PZ.loadRecipe(firstId);
+      PZ.renameActive('Zweites Rezept'); // Duplikat-Name, absichtlich erlaubt
+      const recipes = PZ.listRecipes();
+      const withThatName = recipes.filter(r => r.name === 'Zweites Rezept');
+      renderBox('Umbenennen auf einen bereits vergebenen Namen — Duplikat wird zugelassen', [
+        { label: 'Beide Rezepte tragen jetzt denselben Namen', ok: withThatName.length === 2, actual: withThatName.length, expected: 2, tol: null },
+        { label: 'Weiterhin 2 unabhängige Rezepte (kein Merge)', ok: recipes.length === 2, actual: recipes.length, expected: 2, tol: null }
+      ]);
+    });
+
+    // --- Umbenennen auf leeren/nur-Leerzeichen-String — kein Effekt (Name bleibt) ---
+    withCleanStorage(() => {
+      Object.assign(PZ.state, BASE, { balls: 4, hyd: 60 });
+      const rec = PZ.saveAsNew('Originalname');
+      PZ.renameActive('   ');
+      const afterEmptyRename = PZ.listRecipes()[0].name;
+      PZ.renameActive('');
+      const afterEmptyStringRename = PZ.listRecipes()[0].name;
+      renderBox('renameActive() mit leerem/Leerzeichen-Namen — Name bleibt unverändert', [
+        { label: 'Name bleibt nach Leerzeichen-Rename', ok: afterEmptyRename === 'Originalname', actual: afterEmptyRename, expected: 'Originalname', tol: null },
+        { label: 'Name bleibt nach leerem-String-Rename', ok: afterEmptyStringRename === 'Originalname', actual: afterEmptyStringRename, expected: 'Originalname', tol: null }
+      ]);
+    });
+
+    // --- saveAsNew() ohne Namen — automatische Default-Namen "Rezept 1", "Rezept 2", … ---
+    withCleanStorage(() => {
+      Object.assign(PZ.state, BASE, { balls: 4 });
+      const rec1 = PZ.saveAsNew();
+      Object.assign(PZ.state, { balls: 5 });
+      const rec2 = PZ.saveAsNew('');
+      Object.assign(PZ.state, { balls: 6 });
+      const rec3 = PZ.saveAsNew('   ');
+      renderBox('saveAsNew() ohne (gültigen) Namen — automatische "Rezept N"-Namen', [
+        { label: 'Erstes Rezept ohne Namen heißt "Rezept 1"', ok: rec1.name === 'Rezept 1', actual: rec1.name, expected: 'Rezept 1', tol: null },
+        { label: 'Zweites (leerer String) heißt "Rezept 2"', ok: rec2.name === 'Rezept 2', actual: rec2.name, expected: 'Rezept 2', tol: null },
+        { label: 'Drittes (nur Leerzeichen) heißt "Rezept 3"', ok: rec3.name === 'Rezept 3', actual: rec3.name, expected: 'Rezept 3', tol: null }
+      ]);
+    });
+
+    // --- loadRecipe() mit unbekannter/nicht-existenter id — no-op, state/activeId bleiben unverändert ---
+    withCleanStorage(() => {
+      Object.assign(PZ.state, BASE, { balls: 4, hyd: 60 });
+      PZ.save();
+      const activeBefore = PZ.getActiveId();
+      Object.assign(PZ.state, { balls: 999 }); // Marker, um zu prüfen ob applyState() lief
+      PZ.loadRecipe('nicht-existierende-id-xyz');
+      renderBox('loadRecipe() mit unbekannter id — kein Effekt (no-op)', [
+        { label: 'activeId unverändert', ok: PZ.getActiveId() === activeBefore, actual: PZ.getActiveId(), expected: activeBefore, tol: null },
+        { label: 'PZ.state.balls unverändert (kein Overwrite durch nicht-existentes Rezept)', ok: PZ.state.balls === 999, actual: PZ.state.balls, expected: 999, tol: null }
+      ]);
+    });
+
+    // --- Mehrfaches PZ.save() auf demselben aktiven Rezept — überschreibt, keine neuen Einträge ---
+    withCleanStorage(() => {
+      Object.assign(PZ.state, BASE, { balls: 4, hyd: 60 });
+      PZ.save();
+      const idAfterFirstSave = PZ.getActiveId();
+      Object.assign(PZ.state, { balls: 4, hyd: 60, salt: 3.2 });
+      PZ.save();
+      const idAfterSecondSave = PZ.getActiveId();
+      const recipes = PZ.listRecipes();
+      renderBox('Mehrfaches PZ.save() auf demselben Rezept — überschreibt, kein Duplikat', [
+        { label: 'Weiterhin nur 1 Rezept', ok: recipes.length === 1, actual: recipes.length, expected: 1, tol: null },
+        { label: 'Gleiche id über beide Speicherungen hinweg', ok: idAfterFirstSave === idAfterSecondSave, actual: idAfterSecondSave, expected: idAfterFirstSave, tol: null },
+        { label: 'Aktualisierter Wert (salt) wurde übernommen', ok: recipes[0].state.salt === 3.2, actual: recipes[0].state.salt, expected: 3.2, tol: null }
+      ]);
+    });
+
+    // Ursprünglichen Stand (falls vorhanden) wiederherstellen, sonst Testspuren entfernen
+    if (backup !== null) localStorage.setItem(STORAGE_KEY, backup);
+    else localStorage.removeItem(STORAGE_KEY);
+  })();
 
   // ─────────────────────────────────────────────────────────────
   const s = document.getElementById('summary');

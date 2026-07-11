@@ -4,7 +4,7 @@
    Bedienelementen killen, kein grauer Tap-Highlight. */
 html{background:var(--bg);}
 body{overscroll-behavior-y:contain;}
-button,.seg button,.pills button,summary,input[type=range],.selectbox,.quickbar a,.quickbar button{
+button,.seg button,.pills button,summary,input[type=range],.selectbox,.quickbar a,.quickbar button,.timerbtn{
   touch-action:manipulation;-webkit-tap-highlight-color:transparent;
 }
 
@@ -55,6 +55,7 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;}
 input[type=number]{min-height:40px;font-size:16px;width:86px;}
 .selectbox{min-height:44px;font-size:16px;}
 .actions button{min-height:48px;font-size:14px;}
+.timerbtn{min-height:40px;}
 
 /* Sichtbares Touch-Feedback (kein Hover auf Touch) */
 .seg button:active{transform:scale(.97);}

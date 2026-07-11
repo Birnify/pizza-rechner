@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-11 · Aktuelle Version: v3.8.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-11 · Aktuelle Version: v3.11.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -18,7 +18,9 @@ jedem Windows-11-Rechner in Edge/Chrome/Firefox ohne Server läuft.
 - **Mobil:** `pizza-rechner-mobile.html` — eigene Akkordeon-Ansicht fürs Handy (v3.5.0), s. u.
 - **Ordner:** `C:\Users\soere\OneDrive\Dokumente\Claude\Pizza\`
 - **Sprache der UI:** Deutsch
-- **Persistenz:** `localStorage` (Key: `pizzaRechner`) speichert den `state` — gemeinsam für Desktop- und Mobil-Seite (gleicher Key, gleiche Domain/Ordner)
+- **Persistenz:** `localStorage` (Key: `pizzaRechner`) speichert **mehrere benannte Rezepte**
+  (seit v3.10.0: `{ recipes: [{id, name, state, savedAt}], activeId }`) — gemeinsam für
+  Desktop- und Mobil-Seite (gleicher Key, gleiche Domain/Ordner)
 
 ## Warum keine KI / kein Internet?
 
@@ -156,6 +158,192 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
   W300–310 (Cuoco, Napoletana): 16 · Monica/Nuvola/Teichner 1 (~W280–300): 12 · Rest: 0.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
+
+## Gärzeit-Timer / Wecker (v3.11.0) = aktueller Stand
+
+Neues Modul `js/timer.js` (in Ladereihenfolge nach `guide.js`, vor `ui.js` — braucht
+`PZ.$`/DOM, wird von `js/guide.js` nur optional aufgerufen). Rein clientseitig,
+**kein Server, kein Service-Worker** — der Timer läuft nur, solange der Tab/das Fenster
+geöffnet ist. Das ist eine bewusste Grenze (kein Bug) und wird dem Nutzer beim ersten
+Timer-Start als kleiner Hinweistext auf der Seite mitgeteilt.
+
+- **Welche Schritte bekommen einen Timer:** nur Schritte mit nennenswerter, unbeaufsichtigter
+  Wartezeit — **Autolyse** (30 min), **Stretch & Fold-Phase** (120 min, nur bei Hydration
+  ≥ 70 %), **Vorteig reifen lassen** (Biga/Poolish, `matureMin`), **Stockgare**
+  (`f.bulkMin`), **Stückgare** (`f.proofMin`), **Ofen vorheizen** (fix 40 min, Richtwert
+  aus „30–45 min"). Bewusst **kein** Timer bei Misch-/Knet-/Form-/Back-Schritten — die
+  brauchen entweder Anwesenheit/Beobachtung oder sind zu kurz, um sich wegzubewegen.
+- **Markup:** `js/guide.js` rendert pro timer-fähigem Schritt einen Platzhalter
+  `<div class="timerbox" data-timer-key="…" data-timer-min="…"></div>` (neue Helper-
+  Funktion `timerBox(key, min)`) als Teil des bestehenden `extra`-Felds im jeweiligen
+  `st(...)`-Aufruf — **kein neues HTML in `pizza-rechner.html`/`-mobile.html` nötig**,
+  da die komplette Anleitung (inkl. Timer-Boxen) ohnehin dynamisch in `#guideSteps`
+  gerendert wird (identisch auf Desktop + Mobil, weil beide dasselbe `js/guide.js` laden).
+  Stabile, sprechende Keys (`autolyse`, `stretch-fold`, `biga-reifen`, `poolish-reifen`,
+  `stockgare`, `stueckgare`, `ofen-vorheizen`) statt Array-Index — bleiben über Regler-
+  Änderungen und Re-Renders hinweg gleich.
+- **`js/timer.js` (`PZ.wireTimers()`):** durchsucht nach jedem Rendern `#guideSteps` nach
+  `.timerbox`-Elementen und rendert für jede entweder einen Start-Button
+  („⏰ Timer starten (X min/h)") oder — falls in `localStorage['pizzaRechnerTimers']`
+  bereits ein laufender/abgelaufener Timer für diesen Key existiert — den laufenden
+  Countdown bzw. den „🔔 Fertig!"-Zustand samt „Zurücksetzen"-Button.
+- **`js/guide.js` ruft `PZ.wireTimers()` am Ende von `buildGuide()` auf** (nach dem
+  `$('guideSteps').innerHTML = html`-Zeile, mit `if (PZ.wireTimers)`-Guard, damit
+  `tests/test.html` — das `js/timer.js` bewusst **nicht** lädt, s. u. — nicht bricht).
+  Das ist der zentrale Kniff für Stabilität: `buildGuide()` läuft bei **jeder**
+  Reglerbewegung und ersetzt `#guideSteps` komplett per `innerHTML` — ein rein DOM-
+  gehaltener Timer-Zustand würde dabei verloren gehen. Der eigentliche Zustand
+  (`endAt`, Label) lebt daher **ausschließlich in `localStorage`**, nicht im DOM;
+  `wireTimers()` liest ihn bei jedem Aufruf neu aus und "klemmt" laufende Countdowns
+  korrekt wieder an — auch beim Öffnen/Schließen anderer `<details>`-Karten im
+  iOS-Akkordeon (kein Reset, weil der State nicht am DOM-Knoten hängt).
+- **Mehrere gleichzeitig laufende Timer:** jeder Schritt hat einen eigenen Key, eigenes
+  `setInterval` (Map `intervals[key]` in `js/timer.js`) und einen eigenen Eintrag in
+  `localStorage['pizzaRechnerTimers']` (`{ [key]: { endAt, label } }`) — unabhängig
+  start-/stoppbar (z. B. Vorteig-Timer im Kühlschrank + parallel ein Stretch-&-Fold-Timer).
+- **Reload-Robustheit (kein Muss, aber einfach machbar gewesen):** `endAt` (absoluter
+  Zeitstempel) statt einer verbleibenden Sekundenzahl in `localStorage` — ein
+  versehentlicher Reload berechnet den Rest einfach neu (`endAt - Date.now()`) statt auf
+  0 zurückzuspringen.
+- **Browser-Notification (`Notification`-API):** `Notification.requestPermission()` wird
+  **nur** beim expliziten Klick auf „Timer starten" angefragt (nicht automatisch beim
+  Laden) — kein nerviger Permission-Dialog beim Öffnen der Seite. Bei Ablauf: falls
+  `Notification.permission === 'granted'`, erscheint eine Browser-Notification
+  („⏰ Timer fertig" + Schritt-Titel als Body).
+- **Akustisches Signal ohne externe Datei:** `beep()` erzeugt einen kurzen aufsteigenden
+  Dreiklang (880/1046,5/1318,5 Hz) rein synthetisch per **Web Audio API**
+  (`OscillatorNode` + `GainNode`, Sinus, kurze Exponential-Fades) — kein `<audio>`-Tag,
+  keine Sounddatei, keine externe Library (Web Audio API ist eine native Browser-API,
+  fällt nicht unter „keine externen Libraries").
+- **Fallback bei verweigerter/fehlender Permission:** unabhängig vom Notification-Status
+  wechselt die Timer-Box selbst **immer** sichtbar in den „🔔 Fertig!"-Zustand
+  (pulsierende Badge, `.timerdone`, CSS-Animation `timerpulse`) — wer die Seite offen
+  hat/zurückkommt, sieht den Ablauf auch ganz ohne Notification-Erlaubnis.
+- **Einmaliger Hinweistext** beim allerersten Timer-Start auf der Seite (`.timerhint`,
+  verschwindet nach 9 s, merkt sich `pizzaRechnerTimerHintShown` in `localStorage` damit
+  er nicht bei jedem Start erneut erscheint): „Der Timer läuft nur, solange dieser
+  Tab/dieses Fenster geöffnet ist — kein Wecker mehr, wenn du den Tab schließt."
+- **CSS (`css/styles.css`):** `.timerwrap`/`.timerbtn`/`.timerbtn-start`/`.timerclock`/
+  `.timerdone` (inkl. `@keyframes timerpulse`)/`.timerhint`, passend zum bestehenden
+  Farbschema (`--tomato` für Start-Button/laufenden Countdown, analog zu `.timechip`).
+  `@media print`: `.timerbox`/`.timerhint` ausgeblendet (weder Anleitungs- noch
+  Einkaufslisten-Druck sollen Timer-UI zeigen). `css/mobile.css`: `.timerbtn` bekommt
+  `touch-action:manipulation` + `min-height:40px` (Touch-Ziel), analog zu den übrigen
+  Buttons/Segmenten.
+- **Desktop + Mobil:** keine neuen Element-IDs in den HTML-Dateien nötig (reine
+  `js/guide.js`+`js/timer.js`-Änderung, wirkt automatisch auf beiden Seiten identisch,
+  weil beide dasselbe `js/guide.js` laden) — trotzdem beide `<script src="js/timer.js">`
+  ergänzt (Ladereihenfolge: nach `guide.js`, vor `ui.js`) und `?v=` auf 3.11.0 gezogen.
+  Standalone-Datei neu gebaut.
+- **Tests:** `js/timer.js` wird in `tests/test.html` bewusst **nicht** geladen — der
+  Aufgabenstellung folgend sind Browser-APIs (`Notification`, `setInterval`, Web Audio)
+  kein sinnvolles Unit-Test-Ziel, nur manuelle Verifikation im echten Browser. Bestehende
+  248 Prüfungen bleiben unverändert grün (reine Additiv-Änderung an `extra`-HTML-Strings
+  in `js/guide.js`, von den bestehenden `includes()`-Tests unberührt; `if (PZ.wireTimers)`-
+  Guard verhindert einen Fehler, weil `PZ.wireTimers` in der Testsuite nicht existiert).
+  Manuell verifiziert (Headless-Edge-Dump + Struktur-Check): Timer-Boxen erscheinen mit
+  korrekten Keys/Minuten bei Autolyse/Stockgare/Stückgare/Ofen-Vorheizen (Standard-Zustand,
+  Direkt-Methode, ~24 h Gare), Start-Button-Beschriftung korrekt formatiert („30 min",
+  „2 h", „24 h", „40 min").
+
+## Mehrere gespeicherte Rezepte (v3.10.0)
+
+`js/storage.js` speichert nicht mehr nur einen einzelnen `state`-Slot, sondern beliebig
+viele benannte, eigene Rezepte nebeneinander — unabhängig von den 7 festen Presets
+(`js/presets.js`), die weiterhin unverändert im „Fertiges Rezept wählen"-Dropdown stehen.
+
+- **Neues Speicherformat:** `localStorage['pizzaRechner']` ist jetzt
+  `{ recipes: [{id, name, state, savedAt}], activeId }` statt eines nackten `state`.
+  `id` ist ein zufälliger String (`makeId()`), `state` ist ein vollständiger Snapshot von
+  `PZ.state` zum Speicherzeitpunkt, `savedAt` ein Zeitstempel (aktuell nicht in der UI
+  angezeigt, aber fürs spätere Sortieren/Anzeigen vorbereitet).
+- **Migration (automatisch, verlustfrei):** Erkennt `readStore()` beim ersten `load()`
+  nach dem Update ein altes, nacktes `state`-Objekt (`isLegacyState()` prüft auf typische
+  Felder wie `balls`/`hyd`, kein `recipes`-Array), wird daraus **automatisch und einmalig**
+  ein erstes Rezept **„Mein Rezept"** erzeugt und im neuen Format zurückgeschrieben — die
+  bisherigen Werte des Nutzers gehen dabei nicht verloren. Kein Präfix „Rezept 1" für den
+  Migrationsfall (bewusst „Mein Rezept", damit der Nutzer seinen alten, vertrauten Stand
+  wiedererkennt); **neu** angelegte Rezepte ohne eigenen Namen heißen automatisch
+  „Rezept 1", „Rezept 2", … (`nextDefaultName()`).
+- **API (`js/storage.js`):** `PZ.save()` (überschreibt das aktive Rezept, legt beim allerersten
+  Aufruf automatisch eins an — bleibt 1:1 kompatibel zum bisherigen Quick-Save),
+  `PZ.saveAsNew(name)` (legt immer ein neues Rezept an und macht es aktiv),
+  `PZ.renameActive(name)`, `PZ.deleteRecipe(id)` (löscht, springt beim Löschen des aktiven
+  Rezepts automatisch auf ein verbleibendes um), `PZ.loadRecipe(id)`, `PZ.listRecipes()`,
+  `PZ.getActiveId()`. `PZ.load()` bleibt der Einstiegspunkt beim Seitenstart (lädt/migriert
+  automatisch das aktive Rezept).
+- **UI — eigene Card „💾 Meine Rezepte"** direkt unter „📖 Fertiges Rezept wählen" (Desktop +
+  Mobil, identisches Markup/IDs): `#recipeSelect` (Dropdown aller gespeicherten Rezepte, lädt
+  bei Auswahl sofort — analog zum Preset-Dropdown, aber **komplett getrennter State/Select**,
+  keine Vermischung), `#recipeName` (Textfeld für einen neuen Namen) + `#recipeSaveNew`
+  („➕ Neu" — speichert immer als **neues** Rezept), `#recipeRename` („✏️ Umbenennen" —
+  einfacher `prompt()`-Dialog, passt zum bisherigen dialoglosen/minimalistischen Stil),
+  `#recipeDelete` („🗑️ Löschen" — mit `confirm()`-Rückfrage). Keine Hard-Limit-Anzahl; das
+  native `<select>` bleibt auch mit vielen Einträgen bedienbar (Scroll im Dropdown).
+- **Bestehender `#saveBtn`** („💾 Speichern" im Ergebnis-Panel) bleibt der **Schnell-Speichern**-
+  Button ohne Dialog: ruft weiterhin nur `PZ.save()` (überschreibt das aktive Rezept) und
+  aktualisiert danach das `#recipeSelect`-Dropdown. **`#qbSave` auf Mobil** (Quick-Bar) klickt
+  weiterhin einfach `#saveBtn` — unverändertes Daumen-Speichern, keine Logik dupliziert.
+- **Verdrahtung in `js/main.js`:** `refreshRecipeSelect()` befüllt `#recipeSelect` aus
+  `PZ.listRecipes()`/`PZ.getActiveId()` (auch als `PZ.refreshRecipeSelect` exponiert, damit
+  `js/storage.js` nach `loadRecipe()` selbst neu befüllen kann); die vier Buttons/Select sind
+  reine DOM-Glue-Handler, keine Berechnungslogik angefasst.
+- **Presets vs. eigene Rezepte:** bewusst zwei unabhängige Konzepte/Datenquellen — ein Preset
+  zu wählen setzt `#preset`, ein eigenes Rezept zu laden setzt nur `#recipeSelect` (und
+  umgekehrt ändert keins das jeweils andere Dropdown). Beide bleiben nebeneinander bedienbar.
+- **Tests:** neue Sektion „16 · Speichern & Laden (js/storage.js) — Migration & Mehrfach-
+  Rezepte" in `tests/test.html` (`js/storage.js` wird dort zusätzlich geladen, mit Stubs für
+  `PZ.set`/`PZ.selectSeg`/`PZ.applyMethod`/`PZ.updateTimeLabel`, da `ui.js` in der Testsuite
+  nicht geladen wird). Prüft: Migration eines alten nackten `state`-Stands (Werte 1:1
+  übernommen, korrekter `activeId`), sowie Speichern/Laden/Umbenennen/Löschen mehrerer
+  unabhängiger Rezepte. Die Tests sichern einen eventuell vorhandenen echten
+  `localStorage['pizzaRechner']`-Inhalt vor dem Lauf und stellen ihn danach wieder her —
+  echte Nutzerdaten werden nie überschrieben. Bestehende 222 Prüfungen unverändert grün.
+- **Desktop + Mobil:** identisches Markup/IDs in beiden HTML-Dateien ergänzt, `?v=` auf
+  3.10.0 gezogen, Standalone-Datei neu gebaut.
+
+## Einkaufsliste & getrennter Druck (v3.9.0)
+
+Neues Modul `js/print.js` (in Ladereihenfolge nach `ui.js`, vor `presets.js` — braucht
+`PZ.$` und `PZ.R`, wird von keinem anderen Modul vorausgesetzt). Rein additiv, **keine**
+bestehende Logik/Datei (`calc.js`, `guide.js` etc.) verändert.
+
+- **Einkaufsliste (`PZ.buildShoppingList()`):** liest ausschließlich die bereits
+  berechneten Gesamtmengen aus `PZ.R` — **keine neue Berechnung**, nur Formatierung
+  1:1 wie im Ergebnis-Panel (Mehl/Wasser/Eis gerundet, Salz/Öl 1 Nachkommastelle,
+  Hefe < 10 g → 2 Nachkommastellen sonst gerundet, inkl. Frisch-/Trockenhefe-Label
+  `R.yWord`). Zeilen nur wenn Betrag > 0: Mehl, Wasser, Salz, Hefe, Öl (Schwelle
+  `oil >= 0.05` wie `#gOilRow`), Eis (`R.ice > 0`).
+  **Bei Vorteig (Biga/Poolish) zeigt die Liste immer die Gesamtmengen**, nicht die
+  Aufteilung Vorteig/Hauptteig — die bleibt fürs Formen im normalen Ergebnis-Panel
+  (`#stagePref`/`#stageMain`) unverändert sichtbar.
+- **Markup:** neues `<div id="shoppingList" class="shoppinglist-card">` im
+  `.result`-Card, direkt vor dem `.actions`-Block (Desktop + Mobil identisch,
+  gleiche ID). Standardmäßig `display:none` (`#shoppingList{display:none;}` in
+  `css/styles.css`), wird nur beim Einkaufslisten-Druck sichtbar.
+- **Zwei Druck-Buttons statt einem:** der bisherige einzelne „🖨️ Drucken"-Button
+  wurde durch zwei ersetzt — „🛒 Einkaufsliste drucken" (`PZ.printShoppingList()`)
+  und „📝 Anleitung drucken" (`PZ.printGuide()`). Beide rufen weiterhin ganz normal
+  `window.print()` — **kein neuer Druckmechanismus**, nur zwei `body`-Klassen
+  (`print-shopping`/`print-guide`), die vor dem Druck gesetzt und via `afterprint`-
+  Event wieder entfernt werden, steuern per `@media print`, was sichtbar bleibt.
+- **CSS (`@media print`, `css/styles.css`):**
+  - `body.print-guide .result{display:none;}` → nur die Schritt-für-Schritt-Anleitung
+    bleibt sichtbar (Eingaben/Header/Footer waren schon vorher per bestehender Regel
+    ausgeblendet).
+  - `body.print-shopping .result .card > *:not(.shoppinglist-card){display:none;}`
+    + `.guidewrap{display:none;}` + `#shoppingList{display:block;}` → beim
+    Einkaufslisten-Druck bleibt nur die Liste übrig (Ergebnis-Panel-Inhalte,
+    Anleitung, Eingaben, Header/Footer alle ausgeblendet).
+- **Desktop + Mobil:** identisches Markup/IDs in beiden HTML-Dateien ergänzt
+  (`pizza-rechner.html` + `pizza-rechner-mobile.html`), `js/print.js` in beiden
+  eingebunden, `?v=` auf 3.9.0 gezogen, Standalone-Datei neu gebaut.
+- **Tests:** neue Sektion „15 · Einkaufsliste" in `tests/test.html` (`js/print.js`
+  wird dort zusätzlich geladen, neuer `#shoppingList`-Stub) — prüft Zeilenauswahl
+  (kein Öl bei 0 %, Öl-Zeile bei 4 %, keine/vorhandene Eis-Zeile je nach Wassertemp-
+  Bedarf), identische Formatierung wie `PZ.R`, und dass bei Biga **keine** Vorteig/
+  Hauptteig-Aufteilung in der Liste auftaucht (nur Gesamtmengen). Bestehende 217
+  Prüfungen unverändert grün (kein bestehendes Modul/keine ID angefasst).
 
 ## Einfrier-Hinweis (v3.8.0)
 
@@ -341,19 +529,24 @@ js/state.js          PZ.state (inkl. flour, oil, coldStage, prefMature) + PZ.FRE
 js/flour.js          PZ.FLOURS (13 Mehle) + PZ.getFlour() + Dropdown-Befüllung
 js/calc.js           PZ.calc() Hauptberechnung (inkl. Öl), schreibt PZ.R, ruft PZ.buildGuide()
 js/schedule.js       PZ.schedule() — Gärzeit-Fahrplan (berücksichtigt coldStage)
-js/guide.js          PZ.buildGuide() — Anleitung + Zeitberechnung + Mehl-Warnung
+js/guide.js          PZ.buildGuide() — Anleitung + Zeitberechnung + Mehl-Warnung + Timer-Platzhalter
+js/timer.js          PZ.wireTimers() — Gärzeit-Timer/Wecker je Schritt (Notification + Web-Audio-Beep,
+                     State in localStorage['pizzaRechnerTimers'], kein Server/Service-Worker)
 js/ui.js             Slider/Segmente/Pills/Zeitplan; PZ.set, selectSeg, applyMethod, updateTimeLabel
+js/print.js          PZ.buildShoppingList() (Einkaufsliste aus PZ.R) + PZ.printShoppingList()/PZ.printGuide()
 js/presets.js        PZ.PRESETS (inkl. flour je Preset) + PZ.applyPreset()
-js/storage.js        PZ.save() / PZ.load() (localStorage, stellt auch flour & coldStage wieder her)
-js/main.js           Start: Speichern-Button, load(), applyMethod(), calc()
-tests/test.html      217 Prüfungen in 14 Kategorien (Doppelklick, kein Server)
+js/storage.js        PZ.save()/PZ.load() + Mehrfach-Rezepte (saveAsNew/renameActive/deleteRecipe/
+                     loadRecipe/listRecipes), localStorage-Format {recipes[],activeId}, migriert
+                     alten Einzel-Slot-Stand automatisch
+js/main.js           Start: Speichern-Button, Rezept-Auswahl/-Buttons, load(), applyMethod(), calc()
+tests/test.html      248 Prüfungen in 16 Kategorien (Doppelklick, kein Server)
 README.md            kurzer Einstieg
 ```
 
 **Ladereihenfolge** (Abhängigkeiten): dom → state → flour → calc → schedule → guide →
-ui → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur über `window.PZ`.
+timer → ui → print → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur über `window.PZ`.
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.0.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.11.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1):** Im `<footer>` beider HTML-Dateien (Desktop +
 Mobil, identisch) steht `<span id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine
@@ -387,7 +580,7 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
 - **Versionen-Workflow (Pflicht bei jeder Änderung):** kompletten lauffähigen Stand nach
   `Versionen/vX.Y.Z - [Beschreibung]/` kopieren (html, index, css/, js/, README; tests/ optional).
   SemVer: Patch=Fix, Minor=Feature, Major=Umbau. `?v=` in der HTML mitziehen.
-- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **217 Prüfungen** in 14 Kategorien:
+- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **293 Prüfungen** in 16 Kategorien:
   Bäckerprozente, DDT/Eis, Vorteig-Aufteilung (inkl. Klemm-Grenzfälle exakt an/über der Grenze,
   auch für Biga wenn `bhyd > hyd`), Trockenhefe, Schedule-Schwellen (beide coldStage-Varianten),
   Mehl-Warnung (inkl. Vorteig-Reifezeit + exakte hydMin/hydMax-Grenzwerte), Backzeit-Skalierung,
@@ -399,7 +592,18 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
   prüft, dass der errechnete Startzeitpunkt im Anleitungstext korrekt erscheint, auch bei Biga
   mit Vorteig-Reifezeit). Nach Logik-Änderungen laufen lassen. BASE hat `oil: 0` (isoliert die
   Öl-Tests). v3.6.1: Testsuite von 136 auf 213 Prüfungen gehärtet (reine Test-Erweiterung,
-  keine Logikänderung).
+  keine Logikänderung). v3.9.0: neue Sektion „15 · Einkaufsliste" (213→222 Prüfungen),
+  testet `js/print.js` (Zeilenauswahl, Formatierung, Vorteig zeigt nur Gesamtmengen).
+  v3.10.0: neue Sektion „16 · Speichern & Laden" (222→248 Prüfungen), testet `js/storage.js`
+  (Migration alter Einzel-Slot-Stand, Mehrfach-Rezepte speichern/laden/umbenennen/löschen).
+  v3.11.0: **keine neue Test-Sektion** — `js/timer.js` (Gärzeit-Timer/Wecker) nutzt
+  `Notification`/`setInterval`/Web Audio API, die bewusst **nicht** in `tests/test.html`
+  unit-getestet werden (schwer sinnvoll automatisierbar, s. Projektregeln); `js/timer.js`
+  wird dort auch nicht geladen. Bestehende 248 Prüfungen unverändert grün (rein additive
+  `extra`-HTML-Ergänzung in `js/guide.js`, `if (PZ.wireTimers)`-Guard verhindert Fehler ohne
+  geladenes `js/timer.js`). Manuell verifiziert: Timer-Start/-Countdown/-Ablauf, Notification-
+  Permission-Flows (erlaubt/verweigert/„default"), Persistenz über Reload, mehrere parallele
+  Timer, Struktur-Check per Headless-Edge-Dump auf allen drei HTML-Dateien.
 - **Git:** Repo im Hauptordner, kleine Commits pro Änderungs-Satz. `Versionen/` + `.claude/` gitignored.
 - **Plattform:** Windows / PowerShell. Kein Node, keine Build-Tools.
 - **Preview-Hinweis:** Das Preview-Tool (localhost-Server) war in mehreren Sessions unzuverlässig
@@ -494,7 +698,7 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
     um zu prüfen ob die neueste Version geladen wurde).
   - Rein statischer Text, keine JS-Logik. **Muss ab jetzt bei jedem Versionssprung von Hand
     mitgezogen werden** (zusammen mit `?v=`).
-- **v3.8.0 — Einfrier-Hinweis** = aktueller Stand:
+- v3.8.0 — Einfrier-Hinweis:
   - Neuer optionaler Tipp im Schritt „Teiglinge formen" (`js/guide.js`): Teiglinge einölen,
     einzeln einfrieren (2–3 Monate), Auftauen über Nacht Kühlschrank + 3–5 h RT + 2–4 h Stückgare.
   - Reine Text-Ergänzung, kein Pflichtschritt — beeinflusst `R.totalMin`/Zeitplan nicht, gilt
@@ -503,14 +707,56 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
     Standalone-Datei neu gebaut.
   - Neue Tests in Sektion „10 · Anleitungs-Hinweise" (Direkt-Standard + Biga/`coldStage: bulk`
     + Kontrollcheck `R.totalMin` unverändert positiv).
+- v3.9.0 — Einkaufsliste & getrennter Druck:
+  - Neues Modul `js/print.js`: `PZ.buildShoppingList()` rendert eine Einkaufsliste rein aus
+    den bereits berechneten `PZ.R`-Gesamtmengen (keine neue Berechnung), Formatierung 1:1 wie
+    im Ergebnis-Panel. Bei Vorteig immer Gesamtmengen, keine Vorteig/Hauptteig-Aufteilung.
+  - Der bisherige einzelne „Drucken"-Button wurde durch zwei ersetzt: „🛒 Einkaufsliste
+    drucken" und „📝 Anleitung drucken" — beide nutzen weiterhin `window.print()`, gesteuert
+    über zwei neue `body`-Klassen (`print-shopping`/`print-guide`) + `@media print`-Regeln.
+  - Neues `<div id="shoppingList">` im Ergebnis-Panel (Desktop + Mobil, gleiche ID),
+    standardmäßig unsichtbar, erscheint nur im Einkaufslisten-Druck.
+  - `js/print.js` in beide HTML-Dateien eingebunden, `?v=` auf 3.9.0, Standalone neu gebaut.
+  - Neue Test-Sektion „15 · Einkaufsliste" (213 → 222 Prüfungen), bestehende Tests unverändert
+    grün (kein bestehendes Modul angefasst).
+- **v3.10.0 — Mehrere gespeicherte Rezepte** = aktueller Stand:
+  - `js/storage.js` umgebaut: `localStorage['pizzaRechner']` speichert jetzt beliebig viele
+    benannte Rezepte (`{recipes:[{id,name,state,savedAt}], activeId}`) statt eines nackten
+    `state`. Alter Einzel-Slot-Stand wird beim ersten `load()` automatisch und verlustfrei zu
+    einem ersten Rezept „Mein Rezept" migriert.
+  - Neue API: `PZ.saveAsNew()`, `PZ.renameActive()`, `PZ.deleteRecipe()`, `PZ.loadRecipe()`,
+    `PZ.listRecipes()`, `PZ.getActiveId()`. `PZ.save()`/`PZ.load()` bleiben rückwärtskompatibel
+    (überschreiben/laden das aktive Rezept) — `#saveBtn` und Mobil-`#qbSave` unverändert nutzbar.
+  - Neue UI-Card „💾 Meine Rezepte" (Desktop + Mobil, identisch) unter den Presets: eigenes
+    Dropdown + Neu/Umbenennen/Löschen — komplett getrennt von den 7 festen Presets.
+  - Neue Test-Sektion „16 · Speichern & Laden" (222 → 248 Prüfungen): Migration + Mehrfach-
+    Rezepte, sichert/restauriert einen eventuell vorhandenen echten Speicherstand.
+  - `?v=` auf 3.10.0 gezogen (Desktop + Mobil), Standalone-Datei neu gebaut.
+- **v3.11.0 — Gärzeit-Timer / Wecker** = aktueller Stand:
+  - Neues Modul `js/timer.js`: Timer-Widget je Anleitungs-Schritt mit nennenswerter
+    Wartezeit (Autolyse, Stretch & Fold, Vorteig reifen lassen, Stockgare, Stückgare,
+    Ofen vorheizen). Rein clientseitig, kein Server/Service-Worker — läuft nur solange
+    der Tab offen ist (im UI kommuniziert).
+  - Countdown mit Browser-Notification (`Notification.requestPermission()` nur auf
+    expliziten „Timer starten"-Klick) + synthetischem Beep per Web Audio API (kein
+    `<audio>`, keine externe Datei) + sichtbarem „🔔 Fertig!"-Fallback unabhängig von der
+    Notification-Erlaubnis.
+  - Mehrere Timer unabhängig parallel start-/stoppbar; State (`endAt` + Label) in
+    `localStorage['pizzaRechnerTimers']` — übersteht Reload und das Öffnen/Schließen
+    anderer `<details>`-Karten im iOS-Akkordeon, weil der Zustand nicht am DOM hängt.
+  - Keine neuen HTML-IDs nötig (Timer-Boxen werden dynamisch von `js/guide.js` in
+    `#guideSteps` gerendert) — trotzdem `<script src="js/timer.js">` in beiden HTML-
+    Dateien ergänzt, `?v=` auf 3.11.0, Standalone neu gebaut.
+  - Keine neue Test-Sektion (Browser-APIs nicht sinnvoll unit-testbar); bestehende
+    248 Prüfungen unverändert grün, manuell im Browser verifiziert.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
 - Mehl- und Raumtemperatur getrennt einstellbar (aktuell als gleich angenommen)
 - Zucker-Feld (New York Style) — bewusst noch nicht drin; Öl ist seit v3.3.0 integriert
-- Einkaufsliste generieren; Druck nur für die Anleitung
-- Gärzeit-Timer / Wecker; Export als PDF / Teilen-Link
-- Mehrere gespeicherte Rezepte (statt einem localStorage-Slot)
+- ~~Einkaufsliste generieren; Druck nur für die Anleitung~~ — **erledigt in v3.9.0**
+- ~~Gärzeit-Timer / Wecker~~ — **erledigt in v3.11.0**; Export als PDF / Teilen-Link (offen)
+- ~~Mehrere gespeicherte Rezepte (statt einem localStorage-Slot)~~ — **erledigt in v3.10.0**
 
 ## Rahmen-Kontext (nicht App-bezogen)
 
