@@ -6,17 +6,23 @@
   const state = PZ.state;
 
   // --- Slider <-> Number Verknüpfung ---
-  function link(slider, number, key, decimals) {
+  // `unit` liefert einen aria-valuetext fürs Screenreader-Ansagen (z. B. "62 Prozent Hydration"
+  // statt einer nackten Zahl) — reine a11y-Ergänzung, ändert keine Berechnungslogik.
+  function link(slider, number, key, decimals, unit) {
     const s = $(slider), n = $(number), v = $(key + 'V');
+    function fmt(val) { return decimals != null ? val.toFixed(decimals) : val; }
     function set(val, from) {
       val = parseFloat(val);
       if (isNaN(val)) return;
       state[key] = val;
       if (from !== 's') s.value = val;
       if (from !== 'n') n.value = val;
-      if (v) v.textContent = decimals != null ? val.toFixed(decimals) : val;
+      const disp = fmt(val);
+      if (v) v.textContent = disp;
+      if (unit) s.setAttribute('aria-valuetext', disp + ' ' + unit);
       PZ.calc();
     }
+    if (unit) s.setAttribute('aria-valuetext', fmt(parseFloat(s.value)) + ' ' + unit);
     s.addEventListener('input', () => set(s.value, 's'));
     n.addEventListener('input', () => set(n.value, 'n'));
     return set;
@@ -24,16 +30,16 @@
 
   // Setter-Sammlung (von presets.js und storage.js genutzt)
   PZ.set = {
-    balls: link('balls', 'ballsN', 'balls', 0),
-    ballw: link('ballw', 'ballwN', 'ballw', 0),
-    hyd:   link('hyd', 'hydN', 'hyd', 0),
-    salt:  link('salt', 'saltN', 'salt', 1),
-    oil:   link('oil', 'oilN', 'oil', 1),
-    pref:  link('pref', 'prefN', 'pref', 0),
-    bhyd:  link('bhyd', 'bhydN', 'bhyd', 0),
-    yeast: link('yeast', 'yeastN', 'yeast', 2),
-    ddt:   link('ddt', 'ddtN', 'ddt', 1),
-    room:  link('room', 'roomN', 'room', 0)
+    balls: link('balls', 'ballsN', 'balls', 0, 'Teiglinge'),
+    ballw: link('ballw', 'ballwN', 'ballw', 0, 'Gramm'),
+    hyd:   link('hyd', 'hydN', 'hyd', 0, 'Prozent Hydration'),
+    salt:  link('salt', 'saltN', 'salt', 1, 'Prozent Salz'),
+    oil:   link('oil', 'oilN', 'oil', 1, 'Prozent Olivenöl'),
+    pref:  link('pref', 'prefN', 'pref', 0, 'Prozent Mehl im Vorteig'),
+    bhyd:  link('bhyd', 'bhydN', 'bhyd', 0, 'Prozent Biga-Hydration'),
+    yeast: link('yeast', 'yeastN', 'yeast', 2, 'Prozent Hefe'),
+    ddt:   link('ddt', 'ddtN', 'ddt', 1, 'Grad Celsius Teigtemperatur'),
+    room:  link('room', 'roomN', 'room', 0, 'Grad Celsius Raumtemperatur')
   };
 
   // --- Quick-Pills ---
@@ -65,6 +71,7 @@
       const b = document.createElement('button');
       b.type = 'button';
       b.dataset.ps = s.key;
+      b.setAttribute('aria-pressed', 'false');
       b.textContent = s.label;
       b.onclick = () => { const p = $('preset'); if (p) p.value = ''; selectPrefStage(m, s.key); };
       wrap.appendChild(b);
@@ -76,6 +83,7 @@
     wrap.querySelectorAll('button').forEach(b => {
       const on = b.dataset.ps === key;
       b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', String(on));
       if (on) matured = b.textContent.split(' ·')[0];
     });
     if (matured) $('prefStageVal').textContent = matured;
@@ -95,8 +103,9 @@
   function seg(containerId, attr, key, after) {
     const c = $(containerId);
     c.querySelectorAll('button').forEach(b => b.onclick = () => {
-      c.querySelectorAll('button').forEach(x => x.classList.remove('active'));
+      c.querySelectorAll('button').forEach(x => { x.classList.remove('active'); x.setAttribute('aria-pressed', 'false'); });
       b.classList.add('active');
+      b.setAttribute('aria-pressed', 'true');
       state[key] = b.dataset[attr];
       if (after) after();
       PZ.calc();
@@ -105,7 +114,9 @@
   function selectSeg(cid, attr, val) {
     const c = $(cid);
     c.querySelectorAll('button').forEach(b => {
-      b.classList.toggle('active', b.dataset[attr] == String(val));
+      const on = b.dataset[attr] == String(val);
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', String(on));
     });
   }
 

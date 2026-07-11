@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-11 · Aktuelle Version: v3.6.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-11 · Aktuelle Version: v3.7.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -156,6 +156,54 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
   W300–310 (Cuoco, Napoletana): 16 · Monica/Nuvola/Teichner 1 (~W280–300): 12 · Rest: 0.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
+
+## Accessibility (v3.7.0)
+
+WCAG-2.1-AA-Audit (Desktop + Mobil, identische Fixes in beiden HTML-Dateien + `js/ui.js` +
+`css/styles.css`). Befundliste war: 3 Blocker, 3 Major, 2 Minor — alle behoben.
+
+- **Blocker — Label-Verknüpfung fehlte komplett:** Jedes `<label>` neben einem Slider/
+  Zahlenfeld-Paar (Teiglinge, Gewicht, Hydration, Salz, Öl, Vorteig-Anteil, Biga-Hydration,
+  Hefemenge, DDT, Raumtemp) stand nur visuell daneben, ohne `for`/`aria-labelledby` — Screenreader
+  hatten für keinen dieser Regler einen Namen. Fix: jedes Feld-Label bekommt eine `id`
+  (z. B. `id="hydLabel"`), beide zugehörigen Inputs (`range` + `number`) bekommen
+  `aria-labelledby="hydLabel"` (ein Label kann mehrere Inputs benennen — kein `for` möglich,
+  da zwei Inputs pro Label). Einzelne Controls (`#flour`-Select, `#timeISO`) bekamen normales
+  `for`/`id`, das `#preset`-Select (hatte gar kein Label) ein `aria-label`.
+- **Blocker — Custom-Controls ohne Zustand:** `.seg`-Segmente (Teigführung, Hefe-Art, Kalte
+  Gare, Knetart, Bezugspunkt) und die dynamisch gerenderten Vorteig-Reife-Pills (`#prefStage`)
+  zeigten den aktiven Zustand nur über die CSS-Klasse `.active` (Farbe) — für AT nicht erkennbar.
+  Fix: `aria-pressed="true/false"` auf jedem Button, in `js/ui.js` zentral in `seg()`,
+  `selectSeg()`, `renderPrefStages()` und `highlightPrefStage()` mitgepflegt (nicht nur im
+  initialen Markup). Segment-Container bekamen zusätzlich `role="group"` +
+  `aria-labelledby` aufs zugehörige Feld-Label.
+- **Blocker — `#flourWarn` ohne Live-Region:** Die Mehl-/Hydration-Warnung wird bei jeder
+  Reglerbewegung per `innerHTML` neu geschrieben, hatte aber keine ARIA-Live-Eigenschaft —
+  Screenreader-Nutzer bekamen neue Warnungen nie mitgeteilt. Fix: `aria-live="polite"
+  aria-atomic="true"` auf dem **statischen** Container (nicht dynamisch ersetzen — sonst
+  feuert es nicht zuverlässig). `role="alert"` bewusst nicht verwendet (zu aufdringlich/
+  assertiv bei Warnungen, die während des Reglerziehens laufend neu entstehen können).
+- **Major — Kontrast `--muted` zu schwach:** `#8a7f76` (Hint-Texte, inaktive Segment-Labels)
+  auf `--bg`/weißer Kartenfläche kam auf ≈3,6–3,9:1 (AA verlangt 4,5:1 für normalen Text).
+  Neu: `--muted:#6e6359` → ≈5,4:1 (auf `--bg`) / ≈5,9:1 (auf Weiß) — bestanden mit Marge.
+  (Zum Vergleich, geprüft & bereits ausreichend: weißer Text auf `--tomato` — Timechip,
+  aktive Pill/Segment — ≈4,86:1; `.warn`-Text `#9a3a1c` auf `#fdf0ec` ≈6,3:1.)
+- **Major — Fokus-Ring der Dropdowns unsichtbar:** `.selectbox:focus` nutzte
+  `outline: 2px solid var(--crust)` (`#e8c98a`), Kontrast zu Weiß nur ≈1,6:1 (WCAG 1.4.11
+  verlangt ≥3:1 für UI-Komponentenzustände). Neu: `outline-color: var(--tomato)` → ≈4,86:1.
+- **Major — Slider ohne `aria-valuetext`:** native `<input type="range">` sagt nur die
+  nackte Zahl an. `link()` in `js/ui.js` bekommt einen `unit`-Parameter, setzt
+  `aria-valuetext` bei jeder Änderung **und** einmalig beim Setup (z. B. „62 Prozent
+  Hydration" statt „62"). Rein additiv, keine Berechnungslogik berührt.
+- **Geprüft, kein Fix nötig:** Tastatur-Reihenfolge folgt der DOM-/visuellen Reihenfolge auf
+  beiden Seiten (inkl. `<details>`-Akkordeon auf Mobil — geschlossene Karten nehmen Kinder
+  korrekt aus der Tab-Reihenfolge); Überschriften-Hierarchie h1→h2→h3 ohne Sprünge; `lang="de"`
+  gesetzt; Quick-Bar-Bottom-Padding (`.wrap{padding-bottom:calc(84px + safe-area-inset-bottom)}`)
+  verdeckt keine fokussierten Elemente am Seitenende.
+- **Nicht angefasst (Test-Risiko):** `tests/test.html` prüft `#flourWarn`- und
+  `#guideSteps`-Inhalte nur per `innerHTML.includes(text)` — keine der neuen ARIA-Attribute
+  kollidiert damit, Tests liefen unverändert grün.
+- `?v=` auf 3.7.0 gezogen (Desktop + Mobil), Standalone-Datei neu gebaut.
 
 ## Mobile iOS-Feinschliff (v3.6.0)
 
@@ -390,7 +438,7 @@ ui → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur
   - Touch-Feinschliff: `touch-action:manipulation`, `:active`-Feedback, `overscroll-behavior`.
   - Nur Mobil-Layout betroffen (Desktop-HTML unverändert); `?v=`→3.6.0, Standalone neu gebaut,
     Tests 136/136 grün.
-- **v3.6.1 — Testsuite gehärtet** = aktueller Stand:
+- v3.6.1 — Testsuite gehärtet:
   - Reine Test-Erweiterung (kein Logik-/UI-Code geändert): 136 → 213 Prüfungen.
   - Poolish/Biga-Klemmgrenze jetzt exakt an der Grenze UND 1 % darüber getestet; erstmals auch
     der Fall „Biga wird geklemmt" (`bhyd > hyd`) — vorher nur der unbegrenzte Biga-Fall geprüft.
@@ -404,6 +452,16 @@ ui → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur
     getestet — jetzt wird geprüft, dass der zurückgerechnete Startzeitpunkt korrekt im
     Anleitungstext erscheint (auch mit Vorteig-Reifezeit bei Biga).
   - Kein Bug gefunden — alle neuen Tests liefen beim ersten Anlauf grün gegen die bestehende Logik.
+- **v3.7.0 — Accessibility (WCAG 2.1 AA)** = aktueller Stand:
+  - Alle Slider/Zahlenfelder + Selects + Zeitfeld jetzt programmatisch mit ihrem `<label>`
+    verknüpft (`for`/`aria-labelledby`/`aria-label`) — vorher komplett unverknüpft.
+  - Segment-Buttons + Vorteig-Reife-Pills bekommen `aria-pressed` (zentral in `js/ui.js`
+    gepflegt), Segment-Container `role="group"`.
+  - `#flourWarn` bekommt `aria-live="polite"` — Warnungen werden jetzt vorgelesen.
+  - Kontrastfixes: `--muted` `#8a7f76`→`#6e6359` (3,6:1→5,4:1+), Fokus-Outline der Dropdowns
+    `--crust`→`--tomato` (1,6:1→4,86:1).
+  - Slider bekommen `aria-valuetext` mit Einheit (z. B. „62 Prozent Hydration").
+  - Reine a11y-Ergänzung, keine Berechnungslogik geändert; Tests unverändert grün.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
