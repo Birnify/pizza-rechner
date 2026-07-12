@@ -63,6 +63,15 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .field label{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;column-gap:8px;font-size:14px;font-weight:600;margin-bottom:6px;}
 .field label .val{color:var(--tomato);font-variant-numeric:tabular-nums;font-size:15px;font-family:var(--font-head);flex-shrink:0;}
 .field .hint{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.35;overflow-wrap:break-word;}
+/* Feature-Flag "hints" (js/settings.js, v3.17.0): EIN globaler Schalter blendet alle
+   erklärenden Kurztexte aus, statt jedes einzelne Element separat zu verdrahten. Die
+   Elemente (inkl. IDs wie #shareHint, timersys-hint-<key>) bleiben im DOM — nur
+   unsichtbar, nie entfernt, damit keine aria-describedby-Referenz ins Leere zeigt.
+   #guideSummary trägt bewusst KEINE .hint-Klasse (ist Funktions-/Zusammenfassungstext,
+   kein optionaler Erklärhinweis) — bleibt von diesem Schalter unberührt. */
+body.hints-off .hint,
+body.hints-off .timersys-hint,
+body.hints-off .timerhint{display:none;}
 .row{display:flex;gap:10px;align-items:center;}
 .row>*{min-width:0;}
 input[type=range]{

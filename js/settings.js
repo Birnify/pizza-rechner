@@ -25,7 +25,11 @@
     share: true,          // Teilen-Link
     shopping: false,      // Einkaufsliste & separater Druck
     freezeHint: false,    // Einfrier-Hinweis in der Anleitung
-    multiRecipes: true    // Mehrere gespeicherte Rezepte (sonst: Einzel-Slot-Verhalten)
+    multiRecipes: true,   // Mehrere gespeicherte Rezepte (sonst: Einzel-Slot-Verhalten)
+    hints: true           // Tooltip-/Hinweistexte (erklärende .hint-Kurztexte). Default AN:
+                           // reine Erklärhilfen sind für neue Nutzer wertvoll, erfahrene
+                           // Nutzer können bewusst abschalten (anders als die übrigen, im
+                           // Ausgangszustand unauffälligen Zusatzfunktionen oben).
   };
 
   function readFlags() {
@@ -74,6 +78,15 @@
     if (shareBlock) shareBlock.style.display = f.share ? '' : 'none';
     const shoppingRow = document.getElementById('shoppingRow');
     if (shoppingRow) shoppingRow.style.display = f.shopping ? '' : 'none';
+    // Tooltip-/Hinweistexte: EIN globaler Body-Klassen-Schalter statt Dutzender
+    // Einzel-Elemente. CSS blendet darüber alle .hint/.timersys-hint/.timerhint-Elemente
+    // per display:none aus — die Elemente (und ihre IDs) bleiben dabei im DOM erhalten,
+    // nur unsichtbar/nicht mehr im Accessibility-Tree. Wichtig: #shareHint (referenziert
+    // von #shareLinkBtn via aria-describedby) und die dynamischen timersys-hint-<key>-
+    // Spans (referenziert von den System-Wecker-Links, js/timer.js) bleiben dadurch
+    // gültige DOM-Knoten — nie eine "verwaiste" aria-describedby-Referenz auf eine
+    // nicht-existente ID, nur eine (wie visuell) nicht wahrnehmbare.
+    document.body.classList.toggle('hints-off', !f.hints);
     if (PZ.buildGuide) PZ.buildGuide();
   }
   PZ.applyFlags = applyFlags;
@@ -85,7 +98,8 @@
     flagShare: 'share',
     flagShopping: 'shopping',
     flagFreezeHint: 'freezeHint',
-    flagMultiRecipes: 'multiRecipes'
+    flagMultiRecipes: 'multiRecipes',
+    flagHints: 'hints'
   };
 
   function wireCheckboxes() {

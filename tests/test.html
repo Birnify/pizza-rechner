@@ -17,6 +17,12 @@
   .assert.fail{color:#a8341f;font-weight:700;}
   .assert.fail::before{content:"✗ ";}
   #stubs{position:absolute;left:-9999px;top:-9999px;}
+  /* Duplikat der Feature-Flag-"hints"-Regel aus css/styles.css (v3.17.0) — test.html
+     lädt bewusst kein echtes App-Stylesheet (reine Rechenlogik-Tests, eigenes minimales
+     Test-Runner-CSS), daher hier 1:1 dieselbe Regel nur für den DOM-Effekt-Test unten. */
+  body.hints-off .hint,
+  body.hints-off .timersys-hint,
+  body.hints-off .timerhint{display:none;}
 </style>
 </head>
 <body>
@@ -40,6 +46,8 @@
   <select id="flour"><option value="caputo_pizzeria" selected></option></select>
   <input type="text" id="timeISO">
   <div id="recipesCard"></div><div id="shareBlock"></div><div id="shoppingRow"></div>
+  <div class="hint" id="testHintStub">Erklärender Beispiel-Hinweistext</div>
+  <button type="button" id="testDescribedBtn" aria-describedby="testHintStub">Beispiel-Button</button>
 </div>
 
 <script src="../js/dom.js"></script>
@@ -100,7 +108,7 @@
   // Render-Effekt der einzelnen Flags) wird weiter unten in einer eigenen Sektion geprüft,
   // die einzelne Flags gezielt aus- und wieder auf diese Baseline zurückschaltet.
   Object.assign(PZ.FLAGS, {
-    timer: true, timerSystem: true, share: true, shopping: true, freezeHint: true, multiRecipes: true
+    timer: true, timerSystem: true, share: true, shopping: true, freezeHint: true, multiRecipes: true, hints: true
   });
 
   // --- Haupt-Testfall: setzt state, rechnet, prüft R-Werte ---
@@ -1353,7 +1361,8 @@
         ['share (Teilen-Link)', d.share, true],
         ['shopping (Einkaufsliste & separater Druck)', d.shopping, false],
         ['freezeHint (Einfrier-Hinweis)', d.freezeHint, false],
-        ['multiRecipes (Mehrere gespeicherte Rezepte)', d.multiRecipes, true]
+        ['multiRecipes (Mehrere gespeicherte Rezepte)', d.multiRecipes, true],
+        ['hints (Tooltip-/Hinweistexte)', d.hints, true]
       ].map(([label, actual, expected]) => ({ label, actual, expected, tol: null, ok: actual === expected })));
     })();
 
@@ -1429,6 +1438,36 @@
       renderBox('applyFlags() blendet #recipesCard/#shareBlock/#shoppingRow per display:none aus/ein', [
         { label: 'Alle drei Blöcke bei deaktivierten Flags per display:none ausgeblendet', ok: allHidden, actual: allHidden, expected: true, tol: null },
         { label: 'Alle drei Blöcke bei aktivierten Flags wieder sichtbar (display != none)', ok: allShown, actual: allShown, expected: true, tol: null }
+      ]);
+    })();
+
+    // --- Render-Effekt: "hints" blendet .hint-Texte global per Body-Klasse aus, OHNE
+    // die Elemente (und damit referenzierte IDs) aus dem DOM zu entfernen — keine
+    // verwaiste aria-describedby-Referenz. ---
+    (function () {
+      const stub = document.getElementById('testHintStub');
+      const describedBtn = document.getElementById('testDescribedBtn');
+
+      Object.assign(PZ.FLAGS, { hints: false });
+      PZ.applyFlags();
+      const bodyHasOffClass = document.body.classList.contains('hints-off');
+      const stubHiddenViaCss = getComputedStyle(stub).display === 'none';
+      const stillInDom = document.getElementById('testHintStub') === stub;
+      const describedByStillResolves = describedBtn.getAttribute('aria-describedby') === 'testHintStub'
+        && document.getElementById(describedBtn.getAttribute('aria-describedby')) === stub;
+
+      Object.assign(PZ.FLAGS, { hints: true });
+      PZ.applyFlags();
+      const bodyOffClassRemoved = !document.body.classList.contains('hints-off');
+      const stubVisibleAgain = getComputedStyle(stub).display !== 'none';
+
+      renderBox('Flag "hints": .hint-Texte werden per body.hints-off ausgeblendet, nie aus dem DOM entfernt', [
+        { label: 'hints=false setzt body-Klasse "hints-off"', ok: bodyHasOffClass, actual: bodyHasOffClass, expected: true, tol: null },
+        { label: 'hints=false blendet .hint-Stub per CSS (display:none) aus', ok: stubHiddenViaCss, actual: stubHiddenViaCss, expected: true, tol: null },
+        { label: '.hint-Stub bleibt bei hints=false im DOM (Element/ID nicht entfernt)', ok: stillInDom, actual: stillInDom, expected: true, tol: null },
+        { label: 'aria-describedby-Referenz zeigt weiterhin auf ein existierendes Element (kein Orphan)', ok: describedByStillResolves, actual: describedByStillResolves, expected: true, tol: null },
+        { label: 'hints=true entfernt die body-Klasse "hints-off" wieder', ok: bodyOffClassRemoved, actual: bodyOffClassRemoved, expected: true, tol: null },
+        { label: 'hints=true macht den .hint-Stub wieder sichtbar', ok: stubVisibleAgain, actual: stubVisibleAgain, expected: true, tol: null }
       ]);
     })();
 

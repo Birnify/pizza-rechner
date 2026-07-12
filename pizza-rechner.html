@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pizzateig-Rechner</title>
-<link rel="stylesheet" href="css/styles.css?v=3.16.0">
+<link rel="stylesheet" href="css/styles.css?v=3.17.0">
 </head>
 <body>
 <header>
@@ -246,6 +246,7 @@
         <label class="switch-row"><input type="checkbox" id="flagShopping"> Einkaufsliste &amp; separater Druck</label>
         <label class="switch-row"><input type="checkbox" id="flagFreezeHint"> Einfrier-Hinweis in der Anleitung</label>
         <label class="switch-row"><input type="checkbox" id="flagMultiRecipes"> Mehrere gespeicherte Rezepte</label>
+        <label class="switch-row"><input type="checkbox" id="flagHints"> Tooltip-/Hinweistexte (Erklärungen bei Feldern &amp; Buttons)</label>
       </div>
     </div>
 
@@ -318,7 +319,7 @@
 <section class="guidewrap">
   <div class="guidehead">
     <h2>Schritt-für-Schritt-Anleitung</h2>
-    <span class="hint" id="guideSummary" style="font-size:12px;"></span>
+    <span id="guideSummary" style="font-size:12px;"></span>
   </div>
   <div id="flourWarn" style="margin-bottom:8px;" aria-live="polite" aria-atomic="true"></div>
   <div id="guideSteps"></div>
@@ -327,23 +328,23 @@
 <footer>
   Alles wird lokal in deinem Browser gerechnet &amp; gespeichert · keine Internetverbindung nötig<br>
   Bäckerprozente — Wasser, Salz &amp; Hefe immer relativ zur Mehlmenge (= 100 %)<br>
-  <span id="appVersion" style="opacity:.7;">v3.16.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.17.0</span>
 </footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.16.0"></script>
-<script src="js/state.js?v=3.16.0"></script>
-<script src="js/settings.js?v=3.16.0"></script>
-<script src="js/flour.js?v=3.16.0"></script>
-<script src="js/calc.js?v=3.16.0"></script>
-<script src="js/schedule.js?v=3.16.0"></script>
-<script src="js/guide.js?v=3.16.0"></script>
-<script src="js/timer.js?v=3.16.0"></script>
-<script src="js/ui.js?v=3.16.0"></script>
-<script src="js/print.js?v=3.16.0"></script>
-<script src="js/presets.js?v=3.16.0"></script>
-<script src="js/storage.js?v=3.16.0"></script>
-<script src="js/share.js?v=3.16.0"></script>
-<script src="js/main.js?v=3.16.0"></script>
+<script src="js/dom.js?v=3.17.0"></script>
+<script src="js/state.js?v=3.17.0"></script>
+<script src="js/settings.js?v=3.17.0"></script>
+<script src="js/flour.js?v=3.17.0"></script>
+<script src="js/calc.js?v=3.17.0"></script>
+<script src="js/schedule.js?v=3.17.0"></script>
+<script src="js/guide.js?v=3.17.0"></script>
+<script src="js/timer.js?v=3.17.0"></script>
+<script src="js/ui.js?v=3.17.0"></script>
+<script src="js/print.js?v=3.17.0"></script>
+<script src="js/presets.js?v=3.17.0"></script>
+<script src="js/storage.js?v=3.17.0"></script>
+<script src="js/share.js?v=3.17.0"></script>
+<script src="js/main.js?v=3.17.0"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-12 · Aktuelle Version: v3.16.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-12 · Aktuelle Version: v3.17.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -1170,7 +1170,7 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
     311 Prüfungen (vorher 293), alle grün. `?v=` auf 3.14.0 gezogen (Desktop + Mobil),
     Standalone-Datei neu gebaut. Export als PDF bewusst nicht mitgebaut (Nutzer wollte nur
     den reinen Teilen-Link).
-- **v3.15.0 — System-Wecker/Kalender-Anbindung für Gärzeit-Timer** = aktueller Stand:
+- **v3.15.0 — System-Wecker/Kalender-Anbindung für Gärzeit-Timer**:
   - Erweiterung von `js/timer.js` (rein additiv, bestehende In-App-Countdown-Logik aus
     v3.11.0 bleibt unverändert erhalten): jede Timer-Box bietet im Idle-Zustand jetzt
     zusätzlich zum „Timer starten"-Button einen System-Integrations-Block (`.timersys`).
@@ -1198,8 +1198,19 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
     Browser-APIs sind dort kein Unit-Test-Ziel, s. v3.11.0). 311 Prüfungen unverändert grün,
     verifiziert per Headless-Edge-Dump. `?v=` auf 3.15.0 gezogen (Desktop + Mobil),
     Standalone-Datei neu gebaut.
+- **v3.16.0 — Einstellungen-Menü für Feature-Flags**: neues `js/settings.js`, `PZ.FLAGS`
+  (localStorage-Key `pizzaRechnerFeatureFlags`), 6 Checkboxen zum Ein-/Ausschalten von
+  Timer/System-Wecker-Links/Teilen-Link/Einkaufsliste-Druck/Einfrier-Hinweis/Mehrere
+  Rezepte. Deaktivierte Features komplett aus dem Rendering genommen (`display:none`),
+  keine Änderung an `js/storage.js`. 331 Prüfungen (vorher 311), Accessibility-Audit ohne
+  Befunde. Siehe Abschnitt oben für Details.
+- **v3.17.0 — Feature-Flag „hints"** = aktueller Stand: 7. Flag im Einstellungen-Menü,
+  blendet alle `.hint`-erklärenden Kurztexte global per `body.hints-off`-CSS-Klasse aus
+  (Default AN), Elemente bleiben im DOM (keine verwaisten `aria-describedby`-Referenzen
+  bei `#shareHint`/`timersys-hint-<key>`). 338 Prüfungen (vorher 331), Accessibility-Audit
+  ohne Befunde. Siehe Abschnitt oben für Details.
 
-## Einstellungen-Menü für Feature-Flags (v3.16.0, `js/settings.js`) = aktueller Stand
+## Einstellungen-Menü für Feature-Flags (v3.16.0, `js/settings.js`)
 
 Neues Modul `js/settings.js` (Ladereihenfolge direkt nach `state.js`, vor allen anderen
 Modulen — braucht `PZ.$`, wird aber selbst von `guide.js`/`timer.js`/`print.js` nur
@@ -1299,6 +1310,82 @@ Rezepte) einzeln ein-/ausschalten können, statt sie fest im Layout zu haben.
 - **Nicht angefasst:** Berechnungslogik (`js/calc.js`, `js/schedule.js`) komplett
   unverändert — das Einstellungen-Menü schaltet ausschließlich Anzeige/Rendering,
   nie eine Bäckerprozent- oder Zeitrechnung.
+
+## Feature-Flag „hints" — Tooltip-/Hinweistexte optional abschaltbar (v3.17.0) = aktueller Stand
+
+Direkter Nutzerwunsch (Erweiterung des Einstellungen-Menüs aus v3.16.0 um einen 7. Flag):
+„Auch die ganzen ToolTip Hinweise würde ich gerne als Optional in die Featureliste
+aufnehmen lassen." Vor der Umsetzung wurden systematisch **alle** `.hint`-Vorkommen im
+Projekt gesichtet (`grep` nach `class="hint"`, `.hint{`, `hint(` in HTML/CSS/JS), um klar
+abzugrenzen, was unter den neuen Flag fällt:
+
+- **Eingeschlossen** (reine Erklär-/Zusatztexte, kein Pflichtinhalt): alle `.field .hint`-
+  Sätze unter Reglern (z. B. „Napoli-Standard: 2,5–3 %…", „Maschine erzeugt Reibungswärme…"),
+  `#presetDesc`, `#recipeHint`, `#methodHint`, `#prefHint`, `#prefStageHint`, `#yeastHint`,
+  `#timeHint`, der Intro-Satz der Einstellungen-Card selbst, `#shareHint` (Teilen-Link-
+  Erklärung), sowie die dynamisch erzeugten `js/timer.js`-Elemente `.timerhint` (einmaliger
+  Toast „Der Timer läuft nur, solange dieser Tab geöffnet ist…") und `.timersys-hint`
+  (Erklärung neben den Android-/Kalender-Wecker-Links).
+- **Bewusst ausgeschlossen** (dokumentiert wie vom Nutzer gewünscht, mit Begründung):
+  - `#guideSummary` (die Zusammenfassungszeile über der Anleitung, z. B. „Direkt · Napoli ·
+    62% Hydration") trug zwar `class="hint"`, hatte aber **nie** eine passende CSS-Regel
+    (nur `.field .hint` existiert, `#guideSummary` liegt außerhalb eines `.field`) — die
+    Klasse war rein kosmetisch tot. In dieser Session entfernt (keine visuelle Änderung)
+    und bewusst NICHT unter den neuen Flag gestellt: es ist Funktions-/Statustext (aktueller
+    Rezept-Zustand), keine optionale Erklärung.
+  - `.tip`/`.warn`-Textblöcke innerhalb der Anleitungsschritte (`js/guide.js`, z. B. die
+    💡/⚠️-Hinweise zu Autolyse, Öl-Zugabe, Salz-Reihenfolge) — anderer CSS-Klassenname
+    (`.tip`/`.warn`, nicht `.hint`), tiefer in die eigentliche Schritt-für-Schritt-Anleitung
+    verwoben (viele bestehende String-Matching-Tests, Sektionen 10/11/12), und inhaltlich
+    eher **Anleitungsbestandteil** als optionaler Tooltip. Nicht Teil dieses Flags.
+  - `#flourWarn` (Mehl-Warnung) — `.warn`-Klasse, funktional/actionable, keine Erklärung.
+
+- **Ein globaler Schalter statt Dutzender Einzel-Elemente:** `PZ.applyFlags()`
+  (`js/settings.js`) setzt `document.body.classList.toggle('hints-off', !PZ.FLAGS.hints)`.
+  Neue CSS-Regel (`css/styles.css`, nach `.field .hint`):
+  ```
+  body.hints-off .hint,
+  body.hints-off .timersys-hint,
+  body.hints-off .timerhint{display:none;}
+  ```
+  Höhere Spezifität (`body` + 2 Klassen) als `.field .hint` (nur 2 Klassen) — überschreibt
+  zuverlässig unabhängig von der Reihenfolge im Stylesheet.
+- **Default AN** (anders als `timerSystem`/`shopping`/`freezeHint`): reine Erklärhilfen sind
+  für neue Nutzer wertvoll, erfahrene Nutzer können bewusst abschalten — kein Grund
+  gefunden, der einen anderen Default rechtfertigen würde.
+- **Elemente bleiben immer im DOM, auch wenn `hints=false`** — nur `display:none`, nie
+  entfernt. Wichtig für zwei bestehende `aria-describedby`-Fälle: `#shareLinkBtn` →
+  `aria-describedby="shareHint"` und die beiden System-Wecker-Links → `aria-describedby="timersys-hint-<key>"`
+  (`js/timer.js`). Damit zeigt die Referenz **nie** auf eine nicht-existente ID.
+- Neue Checkbox `#flagHints` („Tooltip-/Hinweistexte (Erklärungen bei Feldern & Buttons)")
+  in beiden Settings-Cards (Desktop + Mobil), identisches `<label class="switch-row">`-
+  Muster wie die 6 bestehenden Flags.
+
+**Test-Sektion „18 · Feature-Flags" erweitert** (`tests/test.html`): Default-Wert (`hints:
+true`), sowie ein neuer Render-Effekt-Block mit zwei Stub-Elementen im `#stubs`-Block
+(`#testHintStub` mit `class="hint"`, `#testDescribedBtn` mit `aria-describedby="testHintStub"`)
+— geprüft wird: `hints=false` setzt `body.hints-off`, blendet den Stub per `getComputedStyle`
+(`display:none`) aus, das Element bleibt im DOM (`getElementById` findet es weiterhin),
+die `aria-describedby`-Referenz löst weiterhin zu einem existierenden Element auf, und
+`hints=true` macht alles wieder rückgängig. Da `tests/test.html` bewusst kein echtes
+App-Stylesheet lädt (reine Rechenlogik-Tests, eigenes minimales Test-Runner-CSS), enthält
+die Datei eine 1:1-Kopie der `body.hints-off`-CSS-Regel nur für diesen DOM-Effekt-Test.
+**338 Prüfungen** bestehen (vorher 331 + 7 neue), verifiziert per Headless-Edge-Dump.
+
+**Accessibility-Nachaudit (gezielt, `accessibility-expert`-Agent):** keine Blocker/Major-
+Funde. Kernfrage war, ob `aria-describedby` auf ein per `display:none` verstecktes Ziel
+(`#shareHint`, `timersys-hint-<key>`) problematisch ist — Ergebnis: die WAI-ARIA
+Accessible-Name-and-Description-Computation sieht für **direkt per IDREF referenzierte**
+Knoten explizit eine Ausnahme von der „hidden wird ignoriert"-Regel vor; reale AT-
+Unterstützung dafür ist zwar uneinheitlich, erzeugt aber in keinem Fall eine Asymmetrie
+zwischen sehenden und nicht-sehenden Nutzern (entweder beide behalten die Beschreibung,
+oder beide verlieren sie — nie „stumme Beschreibung wo vorher eine echte stand"). Ebenfalls
+geprüft: alle Regler bleiben unabhängig vom `hints`-Flag über ihr eigenes
+`aria-labelledby` benannt (Hint-Text ist nie die einzige Benennungsquelle), `#guideSummary`-
+Abgrenzung ist sinnvoll, neue Checkbox folgt unauffällig dem etablierten `.switch-row`-Muster.
+Keine Code-Änderung durch den Audit nötig.
+
+**Nicht angefasst:** Berechnungslogik (`js/calc.js`, `js/schedule.js`) unverändert.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 

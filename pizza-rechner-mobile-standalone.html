@@ -74,6 +74,15 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .field label{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;column-gap:8px;font-size:14px;font-weight:600;margin-bottom:6px;}
 .field label .val{color:var(--tomato);font-variant-numeric:tabular-nums;font-size:15px;font-family:var(--font-head);flex-shrink:0;}
 .field .hint{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.35;overflow-wrap:break-word;}
+/* Feature-Flag "hints" (js/settings.js, v3.17.0): EIN globaler Schalter blendet alle
+   erklärenden Kurztexte aus, statt jedes einzelne Element separat zu verdrahten. Die
+   Elemente (inkl. IDs wie #shareHint, timersys-hint-<key>) bleiben im DOM — nur
+   unsichtbar, nie entfernt, damit keine aria-describedby-Referenz ins Leere zeigt.
+   #guideSummary trägt bewusst KEINE .hint-Klasse (ist Funktions-/Zusammenfassungstext,
+   kein optionaler Erklärhinweis) — bleibt von diesem Schalter unberührt. */
+body.hints-off .hint,
+body.hints-off .timersys-hint,
+body.hints-off .timerhint{display:none;}
 .row{display:flex;gap:10px;align-items:center;}
 .row>*{min-width:0;}
 input[type=range]{
@@ -600,6 +609,7 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
           <label class="switch-row"><input type="checkbox" id="flagShopping"> Einkaufsliste &amp; separater Druck</label>
           <label class="switch-row"><input type="checkbox" id="flagFreezeHint"> Einfrier-Hinweis in der Anleitung</label>
           <label class="switch-row"><input type="checkbox" id="flagMultiRecipes"> Mehrere gespeicherte Rezepte</label>
+          <label class="switch-row"><input type="checkbox" id="flagHints"> Tooltip-/Hinweistexte (Erklärungen bei Feldern &amp; Buttons)</label>
         </div>
       </div>
     </details>
@@ -673,7 +683,7 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 <section class="guidewrap" id="guide">
   <div class="guidehead">
     <h2>Schritt-für-Schritt-Anleitung</h2>
-    <span class="hint" id="guideSummary" style="font-size:12px;"></span>
+    <span id="guideSummary" style="font-size:12px;"></span>
   </div>
   <div id="flourWarn" style="margin-bottom:8px;" aria-live="polite" aria-atomic="true"></div>
   <div id="guideSteps"></div>
@@ -682,7 +692,7 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
   Alles wird lokal in deinem Browser gerechnet &amp; gespeichert · keine Internetverbindung nötig<br>
   Bäckerprozente — Wasser, Salz &amp; Hefe immer relativ zur Mehlmenge (= 100 %)<br>
-  <span id="appVersion" style="opacity:.7;">v3.16.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.17.0</span>
 </footer>
 
 <div class="quickbar">
@@ -752,7 +762,11 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
     share: true,          // Teilen-Link
     shopping: false,      // Einkaufsliste & separater Druck
     freezeHint: false,    // Einfrier-Hinweis in der Anleitung
-    multiRecipes: true    // Mehrere gespeicherte Rezepte (sonst: Einzel-Slot-Verhalten)
+    multiRecipes: true,   // Mehrere gespeicherte Rezepte (sonst: Einzel-Slot-Verhalten)
+    hints: true           // Tooltip-/Hinweistexte (erklärende .hint-Kurztexte). Default AN:
+                           // reine Erklärhilfen sind für neue Nutzer wertvoll, erfahrene
+                           // Nutzer können bewusst abschalten (anders als die übrigen, im
+                           // Ausgangszustand unauffälligen Zusatzfunktionen oben).
   };
 
   function readFlags() {
@@ -801,6 +815,15 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
     if (shareBlock) shareBlock.style.display = f.share ? '' : 'none';
     const shoppingRow = document.getElementById('shoppingRow');
     if (shoppingRow) shoppingRow.style.display = f.shopping ? '' : 'none';
+    // Tooltip-/Hinweistexte: EIN globaler Body-Klassen-Schalter statt Dutzender
+    // Einzel-Elemente. CSS blendet darüber alle .hint/.timersys-hint/.timerhint-Elemente
+    // per display:none aus — die Elemente (und ihre IDs) bleiben dabei im DOM erhalten,
+    // nur unsichtbar/nicht mehr im Accessibility-Tree. Wichtig: #shareHint (referenziert
+    // von #shareLinkBtn via aria-describedby) und die dynamischen timersys-hint-<key>-
+    // Spans (referenziert von den System-Wecker-Links, js/timer.js) bleiben dadurch
+    // gültige DOM-Knoten — nie eine "verwaiste" aria-describedby-Referenz auf eine
+    // nicht-existente ID, nur eine (wie visuell) nicht wahrnehmbare.
+    document.body.classList.toggle('hints-off', !f.hints);
     if (PZ.buildGuide) PZ.buildGuide();
   }
   PZ.applyFlags = applyFlags;
@@ -812,7 +835,8 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
     flagShare: 'share',
     flagShopping: 'shopping',
     flagFreezeHint: 'freezeHint',
-    flagMultiRecipes: 'multiRecipes'
+    flagMultiRecipes: 'multiRecipes',
+    flagHints: 'hints'
   };
 
   function wireCheckboxes() {
