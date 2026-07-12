@@ -1139,7 +1139,7 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
   - Keine neue Test-Sektion nötig (reine CSS-/Markup-Änderung, `js/*`-Texte unangetastet).
     293 Prüfungen unverändert grün. `?v=` auf 3.13.0 gezogen (Desktop + Mobil),
     Standalone-Datei neu gebaut.
-- **v3.13.1 — Mobil-Overflow-Härtung** = aktueller Stand:
+- **v3.13.1 — Mobil-Overflow-Härtung**:
   - Gezielter Fix für den in v3.13.0 notierten Verdacht auf horizontalen Overflow bei sehr
     schmalen Mobil-Viewports, siehe Abschnitt „Mobil-Overflow-Härtung v3.13.1" oben für Details.
   - Untersuchung per Chrome-DevTools-Protocol (echter erzwungener Viewport statt des
@@ -1156,13 +1156,57 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
     `overflow-x:hidden`, keine Änderung am Accessible Name durch `flex-wrap`).
   - Keine neue Test-Sektion nötig. 293 Prüfungen unverändert grün. `?v=` auf 3.13.1 gezogen
     (Desktop + Mobil), Standalone-Datei neu gebaut.
+- **v3.14.0 — Teilen-Link (State als Base64-JSON-URL)**:
+  - Neues Modul `js/share.js`: Button „Link kopieren" kodiert `PZ.state` als Base64-JSON in
+    `?r=`-Query-Parameter, kopiert den vollständigen Link (`navigator.clipboard.writeText`,
+    Fallback `document.execCommand('copy')` für `file://`-Kontexte). Beim Laden übernimmt
+    `tryLoadFromShareLink()` einen vorhandenen `?r=`-Parameter über `PZ.applyState()` und
+    entfernt ihn danach per `history.replaceState`. Defensiv: jeder Fehler führt zu einem
+    stillen no-op, nie zum Absturz.
+  - Accessibility-Nachaudit (gezielt): Major-Fund — Kopier-Bestätigung ohne Live-Region
+    (4.1.3), Fix: neue `#shareLiveMsg`-Live-Region. Minor — `#shareHint` nur visuell neben
+    dem Button (1.3.1), Fix: `aria-describedby="shareHint"`.
+  - Neue Test-Sektion „17 · Teilen-Link" (Encode/Decode/Rundreise/defensive Fehlerbehandlung).
+    311 Prüfungen (vorher 293), alle grün. `?v=` auf 3.14.0 gezogen (Desktop + Mobil),
+    Standalone-Datei neu gebaut. Export als PDF bewusst nicht mitgebaut (Nutzer wollte nur
+    den reinen Teilen-Link).
+- **v3.15.0 — System-Wecker/Kalender-Anbindung für Gärzeit-Timer** = aktueller Stand:
+  - Erweiterung von `js/timer.js` (rein additiv, bestehende In-App-Countdown-Logik aus
+    v3.11.0 bleibt unverändert erhalten): jede Timer-Box bietet im Idle-Zustand jetzt
+    zusätzlich zum „Timer starten"-Button einen System-Integrations-Block (`.timersys`).
+  - **Android:** Link „📱 Android-Wecker stellen" nutzt eine `intent:`-URI mit der
+    dokumentierten AlarmClock-Intent-Action `android.intent.action.SET_TIMER`
+    (`SKIP_UI=true` startet den Timer direkt ohne Uhr-App-Umweg). Nur bei erkanntem
+    Android (`navigator.userAgent`) angezeigt — funktioniert nur in Chromium-basierten
+    Android-Browsern.
+  - **iOS/alle Plattformen:** Link „📅 Kalender-Erinnerung" erzeugt eine `.ics`-Datei
+    (data:text/calendar-URL, `VALARM` mit `TRIGGER:-PT0M` zum exakten Zielzeitpunkt) —
+    bewusst gewählt, weil es **keine** offizielle Web-API gibt, um auf iOS einen nativen
+    System-Timer zu stellen (Shortcuts-URL-Schemes würden einen vom Nutzer vorinstallierten
+    Shortcut voraussetzen, den eine offline `file://`-App nicht bereitstellen kann — daher
+    bewusst nicht vorgetäuscht). Der Hinweistext (`.timersys-hint`) kommuniziert das
+    plattformabhängig ehrlich im UI.
+  - Bugfix währenddessen: `stepLabel()` extrahiert jetzt nur den reinen Text-Knoten aus dem
+    Schritt-`<h4>` (nicht `textContent` des ganzen Elements) — vorher liefen Titel und
+    angehängte Chip-/Zeit-Badges ohne Trenner zusammen (z. B. „Autolyse (empfohlen)20–40 min"
+    statt „Autolyse (empfohlen)"), betraf auch den Notification-Body aus v3.11.0.
+  - Accessibility-Nachaudit (gezielt, `accessibility-expert`-Agent): Minor-Fund — `.timersys-
+    hint` war nur visueller Nachbar der Links ohne programmatische Verknüpfung (1.3.1, analog
+    `#shareHint` aus v3.14.0). Fix: `id="timersys-hint-<key>"` + `aria-describedby` auf beiden
+    Links. Kontraste geprüft (Hint 5,55:1, Link-Text 15,26:1) — beide bestehen AA deutlich.
+  - Keine neue Test-Sektion (`js/timer.js` wird in `tests/test.html` bewusst nicht geladen,
+    Browser-APIs sind dort kein Unit-Test-Ziel, s. v3.11.0). 311 Prüfungen unverändert grün,
+    verifiziert per Headless-Edge-Dump. `?v=` auf 3.15.0 gezogen (Desktop + Mobil),
+    Standalone-Datei neu gebaut.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
 - Mehl- und Raumtemperatur getrennt einstellbar (aktuell als gleich angenommen)
 - Zucker-Feld (New York Style) — bewusst noch nicht drin; Öl ist seit v3.3.0 integriert
 - ~~Einkaufsliste generieren; Druck nur für die Anleitung~~ — **erledigt in v3.9.0**
-- ~~Gärzeit-Timer / Wecker~~ — **erledigt in v3.11.0**
+- ~~Gärzeit-Timer / Wecker~~ — **erledigt in v3.11.0**; System-Wecker/Kalender-Anbindung
+  (Android-Intent + .ics-Kalendererinnerung als iOS-Ersatz, da keine offizielle Web-API
+  existiert) **ergänzt in v3.15.0**
 - ~~Teilen-Link (State als Base64-JSON in der URL)~~ — **erledigt in v3.14.0**; Export
   als PDF weiterhin offen (bewusst nicht mitgebaut, s. Abschnitt oben — Nutzer wollte
   nur den reinen Teilen-Link, keinen zusätzlichen PDF-Button)
