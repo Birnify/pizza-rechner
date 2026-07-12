@@ -219,6 +219,11 @@
   }
 
   function systemTimerHtml(defaultMin, label, key) {
+    // Feature-Flag "timerSystem" (js/settings.js, Default AUS): Teil-Feature von "timer" —
+    // hängt bereits durch guide.js/timerBox() vom übergeordneten "timer"-Flag ab (ohne Timer
+    // kein Platzhalter, also auch keine System-Links). `PZ.FLAGS` fehlt in Tests bewusst,
+    // js/timer.js wird dort ohnehin nicht geladen (s. Kommentar oben in der Datei).
+    if (PZ.FLAGS && PZ.FLAGS.timerSystem === false) return '';
     // aria-describedby verknüpft den erklärenden Hint-Text programmatisch mit beiden
     // Links (analog zum #shareHint-Fix v3.14.0) — sonst ist der Zusammenhang für
     // Screenreader-Nutzer nur visuell erkennbar (WCAG 1.3.1). Eindeutige ID je Box

@@ -39,10 +39,12 @@
   <div id="shoppingList"></div>
   <select id="flour"><option value="caputo_pizzeria" selected></option></select>
   <input type="text" id="timeISO">
+  <div id="recipesCard"></div><div id="shareBlock"></div><div id="shoppingRow"></div>
 </div>
 
 <script src="../js/dom.js"></script>
 <script src="../js/state.js"></script>
+<script src="../js/settings.js"></script>
 <script src="../js/flour.js"></script>
 <script src="../js/schedule.js"></script>
 <script src="../js/guide.js"></script>
@@ -89,6 +91,17 @@
   PZ.selectSeg = function () {};
   PZ.applyMethod = function () {};
   PZ.updateTimeLabel = function () {};
+
+  // --- Feature-Flags (js/settings.js) — Baseline für die gesamte restliche Testsuite ---
+  // Alle bestehenden Tests unten sind so geschrieben, als wären sämtliche Zusatzfunktionen
+  // aktiv (Stand vor Einführung der Feature-Flags in dieser Version) — sonst würde z. B.
+  // der Default "freezeHint: false" den bestehenden Einfrier-Hinweis-Test brechen. Deshalb
+  // hier explizit auf "alles an" setzen; die eigentliche Flag-Logik (Defaults, Persistenz,
+  // Render-Effekt der einzelnen Flags) wird weiter unten in einer eigenen Sektion geprüft,
+  // die einzelne Flags gezielt aus- und wieder auf diese Baseline zurückschaltet.
+  Object.assign(PZ.FLAGS, {
+    timer: true, timerSystem: true, share: true, shopping: true, freezeHint: true, multiRecipes: true
+  });
 
   // --- Haupt-Testfall: setzt state, rechnet, prüft R-Werte ---
   function testCase(name, overrides, buildChecks) {
@@ -1320,6 +1333,109 @@
         { label: 'PZ.state bleibt bei jedem abgelehnten Link unangetastet (Marker balls=42)', ok: PZ.state.balls === 42, actual: PZ.state.balls, expected: 42, tol: null }
       ]);
     })();
+  })();
+
+  // ─────────────────────────────────────────────────────────────
+  heading('18 · Feature-Flags / Einstellungen-Menü (js/settings.js)');
+  (function () {
+    const FLAG_KEY = 'pizzaRechnerFeatureFlags';
+    // Wie bei Abschnitt 16/17: einen eventuell vorhandenen echten Stand sichern und am
+    // Ende wiederherstellen — Tests dürfen nie echte Nutzereinstellungen überschreiben.
+    const backup = localStorage.getItem(FLAG_KEY);
+    const flagsBackup = Object.assign({}, PZ.FLAGS);
+
+    // --- Default-Werte exakt wie vom Nutzer festgelegt ---
+    (function () {
+      const d = PZ.FLAG_DEFAULTS;
+      renderBox('Default-Werte der Feature-Flags', [
+        ['timer (Gärzeit-Timer/Wecker)', d.timer, true],
+        ['timerSystem (System-Wecker/Kalender-Links)', d.timerSystem, false],
+        ['share (Teilen-Link)', d.share, true],
+        ['shopping (Einkaufsliste & separater Druck)', d.shopping, false],
+        ['freezeHint (Einfrier-Hinweis)', d.freezeHint, false],
+        ['multiRecipes (Mehrere gespeicherte Rezepte)', d.multiRecipes, true]
+      ].map(([label, actual, expected]) => ({ label, actual, expected, tol: null, ok: actual === expected })));
+    })();
+
+    // --- Merge-/Vorwärtskompatibilitäts-Verhalten: gespeichertes Teilobjekt + neue Defaults ---
+    (function () {
+      const onlyOneStored = { freezeHint: true };
+      const merged = PZ._mergeFlags(onlyOneStored);
+      const emptyStored = PZ._mergeFlags({});
+      const junkStored = PZ._mergeFlags(null);
+      renderBox('Merge: gespeichertes Teilobjekt überschreibt nur seine eigenen Keys', [
+        { label: 'Explizit gespeichertes freezeHint=true bleibt true', ok: merged.freezeHint === true, actual: merged.freezeHint, expected: true, tol: null },
+        { label: 'Nicht gespeichertes timer bekommt weiterhin seinen Default (true)', ok: merged.timer === true, actual: merged.timer, expected: true, tol: null },
+        { label: 'Nicht gespeichertes multiRecipes bekommt weiterhin seinen Default (true)', ok: merged.multiRecipes === true, actual: merged.multiRecipes, expected: true, tol: null },
+        { label: 'Leeres gespeichertes Objekt -> reine Defaults (shopping=false)', ok: emptyStored.shopping === false, actual: emptyStored.shopping, expected: false, tol: null },
+        { label: 'null als gespeicherter Wert crasht nicht -> reine Defaults', ok: junkStored.timerSystem === false, actual: junkStored.timerSystem, expected: false, tol: null }
+      ]);
+    })();
+
+    // --- Persistenz: setFlag() schreibt sofort in localStorage ---
+    (function () {
+      localStorage.removeItem(FLAG_KEY);
+      PZ.setFlag('shopping', true);
+      let raw = null, threw = false;
+      try { raw = JSON.parse(localStorage.getItem(FLAG_KEY)); } catch (e) { threw = true; }
+      PZ.setFlag('shopping', false); // wieder auf Baseline für die restlichen Checks unten
+      renderBox('setFlag() persistiert sofort in localStorage', [
+        { label: 'Kein Fehler beim Parsen des gespeicherten JSON', ok: !threw, actual: threw, expected: false, tol: null },
+        { label: 'Gespeichertes shopping=true taucht im localStorage-Rohwert auf', ok: !!raw && raw.shopping === true, actual: raw && raw.shopping, expected: true, tol: null },
+        { label: 'Unbekannter Flag-Key wird ignoriert (kein Crash, kein neuer Key)', ok: (function(){ let ok2=true; try { PZ.setFlag('unbekanntesDingens', true); } catch(e){ ok2=false; } return ok2 && !('unbekanntesDingens' in PZ.FLAGS); })(), actual: 'geprüft', expected: 'geprüft', tol: null }
+      ]);
+    })();
+
+    // --- Render-Effekt: guide.js respektiert "timer" & "freezeHint" bei buildGuide() ---
+    (function () {
+      Object.assign(PZ.state, BASE, { hyd: 62 }); // Standard-Direkt-Rezept, Stockgare/Stückgare mit Timer-Kandidaten
+      setFlour('caputo_pizzeria');
+      PZ.calc();
+
+      Object.assign(PZ.FLAGS, { timer: true, freezeHint: true });
+      PZ.buildGuide();
+      const withBoth = document.getElementById('guideSteps').innerHTML;
+
+      Object.assign(PZ.FLAGS, { timer: false, freezeHint: false });
+      PZ.buildGuide();
+      const withNeither = document.getElementById('guideSteps').innerHTML;
+
+      renderBox('buildGuide() respektiert die Flags "timer" und "freezeHint"', [
+        { label: 'Bei timer=true erscheint mind. eine .timerbox', ok: withBoth.includes('class="timerbox"'), actual: withBoth.includes('class="timerbox"'), expected: true, tol: null },
+        { label: 'Bei timer=false erscheint KEINE .timerbox mehr', ok: !withNeither.includes('class="timerbox"'), actual: withNeither.includes('class="timerbox"'), expected: false, tol: null },
+        { label: 'Bei freezeHint=true erscheint der Einfrier-Hinweis', ok: withBoth.includes('Einfrieren möglich'), actual: withBoth.includes('Einfrieren möglich'), expected: true, tol: null },
+        { label: 'Bei freezeHint=false verschwindet der Einfrier-Hinweis', ok: !withNeither.includes('Einfrieren möglich'), actual: withNeither.includes('Einfrieren möglich'), expected: false, tol: null }
+      ]);
+
+      // Baseline für eventuelle künftige Sektionen wiederherstellen (aktuell die letzte Sektion).
+      Object.assign(PZ.FLAGS, { timer: true, freezeHint: true });
+      PZ.buildGuide();
+    })();
+
+    // --- Render-Effekt: applyFlags() blendet die statischen UI-Blöcke sauber aus/ein ---
+    (function () {
+      const recipesCard = document.getElementById('recipesCard');
+      const shareBlock = document.getElementById('shareBlock');
+      const shoppingRow = document.getElementById('shoppingRow');
+
+      Object.assign(PZ.FLAGS, { multiRecipes: false, share: false, shopping: false });
+      PZ.applyFlags();
+      const allHidden = recipesCard.style.display === 'none' && shareBlock.style.display === 'none' && shoppingRow.style.display === 'none';
+
+      Object.assign(PZ.FLAGS, { multiRecipes: true, share: true, shopping: true });
+      PZ.applyFlags();
+      const allShown = recipesCard.style.display !== 'none' && shareBlock.style.display !== 'none' && shoppingRow.style.display !== 'none';
+
+      renderBox('applyFlags() blendet #recipesCard/#shareBlock/#shoppingRow per display:none aus/ein', [
+        { label: 'Alle drei Blöcke bei deaktivierten Flags per display:none ausgeblendet', ok: allHidden, actual: allHidden, expected: true, tol: null },
+        { label: 'Alle drei Blöcke bei aktivierten Flags wieder sichtbar (display != none)', ok: allShown, actual: allShown, expected: true, tol: null }
+      ]);
+    })();
+
+    // --- Aufräumen: echten localStorage-Stand + PZ.FLAGS-Objekt wiederherstellen ---
+    if (backup === null) localStorage.removeItem(FLAG_KEY); else localStorage.setItem(FLAG_KEY, backup);
+    Object.keys(PZ.FLAGS).forEach(k => delete PZ.FLAGS[k]);
+    Object.assign(PZ.FLAGS, flagsBackup);
   })();
 
   // ─────────────────────────────────────────────────────────────

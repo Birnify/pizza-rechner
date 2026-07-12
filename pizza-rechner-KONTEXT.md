@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-11 · Aktuelle Version: v3.15.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-12 · Aktuelle Version: v3.16.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -1198,6 +1198,107 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
     Browser-APIs sind dort kein Unit-Test-Ziel, s. v3.11.0). 311 Prüfungen unverändert grün,
     verifiziert per Headless-Edge-Dump. `?v=` auf 3.15.0 gezogen (Desktop + Mobil),
     Standalone-Datei neu gebaut.
+
+## Einstellungen-Menü für Feature-Flags (v3.16.0, `js/settings.js`) = aktueller Stand
+
+Neues Modul `js/settings.js` (Ladereihenfolge direkt nach `state.js`, vor allen anderen
+Modulen — braucht `PZ.$`, wird aber selbst von `guide.js`/`timer.js`/`print.js` nur
+optional gelesen). Auslöser: der Nutzer wollte die zuletzt gebauten Zusatzfunktionen
+(Timer, System-Wecker-Links, Teilen-Link, Einkaufsliste/Druck, Einfrier-Hinweis, Mehrere
+Rezepte) einzeln ein-/ausschalten können, statt sie fest im Layout zu haben.
+
+- **Feature-Flags** (`PZ.FLAGS`), persistiert unter eigenem localStorage-Key
+  `pizzaRechnerFeatureFlags` (getrennt vom Rezept-Speicher `pizzaRechner`), gemeinsam
+  für Desktop + Mobil (gleicher Key, gleicher Ordner). Defaults exakt wie vom Nutzer
+  festgelegt:
+
+  | Flag | Feature | Default |
+  |------|---------|---------|
+  | `timer` | Gärzeit-Timer/Wecker je Anleitungsschritt (v3.11.0) | **AN** |
+  | `timerSystem` | System-Wecker/Kalender-Links im Idle-Timer (v3.15.0, Teil-Feature von `timer`) | **AUS** |
+  | `share` | Teilen-Link (v3.14.0) | **AN** |
+  | `shopping` | Einkaufsliste & separater Druck (v3.9.0) | **AUS** |
+  | `freezeHint` | Einfrier-Hinweis in der Anleitung (v3.8.0) | **AUS** |
+  | `multiRecipes` | Mehrere gespeicherte Rezepte (v3.10.0, sonst Einzel-Slot-Verhalten) | **AN** |
+
+  `readFlags()` merged gespeicherte Werte mit `DEFAULTS` (`Object.assign({}, DEFAULTS,
+  stored)`) — vorwärtskompatibel: künftige neue Flags bekommen automatisch ihren Default,
+  ohne bestehende Nutzereinstellungen zu überschreiben. `PZ.setFlag(key, value)` schreibt
+  sofort persistent, unbekannte Keys werden ignoriert (Tippfehler-Schutz).
+
+- **Neue Card „Einstellungen"** (Desktop: normale `<div class="card">` nach der
+  Zeitplan-Card; Mobil: `<details class="card">` im Akkordeon, identisches Muster wie
+  die anderen Karten) mit 6 nativen `<label class="switch-row"><input type="checkbox"
+  id="flagXxx"> Text</label>`-Zeilen — natives Label+Checkbox braucht kein zusätzliches
+  ARIA für den Accessible Name. Neue CSS-Klasse `.switch-row` (`css/styles.css`):
+  44 px Touch-Ziel, `accent-color:var(--tomato)`, dünner Trenner zwischen den Zeilen.
+
+- **Rendering-Effekt je Flag** (`PZ.applyFlags()`, aufgerufen bei jeder Checkbox-Änderung
+  und einmal beim Seitenstart):
+  - `multiRecipes` aus → die komplette „Meine Rezepte"-Card (`#recipesCard`) wird per
+    `style.display='none'` **komplett aus dem Rendering genommen** (nicht nur optisch
+    versteckt — `display:none` nimmt Elemente auch aus Tab-Reihenfolge/Accessibility-Tree).
+    **Bewusst keine Änderung an `js/storage.js`/dessen Datenmodell** (`{recipes:[...],
+    activeId}` bleibt unangetastet): mit ausgeblendeter Karte kann der Nutzer nur noch den
+    normalen „Speichern"-Button nutzen, der laut bestehender `save()`-Logik ohnehin immer
+    nur das aktuell aktive Rezept überschreibt (bzw. beim allerersten Mal genau eines
+    anlegt) — das ergibt exakt das gewünschte Einzel-Slot-Verhalten, ohne Datenverlust und
+    ohne Migrationscode: wird das Flag später wieder aktiviert, stehen alle zuvor
+    gespeicherten Rezepte unverändert wieder im Dropdown.
+  - `share` aus → `#shareBlock` (umschließt `#shareLinkBtn` + `#shareHint` +
+    `#shareLiveMsg`, mit `display:flex;flex-direction:column;gap:8px` um das bisherige
+    Abstandsmuster in `.actions` exakt zu erhalten) wird ausgeblendet.
+  - `shopping` aus → `#shoppingRow` (die `.row2`-Zeile mit „Einkaufsliste drucken"/
+    „Anleitung drucken") wird ausgeblendet. Zusätzlich defensive Guards direkt in
+    `PZ.printShoppingList()`/`PZ.printGuide()` (no-op bei deaktiviertem Flag), falls die
+    Funktionen doch aufgerufen werden.
+  - `timer` aus → `js/guide.js`s `timerBox()` liefert einen leeren String statt des
+    `.timerbox`-Platzhalters — `js/timer.js` findet dann nichts zu verdrahten. Da
+    `timerSystem` (System-Wecker-Links) nur **innerhalb** einer bereits gerenderten
+    Timer-Box erscheint, ist das Teil-Feature damit automatisch mit deaktiviert, ganz ohne
+    eigene Prüfung an der Stelle.
+  - `timer` an + `timerSystem` aus → `js/timer.js`s `systemTimerHtml()` liefert einen
+    leeren String, der normale Start-Button bleibt erhalten — genau das vom Nutzer
+    gewünschte Verhalten „Timer ja, Android/Kalender-Links nein".
+  - `freezeHint` aus → der zusätzliche Tipp „Einfrieren möglich: …" im Schritt „Teiglinge
+    formen" (`js/guide.js`) wird nicht mit ausgegeben; der andere Tipp in demselben Schritt
+    (Cornicione-Hinweis) bleibt unverändert.
+  - Nach jeder Flag-Änderung ruft `applyFlags()` zusätzlich `PZ.buildGuide()` neu auf,
+    damit `timer`/`freezeHint` sofort sichtbar werden, ohne dass der Nutzer erst einen
+    Regler bewegen muss.
+
+- **Rückwärtskompatibilität mit `tests/test.html`:** Alle Guards in `guide.js`/`timer.js`/
+  `print.js` prüfen explizit `PZ.FLAGS && PZ.FLAGS.<key> === false` (nicht
+  `PZ.FLAGS.<key>`) — lädt eine Umgebung `js/settings.js` gar nicht (wie die bestehende
+  Testsuite es für `js/timer.js`/`js/ui.js` schon länger bewusst nicht tut), bleibt exakt
+  das alte Verhalten (Feature an) erhalten. `tests/test.html` lädt `js/settings.js`
+  trotzdem mit (um die Flag-Logik selbst zu testen), setzt aber direkt nach dem Laden via
+  `Object.assign(PZ.FLAGS, {...alle: true})` eine „Alles an"-Baseline für die gesamte
+  restliche Testsuite — sonst hätte allein der neue Default `freezeHint:false` den
+  bestehenden Einfrier-Hinweis-Test gebrochen.
+
+- **Neue Test-Sektion „18 · Feature-Flags / Einstellungen-Menü"** (`tests/test.html`):
+  Default-Werte, Merge-/Vorwärtskompatibilitäts-Verhalten (`PZ._mergeFlags()`, ein für
+  Tests exponierter reiner Merge-Helper ohne localStorage/DOM), Persistenz von
+  `setFlag()` (mit Backup/Restore des echten localStorage-Stands, analog zu den
+  Storage-/Share-Tests), Render-Effekt auf `buildGuide()` (`.timerbox`/„Einfrieren
+  möglich" erscheinen/verschwinden je nach Flag) und auf `applyFlags()` (drei neue
+  Stub-Elemente `#recipesCard`/`#shareBlock`/`#shoppingRow` im `#stubs`-Block von
+  `tests/test.html`, geprüft auf `display:none` vs. sichtbar). Alle **331 Prüfungen**
+  bestehen (vorher 311 + 20 neue), verifiziert per Headless-Edge-Dump.
+
+- **Accessibility-Nachaudit (gezielt, `accessibility-expert`-Agent):** keine Blocker/
+  Major/Minor-Funde. Native Checkbox+Label-Verknüpfung braucht kein zusätzliches ARIA,
+  Tab-Reihenfolge/Fokusring unauffällig (kein `outline:none` auf Checkboxen), Kontrast
+  `.switch-row`-Text ~14,7:1 (weit über AA). Kein Live-Region-Fix für die verschwindenden
+  Blöcke nötig (4.1.3 greift hier nicht — der native `checked`-Zustand der Checkbox selbst
+  ist die direkt am fokussierten Element ablesbare Bestätigung, und der Label-Text jeder
+  Checkbox benennt bereits, welchen Bereich sie steuert). Card-Titel-Muster (`aria-label`
+  aus v3.13.0) korrekt übernommen.
+
+- **Nicht angefasst:** Berechnungslogik (`js/calc.js`, `js/schedule.js`) komplett
+  unverändert — das Einstellungen-Menü schaltet ausschließlich Anzeige/Rendering,
+  nie eine Bäckerprozent- oder Zeitrechnung.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 

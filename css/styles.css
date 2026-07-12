@@ -95,6 +95,14 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .pills button:hover{border-color:var(--tomato);color:var(--tomato);}
 .pills button.active{background:var(--tomato);border-color:var(--tomato);color:#fff;font-weight:600;}
+/* Einstellungen: Feature-Flag-Umschalter (native Checkboxen — voller Tastatur-/AT-Support
+   ohne eigene ARIA-Nacharbeit). min-height 44px = Touch-Ziel-Konvention (v3.5.0/mobile-optimizer). */
+.switch-row{
+  display:flex;align-items:center;gap:10px;min-height:44px;padding:6px 0;
+  font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid var(--line);
+}
+.switch-row:last-child{border-bottom:none;}
+.switch-row input[type=checkbox]{width:18px;height:18px;flex-shrink:0;accent-color:var(--tomato);cursor:pointer;}
 /* Results */
 .result{position:sticky;top:20px;}
 .result .total{

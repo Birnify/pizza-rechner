@@ -106,6 +106,14 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .pills button:hover{border-color:var(--tomato);color:var(--tomato);}
 .pills button.active{background:var(--tomato);border-color:var(--tomato);color:#fff;font-weight:600;}
+/* Einstellungen: Feature-Flag-Umschalter (native Checkboxen — voller Tastatur-/AT-Support
+   ohne eigene ARIA-Nacharbeit). min-height 44px = Touch-Ziel-Konvention (v3.5.0/mobile-optimizer). */
+.switch-row{
+  display:flex;align-items:center;gap:10px;min-height:44px;padding:6px 0;
+  font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid var(--line);
+}
+.switch-row:last-child{border-bottom:none;}
+.switch-row input[type=checkbox]{width:18px;height:18px;flex-shrink:0;accent-color:var(--tomato);cursor:pointer;}
 /* Results */
 .result{position:sticky;top:20px;}
 .result .total{
@@ -375,7 +383,7 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
       </div>
     </details>
 
-    <details class="card">
+    <details class="card" id="recipesCard">
       <summary><h2 aria-label="Meine Rezepte">Meine Rezepte</h2></summary>
       <div class="acc-body">
         <div class="field" style="margin-bottom:0;">
@@ -581,6 +589,21 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
       </div>
     </details>
 
+    <details class="card">
+      <summary><h2 aria-label="Einstellungen">Einstellungen</h2></summary>
+      <div class="acc-body">
+        <div class="field" style="margin-bottom:0;">
+          <div class="hint" style="margin-bottom:10px;">Schalte einzelne Zusatzfunktionen ein oder aus — deine Wahl wird direkt im Browser gespeichert.</div>
+          <label class="switch-row"><input type="checkbox" id="flagTimer"> Gärzeit-Timer/Wecker je Anleitungsschritt</label>
+          <label class="switch-row"><input type="checkbox" id="flagTimerSystem"> System-Wecker/Kalender-Links beim Timer</label>
+          <label class="switch-row"><input type="checkbox" id="flagShare"> Teilen-Link (Rezept als Link kopieren)</label>
+          <label class="switch-row"><input type="checkbox" id="flagShopping"> Einkaufsliste &amp; separater Druck</label>
+          <label class="switch-row"><input type="checkbox" id="flagFreezeHint"> Einfrier-Hinweis in der Anleitung</label>
+          <label class="switch-row"><input type="checkbox" id="flagMultiRecipes"> Mehrere gespeicherte Rezepte</label>
+        </div>
+      </div>
+    </details>
+
   </div>
 
   <!-- ERGEBNIS -->
@@ -633,13 +656,15 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 
       <div class="actions">
         <button class="primary" id="saveBtn">Speichern</button>
-        <div class="row2">
+        <div class="row2" id="shoppingRow">
           <button onclick="PZ.printShoppingList()">Einkaufsliste drucken</button>
           <button onclick="PZ.printGuide()">Anleitung drucken</button>
         </div>
-        <button type="button" id="shareLinkBtn" onclick="PZ.copyShareLink(this)" aria-describedby="shareHint">Link kopieren</button>
-        <div class="hint" id="shareHint" style="margin-top:-4px;">Kopiert einen Link, der dieses Rezept komplett enthält — zum Teilen, ohne Login oder Server.</div>
-        <div id="shareLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
+        <div id="shareBlock" style="display:flex;flex-direction:column;gap:8px;">
+          <button type="button" id="shareLinkBtn" onclick="PZ.copyShareLink(this)" aria-describedby="shareHint">Link kopieren</button>
+          <div class="hint" id="shareHint" style="margin-top:-4px;">Kopiert einen Link, der dieses Rezept komplett enthält — zum Teilen, ohne Login oder Server.</div>
+          <div id="shareLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -657,7 +682,7 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
   Alles wird lokal in deinem Browser gerechnet &amp; gespeichert · keine Internetverbindung nötig<br>
   Bäckerprozente — Wasser, Salz &amp; Hefe immer relativ zur Mehlmenge (= 100 %)<br>
-  <span id="appVersion" style="opacity:.7;">v3.15.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.16.0</span>
 </footer>
 
 <div class="quickbar">
@@ -696,6 +721,115 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
     flour: 'caputo_pizzeria',
     coldStage: 'balls'   // Kühlschrank-Phase: 'balls' = als Teiglinge (praktisch), 'bulk' = im Stück (klassisch)
   };
+})(window);
+
+</script>
+<script>
+/* settings.js — Einstellungen-Menü: Feature-Flags für die zuletzt gebauten Zusatzfunktionen.
+ *
+ * Persistiert in localStorage (eigener Key, getrennt vom Rezept-Speicher `pizzaRechner`),
+ * gemeinsam für Desktop + Mobil (gleicher Key). Vorwärtskompatibel: künftige neue Flags
+ * bekommen automatisch ihren Default, ohne bestehende Nutzereinstellungen zu überschreiben
+ * (Merge aus DEFAULTS + gespeicherten Werten, analog zum Migrationsgedanken in storage.js).
+ *
+ * WICHTIG für Rechenlogik/Tests: PZ.FLAGS wird bewusst NUR hier gesetzt. js/guide.js,
+ * js/timer.js und js/print.js prüfen `PZ.FLAGS && PZ.FLAGS.<key> === false` (nicht
+ * `PZ.FLAGS.<key>`) — ist dieses Modul gar nicht geladen (z. B. in tests/test.html, das
+ * bewusst nur die reinen Rechen-/Render-Module lädt), bleibt das alte Verhalten (Feature an)
+ * erhalten. So bricht kein bestehender Test durch die bloße Existenz dieses Moduls.
+ */
+(function (global) {
+  'use strict';
+  const PZ = global.PZ || (global.PZ = {});
+  const $ = PZ.$;
+
+  const KEY = 'pizzaRechnerFeatureFlags';
+
+  // Default-Werte exakt wie vom Nutzer festgelegt.
+  const DEFAULTS = {
+    timer: true,          // Gärzeit-Timer/Wecker je Anleitungsschritt
+    timerSystem: false,   // System-Wecker/Kalender-Links (Teil-Feature von timer)
+    share: true,          // Teilen-Link
+    shopping: false,      // Einkaufsliste & separater Druck
+    freezeHint: false,    // Einfrier-Hinweis in der Anleitung
+    multiRecipes: true    // Mehrere gespeicherte Rezepte (sonst: Einzel-Slot-Verhalten)
+  };
+
+  function readFlags() {
+    let stored = {};
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) stored = JSON.parse(raw) || {};
+    } catch (e) { stored = {}; }
+    if (typeof stored !== 'object' || Array.isArray(stored)) stored = {};
+    return Object.assign({}, DEFAULTS, stored);
+  }
+
+  function writeFlags(flags) {
+    try { localStorage.setItem(KEY, JSON.stringify(flags)); } catch (e) { /* ignore */ }
+  }
+
+  PZ.FLAGS = readFlags();
+  PZ.FLAG_DEFAULTS = DEFAULTS;
+
+  // Reine Merge-Funktion (kein localStorage/DOM) — für Tests exponiert, damit das
+  // Vorwärtskompatibilitäts-Verhalten (gespeicherte Teilobjekte + neue Default-Keys)
+  // geprüft werden kann, ohne einen echten Page-Reload simulieren zu müssen.
+  PZ._mergeFlags = function (stored) {
+    return Object.assign({}, DEFAULTS, stored || {});
+  };
+
+  // Setzt ein einzelnes Flag, persistiert sofort. Unbekannte Keys werden ignoriert
+  // (Schutz gegen Tippfehler/künftige Refaktorierungen).
+  function setFlag(key, value) {
+    if (!(key in DEFAULTS)) return;
+    PZ.FLAGS[key] = !!value;
+    writeFlags(PZ.FLAGS);
+  }
+  PZ.setFlag = setFlag;
+
+  // Wendet die aktuellen Flags auf die statischen UI-Blöcke an (Karten/Buttons komplett
+  // aus dem Rendering nehmen per display:none — sauberer als nur optisch verstecken,
+  // display:none nimmt Elemente auch aus Tab-Reihenfolge & Accessibility-Tree) und stößt
+  // ein Neu-Rendern der Anleitung an (js/guide.js liest PZ.FLAGS.timer/freezeHint dort
+  // bei jedem buildGuide()-Lauf neu aus).
+  function applyFlags() {
+    const f = PZ.FLAGS;
+    const recipesCard = document.getElementById('recipesCard');
+    if (recipesCard) recipesCard.style.display = f.multiRecipes ? '' : 'none';
+    const shareBlock = document.getElementById('shareBlock');
+    if (shareBlock) shareBlock.style.display = f.share ? '' : 'none';
+    const shoppingRow = document.getElementById('shoppingRow');
+    if (shoppingRow) shoppingRow.style.display = f.shopping ? '' : 'none';
+    if (PZ.buildGuide) PZ.buildGuide();
+  }
+  PZ.applyFlags = applyFlags;
+
+  // --- UI-Verdrahtung der Checkboxen (nur falls vorhanden — beide Seiten identisch) ---
+  const CHECKBOX_MAP = {
+    flagTimer: 'timer',
+    flagTimerSystem: 'timerSystem',
+    flagShare: 'share',
+    flagShopping: 'shopping',
+    flagFreezeHint: 'freezeHint',
+    flagMultiRecipes: 'multiRecipes'
+  };
+
+  function wireCheckboxes() {
+    Object.keys(CHECKBOX_MAP).forEach(id => {
+      const el = $ ? $(id) : document.getElementById(id);
+      if (!el) return;
+      const key = CHECKBOX_MAP[id];
+      el.checked = !!PZ.FLAGS[key];
+      el.addEventListener('change', () => {
+        setFlag(key, el.checked);
+        applyFlags();
+      });
+    });
+  }
+
+  wireCheckboxes();
+  applyFlags();
 })(window);
 
 </script>
@@ -996,7 +1130,13 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
   function tip(t) { return `<div class="tip">💡 ${t}</div>`; }
   function warn(t) { return `<div class="warn">⚠️ ${t}</div>`; }
   // Timer-Widget-Platzhalter für Schritte mit nennenswerter Wartezeit (js/timer.js rendert hinein).
+  // Feature-Flag "timer" (js/settings.js): ist das Feature deaktiviert, wird gar kein
+  // Platzhalter gerendert — js/timer.js findet dann nichts zu verdrahten, und das damit
+  // verknüpfte Teil-Feature "timerSystem" (System-Wecker/Kalender-Links) wird automatisch
+  // mit ausgeblendet. `PZ.FLAGS` fehlt in tests/test.html bewusst (dort nicht geladen) —
+  // dann bleibt das alte Verhalten (Timer an) erhalten, kein Test bricht dadurch.
   function timerBox(key, min) {
+    if (PZ.FLAGS && PZ.FLAGS.timer === false) return '';
     return `<div class="timerbox" data-timer-key="${key}" data-timer-min="${Math.round(min)}"></div>`;
   }
 
@@ -1154,7 +1294,9 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
     st('Teiglinge formen', `${R.N} × ${R.W} g`,
       `In <b>${R.N} Stücke à ${R.W} g</b> teilen. Jedes zu einer <b>straffen Kugel</b> formen (Oberfläche spannen, Schluss nach unten). Mit Abstand in eine ${ballsCold ? 'kühlschranktaugliche, dicht schließende Box' : 'Box'}.`,
       tip('Straff geformte Kugeln = runde Pizzen mit gleichmäßigem Rand (Cornicione).')
-      + tip('Einfrieren möglich: Teiglinge dünn mit Öl bestreichen, einzeln (nicht berührend) einfrieren – so <b>2–3 Monate</b> haltbar. Auftauen: <b>über Nacht im Kühlschrank</b>, dann <b>3–5 h bei Raumtemperatur</b> und <b>2–4 h Stückgare</b> wie gewohnt.'), 10);
+      // Feature-Flag "freezeHint" (js/settings.js): Default AUS, optionaler Zusatz-Tipp.
+      // `PZ.FLAGS` fehlt in Tests bewusst -> dort weiterhin sichtbar (altes Verhalten).
+      + (PZ.FLAGS && PZ.FLAGS.freezeHint === false ? '' : tip('Einfrieren möglich: Teiglinge dünn mit Öl bestreichen, einzeln (nicht berührend) einfrieren – so <b>2–3 Monate</b> haltbar. Auftauen: <b>über Nacht im Kühlschrank</b>, dann <b>3–5 h bei Raumtemperatur</b> und <b>2–4 h Stückgare</b> wie gewohnt.')), 10);
     st('Stückgare (Teiglinge)', ballsCold ? 'kühl · Fingertest' : 'Fingertest',
       `${f.proof}. <b>Fertig</b>, wenn ein leichter Fingerdruck <b>langsam</b> zurückfedert (eine kleine Delle bleibt).`,
       (f.cold ? tip('Teiglinge vor dem Backen wirklich auf Raumtemperatur kommen lassen – kalter Teig reißt beim Ausziehen.') : '') + timerBox('stueckgare', f.proofMin), f.proofMin);
@@ -1443,6 +1585,11 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
   }
 
   function systemTimerHtml(defaultMin, label, key) {
+    // Feature-Flag "timerSystem" (js/settings.js, Default AUS): Teil-Feature von "timer" —
+    // hängt bereits durch guide.js/timerBox() vom übergeordneten "timer"-Flag ab (ohne Timer
+    // kein Platzhalter, also auch keine System-Links). `PZ.FLAGS` fehlt in Tests bewusst,
+    // js/timer.js wird dort ohnehin nicht geladen (s. Kommentar oben in der Datei).
+    if (PZ.FLAGS && PZ.FLAGS.timerSystem === false) return '';
     // aria-describedby verknüpft den erklärenden Hint-Text programmatisch mit beiden
     // Links (analog zum #shareHint-Fix v3.14.0) — sonst ist der Zusammenhang für
     // Screenreader-Nutzer nur visuell erkennbar (WCAG 1.3.1). Eindeutige ID je Box
@@ -1744,13 +1891,21 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 
   // Zwei Druckvarianten, ohne den bestehenden window.print()-Mechanismus zu ersetzen:
   // je eine body-Klasse steuert per @media print, was sichtbar bleibt.
+  // Feature-Flag "shopping" (js/settings.js, Default AUS): deckt die komplette
+  // Einkaufsliste/Druck-Funktion ab (js/print.js). Der zugehörige Button ist bei
+  // deaktiviertem Flag bereits per CSS aus dem Rendering genommen (applyFlags() in
+  // settings.js) — dieser Guard ist nur eine defensive zweite Absicherung, falls die
+  // Funktion doch aufgerufen wird. `PZ.FLAGS` fehlt in tests/test.html bewusst (dort
+  // nicht geladen) -> dort weiterhin uneingeschränkt aufrufbar (altes Verhalten).
   function printShoppingList() {
+    if (PZ.FLAGS && PZ.FLAGS.shopping === false) return;
     buildShoppingList();
     document.body.classList.add('print-shopping');
     window.print();
   }
 
   function printGuide() {
+    if (PZ.FLAGS && PZ.FLAGS.shopping === false) return;
     document.body.classList.add('print-guide');
     window.print();
   }

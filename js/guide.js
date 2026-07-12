@@ -30,7 +30,13 @@
   function tip(t) { return `<div class="tip">💡 ${t}</div>`; }
   function warn(t) { return `<div class="warn">⚠️ ${t}</div>`; }
   // Timer-Widget-Platzhalter für Schritte mit nennenswerter Wartezeit (js/timer.js rendert hinein).
+  // Feature-Flag "timer" (js/settings.js): ist das Feature deaktiviert, wird gar kein
+  // Platzhalter gerendert — js/timer.js findet dann nichts zu verdrahten, und das damit
+  // verknüpfte Teil-Feature "timerSystem" (System-Wecker/Kalender-Links) wird automatisch
+  // mit ausgeblendet. `PZ.FLAGS` fehlt in tests/test.html bewusst (dort nicht geladen) —
+  // dann bleibt das alte Verhalten (Timer an) erhalten, kein Test bricht dadurch.
   function timerBox(key, min) {
+    if (PZ.FLAGS && PZ.FLAGS.timer === false) return '';
     return `<div class="timerbox" data-timer-key="${key}" data-timer-min="${Math.round(min)}"></div>`;
   }
 
@@ -188,7 +194,9 @@
     st('Teiglinge formen', `${R.N} × ${R.W} g`,
       `In <b>${R.N} Stücke à ${R.W} g</b> teilen. Jedes zu einer <b>straffen Kugel</b> formen (Oberfläche spannen, Schluss nach unten). Mit Abstand in eine ${ballsCold ? 'kühlschranktaugliche, dicht schließende Box' : 'Box'}.`,
       tip('Straff geformte Kugeln = runde Pizzen mit gleichmäßigem Rand (Cornicione).')
-      + tip('Einfrieren möglich: Teiglinge dünn mit Öl bestreichen, einzeln (nicht berührend) einfrieren – so <b>2–3 Monate</b> haltbar. Auftauen: <b>über Nacht im Kühlschrank</b>, dann <b>3–5 h bei Raumtemperatur</b> und <b>2–4 h Stückgare</b> wie gewohnt.'), 10);
+      // Feature-Flag "freezeHint" (js/settings.js): Default AUS, optionaler Zusatz-Tipp.
+      // `PZ.FLAGS` fehlt in Tests bewusst -> dort weiterhin sichtbar (altes Verhalten).
+      + (PZ.FLAGS && PZ.FLAGS.freezeHint === false ? '' : tip('Einfrieren möglich: Teiglinge dünn mit Öl bestreichen, einzeln (nicht berührend) einfrieren – so <b>2–3 Monate</b> haltbar. Auftauen: <b>über Nacht im Kühlschrank</b>, dann <b>3–5 h bei Raumtemperatur</b> und <b>2–4 h Stückgare</b> wie gewohnt.')), 10);
     st('Stückgare (Teiglinge)', ballsCold ? 'kühl · Fingertest' : 'Fingertest',
       `${f.proof}. <b>Fertig</b>, wenn ein leichter Fingerdruck <b>langsam</b> zurückfedert (eine kleine Delle bleibt).`,
       (f.cold ? tip('Teiglinge vor dem Backen wirklich auf Raumtemperatur kommen lassen – kalter Teig reißt beim Ausziehen.') : '') + timerBox('stueckgare', f.proofMin), f.proofMin);

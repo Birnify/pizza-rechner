@@ -42,13 +42,21 @@
 
   // Zwei Druckvarianten, ohne den bestehenden window.print()-Mechanismus zu ersetzen:
   // je eine body-Klasse steuert per @media print, was sichtbar bleibt.
+  // Feature-Flag "shopping" (js/settings.js, Default AUS): deckt die komplette
+  // Einkaufsliste/Druck-Funktion ab (js/print.js). Der zugehörige Button ist bei
+  // deaktiviertem Flag bereits per CSS aus dem Rendering genommen (applyFlags() in
+  // settings.js) — dieser Guard ist nur eine defensive zweite Absicherung, falls die
+  // Funktion doch aufgerufen wird. `PZ.FLAGS` fehlt in tests/test.html bewusst (dort
+  // nicht geladen) -> dort weiterhin uneingeschränkt aufrufbar (altes Verhalten).
   function printShoppingList() {
+    if (PZ.FLAGS && PZ.FLAGS.shopping === false) return;
     buildShoppingList();
     document.body.classList.add('print-shopping');
     window.print();
   }
 
   function printGuide() {
+    if (PZ.FLAGS && PZ.FLAGS.shopping === false) return;
     document.body.classList.add('print-guide');
     window.print();
   }
