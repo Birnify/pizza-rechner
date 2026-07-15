@@ -955,7 +955,7 @@ footer{text-align:right;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.20.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.20.1</span>
 </footer>
 
 <div class="quickbar">
@@ -1089,17 +1089,22 @@ footer{text-align:right;}
     // Zucker-Regler (New-York-Style): nutzt das etablierte .collapse/.show-Muster
     // (wie prefBlock/bigaHydBlock) statt style.display — verhindert einen Flackerer
     // vorm ersten applyFlags()-Lauf, da .collapse per CSS schon vor JS-Ausführung greift.
-    // Sichtbar, wenn ENTWEDER das Flag dauerhaft/manuell an ist ODER das Preset „New York
-    // Style" gerade aktiv im #preset-Select gewählt ist (v3.19.3 — vorher schaltete das
-    // Preset das Flag beim Anwenden dauerhaft an und ließ den Regler danach für immer
-    // sichtbar, s. pizza-rechner-KONTEXT.md). Fragt dafür live den #preset-Select ab statt
-    // einen zusätzlichen State zu duplizieren — presets.js ruft applyFlags() bei jedem
-    // Preset-Wechsel (inkl. "Eigene Einstellung") neu auf, s. dort.
+    // Sichtbar NUR, wenn ENTWEDER das Preset „New York Style" gerade aktiv im #preset-
+    // Select gewählt ist, ODER „Eigene Einstellung" (kein/unbekanntes Preset) aktiv ist
+    // UND das Flag dauerhaft/manuell an ist (v3.20.1 — verschärft gegenüber v3.19.3, wo
+    // ein manuell angeschalteter Flag den Regler bei JEDEM Preset sichtbar machte, auch
+    // bei Napoli/Teglia, wo Zucker nicht hingehört; s. pizza-rechner-KONTEXT.md). Fragt
+    // dafür live den #preset-Select ab statt einen zusätzlichen State zu duplizieren —
+    // presets.js ruft applyFlags() bei jedem Preset-Wechsel (inkl. "Eigene Einstellung")
+    // neu auf, s. dort.
     const presetEl = document.getElementById('preset');
-    const activePreset = (presetEl && PZ.PRESETS) ? PZ.PRESETS[presetEl.value] : null;
-    const presetWantsSugar = !!(activePreset && activePreset.flag === 'newYorkStyle');
+    const presetKey = presetEl ? presetEl.value : '';
+    const isNewYorkPreset = presetKey === 'newyork_style';
+    // "Eigene Einstellung": kein Preset gewählt ODER (im Test-Stub möglich) ein Key, der
+    // in PZ.PRESETS gar nicht existiert — beides zählt als "kein konkretes Preset aktiv".
+    const isCustomSelection = !presetKey || !(PZ.PRESETS && PZ.PRESETS[presetKey]);
     const sugarBlock = document.getElementById('sugarBlock');
-    if (sugarBlock) sugarBlock.classList.toggle('show', !!f.newYorkStyle || presetWantsSugar);
+    if (sugarBlock) sugarBlock.classList.toggle('show', isNewYorkPreset || (isCustomSelection && !!f.newYorkStyle));
     // Tooltip-/Hinweistexte: EIN globaler Body-Klassen-Schalter statt Dutzender
     // Einzel-Elemente. CSS blendet darüber alle .hint/.timersys-hint/.timerhint-Elemente
     // per display:none aus — die Elemente (und ihre IDs) bleiben dabei im DOM erhalten,
@@ -2321,9 +2326,23 @@ footer{text-align:right;}
     }
   };
 
+  // Verfolgt, welches Preset zuletzt über das #preset-Dropdown aktiv angewendet wurde
+  // (nicht dasselbe wie der reine #preset-Wert, der sich schon bei jeder manuellen
+  // Reglereingabe still auf '' zurücksetzt, s. u.) — nur so lässt sich erkennen, ob der
+  // Nutzer gerade WEG von „New York Style" wechselt (v3.20.1, s. u.).
+  let lastAppliedPresetKey = '';
+
   function applyPreset(key) {
     const state = PZ.state, set = PZ.set;
     const p = PRESETS[key];
+    // Wechsel WEG von „New York Style" (zu einem anderen Preset ODER zu „Eigene
+    // Einstellung"): Zucker-Wert auf 0 zurücksetzen. Sonst bliebe ein zuvor gesetzter
+    // Zucker-Wert unbemerkt im State stehen, auch wenn der Regler jetzt (korrekt) verborgen
+    // ist — s. „Zucker-Regler nur bei New-York-Style-Preset" (v3.20.1) in der Kontext-Datei.
+    if (lastAppliedPresetKey === 'newyork_style' && key !== 'newyork_style' && set.sugar) {
+      set.sugar(0);
+    }
+    lastAppliedPresetKey = key;
     if (!p) {
       $('presetDesc').textContent = DEFAULT_DESC;
       // Zurück zu "Eigene Einstellung" (oder unbekannter Key): preset-gated Regler
@@ -2354,8 +2373,11 @@ footer{text-align:right;}
     // ist (v3.19.3). Kein automatisches, dauerhaftes Anschalten des Feature-Flags mehr
     // (vorher: PZ.setFlag(p.flag, true) — das ließ den Regler auch nach dem Wechsel auf ein
     // anderes Preset oder „Eigene Einstellung" für immer sichtbar, s. Kontext-Datei). Der
-    // manuelle Flag-Schalter im Einstellungen-Menü bleibt davon unberührt und wirkt weiterhin
-    // dauerhaft — applyFlags() kombiniert beides (s. js/settings.js).
+    // manuelle Flag-Schalter im Einstellungen-Menü wirkt seit v3.20.1 NUR noch bei „Eigene
+    // Einstellung" (kein konkretes Preset aktiv) — bei jedem anderen konkreten Preset bleibt
+    // der Zucker-Regler verborgen, unabhängig vom Flag-Zustand (applyFlags() in
+    // js/settings.js prüft dafür exakt den Preset-Key, nicht mehr das generische
+    // `flag`-Feld).
     if (PZ.applyFlags) PZ.applyFlags();
     $('presetDesc').textContent = p.desc;
     PZ.calc();

@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-15 · Aktuelle Version: v3.20.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-15 · Aktuelle Version: v3.20.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,77 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Mehltemperatur getrennt von Raumtemperatur (v3.20.0) = aktueller Stand
+## Zucker-Regler nur bei New-York-Style-Preset oder eigener Einstellung (v3.20.1) = aktueller Stand
+
+Bugfix an der in v3.19.2/v3.19.3 bewusst so designten Sichtbarkeits-Logik, vom Nutzer
+nach praktischer Nutzung per `/define-feature` strukturiert und bestätigt. Kein
+Backlog-Punkt, kein neues Feature, keine Änderung an Berechnungslogik/Preset-Inhalt.
+
+**Problem (v3.19.3):** `#sugarBlock` war sichtbar, wenn **entweder** das Feature-Flag
+`newYorkStyle` manuell an war **oder** das Preset „New York Style" aktiv gewählt war —
+eine ODER-Verknüpfung, die den Zucker-Regler bei aktivem Flag für **jedes** Preset
+freischaltete, nicht nur für „New York Style". Dadurch ließ sich versehentlich Zucker
+in Presets wie Napoli oder Teglia einstellen, wo er nicht hingehört.
+
+**Fix:** `#sugarBlock` ist jetzt nur noch sichtbar, wenn (a) das Preset „New York
+Style" gerade aktiv im `#preset`-Select gewählt ist, **oder** (b) „Eigene Einstellung"
+aktiv ist (kein/unbekanntes Preset im `#preset`-Select) **und** das Flag manuell an
+ist. Bei jedem anderen konkreten Preset (`napoli_klassisch`, `napoli_65`,
+`napoli_kalt`, `schnell`, `napoli_biga`, `napoli_poolish`, `teglia`) bleibt der
+Zucker-Regler verborgen, unabhängig vom Flag-Zustand.
+
+- **`js/settings.js` (`applyFlags()`):** liest weiterhin live `#preset`-Wert und
+  `PZ.PRESETS` aus, prüft aber jetzt **exakt den Preset-Key** (`presetKey ===
+  'newyork_style'`) statt (wie in v3.19.2/v3.19.3) das generische `flag`-Feld des
+  Presets. Das Flag selbst wirkt nur noch, wenn „Eigene Einstellung" aktiv ist
+  (`isCustomSelection = !presetKey || !PZ.PRESETS[presetKey]`). Die Checkbox
+  `#flagNewYorkStyle` bleibt unverändert ein reiner Spiegel des persistenten Flags
+  (nicht der kombinierten Sichtbarkeit) — unangetastet von diesem Fix.
+- **`js/presets.js` (`applyPreset()`):** neuer modulweiter State `lastAppliedPresetKey`
+  verfolgt, welches Preset zuletzt aktiv über das `#preset`-Dropdown angewendet wurde
+  (nicht dasselbe wie der reine `#preset`-Wert, der sich schon bei jeder manuellen
+  Reglereingabe still auf `''` zurücksetzt). Wechselt der Nutzer **weg** von „New York
+  Style" (zu einem anderen Preset ODER zu „Eigene Einstellung"), wird `state.sugar`
+  zusätzlich per `set.sugar(0)` zurückgesetzt — sonst bliebe ein zuvor gesetzter
+  Zucker-Wert unbemerkt im State stehen, auch wenn der Regler jetzt (korrekt) verborgen
+  ist. Reine Reglereingaben (z. B. an der Hydration drehen) lösen diesen Reset nicht
+  aus — nur ein expliziter Wechsel über das `#preset`-Dropdown.
+- **Bewusst NICHT geändert:** „Eigene Einstellung" + manueller Flag zeigt den Regler
+  weiterhin (Abgrenzung aus der Feature-Definition); keine Änderung an der
+  Zucker-Berechnungsformel oder am „New York Style"-Preset selbst; kein neues
+  Feature-Flag-Verhalten für andere Flags.
+
+**Tests** (`tests/test.html`, Sektion 18, +3 neue Prüfungen, 418 → **421**): der
+bestehende Render-Effekt-Block wurde erweitert statt neu geschrieben — `PZ.PRESETS`-Stub
+um ein zweites, „fremdes" Preset (`napoli_klassisch`) ergänzt, dafür auch eine
+entsprechende `<option>` im `#preset`-Stub-`<select>` ergänzt (ohne passende `<option>`
+setzt der Browser `.value` bei einem unbekannten Preset-Key sonst still auf `''` zurück
+— das hätte den neuen Testfall unbemerkt am eigentlichen Preset-Wechsel vorbeigeführt;
+beim ersten Durchlauf genau so aufgefallen und korrigiert). Geprüft: Flag an + anderes
+konkretes Preset aktiv → `#sugarBlock` bleibt verborgen (der eigentliche Bugfix),
+Checkbox bleibt dabei weiterhin „an" (reiner Flag-Spiegel, unbeeinflusst von der
+Sichtbarkeit), zurück zu „Eigene Einstellung" mit weiterhin aktivem Flag → wieder
+sichtbar. Alle 421 Prüfungen grün (Headless-Edge-Dump). Der `state.sugar`-Reset beim
+Verlassen von „New York Style" lässt sich in `tests/test.html` nicht direkt abdecken
+(`js/presets.js` ist dort bewusst nicht geladen, s. Kommentar an der bestehenden
+Preset-Stub-Stelle) — stattdessen per Headless-Edge-CDP (WebSocket,
+`--remote-allow-origins=*`) auf Desktop **und** Mobil verifiziert: Preset „New York
+Style" wählen (Zucker=2, Regler sichtbar) → anderes Preset wählen (Zucker=0, Regler
+verborgen); Flag manuell an + anderes Preset → Regler bleibt verborgen; zurück zu
+„Eigene Einstellung" mit aktivem Flag → Regler wieder sichtbar; Zucker manuell auf 3,5
+gesetzt, dann „New York Style" → anderes Preset gewählt → Zucker wieder 0. Identisches
+Ergebnis auf beiden Seiten.
+
+**Kein Accessibility-/Mobile-Audit nötig:** reine JS-Logik-Änderung in
+`js/settings.js`/`js/presets.js`, kein neues/verändertes Markup, keine neue CSS.
+
+**Geändert:** `js/settings.js`, `js/presets.js`, `tests/test.html`. `?v=` auf `3.20.1`
+gezogen (Desktop + Mobil, Cache-Busting + Footer-Version). `pizza-rechner-mobile-
+standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v3.20.1 - Zucker-Regler nur bei New York Style/` enthält den vollständigen
+Schnappschuss.
+
+## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
 Letzter offener Punkt aus „Mögliche nächste Schritte" umgesetzt, vom Nutzer per
 `/define-feature` strukturiert und bestätigt. Bisher nahm die Wassertemperatur-Formel
@@ -241,6 +311,13 @@ standalone.html` neu gebaut (`python build-mobile-standalone.py`).
 vollständigen Schnappschuss.
 
 ## New York Style: nur temporäre statt dauerhafte Zucker-Regler-Sichtbarkeit (v3.19.3)
+
+**⚠️ In v3.20.1 weiter verschärft, hier nur zur historischen Einordnung stehen
+gelassen:** die hier eingeführte ODER-Verknüpfung (Flag ODER aktives Preset) schaltete
+den Zucker-Regler bei aktivem Flag noch für JEDES Preset frei, nicht nur für „New York
+Style" selbst. In v3.20.1 wirkt das Flag nur noch bei „Eigene Einstellung" — s. Abschnitt
+„Zucker-Regler nur bei New-York-Style-Preset oder eigener Einstellung (v3.20.1)" ganz
+oben (= aktueller Stand).
 
 Korrektur am gerade erst umgesetzten Feature aus v3.19.2 (s. Abschnitt „Zucker-Feld /
 New York Style" direkt darunter), vom Nutzer per `/define-feature` strukturiert. Kein
@@ -1998,8 +2075,13 @@ Keine Code-Änderung durch den Audit nötig.
 - ~~Nebenbefund aus v3.19.0 (Accessibility-Audit): `.info-btn`-Touch-Ziel auf Mobil nur
   28×28px~~ — **erledigt in v3.19.1**: unsichtbare Tap-Fläche per `::before` auf 44×44px
   vergrößert (sichtbare 28px-Kreisoptik unverändert), analog zum `.switch`-Muster.
+- ~~Bugfix: Zucker-Regler wurde durch den manuellen „New York Style"-Flag bei JEDEM
+  Preset sichtbar/nutzbar, nicht nur beim gleichnamigen Preset~~ — **erledigt in
+  v3.20.1** (kein Backlog-Punkt, direkter Nutzerauftrag per `/define-feature`; s.
+  Abschnitt „Zucker-Regler nur bei New-York-Style-Preset oder eigener Einstellung
+  (v3.20.1)" oben).
 
-**Stand v3.20.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.20.1: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben). Einzige offen gebliebene Teilaufgabe eines bereits erledigten Punkts: **Export
 als PDF** (s. „Teilen-Link"-Zeile oben — bewusst nicht mitgebaut, da der Nutzer damals
 nur den reinen Teilen-Link wollte). Für den nächsten Zyklus braucht es daher frisches

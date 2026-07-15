@@ -89,17 +89,22 @@
     // Zucker-Regler (New-York-Style): nutzt das etablierte .collapse/.show-Muster
     // (wie prefBlock/bigaHydBlock) statt style.display — verhindert einen Flackerer
     // vorm ersten applyFlags()-Lauf, da .collapse per CSS schon vor JS-Ausführung greift.
-    // Sichtbar, wenn ENTWEDER das Flag dauerhaft/manuell an ist ODER das Preset „New York
-    // Style" gerade aktiv im #preset-Select gewählt ist (v3.19.3 — vorher schaltete das
-    // Preset das Flag beim Anwenden dauerhaft an und ließ den Regler danach für immer
-    // sichtbar, s. pizza-rechner-KONTEXT.md). Fragt dafür live den #preset-Select ab statt
-    // einen zusätzlichen State zu duplizieren — presets.js ruft applyFlags() bei jedem
-    // Preset-Wechsel (inkl. "Eigene Einstellung") neu auf, s. dort.
+    // Sichtbar NUR, wenn ENTWEDER das Preset „New York Style" gerade aktiv im #preset-
+    // Select gewählt ist, ODER „Eigene Einstellung" (kein/unbekanntes Preset) aktiv ist
+    // UND das Flag dauerhaft/manuell an ist (v3.20.1 — verschärft gegenüber v3.19.3, wo
+    // ein manuell angeschalteter Flag den Regler bei JEDEM Preset sichtbar machte, auch
+    // bei Napoli/Teglia, wo Zucker nicht hingehört; s. pizza-rechner-KONTEXT.md). Fragt
+    // dafür live den #preset-Select ab statt einen zusätzlichen State zu duplizieren —
+    // presets.js ruft applyFlags() bei jedem Preset-Wechsel (inkl. "Eigene Einstellung")
+    // neu auf, s. dort.
     const presetEl = document.getElementById('preset');
-    const activePreset = (presetEl && PZ.PRESETS) ? PZ.PRESETS[presetEl.value] : null;
-    const presetWantsSugar = !!(activePreset && activePreset.flag === 'newYorkStyle');
+    const presetKey = presetEl ? presetEl.value : '';
+    const isNewYorkPreset = presetKey === 'newyork_style';
+    // "Eigene Einstellung": kein Preset gewählt ODER (im Test-Stub möglich) ein Key, der
+    // in PZ.PRESETS gar nicht existiert — beides zählt als "kein konkretes Preset aktiv".
+    const isCustomSelection = !presetKey || !(PZ.PRESETS && PZ.PRESETS[presetKey]);
     const sugarBlock = document.getElementById('sugarBlock');
-    if (sugarBlock) sugarBlock.classList.toggle('show', !!f.newYorkStyle || presetWantsSugar);
+    if (sugarBlock) sugarBlock.classList.toggle('show', isNewYorkPreset || (isCustomSelection && !!f.newYorkStyle));
     // Tooltip-/Hinweistexte: EIN globaler Body-Klassen-Schalter statt Dutzender
     // Einzel-Elemente. CSS blendet darüber alle .hint/.timersys-hint/.timerhint-Elemente
     // per display:none aus — die Elemente (und ihre IDs) bleiben dabei im DOM erhalten,

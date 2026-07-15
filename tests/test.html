@@ -48,7 +48,7 @@
   <select id="flour"><option value="caputo_pizzeria" selected></option></select>
   <input type="text" id="timeISO">
   <div id="recipesCard"></div><div id="shareBlock"></div><div id="shoppingRow"></div>
-  <select id="preset"><option value=""></option><option value="newyork_style"></option></select>
+  <select id="preset"><option value=""></option><option value="newyork_style"></option><option value="napoli_klassisch"></option></select>
   <div id="sugarBlock"></div><input type="checkbox" id="flagNewYorkStyle">
   <div class="hint" id="testHintStub">Erklärender Beispiel-Hinweistext</div>
   <button type="button" id="testDescribedBtn" aria-describedby="testHintStub">Beispiel-Button</button>
@@ -1573,16 +1573,20 @@
       ]);
     })();
 
-    // --- Render-Effekt (v3.19.3): #sugarBlock ist sichtbar, wenn ENTWEDER das Flag
-    // manuell/dauerhaft an ist ODER das Preset "New York Style" gerade im #preset-Select
-    // aktiv gewählt ist — presets.js ist hier nicht geladen (reine Logik-/Render-Tests),
-    // daher wird PZ.PRESETS minimal gestubbt. Wichtig: die Checkbox #flagNewYorkStyle
-    // (Einstellungen-Menü) darf NUR den echten persistenten Flag-Zustand widerspiegeln,
-    // nicht die temporäre preset-getriebene Sichtbarkeit (sonst würde sie fälschlich "an"
-    // erscheinen, obwohl der Nutzer den Schalter nie selbst gesetzt hat).
+    // --- Render-Effekt (v3.20.1, verschärft gegenüber v3.19.3): #sugarBlock ist NUR
+    // sichtbar, wenn ENTWEDER das Preset "New York Style" gerade im #preset-Select aktiv
+    // gewählt ist, ODER "Eigene Einstellung" (kein/unbekanntes Preset) aktiv ist UND das
+    // Flag manuell/dauerhaft an ist. Bei jedem ANDEREN konkreten Preset bleibt der Zucker-
+    // Regler verborgen, auch wenn das Flag an ist (v3.19.3 verknüpfte hier fälschlich per
+    // ODER — das Flag schaltete den Regler bei JEDEM Preset frei, s. Kontext-Datei).
+    // presets.js ist hier nicht geladen (reine Logik-/Render-Tests), daher wird PZ.PRESETS
+    // minimal gestubbt (inkl. eines zweiten, "fremden" Presets für die Abgrenzung). Wichtig:
+    // die Checkbox #flagNewYorkStyle (Einstellungen-Menü) darf NUR den echten persistenten
+    // Flag-Zustand widerspiegeln, nicht die temporäre preset-getriebene Sichtbarkeit (sonst
+    // würde sie fälschlich "an" erscheinen, obwohl der Nutzer den Schalter nie selbst gesetzt hat).
     (function () {
       const presetsBackup = PZ.PRESETS;
-      PZ.PRESETS = { newyork_style: { flag: 'newYorkStyle' } };
+      PZ.PRESETS = { newyork_style: {}, napoli_klassisch: {} };
       const presetEl = document.getElementById('preset');
       const sugarBlock = document.getElementById('sugarBlock');
       const checkbox = document.getElementById('flagNewYorkStyle');
@@ -1612,7 +1616,21 @@
       PZ.applyFlags();
       const shownWithBothFlagAndPreset = sugarBlock.classList.contains('show');
 
-      renderBox('#sugarBlock-Sichtbarkeit: aktives Preset ODER manuelles Flag (Checkbox bleibt reiner Flag-Spiegel)', [
+      // Neu (v3.20.1): Flag bleibt an, aber ein ANDERES konkretes Preset ("napoli_klassisch")
+      // ist aktiv -> Zucker-Regler bleibt verborgen, das Flag darf nicht länger jedes Preset
+      // freischalten. Das ist der eigentliche Bugfix dieses Zyklus.
+      presetEl.value = 'napoli_klassisch';
+      PZ.applyFlags();
+      const hiddenForOtherPresetDespiteFlag = !sugarBlock.classList.contains('show');
+      const checkboxStaysOnForOtherPreset = checkbox.checked === true;
+
+      // Zurück zu "Eigene Einstellung" mit weiterhin aktivem Flag -> wieder sichtbar
+      // (Flag wirkt weiterhin nur im "Eigene Einstellung"-Fall).
+      presetEl.value = '';
+      PZ.applyFlags();
+      const shownAgainForCustomWithFlag = sugarBlock.classList.contains('show');
+
+      renderBox('#sugarBlock-Sichtbarkeit: NUR Preset "New York Style" ODER ("Eigene Einstellung" + manuelles Flag) (Checkbox bleibt reiner Flag-Spiegel)', [
         { label: 'Flag aus + kein Preset aktiv -> #sugarBlock ohne "show"', ok: hiddenByDefault, actual: hiddenByDefault, expected: true, tol: null },
         { label: 'Checkbox im Ausgangszustand unchecked', ok: checkboxOffByDefault, actual: checkboxOffByDefault, expected: true, tol: null },
         { label: 'Flag aus + Preset "New York Style" aktiv -> #sugarBlock bekommt "show"', ok: shownViaActivePreset, actual: shownViaActivePreset, expected: true, tol: null },
@@ -1620,7 +1638,10 @@
         { label: 'Zurück zu "Eigene Einstellung" (Flag weiterhin aus) -> #sugarBlock verliert "show" wieder', ok: hiddenAgainAfterLeavingPreset, actual: hiddenAgainAfterLeavingPreset, expected: true, tol: null },
         { label: 'Flag manuell an + kein Preset aktiv -> #sugarBlock bleibt via "show" sichtbar', ok: shownViaManualFlagAlone, actual: shownViaManualFlagAlone, expected: true, tol: null },
         { label: 'Checkbox spiegelt den manuell gesetzten Flag-Zustand (checked)', ok: checkboxOnWithManualFlag, actual: checkboxOnWithManualFlag, expected: true, tol: null },
-        { label: 'Flag an UND Preset aktiv -> #sugarBlock weiterhin sichtbar (Kombination)', ok: shownWithBothFlagAndPreset, actual: shownWithBothFlagAndPreset, expected: true, tol: null }
+        { label: 'Flag an UND Preset "New York Style" aktiv -> #sugarBlock weiterhin sichtbar (Kombination)', ok: shownWithBothFlagAndPreset, actual: shownWithBothFlagAndPreset, expected: true, tol: null },
+        { label: 'Flag an + ANDERES konkretes Preset aktiv -> #sugarBlock bleibt verborgen (v3.20.1-Fix)', ok: hiddenForOtherPresetDespiteFlag, actual: hiddenForOtherPresetDespiteFlag, expected: true, tol: null },
+        { label: 'Checkbox bleibt bei anderem Preset weiterhin "an" (reiner Flag-Spiegel, unbeeinflusst von der Sichtbarkeit)', ok: checkboxStaysOnForOtherPreset, actual: checkboxStaysOnForOtherPreset, expected: true, tol: null },
+        { label: 'Zurück zu "Eigene Einstellung" mit weiterhin aktivem Flag -> #sugarBlock wieder sichtbar', ok: shownAgainForCustomWithFlag, actual: shownAgainForCustomWithFlag, expected: true, tol: null }
       ]);
 
       // Aufräumen: Preset-Stub-Select + PZ.PRESETS wieder auf Ausgangszustand.

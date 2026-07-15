@@ -44,9 +44,23 @@
     }
   };
 
+  // Verfolgt, welches Preset zuletzt über das #preset-Dropdown aktiv angewendet wurde
+  // (nicht dasselbe wie der reine #preset-Wert, der sich schon bei jeder manuellen
+  // Reglereingabe still auf '' zurücksetzt, s. u.) — nur so lässt sich erkennen, ob der
+  // Nutzer gerade WEG von „New York Style" wechselt (v3.20.1, s. u.).
+  let lastAppliedPresetKey = '';
+
   function applyPreset(key) {
     const state = PZ.state, set = PZ.set;
     const p = PRESETS[key];
+    // Wechsel WEG von „New York Style" (zu einem anderen Preset ODER zu „Eigene
+    // Einstellung"): Zucker-Wert auf 0 zurücksetzen. Sonst bliebe ein zuvor gesetzter
+    // Zucker-Wert unbemerkt im State stehen, auch wenn der Regler jetzt (korrekt) verborgen
+    // ist — s. „Zucker-Regler nur bei New-York-Style-Preset" (v3.20.1) in der Kontext-Datei.
+    if (lastAppliedPresetKey === 'newyork_style' && key !== 'newyork_style' && set.sugar) {
+      set.sugar(0);
+    }
+    lastAppliedPresetKey = key;
     if (!p) {
       $('presetDesc').textContent = DEFAULT_DESC;
       // Zurück zu "Eigene Einstellung" (oder unbekannter Key): preset-gated Regler
@@ -77,8 +91,11 @@
     // ist (v3.19.3). Kein automatisches, dauerhaftes Anschalten des Feature-Flags mehr
     // (vorher: PZ.setFlag(p.flag, true) — das ließ den Regler auch nach dem Wechsel auf ein
     // anderes Preset oder „Eigene Einstellung" für immer sichtbar, s. Kontext-Datei). Der
-    // manuelle Flag-Schalter im Einstellungen-Menü bleibt davon unberührt und wirkt weiterhin
-    // dauerhaft — applyFlags() kombiniert beides (s. js/settings.js).
+    // manuelle Flag-Schalter im Einstellungen-Menü wirkt seit v3.20.1 NUR noch bei „Eigene
+    // Einstellung" (kein konkretes Preset aktiv) — bei jedem anderen konkreten Preset bleibt
+    // der Zucker-Regler verborgen, unabhängig vom Flag-Zustand (applyFlags() in
+    // js/settings.js prüft dafür exakt den Preset-Key, nicht mehr das generische
+    // `flag`-Feld).
     if (PZ.applyFlags) PZ.applyFlags();
     $('presetDesc').textContent = p.desc;
     PZ.calc();
