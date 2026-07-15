@@ -35,6 +35,7 @@
     hyd:   link('hyd', 'hydN', 'hyd', 0, 'Prozent Hydration'),
     salt:  link('salt', 'saltN', 'salt', 1, 'Prozent Salz'),
     oil:   link('oil', 'oilN', 'oil', 1, 'Prozent Olivenöl'),
+    sugar: link('sugar', 'sugarN', 'sugar', 1, 'Prozent Zucker'),
     pref:  link('pref', 'prefN', 'pref', 0, 'Prozent Mehl im Vorteig'),
     bhyd:  link('bhyd', 'bhydN', 'bhyd', 0, 'Prozent Biga-Hydration'),
     yeast: link('yeast', 'yeastN', 'yeast', 2, 'Prozent Hefe'),

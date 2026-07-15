@@ -36,6 +36,11 @@
     teglia: {
       method: 'direct', hyd: 75, salt: 2.5, oil: 4, yeastType: 'fresh', yeast: 0.3, ballw: 320, ddt: 24, flour: 'caputo_nuvola_super',
       desc: 'Römische Blechpizza: 75 % Hydration, 4 % Olivenöl, sehr lockere Krume. Teig ist klebrig — mit Stretch & Fold statt langem Kneten arbeiten. 24 h kühl. Braucht sehr starkes Mehl (W330+).'
+    },
+    newyork_style: {
+      method: 'direct', hyd: 62, salt: 2.5, oil: 3, sugar: 2, yeastType: 'fresh', yeast: 0.2, ballw: 300, ddt: 24, flour: 'dallag_napoletana',
+      flag: 'newYorkStyle',
+      desc: 'New York Style: 62 % Hydration, 3 % Öl, 2 % Zucker (Bräunung &amp; Hefeaktivität) — größere, dünnere Teiglinge. ~26 h Kaltgare für Aroma &amp; knusprig-zähe Kruste. Braucht ein mittelstarkes Mehl (W300+).'
     }
   };
 
@@ -50,6 +55,7 @@
     if (p.hyd != null)   set.hyd(p.hyd);
     if (p.salt != null)  set.salt(p.salt);
     if (p.oil != null)   set.oil(p.oil);
+    if (p.sugar != null) set.sugar(p.sugar);
     if (p.pref != null)  set.pref(p.pref);
     if (p.bhyd != null)  set.bhyd(p.bhyd);
     if (p.yeast != null) set.yeast(p.yeast);
@@ -58,6 +64,10 @@
     if (p.flour) { state.flour = p.flour; const fs = $('flour'); if (fs) fs.value = p.flour; }
     // Vorteig-Reife-Stufe setzt Reifezeit + Hefe passend (nach applyMethod, das die Pills rendert)
     if (p.prefStage && PZ.selectPrefStage) PZ.selectPrefStage(state.method, p.prefStage);
+    // Manche Presets brauchen einen sonst standardmäßig ausgeblendeten Regler sichtbar
+    // (z. B. „New York Style" den Zucker-Regler) — schaltet das zugehörige Feature-Flag
+    // dauerhaft an (persistiert), kein automatisches Zurücksetzen bei anderen Presets.
+    if (p.flag && PZ.setFlag) { PZ.setFlag(p.flag, true); if (PZ.applyFlags) PZ.applyFlags(); }
     $('presetDesc').textContent = p.desc;
     PZ.calc();
   }
@@ -65,7 +75,7 @@
   $('preset').addEventListener('change', e => applyPreset(e.target.value));
 
   // Manuelle Änderung an einem Regler → Auswahl zurück auf "Eigene Einstellung"
-  ['hyd', 'salt', 'oil', 'yeast', 'pref', 'bhyd', 'ballw', 'ddt', 'room', 'hydN', 'saltN', 'oilN', 'yeastN'].forEach(id => {
+  ['hyd', 'salt', 'oil', 'sugar', 'yeast', 'pref', 'bhyd', 'ballw', 'ddt', 'room', 'hydN', 'saltN', 'oilN', 'sugarN', 'yeastN'].forEach(id => {
     const el = $(id);
     if (el) el.addEventListener('input', () => { $('preset').value = ''; });
   });

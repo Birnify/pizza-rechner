@@ -13,13 +13,15 @@
     const total = N * W;
     const h = state.hyd / 100, s = state.salt / 100, y = state.yeast / 100;
     const o = (state.oil || 0) / 100;
+    const su = (state.sugar || 0) / 100;
 
-    // Mehl = Total / (1 + Hydration + Salz + Hefe + Öl)
-    // (Öl ist ein Bäckerprozent wie Salz/Hefe → das Gesamtgewicht bleibt exakt N×W.)
-    const flour = total / (1 + h + s + y + o);
+    // Mehl = Total / (1 + Hydration + Salz + Hefe + Öl + Zucker)
+    // (Öl und Zucker sind Bäckerprozente wie Salz/Hefe → das Gesamtgewicht bleibt exakt N×W.)
+    const flour = total / (1 + h + s + y + o + su);
     const water = flour * h;
     const salt  = flour * s;
     const oil   = flour * o;
+    const sugar = flour * su;
     let yeast   = flour * y;                       // immer als Frischhefe gerechnet
     if (state.yeastType === 'dry') yeast *= PZ.FRESH_TO_DRY;
     const yWord = state.yeastType === 'dry' ? '(trocken)' : '(frisch)';
@@ -38,6 +40,9 @@
     if ($('gOil')) $('gOil').textContent = oil.toFixed(1);
     // Öl-Zeile ganz ausblenden, wenn kein Öl im Rezept
     if ($('gOilRow')) $('gOilRow').style.display = oil >= 0.05 ? 'flex' : 'none';
+    if ($('gSugar')) $('gSugar').textContent = sugar.toFixed(1);
+    // Zucker-Zeile ganz ausblenden, wenn kein Zucker im Rezept (Standard: New-York-Style-Feld ist 0)
+    if ($('gSugarRow')) $('gSugarRow').style.display = sugar >= 0.05 ? 'flex' : 'none';
 
     // --- Vorteig-Aufteilung ---
     let prefEff = state.pref, prefClamped = false;
@@ -68,6 +73,9 @@
       // Öl kommt komplett in den Hauptteig (nie in Biga/Poolish)
       if ($('mOil')) $('mOil').textContent = oil.toFixed(1);
       if ($('mOilRow')) $('mOilRow').style.display = oil >= 0.05 ? 'flex' : 'none';
+      // Zucker kommt komplett in den Hauptteig (nie in Biga/Poolish, analog zu Öl)
+      if ($('mSugar')) $('mSugar').textContent = sugar.toFixed(1);
+      if ($('mSugarRow')) $('mSugarRow').style.display = sugar >= 0.05 ? 'flex' : 'none';
     }
 
     // --- Wassertemperatur (DDT-Methode) ---
@@ -97,7 +105,7 @@
     $('iceAmt').textContent = ice;
     $('iceNote').innerHTML = note;
 
-    PZ.R = { N, W, total, flour, water, salt, oil, yeast, yWord, pf, pw, pYeast, mYeast, mFlour, mWater, wT, ice, Ttap, prefEff, prefClamped };
+    PZ.R = { N, W, total, flour, water, salt, oil, sugar, yeast, yWord, pf, pw, pYeast, mYeast, mFlour, mWater, wT, ice, Ttap, prefEff, prefClamped };
     PZ.buildGuide();
   }
 

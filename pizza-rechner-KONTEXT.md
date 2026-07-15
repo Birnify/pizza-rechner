@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-15 · Aktuelle Version: v3.19.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-15 · Aktuelle Version: v3.19.2 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -37,9 +37,11 @@ die anderen Mengen sinken nur minimal, weil das Öl seinen Gewichtsanteil bekomm
 ## Funktionsumfang (aktueller Stand v3.0.0)
 
 ### 1. Eingaben (linke Spalte, Reihenfolge = Arbeitsablauf)
-1. **Preset-Auswahl**: 7 erprobte Rezepte (Dropdown), setzt alle Werte **inkl. passendem Mehl**
+1. **Preset-Auswahl**: 8 erprobte Rezepte (Dropdown), setzt alle Werte **inkl. passendem Mehl**
+   (1 davon, „New York Style", ist flag-gated — s. Abschnitt „Zucker-Feld / New York Style")
 2. **Grundeinstellungen**: **Mehl-Dropdown** (13 Sorten, wird per JS aus `PZ.FLOURS` generiert),
-   Anzahl Teiglinge, Gewicht/Teigling (Pills), Hydration %, Salz %, **Olivenöl %**
+   Anzahl Teiglinge, Gewicht/Teigling (Pills), Hydration %, Salz %, **Olivenöl %**, optional
+   **Zucker %** (nur sichtbar bei Flag „New York Style" oder gleichnamigem Preset)
 3. **Methode & Hefe**: Direkt/Biga/Poolish, Vorteig-Mehlanteil %, Biga-Hydration %,
    **Vorteig-Reife-Stufen** (Pills, nur bei Biga/Poolish — koppeln Reifezeit + Hefe),
    Frisch-/Trockenhefe, Hefemenge % (Pills 72h+…4h nur bei Direkt sichtbar),
@@ -48,9 +50,10 @@ die anderen Mengen sinken nur minimal, weil das Öl seinen Gewichtsanteil bekomm
 5. **Zeitplan**: „Ich starte um…" / „Fertig sein um…" + datetime + „Jetzt"-Button
 
 ### 2. Ergebnis (rechte Spalte, sticky)
-- Gesamtteig + Gesamtmengen (Mehl, Wasser, Salz, Hefe, **Öl** — Öl-Zeile blendet bei 0 % aus)
+- Gesamtteig + Gesamtmengen (Mehl, Wasser, Salz, Hefe, **Öl**, **Zucker** — Öl-/Zucker-Zeile
+  blenden je bei 0 % aus)
 - Bei Vorteig: Aufteilung Vorteig-Stufe / Hauptteig-Stufe (**100 % der Hefe in den Vorteig**,
-  **Öl komplett in den Hauptteig** — nie in Biga/Poolish)
+  **Öl und Zucker komplett in den Hauptteig** — nie in Biga/Poolish)
 - Wassertemperatur (DDT) + Eismenge (Energiebilanz mit Schmelzwärme 334 J/g)
 - Buttons: Drucken, Speichern
 
@@ -121,7 +124,9 @@ In `js/guide.js`, im Autolyse-Zweig (`state.yeast < 1,2 %`, nur Direkt-Methode):
 - **Bei Vorteig geht das Öl komplett in den Hauptteig**, nie in Biga/Poolish (analog wie Salz).
   Result-Panel: `#gOilRow` (Gesamtmengen) + `#mOilRow` (Hauptteig), beide bei 0 % ausgeblendet.
 - Öl beeinflusst **nicht** die Eis-/DDT-Rechnung (`M = water` bleibt) — kleine Masse, Raumtemp.
-- Alle 7 Presets haben Öl: neapolitanisch je **2 %**, Teglia/Blech **4 %**. Zucker bewusst **nicht**.
+- Alle 7 Presets haben Öl: neapolitanisch je **2 %**, Teglia/Blech **4 %**. Zucker bewusst
+  **nicht** — außer beim flag-gated 8. Preset „New York Style" (2 % Zucker), s. Abschnitt
+  „Zucker-Feld / New York Style (v3.19.2)" weiter oben.
 
 ## Kaltgare-Stufe (v3.0.0)
 
@@ -132,7 +137,11 @@ In `js/guide.js`, im Autolyse-Zweig (`state.yeast < 1,2 %`, nur Direkt-Methode):
 - Die **Gesamtdauer (bulkMin + proofMin) ist in beiden Varianten identisch** —
   darauf verlassen sich die Mehl-Warnung und die Tests.
 
-## Die 7 Presets (alle gegen die Mehl-Warnung geprüft — keine löst eine Warnung aus)
+## Die 7 Kern-Presets (alle gegen die Mehl-Warnung geprüft — keine löst eine Warnung aus)
+
+Daneben gibt es ein 8. Preset, „New York Style" — flag-gated (nicht immer im Dropdown-Effekt
+sichtbar aktivierbar ohne das zugehörige Flag), s. Abschnitt „Zucker-Feld / New York Style"
+weiter unten. Bewusst nicht in dieser Tabelle, da einziges Preset mit `flag`-Eigenschaft.
 
 | Key | Methode | Hyd | Salz | Öl | Hefe | Mehl (empfohlen) |
 |-----|---------|-----|------|------|------|------------------|
@@ -159,7 +168,94 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Info-Knopf-Touch-Ziel auf 44×44px vergrößert (v3.19.1, `mobile-optimizer`-Agent) = aktueller Stand
+## Zucker-Feld / New York Style (v3.19.2) = aktueller Stand
+
+Neues Feature, vom Nutzer über `/define-feature` strukturiert und in einer Rückfrage-Runde
+präzisiert: ein Zucker-Regler als Bäckerprozent (analog zu Öl, s. v3.3.0) plus ein neues
+Preset „New York Style", das ihn nutzt. Außerhalb dieses Presets bleibt der Zucker-Regler
+ausgeblendet, es sei denn, ein neuer Feature-Flag „New York Style" wird aktiv eingeschaltet.
+Bewusst **kein** sonstiger New-York-Style-spezifischer Eingriff (keine andere Backzeit-/
+Temperaturlogik, keine Krustenform-Logik) — nur der Regler + das Preset.
+
+- **Formel** (`js/calc.js`): `flour = total / (1 + h + s + y + o + su)` (`su = sugar/100`),
+  `sugar = flour × su`. Dadurch bleibt das Gesamtgewicht weiterhin exakt N × W (Masse
+  erhalten), jetzt auch mit Zucker in der Summe. `PZ.R.sugar` neu im Ergebnis-Objekt.
+  `state.sugar` (Default **0**, `js/state.js`) — Slider 0–5 %, analog Öl aber engerer
+  Bereich (typische Zucker-Bäckerprozente liegen niedriger als Öl).
+- **DOM:** `#gSugar`/`#gSugarRow` (Gesamtmengen) + bei Vorteig-Methoden zusätzlich
+  `#mSugar`/`#mSugarRow` (Hauptteig) — beide Zeilen blenden bei `sugar < 0,05 g` per
+  `display:none` aus, analog `#gOilRow`/`#mOilRow`. Es gibt bewusst **kein** `pSugar`-Feld:
+  Zucker geht wie Öl komplett in den Hauptteig, taucht im Vorteig (Biga/Poolish) selbst
+  nie auf.
+- **Regler-Sichtbarkeit:** `#sugarBlock` (`pizza-rechner.html` + `pizza-rechner-mobile.html`,
+  jeweils im Grundeinstellungen-Feld nach Öl) nutzt das etablierte `.collapse`/`.show`-Muster
+  (wie `prefBlock`/`bigaHydBlock`) statt `style.display` — verhindert einen Flacker-Moment
+  vorm ersten `applyFlags()`-Lauf, da `.collapse{display:none}` schon per CSS vor jeder
+  JS-Ausführung greift. **CSS-Detail:** weil `.field:last-child{margin-bottom:0}` strukturell
+  immer auf `sugarBlock` zeigt (auch bei `display:none` — `:last-child` ist DOM-Struktur,
+  nicht Sichtbarkeit), bekommt stattdessen das Öl-Feld davor fix `margin-bottom:0` und
+  `sugarBlock` selbst `margin-top:18px` (statt `margin-bottom:0` allein) — sonst hätte das
+  Öl-Feld bei ausgeblendetem Zucker (Standardfall für die meisten Nutzer) eine unschöne
+  Extra-Lücke am Kartenboden gehabt. Per Headless-Edge-CDP verifiziert: Kartenboden-Abstand
+  ist in beiden Zuständen (Zucker aus/an) exakt 21 px (20 px Padding + 1 px Rahmen), der
+  Row-Abstand zwischen Öl und sichtbarem Zucker-Feld 18 px (Standard-Feldabstand).
+- **Feature-Flag `newYorkStyle`** (`js/settings.js`, Default **AUS**, Checkbox `#flagNewYorkStyle`
+  im Einstellungen-Menü „New York Style"): blendet den Zucker-Regler standardmäßig aus — die
+  meisten neapolitanischen Rezepte brauchen ihn nicht. Wird vom Preset automatisch angeschaltet
+  (`applyPreset()` ruft bei einem gesetzten `p.flag` generisch `PZ.setFlag(p.flag, true)` +
+  `PZ.applyFlags()` auf — aktuell nutzt nur dieses eine Preset das `flag`-Feld, das Muster ist
+  aber für künftige Presets wiederverwendbar) und bleibt danach dauerhaft an (kein
+  automatisches Zurückschalten bei anderen Presets oder bei „Eigene Einstellung").
+  **Bugfix während der Umsetzung:** `applyFlags()` synct jetzt bei jedem Aufruf auch alle
+  Checkbox-`.checked`-Zustände aus `PZ.FLAGS` (vorher setzte `wireCheckboxes()` das nur
+  einmalig beim Laden — ein programmatisch gesetztes Flag wie hier hätte die Checkbox
+  optisch auf „aus" stehen lassen, obwohl das Feature technisch an war). Per Headless-CDP
+  verifiziert: nach Preset-Anwendung ist sowohl `PZ.FLAGS.newYorkStyle` als auch
+  `#flagNewYorkStyle.checked` `true`.
+- **Neues 8. Preset „New York Style"** (`js/presets.js`, `newyork_style`, flag-gated):
+  `direct`, 62 % Hydration, 2,5 % Salz, 3 % Öl, **2 % Zucker**, 0,2 % Hefe (frisch),
+  300 g/Teigling, 24 °C DDT, Mehl `dallag_napoletana` (W310, hydMin 60/hydMax 65,
+  minH 16/maxH 48) — ergibt „Lange Gare · ~24 h"-Stufe (real ~26 h: 2 h Stockgare +
+  24 h Kühlschrank/Temperieren), löst keine Mehl-Warnung aus (per Headless-CDP verifiziert:
+  `#flourWarn` bleibt leer, Massesumme = Gesamtgewicht bis auf Rundung). Bewusst **nicht**
+  Teil der „7 Kern-Presets"-Tabelle weiter oben (die bleibt unverändert, dieses Preset ist
+  das einzige mit einem `flag`-Gate).
+- **`js/guide.js` — Zucker kommt anders als Öl FRÜH in den Teig** (mit Mehl/Wasser/Hefe,
+  nicht erst nach dem Salz): unterstützt die Hefeaktivität statt das Glutennetz zu stören.
+  `hasSugar = R.sugar >= 0.05`. Direkt-Methode: taucht in der „Zutaten abwiegen"-Zeile
+  (zwischen Hefe und Öl) und im Mischen-Schritt-Titel/-Text auf (Titel wird zu „Mischen &
+  Zucker & Salz & Öl", Body bekommt `sugarPhrase` nach „Mehl, Wasser & Hefe" eingefügt,
+  `sugarTip` erklärt die frühe Zugabe). Vorteig-Methoden: taucht im „Vorteig + Wasser +
+  Mehl + Zucker"-Hauptteig-Mix-Schritt auf (`sugarTip` dort im Extra-Block) — der spät
+  zugegebene Öl-Schritt bleibt unverändert getrennt davon.
+- **Presets sind jetzt generisch flag-fähig:** `applyPreset()` prüft `p.flag` unabhängig
+  vom Zucker-Feature — künftige Presets, die einen sonst versteckten Regler brauchen,
+  können dasselbe `flag`-Feld nutzen, ohne `presets.js` erneut anzufassen.
+
+**Tests** (`tests/test.html`, `test-generator`-Agent, +53 neue Prüfungen, 338 → **391**):
+`BASE`-Objekt um `sugar: 0` ergänzt (Test-Isolation, analog `oil: 0`); `PRESET_STATES` um
+`newyork_style` ergänzt (läuft automatisch durch Mehl-Warnung- und Masseerhaltung-Schleifen
+mit); Masseerhaltung-Formel um `+sugar` erweitert + eigene Methoden-Schleife (Direkt/Biga/
+Poolish) mit Öl **und** Zucker kombiniert; neue Sektion **„19 · Zucker (New York Style,
+Bäckerprozent)"**: Masseerhaltung mit Öl+Zucker, Default-Regression, `#gSugarRow`-
+Sichtbarkeit, Vorteig-Fall (Zucker komplett im Hauptteig, kein `#pSugar`-Element, Biga
+**und** Poolish), Kombi-Test (Biga+Öl+Zucker+Kaltgare „im Stück"), `guide.js`-Textprüfung
+(„Zucker" bei Direkt **und** Biga, verschwindet bei 0 %), Randfälle 1/20 Teiglinge; Sektion
+Feature-Flags: `newYorkStyle`-Default (`false`) + Vorwärtskompatibilitäts-Regressionsanker
+in `PZ._mergeFlags()` (alter Flag-Stand ohne `newYorkStyle`-Key bekommt sauber `false`,
+ohne andere gespeicherte Werte zu verlieren). Alle 391 Prüfungen grün (Headless-Edge-Dump).
+Funktional zusätzlich per Headless-Edge-CDP (WebSocket, `--remote-allow-origins=*`)
+verifiziert: Preset-Anwendung auf Desktop **und** Mobil (Zucker/Öl/Hefe/Mehl/Gewicht korrekt
+gesetzt, Flag + Checkbox + `#sugarBlock`-Sichtbarkeit synchron, keine Mehl-Warnung, „Zucker"
+im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eigene Einstellung".
+
+**Geändert:** `js/state.js`, `js/calc.js`, `js/ui.js`, `js/presets.js`, `js/settings.js`,
+`js/guide.js`, `pizza-rechner.html`, `pizza-rechner-mobile.html`, `tests/test.html`.
+`?v=` auf `3.19.2` gezogen (Desktop + Mobil, Cache-Busting + Footer-Version).
+`pizza-rechner-mobile-standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v3.19.2 - Zucker-Feld New York Style/` enthält den vollständigen Schnappschuss.
+
+## Info-Knopf-Touch-Ziel auf 44×44px vergrößert (v3.19.1, `mobile-optimizer`-Agent)
 
 Reiner Mobil-Layout-Fix, kein neues Feature, keine Logik-Änderung — greift den
 Nebenbefund aus dem v3.19.0-Accessibility-Audit auf (s. Abschnitt „Mögliche nächste
@@ -1724,7 +1820,9 @@ Keine Code-Änderung durch den Audit nötig.
 ## Mögliche nächste Schritte (offen / Ideen)
 
 - Mehl- und Raumtemperatur getrennt einstellbar (aktuell als gleich angenommen)
-- Zucker-Feld (New York Style) — bewusst noch nicht drin; Öl ist seit v3.3.0 integriert
+- ~~Zucker-Feld (New York Style)~~ — **erledigt in v3.19.2**: Zucker-Regler als
+  Bäckerprozent (wie Öl), neues 8. Preset „New York Style" + flag-gated Sichtbarkeit
+  (s. Abschnitt oben)
 - ~~Einkaufsliste generieren; Druck nur für die Anleitung~~ — **erledigt in v3.9.0**
 - ~~Gärzeit-Timer / Wecker~~ — **erledigt in v3.11.0**; System-Wecker/Kalender-Anbindung
   (Android-Intent + .ics-Kalendererinnerung als iOS-Ersatz, da keine offizielle Web-API

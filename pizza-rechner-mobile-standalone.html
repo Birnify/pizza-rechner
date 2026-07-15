@@ -521,6 +521,7 @@ footer{text-align:right;}
             </optgroup>
             <optgroup label="Andere Stile">
               <option value="teglia">Teglia / Blech · hohe Hydration 75 %</option>
+              <option value="newyork_style">New York Style · Zucker &amp; Öl, ~26 h</option>
             </optgroup>
           </select>
           <div class="hint" id="presetDesc" style="margin-top:8px;">Wähle ein erprobtes Rezept — alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.</div>
@@ -589,6 +590,20 @@ footer{text-align:right;}
             <span class="unit" id="oilUnit">%</span>
           </div>
           <div class="hint">Macht den Teig geschmeidiger &amp; fördert die Bräunung. Klassisch Napoli 0 %, mit Öl 1–3 %, Blech/Teglia 3–5 %. Kommt spät zum Teig — nach dem Salz.</div>
+        </div>
+
+        <!-- margin-top statt margin-bottom aufs Öl-Feld: .field:last-child{margin-bottom:0}
+             greift strukturell immer hier (auch bei display:none per .collapse), das Öl-Feld
+             bekommt seinen Kartenboden-Abstand daher fix per Inline-Style, dieses Feld den
+             Row-Abstand nach oben, wenn es sichtbar ist. -->
+        <div class="field collapse" id="sugarBlock" style="margin-top:18px;margin-bottom:0;">
+          <label id="sugarLabel">Zucker</label>
+          <div class="row">
+            <input type="range" id="sugar" min="0" max="5" step="0.5" value="0" aria-labelledby="sugarLabel" aria-describedby="sugarUnit">
+            <input type="number" id="sugarN" min="0" max="8" step="0.5" value="0" aria-labelledby="sugarLabel" aria-describedby="sugarUnit">
+            <span class="unit" id="sugarUnit">%</span>
+          </div>
+          <div class="hint">New-York-Style: unterstützt die Hefeaktivität &amp; die Krustenbräunung. Wird früh zugegeben (mit Mehl/Wasser/Hefe), nicht spät wie Öl.</div>
         </div>
       </div>
     </details>
@@ -718,6 +733,7 @@ footer{text-align:right;}
       <div class="ing"><span class="name"><span class="dot" style="background:#cfc9c0"></span>Salz</span><span class="amt"><span id="gSalt">16.8</span> g</span></div>
       <div class="ing"><span class="name"><span class="dot" style="background:#e0a85a"></span>Hefe <small id="yLabel">(frisch)</small></span><span class="amt"><span id="gYeast">1.8</span> g</span></div>
       <div class="ing" id="gOilRow"><span class="name"><span class="dot" style="background:#8a9a3b"></span>Olivenöl</span><span class="amt"><span id="gOil">12.0</span> g</span></div>
+      <div class="ing" id="gSugarRow"><span class="name"><span class="dot" style="background:#e39fb0"></span>Zucker</span><span class="amt"><span id="gSugar">0</span> g</span></div>
 
       <!-- Vorteig-Stufe -->
       <div class="stage biga collapse" id="stagePref">
@@ -735,6 +751,7 @@ footer{text-align:right;}
         <div class="ing"><span class="name">+ Salz</span><span class="amt"><span id="mSalt">0</span> g</span></div>
         <div class="ing" id="mYeastRow"><span class="name">+ Hefe <small>(frisch)</small></span><span class="amt"><span id="mYeast">0</span> g</span></div>
         <div class="ing" id="mOilRow"><span class="name">+ Olivenöl</span><span class="amt"><span id="mOil">0</span> g</span></div>
+        <div class="ing" id="mSugarRow"><span class="name">+ Zucker</span><span class="amt"><span id="mSugar">0</span> g</span></div>
         <div class="ing"><span class="name">+ ganze Biga/Poolish</span><span class="amt">alles</span></div>
       </div>
 
@@ -903,6 +920,17 @@ footer{text-align:right;}
           <div class="flag-item">
             <div class="switch-row">
               <div class="switch-row-main">
+                <label class="switch-name" for="flagNewYorkStyle">New York Style</label>
+                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagNewYorkStyleInfo" aria-label="Erklärung zu „New York Style“ ein-/ausblenden">i</button>
+              </div>
+              <span class="switch"><input type="checkbox" id="flagNewYorkStyle" role="switch" aria-describedby="flagNewYorkStyleInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+            </div>
+            <p class="switch-info" id="flagNewYorkStyleInfo" hidden>Blendet den Zucker-Regler (Bäckerprozent, wie Öl) bei den Grundeinstellungen ein — für New-York-Style-Teige. Wird auch automatisch angeschaltet, wenn du das „New York Style"-Preset wählst.</p>
+          </div>
+
+          <div class="flag-item">
+            <div class="switch-row">
+              <div class="switch-row-main">
                 <label class="switch-name" for="flagHints">Hinweistexte</label>
                 <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagHintsInfo" aria-label="Erklärung zu „Hinweistexte“ ein-/ausblenden">i</button>
               </div>
@@ -918,7 +946,7 @@ footer{text-align:right;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.19.1</span>
+  <span id="appVersion" style="opacity:.7;">v3.19.2</span>
 </footer>
 
 <div class="quickbar">
@@ -949,7 +977,7 @@ footer{text-align:right;}
 
   // Zentrales Objekt mit allen Eingaben
   PZ.state = {
-    balls: 4, ballw: 250, hyd: 62, salt: 2.8, oil: 2,
+    balls: 4, ballw: 250, hyd: 62, salt: 2.8, oil: 2, sugar: 0,
     method: 'direct', pref: 70, bhyd: 45, prefMature: 24, prefStage: 'b24',
     yeastType: 'fresh', yeast: 0.30,
     ddt: 24, room: 21, knead: 3,
@@ -989,6 +1017,9 @@ footer{text-align:right;}
     shopping: false,      // Einkaufsliste & separater Druck
     freezeHint: false,    // Einfrier-Hinweis in der Anleitung
     multiRecipes: true,   // Mehrere gespeicherte Rezepte (sonst: Einzel-Slot-Verhalten)
+    newYorkStyle: false,  // Zucker-Regler (Bäckerprozent, wie Öl) — sonst ausgeblendet.
+                           // Wird vom Preset „New York Style" beim Anwenden automatisch
+                           // angeschaltet (persistiert), sonst Default AUS.
     hints: true           // Tooltip-/Hinweistexte (erklärende .hint-Kurztexte). Default AN:
                            // reine Erklärhilfen sind für neue Nutzer wertvoll, erfahrene
                            // Nutzer können bewusst abschalten (anders als die übrigen, im
@@ -1046,6 +1077,11 @@ footer{text-align:right;}
     if (shareBlock) shareBlock.style.display = f.share ? '' : 'none';
     const shoppingRow = document.getElementById('shoppingRow');
     if (shoppingRow) shoppingRow.style.display = f.shopping ? '' : 'none';
+    // Zucker-Regler (New-York-Style): nutzt das etablierte .collapse/.show-Muster
+    // (wie prefBlock/bigaHydBlock) statt style.display — verhindert einen Flackerer
+    // vorm ersten applyFlags()-Lauf, da .collapse per CSS schon vor JS-Ausführung greift.
+    const sugarBlock = document.getElementById('sugarBlock');
+    if (sugarBlock) sugarBlock.classList.toggle('show', !!f.newYorkStyle);
     // Tooltip-/Hinweistexte: EIN globaler Body-Klassen-Schalter statt Dutzender
     // Einzel-Elemente. CSS blendet darüber alle .hint/.timersys-hint/.timerhint-Elemente
     // per display:none aus — die Elemente (und ihre IDs) bleiben dabei im DOM erhalten,
@@ -1055,6 +1091,14 @@ footer{text-align:right;}
     // gültige DOM-Knoten — nie eine "verwaiste" aria-describedby-Referenz auf eine
     // nicht-existente ID, nur eine (wie visuell) nicht wahrnehmbare.
     document.body.classList.toggle('hints-off', !f.hints);
+    // Checkboxen synchron halten: wireCheckboxes() setzt el.checked nur einmalig beim
+    // Laden. Seit dem "New York Style"-Preset (js/presets.js) kann ein Flag aber auch
+    // PROGRAMMATISCH (ohne Checkbox-Klick) angeschaltet werden — ohne diesen Sync bliebe
+    // der Schalter im Einstellungen-Menü optisch "aus", obwohl das Flag technisch an ist.
+    Object.keys(CHECKBOX_MAP).forEach(function (id) {
+      const el = document.getElementById(id);
+      if (el) el.checked = !!f[CHECKBOX_MAP[id]];
+    });
     if (PZ.buildGuide) PZ.buildGuide();
   }
   PZ.applyFlags = applyFlags;
@@ -1067,6 +1111,7 @@ footer{text-align:right;}
     flagShopping: 'shopping',
     flagFreezeHint: 'freezeHint',
     flagMultiRecipes: 'multiRecipes',
+    flagNewYorkStyle: 'newYorkStyle',
     flagHints: 'hints'
   };
 
@@ -1185,13 +1230,15 @@ footer{text-align:right;}
     const total = N * W;
     const h = state.hyd / 100, s = state.salt / 100, y = state.yeast / 100;
     const o = (state.oil || 0) / 100;
+    const su = (state.sugar || 0) / 100;
 
-    // Mehl = Total / (1 + Hydration + Salz + Hefe + Öl)
-    // (Öl ist ein Bäckerprozent wie Salz/Hefe → das Gesamtgewicht bleibt exakt N×W.)
-    const flour = total / (1 + h + s + y + o);
+    // Mehl = Total / (1 + Hydration + Salz + Hefe + Öl + Zucker)
+    // (Öl und Zucker sind Bäckerprozente wie Salz/Hefe → das Gesamtgewicht bleibt exakt N×W.)
+    const flour = total / (1 + h + s + y + o + su);
     const water = flour * h;
     const salt  = flour * s;
     const oil   = flour * o;
+    const sugar = flour * su;
     let yeast   = flour * y;                       // immer als Frischhefe gerechnet
     if (state.yeastType === 'dry') yeast *= PZ.FRESH_TO_DRY;
     const yWord = state.yeastType === 'dry' ? '(trocken)' : '(frisch)';
@@ -1210,6 +1257,9 @@ footer{text-align:right;}
     if ($('gOil')) $('gOil').textContent = oil.toFixed(1);
     // Öl-Zeile ganz ausblenden, wenn kein Öl im Rezept
     if ($('gOilRow')) $('gOilRow').style.display = oil >= 0.05 ? 'flex' : 'none';
+    if ($('gSugar')) $('gSugar').textContent = sugar.toFixed(1);
+    // Zucker-Zeile ganz ausblenden, wenn kein Zucker im Rezept (Standard: New-York-Style-Feld ist 0)
+    if ($('gSugarRow')) $('gSugarRow').style.display = sugar >= 0.05 ? 'flex' : 'none';
 
     // --- Vorteig-Aufteilung ---
     let prefEff = state.pref, prefClamped = false;
@@ -1240,6 +1290,9 @@ footer{text-align:right;}
       // Öl kommt komplett in den Hauptteig (nie in Biga/Poolish)
       if ($('mOil')) $('mOil').textContent = oil.toFixed(1);
       if ($('mOilRow')) $('mOilRow').style.display = oil >= 0.05 ? 'flex' : 'none';
+      // Zucker kommt komplett in den Hauptteig (nie in Biga/Poolish, analog zu Öl)
+      if ($('mSugar')) $('mSugar').textContent = sugar.toFixed(1);
+      if ($('mSugarRow')) $('mSugarRow').style.display = sugar >= 0.05 ? 'flex' : 'none';
     }
 
     // --- Wassertemperatur (DDT-Methode) ---
@@ -1269,7 +1322,7 @@ footer{text-align:right;}
     $('iceAmt').textContent = ice;
     $('iceNote').innerHTML = note;
 
-    PZ.R = { N, W, total, flour, water, salt, oil, yeast, yWord, pf, pw, pYeast, mYeast, mFlour, mWater, wT, ice, Ttap, prefEff, prefClamped };
+    PZ.R = { N, W, total, flour, water, salt, oil, sugar, yeast, yWord, pf, pw, pYeast, mYeast, mFlour, mWater, wT, ice, Ttap, prefEff, prefClamped };
     PZ.buildGuide();
   }
 
@@ -1450,6 +1503,13 @@ footer{text-align:right;}
     const oilTip = hasOil
       ? tip('Öl <b>erst nach dem Salz</b> zugeben — kommt es zu früh, umhüllt es das Mehl und stört die Glutenbildung. Langsam einarbeiten, dann wird der Teig geschmeidig.')
       : '';
+    const hasSugar = R.sugar >= 0.05;         // Zucker im Rezept? (New-York-Style-Feld)
+    // Zucker kommt anders als Öl früh in den Teig (mit Mehl/Wasser/Hefe) — er
+    // unterstützt die Hefeaktivität, statt (wie Öl) das Glutennetz zu stören.
+    const sugarPhrase = hasSugar ? ` sowie <b>${g(R.sugar)} g Zucker</b>` : '';
+    const sugarTip = hasSugar
+      ? tip('Zucker <b>früh mit Mehl, Wasser &amp; Hefe</b> zugeben — er unterstützt die Hefeaktivität und sorgt beim Backen für die typische New-York-Style-Krustenbräunung.')
+      : '';
     const iceTxt = R.ice > 0 ? ` (davon <b>${R.ice} g Eis</b>)` : '';
     let matureMin = 0;                        // Vorteig-Reifezeit (nur bei Biga/Poolish)
     _items = [];
@@ -1495,12 +1555,12 @@ footer{text-align:right;}
       }
       const addParts = [];
       if (hasMW) addParts.push(`mit dem <b>${g(R.mWater)} g Wasser</b> lösen`);
-      if (hasMF) addParts.push(`<b>${g(R.mFlour)} g Mehl</b>${R.mYeast >= 0.05 ? ` und <b>${g(R.mYeast)} g Hefe ${R.yWord}</b>` : ''} zugeben`);
-      st('Vorteig' + (hasMW ? ' + Wasser' : '') + (hasMF ? ' + Mehl' : ''), '~5 min',
+      if (hasMF) addParts.push(`<b>${g(R.mFlour)} g Mehl</b>${R.mYeast >= 0.05 ? ` und <b>${g(R.mYeast)} g Hefe ${R.yWord}</b>` : ''}${hasSugar ? ` und <b>${g(R.sugar)} g Zucker</b>` : ''} zugeben`);
+      st('Vorteig' + (hasMW ? ' + Wasser' : '') + (hasMF ? ' + Mehl' : '') + (hasSugar ? ' + Zucker' : ''), '~5 min',
         `Den ganzen ${isBiga ? 'Biga' : 'Poolish'} ` + (addParts.length ? addParts.join(', dann ') : 'in die Schüssel geben') + ' und '
         + (state.knead === '6'
           ? `<b>in der Maschine ca. 2–3 min auf niedriger Stufe vermengen</b>, bis ein grober Teig entsteht.`
-          : `<b>von Hand ca. 3–5 min vermengen</b> (drücken, falten, drehen), bis kein trockenes Mehl mehr sichtbar ist.`), '', 5);
+          : `<b>von Hand ca. 3–5 min vermengen</b> (drücken, falten, drehen), bis kein trockenes Mehl mehr sichtbar ist.`), sugarTip, 5);
       st('Salz zugeben' + (hasOil ? ' & Öl' : ''), 'nach 2–3 min',
         `Erst wenn alles grob zusammenhängt, <b>${g(R.salt)} g Salz</b> `
         + (state.knead === '6'
@@ -1514,7 +1574,7 @@ footer{text-align:right;}
     if (!pref) {
       sec('Vorbereitung');
       st('Zutaten abwiegen', '~5 min',
-        `<b>${g(R.flour)} g Mehl</b> · <b>${g(R.water)} g Wasser</b> · <b>${g(R.salt)} g Salz</b> · <b>${g(R.yeast)} g Hefe ${R.yWord}</b>${hasOil ? ` · <b>${g(R.oil)} g Olivenöl</b>` : ''}.`,
+        `<b>${g(R.flour)} g Mehl</b> · <b>${g(R.water)} g Wasser</b> · <b>${g(R.salt)} g Salz</b> · <b>${g(R.yeast)} g Hefe ${R.yWord}</b>${hasSugar ? ` · <b>${g(R.sugar)} g Zucker</b>` : ''}${hasOil ? ` · <b>${g(R.oil)} g Olivenöl</b>` : ''}.`,
         tip('Für Hefe & Salz eine <b>0,1-g-Feinwaage</b> nutzen – bei diesen kleinen Mengen entscheidend.'), 5);
       st('Schüttwasser temperieren', `${R.wT} °C`,
         `Das <b>${g(R.water)} g Wasser</b> auf <b>${R.wT} °C</b> bringen${iceTxt}. So landet der Teig nach dem Kneten bei ~${state.ddt} °C.`,
@@ -1542,11 +1602,11 @@ footer{text-align:right;}
             : `Frischhefe im <b>temperierten Wasser auflösen</b>, bis keine Stückchen mehr da sind.`, '', 2);
       }
       sec('Kneten');
-      st('Mischen & Salz' + (hasOil ? ' & Öl' : ''), 'nach 2–3 min',
+      st('Mischen' + (hasSugar ? ' & Zucker' : '') + ' & Salz' + (hasOil ? ' & Öl' : ''), 'nach 2–3 min',
         (state.knead === '6'
-          ? `Mehl, Wasser & Hefe in die Maschine geben und <b>ca. 2–3 min auf niedriger Stufe vermengen</b>, dann <b>${g(R.salt)} g Salz zugeben und weitere 2–3 min auf mittlerer Stufe einarbeiten</b>.`
-          : `Mehl, Wasser & Hefe <b>von Hand ca. 3–5 min grob vermengen</b> (bis kein trockenes Mehl mehr bleibt), dann <b>${g(R.salt)} g Salz einstreuen und weitere 2–3 min einkneten</b>.`) + oilStep,
-        warn('Salz zeitversetzt zur Hefe zugeben – nie direkt aufeinander.') + oilTip, 5);
+          ? `Mehl, Wasser & Hefe${sugarPhrase} in die Maschine geben und <b>ca. 2–3 min auf niedriger Stufe vermengen</b>, dann <b>${g(R.salt)} g Salz zugeben und weitere 2–3 min auf mittlerer Stufe einarbeiten</b>.`
+          : `Mehl, Wasser & Hefe${sugarPhrase} <b>von Hand ca. 3–5 min grob vermengen</b> (bis kein trockenes Mehl mehr bleibt), dann <b>${g(R.salt)} g Salz einstreuen und weitere 2–3 min einkneten</b>.`) + oilStep,
+        warn('Salz zeitversetzt zur Hefe zugeben – nie direkt aufeinander.') + sugarTip + oilTip, 5);
     }
 
     // ===== GEMEINSAME SCHRITTE (Kneten → Backen) =====
@@ -1974,6 +2034,7 @@ footer{text-align:right;}
     hyd:   link('hyd', 'hydN', 'hyd', 0, 'Prozent Hydration'),
     salt:  link('salt', 'saltN', 'salt', 1, 'Prozent Salz'),
     oil:   link('oil', 'oilN', 'oil', 1, 'Prozent Olivenöl'),
+    sugar: link('sugar', 'sugarN', 'sugar', 1, 'Prozent Zucker'),
     pref:  link('pref', 'prefN', 'pref', 0, 'Prozent Mehl im Vorteig'),
     bhyd:  link('bhyd', 'bhydN', 'bhyd', 0, 'Prozent Biga-Hydration'),
     yeast: link('yeast', 'yeastN', 'yeast', 2, 'Prozent Hefe'),
@@ -2234,6 +2295,11 @@ footer{text-align:right;}
     teglia: {
       method: 'direct', hyd: 75, salt: 2.5, oil: 4, yeastType: 'fresh', yeast: 0.3, ballw: 320, ddt: 24, flour: 'caputo_nuvola_super',
       desc: 'Römische Blechpizza: 75 % Hydration, 4 % Olivenöl, sehr lockere Krume. Teig ist klebrig — mit Stretch & Fold statt langem Kneten arbeiten. 24 h kühl. Braucht sehr starkes Mehl (W330+).'
+    },
+    newyork_style: {
+      method: 'direct', hyd: 62, salt: 2.5, oil: 3, sugar: 2, yeastType: 'fresh', yeast: 0.2, ballw: 300, ddt: 24, flour: 'dallag_napoletana',
+      flag: 'newYorkStyle',
+      desc: 'New York Style: 62 % Hydration, 3 % Öl, 2 % Zucker (Bräunung &amp; Hefeaktivität) — größere, dünnere Teiglinge. ~26 h Kaltgare für Aroma &amp; knusprig-zähe Kruste. Braucht ein mittelstarkes Mehl (W300+).'
     }
   };
 
@@ -2248,6 +2314,7 @@ footer{text-align:right;}
     if (p.hyd != null)   set.hyd(p.hyd);
     if (p.salt != null)  set.salt(p.salt);
     if (p.oil != null)   set.oil(p.oil);
+    if (p.sugar != null) set.sugar(p.sugar);
     if (p.pref != null)  set.pref(p.pref);
     if (p.bhyd != null)  set.bhyd(p.bhyd);
     if (p.yeast != null) set.yeast(p.yeast);
@@ -2256,6 +2323,10 @@ footer{text-align:right;}
     if (p.flour) { state.flour = p.flour; const fs = $('flour'); if (fs) fs.value = p.flour; }
     // Vorteig-Reife-Stufe setzt Reifezeit + Hefe passend (nach applyMethod, das die Pills rendert)
     if (p.prefStage && PZ.selectPrefStage) PZ.selectPrefStage(state.method, p.prefStage);
+    // Manche Presets brauchen einen sonst standardmäßig ausgeblendeten Regler sichtbar
+    // (z. B. „New York Style" den Zucker-Regler) — schaltet das zugehörige Feature-Flag
+    // dauerhaft an (persistiert), kein automatisches Zurücksetzen bei anderen Presets.
+    if (p.flag && PZ.setFlag) { PZ.setFlag(p.flag, true); if (PZ.applyFlags) PZ.applyFlags(); }
     $('presetDesc').textContent = p.desc;
     PZ.calc();
   }
@@ -2263,7 +2334,7 @@ footer{text-align:right;}
   $('preset').addEventListener('change', e => applyPreset(e.target.value));
 
   // Manuelle Änderung an einem Regler → Auswahl zurück auf "Eigene Einstellung"
-  ['hyd', 'salt', 'oil', 'yeast', 'pref', 'bhyd', 'ballw', 'ddt', 'room', 'hydN', 'saltN', 'oilN', 'yeastN'].forEach(id => {
+  ['hyd', 'salt', 'oil', 'sugar', 'yeast', 'pref', 'bhyd', 'ballw', 'ddt', 'room', 'hydN', 'saltN', 'oilN', 'sugarN', 'yeastN'].forEach(id => {
     const el = $(id);
     if (el) el.addEventListener('input', () => { $('preset').value = ''; });
   });

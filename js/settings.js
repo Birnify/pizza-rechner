@@ -26,6 +26,9 @@
     shopping: false,      // Einkaufsliste & separater Druck
     freezeHint: false,    // Einfrier-Hinweis in der Anleitung
     multiRecipes: true,   // Mehrere gespeicherte Rezepte (sonst: Einzel-Slot-Verhalten)
+    newYorkStyle: false,  // Zucker-Regler (Bäckerprozent, wie Öl) — sonst ausgeblendet.
+                           // Wird vom Preset „New York Style" beim Anwenden automatisch
+                           // angeschaltet (persistiert), sonst Default AUS.
     hints: true           // Tooltip-/Hinweistexte (erklärende .hint-Kurztexte). Default AN:
                            // reine Erklärhilfen sind für neue Nutzer wertvoll, erfahrene
                            // Nutzer können bewusst abschalten (anders als die übrigen, im
@@ -83,6 +86,11 @@
     if (shareBlock) shareBlock.style.display = f.share ? '' : 'none';
     const shoppingRow = document.getElementById('shoppingRow');
     if (shoppingRow) shoppingRow.style.display = f.shopping ? '' : 'none';
+    // Zucker-Regler (New-York-Style): nutzt das etablierte .collapse/.show-Muster
+    // (wie prefBlock/bigaHydBlock) statt style.display — verhindert einen Flackerer
+    // vorm ersten applyFlags()-Lauf, da .collapse per CSS schon vor JS-Ausführung greift.
+    const sugarBlock = document.getElementById('sugarBlock');
+    if (sugarBlock) sugarBlock.classList.toggle('show', !!f.newYorkStyle);
     // Tooltip-/Hinweistexte: EIN globaler Body-Klassen-Schalter statt Dutzender
     // Einzel-Elemente. CSS blendet darüber alle .hint/.timersys-hint/.timerhint-Elemente
     // per display:none aus — die Elemente (und ihre IDs) bleiben dabei im DOM erhalten,
@@ -92,6 +100,14 @@
     // gültige DOM-Knoten — nie eine "verwaiste" aria-describedby-Referenz auf eine
     // nicht-existente ID, nur eine (wie visuell) nicht wahrnehmbare.
     document.body.classList.toggle('hints-off', !f.hints);
+    // Checkboxen synchron halten: wireCheckboxes() setzt el.checked nur einmalig beim
+    // Laden. Seit dem "New York Style"-Preset (js/presets.js) kann ein Flag aber auch
+    // PROGRAMMATISCH (ohne Checkbox-Klick) angeschaltet werden — ohne diesen Sync bliebe
+    // der Schalter im Einstellungen-Menü optisch "aus", obwohl das Flag technisch an ist.
+    Object.keys(CHECKBOX_MAP).forEach(function (id) {
+      const el = document.getElementById(id);
+      if (el) el.checked = !!f[CHECKBOX_MAP[id]];
+    });
     if (PZ.buildGuide) PZ.buildGuide();
   }
   PZ.applyFlags = applyFlags;
@@ -104,6 +120,7 @@
     flagShopping: 'shopping',
     flagFreezeHint: 'freezeHint',
     flagMultiRecipes: 'multiRecipes',
+    flagNewYorkStyle: 'newYorkStyle',
     flagHints: 'hints'
   };
 

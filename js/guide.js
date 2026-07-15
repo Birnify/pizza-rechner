@@ -76,6 +76,13 @@
     const oilTip = hasOil
       ? tip('Öl <b>erst nach dem Salz</b> zugeben — kommt es zu früh, umhüllt es das Mehl und stört die Glutenbildung. Langsam einarbeiten, dann wird der Teig geschmeidig.')
       : '';
+    const hasSugar = R.sugar >= 0.05;         // Zucker im Rezept? (New-York-Style-Feld)
+    // Zucker kommt anders als Öl früh in den Teig (mit Mehl/Wasser/Hefe) — er
+    // unterstützt die Hefeaktivität, statt (wie Öl) das Glutennetz zu stören.
+    const sugarPhrase = hasSugar ? ` sowie <b>${g(R.sugar)} g Zucker</b>` : '';
+    const sugarTip = hasSugar
+      ? tip('Zucker <b>früh mit Mehl, Wasser &amp; Hefe</b> zugeben — er unterstützt die Hefeaktivität und sorgt beim Backen für die typische New-York-Style-Krustenbräunung.')
+      : '';
     const iceTxt = R.ice > 0 ? ` (davon <b>${R.ice} g Eis</b>)` : '';
     let matureMin = 0;                        // Vorteig-Reifezeit (nur bei Biga/Poolish)
     _items = [];
@@ -121,12 +128,12 @@
       }
       const addParts = [];
       if (hasMW) addParts.push(`mit dem <b>${g(R.mWater)} g Wasser</b> lösen`);
-      if (hasMF) addParts.push(`<b>${g(R.mFlour)} g Mehl</b>${R.mYeast >= 0.05 ? ` und <b>${g(R.mYeast)} g Hefe ${R.yWord}</b>` : ''} zugeben`);
-      st('Vorteig' + (hasMW ? ' + Wasser' : '') + (hasMF ? ' + Mehl' : ''), '~5 min',
+      if (hasMF) addParts.push(`<b>${g(R.mFlour)} g Mehl</b>${R.mYeast >= 0.05 ? ` und <b>${g(R.mYeast)} g Hefe ${R.yWord}</b>` : ''}${hasSugar ? ` und <b>${g(R.sugar)} g Zucker</b>` : ''} zugeben`);
+      st('Vorteig' + (hasMW ? ' + Wasser' : '') + (hasMF ? ' + Mehl' : '') + (hasSugar ? ' + Zucker' : ''), '~5 min',
         `Den ganzen ${isBiga ? 'Biga' : 'Poolish'} ` + (addParts.length ? addParts.join(', dann ') : 'in die Schüssel geben') + ' und '
         + (state.knead === '6'
           ? `<b>in der Maschine ca. 2–3 min auf niedriger Stufe vermengen</b>, bis ein grober Teig entsteht.`
-          : `<b>von Hand ca. 3–5 min vermengen</b> (drücken, falten, drehen), bis kein trockenes Mehl mehr sichtbar ist.`), '', 5);
+          : `<b>von Hand ca. 3–5 min vermengen</b> (drücken, falten, drehen), bis kein trockenes Mehl mehr sichtbar ist.`), sugarTip, 5);
       st('Salz zugeben' + (hasOil ? ' & Öl' : ''), 'nach 2–3 min',
         `Erst wenn alles grob zusammenhängt, <b>${g(R.salt)} g Salz</b> `
         + (state.knead === '6'
@@ -140,7 +147,7 @@
     if (!pref) {
       sec('Vorbereitung');
       st('Zutaten abwiegen', '~5 min',
-        `<b>${g(R.flour)} g Mehl</b> · <b>${g(R.water)} g Wasser</b> · <b>${g(R.salt)} g Salz</b> · <b>${g(R.yeast)} g Hefe ${R.yWord}</b>${hasOil ? ` · <b>${g(R.oil)} g Olivenöl</b>` : ''}.`,
+        `<b>${g(R.flour)} g Mehl</b> · <b>${g(R.water)} g Wasser</b> · <b>${g(R.salt)} g Salz</b> · <b>${g(R.yeast)} g Hefe ${R.yWord}</b>${hasSugar ? ` · <b>${g(R.sugar)} g Zucker</b>` : ''}${hasOil ? ` · <b>${g(R.oil)} g Olivenöl</b>` : ''}.`,
         tip('Für Hefe & Salz eine <b>0,1-g-Feinwaage</b> nutzen – bei diesen kleinen Mengen entscheidend.'), 5);
       st('Schüttwasser temperieren', `${R.wT} °C`,
         `Das <b>${g(R.water)} g Wasser</b> auf <b>${R.wT} °C</b> bringen${iceTxt}. So landet der Teig nach dem Kneten bei ~${state.ddt} °C.`,
@@ -168,11 +175,11 @@
             : `Frischhefe im <b>temperierten Wasser auflösen</b>, bis keine Stückchen mehr da sind.`, '', 2);
       }
       sec('Kneten');
-      st('Mischen & Salz' + (hasOil ? ' & Öl' : ''), 'nach 2–3 min',
+      st('Mischen' + (hasSugar ? ' & Zucker' : '') + ' & Salz' + (hasOil ? ' & Öl' : ''), 'nach 2–3 min',
         (state.knead === '6'
-          ? `Mehl, Wasser & Hefe in die Maschine geben und <b>ca. 2–3 min auf niedriger Stufe vermengen</b>, dann <b>${g(R.salt)} g Salz zugeben und weitere 2–3 min auf mittlerer Stufe einarbeiten</b>.`
-          : `Mehl, Wasser & Hefe <b>von Hand ca. 3–5 min grob vermengen</b> (bis kein trockenes Mehl mehr bleibt), dann <b>${g(R.salt)} g Salz einstreuen und weitere 2–3 min einkneten</b>.`) + oilStep,
-        warn('Salz zeitversetzt zur Hefe zugeben – nie direkt aufeinander.') + oilTip, 5);
+          ? `Mehl, Wasser & Hefe${sugarPhrase} in die Maschine geben und <b>ca. 2–3 min auf niedriger Stufe vermengen</b>, dann <b>${g(R.salt)} g Salz zugeben und weitere 2–3 min auf mittlerer Stufe einarbeiten</b>.`
+          : `Mehl, Wasser & Hefe${sugarPhrase} <b>von Hand ca. 3–5 min grob vermengen</b> (bis kein trockenes Mehl mehr bleibt), dann <b>${g(R.salt)} g Salz einstreuen und weitere 2–3 min einkneten</b>.`) + oilStep,
+        warn('Salz zeitversetzt zur Hefe zugeben – nie direkt aufeinander.') + sugarTip + oilTip, 5);
     }
 
     // ===== GEMEINSAME SCHRITTE (Kneten → Backen) =====
