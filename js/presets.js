@@ -68,6 +68,7 @@
     if (p.yeast != null) set.yeast(p.yeast);
     if (p.ddt != null)   set.ddt(p.ddt);
     if (p.room != null)  set.room(p.room);
+    if (p.flourTemp != null) set.flourTemp(p.flourTemp);
     if (p.flour) { state.flour = p.flour; const fs = $('flour'); if (fs) fs.value = p.flour; }
     // Vorteig-Reife-Stufe setzt Reifezeit + Hefe passend (nach applyMethod, das die Pills rendert)
     if (p.prefStage && PZ.selectPrefStage) PZ.selectPrefStage(state.method, p.prefStage);
@@ -86,7 +87,7 @@
   $('preset').addEventListener('change', e => applyPreset(e.target.value));
 
   // Manuelle Änderung an einem Regler → Auswahl zurück auf "Eigene Einstellung"
-  ['hyd', 'salt', 'oil', 'sugar', 'yeast', 'pref', 'bhyd', 'ballw', 'ddt', 'room', 'hydN', 'saltN', 'oilN', 'sugarN', 'yeastN'].forEach(id => {
+  ['hyd', 'salt', 'oil', 'sugar', 'yeast', 'pref', 'bhyd', 'ballw', 'ddt', 'room', 'flourTemp', 'hydN', 'saltN', 'oilN', 'sugarN', 'yeastN'].forEach(id => {
     const el = $(id);
     if (el) el.addEventListener('input', () => { $('preset').value = ''; });
   });

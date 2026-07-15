@@ -132,6 +132,9 @@
     set.pref(state.pref); set.bhyd(state.bhyd); set.yeast(state.yeast);
     // prefMature/prefStage werden von applyMethod() unten aus state.prefStage gesetzt
     set.ddt(state.ddt); set.room(state.room);
+    // Ältere gespeicherte Rezepte (vor v3.20.0) kennen flourTemp noch nicht — dann bleibt
+    // der aktuell im UI stehende Wert unangetastet, analog zum bestehenden oil-Fallback oben.
+    if (state.flourTemp != null) set.flourTemp(state.flourTemp);
     // Segmente
     PZ.selectSeg('method', 'm', state.method);
     PZ.selectSeg('yeastType', 'y', state.yeastType);

@@ -76,7 +76,7 @@
     balls: 4, ballw: 250, hyd: 62, salt: 2.8, oil: 0, sugar: 0,
     method: 'direct', pref: 70, bhyd: 45, prefMature: 24, prefStage: 'b24',
     yeastType: 'fresh', yeast: 0.30,
-    ddt: 24, room: 21, knead: '3',
+    ddt: 24, room: 21, flourTemp: 21, knead: '3',
     timeMode: 'start', timeISO: '',
     flour: 'caputo_pizzeria',
     coldStage: 'balls'
@@ -214,33 +214,33 @@
   // ─────────────────────────────────────────────────────────────
   heading('2 · Wassertemperatur & Eismenge (DDT-Methode)');
 
-  testCase('DDT · Hand, Normalraum (room 21, ddt 24)', { room: 21, ddt: 24, knead: '3' }, R => [
+  testCase('DDT · Hand, Normalraum (room 21, ddt 24)', { room: 21, flourTemp: 21, ddt: 24, knead: '3' }, R => [
     // wT = 24*3 - 21 - 21 - 3 = 27
     ['wT', R.wT, 27, 0],
     ['ice', R.ice, 0, 0],
   ]);
 
-  testCase('DDT · Maschine, Normalraum (room 21, ddt 24)', { room: 21, ddt: 24, knead: '6' }, R => [
+  testCase('DDT · Maschine, Normalraum (room 21, ddt 24)', { room: 21, flourTemp: 21, ddt: 24, knead: '6' }, R => [
     // wT = 24*3 - 21 - 21 - 6 = 24
     ['wT', R.wT, 24, 0],
     ['ice', R.ice, 0, 0],
   ]);
 
-  testCase('DDT · Hand, warmer Raum (room 25, ddt 24)', { room: 25, ddt: 24, knead: '3' }, R => [
+  testCase('DDT · Hand, warmer Raum (room 25, ddt 24)', { room: 25, flourTemp: 25, ddt: 24, knead: '3' }, R => [
     // wT = 24*3 - 25 - 25 - 3 = 19 — kälter als Ttap (25°), also wird Eis gebraucht (nicht 0!)
     // x = 375.53*4.18*(25-19) / (334 + 4.18*19 + 4.18*6) ≈ 21 g
     ['wT', R.wT, 19, 0],
     ['ice', R.ice, 21, 2],
   ]);
 
-  testCase('Eiswasser · Maschine, Sommer (room 28, ddt 22)', { room: 28, ddt: 22, knead: '6' }, R => [
+  testCase('Eiswasser · Maschine, Sommer (room 28, ddt 22)', { room: 28, flourTemp: 28, ddt: 22, knead: '6' }, R => [
     // wT = 22*3 - 28 - 28 - 6 = 4
     // ice ≈ 375.53 * 4.18 * (28-4) / (334 + 4.18*4 + 4.18*(28-4)) ≈ 84 g
     ['wT', R.wT, 4, 0],
     ['ice', R.ice, 84, 2],
   ]);
 
-  testCase('Eiswasser · Maschine, Extremsommer (room 32, ddt 23)', { room: 32, ddt: 23, knead: '6' }, R => {
+  testCase('Eiswasser · Maschine, Extremsommer (room 32, ddt 23)', { room: 32, flourTemp: 32, ddt: 23, knead: '6' }, R => {
     // wT = 23*3 - 32 - 32 - 6 = -1
     // M = water = flour*0.62; x = M*c*(32-(-1)) / (334 + c*(-1) + c*(32-(-1)))
     //   = M*4.18*33 / (334 - 4.18 + 137.94) = M*137.94/467.76 = M*0.2948
@@ -252,11 +252,65 @@
     ];
   });
 
-  testCase('Kein Eis wenn Leitungswasser kälter als wT', { room: 15, ddt: 23, knead: '3' }, R => [
+  testCase('Kein Eis wenn Leitungswasser kälter als wT', { room: 15, flourTemp: 15, ddt: 23, knead: '3' }, R => [
     // wT = 23*3 - 15 - 15 - 3 = 36 > 15 → kein Eis, Wasser anwärmen
     ['wT', R.wT, 36, 0],
     ['ice', R.ice, 0, 0],
   ]);
+
+  // --- Mehltemperatur getrennt von Raumtemperatur (v3.20.0) ---
+  // wT = ddt*3 - room - flourTemp - friction (vorher: room doppelt statt eigenem flourTemp).
+  testCase('DDT · Mehl kühler als Raum (Keller/Kühlschrank)', { room: 21, flourTemp: 8, ddt: 24, knead: '3' }, R => [
+    // wT = 24*3 - 21 - 8 - 3 = 40
+    ['wT', R.wT, 40, 0],
+  ]);
+
+  testCase('DDT · Mehl wärmer als Raum', { room: 18, flourTemp: 26, ddt: 24, knead: '3' }, R => [
+    // wT = 24*3 - 18 - 26 - 3 = 25
+    ['wT', R.wT, 25, 0],
+  ]);
+
+  testCase('DDT · Default-Regression: flourTemp startet wie room (unverändertes Verhalten)', { room: 25, flourTemp: 25, ddt: 24, knead: '3' }, R => [
+    // identisch zum alten "Mehl- und Raumtemp gleich"-Verhalten, solange flourTemp == room
+    ['wT', R.wT, 19, 0],
+  ]);
+
+  // --- Kombinationsfälle: flourTemp treibt den Eisbedarf unabhängig vom Raum ---
+  testCase('DDT · Eiswasser-Extremfall: warmes Mehl allein treibt den Eisbedarf (Raum moderat)', {
+    room: 22, flourTemp: 35, ddt: 24, knead: '6'
+  }, R => [
+    // wT = 24*3 - 22 - 35 - 6 = 9 — obwohl der Raum mit 22° gar nicht extrem ist, macht allein
+    // das warme Mehl (35°) einen spürbaren Eisbedarf nötig (Maschinenknetung, Reibung 6).
+    ['wT', R.wT, 9, 0],
+    ['ice', R.ice, 48, 3],
+  ]);
+
+  testCase('DDT · Kaltes Mehl vermeidet Eisbedarf trotz warmem Raum', {
+    room: 30, flourTemp: 5, ddt: 24, knead: '3'
+  }, R => [
+    // wT = 24*3 - 30 - 5 - 3 = 34 > Ttap(30)+1 → "anwärmen"-Zweig, kein Eis nötig — das kalte
+    // Mehl (5°, z.B. aus dem Kühlschrank) überkompensiert den warmen Raum vollständig.
+    ['wT', R.wT, 34, 0],
+    ['ice', R.ice, 0, 0],
+  ]);
+
+  // --- Masseerhaltung: flourTemp beeinflusst NUR wT/Eis, nie die Bäckerprozent-Mengen ---
+  (function () {
+    Object.assign(PZ.state, BASE, { flourTemp: 5, room: 21, ddt: 24, knead: '3' });
+    PZ.calc();
+    const R1 = Object.assign({}, PZ.R);
+    Object.assign(PZ.state, BASE, { flourTemp: 35, room: 21, ddt: 24, knead: '3' });
+    PZ.calc();
+    const R2 = Object.assign({}, PZ.R);
+    renderBox('flourTemp beeinflusst nur wT/Eis, nicht die Mengen (Masseerhaltung bleibt unberührt)', [
+      { label: 'flour identisch trotz unterschiedlichem flourTemp', ok: R1.flour === R2.flour, actual: R2.flour, expected: R1.flour, tol: null },
+      { label: 'water identisch', ok: R1.water === R2.water, actual: R2.water, expected: R1.water, tol: null },
+      { label: 'salt identisch', ok: R1.salt === R2.salt, actual: R2.salt, expected: R1.salt, tol: null },
+      { label: 'yeast identisch', ok: R1.yeast === R2.yeast, actual: R2.yeast, expected: R1.yeast, tol: null },
+      { label: 'total identisch', ok: R1.total === R2.total, actual: R2.total, expected: R1.total, tol: null },
+      { label: 'Kontrolle: wT unterscheidet sich tatsächlich (Test misst wirklich etwas)', ok: R1.wT !== R2.wT, actual: R2.wT, expected: '≠ ' + R1.wT, tol: null }
+    ]);
+  })();
 
   // ─────────────────────────────────────────────────────────────
   heading('3 · Vorteig-Aufteilung');
@@ -926,7 +980,7 @@
   });
 
   testCase('Kein Eis nötig (wT nah an Raumtemp) — keine Eis-Zeile', {
-    ddt: 25, room: 24, knead: '3'
+    ddt: 25, room: 24, flourTemp: 24, knead: '3'
   }, R => {
     PZ.buildShoppingList();
     const html = document.getElementById('shoppingList').innerHTML;
@@ -937,7 +991,7 @@
   });
 
   testCase('Mit Eisbedarf (kaltes Schüttwasser) — Eis-Zeile erscheint gerundet', {
-    ddt: 22, room: 28, knead: '6'
+    ddt: 22, room: 28, flourTemp: 28, knead: '6'
   }, R => {
     PZ.buildShoppingList();
     const html = document.getElementById('shoppingList').innerHTML;
@@ -1086,6 +1140,28 @@
         { label: 'activeId zeigt auf das migrierte Rezept', ok: migrated.activeId === migrated.recipes[0].id, actual: migrated.activeId, expected: migrated.recipes[0].id, tol: null },
         { label: 'PZ.state nach load() auf migrierte Werte gesetzt', ok: PZ.state.balls === 6 && PZ.state.hyd === 68, actual: PZ.state.balls + '/' + PZ.state.hyd, expected: '6/68', tol: null },
         { label: 'PZ.listRecipes() sieht das migrierte Rezept', ok: recipes.length === 1 && recipes[0].name === 'Mein Rezept', actual: recipes.length, expected: 1, tol: null }
+      ]);
+    });
+
+    // --- Altes Rezept ganz ohne flourTemp-Feld (gespeichert vor v3.20.0) — darf nicht
+    // crashen; PZ.state.flourTemp bleibt beim zuvor im UI stehenden Wert stehen (Fallback-
+    // Muster analog zu oil in applyState(), js/storage.js), statt mit undefined überschrieben
+    // zu werden. ---
+    withCleanStorage(() => {
+      const legacyNoFlourTemp = Object.assign({}, BASE, { balls: 5, hyd: 63 });
+      delete legacyNoFlourTemp.flourTemp;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(legacyNoFlourTemp));
+      Object.assign(PZ.state, BASE, { flourTemp: 17 }); // Sentinel: simuliert vorherigen UI-Stand
+      let loadThrew = false, calcThrew = false;
+      try { PZ.load(); } catch (e) { loadThrew = true; }
+      try { PZ.calc(); } catch (e) { calcThrew = true; }
+      renderBox('Altes Rezept ohne flourTemp-Feld (vor v3.20.0) — kein Crash, Sentinel-Wert bleibt erhalten', [
+        { label: 'PZ.load() wirft keinen Fehler', ok: !loadThrew, actual: loadThrew, expected: false, tol: null },
+        { label: 'Andere Felder wurden trotzdem übernommen (balls)', ok: PZ.state.balls === 5, actual: PZ.state.balls, expected: 5, tol: null },
+        { label: 'Andere Felder wurden trotzdem übernommen (hyd)', ok: PZ.state.hyd === 63, actual: PZ.state.hyd, expected: 63, tol: null },
+        { label: 'flourTemp bleibt beim vorherigen UI-Wert (kein Überschreiben mit undefined)', ok: PZ.state.flourTemp === 17, actual: PZ.state.flourTemp, expected: 17, tol: null },
+        { label: 'PZ.calc() läuft anschließend ohne Fehler', ok: !calcThrew, actual: calcThrew, expected: false, tol: null },
+        { label: 'wT ist danach eine gültige Zahl (kein NaN)', ok: typeof PZ.R.wT === 'number' && !isNaN(PZ.R.wT), actual: PZ.R.wT, expected: 'Zahl', tol: null }
       ]);
     });
 

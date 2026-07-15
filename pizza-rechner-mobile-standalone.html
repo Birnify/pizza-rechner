@@ -697,12 +697,21 @@ footer{text-align:right;}
           <div class="hint">Napoli-Ziel nach dem Kneten: 23–25 °C.</div>
         </div>
         <div class="field">
-          <label id="roomLabel">Mehl-/Raumtemperatur</label>
+          <label id="roomLabel">Raumtemperatur</label>
           <div class="row">
             <input type="range" id="room" min="10" max="32" step="1" value="21" aria-labelledby="roomLabel" aria-describedby="roomUnit">
             <input type="number" id="roomN" min="0" max="40" value="21" aria-labelledby="roomLabel" aria-describedby="roomUnit">
             <span class="unit" id="roomUnit">°C</span>
           </div>
+        </div>
+        <div class="field">
+          <label id="flourTempLabel">Mehltemperatur</label>
+          <div class="row">
+            <input type="range" id="flourTemp" min="4" max="32" step="1" value="21" aria-labelledby="flourTempLabel" aria-describedby="flourTempUnit">
+            <input type="number" id="flourTempN" min="0" max="40" value="21" aria-labelledby="flourTempLabel" aria-describedby="flourTempUnit">
+            <span class="unit" id="flourTempUnit">°C</span>
+          </div>
+          <div class="hint">Startet gleich der Raumtemperatur, aber unabhängig änderbar — z. B. kühler bei Mehl aus dem Keller oder Kühlschrank.</div>
         </div>
         <div class="field">
           <label id="kneadLabel">Knetart</label>
@@ -946,7 +955,7 @@ footer{text-align:right;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.19.3</span>
+  <span id="appVersion" style="opacity:.7;">v3.20.0</span>
 </footer>
 
 <div class="quickbar">
@@ -980,7 +989,7 @@ footer{text-align:right;}
     balls: 4, ballw: 250, hyd: 62, salt: 2.8, oil: 2, sugar: 0,
     method: 'direct', pref: 70, bhyd: 45, prefMature: 24, prefStage: 'b24',
     yeastType: 'fresh', yeast: 0.30,
-    ddt: 24, room: 21, knead: 3,
+    ddt: 24, room: 21, flourTemp: 21, knead: 3,
     timeMode: 'start', timeISO: '',
     flour: 'caputo_pizzeria',
     coldStage: 'balls'   // Kühlschrank-Phase: 'balls' = als Teiglinge (praktisch), 'bulk' = im Stück (klassisch)
@@ -1307,8 +1316,7 @@ footer{text-align:right;}
     // --- Wassertemperatur (DDT-Methode) ---
     // Wassertemp = DDT*3 - Mehltemp - Raumtemp - Reibungsfaktor
     const friction = parseFloat(state.knead); // Hand 3, Maschine 6
-    let wT = state.ddt * 3 - state.room - state.room - friction;
-    // (Mehl- und Raumtemp als gleich angenommen = state.room)
+    let wT = state.ddt * 3 - state.room - state.flourTemp - friction;
     wT = Math.round(wT * 10) / 10;
     $('waterTemp').textContent = wT;
 
@@ -2048,7 +2056,8 @@ footer{text-align:right;}
     bhyd:  link('bhyd', 'bhydN', 'bhyd', 0, 'Prozent Biga-Hydration'),
     yeast: link('yeast', 'yeastN', 'yeast', 2, 'Prozent Hefe'),
     ddt:   link('ddt', 'ddtN', 'ddt', 1, 'Grad Celsius Teigtemperatur'),
-    room:  link('room', 'roomN', 'room', 0, 'Grad Celsius Raumtemperatur')
+    room:  link('room', 'roomN', 'room', 0, 'Grad Celsius Raumtemperatur'),
+    flourTemp: link('flourTemp', 'flourTempN', 'flourTemp', 0, 'Grad Celsius Mehltemperatur')
   };
 
   // --- Quick-Pills ---
@@ -2336,6 +2345,7 @@ footer{text-align:right;}
     if (p.yeast != null) set.yeast(p.yeast);
     if (p.ddt != null)   set.ddt(p.ddt);
     if (p.room != null)  set.room(p.room);
+    if (p.flourTemp != null) set.flourTemp(p.flourTemp);
     if (p.flour) { state.flour = p.flour; const fs = $('flour'); if (fs) fs.value = p.flour; }
     // Vorteig-Reife-Stufe setzt Reifezeit + Hefe passend (nach applyMethod, das die Pills rendert)
     if (p.prefStage && PZ.selectPrefStage) PZ.selectPrefStage(state.method, p.prefStage);
@@ -2354,7 +2364,7 @@ footer{text-align:right;}
   $('preset').addEventListener('change', e => applyPreset(e.target.value));
 
   // Manuelle Änderung an einem Regler → Auswahl zurück auf "Eigene Einstellung"
-  ['hyd', 'salt', 'oil', 'sugar', 'yeast', 'pref', 'bhyd', 'ballw', 'ddt', 'room', 'hydN', 'saltN', 'oilN', 'sugarN', 'yeastN'].forEach(id => {
+  ['hyd', 'salt', 'oil', 'sugar', 'yeast', 'pref', 'bhyd', 'ballw', 'ddt', 'room', 'flourTemp', 'hydN', 'saltN', 'oilN', 'sugarN', 'yeastN'].forEach(id => {
     const el = $(id);
     if (el) el.addEventListener('input', () => { $('preset').value = ''; });
   });
@@ -2499,6 +2509,9 @@ footer{text-align:right;}
     set.pref(state.pref); set.bhyd(state.bhyd); set.yeast(state.yeast);
     // prefMature/prefStage werden von applyMethod() unten aus state.prefStage gesetzt
     set.ddt(state.ddt); set.room(state.room);
+    // Ältere gespeicherte Rezepte (vor v3.20.0) kennen flourTemp noch nicht — dann bleibt
+    // der aktuell im UI stehende Wert unangetastet, analog zum bestehenden oil-Fallback oben.
+    if (state.flourTemp != null) set.flourTemp(state.flourTemp);
     // Segmente
     PZ.selectSeg('method', 'm', state.method);
     PZ.selectSeg('yeastType', 'y', state.yeastType);

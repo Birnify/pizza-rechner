@@ -81,8 +81,7 @@
     // --- Wassertemperatur (DDT-Methode) ---
     // Wassertemp = DDT*3 - Mehltemp - Raumtemp - Reibungsfaktor
     const friction = parseFloat(state.knead); // Hand 3, Maschine 6
-    let wT = state.ddt * 3 - state.room - state.room - friction;
-    // (Mehl- und Raumtemp als gleich angenommen = state.room)
+    let wT = state.ddt * 3 - state.room - state.flourTemp - friction;
     wT = Math.round(wT * 10) / 10;
     $('waterTemp').textContent = wT;
 

@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-15 · Aktuelle Version: v3.19.3 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-15 · Aktuelle Version: v3.20.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -46,7 +46,10 @@ die anderen Mengen sinken nur minimal, weil das Öl seinen Gewichtsanteil bekomm
    **Vorteig-Reife-Stufen** (Pills, nur bei Biga/Poolish — koppeln Reifezeit + Hefe),
    Frisch-/Trockenhefe, Hefemenge % (Pills 72h+…4h nur bei Direkt sichtbar),
    **Kaltgare-Stufe** (Segment): „Als Teiglinge (praktisch)" [Standard] / „Im Stück (klassisch)"
-4. **Teigtemperatur & Eiswasser**: Ziel-Teigtemperatur (DDT), Raum-/Mehltemperatur, Knetart Hand/Maschine
+4. **Teigtemperatur & Eiswasser**: Ziel-Teigtemperatur (DDT), **Raumtemperatur und Mehltemperatur
+   getrennt einstellbar** (Mehltemperatur startet auf demselben Wert wie die Raumtemperatur,
+   ist danach aber unabhängig änderbar, s. Abschnitt „Mehltemperatur getrennt von
+   Raumtemperatur (v3.20.0)" unten), Knetart Hand/Maschine
 5. **Zeitplan**: „Ich starte um…" / „Fertig sein um…" + datetime + „Jetzt"-Button
 
 ### 2. Ergebnis (rechte Spalte, sticky)
@@ -168,7 +171,76 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## New York Style: nur temporäre statt dauerhafte Zucker-Regler-Sichtbarkeit (v3.19.3) = aktueller Stand
+## Mehltemperatur getrennt von Raumtemperatur (v3.20.0) = aktueller Stand
+
+Letzter offener Punkt aus „Mögliche nächste Schritte" umgesetzt, vom Nutzer per
+`/define-feature` strukturiert und bestätigt. Bisher nahm die Wassertemperatur-Formel
+(DDT-Methode) an, dass Mehl- und Raumtemperatur identisch sind (`wT = ddt*3 - room - room
+- friction`) — das verfälscht die Schüttwasser-/Eiswasser-Berechnung, wenn das Mehl kühler
+(Keller, Kühlschrank) oder wärmer als der Raum lagert.
+
+- **Neuer Regler „Mehltemperatur"** (`#flourTemp`/`#flourTempN`) direkt neben/unter dem
+  bestehenden Raumtemperatur-Regler, auf beiden Seiten im Card „Teigtemperatur & Eiswasser".
+  Das bisherige Feld hieß „Mehl-/Raumtemperatur" (repräsentierte beide Werte gleichzeitig)
+  und wurde umbenannt zu reinem „Raumtemperatur" — jetzt bildet es nur noch `state.room` ab.
+- **`js/state.js`:** neuer State-Wert `flourTemp: 21` (identischer Default wie `room: 21`
+  — „startet standardmäßig auf demselben Wert wie die Raumtemperatur"). Danach völlig
+  unabhängig änderbar, **keine laufende Synchronisierung**: ändert der Nutzer später die
+  Raumtemperatur, zieht das die Mehltemperatur nicht automatisch mit (bewusste
+  Abgrenzung aus der Feature-Definition — nur der initiale Default-Wert ist identisch).
+- **`js/calc.js` (DDT-Formel):** `wT = state.ddt * 3 - state.room - state.flourTemp -
+  friction` statt vorher `state.room` doppelt. Sonst keine Änderung an der Formel/
+  Eiswasser-Energiebilanz — `Ttap` (Leitungswassertemperatur für den Eisbedarf) bleibt
+  weiterhin `state.room`, nicht `flourTemp` (Leitungswasser hat Raumtemperatur, nicht
+  Mehltemperatur).
+- **`js/ui.js`:** `PZ.set.flourTemp = link('flourTemp', 'flourTempN', 'flourTemp', 0,
+  'Grad Celsius Mehltemperatur')`, analog zu `room`.
+- **`js/storage.js` (`applyState`):** `if (state.flourTemp != null) set.flourTemp
+  (state.flourTemp)` — Fallback-Muster analog zum bestehenden `oil`-Guard, damit ältere
+  gespeicherte Rezepte (vor v3.20.0, ohne `flourTemp`-Feld) beim Laden nicht crashen; der
+  zuvor im UI stehende Wert bleibt in dem Fall einfach stehen statt mit `undefined`
+  überschrieben zu werden.
+- **`js/presets.js`:** `if (p.flourTemp != null) set.flourTemp(p.flourTemp)` ergänzt
+  (aktuell nutzt kein Preset dieses Feld — aus dem Scope explizit ausgeklammert, alle
+  Presets bleiben unverändert), plus `'flourTemp'` in der Liste der Regler-IDs, die bei
+  manueller Eingabe `#preset` auf „Eigene Einstellung" zurücksetzen.
+- **Slider-Bereich bewusst weiter als beim Raumtemperatur-Regler:** `min="4" max="32"
+  step="1"` (Raumtemperatur: `min="10" max="32"`) — deckt explizit auch kühl gelagertes
+  Mehl aus dem Kühlschrank ab (~4–8 °C), das laut Feature-Motivation ein Kernfall ist.
+  Zahlenfeld `min="0" max="40"`, identisch zum Raumtemperatur-Feld. Eigene Design-
+  Entscheidung des Orchestrators (im Feature-Auftrag nicht spezifiziert), im
+  `accessibility-expert`-Review mitgeprüft, keine Einwände.
+- **Bewusst NICHT angefasst** (laut Scope/Abgrenzung): Mehl-Warnung und Gärzeit-Logik
+  (`js/guide.js`/`js/schedule.js`) bleiben unverändert an `state.room` gekoppelt, kein
+  separates Mehltemperatur-Feld pro Mehlsorte, keine automatische Kopplung nach dem
+  initialen Default.
+
+**Tests** (`tests/test.html`, `BASE` + Sektion 2 „Wassertemperatur & Eismenge" + Sektion
+16 „Speichern & Laden", 399 → **418**): `BASE.flourTemp: 21` ergänzt (Test-Isolation,
+identisch zu `room`); alle bestehenden DDT-/Eiswasser-Testfälle, die `room` überschreiben,
+um ein passendes `flourTemp: <gleicher Wert>` ergänzt (regressionssichert das alte
+„Mehl=Raum"-Verhalten weiter); 3 neue Testfälle für unabhängige Werte (Mehl kühler als
+Raum, Mehl wärmer als Raum, Default-Regression); vom `test-generator`-Agenten gezielt
+ergänzt: 2 Kombinationsfälle, in denen allein `flourTemp` (nicht `room`) den Eisbedarf
+auslöst bzw. vermeidet, ein Masseerhaltung-Anker (unterschiedliches `flourTemp` ändert
+`flour`/`water`/`salt`/`yeast`/`total` nicht, nur `wT`/`ice`), sowie ein Legacy-Storage-
+Regressionstest (gespeichertes Rezept ganz ohne `flourTemp`-Feld lädt ohne Crash, Sentinel-
+UI-Wert bleibt erhalten). Alle 418 Prüfungen grün (Headless-Edge-Dump). Gezielter
+`accessibility-expert`-Review der neuen Regler-Markup-Instanz (identisches Muster wie
+`#ddt`/`#room`, keine neuen CSS-Klassen) auf Desktop **und** Mobil: keine Befunde, keine
+Änderungen nötig — Label-Verknüpfung, `aria-valuetext` mit eigener Einheit-Ansage,
+Mobil-`.unit`-Span-Muster, Tab-Reihenfolge, alles bereits korrekt durch Wiederverwendung
+der etablierten Feld-Struktur. Kein `mobile-optimizer`-Lauf nötig (keine neue CSS/kein
+neues Layout, reine Feld-Wiederholung).
+
+**Geändert:** `js/state.js`, `js/calc.js`, `js/ui.js`, `js/storage.js`, `js/presets.js`,
+`pizza-rechner.html`, `pizza-rechner-mobile.html`, `tests/test.html`. `?v=` auf `3.20.0`
+gezogen (Desktop + Mobil, Cache-Busting + Footer-Version). `pizza-rechner-mobile-
+standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v3.20.0 - Mehltemperatur getrennt von Raumtemperatur/` enthält den
+vollständigen Schnappschuss.
+
+## New York Style: nur temporäre statt dauerhafte Zucker-Regler-Sichtbarkeit (v3.19.3)
 
 Korrektur am gerade erst umgesetzten Feature aus v3.19.2 (s. Abschnitt „Zucker-Feld /
 New York Style" direkt darunter), vom Nutzer per `/define-feature` strukturiert. Kein
@@ -1902,7 +1974,10 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
-- Mehl- und Raumtemperatur getrennt einstellbar (aktuell als gleich angenommen)
+- ~~Mehl- und Raumtemperatur getrennt einstellbar (aktuell als gleich angenommen)~~ —
+  **erledigt in v3.20.0**: eigener Mehltemperatur-Regler (`#flourTemp`), Default =
+  Raumtemperatur, danach unabhängig änderbar; DDT-Formel nutzt beide Werte statt
+  Raumtemperatur doppelt (s. Abschnitt oben)
 - ~~Zucker-Feld (New York Style)~~ — **erledigt in v3.19.2**: Zucker-Regler als
   Bäckerprozent (wie Öl), neues 8. Preset „New York Style" + flag-gated Sichtbarkeit
   (s. Abschnitt oben)
@@ -1923,6 +1998,14 @@ Keine Code-Änderung durch den Audit nötig.
 - ~~Nebenbefund aus v3.19.0 (Accessibility-Audit): `.info-btn`-Touch-Ziel auf Mobil nur
   28×28px~~ — **erledigt in v3.19.1**: unsichtbare Tap-Fläche per `::before` auf 44×44px
   vergrößert (sichtbare 28px-Kreisoptik unverändert), analog zum `.switch`-Muster.
+
+**Stand v3.20.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+oben). Einzige offen gebliebene Teilaufgabe eines bereits erledigten Punkts: **Export
+als PDF** (s. „Teilen-Link"-Zeile oben — bewusst nicht mitgebaut, da der Nutzer damals
+nur den reinen Teilen-Link wollte). Für den nächsten Zyklus braucht es daher frisches
+Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes,
+oder eben der PDF-Export als nahliegender Kandidat) statt eines vorgegebenen
+Backlog-Punkts.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

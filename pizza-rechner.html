@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pizzateig-Rechner</title>
-<link rel="stylesheet" href="css/styles.css?v=3.19.3">
+<link rel="stylesheet" href="css/styles.css?v=3.20.0">
 </head>
 <body>
 <header>
@@ -215,11 +215,19 @@
         <div class="hint">Napoli-Ziel nach dem Kneten: 23–25 °C.</div>
       </div>
       <div class="field">
-        <label id="roomLabel">Mehl-/Raumtemperatur <span class="val"><span id="roomV">21</span> °C</span></label>
+        <label id="roomLabel">Raumtemperatur <span class="val"><span id="roomV">21</span> °C</span></label>
         <div class="row">
           <input type="range" id="room" min="10" max="32" step="1" value="21" aria-labelledby="roomLabel">
           <input type="number" id="roomN" min="0" max="40" value="21" aria-labelledby="roomLabel">
         </div>
+      </div>
+      <div class="field">
+        <label id="flourTempLabel">Mehltemperatur <span class="val"><span id="flourTempV">21</span> °C</span></label>
+        <div class="row">
+          <input type="range" id="flourTemp" min="4" max="32" step="1" value="21" aria-labelledby="flourTempLabel">
+          <input type="number" id="flourTempN" min="0" max="40" value="21" aria-labelledby="flourTempLabel">
+        </div>
+        <div class="hint">Startet gleich der Raumtemperatur, aber unabhängig änderbar — z. B. kühler bei Mehl aus dem Keller oder Kühlschrank.</div>
       </div>
       <div class="field">
         <label id="kneadLabel">Knetart</label>
@@ -426,23 +434,23 @@
 <footer>
   Alles wird lokal in deinem Browser gerechnet &amp; gespeichert · keine Internetverbindung nötig<br>
   Bäckerprozente — Wasser, Salz &amp; Hefe immer relativ zur Mehlmenge (= 100 %)<br>
-  <span id="appVersion" style="opacity:.7;">v3.19.3</span>
+  <span id="appVersion" style="opacity:.7;">v3.20.0</span>
 </footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.19.3"></script>
-<script src="js/state.js?v=3.19.3"></script>
-<script src="js/settings.js?v=3.19.3"></script>
-<script src="js/flour.js?v=3.19.3"></script>
-<script src="js/calc.js?v=3.19.3"></script>
-<script src="js/schedule.js?v=3.19.3"></script>
-<script src="js/guide.js?v=3.19.3"></script>
-<script src="js/timer.js?v=3.19.3"></script>
-<script src="js/ui.js?v=3.19.3"></script>
-<script src="js/print.js?v=3.19.3"></script>
-<script src="js/presets.js?v=3.19.3"></script>
-<script src="js/storage.js?v=3.19.3"></script>
-<script src="js/share.js?v=3.19.3"></script>
-<script src="js/main.js?v=3.19.3"></script>
+<script src="js/dom.js?v=3.20.0"></script>
+<script src="js/state.js?v=3.20.0"></script>
+<script src="js/settings.js?v=3.20.0"></script>
+<script src="js/flour.js?v=3.20.0"></script>
+<script src="js/calc.js?v=3.20.0"></script>
+<script src="js/schedule.js?v=3.20.0"></script>
+<script src="js/guide.js?v=3.20.0"></script>
+<script src="js/timer.js?v=3.20.0"></script>
+<script src="js/ui.js?v=3.20.0"></script>
+<script src="js/print.js?v=3.20.0"></script>
+<script src="js/presets.js?v=3.20.0"></script>
+<script src="js/storage.js?v=3.20.0"></script>
+<script src="js/share.js?v=3.20.0"></script>
+<script src="js/main.js?v=3.20.0"></script>
 </body>
 </html>

@@ -40,7 +40,8 @@
     bhyd:  link('bhyd', 'bhydN', 'bhyd', 0, 'Prozent Biga-Hydration'),
     yeast: link('yeast', 'yeastN', 'yeast', 2, 'Prozent Hefe'),
     ddt:   link('ddt', 'ddtN', 'ddt', 1, 'Grad Celsius Teigtemperatur'),
-    room:  link('room', 'roomN', 'room', 0, 'Grad Celsius Raumtemperatur')
+    room:  link('room', 'roomN', 'room', 0, 'Grad Celsius Raumtemperatur'),
+    flourTemp: link('flourTemp', 'flourTempN', 'flourTemp', 0, 'Grad Celsius Mehltemperatur')
   };
 
   // --- Quick-Pills ---
