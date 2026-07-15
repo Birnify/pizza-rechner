@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-16 · Aktuelle Version: v3.23.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-16 · Aktuelle Version: v3.24.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,59 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Card-Überschriften ohne Nummerierung (v3.23.0) = aktueller Stand
+## Umbenennung in „Teigmeister" (v3.24.0) = aktueller Stand
+
+Kleines Vorhaben, vom Nutzer per `/define-feature` strukturiert und bestätigt. Kein
+Backlog-Punkt, keine neue Idee des Orchestrators — reine Namenspräferenz: der
+sichtbare App-Name wechselt von „Pizzateig-Rechner" zu „Teigmeister". Ausdrücklich
+**kein** Rebranding auf Datei-/Repo-Ebene: Dateinamen (`pizza-rechner.html` usw.),
+URLs, interne Code-Bezeichner und der Repo-Name bleiben unverändert — nur sichtbarer
+Text im UI wechselt.
+
+- **Geänderte sichtbare Textstellen** (Desktop `pizza-rechner.html`, Mobil
+  `pizza-rechner-mobile.html`, `index.html`, `js/timer.js`):
+  - `<title>` auf allen drei HTML-Seiten (`index.html`, Desktop, Mobil — Mobil-Titel
+    weiterhin mit „· Mobil"-Suffix: „Teigmeister · Mobil").
+  - `<h1>🍕 …</h1>` in Header (Desktop + Mobil).
+  - `index.html`-Weiterleitungstext („Weiter zum Teigmeister …").
+  - `<meta name="apple-mobile-web-app-title">` (Mobil) — bestimmt den Namen, der
+    beim „Zum Home-Bildschirm hinzufügen" auf iOS unter dem Icon erscheint, vorher
+    „Pizzateig" (Kurzform), jetzt „Teigmeister".
+  - Der Beschreibungstext im `.ics`-Kalendereintrag des Gärzeit-Timers (`js/timer.js`,
+    `icsDataUrl()`): „Erinnerung vom Teigmeister: …" statt „… vom Pizzateig-Rechner: …"
+    — dieser Text erscheint sichtbar in der Kalender-App des Nutzers, zählt daher zum
+    UI-Scope. Der rein technische `PRODID`-Header (`-//Pizzateig-Rechner//Timer//DE`)
+    und die interne Kalender-UID (`@pizza-rechner`) wurden bewusst **nicht** angefasst
+    — beides sind interne iCalendar-Bezeichner ohne Sichtbarkeit für den Nutzer,
+    fallen unter die Abgrenzung „keine internen Code-Bezeichner".
+- **Bewusst NICHT geändert:** Dateinamen (`pizza-rechner.html`,
+  `pizza-rechner-mobile.html`, `pizza-rechner-mobile-standalone.html`, `index.html`
+  selbst usw.), GitHub-Repo-Name, alle internen IDs/Variablennamen (`PZ`, `pizzaRechner`-
+  localStorage-Key usw.), `README.md` und die beiden `*-KONTEXT.md`-Dateien (Projekt-/
+  Prozessdokumentation, kein Teil der App-UI) sowie `tests/test.html` (internes
+  Test-Tooling für Entwickler, kein Nutzer-UI — Titel/Überschrift dort bewusst bei
+  „Pizzateig-Rechner — Tests" belassen).
+- **Kein Accessibility-/Mobile-Audit nötig:** reiner Textinhalts-Austausch in bereits
+  bestehenden Elementen (`<title>`, `<h1>`, `<meta>`-Attributwert) — keine neue/
+  veränderte Struktur, kein neues Markup, keine neue CSS, keine ARIA-Änderung. Analog
+  zur Begründung bei v3.20.1/v3.23.0 (reine Logik- bzw. CSS-Änderung ohne Markup-Wirkung)
+  wird der Audit hier aus denselben Gründen ausgelassen.
+
+**Tests:** reine Text-/Branding-Änderung ohne Auswirkung auf Rechenlogik —
+`tests/test.html` bleibt unverändert bei **467** Prüfungen, alle grün
+(Headless-Edge-Dump). Kein `test-generator`-Lauf nötig (keine Änderung an
+`js/calc.js`/`js/schedule.js`/`js/guide.js`). Visuell per Headless-Edge-Screenshot auf
+Desktop (`pizza-rechner.html`) und Mobil (`pizza-rechner-mobile.html`) verifiziert:
+Kopfbereich zeigt jetzt „🍕 Teigmeister", Layout/Abstände unverändert; per Textsuche
+sichergestellt, dass keine der geänderten Dateien noch „Pizzateig-Rechner" enthält.
+
+**Geändert:** `index.html`, `pizza-rechner.html`, `pizza-rechner-mobile.html`,
+`js/timer.js`. `?v=` auf `3.24.0` gezogen (Desktop + Mobil, Cache-Busting +
+Footer-Version). `pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.24.0 - Umbenennung Teigmeister/` enthält den vollständigen Schnappschuss.
+
+## Card-Überschriften ohne Nummerierung (v3.23.0)
 
 Kleines Vorhaben, vom Nutzer per `/define-feature` strukturiert und bestätigt. Kein
 Backlog-Punkt, keine neue Idee des Orchestrators — reiner Wunsch des Nutzers: die
@@ -2351,6 +2403,9 @@ Keine Code-Änderung durch den Audit nötig.
 - ~~Card-Überschriften ohne Nummerierung~~ — **erledigt in v3.23.0** (kein Backlog-Punkt,
   direkter Nutzerauftrag per `/define-feature`; s. Abschnitt „Card-Überschriften ohne
   Nummerierung (v3.23.0)" oben).
+- ~~Umbenennung in „Teigmeister"~~ — **erledigt in v3.24.0** (kein Backlog-Punkt,
+  direkter Nutzerauftrag per `/define-feature`; s. Abschnitt „Umbenennung in
+  „Teigmeister" (v3.24.0)" oben).
 
 **Neu ins Backlog aufgenommen (Nebenbefund aus v3.22.0):**
 - `applyState()` (`js/storage.js`) ruft beim Laden eines Rezepts nie `set.sugar(...)`
@@ -2359,7 +2414,7 @@ Keine Code-Änderung durch den Audit nötig.
   vorbestehend seit v3.19.2 (nicht durch v3.22.0 verursacht) — beim nächsten Storage-
   bezogenen Zyklus mit beheben.
 
-**Stand v3.23.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.24.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben), bis auf den kleinen Sugar-Sync-Nebenbefund direkt darüber. Einzige offen
 gebliebene Teilaufgabe eines bereits erledigten Punkts: **Export als PDF** (s.
 „Teilen-Link"-Zeile oben — bewusst nicht mitgebaut, da der Nutzer damals nur den reinen

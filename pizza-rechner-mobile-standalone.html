@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Pizzateig">
+<meta name="apple-mobile-web-app-title" content="Teigmeister">
 <meta name="theme-color" content="#c8442e">
-<title>Pizzateig-Rechner · Mobil</title>
+<title>Teigmeister · Mobil</title>
 <style>
 :root{
   --tomato:#c8442e;
@@ -474,7 +474,7 @@ footer{text-align:right;}
   <button type="button" id="navToggle" class="nav-toggle" aria-expanded="false" aria-controls="navMenu" aria-label="Menü öffnen">
     <span aria-hidden="true">☰</span>
   </button>
-  <h1>🍕 Pizzateig-Rechner</h1>
+  <h1>🍕 Teigmeister</h1>
 </header>
 
 <nav id="navMenu" class="nav-overlay" hidden>
@@ -1137,7 +1137,7 @@ footer{text-align:right;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.23.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.24.0</span>
 </footer>
 
 <div class="quickbar">
@@ -2110,7 +2110,7 @@ footer{text-align:right;}
     const target = new Date(now.getTime() + minutes * 60000);
     const end = new Date(target.getTime() + 60000);
     const sum = icsEscape('🍕 ' + (label || 'Pizza-Timer'));
-    const desc = icsEscape('Erinnerung vom Pizzateig-Rechner: ' + (label || 'Timer') + ' ist fertig.');
+    const desc = icsEscape('Erinnerung vom Teigmeister: ' + (label || 'Timer') + ' ist fertig.');
     const uid = 'pz-' + Date.now() + '-' + Math.random().toString(36).slice(2) + '@pizza-rechner';
     const lines = [
       'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Pizzateig-Rechner//Timer//DE', 'CALSCALE:GREGORIAN',

@@ -206,7 +206,7 @@
     const target = new Date(now.getTime() + minutes * 60000);
     const end = new Date(target.getTime() + 60000);
     const sum = icsEscape('🍕 ' + (label || 'Pizza-Timer'));
-    const desc = icsEscape('Erinnerung vom Pizzateig-Rechner: ' + (label || 'Timer') + ' ist fertig.');
+    const desc = icsEscape('Erinnerung vom Teigmeister: ' + (label || 'Timer') + ' ist fertig.');
     const uid = 'pz-' + Date.now() + '-' + Math.random().toString(36).slice(2) + '@pizza-rechner';
     const lines = [
       'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Pizzateig-Rechner//Timer//DE', 'CALSCALE:GREGORIAN',
