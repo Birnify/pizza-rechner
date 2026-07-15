@@ -1165,6 +1165,30 @@
       ]);
     });
 
+    // --- applyState() synchronisiert den Zucker-Regler beim Laden (Fix, Nebenbefund aus
+    // v3.22.0): applyState() rief set.sugar(state.sugar) bisher nie auf — PZ.state.sugar
+    // wurde zwar korrekt per Object.assign übernommen (Berechnung war nie falsch), der
+    // Regler im UI konnte aber einen veralteten Wert zeigen. PZ.set ist in test.html ein
+    // No-op-Stub (s. Kommentar weiter oben); dieser Test ersetzt ihn kurzzeitig durch einen
+    // Spy, der die Aufrufe je Property protokolliert, um genau diesen Aufruf zu verifizieren. ---
+    withCleanStorage(() => {
+      Object.assign(PZ.state, BASE, { balls: 4, hyd: 60, sugar: 3.5 });
+      PZ.save();
+      const savedId = PZ.getActiveId();
+      Object.assign(PZ.state, { sugar: 0 }); // simuliert einen veralteten Regler-Stand vor dem Laden
+
+      const calls = {};
+      const realSet = PZ.set;
+      PZ.set = new Proxy({}, { get: (t, prop) => (val) => { (calls[prop] = calls[prop] || []).push(val); } });
+      try { PZ.loadRecipe(savedId); } finally { PZ.set = realSet; }
+
+      renderBox('applyState() ruft set.sugar() beim Laden auf (Regler-Sync-Fix)', [
+        { label: 'set.sugar() wurde beim Laden aufgerufen', ok: !!(calls.sugar && calls.sugar.length > 0), actual: calls.sugar ? calls.sugar.length : 0, expected: '> 0', tol: null },
+        { label: 'set.sugar() bekam den gespeicherten Wert (3.5)', ok: calls.sugar && calls.sugar[calls.sugar.length - 1] === 3.5, actual: calls.sugar && calls.sugar[calls.sugar.length - 1], expected: 3.5, tol: null },
+        { label: 'PZ.state.sugar korrekt aus dem Rezept übernommen', ok: PZ.state.sugar === 3.5, actual: PZ.state.sugar, expected: 3.5, tol: null }
+      ]);
+    });
+
     // --- Speichern/Laden/Umbenennen/Löschen mehrerer Rezepte ---
     withCleanStorage(() => {
       Object.assign(PZ.state, BASE, { balls: 4, hyd: 60 });

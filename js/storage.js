@@ -129,6 +129,9 @@
     Object.assign(state, o);
     set.balls(state.balls); set.ballw(state.ballw); set.hyd(state.hyd); set.salt(state.salt);
     if (state.oil != null) set.oil(state.oil);
+    // Ältere gespeicherte Rezepte (vor v3.19.2) kennen sugar noch nicht — dann bleibt
+    // der aktuell im UI stehende Wert unangetastet, analog zum oil-Fallback direkt oben.
+    if (state.sugar != null) set.sugar(state.sugar);
     set.pref(state.pref); set.bhyd(state.bhyd); set.yeast(state.yeast);
     // prefMature/prefStage werden von applyMethod() unten aus state.prefStage gesetzt
     set.ddt(state.ddt); set.room(state.room);

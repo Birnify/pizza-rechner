@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-16 · Aktuelle Version: v3.24.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-16 · Aktuelle Version: v3.24.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,59 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Umbenennung in „Teigmeister" (v3.24.0) = aktueller Stand
+## Zucker-Regler-Sync beim Rezept-Laden (v3.24.1) = aktueller Stand
+
+Kleiner Bugfix, vom Nutzer per `/define-feature` strukturiert und bestätigt. Kein
+neues Feature, keine Änderung an der Zucker-Berechnungslogik selbst — behebt den in
+v3.22.0 entdeckten, damals bewusst außerhalb des Scopes gelassenen Nebenbefund
+(s. Backlog-Eintrag unten).
+
+**Problem:** `applyState()` (`js/storage.js`) übernahm beim Laden eines Rezepts
+(über „Meine Rezepte" `#recipeSelect` **oder** die „Eigene Rezepte"-Optgroup im
+`#preset`-Dropdown, s. v3.22.0) `state.sugar` zwar korrekt in `PZ.state` (per
+`Object.assign`), rief aber nie `set.sugar(...)` auf — anders als bei allen übrigen
+Reglern (`oil`, `flourTemp`, `hyd`, `salt` usw.), die direkt danach explizit
+synchronisiert werden. Der Zucker-Slider im UI konnte dadurch nach dem Laden einen
+veralteten Wert anzeigen, bis der Nutzer ihn selbst anfasst — die Berechnung selbst
+war nie betroffen, da sie durchgehend `PZ.state.sugar` direkt liest.
+
+- **Fix:** `applyState()` bekommt direkt nach der bestehenden `oil`-Fallback-Zeile
+  einen analogen Aufruf: `if (state.sugar != null) set.sugar(state.sugar);` — mit
+  demselben Null-Fallback wie bei `oil`/`flourTemp`, damit ältere gespeicherte
+  Rezepte (vor v3.19.2, ohne `sugar`-Feld) den aktuell im UI stehenden Wert nicht
+  mit `undefined` überschreiben.
+- **Geprüft, ob andere Lade-Pfade denselben Fehler haben:** `applyPreset()`
+  (`js/presets.js`, Zeile 79) rief `set.sugar(p.sugar)` bereits korrekt auf — dort
+  bestand der Fehler nicht. Eine Codesuche nach `Object.assign(...state...)` im
+  gesamten `js/`-Verzeichnis ergab nur die eine Stelle in `applyState()` — kein
+  weiterer versteckter Lade-Pfad mit demselben Muster. `js/newrecipe.js` (eigener,
+  unabhängiger `nrState` fürs Mini-Anlegeformular) ist bewusst nicht betroffen, da
+  es nie in `PZ.state` schreibt (Kernidee des v3.22.0-Features).
+- **Bewusst NICHT geändert:** keine Änderung an der Zucker-Berechnungsformel, an
+  `applyPreset()` selbst (war schon korrekt) oder an anderen Reglern/Feldern.
+
+**Tests** (`tests/test.html`, Sektion 16, +3 neue Prüfungen, 467 → **470**): `PZ.set`
+ist in `test.html` ein No-op-Proxy-Stub (kein echtes DOM-Markup für Slider, s.
+bestehender Kommentar an der Stub-Stelle) — der neue Test ersetzt ihn kurzzeitig
+durch einen Spy-Proxy, der Aufrufe je Property protokolliert, ruft `PZ.loadRecipe()`
+auf ein zuvor mit `sugar: 3.5` gespeichertes Rezept auf (nachdem `PZ.state.sugar`
+zuvor künstlich auf `0` gesetzt wurde, um einen veralteten UI-Stand zu simulieren)
+und stellt danach `PZ.set` wieder her. Geprüft: `set.sugar()` wird beim Laden
+überhaupt aufgerufen, bekommt den korrekten gespeicherten Wert (3,5), und
+`PZ.state.sugar` selbst ist ebenfalls korrekt übernommen. Alle 470 Prüfungen grün
+(Headless-Edge-Dump). Kein `test-generator`-Lauf nötig (eine einzelne, gezielt
+selbst geschriebene Ergänzung an bestehender Stelle, keine Änderung an
+`js/calc.js`/`js/schedule.js`/`js/guide.js`). Kein `accessibility-expert`- oder
+`mobile-optimizer`-Lauf nötig (reine JS-Logik-Änderung, kein neues/verändertes
+Markup, keine neue CSS — analog zur Begründung bei v3.20.1).
+
+**Geändert:** `js/storage.js`, `tests/test.html`. `?v=` auf `3.24.1` gezogen
+(Desktop + Mobil, Cache-Busting + Footer-Version). `pizza-rechner-mobile-
+standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v3.24.1 - Zucker-Regler-Sync beim Laden/` enthält den vollständigen
+Schnappschuss.
+
+## Umbenennung in „Teigmeister" (v3.24.0)
 
 Kleines Vorhaben, vom Nutzer per `/define-feature` strukturiert und bestätigt. Kein
 Backlog-Punkt, keine neue Idee des Orchestrators — reine Namenspräferenz: der
@@ -2406,22 +2458,19 @@ Keine Code-Änderung durch den Audit nötig.
 - ~~Umbenennung in „Teigmeister"~~ — **erledigt in v3.24.0** (kein Backlog-Punkt,
   direkter Nutzerauftrag per `/define-feature`; s. Abschnitt „Umbenennung in
   „Teigmeister" (v3.24.0)" oben).
+- ~~`applyState()` ruft beim Laden eines Rezepts nie `set.sugar(...)` auf (Zucker-
+  Slider kann veraltet aussehen)~~ — **erledigt in v3.24.1** (Nebenbefund aus
+  v3.22.0, kein Backlog-Punkt im engeren Sinne, direkter Nutzerauftrag per
+  `/define-feature`; s. Abschnitt „Zucker-Regler-Sync beim Rezept-Laden (v3.24.1)"
+  oben).
 
-**Neu ins Backlog aufgenommen (Nebenbefund aus v3.22.0):**
-- `applyState()` (`js/storage.js`) ruft beim Laden eines Rezepts nie `set.sugar(...)`
-  auf — der Zucker-Slider im UI kann nach dem Laden veraltet aussehen, obwohl
-  `PZ.state.sugar` und damit die Berechnung selbst korrekt sind. Klein, kosmetisch,
-  vorbestehend seit v3.19.2 (nicht durch v3.22.0 verursacht) — beim nächsten Storage-
-  bezogenen Zyklus mit beheben.
-
-**Stand v3.24.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
-oben), bis auf den kleinen Sugar-Sync-Nebenbefund direkt darüber. Einzige offen
-gebliebene Teilaufgabe eines bereits erledigten Punkts: **Export als PDF** (s.
-„Teilen-Link"-Zeile oben — bewusst nicht mitgebaut, da der Nutzer damals nur den reinen
-Teilen-Link wollte). Für den nächsten Zyklus braucht es daher frisches Brainstorming in
-Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes, der Sugar-Sync-
-Nebenbefund, oder eben der PDF-Export als nahliegende Kandidaten) statt eines
-vorgegebenen Backlog-Punkts.
+**Stand v3.24.1: alle bisherigen Backlog-Punkte inkl. aller bisherigen Nebenbefunde
+sind abgearbeitet** (durchgestrichen oben). Einzige offen gebliebene Teilaufgabe
+eines bereits erledigten Punkts: **Export als PDF** (s. „Teilen-Link"-Zeile oben —
+bewusst nicht mitgebaut, da der Nutzer damals nur den reinen Teilen-Link wollte).
+Für den nächsten Zyklus braucht es daher frisches Brainstorming in Phase 1 (neue
+Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes, oder eben der PDF-Export als
+nahliegender Kandidat) statt eines vorgegebenen Backlog-Punkts.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 
