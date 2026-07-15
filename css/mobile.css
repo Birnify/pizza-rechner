@@ -91,4 +91,45 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 
 #result{scroll-margin-top:16px;}
 
-@media print{.quickbar{display:none;}}
+/* Hamburger-Navigation: Bereichs-Umschaltung statt durchgehendem One-Pager */
+header{position:relative;}
+.nav-toggle{
+  position:absolute;top:calc(14px + env(safe-area-inset-top));left:calc(14px + env(safe-area-inset-left));
+  width:44px;height:44px;border:1px solid rgba(255,255,255,.8);border-radius:var(--radius);
+  background:rgba(255,255,255,.14);color:#fff;font-size:20px;line-height:1;cursor:pointer;
+  -webkit-backdrop-filter:blur(2px);
+}
+.nav-toggle:active{background:rgba(255,255,255,.28);}
+
+/* Von hidden-Attribut abhängige Sichtbarkeit: eigene author-Regel mit höherer
+   Spezifität als [class]{display:...}, damit sie zuverlässig greift (kein
+   Verlass auf die UA-Default-Regel für [hidden], die von Author-CSS mit
+   display-Eigenschaft überschrieben würde). */
+[data-view][hidden]{display:none!important;}
+
+.nav-overlay{
+  position:fixed;inset:0;z-index:60;background:rgba(30,22,18,.5);
+  display:flex;align-items:flex-start;justify-content:flex-start;
+}
+.nav-overlay[hidden]{display:none;}
+.nav-panel{
+  background:var(--card);color:var(--ink);width:min(78vw,300px);height:100%;
+  box-shadow:2px 0 18px rgba(0,0,0,.25);padding:calc(18px + env(safe-area-inset-top)) 18px 18px calc(18px + env(safe-area-inset-left));
+  display:flex;flex-direction:column;gap:4px;overflow-y:auto;
+}
+.nav-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.nav-panel-title{font-family:var(--font-head);font-size:18px;font-weight:700;}
+.nav-close{
+  width:40px;height:40px;border:1px solid var(--line);border-radius:var(--radius);
+  background:#fff;font-size:16px;cursor:pointer;
+}
+.nav-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;}
+.nav-item{
+  display:block;width:100%;text-align:left;padding:13px 14px;min-height:44px;
+  border:1px solid transparent;border-radius:var(--radius);background:none;
+  color:var(--ink);font-size:15px;font-weight:600;cursor:pointer;
+}
+.nav-item:active{background:var(--bg);}
+.nav-item.active{background:var(--bg);border-left:3px solid var(--tomato);color:var(--tomato-dark);}
+
+@media print{.quickbar{display:none;}.nav-toggle,.nav-overlay{display:none!important;}}

@@ -8,17 +8,36 @@
 <meta name="apple-mobile-web-app-title" content="Pizzateig">
 <meta name="theme-color" content="#c8442e">
 <title>Pizzateig-Rechner · Mobil</title>
-<link rel="stylesheet" href="css/styles.css?v=3.17.0">
-<link rel="stylesheet" href="css/mobile.css?v=3.17.0">
+<link rel="stylesheet" href="css/styles.css?v=3.17.1">
+<link rel="stylesheet" href="css/mobile.css?v=3.17.1">
 </head>
 <body>
 <header>
+  <button type="button" id="navToggle" class="nav-toggle" aria-expanded="false" aria-controls="navMenu" aria-label="Menü öffnen">
+    <span aria-hidden="true">☰</span>
+  </button>
   <h1>🍕 Pizzateig-Rechner</h1>
   <p>Neapolitanisch · Biga · Poolish — komplett offline</p>
   <a class="viewlink" href="pizza-rechner.html">Zur Desktop-Ansicht</a>
 </header>
 
-<div class="wrap">
+<nav id="navMenu" class="nav-overlay" hidden>
+  <div class="nav-panel" role="dialog" aria-modal="true" aria-label="Bereiche auswählen">
+    <div class="nav-panel-head">
+      <span class="nav-panel-title">Bereiche</span>
+      <button type="button" id="navClose" class="nav-close" aria-label="Menü schließen">✕</button>
+    </div>
+    <ul class="nav-list">
+      <li><button type="button" class="nav-item active" data-goto="rechner" aria-current="page">Rechner</button></li>
+      <li><button type="button" class="nav-item" data-goto="rezepte">Rezepte</button></li>
+      <li><button type="button" class="nav-item" data-goto="zeitplan">Zeitplan</button></li>
+      <li><button type="button" class="nav-item" data-goto="einstellungen">Einstellungen</button></li>
+    </ul>
+  </div>
+</nav>
+<div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
+
+<div class="wrap view" data-view="rechner">
   <!-- LINKE SPALTE (auf Mobil: einzige Spalte): EINGABEN ALS AKKORDEON -->
   <div class="controls-col" style="display:grid;gap:20px;">
 
@@ -43,28 +62,6 @@
             </optgroup>
           </select>
           <div class="hint" id="presetDesc" style="margin-top:8px;">Wähle ein erprobtes Rezept — alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.</div>
-        </div>
-      </div>
-    </details>
-
-    <details class="card" id="recipesCard">
-      <summary><h2 aria-label="Meine Rezepte">Meine Rezepte</h2></summary>
-      <div class="acc-body">
-        <div class="field" style="margin-bottom:0;">
-          <label id="myRecipesLabel" for="recipeSelect">Gespeichertes Rezept</label>
-          <select id="recipeSelect" class="selectbox" aria-labelledby="myRecipesLabel">
-            <option value="">— noch keins gespeichert —</option>
-          </select>
-          <div class="row" style="margin-top:8px;gap:8px;">
-            <label for="recipeName" class="visually-hidden">Name für neues Rezept</label>
-            <input type="text" id="recipeName" class="selectbox" placeholder="Name für neues Rezept" style="flex:2;">
-            <button type="button" id="recipeSaveNew" style="flex:1;">Neu</button>
-          </div>
-          <div class="row" style="margin-top:8px;gap:8px;">
-            <button type="button" id="recipeRename" style="flex:1;">Umbenennen</button>
-            <button type="button" id="recipeDelete" style="flex:1;">Löschen</button>
-          </div>
-          <div class="hint" id="recipeHint" style="margin-top:8px;">Eigene Rezepte sind unabhängig von den Presets oben — hier landen deine per „Speichern" gesicherten Stände.</div>
         </div>
       </div>
     </details>
@@ -232,43 +229,6 @@
       </div>
     </details>
 
-    <details class="card">
-      <summary><h2 aria-label="Zeitplan">Zeitplan</h2></summary>
-      <div class="acc-body">
-        <div class="field">
-          <label id="timeModeLabel">Bezugspunkt</label>
-          <div class="seg" id="timeMode" role="group" aria-labelledby="timeModeLabel">
-            <button data-tm="start" class="active" aria-pressed="true">Ich starte um…</button>
-            <button data-tm="target" aria-pressed="false">Fertig sein um…</button>
-          </div>
-        </div>
-        <div class="field" style="margin-bottom:0;">
-          <label id="timeLabel" for="timeISO">Startzeitpunkt</label>
-          <div class="row">
-            <input type="datetime-local" id="timeISO" style="flex:1;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:16px;color:var(--ink);">
-            <button id="nowBtn" type="button" style="padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;font-weight:600;font-size:13px;min-height:44px;">Jetzt</button>
-          </div>
-          <div class="hint" id="timeHint">Trag eine Uhrzeit ein — dann bekommt jeder Schritt der Anleitung unten eine konkrete Uhrzeit.</div>
-        </div>
-      </div>
-    </details>
-
-    <details class="card">
-      <summary><h2 aria-label="Einstellungen">Einstellungen</h2></summary>
-      <div class="acc-body">
-        <div class="field" style="margin-bottom:0;">
-          <div class="hint" style="margin-bottom:10px;">Schalte einzelne Zusatzfunktionen ein oder aus — deine Wahl wird direkt im Browser gespeichert.</div>
-          <label class="switch-row"><input type="checkbox" id="flagTimer"> Gärzeit-Timer/Wecker je Anleitungsschritt</label>
-          <label class="switch-row"><input type="checkbox" id="flagTimerSystem"> System-Wecker/Kalender-Links beim Timer</label>
-          <label class="switch-row"><input type="checkbox" id="flagShare"> Teilen-Link (Rezept als Link kopieren)</label>
-          <label class="switch-row"><input type="checkbox" id="flagShopping"> Einkaufsliste &amp; separater Druck</label>
-          <label class="switch-row"><input type="checkbox" id="flagFreezeHint"> Einfrier-Hinweis in der Anleitung</label>
-          <label class="switch-row"><input type="checkbox" id="flagMultiRecipes"> Mehrere gespeicherte Rezepte</label>
-          <label class="switch-row"><input type="checkbox" id="flagHints"> Tooltip-/Hinweistexte (Erklärungen bei Feldern &amp; Buttons)</label>
-        </div>
-      </div>
-    </details>
-
   </div>
 
   <!-- ERGEBNIS -->
@@ -335,7 +295,7 @@
   </div>
 </div>
 
-<section class="guidewrap" id="guide">
+<section class="guidewrap view" data-view="rechner" id="guide">
   <div class="guidehead">
     <h2>Schritt-für-Schritt-Anleitung</h2>
     <span id="guideSummary" style="font-size:12px;"></span>
@@ -344,10 +304,81 @@
   <div id="guideSteps"></div>
 </section>
 
+<div class="wrap view" data-view="rezepte" hidden>
+  <div class="controls-col" style="display:grid;gap:20px;">
+    <details class="card" id="recipesCard" open>
+      <summary><h2 aria-label="Meine Rezepte">Meine Rezepte</h2></summary>
+      <div class="acc-body">
+        <div class="field" style="margin-bottom:0;">
+          <label id="myRecipesLabel" for="recipeSelect">Gespeichertes Rezept</label>
+          <select id="recipeSelect" class="selectbox" aria-labelledby="myRecipesLabel">
+            <option value="">— noch keins gespeichert —</option>
+          </select>
+          <div class="row" style="margin-top:8px;gap:8px;">
+            <label for="recipeName" class="visually-hidden">Name für neues Rezept</label>
+            <input type="text" id="recipeName" class="selectbox" placeholder="Name für neues Rezept" style="flex:2;">
+            <button type="button" id="recipeSaveNew" style="flex:1;">Neu</button>
+          </div>
+          <div class="row" style="margin-top:8px;gap:8px;">
+            <button type="button" id="recipeRename" style="flex:1;">Umbenennen</button>
+            <button type="button" id="recipeDelete" style="flex:1;">Löschen</button>
+          </div>
+          <div class="hint" id="recipeHint" style="margin-top:8px;">Eigene Rezepte sind unabhängig von den Presets oben — hier landen deine per „Speichern" gesicherten Stände.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<div class="wrap view" data-view="zeitplan" hidden>
+  <div class="controls-col" style="display:grid;gap:20px;">
+    <details class="card" open>
+      <summary><h2 aria-label="Zeitplan">Zeitplan</h2></summary>
+      <div class="acc-body">
+        <div class="field">
+          <label id="timeModeLabel">Bezugspunkt</label>
+          <div class="seg" id="timeMode" role="group" aria-labelledby="timeModeLabel">
+            <button data-tm="start" class="active" aria-pressed="true">Ich starte um…</button>
+            <button data-tm="target" aria-pressed="false">Fertig sein um…</button>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label id="timeLabel" for="timeISO">Startzeitpunkt</label>
+          <div class="row">
+            <input type="datetime-local" id="timeISO" style="flex:1;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:16px;color:var(--ink);">
+            <button id="nowBtn" type="button" style="padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;font-weight:600;font-size:13px;min-height:44px;">Jetzt</button>
+          </div>
+          <div class="hint" id="timeHint">Trag eine Uhrzeit ein — dann bekommt jeder Schritt der Anleitung unten eine konkrete Uhrzeit.</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<div class="wrap view" data-view="einstellungen" hidden>
+  <div class="controls-col" style="display:grid;gap:20px;">
+    <details class="card" open>
+      <summary><h2 aria-label="Einstellungen">Einstellungen</h2></summary>
+      <div class="acc-body">
+        <div class="field" style="margin-bottom:0;">
+          <div class="hint" style="margin-bottom:10px;">Schalte einzelne Zusatzfunktionen ein oder aus — deine Wahl wird direkt im Browser gespeichert.</div>
+          <label class="switch-row"><input type="checkbox" id="flagTimer"> Gärzeit-Timer/Wecker je Anleitungsschritt</label>
+          <label class="switch-row"><input type="checkbox" id="flagTimerSystem"> System-Wecker/Kalender-Links beim Timer</label>
+          <label class="switch-row"><input type="checkbox" id="flagShare"> Teilen-Link (Rezept als Link kopieren)</label>
+          <label class="switch-row"><input type="checkbox" id="flagShopping"> Einkaufsliste &amp; separater Druck</label>
+          <label class="switch-row"><input type="checkbox" id="flagFreezeHint"> Einfrier-Hinweis in der Anleitung</label>
+          <label class="switch-row"><input type="checkbox" id="flagMultiRecipes"> Mehrere gespeicherte Rezepte</label>
+          <label class="switch-row"><input type="checkbox" id="flagHints"> Tooltip-/Hinweistexte (Erklärungen bei Feldern &amp; Buttons)</label>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
   Alles wird lokal in deinem Browser gerechnet &amp; gespeichert · keine Internetverbindung nötig<br>
   Bäckerprozente — Wasser, Salz &amp; Hefe immer relativ zur Mehlmenge (= 100 %)<br>
-  <span id="appVersion" style="opacity:.7;">v3.17.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.17.1</span>
 </footer>
 
 <div class="quickbar">
@@ -356,20 +387,20 @@
 </div>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.17.0"></script>
-<script src="js/state.js?v=3.17.0"></script>
-<script src="js/settings.js?v=3.17.0"></script>
-<script src="js/flour.js?v=3.17.0"></script>
-<script src="js/calc.js?v=3.17.0"></script>
-<script src="js/schedule.js?v=3.17.0"></script>
-<script src="js/guide.js?v=3.17.0"></script>
-<script src="js/timer.js?v=3.17.0"></script>
-<script src="js/ui.js?v=3.17.0"></script>
-<script src="js/print.js?v=3.17.0"></script>
-<script src="js/presets.js?v=3.17.0"></script>
-<script src="js/storage.js?v=3.17.0"></script>
-<script src="js/share.js?v=3.17.0"></script>
-<script src="js/main.js?v=3.17.0"></script>
+<script src="js/dom.js?v=3.17.1"></script>
+<script src="js/state.js?v=3.17.1"></script>
+<script src="js/settings.js?v=3.17.1"></script>
+<script src="js/flour.js?v=3.17.1"></script>
+<script src="js/calc.js?v=3.17.1"></script>
+<script src="js/schedule.js?v=3.17.1"></script>
+<script src="js/guide.js?v=3.17.1"></script>
+<script src="js/timer.js?v=3.17.1"></script>
+<script src="js/ui.js?v=3.17.1"></script>
+<script src="js/print.js?v=3.17.1"></script>
+<script src="js/presets.js?v=3.17.1"></script>
+<script src="js/storage.js?v=3.17.1"></script>
+<script src="js/share.js?v=3.17.1"></script>
+<script src="js/main.js?v=3.17.1"></script>
 <script>
   // Mobil-only UI-Glue (kein Eingriff in die PZ-Rechenmodule)
   (function(){
@@ -407,6 +438,104 @@
         }
       });
     });
+
+    // 4) Hamburger-Navigation: Bereichs-Umschaltung (Rechner/Rezepte/Zeitplan/Einstellungen)
+    //    statt durchgehendem One-Pager. Rein UI-seitig, rührt keine PZ-Logik an.
+    var navToggle = document.getElementById('navToggle');
+    var navOverlay = document.getElementById('navMenu');
+    var navClose = document.getElementById('navClose');
+    var navItems = navOverlay ? Array.prototype.slice.call(navOverlay.querySelectorAll('.nav-item')) : [];
+    var viewEls = Array.prototype.slice.call(document.querySelectorAll('[data-view]')).filter(function(el){
+      return el.closest && !el.closest('.nav-overlay');
+    });
+    var lastFocused = null;
+
+    function focusablesInPanel(){
+      return [navClose].concat(navItems);
+    }
+
+    function onNavKeydown(e){
+      if (e.key === 'Escape') { e.preventDefault(); closeNav(); return; }
+      if (e.key === 'Tab') {
+        var f = focusablesInPanel();
+        var idx = f.indexOf(document.activeElement);
+        if (e.shiftKey) {
+          if (idx <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
+        } else {
+          if (idx === -1 || idx === f.length - 1) { e.preventDefault(); f[0].focus(); }
+        }
+      }
+    }
+
+    function openNav(){
+      if (!navOverlay) return;
+      lastFocused = document.activeElement;
+      navOverlay.hidden = false;
+      navToggle.setAttribute('aria-expanded', 'true');
+      var current = navItems.filter(function(b){ return b.classList.contains('active'); })[0] || navItems[0];
+      if (current) current.focus(); else if (navClose) navClose.focus();
+      document.addEventListener('keydown', onNavKeydown);
+    }
+
+    // restoreFocus=false wird nur beim Bereichswechsel per Klick auf ein .nav-item
+    // genutzt — dort soll der Fokus NICHT auf den Hamburger-Button zurückspringen,
+    // sondern (per focusView, s. u.) in den neu sichtbaren Bereich wandern.
+    function closeNav(restoreFocus){
+      if (!navOverlay) return;
+      navOverlay.hidden = true;
+      navToggle.setAttribute('aria-expanded', 'false');
+      document.removeEventListener('keydown', onNavKeydown);
+      if (restoreFocus !== false) (lastFocused || navToggle).focus();
+    }
+
+    function activateView(view){
+      viewEls.forEach(function(el){
+        if (el.getAttribute('data-view') === view) el.removeAttribute('hidden');
+        else el.setAttribute('hidden', '');
+      });
+      navItems.forEach(function(b){
+        var isActive = b.getAttribute('data-goto') === view;
+        b.classList.toggle('active', isActive);
+        if (isActive) b.setAttribute('aria-current', 'page');
+        else b.removeAttribute('aria-current');
+      });
+      window.scrollTo(0, 0);
+    }
+
+    // Nach einem Bereichswechsel bekommen Screenreader-Nutzer sonst keinerlei
+    // Rückmeldung, dass sich der sichtbare Inhalt komplett ausgetauscht hat
+    // (WCAG 4.1.3 Status Messages) — Live-Region-Ansage + Fokus auf die erste
+    // Überschrift des neuen Bereichs (analog zum SPA-Routenwechsel-Muster).
+    function announceView(label){
+      var el = document.getElementById('viewAnnounce');
+      if (el) el.textContent = 'Ansicht: ' + label;
+    }
+    function focusView(view){
+      var h = document.querySelector('[data-view="' + view + '"] h2');
+      if (h) {
+        if (!h.hasAttribute('tabindex')) h.setAttribute('tabindex', '-1');
+        h.focus({ preventScroll: true });
+      }
+    }
+
+    if (navToggle && navOverlay) {
+      navToggle.addEventListener('click', function(){
+        if (navOverlay.hidden) openNav(); else closeNav();
+      });
+      navClose.addEventListener('click', function(){ closeNav(); });
+      navOverlay.addEventListener('click', function(e){
+        if (e.target === navOverlay) closeNav();
+      });
+      navItems.forEach(function(b){
+        b.addEventListener('click', function(){
+          var view = b.getAttribute('data-goto');
+          activateView(view);
+          announceView(b.textContent);
+          closeNav(false);
+          focusView(view);
+        });
+      });
+    }
   })();
 </script>
 </body>

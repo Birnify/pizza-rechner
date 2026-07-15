@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-12 · Aktuelle Version: v3.17.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-15 · Aktuelle Version: v3.17.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -158,6 +158,80 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
   W300–310 (Cuoco, Napoletana): 16 · Monica/Nuvola/Teichner 1 (~W280–300): 12 · Rest: 0.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
+
+## Mobil-Hamburger-Navigation (v3.17.x) + gezielter Accessibility-Audit = aktueller Stand
+
+`pizza-rechner-mobile.html` wurde von einem durchgehenden One-Pager-Akkordeon auf eine
+Hamburger-Menü-Navigation mit vier Bereichen umgestellt (**nur Mobil**, `pizza-rechner.html`
+bleibt unverändert): „Rechner" (Preset, Grundeinstellungen, Methode & Hefe, Teigtemperatur &
+Eiswasser, Ergebnis-Panel, Anleitung), „Rezepte" (Meine-Rezepte-Karte), „Zeitplan"
+(Zeitplan-Karte), „Einstellungen" (Feature-Flag-Karte). Die vier Bereiche sind eigene
+Top-Level-Container mit `class="view" data-view="rechner|rezepte|zeitplan|einstellungen"`;
+Umschaltung passiert rein per JS (`[hidden]`-Attribut setzen/entfernen), verstärkt durch
+`[data-view][hidden]{display:none!important;}` in `css/mobile.css` (author-CSS mit höherer
+Spezifität als eine `[hidden]{display:block}`-Fallback-Regel).
+
+`#navToggle` (Header, oben links, 44×44px) öffnet `#navMenu` (`<nav class="nav-overlay">`
+mit innerem `<div class="nav-panel" role="dialog" aria-modal="true">`). Fokus-Trap ist reines
+JS (kein natives `<dialog>`): `keydown`-Listener am `document`, der Tab/Shift+Tab zwischen
+`navClose` + den vier `.nav-item`-Buttons zyklisch hält; ESC schließt, Klick auf den
+Backdrop schließt, Fokus kehrt beim Schließen (ESC/Backdrop/✕) auf das auslösende Element
+zurück (`lastFocused`, meist `#navToggle`).
+
+**Gezielter WCAG-2.1-AA-Audit für dieses neue UI-Stück** (`accessibility-expert`-Agent,
+Methodik wie v3.7.0/v3.12.0/v3.14.0/v3.15.0) — 1 Major, 2 Minor, Rest geprüft ohne Fund:
+
+- **Major — Bereichswechsel ohne Rückmeldung für Screenreader (4.1.3 Status Messages):**
+  Beim Klick auf einen `.nav-item` wurde der sichtbare Bereich komplett ausgetauscht, aber
+  weder angesagt noch bekam der Fokus einen sinnvollen neuen Ankerpunkt — er sprang (über
+  den generischen Dialog-Schließen-Pfad) zurück auf `#navToggle`, obwohl der Nutzer gerade
+  aktiv navigiert hat. Fix: neue, dauerhaft im DOM stehende, visuell versteckte Live-Region
+  `<div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite">` direkt
+  nach `#navMenu`. `closeNav(restoreFocus)` bekam einen Parameter — beim Schließen per
+  ESC/✕/Backdrop bleibt der alte Fokus-Rückkehr-Pfad (`restoreFocus !== false`), beim
+  Schließen durch Auswahl eines `.nav-item` wird `closeNav(false)` aufgerufen und
+  stattdessen `focusView(view)` (setzt `tabindex="-1"` auf das erste `h2` des neuen
+  Bereichs und fokussiert es) + `announceView(label)` (schreibt „Ansicht: <Name>" in die
+  Live-Region) ausgeführt — analog zum etablierten SPA-Routenwechsel-Muster (Fokus auf die
+  neue Bereichsüberschrift + Live-Region-Ansage).
+- **Minor — Kontrast `.nav-toggle`-Rahmen gegen den Header-Hintergrund (1.4.11 Non-text
+  Contrast):** `border:1px solid rgba(255,255,255,.5)` kam gegen `var(--tomato-dark)`
+  (`#a8341f`) rechnerisch nur auf **~2,76:1** — unter dem 3:1-Soll für UI-Komponenten-
+  Umrandungen (das eigentliche Symbol „☰" selbst hat mit **~6,6:1** ausreichend Kontrast,
+  betraf also nur den dekorativen Rahmen). Fix: Opacity auf `.8` angehoben.
+- **Minor — Fehlender Fallback-Fokus in `openNav()`, falls `navItems` leer wäre (Robustheit,
+  kein aktuell auslösbarer Bug):** Die vier `.nav-item`-Buttons sind fest im Markup verankert,
+  können also derzeit nicht leer sein — trotzdem ergänzt: `if (current) current.focus(); else
+  if (navClose) navClose.focus();` als defensives Sicherheitsnetz, damit der Fokus bei einer
+  künftigen dynamischen Nav-Liste nie außerhalb des offenen Panels landen kann.
+- **Geprüft, kein Fix nötig:**
+  - `role="dialog"`/`aria-modal="true"` auf dem inneren `.nav-panel` innerhalb der äußeren
+    `<nav>`-Landmark ist kein Rollenkonflikt — beide Semantiken (Navigations-Landmark +
+    modaler Dialog) sind für ein Hamburger-Menü-Drawer ein etabliertes Muster; die `<nav>`
+    ist Vorfahre des Dialogs, wird also durch `aria-modal` (das nur *Geschwister*-Inhalte
+    außerhalb des Dialogs für AT unterdrückt) nicht mit ausgeblendet.
+  - `aria-expanded`/`aria-controls` auf `#navToggle` korrekt referenziert (`navMenu`-ID
+    existiert, Zustand wird bei jedem Öffnen/Schließen synchron gesetzt).
+  - Tastatur-Trap greift korrekt zyklisch (Tab am Ende → `navClose`, Shift+Tab am Anfang →
+    letztes `.nav-item`); da alle Panel-Elemente kontinuierlich im DOM stehen, genügt der
+    Trap an den beiden Rändern, kein Element außerhalb des Panels wird während offenem
+    Overlay fokussierbar (das Overlay deckt den Viewport per `position:fixed;inset:0` mit
+    höherem `z-index` vollständig ab, dahinterliegende Elemente sind nicht mehr klickbar).
+  - `[hidden]` entfernt die drei inaktiven Bereiche zuverlässig sowohl aus dem Accessibility-
+    Tree als auch aus der Tab-Reihenfolge — verifiziert gegen die `!important`-Verstärkung
+    in `css/mobile.css`.
+  - Kontraste `.nav-item` aktiv (`var(--tomato-dark)` auf `var(--bg)`, **~6,14:1**) und
+    `.nav-item`/`.nav-close`-Text (`var(--ink)` auf Weiß, deutlich über AA) bestehen klar.
+  - `aria-current="page"` auf dem aktiven `.nav-item` ist ein zulässiger Wert für „aktueller
+    Bereich in einer Menge gleichrangiger Ansichten", analog zur klassischen Seiten-Navigation.
+
+**Tests:** `js/guide.js` (String-Matching-Ziel der Tests) wurde nicht angefasst — reine
+`pizza-rechner-mobile.html`/`css/mobile.css`-Änderung. Alle 338 Prüfungen weiterhin grün
+(Headless-Edge-Dump verifiziert). `?v=` auf `3.17.1` gezogen (Desktop + Mobil, da beide
+Dateien denselben `appVersion`-Text/Cache-Busting-Stand teilen, auch wenn nur die Mobil-Seite
+inhaltlich betroffen ist — Desktop-Markup/-Logik unverändert). `pizza-rechner-mobile-
+standalone.html` neu gebaut (`python build-mobile-standalone.py`). `Versionen/v3.17.1 -
+Mobil-Hamburger-Nav Accessibility-Audit/` enthält den vollständigen Schnappschuss.
 
 ## System-Wecker/Kalender-Anbindung für Gärzeit-Timer (v3.15.0, `js/timer.js`) + Accessibility-Audit = aktueller Stand
 
