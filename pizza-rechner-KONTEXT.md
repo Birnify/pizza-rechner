@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-16 · Aktuelle Version: v3.22.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-16 · Aktuelle Version: v3.23.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,50 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Eigenständiges Rezept-Anlegen-Formular + Presets-Dropdown-Integration (v3.22.0) = aktueller Stand
+## Card-Überschriften ohne Nummerierung (v3.23.0) = aktueller Stand
+
+Kleines Vorhaben, vom Nutzer per `/define-feature` strukturiert und bestätigt. Kein
+Backlog-Punkt, keine neue Idee des Orchestrators — reiner Wunsch des Nutzers: die
+automatische „01 · "/„02 · "-Nummerierung vor jeder Card-Überschrift wurde als störend
+empfunden und sollte weg (z. B. wurde aus „01 · Fertiges Rezept wählen" wieder „Fertiges
+Rezept wählen").
+
+- **Ursache/Umsetzung:** Die Nummerierung stand nie im HTML-Text, sondern wurde rein
+  über CSS-Counter erzeugt (`css/styles.css`): `counter-reset:cardnum` auf `.wrap`,
+  `counter-increment:cardnum` auf `.card`, sowie die eigentliche Anzeige über
+  `.card h2::before{content:counter(cardnum,decimal-leading-zero) '  ·  '; …}`. Alle
+  drei zusammengehörigen Regeln wurden ersatzlos entfernt (`.card h2::before` komplett
+  gelöscht, die beiden `counter-*`-Deklarationen aus `.wrap` bzw. `.card` entfernt) —
+  keine neue Regel, kein Ersatz-Layout nötig, da die restliche `.card h2`-Regel
+  (Typografie, `border-bottom`) unverändert bleibt und ohne das `::before`-Pseudoelement
+  einfach nur ohne vorangestellte Nummer rendert.
+- **Betrifft automatisch Desktop und Mobil gleichermaßen**, da `css/styles.css` das
+  gemeinsame Stylesheet beider Seiten ist (`css/mobile.css` enthielt keine eigene
+  Counter-Regel) — keine Änderung an `pizza-rechner.html`, `pizza-rechner-mobile.html`
+  oder irgendeinem JS-Modul nötig.
+- **Bewusst NICHT angefasst** (laut Scope/Abgrenzung): die Nummerierung der
+  Schritt-für-Schritt-Anleitung (`.step .num`, eigene, funktional sinnvolle Reihenfolge
+  der Anleitungsschritte) ist ein komplett getrenntes Markup/CSS-Element und bleibt
+  unverändert; keine sonstigen Layout-/Struktur-Änderungen an den Cards.
+
+**Tests:** reine CSS-Änderung ohne Auswirkung auf Rechenlogik — `tests/test.html` bleibt
+unverändert bei **467** Prüfungen, alle grün (Headless-Edge-Dump). Kein
+`test-generator`-Lauf nötig (keine Änderung an `js/calc.js`/`js/schedule.js`/`js/guide.js`).
+Visuell per Headless-Edge-Screenshot auf Desktop (`pizza-rechner.html`) und Mobil
+(`pizza-rechner-mobile.html`) verifiziert: alle Card-Überschriften („Fertiges Rezept
+wählen", „Meine Rezepte", „Neues Rezept anlegen", „Grundeinstellungen" usw.) erscheinen
+jetzt ohne vorangestellte Nummer, Layout/Abstände unverändert. Kein
+`accessibility-expert`- oder `mobile-optimizer`-Lauf nötig (keine Markup-/Strukturänderung,
+nur eine rein dekorative CSS-Regel entfernt, die zuvor als generiertes Pseudoelement ohne
+eigene Semantik lief).
+
+**Geändert:** `css/styles.css`. `?v=` auf `3.23.0` gezogen (Desktop + Mobil,
+Cache-Busting + Footer-Version). `pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.23.0 - Card-Ueberschriften ohne Nummerierung/` enthält den vollständigen
+Schnappschuss.
+
+## Eigenständiges Rezept-Anlegen-Formular + Presets-Dropdown-Integration (v3.22.0)
 
 Neues Feature, vom Nutzer per `/define-feature` strukturiert und bestätigt. Auslöser:
 zum Anlegen eines neuen Rezepts musste man bisher die über die ganze Seite verstreuten
@@ -2305,6 +2348,9 @@ Keine Code-Änderung durch den Audit nötig.
   in v3.22.0** (kein Backlog-Punkt, direkter Nutzerauftrag per `/define-feature`; s.
   Abschnitt „Eigenständiges Rezept-Anlegen-Formular + Presets-Dropdown-Integration
   (v3.22.0)" oben).
+- ~~Card-Überschriften ohne Nummerierung~~ — **erledigt in v3.23.0** (kein Backlog-Punkt,
+  direkter Nutzerauftrag per `/define-feature`; s. Abschnitt „Card-Überschriften ohne
+  Nummerierung (v3.23.0)" oben).
 
 **Neu ins Backlog aufgenommen (Nebenbefund aus v3.22.0):**
 - `applyState()` (`js/storage.js`) ruft beim Laden eines Rezepts nie `set.sugar(...)`
@@ -2313,13 +2359,14 @@ Keine Code-Änderung durch den Audit nötig.
   vorbestehend seit v3.19.2 (nicht durch v3.22.0 verursacht) — beim nächsten Storage-
   bezogenen Zyklus mit beheben.
 
-**Stand v3.22.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
-oben), bis auf den neuen kleinen Nebenbefund direkt darüber. Einzige offen gebliebene
-Teilaufgabe eines bereits erledigten Punkts: **Export als PDF** (s. „Teilen-Link"-Zeile
-oben — bewusst nicht mitgebaut, da der Nutzer damals nur den reinen Teilen-Link wollte).
-Für den nächsten Zyklus braucht es daher frisches Brainstorming in Phase 1 (neue
-Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes, der Sugar-Sync-Nebenbefund, oder
-eben der PDF-Export als nahliegende Kandidaten) statt eines vorgegebenen Backlog-Punkts.
+**Stand v3.23.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+oben), bis auf den kleinen Sugar-Sync-Nebenbefund direkt darüber. Einzige offen
+gebliebene Teilaufgabe eines bereits erledigten Punkts: **Export als PDF** (s.
+„Teilen-Link"-Zeile oben — bewusst nicht mitgebaut, da der Nutzer damals nur den reinen
+Teilen-Link wollte). Für den nächsten Zyklus braucht es daher frisches Brainstorming in
+Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes, der Sugar-Sync-
+Nebenbefund, oder eben der PDF-Export als nahliegende Kandidaten) statt eines
+vorgegebenen Backlog-Punkts.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

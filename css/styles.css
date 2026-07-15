@@ -35,13 +35,13 @@ header h1{
 }
 header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .viewlink{display:inline-block;margin-top:9px;font-size:12px;color:#fff;opacity:.85;text-decoration:underline;text-underline-offset:2px;}
-.wrap{max-width:980px;margin:0 auto;padding:20px;display:grid;gap:20px;grid-template-columns:1fr;counter-reset:cardnum;}
+.wrap{max-width:980px;margin:0 auto;padding:20px;display:grid;gap:20px;grid-template-columns:1fr;}
 @media(min-width:860px){.wrap{grid-template-columns:1fr 360px;align-items:start;}}
 .wrap>*{min-width:0;}
 .card{
   background:var(--card);border-radius:var(--radius);padding:20px;
   border:1px solid var(--line);border-left:3px solid var(--tomato);
-  counter-increment:cardnum;min-width:0;
+  min-width:0;
 }
 .result .card{border-left-color:var(--basil);}
 .selectbox{
@@ -53,10 +53,6 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .card h2{
   margin:0 0 16px;font-size:14px;text-transform:uppercase;letter-spacing:1.2px;
   color:var(--ink);font-weight:700;padding-bottom:10px;border-bottom:1px solid var(--line);
-}
-.card h2::before{
-  content:counter(cardnum,decimal-leading-zero) '  \00b7  ';
-  color:var(--tomato);font-weight:700;font-variant-numeric:tabular-nums;
 }
 .field{margin-bottom:18px;}
 .field:last-child{margin-bottom:0;}
