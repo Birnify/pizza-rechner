@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-15 · Aktuelle Version: v3.20.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-15 · Aktuelle Version: v3.21.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,112 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Zucker-Regler nur bei New-York-Style-Preset oder eigener Einstellung (v3.20.1) = aktueller Stand
+## Rezepte-Backup: Export/Import aller gespeicherten Rezepte als Datei (v3.21.0) = aktueller Stand
+
+Neues Feature, vom Nutzer per `/define-feature` strukturiert und bestätigt. Auslöser:
+eine Nutzerfrage, wie sicher selbst erstellte Rezepte sind ("gehen die nicht hops wenn
+ich Cache lösche?") — `localStorage` (in dem `js/storage.js` seit v3.10.0 mehrere
+benannte Rezepte hält) geht beim Löschen von Websitedaten ersatzlos verloren, es gibt
+keine Cloud-Sicherung, und `localStorage` ist zudem **pro Origin getrennt** (eine lokale
+`file://`-Kopie und die GitHub-Pages-Live-Version haben getrennte Rezept-Bestände — kein
+Bug, aber ein Grund mehr für eine Datei-Brücke zwischen beiden). Der bestehende
+Teilen-Link (v3.14.0) deckt nur den gerade aktiven Zustand ab, nicht den kompletten
+Rezept-Bestand. Bewusst **kein** Cloud-Backend/Account/automatische Synchronisation —
+der Nutzer hat sich in der vorausgehenden Diskussion explizit für die reine
+Datei-Export/Import-Lösung entschieden, um die Offline-Philosophie der App nicht zu
+brechen (s. Abschnitt „Warum keine KI / kein Internet?" oben).
+
+- **Neue Buttons in der bestehenden „Meine Rezepte"-Card** (`#recipesCard`, identisch in
+  `pizza-rechner.html` und `pizza-rechner-mobile.html`, direkt unter dem bestehenden
+  Umbenennen/Löschen-Zeilenpaar): „Als Datei sichern" (`#recipeExportBtn`) und „Aus
+  Datei laden" (`#recipeImportBtn`) + ein versteckter `<input type="file"
+  id="recipeImportInput" accept="application/json,.json">`. Neuer Hinweistext
+  `#recipeIOHint` erklärt kurz den Zweck, neue Live-Region `#recipeIOLiveMsg`
+  (`role="status" aria-live="polite"`, `.visually-hidden`) für Erfolgs-/Fehler-Feedback
+  nach Export/Import, analog zum etablierten `#shareLiveMsg`-Muster aus v3.14.0.
+- **`js/storage.js` — zwei neue reine Datenfunktionen, kein DOM-Zugriff:**
+  - `PZ.exportRecipes()`: liest den kompletten Store (`readStore()`) und gibt
+    `{format:'pizzaRechnerBackup', version:1, exportedAt:<ISO-String>, recipes:[…]}`
+    zurück — **alle** gespeicherten Rezepte, nicht nur `PZ.state`/das aktive Rezept
+    (Unterschied zum Teilen-Link, der bewusst nur den aktuellen State kodiert).
+  - `PZ.importRecipes(parsed)`: **fügt** die Rezepte aus `parsed.recipes` den
+    bestehenden hinzu, überschreibt/löscht **nie** etwas. Wirft einen `Error`, wenn
+    `parsed` kein Objekt mit `recipes`-Array ist (z. B. `null`, `{}`, ein Array) — der
+    Aufrufer fängt das ab und zeigt eine anwenderfreundliche Meldung, analog zum
+    defensiven Fehlerverhalten von `js/share.js`. Einzelne kaputte Einträge **innerhalb**
+    einer sonst gültigen Datei brechen den Import nicht ab: `isValidRecipeEntry()`
+    prüft je Eintrag ein plausibles `state`-Objekt (dieselbe Heuristik wie
+    `looksLikeState()` in `js/share.js` — `state.balls != null || state.hyd != null`),
+    ungültige Einträge werden übersprungen und gezählt (`result.skipped`).
+  - **Merge-Logik bei Namenskollision** (vom Nutzer in der Feature-Definition
+    festgelegt: neue ID/Name statt Überschreiben, nichts geht verloren): jeder
+    importierte Eintrag bekommt **immer** eine frische `id` (`makeId()`) — verhindert
+    jede Kollision mit vorhandenen Rezept-IDs. Kollidiert der **Name** mit einem
+    bestehenden Rezept, wird er über `uniqueImportName()` eindeutig gemacht: erste
+    Kollision → `"<Name> (importiert)"`, jede weitere → `"<Name> (importiert 2)"`,
+    `"<Name> (importiert 3)"`, … Ergebnis: `{imported, skipped, total}` für die
+    Erfolgsmeldung im UI.
+- **`js/main.js` — UI-Verdrahtung:**
+  - Export-Klick: `PZ.exportRecipes()` → `JSON.stringify(…, null, 2)` → `Blob` →
+    `URL.createObjectURL` → unsichtbarer `<a download>`-Klick (offline-tauglich, kein
+    Server), Dateiname `pizza-rezepte-backup-<ISO-Datum>.json`. Bei noch komplett leerer
+    Rezeptliste (nichts zu sichern) bricht der Export mit einer Live-Region-Meldung ab,
+    statt eine leere Backup-Datei herunterzuladen.
+  - Import-Klick öffnet über `recipeImportInput.click()` den nativen Datei-Dialog; nach
+    Auswahl liest ein `FileReader` die Datei als Text, `JSON.parse` + `PZ.importRecipes()`
+    laufen in einem `try/catch` — Erfolg **und** jeder Fehlerfall (kaputtes JSON, falsches
+    Format, 0 gültige Einträge) enden in einer konkreten `#recipeIOLiveMsg`-Meldung, nie
+    in einem stillen Fehlschlag oder Absturz. `refreshRecipeSelect()` läuft nach
+    erfolgreichem Import, damit die neuen Rezepte sofort im Dropdown auftauchen.
+- **Accessibility-Fix während des Audits** (`accessibility-expert`-Agent, gezielt auf
+  dieses neue UI-Stück): `#recipeImportInput` ist zwar per `.visually-hidden` (clip-
+  basiert, nicht `display:none` — bleibt fokussierbar) versteckt, landete aber ohne
+  Gegenmaßnahme unsichtbar in der Tab-Reihenfolge, und der native Datei-Dialog verschob
+  den Fokus dorthin, ohne ihn nach dem Schließen zurückzuholen (WCAG 2.4.7/2.4.3). Fix:
+  `tabindex="-1"` auf `#recipeImportInput` (raus aus der sequenziellen Tab-Reihenfolge,
+  weiterhin per Skript klickbar) + ein einmaliger `window`-`focus`-Listener in
+  `js/main.js`, der den Fokus nach Schließen des Dialogs (Auswahl **oder** Abbruch)
+  explizit zurück auf `#recipeImportBtn` holt, falls er noch auf dem unsichtbaren Input
+  steht. Alles andere ohne Befund: Label-Verknüpfung, Button-Beschriftungen, Live-Region,
+  44×44px-Touch-Ziele auf Mobil (generische `button{min-height:44px}`-Regel), kein
+  unterdrückter Fokusring.
+- **Bewusst NICHT angefasst:** kein Cloud-Backend, kein Account, keine automatische/
+  geräteübergreifende Synchronisation, keine wiederkehrende Erinnerung ans Exportieren,
+  der bestehende Teilen-Link (`js/share.js`) bleibt vollständig unverändert (weiterhin
+  nur der aktuelle State, kein Bezug zum neuen Backup-Format).
+
+**Tests** (`tests/test.html`, Sektion 20, +32 neue Prüfungen, 421 → **453**): neue
+Sektion „Rezepte-Backup (js/storage.js) — Export/Import als Datei", nach demselben
+`withCleanStorage()`-Muster wie Sektion 16 (sichert/stellt einen eventuell vorhandenen
+echten `localStorage`-Inhalt vor/nach jedem Testblock wieder her). Geprüft:
+`exportRecipes()`-Struktur (alle Felder, alle Rezepte statt nur `PZ.state`),
+`importRecipes()` in eine leere Bibliothek (neue IDs, Namen 1:1 übernommen),
+Namenskollision (bestehendes Rezept bleibt unangetastet, Duplikate bekommen
+`"(importiert)"`/`"(importiert 2)"`-Namen), doppelter Import derselben Datei (kein
+Datenverlust, beide Kopien bleiben erhalten), leere/korrupte Eingabe (`null`, `{}`, ein
+Array — jeweils definierter `Error` statt stillem no-op oder Absturz, bestehende Rezepte
+bleiben unangetastet), Datei mit teils kaputten Einträgen (gültige werden importiert,
+kaputte übersprungen und gezählt, kein Abbruch des gesamten Imports), vollständige
+Rundreise `exportRecipes()` → `JSON.stringify` → `JSON.parse` → `importRecipes()` (exakt
+der Pfad, den Datei-Download + Datei-Upload in der echten App durchlaufen) — alle Werte
+bleiben exakt erhalten. Alle 453 Prüfungen grün (Headless-Edge-Dump). Zusätzlich per
+Headless-Edge-CDP (WebSocket, `--remote-allow-origins=*`) auf Desktop **und** Mobil den
+kompletten Ablauf gegen das echte DOM verifiziert: zwei Rezepte anlegen → Export-Klick
+löst ohne Fehler aus + korrekte Live-Region-Meldung ("2 Rezepte als Datei gesichert.") →
+Store leeren (simuliert neuen Browser/gelöschte Websitedaten) → Import der exportierten
+JSON-Daten → beide Rezepte korrekt im Store **und** im `#recipeSelect`-Dropdown → erneuter
+Import derselben Datei in den bereits gefüllten Store → beide Original-Rezepte bleiben,
+zwei weitere mit `"(importiert)"`-Suffix kommen hinzu (kein Datenverlust) → kaputtes JSON
+wirft beim Parsen wie erwartet. Identisches Ergebnis auf beiden Seiten.
+
+**Geändert:** `js/storage.js`, `js/main.js`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`, `tests/test.html`. `?v=` auf `3.21.0` gezogen (Desktop +
+Mobil, Cache-Busting + Footer-Version). `pizza-rechner-mobile-standalone.html` neu
+gebaut (`python build-mobile-standalone.py`).
+`Versionen/v3.21.0 - Rezepte-Backup Export-Import/` enthält den vollständigen
+Schnappschuss.
+
+## Zucker-Regler nur bei New-York-Style-Preset oder eigener Einstellung (v3.20.1)
 
 Bugfix an der in v3.19.2/v3.19.3 bewusst so designten Sichtbarkeits-Logik, vom Nutzer
 nach praktischer Nutzung per `/define-feature` strukturiert und bestätigt. Kein
@@ -2080,8 +2185,12 @@ Keine Code-Änderung durch den Audit nötig.
   v3.20.1** (kein Backlog-Punkt, direkter Nutzerauftrag per `/define-feature`; s.
   Abschnitt „Zucker-Regler nur bei New-York-Style-Preset oder eigener Einstellung
   (v3.20.1)" oben).
+- ~~Rezepte-Backup (Export/Import aller gespeicherten Rezepte als Datei)~~ — **erledigt
+  in v3.21.0** (kein Backlog-Punkt, direkter Nutzerauftrag per `/define-feature`; s.
+  Abschnitt „Rezepte-Backup: Export/Import aller gespeicherten Rezepte als Datei
+  (v3.21.0)" oben).
 
-**Stand v3.20.1: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.21.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben). Einzige offen gebliebene Teilaufgabe eines bereits erledigten Punkts: **Export
 als PDF** (s. „Teilen-Link"-Zeile oben — bewusst nicht mitgebaut, da der Nutzer damals
 nur den reinen Teilen-Link wollte). Für den nächsten Zyklus braucht es daher frisches

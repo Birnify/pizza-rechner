@@ -165,6 +165,88 @@
     applyState(rec.state);
   }
 
+  // --- Backup: Export/Import aller Rezepte als Datei (v3.21.0) ------------
+  //
+  // localStorage lebt nur im Browser-Profil (und ist zudem pro Origin getrennt,
+  // z.B. file:// vs. GitHub-Pages-Live-Version) — "Websitedaten löschen" nimmt
+  // alle gespeicherten Rezepte ersatzlos mit. Export/Import ist die einzige
+  // Brücke dagegen, bewusst als reine Datei (kein Server, kein Account, s.
+  // pizza-rechner-KONTEXT.md "Warum keine KI / kein Internet?").
+
+  // Baut ein Backup-Objekt mit ALLEN gespeicherten Rezepten (nicht nur dem
+  // aktiven state). Reine Datenfunktion, kein DOM-Zugriff — der Download
+  // (Blob + <a download>) passiert in js/main.js.
+  function exportRecipes() {
+    const data = readStore();
+    return {
+      format: 'pizzaRechnerBackup',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      recipes: JSON.parse(JSON.stringify(data.recipes))
+    };
+  }
+
+  // Ein Eintrag zählt nur als importierbar, wenn er wie ein echtes Rezept
+  // aussieht (state-Objekt mit mind. einem der Kern-Felder) — analog zu
+  // looksLikeState() in js/share.js. Verhindert, dass eine fremde/kaputte
+  // Datei stille Datenmüll-Rezepte anlegt, die applyState() später crashen
+  // lassen könnten.
+  function isValidRecipeEntry(r) {
+    const s = r && r.state;
+    return !!r && typeof r === 'object' && !!s && typeof s === 'object' &&
+      !Array.isArray(s) && (s.balls != null || s.hyd != null);
+  }
+
+  // Findet einen noch nicht vergebenen Namen für einen importierten Eintrag,
+  // ohne einen bestehenden Namen zu überschreiben oder zu verwerfen: erste
+  // Kollision -> "<Name> (importiert)", jede weitere -> "<Name> (importiert 2)",
+  // "<Name> (importiert 3)", ...
+  function uniqueImportName(base, existingNames) {
+    if (!existingNames.has(base)) return base;
+    let name = base + ' (importiert)';
+    let n = 2;
+    while (existingNames.has(name)) {
+      name = base + ' (importiert ' + n + ')';
+      n++;
+    }
+    return name;
+  }
+
+  // Liest ein zuvor per exportRecipes() erzeugtes (oder strukturell gleich
+  // aufgebautes) Backup-Objekt ein und FÜGT die enthaltenen Rezepte den
+  // bestehenden hinzu — nichts wird überschrieben oder gelöscht. Jeder
+  // importierte Eintrag bekommt immer eine neue id (verhindert Kollisionen
+  // mit vorhandenen Rezepten) und ggf. einen angepassten Namen bei
+  // Namenskollision (s. uniqueImportName). Wirft bei offensichtlich falschem
+  // Format (kein Objekt / kein recipes-Array) einen Error — der Aufrufer
+  // (js/main.js) fängt das ab und zeigt eine anwenderfreundliche Meldung,
+  // analog zum defensiven Fehlerverhalten von js/share.js. Einzelne kaputte
+  // Einträge INNERHALB einer sonst gültigen Datei brechen den Import nicht ab,
+  // sie werden übersprungen und gezählt (result.skipped).
+  function importRecipes(parsed) {
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.recipes)) {
+      throw new Error('invalid-format');
+    }
+    const data = readStore();
+    const existingNames = new Set(data.recipes.map(r => r.name));
+    let imported = 0, skipped = 0;
+    parsed.recipes.forEach(entry => {
+      if (!isValidRecipeEntry(entry)) { skipped++; return; }
+      const baseName = (entry.name && String(entry.name).trim()) || 'Importiertes Rezept';
+      const name = uniqueImportName(baseName, existingNames);
+      existingNames.add(name);
+      data.recipes.push({
+        id: makeId(),
+        name: name,
+        state: JSON.parse(JSON.stringify(entry.state)),
+        savedAt: typeof entry.savedAt === 'number' ? entry.savedAt : Date.now()
+      });
+      imported++;
+    });
+    if (imported > 0) writeRaw(data);
+    return { imported: imported, skipped: skipped, total: parsed.recipes.length };
+  }
+
   PZ.save = save;
   PZ.load = load;
   PZ.applyState = applyState;
@@ -174,4 +256,6 @@
   PZ.loadRecipe = loadRecipe;
   PZ.listRecipes = listRecipes;
   PZ.getActiveId = getActiveId;
+  PZ.exportRecipes = exportRecipes;
+  PZ.importRecipes = importRecipes;
 })(window);

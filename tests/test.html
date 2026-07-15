@@ -1794,6 +1794,156 @@
   ]);
 
   // ─────────────────────────────────────────────────────────────
+  heading('20 · Rezepte-Backup (js/storage.js) — Export/Import als Datei');
+  (function () {
+    const STORAGE_KEY = 'pizzaRechner';
+    // Wie Sektion 16: eventuell vorhandenen echten Stand sichern/wiederherstellen —
+    // die Tests dürfen echte Nutzerdaten niemals überschreiben.
+    const backup = localStorage.getItem(STORAGE_KEY);
+
+    function withCleanStorage(fn) {
+      localStorage.removeItem(STORAGE_KEY);
+      try { fn(); } finally { localStorage.removeItem(STORAGE_KEY); }
+    }
+
+    // --- exportRecipes(): liefert ALLE gespeicherten Rezepte, nicht nur den aktiven state ---
+    withCleanStorage(() => {
+      Object.assign(PZ.state, BASE, { balls: 4, hyd: 60 });
+      PZ.save();
+      Object.assign(PZ.state, { balls: 8, hyd: 70 });
+      PZ.saveAsNew('Zweites Rezept');
+      const out = PZ.exportRecipes();
+      renderBox('exportRecipes() liefert ein Backup-Objekt mit allen Rezepten', [
+        { label: 'format-Feld gesetzt', ok: out.format === 'pizzaRechnerBackup', actual: out.format, expected: 'pizzaRechnerBackup', tol: null },
+        { label: 'version-Feld gesetzt', ok: out.version === 1, actual: out.version, expected: 1, tol: null },
+        { label: 'exportedAt ist ein ISO-Zeitstempel-String', ok: typeof out.exportedAt === 'string' && out.exportedAt.length > 0, actual: out.exportedAt, expected: 'String', tol: null },
+        { label: 'Beide Rezepte enthalten', ok: out.recipes.length === 2, actual: out.recipes.length, expected: 2, tol: null },
+        { label: 'Rezept-Inhalte 1:1 übernommen (balls des ersten)', ok: out.recipes[0].state.balls === 4, actual: out.recipes[0].state.balls, expected: 4, tol: null }
+      ]);
+    });
+
+    // --- importRecipes(): fügt Rezepte einer leeren Bibliothek hinzu ---
+    withCleanStorage(() => {
+      const parsed = {
+        format: 'pizzaRechnerBackup', version: 1, exportedAt: new Date().toISOString(),
+        recipes: [
+          { id: 'irrelevant-id-1', name: 'Importiert A', state: Object.assign({}, BASE, { balls: 3 }), savedAt: 111 },
+          { id: 'irrelevant-id-2', name: 'Importiert B', state: Object.assign({}, BASE, { balls: 9 }), savedAt: 222 }
+        ]
+      };
+      const result = PZ.importRecipes(parsed);
+      const recipes = PZ.listRecipes();
+      renderBox('importRecipes() in eine leere Bibliothek — beide Rezepte werden übernommen', [
+        { label: 'imported = 2', ok: result.imported === 2, actual: result.imported, expected: 2, tol: null },
+        { label: 'skipped = 0', ok: result.skipped === 0, actual: result.skipped, expected: 0, tol: null },
+        { label: 'Beide Rezepte jetzt in listRecipes()', ok: recipes.length === 2, actual: recipes.length, expected: 2, tol: null },
+        { label: 'Namen 1:1 übernommen', ok: recipes.some(r => r.name === 'Importiert A') && recipes.some(r => r.name === 'Importiert B'), actual: recipes.map(r => r.name).join(','), expected: 'enthält beide Namen', tol: null },
+        { label: 'Importierte Rezepte bekommen NEUE ids (nicht die aus der Datei übernommen)', ok: !recipes.some(r => r.id === 'irrelevant-id-1' || r.id === 'irrelevant-id-2'), actual: recipes.map(r => r.id).join(','), expected: 'keine der Datei-ids', tol: null }
+      ]);
+    });
+
+    // --- Namenskollision beim Import: bestehendes Rezept bleibt unangetastet, ---
+    // --- der importierte Eintrag bekommt einen unterscheidbaren Namen, nichts geht verloren ---
+    withCleanStorage(() => {
+      Object.assign(PZ.state, BASE, { balls: 4 });
+      PZ.saveAsNew('Mein Rezept');
+      const parsed = {
+        recipes: [
+          { name: 'Mein Rezept', state: Object.assign({}, BASE, { balls: 12 }) },
+          { name: 'Mein Rezept', state: Object.assign({}, BASE, { balls: 13 }) }
+        ]
+      };
+      const result = PZ.importRecipes(parsed);
+      const recipes = PZ.listRecipes();
+      const named = recipes.map(r => r.name).sort();
+      renderBox('Namenskollision beim Import — bestehendes Rezept bleibt, Duplikate bekommen unterscheidbare Namen', [
+        { label: 'imported = 2', ok: result.imported === 2, actual: result.imported, expected: 2, tol: null },
+        { label: 'Insgesamt 3 Rezepte (nichts überschrieben)', ok: recipes.length === 3, actual: recipes.length, expected: 3, tol: null },
+        { label: 'Original "Mein Rezept" (balls=4) unverändert vorhanden', ok: recipes.some(r => r.name === 'Mein Rezept' && r.state.balls === 4), actual: recipes.find(r => r.name === 'Mein Rezept'), expected: 'balls=4', tol: null },
+        { label: 'Erster Import bekommt "Mein Rezept (importiert)"', ok: named.indexOf('Mein Rezept (importiert)') !== -1, actual: named, expected: 'enthält "Mein Rezept (importiert)"', tol: null },
+        { label: 'Zweiter Import bekommt "Mein Rezept (importiert 2)"', ok: named.indexOf('Mein Rezept (importiert 2)') !== -1, actual: named, expected: 'enthält "Mein Rezept (importiert 2)"', tol: null }
+      ]);
+    });
+
+    // --- Doppelter Import derselben Datei: läuft zweimal, ohne etwas zu überschreiben ---
+    withCleanStorage(() => {
+      const parsed = { recipes: [{ name: 'Backup-Rezept', state: Object.assign({}, BASE, { balls: 6 }) }] };
+      PZ.importRecipes(parsed);
+      const result2 = PZ.importRecipes(parsed); // exakt dieselbe Datei nochmal einlesen
+      const recipes = PZ.listRecipes();
+      renderBox('Doppelter Import derselben Datei — kein Datenverlust, zweiter Import bekommt eigenen Namen', [
+        { label: 'Zweiter Import ebenfalls erfolgreich (imported = 1)', ok: result2.imported === 1, actual: result2.imported, expected: 1, tol: null },
+        { label: 'Insgesamt 2 unabhängige Rezepte (kein Überschreiben)', ok: recipes.length === 2, actual: recipes.length, expected: 2, tol: null },
+        { label: 'Beide mit balls=6 (identischer Inhalt, nur der Name unterscheidet)', ok: recipes.every(r => r.state.balls === 6), actual: recipes.map(r => r.state.balls), expected: '[6,6]', tol: null }
+      ]);
+    });
+
+    // --- Leere/korrupte Datei — definierter Fehler statt Absturz oder stillem Datenverlust ---
+    withCleanStorage(() => {
+      Object.assign(PZ.state, BASE, { balls: 4 });
+      PZ.saveAsNew('Bestehendes Rezept');
+      let threwOnNull = false, threwOnEmptyObj = false, threwOnArray = false;
+      try { PZ.importRecipes(null); } catch (e) { threwOnNull = true; }
+      try { PZ.importRecipes({}); } catch (e) { threwOnEmptyObj = true; }
+      try { PZ.importRecipes([1, 2, 3]); } catch (e) { threwOnArray = true; }
+      const recipesAfter = PZ.listRecipes();
+      renderBox('Leere/korrupte Import-Eingabe — definierter Fehler, bestehende Rezepte bleiben unangetastet', [
+        { label: 'importRecipes(null) wirft (kein stiller no-op)', ok: threwOnNull, actual: threwOnNull, expected: true, tol: null },
+        { label: 'importRecipes({}) ohne recipes-Array wirft', ok: threwOnEmptyObj, actual: threwOnEmptyObj, expected: true, tol: null },
+        { label: 'importRecipes([...]) (kein Objekt mit recipes-Feld) wirft', ok: threwOnArray, actual: threwOnArray, expected: true, tol: null },
+        { label: 'Bestehendes Rezept nach den Fehlversuchen weiterhin da', ok: recipesAfter.length === 1 && recipesAfter[0].name === 'Bestehendes Rezept', actual: recipesAfter.length, expected: 1, tol: null }
+      ]);
+    });
+
+    // --- Datei mit teils kaputten Einträgen — gültige werden importiert, ungültige übersprungen ---
+    withCleanStorage(() => {
+      const parsed = {
+        recipes: [
+          { name: 'Gültig', state: Object.assign({}, BASE, { balls: 5 }) },
+          { name: 'Kaputt (kein state)' },
+          { name: 'Kaputt (state ist Array)', state: [1, 2, 3] },
+          null,
+          { name: 'Auch gültig', state: Object.assign({}, BASE, { balls: 7 }) }
+        ]
+      };
+      const result = PZ.importRecipes(parsed);
+      const recipes = PZ.listRecipes();
+      renderBox('Datei mit teils kaputten Einträgen — gültige Rezepte werden importiert, kaputte übersprungen', [
+        { label: 'imported = 2 (nur die 2 gültigen)', ok: result.imported === 2, actual: result.imported, expected: 2, tol: null },
+        { label: 'skipped = 3 (die 3 kaputten)', ok: result.skipped === 3, actual: result.skipped, expected: 3, tol: null },
+        { label: 'total = 5 (alle Einträge der Datei)', ok: result.total === 5, actual: result.total, expected: 5, tol: null },
+        { label: 'Nur die 2 gültigen landen in listRecipes()', ok: recipes.length === 2, actual: recipes.length, expected: 2, tol: null },
+        { label: 'Import läuft ohne Exception durch (kein Absturz an kaputten Einträgen)', ok: true, actual: true, expected: true, tol: null }
+      ]);
+    });
+
+    // --- Rundreise: exportRecipes() -> JSON.stringify -> JSON.parse -> importRecipes() ---
+    // (genau der Pfad, den Datei-Download + Datei-Upload in js/main.js durchlaufen)
+    withCleanStorage(() => {
+      Object.assign(PZ.state, BASE, { balls: 4, hyd: 60, salt: 3.1 });
+      PZ.saveAsNew('Original');
+      const exported = PZ.exportRecipes();
+      const asFileContent = JSON.stringify(exported); // simuliert Blob-Download
+      withCleanStorage(() => { /* Ziel-"Browser" hat noch keine Rezepte */
+        const reparsed = JSON.parse(asFileContent); // simuliert FileReader-Ergebnis
+        const result = PZ.importRecipes(reparsed);
+        const recipes = PZ.listRecipes();
+        renderBox('Vollständige Rundreise Export -> Datei-Text -> Import — Werte bleiben exakt erhalten', [
+          { label: 'imported = 1', ok: result.imported === 1, actual: result.imported, expected: 1, tol: null },
+          { label: 'Name erhalten', ok: recipes[0].name === 'Original', actual: recipes[0].name, expected: 'Original', tol: null },
+          { label: 'balls erhalten', ok: recipes[0].state.balls === 4, actual: recipes[0].state.balls, expected: 4, tol: null },
+          { label: 'hyd erhalten', ok: recipes[0].state.hyd === 60, actual: recipes[0].state.hyd, expected: 60, tol: null },
+          { label: 'salt erhalten', ok: recipes[0].state.salt === 3.1, actual: recipes[0].state.salt, expected: 3.1, tol: null }
+        ]);
+      });
+    });
+
+    // Ursprünglichen Stand (falls vorhanden) wiederherstellen, sonst Testspuren entfernen
+    if (backup !== null) localStorage.setItem(STORAGE_KEY, backup);
+    else localStorage.removeItem(STORAGE_KEY);
+  })();
+
+  // ─────────────────────────────────────────────────────────────
   const s = document.getElementById('summary');
   s.textContent = failed === 0
     ? '✓ Alle ' + passed + ' Prüfungen bestanden'

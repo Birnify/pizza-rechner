@@ -71,6 +71,79 @@
     };
   }
 
+  // --- Rezepte-Backup: Export/Import als Datei (js/storage.js) ----------
+  function showRecipeIOMsg(msg) {
+    const el = $('recipeIOLiveMsg');
+    if (el) el.textContent = msg;
+  }
+
+  const recipeExportBtn = $('recipeExportBtn');
+  if (recipeExportBtn) {
+    recipeExportBtn.onclick = () => {
+      const backup = PZ.exportRecipes();
+      if (!backup.recipes.length) {
+        showRecipeIOMsg('Noch keine gespeicherten Rezepte zum Sichern vorhanden.');
+        return;
+      }
+      const json = JSON.stringify(backup, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pizza-rezepte-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const n = backup.recipes.length;
+      showRecipeIOMsg(n + (n === 1 ? ' Rezept' : ' Rezepte') + ' als Datei gesichert.');
+    };
+  }
+
+  const recipeImportBtn = $('recipeImportBtn');
+  const recipeImportInput = $('recipeImportInput');
+  if (recipeImportBtn && recipeImportInput) {
+    // recipeImportInput ist per tabindex="-1" bewusst aus der Tab-Reihenfolge genommen
+    // (unsichtbares Steuerelement, s. .visually-hidden) und wird nur über diesen Button
+    // ausgelöst. Der native Datei-Dialog verschiebt den Fokus dabei technisch auf das
+    // Input selbst; ohne Gegenmaßnahme bliebe er dort stehen — für Tastatur-Nutzer ohne
+    // sichtbaren Fokusring (WCAG 2.4.7). Sobald das Fenster nach dem Schließen des
+    // Dialogs (egal ob Datei gewählt oder abgebrochen) den Fokus zurückbekommt, holen
+    // wir ihn zurück auf den sichtbaren Button.
+    recipeImportBtn.onclick = () => {
+      recipeImportInput.click();
+      const restoreFocus = () => {
+        window.removeEventListener('focus', restoreFocus);
+        if (document.activeElement === recipeImportInput) recipeImportBtn.focus();
+      };
+      window.addEventListener('focus', restoreFocus);
+    };
+    recipeImportInput.onchange = () => {
+      const file = recipeImportInput.files && recipeImportInput.files[0];
+      recipeImportInput.value = ''; // erlaubt erneutes Auswählen derselben Datei
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          const result = PZ.importRecipes(parsed);
+          refreshRecipeSelect();
+          if (result.imported === 0) {
+            showRecipeIOMsg('Keine gültigen Rezepte in dieser Datei gefunden.');
+          } else {
+            let msg = result.imported + (result.imported === 1 ? ' Rezept' : ' Rezepte') + ' importiert.';
+            if (result.skipped > 0) msg += ' ' + result.skipped + ' übersprungen (ungültig).';
+            showRecipeIOMsg(msg);
+          }
+        } catch (e) {
+          showRecipeIOMsg('Import fehlgeschlagen: Datei ist kein gültiges Rezepte-Backup.');
+        }
+      };
+      reader.onerror = () => showRecipeIOMsg('Import fehlgeschlagen: Datei konnte nicht gelesen werden.');
+      reader.readAsText(file);
+    };
+  }
+
   // Ein gültiger Teilen-Link (?r=…, js/share.js) hat Vorrang vor dem zuletzt
   // gespeicherten Rezept — wer einen Link öffnet, will das geteilte Rezept sehen.
   // Bei fehlendem/kaputtem Link (oder falls js/share.js gar nicht geladen ist)

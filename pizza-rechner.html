@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pizzateig-Rechner</title>
-<link rel="stylesheet" href="css/styles.css?v=3.20.1">
+<link rel="stylesheet" href="css/styles.css?v=3.21.0">
 </head>
 <body>
 <header>
@@ -58,6 +58,14 @@
           <button type="button" id="recipeDelete" style="flex:1;">Löschen</button>
         </div>
         <div class="hint" id="recipeHint" style="margin-top:8px;">Eigene Rezepte sind unabhängig von den Presets oben — hier landen deine per „Speichern" gesicherten Stände.</div>
+        <div class="row" style="margin-top:14px;gap:8px;">
+          <button type="button" id="recipeExportBtn" style="flex:1;">Als Datei sichern</button>
+          <button type="button" id="recipeImportBtn" style="flex:1;">Aus Datei laden</button>
+          <label for="recipeImportInput" class="visually-hidden">Backup-Datei mit Rezepten auswählen</label>
+          <input type="file" id="recipeImportInput" accept="application/json,.json" class="visually-hidden" tabindex="-1">
+        </div>
+        <div class="hint" id="recipeIOHint" style="margin-top:8px;">Sichert alle gespeicherten Rezepte als Datei (z. B. vor dem Löschen von Websitedaten) oder lädt eine solche Datei wieder ein — importierte Rezepte werden ergänzt, nichts wird überschrieben.</div>
+        <div id="recipeIOLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
       </div>
     </div>
 
@@ -434,23 +442,23 @@
 <footer>
   Alles wird lokal in deinem Browser gerechnet &amp; gespeichert · keine Internetverbindung nötig<br>
   Bäckerprozente — Wasser, Salz &amp; Hefe immer relativ zur Mehlmenge (= 100 %)<br>
-  <span id="appVersion" style="opacity:.7;">v3.20.1</span>
+  <span id="appVersion" style="opacity:.7;">v3.21.0</span>
 </footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.20.1"></script>
-<script src="js/state.js?v=3.20.1"></script>
-<script src="js/settings.js?v=3.20.1"></script>
-<script src="js/flour.js?v=3.20.1"></script>
-<script src="js/calc.js?v=3.20.1"></script>
-<script src="js/schedule.js?v=3.20.1"></script>
-<script src="js/guide.js?v=3.20.1"></script>
-<script src="js/timer.js?v=3.20.1"></script>
-<script src="js/ui.js?v=3.20.1"></script>
-<script src="js/print.js?v=3.20.1"></script>
-<script src="js/presets.js?v=3.20.1"></script>
-<script src="js/storage.js?v=3.20.1"></script>
-<script src="js/share.js?v=3.20.1"></script>
-<script src="js/main.js?v=3.20.1"></script>
+<script src="js/dom.js?v=3.21.0"></script>
+<script src="js/state.js?v=3.21.0"></script>
+<script src="js/settings.js?v=3.21.0"></script>
+<script src="js/flour.js?v=3.21.0"></script>
+<script src="js/calc.js?v=3.21.0"></script>
+<script src="js/schedule.js?v=3.21.0"></script>
+<script src="js/guide.js?v=3.21.0"></script>
+<script src="js/timer.js?v=3.21.0"></script>
+<script src="js/ui.js?v=3.21.0"></script>
+<script src="js/print.js?v=3.21.0"></script>
+<script src="js/presets.js?v=3.21.0"></script>
+<script src="js/storage.js?v=3.21.0"></script>
+<script src="js/share.js?v=3.21.0"></script>
+<script src="js/main.js?v=3.21.0"></script>
 </body>
 </html>

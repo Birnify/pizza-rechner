@@ -821,6 +821,14 @@ footer{text-align:right;}
             <button type="button" id="recipeDelete" style="flex:1;">Löschen</button>
           </div>
           <div class="hint" id="recipeHint" style="margin-top:8px;">Eigene Rezepte sind unabhängig von den Presets oben — hier landen deine per „Speichern" gesicherten Stände.</div>
+          <div class="row" style="margin-top:14px;gap:8px;">
+            <button type="button" id="recipeExportBtn" style="flex:1;">Als Datei sichern</button>
+            <button type="button" id="recipeImportBtn" style="flex:1;">Aus Datei laden</button>
+            <label for="recipeImportInput" class="visually-hidden">Backup-Datei mit Rezepten auswählen</label>
+            <input type="file" id="recipeImportInput" accept="application/json,.json" class="visually-hidden" tabindex="-1">
+          </div>
+          <div class="hint" id="recipeIOHint" style="margin-top:8px;">Sichert alle gespeicherten Rezepte als Datei (z. B. vor dem Löschen von Websitedaten) oder lädt eine solche Datei wieder ein — importierte Rezepte werden ergänzt, nichts wird überschrieben.</div>
+          <div id="recipeIOLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
         </div>
       </div>
     </details>
@@ -955,7 +963,7 @@ footer{text-align:right;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.20.1</span>
+  <span id="appVersion" style="opacity:.7;">v3.21.0</span>
 </footer>
 
 <div class="quickbar">
@@ -2564,6 +2572,88 @@ footer{text-align:right;}
     applyState(rec.state);
   }
 
+  // --- Backup: Export/Import aller Rezepte als Datei (v3.21.0) ------------
+  //
+  // localStorage lebt nur im Browser-Profil (und ist zudem pro Origin getrennt,
+  // z.B. file:// vs. GitHub-Pages-Live-Version) — "Websitedaten löschen" nimmt
+  // alle gespeicherten Rezepte ersatzlos mit. Export/Import ist die einzige
+  // Brücke dagegen, bewusst als reine Datei (kein Server, kein Account, s.
+  // pizza-rechner-KONTEXT.md "Warum keine KI / kein Internet?").
+
+  // Baut ein Backup-Objekt mit ALLEN gespeicherten Rezepten (nicht nur dem
+  // aktiven state). Reine Datenfunktion, kein DOM-Zugriff — der Download
+  // (Blob + <a download>) passiert in js/main.js.
+  function exportRecipes() {
+    const data = readStore();
+    return {
+      format: 'pizzaRechnerBackup',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      recipes: JSON.parse(JSON.stringify(data.recipes))
+    };
+  }
+
+  // Ein Eintrag zählt nur als importierbar, wenn er wie ein echtes Rezept
+  // aussieht (state-Objekt mit mind. einem der Kern-Felder) — analog zu
+  // looksLikeState() in js/share.js. Verhindert, dass eine fremde/kaputte
+  // Datei stille Datenmüll-Rezepte anlegt, die applyState() später crashen
+  // lassen könnten.
+  function isValidRecipeEntry(r) {
+    const s = r && r.state;
+    return !!r && typeof r === 'object' && !!s && typeof s === 'object' &&
+      !Array.isArray(s) && (s.balls != null || s.hyd != null);
+  }
+
+  // Findet einen noch nicht vergebenen Namen für einen importierten Eintrag,
+  // ohne einen bestehenden Namen zu überschreiben oder zu verwerfen: erste
+  // Kollision -> "<Name> (importiert)", jede weitere -> "<Name> (importiert 2)",
+  // "<Name> (importiert 3)", ...
+  function uniqueImportName(base, existingNames) {
+    if (!existingNames.has(base)) return base;
+    let name = base + ' (importiert)';
+    let n = 2;
+    while (existingNames.has(name)) {
+      name = base + ' (importiert ' + n + ')';
+      n++;
+    }
+    return name;
+  }
+
+  // Liest ein zuvor per exportRecipes() erzeugtes (oder strukturell gleich
+  // aufgebautes) Backup-Objekt ein und FÜGT die enthaltenen Rezepte den
+  // bestehenden hinzu — nichts wird überschrieben oder gelöscht. Jeder
+  // importierte Eintrag bekommt immer eine neue id (verhindert Kollisionen
+  // mit vorhandenen Rezepten) und ggf. einen angepassten Namen bei
+  // Namenskollision (s. uniqueImportName). Wirft bei offensichtlich falschem
+  // Format (kein Objekt / kein recipes-Array) einen Error — der Aufrufer
+  // (js/main.js) fängt das ab und zeigt eine anwenderfreundliche Meldung,
+  // analog zum defensiven Fehlerverhalten von js/share.js. Einzelne kaputte
+  // Einträge INNERHALB einer sonst gültigen Datei brechen den Import nicht ab,
+  // sie werden übersprungen und gezählt (result.skipped).
+  function importRecipes(parsed) {
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.recipes)) {
+      throw new Error('invalid-format');
+    }
+    const data = readStore();
+    const existingNames = new Set(data.recipes.map(r => r.name));
+    let imported = 0, skipped = 0;
+    parsed.recipes.forEach(entry => {
+      if (!isValidRecipeEntry(entry)) { skipped++; return; }
+      const baseName = (entry.name && String(entry.name).trim()) || 'Importiertes Rezept';
+      const name = uniqueImportName(baseName, existingNames);
+      existingNames.add(name);
+      data.recipes.push({
+        id: makeId(),
+        name: name,
+        state: JSON.parse(JSON.stringify(entry.state)),
+        savedAt: typeof entry.savedAt === 'number' ? entry.savedAt : Date.now()
+      });
+      imported++;
+    });
+    if (imported > 0) writeRaw(data);
+    return { imported: imported, skipped: skipped, total: parsed.recipes.length };
+  }
+
   PZ.save = save;
   PZ.load = load;
   PZ.applyState = applyState;
@@ -2573,6 +2663,8 @@ footer{text-align:right;}
   PZ.loadRecipe = loadRecipe;
   PZ.listRecipes = listRecipes;
   PZ.getActiveId = getActiveId;
+  PZ.exportRecipes = exportRecipes;
+  PZ.importRecipes = importRecipes;
 })(window);
 
 </script>
@@ -2787,6 +2879,79 @@ footer{text-align:right;}
       const nextId = PZ.deleteRecipe(id);
       refreshRecipeSelect();
       if (nextId) PZ.loadRecipe(nextId);
+    };
+  }
+
+  // --- Rezepte-Backup: Export/Import als Datei (js/storage.js) ----------
+  function showRecipeIOMsg(msg) {
+    const el = $('recipeIOLiveMsg');
+    if (el) el.textContent = msg;
+  }
+
+  const recipeExportBtn = $('recipeExportBtn');
+  if (recipeExportBtn) {
+    recipeExportBtn.onclick = () => {
+      const backup = PZ.exportRecipes();
+      if (!backup.recipes.length) {
+        showRecipeIOMsg('Noch keine gespeicherten Rezepte zum Sichern vorhanden.');
+        return;
+      }
+      const json = JSON.stringify(backup, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pizza-rezepte-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const n = backup.recipes.length;
+      showRecipeIOMsg(n + (n === 1 ? ' Rezept' : ' Rezepte') + ' als Datei gesichert.');
+    };
+  }
+
+  const recipeImportBtn = $('recipeImportBtn');
+  const recipeImportInput = $('recipeImportInput');
+  if (recipeImportBtn && recipeImportInput) {
+    // recipeImportInput ist per tabindex="-1" bewusst aus der Tab-Reihenfolge genommen
+    // (unsichtbares Steuerelement, s. .visually-hidden) und wird nur über diesen Button
+    // ausgelöst. Der native Datei-Dialog verschiebt den Fokus dabei technisch auf das
+    // Input selbst; ohne Gegenmaßnahme bliebe er dort stehen — für Tastatur-Nutzer ohne
+    // sichtbaren Fokusring (WCAG 2.4.7). Sobald das Fenster nach dem Schließen des
+    // Dialogs (egal ob Datei gewählt oder abgebrochen) den Fokus zurückbekommt, holen
+    // wir ihn zurück auf den sichtbaren Button.
+    recipeImportBtn.onclick = () => {
+      recipeImportInput.click();
+      const restoreFocus = () => {
+        window.removeEventListener('focus', restoreFocus);
+        if (document.activeElement === recipeImportInput) recipeImportBtn.focus();
+      };
+      window.addEventListener('focus', restoreFocus);
+    };
+    recipeImportInput.onchange = () => {
+      const file = recipeImportInput.files && recipeImportInput.files[0];
+      recipeImportInput.value = ''; // erlaubt erneutes Auswählen derselben Datei
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          const result = PZ.importRecipes(parsed);
+          refreshRecipeSelect();
+          if (result.imported === 0) {
+            showRecipeIOMsg('Keine gültigen Rezepte in dieser Datei gefunden.');
+          } else {
+            let msg = result.imported + (result.imported === 1 ? ' Rezept' : ' Rezepte') + ' importiert.';
+            if (result.skipped > 0) msg += ' ' + result.skipped + ' übersprungen (ungültig).';
+            showRecipeIOMsg(msg);
+          }
+        } catch (e) {
+          showRecipeIOMsg('Import fehlgeschlagen: Datei ist kein gültiges Rezepte-Backup.');
+        }
+      };
+      reader.onerror = () => showRecipeIOMsg('Import fehlgeschlagen: Datei konnte nicht gelesen werden.');
+      reader.readAsText(file);
     };
   }
 
