@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-15 · Aktuelle Version: v3.21.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-16 · Aktuelle Version: v3.22.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,119 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Rezepte-Backup: Export/Import aller gespeicherten Rezepte als Datei (v3.21.0) = aktueller Stand
+## Eigenständiges Rezept-Anlegen-Formular + Presets-Dropdown-Integration (v3.22.0) = aktueller Stand
+
+Neues Feature, vom Nutzer per `/define-feature` strukturiert und bestätigt. Auslöser:
+zum Anlegen eines neuen Rezepts musste man bisher die über die ganze Seite verstreuten
+Hauptregler umstellen (was auch die gerade laufende Berechnung/Anleitung mit veränderte)
+und erst danach in der „Meine Rezepte"-Card speichern. Jetzt gibt es dafür eine eigene,
+vom Hauptrechner komplett unabhängige Card.
+
+- **Neue Card „Neues Rezept anlegen"** (`#newRecipeCard`, Desktop direkt nach
+  `#recipesCard`; Mobil als `<details class="card">` in der `data-view="rezepte"`-Ansicht,
+  ebenfalls direkt nach `#recipesCard`). Enthält drei Unterabschnitte, die die bestehenden
+  Haupt-Cards strukturell 1:1 spiegeln, aber mit eigenem `nr`-ID-Präfix (`#nrHyd` statt
+  `#hyd` usw.): **Grundeinstellungen** (Mehl, Anzahl Teiglinge, Gewicht/Teigling, Hydration,
+  Salz, Öl, Zucker), **Methode & Hefe** (Teigführung, Vorteig-Anteil, Biga-Hydration,
+  Vorteig-Reife-Stufen, Hefe-Art, Hefemenge), **Teigtemperatur & Eiswasser** (DDT, Raum-
+  und Mehltemperatur, Knetart) — plus Namensfeld + „Rezept anlegen"-Button + Live-Region.
+  **Bewusst ohne Zeitplan-Felder** (Scope der Feature-Definition) **und ohne „Kalte
+  Gare"-Auswahl** (im Scope nicht als eigenes Feld genannt, da es eher eine Zeitplan-nahe
+  Entscheidung ist) — neu angelegte Rezepte bekommen dafür feste Defaults (`coldStage:
+  'balls'`, `timeMode: 'start'`, `timeISO: ''`), die nach dem Laden im Hauptrechner normal
+  änderbar sind.
+- **`js/newrecipe.js` (neues Modul):** eigener, komplett unabhängiger Mini-State
+  (`nrState`, Schema identisch zu `PZ.state`) + eigene Kopien von `link()`/`seg()`/
+  `applyMethod()`/den Vorteig-Reife-Stufen-Funktionen aus `js/ui.js` — **ohne** einen
+  einzigen `PZ.calc()`-Aufruf und **ohne** Schreibzugriff auf `PZ.state`. Das ist die
+  Kernidee des Features: das Anlegen eines Rezepts beeinflusst die aktuell laufende
+  Berechnung/Anleitung auf der Hauptseite in keiner Weise. Klick auf „Rezept anlegen"
+  baut aus `nrState` + den festen Defaults ein vollständiges, mit `applyState()`
+  kompatibles state-Objekt und übergibt es an die neue Speicherfunktion (s. u.).
+- **`js/storage.js` — neue Funktion `addRecipeFromState(name, state)`:** fügt ein Rezept
+  aus einem **beliebigen** übergebenen state-Objekt hinzu (nicht aus `PZ.state`, im
+  Unterschied zu `save()`/`saveAsNew()`) und lässt `data.activeId` **unverändert** — das
+  neu angelegte Rezept wird **nicht** automatisch aktiv/geladen. Sonst hätte ein Anlegen
+  über das Mini-Formular beim nächsten Seitenaufruf plötzlich dieses (statt des zuvor
+  aktiven) Rezepts geladen — ein Bruch der „beeinflusst den aktuellen Zustand nicht"-
+  Kernidee. Name-Fallback identisch zu `saveAsNew()`: leer/nur Leerzeichen →
+  `nextDefaultName()` („Rezept N"), sonst der übergebene (getrimmte) Name, auch wenn er
+  ein bestehendes Rezept dupliziert (keine Uniqueness-Logik, wie schon bei `saveAsNew()`).
+- **Presets-Dropdown (`#preset`) bekommt eine neue, dynamisch befüllte Optgroup „Eigene
+  Rezepte"** (`#presetCustomGroup`, leer im HTML, per JS befüllt): jede Option trägt den
+  Wert `recipe:<id>` statt eines `PZ.PRESETS`-Keys. `PZ.refreshPresetCustomRecipes()`
+  (`js/newrecipe.js`) baut nur den Inhalt dieser einen Optgroup neu auf (nicht das ganze
+  Select), erhält dabei die aktuelle Auswahl. Läuft automatisch bei **jeder** Änderung an
+  der Rezept-Bibliothek — `js/main.js`s `refreshRecipeSelect()` wurde um einen Aufruf von
+  `PZ.refreshPresetCustomRecipes()` ergänzt (ein gemeinsamer Aufrufpunkt statt Verdrahtung
+  an jeder einzelnen Stelle: Neu/Umbenennen/Löschen/Import/Anlegen über das neue Formular).
+- **`js/presets.js` — `#preset`-Change-Handler dispatcht jetzt zwischen zwei
+  Datenquellen:** Werte mit `recipe:`-Präfix rufen `PZ.loadRecipe(id)` auf (1:1 derselbe
+  Pfad wie „Meine Rezepte" → Laden über `#recipeSelect`, keine duplizierte Logik),
+  `presetDesc` bekommt eine Meldung mit dem Rezeptnamen. Alle anderen Werte laufen
+  weiterhin durch die bestehende `applyPreset()`. `lastAppliedPresetKey` (steuert den
+  Zucker-Reset beim Verlassen von „New York Style", s. v3.20.1) wird auch beim Laden
+  eines eigenen Rezepts aktualisiert, damit ein anschließender Wechsel weg von „New York
+  Style" weiterhin korrekt erkannt wird.
+- **Die Option „— Eigene Einstellung —" (`value=""`) wurde aus `#preset` entfernt**
+  (Scope-Vorgabe). Eine manuelle Reglereingabe setzt `#preset.value = ''` weiterhin
+  zurück (Bestandslogik, `js/presets.js`) — ohne passende `<option>` zeigt der native
+  Select den Zustand jetzt einfach ohne sichtbare Auswahl an, statt eine eigene Option
+  dafür vorzuhalten.
+- **Accessibility-Fix während des gezielten Audits** (`accessibility-expert`-Agent, nur
+  auf die neuen Teile fokussiert): der native `<select>` landete beim Löschen eines
+  gerade im `#preset`-Dropdown ausgewählten eigenen Rezepts bei `selectedIndex = -1` —
+  kein sichtbarer Optionstext, kein programmatisch bestimmbarer Wert (WCAG 4.1.2). Fix:
+  eine unsichtbare, nicht wählbare Platzhalter-Option `<option value="" disabled
+  hidden>Kein Rezept ausgewählt</option>` als erstes Kind des Selects (Desktop + Mobil) —
+  `hidden` nimmt sie aus der sichtbaren Optionsliste, `disabled` verhindert jede Auswahl
+  per Maus/Tastatur, sie dient nur als gültiger Rückfallwert für Skript-Zuweisungen. Kein
+  Widerspruch zur obigen Entfernung von „Eigene Einstellung" — die ist weiterhin
+  unwiederbringlich weg, dies ist eine rein technische, unsichtbare Absicherung. Zusätzlich
+  `if (sel.selectedIndex === -1) sel.value = '';` in `refreshPresetCustomRecipes()`. Alle
+  übrigen Kontrollen (Label-Verknüpfung, `aria-pressed`, `aria-valuetext`, Live-Region,
+  Überschriftenhierarchie) waren bereits korrekt (1:1 Kopien der etablierten, schon
+  auditierten Haupt-Regler) — keine weiteren Befunde.
+- **Bewusst NICHT angefasst:** die bestehende „Meine Rezepte"-Verwaltung
+  (Umbenennen/Löschen/Laden über `#recipeSelect`) bleibt unverändert; kein Cross-Sync der
+  Auswahl zwischen `#recipeSelect` und `#preset` über das hier gebaute hinaus (beide
+  bleiben, wie seit v3.10.0, unabhängig bedienbare Dropdowns); Export/Import (v3.21.0)
+  unangetastet; die Hauptregler/Karten auf der übrigen Seite bleiben unverändert bedienbar.
+- **Nebenbefund fürs Backlog (nicht behoben, außerhalb des Scopes):** `applyState()` in
+  `js/storage.js` setzt `state.sugar` beim Laden eines Rezepts zwar korrekt in `PZ.state`
+  (per `Object.assign`), ruft aber nie `set.sugar(...)` auf — der Zucker-Slider im UI zeigt
+  nach dem Laden über `#recipeSelect` **oder** `#preset` (`recipe:...`) ggf. einen veralteten
+  Wert an, bis der Nutzer den Regler selbst anfasst. Die Berechnung selbst ist korrekt
+  (nutzt `PZ.state.sugar` direkt), nur die Anzeige hinkt hinterher. Vorbestehend, nicht
+  durch dieses Feature verursacht — beim nächsten Storage-bezogenen Zyklus mit beheben.
+
+**Tests** (`tests/test.html`, Sektion 16, +14 neue Prüfungen, 453 → **467**): neue
+Testfälle direkt an die bestehende „Speichern & Laden"-Sektion angehängt (gleiches
+`withCleanStorage()`-Muster). Geprüft: `addRecipeFromState()` legt ein Rezept mit den
+übergebenen (nicht den PZ.state-)Werten an, ohne `PZ.state` oder `activeId` zu verändern,
+neues Rezept ist nicht automatisch aktiv; automatische „Rezept N"-Namen bei leerem/nur-
+Leerzeichen-Namen (analog `saveAsNew()`); Anlegen in eine komplett leere Bibliothek
+(`activeId` bleibt `null`, Rezept lässt sich trotzdem normal laden). Alle 467 Prüfungen
+grün (Headless-Edge-Dump). Die UI-Verdrahtung selbst (`js/newrecipe.js`, `js/presets.js`s
+Dispatch-Logik) läuft in `tests/test.html` nicht mit (kein DOM-Markup für die neue Card,
+`presets.js`/`main.js`/`newrecipe.js` sind dort wie gehabt nicht eingebunden) — stattdessen
+per Headless-Edge-CDP (WebSocket, `--remote-allow-origins=*`) auf Desktop **und** Mobil
+gegen das echte DOM verifiziert: Hauptzustand auf einen markanten Wert gesetzt (Teiglinge
+6, Hydration 77 %) → Mini-Formular auf andere Werte gestellt (Teiglinge 12, Hydration
+68 %, inkl. Wechsel auf Biga + Vorteig-Reife-Stufe „48 h") → „Rezept anlegen" → Hauptzustand
+bleibt exakt bei 6/77 unverändert, neues Rezept korrekt mit 12/68/Biga in der Bibliothek,
+taucht sofort in „Meine Rezepte" **und** in der neuen „Eigene Rezepte"-Optgroup auf → Auswahl
+dort lädt das Rezept korrekt (Hauptzustand wird jetzt 12/68/Biga, `#recipeSelect`
+synchronisiert automatisch mit). Identisches Ergebnis auf Desktop und Mobil.
+
+**Geändert:** `js/storage.js`, `js/presets.js`, `js/main.js`, `js/newrecipe.js` (neu),
+`pizza-rechner.html`, `pizza-rechner-mobile.html`, `tests/test.html`. `?v=` auf `3.22.0`
+gezogen (Desktop + Mobil, Cache-Busting + Footer-Version). `pizza-rechner-mobile-
+standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v3.22.0 - Neues Rezept anlegen + Presets-Integration/` enthält den
+vollständigen Schnappschuss.
+
+## Rezepte-Backup: Export/Import aller gespeicherten Rezepte als Datei (v3.21.0)
 
 Neues Feature, vom Nutzer per `/define-feature` strukturiert und bestätigt. Auslöser:
 eine Nutzerfrage, wie sicher selbst erstellte Rezepte sind ("gehen die nicht hops wenn
@@ -2189,14 +2301,25 @@ Keine Code-Änderung durch den Audit nötig.
   in v3.21.0** (kein Backlog-Punkt, direkter Nutzerauftrag per `/define-feature`; s.
   Abschnitt „Rezepte-Backup: Export/Import aller gespeicherten Rezepte als Datei
   (v3.21.0)" oben).
+- ~~Eigenständiges Rezept-Anlegen-Formular + Presets-Dropdown-Integration~~ — **erledigt
+  in v3.22.0** (kein Backlog-Punkt, direkter Nutzerauftrag per `/define-feature`; s.
+  Abschnitt „Eigenständiges Rezept-Anlegen-Formular + Presets-Dropdown-Integration
+  (v3.22.0)" oben).
 
-**Stand v3.21.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
-oben). Einzige offen gebliebene Teilaufgabe eines bereits erledigten Punkts: **Export
-als PDF** (s. „Teilen-Link"-Zeile oben — bewusst nicht mitgebaut, da der Nutzer damals
-nur den reinen Teilen-Link wollte). Für den nächsten Zyklus braucht es daher frisches
-Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes,
-oder eben der PDF-Export als nahliegender Kandidat) statt eines vorgegebenen
-Backlog-Punkts.
+**Neu ins Backlog aufgenommen (Nebenbefund aus v3.22.0):**
+- `applyState()` (`js/storage.js`) ruft beim Laden eines Rezepts nie `set.sugar(...)`
+  auf — der Zucker-Slider im UI kann nach dem Laden veraltet aussehen, obwohl
+  `PZ.state.sugar` und damit die Berechnung selbst korrekt sind. Klein, kosmetisch,
+  vorbestehend seit v3.19.2 (nicht durch v3.22.0 verursacht) — beim nächsten Storage-
+  bezogenen Zyklus mit beheben.
+
+**Stand v3.22.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+oben), bis auf den neuen kleinen Nebenbefund direkt darüber. Einzige offen gebliebene
+Teilaufgabe eines bereits erledigten Punkts: **Export als PDF** (s. „Teilen-Link"-Zeile
+oben — bewusst nicht mitgebaut, da der Nutzer damals nur den reinen Teilen-Link wollte).
+Für den nächsten Zyklus braucht es daher frisches Brainstorming in Phase 1 (neue
+Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes, der Sugar-Sync-Nebenbefund, oder
+eben der PDF-Export als nahliegende Kandidaten) statt eines vorgegebenen Backlog-Punkts.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

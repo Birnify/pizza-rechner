@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-title" content="Pizzateig">
 <meta name="theme-color" content="#c8442e">
 <title>Pizzateig-Rechner · Mobil</title>
-<link rel="stylesheet" href="css/styles.css?v=3.21.0">
-<link rel="stylesheet" href="css/mobile.css?v=3.21.0">
+<link rel="stylesheet" href="css/styles.css?v=3.22.0">
+<link rel="stylesheet" href="css/mobile.css?v=3.22.0">
 </head>
 <body>
 <header>
@@ -46,7 +46,7 @@
       <div class="acc-body">
         <div class="field" style="margin-bottom:0;">
           <select id="preset" class="selectbox selectbox-lg" aria-label="Fertiges Rezept auswählen">
-            <option value="">— Eigene Einstellung —</option>
+            <option value="" disabled hidden>Kein Rezept ausgewählt</option>
             <optgroup label="Neapolitanisch · Direkt">
               <option value="napoli_klassisch">Napoli Klassisch (AVPN) · 24 h</option>
               <option value="napoli_65">Napoli 65 % · 24 h (einsteigerfreundlich)</option>
@@ -61,6 +61,7 @@
               <option value="teglia">Teglia / Blech · hohe Hydration 75 %</option>
               <option value="newyork_style">New York Style · Zucker &amp; Öl, ~26 h</option>
             </optgroup>
+            <optgroup label="Eigene Rezepte" id="presetCustomGroup"></optgroup>
           </select>
           <div class="hint" id="presetDesc" style="margin-top:8px;">Wähle ein erprobtes Rezept — alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.</div>
         </div>
@@ -370,6 +371,183 @@
         </div>
       </div>
     </details>
+
+    <details class="card" id="newRecipeCard">
+      <summary><h2 aria-label="Neues Rezept anlegen">Neues Rezept anlegen</h2></summary>
+      <div class="acc-body">
+        <div class="hint" style="margin-bottom:16px;">Legt ein neues, eigenständiges Rezept an — die aktuelle Berechnung im Rechner-Bereich bleibt dabei unverändert. Erscheint danach in „Meine Rezepte“ und im „Fertiges Rezept wählen“-Dropdown unter „Eigene Rezepte“.</div>
+
+        <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:0 0 12px;border:none;padding:0;">Grundeinstellungen</h3>
+
+        <div class="field">
+          <label for="nrFlour">Mehl</label>
+          <select id="nrFlour" class="selectbox"></select>
+        </div>
+
+        <div class="field">
+          <label id="nrBallsLabel">Anzahl Teiglinge</label>
+          <div class="row">
+            <input type="range" id="nrBalls" min="1" max="20" step="1" value="4" aria-labelledby="nrBallsLabel">
+            <input type="number" id="nrBallsN" min="1" max="50" value="4" aria-labelledby="nrBallsLabel">
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="nrBallwLabel">Gewicht pro Teigling</label>
+          <div class="row">
+            <input type="range" id="nrBallw" min="150" max="400" step="5" value="250" aria-labelledby="nrBallwLabel" aria-describedby="nrBallwUnit">
+            <input type="number" id="nrBallwN" min="100" max="500" value="250" aria-labelledby="nrBallwLabel" aria-describedby="nrBallwUnit">
+            <span class="unit" id="nrBallwUnit">g</span>
+          </div>
+          <div class="pills">
+            <button type="button" data-nrballw="180">Mini 180</button>
+            <button type="button" data-nrballw="250">Napoli 250</button>
+            <button type="button" data-nrballw="280">Napoli XL 280</button>
+            <button type="button" data-nrballw="320">Teglia 320</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="nrHydLabel">Hydration (Wasser)</label>
+          <div class="row">
+            <input type="range" id="nrHyd" min="50" max="85" step="1" value="62" aria-labelledby="nrHydLabel" aria-describedby="nrHydUnit">
+            <input type="number" id="nrHydN" min="40" max="100" value="62" aria-labelledby="nrHydLabel" aria-describedby="nrHydUnit">
+            <span class="unit" id="nrHydUnit">%</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="nrSaltLabel">Salz</label>
+          <div class="row">
+            <input type="range" id="nrSalt" min="0" max="4" step="0.1" value="2.8" aria-labelledby="nrSaltLabel" aria-describedby="nrSaltUnit">
+            <input type="number" id="nrSaltN" min="0" max="5" step="0.1" value="2.8" aria-labelledby="nrSaltLabel" aria-describedby="nrSaltUnit">
+            <span class="unit" id="nrSaltUnit">%</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="nrOilLabel">Olivenöl</label>
+          <div class="row">
+            <input type="range" id="nrOil" min="0" max="8" step="0.5" value="2" aria-labelledby="nrOilLabel" aria-describedby="nrOilUnit">
+            <input type="number" id="nrOilN" min="0" max="10" step="0.5" value="2" aria-labelledby="nrOilLabel" aria-describedby="nrOilUnit">
+            <span class="unit" id="nrOilUnit">%</span>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:0;">
+          <label id="nrSugarLabel">Zucker</label>
+          <div class="row">
+            <input type="range" id="nrSugar" min="0" max="5" step="0.5" value="0" aria-labelledby="nrSugarLabel" aria-describedby="nrSugarUnit">
+            <input type="number" id="nrSugarN" min="0" max="8" step="0.5" value="0" aria-labelledby="nrSugarLabel" aria-describedby="nrSugarUnit">
+            <span class="unit" id="nrSugarUnit">%</span>
+          </div>
+          <div class="hint">Nicht flag-/preset-gebunden wie im Hauptrechner — im eigenständigen Formular immer verfügbar.</div>
+        </div>
+
+        <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:20px 0 12px;border:none;padding:0;">Methode &amp; Hefe</h3>
+
+        <div class="field">
+          <label id="nrMethodLabel">Teigführung</label>
+          <div class="seg" id="nrMethod" role="group" aria-labelledby="nrMethodLabel">
+            <button type="button" data-m="direct" class="active" aria-pressed="true">Direkt</button>
+            <button type="button" data-m="biga" aria-pressed="false">Biga</button>
+            <button type="button" data-m="poolish" aria-pressed="false">Poolish</button>
+          </div>
+        </div>
+
+        <div class="field collapse" id="nrPrefBlock">
+          <label id="nrPrefLabel">Anteil Mehl im Vorteig</label>
+          <div class="row">
+            <input type="range" id="nrPref" min="10" max="100" step="5" value="70" aria-labelledby="nrPrefLabel" aria-describedby="nrPrefUnit">
+            <input type="number" id="nrPrefN" min="10" max="100" value="70" aria-labelledby="nrPrefLabel" aria-describedby="nrPrefUnit">
+            <span class="unit" id="nrPrefUnit">%</span>
+          </div>
+        </div>
+
+        <div class="field collapse" id="nrBigaHydBlock">
+          <label id="nrBhydLabel">Biga-Hydration</label>
+          <div class="row">
+            <input type="range" id="nrBhyd" min="40" max="55" step="1" value="45" aria-labelledby="nrBhydLabel" aria-describedby="nrBhydUnit">
+            <input type="number" id="nrBhydN" min="35" max="60" value="45" aria-labelledby="nrBhydLabel" aria-describedby="nrBhydUnit">
+            <span class="unit" id="nrBhydUnit">%</span>
+          </div>
+        </div>
+
+        <div class="field collapse" id="nrPrefStageBlock">
+          <label id="nrPrefStageLabel">Vorteig-Reife <span class="val" id="nrPrefStageVal">24 h</span></label>
+          <div class="pills" id="nrPrefStage" role="group" aria-labelledby="nrPrefStageLabel"></div>
+        </div>
+
+        <div class="field">
+          <label id="nrYeastTypeLabel">Hefe-Art</label>
+          <div class="seg" id="nrYeastType" role="group" aria-labelledby="nrYeastTypeLabel">
+            <button type="button" data-y="fresh" class="active" aria-pressed="true">Frischhefe</button>
+            <button type="button" data-y="dry" aria-pressed="false">Trockenhefe</button>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:0;">
+          <label id="nrYeastLabel">Hefemenge</label>
+          <div class="row">
+            <input type="range" id="nrYeast" min="0.05" max="3" step="0.05" value="0.30" aria-labelledby="nrYeastLabel" aria-describedby="nrYeastUnit">
+            <input type="number" id="nrYeastN" min="0.01" max="5" step="0.01" value="0.30" aria-labelledby="nrYeastLabel" aria-describedby="nrYeastUnit">
+            <span class="unit" id="nrYeastUnit">%</span>
+          </div>
+          <div class="pills" id="nrYeastPills">
+            <button type="button" data-nryeast="0.05">Extrem lang (72h+)</button>
+            <button type="button" data-nryeast="0.1">Sehr lang (48h kühl)</button>
+            <button type="button" data-nryeast="0.3">Lang (24h)</button>
+            <button type="button" data-nryeast="1">Mittel (8h RT)</button>
+            <button type="button" data-nryeast="2.5">Schnell (4h)</button>
+          </div>
+        </div>
+
+        <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:20px 0 12px;border:none;padding:0;">Teigtemperatur &amp; Eiswasser</h3>
+
+        <div class="field">
+          <label id="nrDdtLabel">Ziel-Teigtemperatur</label>
+          <div class="row">
+            <input type="range" id="nrDdt" min="20" max="28" step="0.5" value="24" aria-labelledby="nrDdtLabel" aria-describedby="nrDdtUnit">
+            <input type="number" id="nrDdtN" min="18" max="30" step="0.5" value="24" aria-labelledby="nrDdtLabel" aria-describedby="nrDdtUnit">
+            <span class="unit" id="nrDdtUnit">°C</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="nrRoomLabel">Raumtemperatur</label>
+          <div class="row">
+            <input type="range" id="nrRoom" min="10" max="32" step="1" value="21" aria-labelledby="nrRoomLabel" aria-describedby="nrRoomUnit">
+            <input type="number" id="nrRoomN" min="0" max="40" value="21" aria-labelledby="nrRoomLabel" aria-describedby="nrRoomUnit">
+            <span class="unit" id="nrRoomUnit">°C</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="nrFlourTempLabel">Mehltemperatur</label>
+          <div class="row">
+            <input type="range" id="nrFlourTemp" min="4" max="32" step="1" value="21" aria-labelledby="nrFlourTempLabel" aria-describedby="nrFlourTempUnit">
+            <input type="number" id="nrFlourTempN" min="0" max="40" value="21" aria-labelledby="nrFlourTempLabel" aria-describedby="nrFlourTempUnit">
+            <span class="unit" id="nrFlourTempUnit">°C</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="nrKneadLabel">Knetart</label>
+          <div class="seg" id="nrKnead" role="group" aria-labelledby="nrKneadLabel">
+            <button type="button" data-k="3" class="active" aria-pressed="true">Hand</button>
+            <button type="button" data-k="6" aria-pressed="false">Maschine</button>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:6px;margin-bottom:0;">
+          <label for="nrName" class="visually-hidden">Name für das neue Rezept</label>
+          <input type="text" id="nrName" class="selectbox" placeholder="Name für das neue Rezept" style="margin-bottom:10px;">
+          <button type="button" id="nrCreateBtn" style="width:100%;">Rezept anlegen</button>
+          <div class="hint" id="nrHint" style="margin-top:8px;">Kalte Gare startet für neu angelegte Rezepte auf „Als Teiglinge (praktisch)“, Zeitplan bleibt leer — beides nach dem Laden im Rechner-Bereich änderbar.</div>
+          <div id="nrLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+    </details>
   </div>
 </div>
 
@@ -501,7 +679,7 @@
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.21.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.22.0</span>
 </footer>
 
 <div class="quickbar">
@@ -510,20 +688,21 @@
 </div>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.21.0"></script>
-<script src="js/state.js?v=3.21.0"></script>
-<script src="js/settings.js?v=3.21.0"></script>
-<script src="js/flour.js?v=3.21.0"></script>
-<script src="js/calc.js?v=3.21.0"></script>
-<script src="js/schedule.js?v=3.21.0"></script>
-<script src="js/guide.js?v=3.21.0"></script>
-<script src="js/timer.js?v=3.21.0"></script>
-<script src="js/ui.js?v=3.21.0"></script>
-<script src="js/print.js?v=3.21.0"></script>
-<script src="js/presets.js?v=3.21.0"></script>
-<script src="js/storage.js?v=3.21.0"></script>
-<script src="js/share.js?v=3.21.0"></script>
-<script src="js/main.js?v=3.21.0"></script>
+<script src="js/dom.js?v=3.22.0"></script>
+<script src="js/state.js?v=3.22.0"></script>
+<script src="js/settings.js?v=3.22.0"></script>
+<script src="js/flour.js?v=3.22.0"></script>
+<script src="js/calc.js?v=3.22.0"></script>
+<script src="js/schedule.js?v=3.22.0"></script>
+<script src="js/guide.js?v=3.22.0"></script>
+<script src="js/timer.js?v=3.22.0"></script>
+<script src="js/ui.js?v=3.22.0"></script>
+<script src="js/print.js?v=3.22.0"></script>
+<script src="js/presets.js?v=3.22.0"></script>
+<script src="js/storage.js?v=3.22.0"></script>
+<script src="js/newrecipe.js?v=3.22.0"></script>
+<script src="js/share.js?v=3.22.0"></script>
+<script src="js/main.js?v=3.22.0"></script>
 <script>
   // Mobil-only UI-Glue (kein Eingriff in die PZ-Rechenmodule)
   (function(){

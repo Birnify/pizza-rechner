@@ -28,6 +28,17 @@
   }
   PZ.refreshRecipeSelect = refreshRecipeSelect;
 
+  // Jede Änderung an der Rezepte-Bibliothek (Neu/Umbenennen/Löschen/Import/Anlegen
+  // über das neue Mini-Formular, js/newrecipe.js, v3.22.0) muss auch die "Eigene
+  // Rezepte"-Optgroup im #preset-Dropdown der Hauptseite aktuell halten — ein
+  // gemeinsamer Aufrufpunkt statt an jeder einzelnen Stelle unten separat.
+  const _refreshRecipeSelect = refreshRecipeSelect;
+  refreshRecipeSelect = function () {
+    _refreshRecipeSelect();
+    if (PZ.refreshPresetCustomRecipes) PZ.refreshPresetCustomRecipes();
+  };
+  PZ.refreshRecipeSelect = refreshRecipeSelect;
+
   const recipeSelect = $('recipeSelect');
   if (recipeSelect) {
     recipeSelect.addEventListener('change', e => {

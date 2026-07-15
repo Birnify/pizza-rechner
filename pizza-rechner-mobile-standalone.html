@@ -508,7 +508,7 @@ footer{text-align:right;}
       <div class="acc-body">
         <div class="field" style="margin-bottom:0;">
           <select id="preset" class="selectbox selectbox-lg" aria-label="Fertiges Rezept auswählen">
-            <option value="">— Eigene Einstellung —</option>
+            <option value="" disabled hidden>Kein Rezept ausgewählt</option>
             <optgroup label="Neapolitanisch · Direkt">
               <option value="napoli_klassisch">Napoli Klassisch (AVPN) · 24 h</option>
               <option value="napoli_65">Napoli 65 % · 24 h (einsteigerfreundlich)</option>
@@ -523,6 +523,7 @@ footer{text-align:right;}
               <option value="teglia">Teglia / Blech · hohe Hydration 75 %</option>
               <option value="newyork_style">New York Style · Zucker &amp; Öl, ~26 h</option>
             </optgroup>
+            <optgroup label="Eigene Rezepte" id="presetCustomGroup"></optgroup>
           </select>
           <div class="hint" id="presetDesc" style="margin-top:8px;">Wähle ein erprobtes Rezept — alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.</div>
         </div>
@@ -832,6 +833,183 @@ footer{text-align:right;}
         </div>
       </div>
     </details>
+
+    <details class="card" id="newRecipeCard">
+      <summary><h2 aria-label="Neues Rezept anlegen">Neues Rezept anlegen</h2></summary>
+      <div class="acc-body">
+        <div class="hint" style="margin-bottom:16px;">Legt ein neues, eigenständiges Rezept an — die aktuelle Berechnung im Rechner-Bereich bleibt dabei unverändert. Erscheint danach in „Meine Rezepte“ und im „Fertiges Rezept wählen“-Dropdown unter „Eigene Rezepte“.</div>
+
+        <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:0 0 12px;border:none;padding:0;">Grundeinstellungen</h3>
+
+        <div class="field">
+          <label for="nrFlour">Mehl</label>
+          <select id="nrFlour" class="selectbox"></select>
+        </div>
+
+        <div class="field">
+          <label id="nrBallsLabel">Anzahl Teiglinge</label>
+          <div class="row">
+            <input type="range" id="nrBalls" min="1" max="20" step="1" value="4" aria-labelledby="nrBallsLabel">
+            <input type="number" id="nrBallsN" min="1" max="50" value="4" aria-labelledby="nrBallsLabel">
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="nrBallwLabel">Gewicht pro Teigling</label>
+          <div class="row">
+            <input type="range" id="nrBallw" min="150" max="400" step="5" value="250" aria-labelledby="nrBallwLabel" aria-describedby="nrBallwUnit">
+            <input type="number" id="nrBallwN" min="100" max="500" value="250" aria-labelledby="nrBallwLabel" aria-describedby="nrBallwUnit">
+            <span class="unit" id="nrBallwUnit">g</span>
+          </div>
+          <div class="pills">
+            <button type="button" data-nrballw="180">Mini 180</button>
+            <button type="button" data-nrballw="250">Napoli 250</button>
+            <button type="button" data-nrballw="280">Napoli XL 280</button>
+            <button type="button" data-nrballw="320">Teglia 320</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="nrHydLabel">Hydration (Wasser)</label>
+          <div class="row">
+            <input type="range" id="nrHyd" min="50" max="85" step="1" value="62" aria-labelledby="nrHydLabel" aria-describedby="nrHydUnit">
+            <input type="number" id="nrHydN" min="40" max="100" value="62" aria-labelledby="nrHydLabel" aria-describedby="nrHydUnit">
+            <span class="unit" id="nrHydUnit">%</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="nrSaltLabel">Salz</label>
+          <div class="row">
+            <input type="range" id="nrSalt" min="0" max="4" step="0.1" value="2.8" aria-labelledby="nrSaltLabel" aria-describedby="nrSaltUnit">
+            <input type="number" id="nrSaltN" min="0" max="5" step="0.1" value="2.8" aria-labelledby="nrSaltLabel" aria-describedby="nrSaltUnit">
+            <span class="unit" id="nrSaltUnit">%</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="nrOilLabel">Olivenöl</label>
+          <div class="row">
+            <input type="range" id="nrOil" min="0" max="8" step="0.5" value="2" aria-labelledby="nrOilLabel" aria-describedby="nrOilUnit">
+            <input type="number" id="nrOilN" min="0" max="10" step="0.5" value="2" aria-labelledby="nrOilLabel" aria-describedby="nrOilUnit">
+            <span class="unit" id="nrOilUnit">%</span>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:0;">
+          <label id="nrSugarLabel">Zucker</label>
+          <div class="row">
+            <input type="range" id="nrSugar" min="0" max="5" step="0.5" value="0" aria-labelledby="nrSugarLabel" aria-describedby="nrSugarUnit">
+            <input type="number" id="nrSugarN" min="0" max="8" step="0.5" value="0" aria-labelledby="nrSugarLabel" aria-describedby="nrSugarUnit">
+            <span class="unit" id="nrSugarUnit">%</span>
+          </div>
+          <div class="hint">Nicht flag-/preset-gebunden wie im Hauptrechner — im eigenständigen Formular immer verfügbar.</div>
+        </div>
+
+        <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:20px 0 12px;border:none;padding:0;">Methode &amp; Hefe</h3>
+
+        <div class="field">
+          <label id="nrMethodLabel">Teigführung</label>
+          <div class="seg" id="nrMethod" role="group" aria-labelledby="nrMethodLabel">
+            <button type="button" data-m="direct" class="active" aria-pressed="true">Direkt</button>
+            <button type="button" data-m="biga" aria-pressed="false">Biga</button>
+            <button type="button" data-m="poolish" aria-pressed="false">Poolish</button>
+          </div>
+        </div>
+
+        <div class="field collapse" id="nrPrefBlock">
+          <label id="nrPrefLabel">Anteil Mehl im Vorteig</label>
+          <div class="row">
+            <input type="range" id="nrPref" min="10" max="100" step="5" value="70" aria-labelledby="nrPrefLabel" aria-describedby="nrPrefUnit">
+            <input type="number" id="nrPrefN" min="10" max="100" value="70" aria-labelledby="nrPrefLabel" aria-describedby="nrPrefUnit">
+            <span class="unit" id="nrPrefUnit">%</span>
+          </div>
+        </div>
+
+        <div class="field collapse" id="nrBigaHydBlock">
+          <label id="nrBhydLabel">Biga-Hydration</label>
+          <div class="row">
+            <input type="range" id="nrBhyd" min="40" max="55" step="1" value="45" aria-labelledby="nrBhydLabel" aria-describedby="nrBhydUnit">
+            <input type="number" id="nrBhydN" min="35" max="60" value="45" aria-labelledby="nrBhydLabel" aria-describedby="nrBhydUnit">
+            <span class="unit" id="nrBhydUnit">%</span>
+          </div>
+        </div>
+
+        <div class="field collapse" id="nrPrefStageBlock">
+          <label id="nrPrefStageLabel">Vorteig-Reife <span class="val" id="nrPrefStageVal">24 h</span></label>
+          <div class="pills" id="nrPrefStage" role="group" aria-labelledby="nrPrefStageLabel"></div>
+        </div>
+
+        <div class="field">
+          <label id="nrYeastTypeLabel">Hefe-Art</label>
+          <div class="seg" id="nrYeastType" role="group" aria-labelledby="nrYeastTypeLabel">
+            <button type="button" data-y="fresh" class="active" aria-pressed="true">Frischhefe</button>
+            <button type="button" data-y="dry" aria-pressed="false">Trockenhefe</button>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:0;">
+          <label id="nrYeastLabel">Hefemenge</label>
+          <div class="row">
+            <input type="range" id="nrYeast" min="0.05" max="3" step="0.05" value="0.30" aria-labelledby="nrYeastLabel" aria-describedby="nrYeastUnit">
+            <input type="number" id="nrYeastN" min="0.01" max="5" step="0.01" value="0.30" aria-labelledby="nrYeastLabel" aria-describedby="nrYeastUnit">
+            <span class="unit" id="nrYeastUnit">%</span>
+          </div>
+          <div class="pills" id="nrYeastPills">
+            <button type="button" data-nryeast="0.05">Extrem lang (72h+)</button>
+            <button type="button" data-nryeast="0.1">Sehr lang (48h kühl)</button>
+            <button type="button" data-nryeast="0.3">Lang (24h)</button>
+            <button type="button" data-nryeast="1">Mittel (8h RT)</button>
+            <button type="button" data-nryeast="2.5">Schnell (4h)</button>
+          </div>
+        </div>
+
+        <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:20px 0 12px;border:none;padding:0;">Teigtemperatur &amp; Eiswasser</h3>
+
+        <div class="field">
+          <label id="nrDdtLabel">Ziel-Teigtemperatur</label>
+          <div class="row">
+            <input type="range" id="nrDdt" min="20" max="28" step="0.5" value="24" aria-labelledby="nrDdtLabel" aria-describedby="nrDdtUnit">
+            <input type="number" id="nrDdtN" min="18" max="30" step="0.5" value="24" aria-labelledby="nrDdtLabel" aria-describedby="nrDdtUnit">
+            <span class="unit" id="nrDdtUnit">°C</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="nrRoomLabel">Raumtemperatur</label>
+          <div class="row">
+            <input type="range" id="nrRoom" min="10" max="32" step="1" value="21" aria-labelledby="nrRoomLabel" aria-describedby="nrRoomUnit">
+            <input type="number" id="nrRoomN" min="0" max="40" value="21" aria-labelledby="nrRoomLabel" aria-describedby="nrRoomUnit">
+            <span class="unit" id="nrRoomUnit">°C</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="nrFlourTempLabel">Mehltemperatur</label>
+          <div class="row">
+            <input type="range" id="nrFlourTemp" min="4" max="32" step="1" value="21" aria-labelledby="nrFlourTempLabel" aria-describedby="nrFlourTempUnit">
+            <input type="number" id="nrFlourTempN" min="0" max="40" value="21" aria-labelledby="nrFlourTempLabel" aria-describedby="nrFlourTempUnit">
+            <span class="unit" id="nrFlourTempUnit">°C</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="nrKneadLabel">Knetart</label>
+          <div class="seg" id="nrKnead" role="group" aria-labelledby="nrKneadLabel">
+            <button type="button" data-k="3" class="active" aria-pressed="true">Hand</button>
+            <button type="button" data-k="6" aria-pressed="false">Maschine</button>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:6px;margin-bottom:0;">
+          <label for="nrName" class="visually-hidden">Name für das neue Rezept</label>
+          <input type="text" id="nrName" class="selectbox" placeholder="Name für das neue Rezept" style="margin-bottom:10px;">
+          <button type="button" id="nrCreateBtn" style="width:100%;">Rezept anlegen</button>
+          <div class="hint" id="nrHint" style="margin-top:8px;">Kalte Gare startet für neu angelegte Rezepte auf „Als Teiglinge (praktisch)“, Zeitplan bleibt leer — beides nach dem Laden im Rechner-Bereich änderbar.</div>
+          <div id="nrLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+    </details>
   </div>
 </div>
 
@@ -963,7 +1141,7 @@ footer{text-align:right;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.21.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.22.0</span>
 </footer>
 
 <div class="quickbar">
@@ -2391,9 +2569,29 @@ footer{text-align:right;}
     PZ.calc();
   }
 
-  $('preset').addEventListener('change', e => applyPreset(e.target.value));
+  // Eigene Rezepte ("Eigene Rezepte"-Optgroup, v3.22.0, js/newrecipe.js): Optionen dort
+  // tragen den Wert "recipe:<id>" statt eines PRESETS-Keys. Auswahl lädt das Rezept
+  // 1:1 wie über "Meine Rezepte" -> Laden (PZ.loadRecipe), statt applyPreset() zu
+  // durchlaufen — ein Preset und ein eigenes Rezept sind unterschiedliche Datenquellen.
+  const RECIPE_PREFIX = 'recipe:';
+  function handlePresetChange(value) {
+    if (value && value.indexOf(RECIPE_PREFIX) === 0) {
+      const id = value.slice(RECIPE_PREFIX.length);
+      lastAppliedPresetKey = value;
+      if (PZ.loadRecipe) PZ.loadRecipe(id);
+      const rec = (PZ.listRecipes ? PZ.listRecipes() : []).find(r => r.id === id);
+      $('presetDesc').textContent = rec
+        ? 'Eigenes Rezept „' + rec.name + '“ geladen — Werte wurden übernommen.'
+        : DEFAULT_DESC;
+      return;
+    }
+    applyPreset(value);
+  }
+  $('preset').addEventListener('change', e => handlePresetChange(e.target.value));
 
-  // Manuelle Änderung an einem Regler → Auswahl zurück auf "Eigene Einstellung"
+  // Manuelle Änderung an einem Regler → #preset-Auswahl zurücksetzen (kein Preset/eigenes
+  // Rezept mehr aktiv). Seit v3.22.0 gibt es dafür keine "Eigene Einstellung"-Option mehr —
+  // ein leerer Wert ohne passende <option> zeigt den Select schlicht ohne Auswahl an.
   ['hyd', 'salt', 'oil', 'sugar', 'yeast', 'pref', 'bhyd', 'ballw', 'ddt', 'room', 'flourTemp', 'hydN', 'saltN', 'oilN', 'sugarN', 'yeastN'].forEach(id => {
     const el = $(id);
     if (el) el.addEventListener('input', () => { $('preset').value = ''; });
@@ -2654,10 +2852,32 @@ footer{text-align:right;}
     return { imported: imported, skipped: skipped, total: parsed.recipes.length };
   }
 
+  // Fügt EIN neues Rezept aus einem BELIEBIGEN state-Objekt hinzu — im Unterschied
+  // zu save()/saveAsNew() bezieht sich diese Funktion NIE auf PZ.state, sondern
+  // ausschliesslich auf das übergebene state-Objekt, und rührt data.activeId NICHT
+  // an (das aktive/zuletzt geladene Rezept bleibt unverändert). Genutzt vom
+  // eigenständigen "Neues Rezept anlegen"-Formular (js/newrecipe.js, v3.22.0) —
+  // Kernidee des Features: ein Rezept anlegen, OHNE den aktuell laufenden
+  // Rechner-Zustand auf der Hauptseite zu beeinflussen oder zu überschreiben.
+  function addRecipeFromState(name, state) {
+    const data = readStore();
+    const snapshot = JSON.parse(JSON.stringify(state));
+    const rec = {
+      id: makeId(),
+      name: name && name.trim() ? name.trim() : nextDefaultName(data.recipes),
+      state: snapshot,
+      savedAt: Date.now()
+    };
+    data.recipes.push(rec);
+    writeRaw(data);
+    return rec;
+  }
+
   PZ.save = save;
   PZ.load = load;
   PZ.applyState = applyState;
   PZ.saveAsNew = saveAsNew;
+  PZ.addRecipeFromState = addRecipeFromState;
   PZ.renameActive = renameActive;
   PZ.deleteRecipe = deleteRecipe;
   PZ.loadRecipe = loadRecipe;
@@ -2665,6 +2885,243 @@ footer{text-align:right;}
   PZ.getActiveId = getActiveId;
   PZ.exportRecipes = exportRecipes;
   PZ.importRecipes = importRecipes;
+})(window);
+
+</script>
+<script>
+/* newrecipe.js — eigenständiges Mini-Formular "Neues Rezept anlegen" (v3.22.0)
+ *
+ * Legt ein neues Rezept in der bestehenden Mehrfach-Rezepte-Bibliothek an
+ * (js/storage.js), OHNE den aktuell auf der Hauptseite laufenden Rechner-
+ * Zustand (PZ.state) zu berühren. Eigener, komplett unabhängiger Mini-State
+ * (nrState) + eigene Bedienelemente (IDs mit "nr"-Präfix, z. B. #nrHyd statt
+ * #hyd) — keine PZ.calc()-Aufrufe, kein Schreibzugriff auf PZ.state/PZ.set.
+ *
+ * Bewusst OHNE Zeitplan-Felder (Scope der Feature-Definition) und OHNE
+ * "Kalte Gare"-Auswahl (im Scope nicht als eigenes Feld genannt) — neu
+ * angelegte Rezepte bekommen dafür feste, unauffällige Defaults
+ * (coldStage: 'balls', timeMode: 'start', timeISO: ''), die nach dem Laden
+ * im Hauptrechner jederzeit normal änderbar sind.
+ *
+ * Zusätzlich: befüllt die neue "Eigene Rezepte"-Optgroup im #preset-Dropdown
+ * der Hauptseite (PZ.refreshPresetCustomRecipes) — läuft auch für Rezepte,
+ * die über die bestehende "Meine Rezepte"-Card angelegt/umbenannt/gelöscht
+ * wurden (js/main.js ruft das über den erweiterten refreshRecipeSelect()
+ * mit auf).
+ */
+(function (global) {
+  'use strict';
+  const PZ = global.PZ || (global.PZ = {});
+  const $ = PZ.$;
+
+  // --- Eigenständiger Mini-State (Schema identisch zu PZ.state, s. js/state.js,
+  // damit das Ergebnis 1:1 als gültiges Rezept-state-Objekt gespeichert werden
+  // kann) — bewusst eine eigene Kopie, keine Referenz auf PZ.state. ---
+  const nrState = {
+    balls: 4, ballw: 250, hyd: 62, salt: 2.8, oil: 2, sugar: 0,
+    method: 'direct', pref: 70, bhyd: 45, prefMature: 24, prefStage: 'b24',
+    yeastType: 'fresh', yeast: 0.30,
+    ddt: 24, room: 21, flourTemp: 21, knead: '3',
+    flour: 'caputo_pizzeria'
+  };
+
+  const nrCard = $('newRecipeCard');
+  if (!nrCard) return; // Karte nicht auf dieser Seite vorhanden -> Modul inaktiv
+
+  // --- Slider <-> Zahlenfeld, analog zu link() in js/ui.js, aber OHNE PZ.calc()
+  // und OHNE Bezug auf PZ.state — schreibt ausschliesslich in nrState. ---
+  function nrLink(sliderId, numberId, key, decimals, unit) {
+    const s = $(sliderId), n = $(numberId), v = $(sliderId + 'V');
+    function fmt(val) { return decimals != null ? val.toFixed(decimals) : val; }
+    function set(val, from) {
+      val = parseFloat(val);
+      if (isNaN(val)) return;
+      nrState[key] = val;
+      if (from !== 's') s.value = val;
+      if (from !== 'n') n.value = val;
+      const disp = fmt(val);
+      if (v) v.textContent = disp;
+      if (unit) s.setAttribute('aria-valuetext', disp + ' ' + unit);
+    }
+    if (unit) s.setAttribute('aria-valuetext', fmt(parseFloat(s.value)) + ' ' + unit);
+    s.addEventListener('input', () => set(s.value, 's'));
+    n.addEventListener('input', () => set(n.value, 'n'));
+    return set;
+  }
+
+  const nrSet = {
+    balls: nrLink('nrBalls', 'nrBallsN', 'balls', 0, 'Teiglinge'),
+    ballw: nrLink('nrBallw', 'nrBallwN', 'ballw', 0, 'Gramm'),
+    hyd: nrLink('nrHyd', 'nrHydN', 'hyd', 0, 'Prozent Hydration'),
+    salt: nrLink('nrSalt', 'nrSaltN', 'salt', 1, 'Prozent Salz'),
+    oil: nrLink('nrOil', 'nrOilN', 'oil', 1, 'Prozent Olivenöl'),
+    sugar: nrLink('nrSugar', 'nrSugarN', 'sugar', 1, 'Prozent Zucker'),
+    pref: nrLink('nrPref', 'nrPrefN', 'pref', 0, 'Prozent Mehl im Vorteig'),
+    bhyd: nrLink('nrBhyd', 'nrBhydN', 'bhyd', 0, 'Prozent Biga-Hydration'),
+    yeast: nrLink('nrYeast', 'nrYeastN', 'yeast', 2, 'Prozent Hefe'),
+    ddt: nrLink('nrDdt', 'nrDdtN', 'ddt', 1, 'Grad Celsius Teigtemperatur'),
+    room: nrLink('nrRoom', 'nrRoomN', 'room', 0, 'Grad Celsius Raumtemperatur'),
+    flourTemp: nrLink('nrFlourTemp', 'nrFlourTempN', 'flourTemp', 0, 'Grad Celsius Mehltemperatur')
+  };
+
+  document.querySelectorAll('[data-nrballw]').forEach(b => b.onclick = () => nrSet.ballw(b.dataset.nrballw));
+  document.querySelectorAll('[data-nryeast]').forEach(b => b.onclick = () => nrSet.yeast(b.dataset.nryeast));
+
+  // --- Segment-Buttons, analog zu seg()/selectSeg() in js/ui.js, aber schreibt
+  // nur in nrState (kein PZ.calc(), keine Rückwirkung auf #preset). ---
+  function nrSeg(containerId, attr, key, after) {
+    const c = $(containerId);
+    c.querySelectorAll('button').forEach(b => b.onclick = () => {
+      c.querySelectorAll('button').forEach(x => { x.classList.remove('active'); x.setAttribute('aria-pressed', 'false'); });
+      b.classList.add('active');
+      b.setAttribute('aria-pressed', 'true');
+      nrState[key] = b.dataset[attr];
+      if (after) after();
+    });
+  }
+
+  // --- Vorteig-Reife-Stufen (Biga/Poolish): nutzt dieselbe Datenquelle wie die
+  // Hauptseite (PZ.PREF_STAGES, js/ui.js), koppelt Reifezeit + Hefemenge exakt
+  // wie dort — nur eben isoliert im Mini-Formular. ---
+  const PREF_DEFAULT = { biga: 'b24', poolish: 'p14' };
+
+  function nrRenderPrefStages(m) {
+    const wrap = $('nrPrefStage');
+    const stages = (PZ.PREF_STAGES && PZ.PREF_STAGES[m]) || [];
+    wrap.innerHTML = '';
+    stages.forEach(s => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.ps = s.key;
+      b.setAttribute('aria-pressed', 'false');
+      b.textContent = s.label;
+      b.onclick = () => nrSelectPrefStage(m, s.key);
+      wrap.appendChild(b);
+    });
+  }
+  function nrHighlightPrefStage(key) {
+    const wrap = $('nrPrefStage');
+    let matured = '';
+    wrap.querySelectorAll('button').forEach(b => {
+      const on = b.dataset.ps === key;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', String(on));
+      if (on) matured = b.textContent.split(' ·')[0];
+    });
+    if (matured) $('nrPrefStageVal').textContent = matured;
+  }
+  function nrSelectPrefStage(m, key) {
+    const stages = (PZ.PREF_STAGES && PZ.PREF_STAGES[m]) || [];
+    const s = stages.find(x => x.key === key) || stages[0];
+    if (!s) return;
+    nrState.prefStage = s.key;
+    nrState.prefMature = s.mature;
+    nrHighlightPrefStage(s.key);
+    nrSet.yeast(s.yeast);
+  }
+
+  function nrApplyMethod() {
+    const m = nrState.method;
+    const isPref = m !== 'direct';
+    $('nrPrefBlock').classList.toggle('show', isPref);
+    $('nrBigaHydBlock').classList.toggle('show', m === 'biga');
+    $('nrPrefStageBlock').classList.toggle('show', isPref);
+    $('nrYeastPills').style.display = isPref ? 'none' : '';
+    if (isPref) {
+      nrRenderPrefStages(m);
+      const stages = (PZ.PREF_STAGES && PZ.PREF_STAGES[m]) || [];
+      const valid = stages.some(s => s.key === nrState.prefStage);
+      nrSelectPrefStage(m, valid ? nrState.prefStage : PREF_DEFAULT[m]);
+    }
+  }
+
+  nrSeg('nrMethod', 'm', 'method', nrApplyMethod);
+  nrSeg('nrYeastType', 'y', 'yeastType');
+  nrSeg('nrKnead', 'k', 'knead');
+  nrApplyMethod();
+
+  // --- Mehl-Dropdown, analog zur Befüllung von #flour in js/flour.js — eigene
+  // Kopie statt Wiederverwendung, da flour.js fest auf #flour/PZ.state verdrahtet ist. ---
+  (function populateNrFlour() {
+    const sel = $('nrFlour');
+    if (!sel || !PZ.FLOURS) return;
+    sel.innerHTML = '';
+    const groups = {};
+    Object.keys(PZ.FLOURS).forEach(key => {
+      const f = PZ.FLOURS[key];
+      if (!groups[f.group]) {
+        const og = document.createElement('optgroup');
+        og.label = f.group;
+        sel.appendChild(og);
+        groups[f.group] = og;
+      }
+      const o = document.createElement('option');
+      o.value = key;
+      o.textContent = f.name + ' · W' + f.w + ' · ' + f.dur;
+      groups[f.group].appendChild(o);
+    });
+    sel.value = nrState.flour;
+    sel.addEventListener('change', () => { nrState.flour = sel.value; });
+  })();
+
+  // --- Anlegen ---
+  function showNrMsg(msg) {
+    const el = $('nrLiveMsg');
+    if (el) el.textContent = msg;
+  }
+
+  const nrCreateBtn = $('nrCreateBtn');
+  if (nrCreateBtn) {
+    nrCreateBtn.onclick = () => {
+      const nameEl = $('nrName');
+      const name = nameEl ? nameEl.value : '';
+      // Feste, im Mini-Formular nicht editierbare Felder ergänzen, damit ein
+      // vollständiges, mit applyState() kompatibles Rezept-state-Objekt entsteht.
+      const fullState = Object.assign({}, nrState, {
+        coldStage: 'balls',
+        timeMode: 'start',
+        timeISO: ''
+      });
+      const rec = PZ.addRecipeFromState(name, fullState);
+      if (nameEl) nameEl.value = '';
+      if (PZ.refreshRecipeSelect) PZ.refreshRecipeSelect();
+      showNrMsg('„' + rec.name + '“ wurde angelegt — zu finden in „Meine Rezepte“ und im Presets-Dropdown unter „Eigene Rezepte“. Die aktuelle Berechnung oben bleibt unverändert.');
+    };
+  }
+
+  // --- "Eigene Rezepte"-Optgroup im #preset-Dropdown (Hauptseite) ---------
+  // Rein additiv: baut nur den Inhalt der eigens dafür vorgesehenen, leeren
+  // Optgroup (#presetCustomGroup) neu auf, alle anderen <option>s im Select
+  // bleiben unangetastet. Erhält die aktuelle Auswahl, sofern der gewählte
+  // Wert nach dem Neuaufbau noch existiert (z. B. nach dem Löschen eines
+  // gerade dort ausgewählten Rezepts). Seit v3.22.0 gibt es keine "Eigene
+  // Einstellung"-Option mehr als Fallback — OHNE Gegenmaßnahme würde
+  // `sel.value = current` in diesem Fall still fehlschlagen: der native
+  // <select> landet bei `selectedIndex = -1` (kein Options-Text sichtbar,
+  // kein programmatisch bestimmbarer Zustand mehr — WCAG 4.1.2, per
+  // accessibility-expert-Audit gefunden und mit Headless-Edge-CDP
+  // reproduziert). Fix: eine unsichtbare, nicht wählbare Platzhalter-Option
+  // (`<option value="" disabled hidden>`, s. HTML) fängt genau diesen Fall
+  // auf — bleibt für die normale Bedienung unsichtbar/unwählbar (disabled),
+  // wird aber gültiges Ziel für `sel.value = ''`, sodass der Select immer
+  // einen klar benannten Zustand hat.
+  function refreshPresetCustomRecipes() {
+    const group = $('presetCustomGroup');
+    const sel = $('preset');
+    if (!group || !sel || !PZ.listRecipes) return;
+    const current = sel.value;
+    group.innerHTML = '';
+    PZ.listRecipes().forEach(r => {
+      const o = document.createElement('option');
+      o.value = 'recipe:' + r.id;
+      o.textContent = r.name;
+      group.appendChild(o);
+    });
+    sel.value = current;
+    if (sel.selectedIndex === -1) sel.value = '';
+  }
+  PZ.refreshPresetCustomRecipes = refreshPresetCustomRecipes;
+  refreshPresetCustomRecipes();
 })(window);
 
 </script>
@@ -2837,6 +3294,17 @@ footer{text-align:right;}
     recipes.forEach(r => sel.appendChild(new Option(r.name, r.id)));
     sel.value = activeId || recipes[0].id;
   }
+  PZ.refreshRecipeSelect = refreshRecipeSelect;
+
+  // Jede Änderung an der Rezepte-Bibliothek (Neu/Umbenennen/Löschen/Import/Anlegen
+  // über das neue Mini-Formular, js/newrecipe.js, v3.22.0) muss auch die "Eigene
+  // Rezepte"-Optgroup im #preset-Dropdown der Hauptseite aktuell halten — ein
+  // gemeinsamer Aufrufpunkt statt an jeder einzelnen Stelle unten separat.
+  const _refreshRecipeSelect = refreshRecipeSelect;
+  refreshRecipeSelect = function () {
+    _refreshRecipeSelect();
+    if (PZ.refreshPresetCustomRecipes) PZ.refreshPresetCustomRecipes();
+  };
   PZ.refreshRecipeSelect = refreshRecipeSelect;
 
   const recipeSelect = $('recipeSelect');

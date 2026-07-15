@@ -247,10 +247,32 @@
     return { imported: imported, skipped: skipped, total: parsed.recipes.length };
   }
 
+  // Fügt EIN neues Rezept aus einem BELIEBIGEN state-Objekt hinzu — im Unterschied
+  // zu save()/saveAsNew() bezieht sich diese Funktion NIE auf PZ.state, sondern
+  // ausschliesslich auf das übergebene state-Objekt, und rührt data.activeId NICHT
+  // an (das aktive/zuletzt geladene Rezept bleibt unverändert). Genutzt vom
+  // eigenständigen "Neues Rezept anlegen"-Formular (js/newrecipe.js, v3.22.0) —
+  // Kernidee des Features: ein Rezept anlegen, OHNE den aktuell laufenden
+  // Rechner-Zustand auf der Hauptseite zu beeinflussen oder zu überschreiben.
+  function addRecipeFromState(name, state) {
+    const data = readStore();
+    const snapshot = JSON.parse(JSON.stringify(state));
+    const rec = {
+      id: makeId(),
+      name: name && name.trim() ? name.trim() : nextDefaultName(data.recipes),
+      state: snapshot,
+      savedAt: Date.now()
+    };
+    data.recipes.push(rec);
+    writeRaw(data);
+    return rec;
+  }
+
   PZ.save = save;
   PZ.load = load;
   PZ.applyState = applyState;
   PZ.saveAsNew = saveAsNew;
+  PZ.addRecipeFromState = addRecipeFromState;
   PZ.renameActive = renameActive;
   PZ.deleteRecipe = deleteRecipe;
   PZ.loadRecipe = loadRecipe;

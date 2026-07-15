@@ -1339,6 +1339,56 @@
       ]);
     });
 
+    // --- addRecipeFromState() (v3.22.0, "Neues Rezept anlegen"-Mini-Formular,
+    // js/newrecipe.js): legt ein Rezept aus einem BELIEBIGEN state-Objekt an,
+    // OHNE PZ.state zu berühren und OHNE data.activeId zu verändern — Kernidee
+    // des Features: den aktuell laufenden Rechner-Zustand nicht zu beeinflussen. ---
+    withCleanStorage(() => {
+      Object.assign(PZ.state, BASE, { balls: 4, hyd: 60 }); // "aktuell laufender" Hauptzustand
+      PZ.save();
+      const activeIdBefore = PZ.getActiveId();
+      const stateBeforeSnapshot = Object.assign({}, PZ.state);
+
+      const independentState = Object.assign({}, BASE, { balls: 9, hyd: 71, method: 'biga' });
+      const rec = PZ.addRecipeFromState('Unabhängiges Rezept', independentState);
+      const recipes = PZ.listRecipes();
+
+      renderBox('addRecipeFromState() — legt Rezept an, ohne PZ.state oder das aktive Rezept zu verändern', [
+        { label: 'Neues Rezept wurde der Bibliothek hinzugefügt', ok: recipes.length === 2, actual: recipes.length, expected: 2, tol: null },
+        { label: 'Neues Rezept trägt den übergebenen Namen', ok: rec.name === 'Unabhängiges Rezept', actual: rec.name, expected: 'Unabhängiges Rezept', tol: null },
+        { label: 'Neues Rezept übernimmt die übergebenen Werte (balls), nicht PZ.state', ok: rec.state.balls === 9, actual: rec.state.balls, expected: 9, tol: null },
+        { label: 'Neues Rezept übernimmt die übergebenen Werte (method)', ok: rec.state.method === 'biga', actual: rec.state.method, expected: 'biga', tol: null },
+        { label: 'PZ.state bleibt exakt unverändert (balls)', ok: PZ.state.balls === stateBeforeSnapshot.balls, actual: PZ.state.balls, expected: stateBeforeSnapshot.balls, tol: null },
+        { label: 'PZ.state bleibt exakt unverändert (hyd)', ok: PZ.state.hyd === stateBeforeSnapshot.hyd, actual: PZ.state.hyd, expected: stateBeforeSnapshot.hyd, tol: null },
+        { label: 'Das aktive Rezept bleibt unverändert das bisherige (activeId)', ok: PZ.getActiveId() === activeIdBefore, actual: PZ.getActiveId(), expected: activeIdBefore, tol: null },
+        { label: 'Neues Rezept ist nicht automatisch aktiv', ok: PZ.getActiveId() !== rec.id, actual: PZ.getActiveId(), expected: '!= ' + rec.id, tol: null }
+      ]);
+    });
+
+    // --- addRecipeFromState() ohne (gültigen) Namen — automatische "Rezept N"-Namen,
+    // identisches Verhalten wie saveAsNew() ohne Namen. ---
+    withCleanStorage(() => {
+      const rec1 = PZ.addRecipeFromState('', Object.assign({}, BASE, { balls: 3 }));
+      const rec2 = PZ.addRecipeFromState('   ', Object.assign({}, BASE, { balls: 4 }));
+      const rec3 = PZ.addRecipeFromState(undefined, Object.assign({}, BASE, { balls: 5 }));
+      renderBox('addRecipeFromState() ohne (gültigen) Namen — automatische "Rezept N"-Namen', [
+        { label: 'Erstes Rezept ohne Namen heißt "Rezept 1"', ok: rec1.name === 'Rezept 1', actual: rec1.name, expected: 'Rezept 1', tol: null },
+        { label: 'Zweites (nur Leerzeichen) heißt "Rezept 2"', ok: rec2.name === 'Rezept 2', actual: rec2.name, expected: 'Rezept 2', tol: null },
+        { label: 'Drittes (undefined) heißt "Rezept 3"', ok: rec3.name === 'Rezept 3', actual: rec3.name, expected: 'Rezept 3', tol: null }
+      ]);
+    });
+
+    // --- addRecipeFromState() in eine leere Bibliothek (keine aktive Rezept vorher) —
+    // activeId bleibt null, das neue Rezept wird trotzdem korrekt gespeichert. ---
+    withCleanStorage(() => {
+      const rec = PZ.addRecipeFromState('Erstes eigenständiges Rezept', Object.assign({}, BASE, { balls: 7 }));
+      renderBox('addRecipeFromState() in eine leere Bibliothek — activeId bleibt null', [
+        { label: 'Rezept wurde angelegt', ok: PZ.listRecipes().length === 1, actual: PZ.listRecipes().length, expected: 1, tol: null },
+        { label: 'activeId bleibt null (kein Rezept war/ist aktiv)', ok: PZ.getActiveId() === null, actual: PZ.getActiveId(), expected: null, tol: null },
+        { label: 'Rezept lässt sich anschließend normal laden', ok: (() => { PZ.loadRecipe(rec.id); return PZ.state.balls === 7; })(), actual: 'balls nach loadRecipe', expected: 7, tol: null }
+      ]);
+    });
+
     // Ursprünglichen Stand (falls vorhanden) wiederherstellen, sonst Testspuren entfernen
     if (backup !== null) localStorage.setItem(STORAGE_KEY, backup);
     else localStorage.removeItem(STORAGE_KEY);

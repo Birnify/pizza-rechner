@@ -101,9 +101,29 @@
     PZ.calc();
   }
 
-  $('preset').addEventListener('change', e => applyPreset(e.target.value));
+  // Eigene Rezepte ("Eigene Rezepte"-Optgroup, v3.22.0, js/newrecipe.js): Optionen dort
+  // tragen den Wert "recipe:<id>" statt eines PRESETS-Keys. Auswahl lädt das Rezept
+  // 1:1 wie über "Meine Rezepte" -> Laden (PZ.loadRecipe), statt applyPreset() zu
+  // durchlaufen — ein Preset und ein eigenes Rezept sind unterschiedliche Datenquellen.
+  const RECIPE_PREFIX = 'recipe:';
+  function handlePresetChange(value) {
+    if (value && value.indexOf(RECIPE_PREFIX) === 0) {
+      const id = value.slice(RECIPE_PREFIX.length);
+      lastAppliedPresetKey = value;
+      if (PZ.loadRecipe) PZ.loadRecipe(id);
+      const rec = (PZ.listRecipes ? PZ.listRecipes() : []).find(r => r.id === id);
+      $('presetDesc').textContent = rec
+        ? 'Eigenes Rezept „' + rec.name + '“ geladen — Werte wurden übernommen.'
+        : DEFAULT_DESC;
+      return;
+    }
+    applyPreset(value);
+  }
+  $('preset').addEventListener('change', e => handlePresetChange(e.target.value));
 
-  // Manuelle Änderung an einem Regler → Auswahl zurück auf "Eigene Einstellung"
+  // Manuelle Änderung an einem Regler → #preset-Auswahl zurücksetzen (kein Preset/eigenes
+  // Rezept mehr aktiv). Seit v3.22.0 gibt es dafür keine "Eigene Einstellung"-Option mehr —
+  // ein leerer Wert ohne passende <option> zeigt den Select schlicht ohne Auswahl an.
   ['hyd', 'salt', 'oil', 'sugar', 'yeast', 'pref', 'bhyd', 'ballw', 'ddt', 'room', 'flourTemp', 'hydN', 'saltN', 'oilN', 'sugarN', 'yeastN'].forEach(id => {
     const el = $(id);
     if (el) el.addEventListener('input', () => { $('preset').value = ''; });
