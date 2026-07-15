@@ -62,6 +62,7 @@
 <script src="../js/guide.js"></script>
 <script src="../js/calc.js"></script>
 <script src="../js/print.js"></script>
+<script src="../js/pdf.js"></script>
 <script src="../js/storage.js"></script>
 <script src="../js/share.js"></script>
 
@@ -2015,6 +2016,109 @@
     // Ursprünglichen Stand (falls vorhanden) wiederherstellen, sonst Testspuren entfernen
     if (backup !== null) localStorage.setItem(STORAGE_KEY, backup);
     else localStorage.removeItem(STORAGE_KEY);
+  })();
+
+  // ─────────────────────────────────────────────────────────────
+  heading('21 · PDF-Export der Anleitung (js/pdf.js)');
+
+  // buildGuidePdfBytes() liest die bereits von PZ.calc()/buildGuide() gerenderte
+  // Anleitung direkt aus dem DOM (#guideSummary/#flourWarn/#guideSteps) und baut daraus
+  // von Hand ein PDF-1.4-Dokument (kein Font-Embedding, keine externe Bibliothek — s.
+  // Kommentar in js/pdf.js). Getestet wird die reine Datenfunktion, kein window.print()-
+  // artiger Seiteneffekt (analog zu buildShoppingList() in Sektion 15 — printGuide()/
+  // printShoppingList() selbst werden aus demselben Grund auch dort nicht unit-getestet).
+
+  // Dekodiert ein Uint8Array 1:1 zurück in einen JS-String (jedes Byte = ein Zeichen —
+  // exakt der Weg, auf dem buildGuidePdfBytes() den PDF-Bytestring erzeugt hat).
+  function bytesToStr(bytes) {
+    let out = '';
+    for (let i = 0; i < bytes.length; i++) out += String.fromCharCode(bytes[i]);
+    return out;
+  }
+  // Nur Codepoints <= 0xFF sind WinAnsi-/Latin-1-tauglich — Voraussetzung dafür, dass
+  // sanitizeText() wirklich jeden Textblock von Emoji/Symbolen ohne WinAnsi-Entsprechung
+  // befreit hat (sonst würde ein Font ohne Embedding die Zeichen nicht darstellen können).
+  function allLatin1(str) {
+    for (const ch of str) { if (ch.codePointAt(0) > 0xFF) return false; }
+    return true;
+  }
+
+  testCase('Direkt · Standard — PDF-Grundstruktur (Header/Objekte/Trailer gültig)', {}, R => {
+    const bytes = PZ.buildGuidePdfBytes();
+    const str = bytesToStr(bytes);
+    return [
+      ['Bytes vorhanden', bytes.length > 0, true],
+      ['Beginnt mit PDF-Header %PDF-1.4', str.indexOf('%PDF-1.4') === 0, true],
+      ['Catalog-Objekt vorhanden', str.includes('/Type /Catalog'), true],
+      ['Page-Objekt vorhanden', str.includes('/Type /Page'), true],
+      ['Content-Stream vorhanden', str.includes('stream') && str.includes('endstream'), true],
+      ['Trailer + xref vorhanden', str.includes('trailer') && str.includes('startxref'), true],
+      ['Datei endet mit %%EOF', str.slice(-5), '%%EOF'],
+    ];
+  });
+
+  testCase('Direkt · Standard — enthält reale Anleitungstexte (Klartext-Regressionsanker)', {}, R => {
+    const bytes = PZ.buildGuidePdfBytes();
+    const str = bytesToStr(bytes);
+    return [
+      ['Titel "Schritt-für-Schritt-Anleitung" enthalten', str.includes('Schritt-für-Schritt-Anleitung'), true],
+      ['Schritt "Kneten" enthalten', str.includes('Kneten'), true],
+      ['Schritt "Stockgare" enthalten', str.includes('Stockgare'), true],
+      ['Schritt "Teiglinge formen" enthalten', str.includes('Teiglinge formen'), true],
+      ['Tipp-Präfix "Tipp: " enthalten', str.includes('Tipp: '), true],
+    ];
+  });
+
+  testCase('Biga (Vorteig) — Tagesabschnitte und Vorteig-Schritte im PDF enthalten', {
+    method: 'biga', pref: 70, bhyd: 45, hyd: 65, prefMature: 24, prefStage: 'b24'
+  }, R => {
+    const bytes = PZ.buildGuidePdfBytes();
+    const str = bytesToStr(bytes);
+    return [
+      ['Tagesabschnitt "Vorteig — Biga ansetzen" enthalten', str.includes('Vorteig') && str.includes('Biga ansetzen'), true],
+      ['Schritt "Biga reifen lassen" enthalten', str.includes('Biga reifen lassen'), true],
+      ['Größerer Inhalt (mehr Schritte) erzeugt kein leeres/kaputtes PDF', bytes.length > 500, true],
+    ];
+  });
+
+  // Reuse der bekannten Warn-Kombination aus Sektion 6 ("Gärzeit zu lang" — Caputo
+  // Pizzeria, extrem lange Gare) — prüft, dass die Mehl-Warnung als eigener,
+  // "Achtung:"-präfigierter Block ins PDF übernommen wird.
+  testCase('Mehl-Warnung fließt als "Achtung:"-Block ins PDF ein (Gärzeit zu lang)', {
+    flour: 'caputo_pizzeria', yeast: 0.05, hyd: 63
+  }, R => {
+    const blocks = PZ._pdfCollectGuideContent();
+    const warnBlock = blocks.find(b => b.type === 'warn' && /zu lang/.test(b.text));
+    const bytes = PZ.buildGuidePdfBytes();
+    const str = bytesToStr(bytes);
+    return [
+      ['collectGuideContent() liefert einen warn-Block mit "zu lang"', !!warnBlock, true],
+      ['PDF enthält "Achtung: "-Präfix', str.includes('Achtung: '), true],
+      ['PDF enthält den Warntext ("zu lang")', str.includes('zu lang'), true],
+    ];
+  });
+
+  testCase('Direkt · Standard — collectGuideContent() liefert nur WinAnsi-taugliche, strukturierte Blöcke', {}, R => {
+    const blocks = PZ._pdfCollectGuideContent();
+    return [
+      ['Alle Blöcke WinAnsi-tauglich (kein Emoji-Byte > 0xFF)', blocks.every(b => allLatin1(b.text)), true],
+      ['Erster Block ist der Titel', blocks.length > 0 && blocks[0].type === 'title', true],
+      ['Mindestens ein stepTitle-Block', blocks.some(b => b.type === 'stepTitle'), true],
+      ['Mindestens ein body-Block', blocks.some(b => b.type === 'body'), true],
+      ['Mindestens ein tip-Block', blocks.some(b => b.type === 'tip'), true],
+    ];
+  });
+
+  (function () {
+    const cases = [
+      { label: 'Emoji werden vollständig entfernt (kein Byte > 0xFF im Ergebnis)', ok: allLatin1(PZ._pdfSanitizeText('💡 Tipp ⚠️ Achtung 🍕 Pizza ▶ Start ⏱️ Timer')) },
+      { label: 'Pfeil "→" wird zu "->" (ASCII-Fallback)', ok: PZ._pdfSanitizeText('Start → Fertig') === 'Start -> Fertig' },
+      { label: 'Deutsche Umlaute/ß bleiben erhalten (WinAnsi = Latin-1 in diesem Bereich)', ok: PZ._pdfSanitizeText('Größe, Mehltemperatur, Kruste, süß') === 'Größe, Mehltemperatur, Kruste, süß' },
+      { label: 'Gedankenstrich "–" bleibt WinAnsi-tauglich (kein Codepoint > 0xFF)', ok: allLatin1(PZ._pdfSanitizeText('8–12 min')) },
+      { label: 'Leerer/undefined Input liefert leeren String statt Fehler', ok: PZ._pdfSanitizeText('') === '' && PZ._pdfSanitizeText(undefined) === '' },
+    ];
+    renderBox('sanitizeText() — Emoji-Bereinigung & WinAnsi-Tauglichkeit', cases.map(c =>
+      ({ label: c.label, ok: c.ok, actual: c.ok, expected: true, tol: null })));
   })();
 
   // ─────────────────────────────────────────────────────────────

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Teigmeister</title>
-<link rel="stylesheet" href="css/styles.css?v=3.24.1">
+<link rel="stylesheet" href="css/styles.css?v=3.25.0">
 </head>
 <body>
 <header>
@@ -585,6 +585,11 @@
           <button onclick="PZ.printShoppingList()">Einkaufsliste drucken</button>
           <button onclick="PZ.printGuide()">Anleitung drucken</button>
         </div>
+        <div id="pdfGuideBlock" style="display:flex;flex-direction:column;gap:8px;">
+          <button type="button" id="pdfGuideBtn" onclick="PZ.downloadGuidePDF()" aria-describedby="pdfGuideHint">Als PDF speichern</button>
+          <div class="hint" id="pdfGuideHint" style="margin-top:-4px;">Lädt die Schritt-für-Schritt-Anleitung direkt als PDF-Datei herunter — ganz ohne Druckdialog.</div>
+          <div id="pdfGuideLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
+        </div>
         <div id="shareBlock" style="display:flex;flex-direction:column;gap:8px;">
           <button type="button" id="shareLinkBtn" onclick="PZ.copyShareLink(this)" aria-describedby="shareHint">Link kopieren</button>
           <div class="hint" id="shareHint" style="margin-top:-4px;">Kopiert einen Link, der dieses Rezept komplett enthält — zum Teilen, ohne Login oder Server.</div>
@@ -607,24 +612,25 @@
 <footer>
   Alles wird lokal in deinem Browser gerechnet &amp; gespeichert · keine Internetverbindung nötig<br>
   Bäckerprozente — Wasser, Salz &amp; Hefe immer relativ zur Mehlmenge (= 100 %)<br>
-  <span id="appVersion" style="opacity:.7;">v3.24.1</span>
+  <span id="appVersion" style="opacity:.7;">v3.25.0</span>
 </footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.24.1"></script>
-<script src="js/state.js?v=3.24.1"></script>
-<script src="js/settings.js?v=3.24.1"></script>
-<script src="js/flour.js?v=3.24.1"></script>
-<script src="js/calc.js?v=3.24.1"></script>
-<script src="js/schedule.js?v=3.24.1"></script>
-<script src="js/guide.js?v=3.24.1"></script>
-<script src="js/timer.js?v=3.24.1"></script>
-<script src="js/ui.js?v=3.24.1"></script>
-<script src="js/print.js?v=3.24.1"></script>
-<script src="js/presets.js?v=3.24.1"></script>
-<script src="js/storage.js?v=3.24.1"></script>
-<script src="js/newrecipe.js?v=3.24.1"></script>
-<script src="js/share.js?v=3.24.1"></script>
-<script src="js/main.js?v=3.24.1"></script>
+<script src="js/dom.js?v=3.25.0"></script>
+<script src="js/state.js?v=3.25.0"></script>
+<script src="js/settings.js?v=3.25.0"></script>
+<script src="js/flour.js?v=3.25.0"></script>
+<script src="js/calc.js?v=3.25.0"></script>
+<script src="js/schedule.js?v=3.25.0"></script>
+<script src="js/guide.js?v=3.25.0"></script>
+<script src="js/timer.js?v=3.25.0"></script>
+<script src="js/ui.js?v=3.25.0"></script>
+<script src="js/print.js?v=3.25.0"></script>
+<script src="js/pdf.js?v=3.25.0"></script>
+<script src="js/presets.js?v=3.25.0"></script>
+<script src="js/storage.js?v=3.25.0"></script>
+<script src="js/newrecipe.js?v=3.25.0"></script>
+<script src="js/share.js?v=3.25.0"></script>
+<script src="js/main.js?v=3.25.0"></script>
 </body>
 </html>

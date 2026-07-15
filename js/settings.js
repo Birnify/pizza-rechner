@@ -86,6 +86,12 @@
     if (shareBlock) shareBlock.style.display = f.share ? '' : 'none';
     const shoppingRow = document.getElementById('shoppingRow');
     if (shoppingRow) shoppingRow.style.display = f.shopping ? '' : 'none';
+    // "Als PDF speichern" (js/pdf.js) ist inhaltlich eine dritte Export-Variante der
+    // Anleitung (neben den beiden Druck-Buttons oben) — teilt sich bewusst dasselbe
+    // "shopping"-Flag statt ein eigenes Flag zu bekommen: schaltet der Nutzer die
+    // Druck-/Export-Zusatzfunktionen ab, verschwindet der PDF-Button konsistent mit.
+    const pdfGuideBlock = document.getElementById('pdfGuideBlock');
+    if (pdfGuideBlock) pdfGuideBlock.style.display = f.shopping ? '' : 'none';
     // Zucker-Regler (New-York-Style): nutzt das etablierte .collapse/.show-Muster
     // (wie prefBlock/bigaHydBlock) statt style.display — verhindert einen Flackerer
     // vorm ersten applyFlags()-Lauf, da .collapse per CSS schon vor JS-Ausführung greift.

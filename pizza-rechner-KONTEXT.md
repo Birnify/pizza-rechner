@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-16 · Aktuelle Version: v3.24.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-16 · Aktuelle Version: v3.25.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,116 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Zucker-Regler-Sync beim Rezept-Laden (v3.24.1) = aktueller Stand
+## PDF-Export der Anleitung (v3.25.0) = aktueller Stand
+
+Neues Feature, vom Nutzer per `/define-feature` strukturiert und bestätigt. Motivation:
+der bestehende „Anleitung drucken"-Button (v3.9.0, `js/print.js`) braucht weiterhin den
+Browser-Druckdialog samt manueller „Als PDF speichern"-Auswahl — ein direkter
+Download-Button macht das Sichern der Anleitung als Datei einfacher/schneller. Scope
+laut Feature-Definition: nur die Schritt-für-Schritt-Anleitung, keine Änderung an der
+bestehenden Druckansicht/dem „Anleitung drucken"-Button, kein PDF-Export für andere
+Bereiche (Einkaufsliste, Ergebnis-Panel), keine Cloud-/Server-Komponente.
+
+**Technische Entscheidung (im Feature-Auftrag ausdrücklich zur eigenen Prüfung gestellt):
+kein jsPDF/keine externe Bibliothek.** Die App läuft komplett offline per `file://`-
+Doppelklick, ohne Build-Tools/Bundler/npm/CDN — eine Fremdbibliothek müsste als
+vollständig gebündelte Datei im Projekt liegen (zusätzliche Lizenz-/Wartungslast, oft
+mehrere hundert KB für einen simplen Text-Report). Der Anleitungsinhalt ist reiner
+strukturierter Text (Überschriften, Absätze, kurze Hinweiszeilen) — dafür reicht ein von
+Hand erzeugtes PDF nach klassischer PDF-1.4-Syntax (Catalog/Pages/Page/Content-Stream)
+mit den Basis-14-Schriftarten Helvetica/Helvetica-Bold (WinAnsiEncoding, in jedem
+PDF-Viewer eingebaut, kein Font-Embedding nötig) komplett aus. Passt damit zur
+bestehenden „alles selbst geschrieben, nichts nachgeladen"-Linie (vgl. den
+handgeschriebenen `.ics`-Kalendereintrag in `js/timer.js`, den Base64-Teilen-Link in
+`js/share.js`).
+
+- **Neues Modul `js/pdf.js`:**
+  - `collectGuideContent()`: liest die **bereits gerenderte** Anleitung direkt aus dem DOM
+    (`#guideSummary`/`#flourWarn`/`#guideSteps`) statt die Bau-Logik aus `js/guide.js` zu
+    duplizieren — die Anleitung ist zum Klick-Zeitpunkt immer aktuell (reaktive
+    Neuberechnung bei jeder Eingabe). Baut eine Liste strukturierter Blöcke
+    (`title`/`summary`/`warn`/`schedbar`/`day`/`stepTitle`/`body`/`tip`), inkl. sauberer
+    Trennung von Schritt-Titel, `.chip`- und `.timechip`-Zusatztext.
+  - `sanitizeText()`: entfernt Emoji/Symbole ohne WinAnsi-Entsprechung (⏱️💡⚠️▶🍕 usw. +
+    Variationsselektor, per Unicode-Bereichs-Regex) komplett statt sie durch „?" zu
+    ersetzen, bildet gängige Sonderzeichen (Gedankenstriche, Anführungszeichen,
+    Auslassungspunkte, Euro-Zeichen) auf ihre WinAnsi-Bytes ab, ersetzt „→" durch „->".
+    Deutsche Umlaute/ß bleiben unverändert (Latin-1-Bereich = WinAnsi in diesem Bereich).
+  - `layoutPages()`: bricht die Blöcke seitenweise um — eigene, angenäherte
+    Helvetica-Zeichenbreiten-Tabelle (Standard-AFM-Metriken der Basis-14-Schrift, 1/1000
+    em) fürs Wortumbruch, A4-Seiten (595,28 × 841,89 pt), automatischer Seitenumbruch bei
+    Platzmangel. Helvetica-Bold nutzt dieselbe Tabelle + einen kleinen Aufschlag
+    (`BOLD_FACTOR`) statt einer eigenen zweiten Metriktabelle — nur in kurzen
+    Überschriften verwendet, lieber etwas zu früh als zu spät umbrechen.
+  - `buildPdf()`: serialisiert die Seiten zu einem gültigen PDF-1.4-Byte-String (Catalog,
+    Pages, zwei Font-Objekte, je ein Page-/Content-Stream-Objekt pro Seite, xref-Tabelle
+    + Trailer). Farbakzente an die Website-Palette angelehnt (Warnungen in Tomatenrot,
+    Tipps in Basilikum-Grün, s. `css/styles.css --tomato`/`--basil`).
+  - `buildGuidePdfBytes()`: öffentliche reine Datenfunktion (kein DOM-Seiteneffekt),
+    liefert ein `Uint8Array`. `downloadGuidePDF()`: baut daraus einen `Blob` +
+    `URL.createObjectURL` + unsichtbaren `<a download>`-Klick (identisches, bereits
+    bewährtes Muster wie der Rezepte-Export-Button, v3.21.0), Dateiname
+    `pizza-anleitung-<ISO-Datum>.pdf`.
+- **Neuer Button „Als PDF speichern" (`#pdfGuideBtn`)** direkt unter dem bestehenden
+  `#shoppingRow` (den beiden Druck-Buttons), identisch in `pizza-rechner.html` und
+  `pizza-rechner-mobile.html`. Eigener Block `#pdfGuideBlock` nach dem etablierten
+  `#shareBlock`-Muster (v3.14.0): Hint-Text per `aria-describedby`, `.visually-hidden`
+  Live-Region `#pdfGuideLiveMsg` (`role="status" aria-live="polite"`) für Erfolgs-/
+  Fehler-Feedback.
+- **Design-Entscheidung zur Sichtbarkeit:** `#pdfGuideBlock` teilt sich bewusst dasselbe
+  Feature-Flag „shopping" (`js/settings.js`) wie `#shoppingRow` — inhaltlich ist „Als PDF
+  speichern" eine dritte Export-Variante der Anleitung neben den beiden Druck-Buttons,
+  kein eigenes neues Flag nötig. Schaltet der Nutzer die Druck-/Export-Zusatzfunktion ab,
+  verschwindet der PDF-Button konsistent mit (Default des Flags ist AUS, wie bisher).
+- **Accessibility-Fix während des gezielten Audits** (`accessibility-expert`-Agent, nur
+  auf die drei neuen Markup-/Logik-Stellen fokussiert): **WCAG 4.1.3 (Status Messages,
+  Level AA)** — `setPdfMsg()` setzte `#pdfGuideLiveMsg`s `textContent` direkt, ohne
+  vorheriges Leeren. Da die Erfolgsmeldung („Anleitung als PDF gespeichert.") bei jedem
+  Klick wortgleich identisch ist (anders als z. B. `#recipeIOLiveMsg`, deren Text meist
+  eine variable Rezeptanzahl enthält), erkennen viele Screenreader bei zwei Klicks
+  hintereinander keine echte DOM-Mutation und unterdrücken die zweite Ansage — für
+  Tastatur-/Screenreader-Nutzer der einzige nicht-visuelle Beleg, dass der Klick
+  funktioniert hat (kein sichtbarer Seiteneffekt außer dem Download selbst). Fix: die
+  Live-Region wird zuerst geleert, der eigentliche Text erst im nächsten Tick
+  (`setTimeout(…, 50)`) gesetzt — garantiert bei jedem Aufruf eine echte Inhaltsänderung.
+  Alle übrigen geprüften Punkte (Markup-Struktur, Sichtbarkeitssteuerung per
+  `style.display`) ohne Befund. *Nebenbefund fürs Backlog (nicht behoben, außerhalb des
+  angefragten Scopes):* dasselbe latente Muster (kein Clear-Reset vor dem Setzen) liegt
+  auch bei `#recipeIOLiveMsg` (`js/main.js`) vor, dort aber meist entschärft, weil die
+  Meldung eine variable Rezeptanzahl enthält.
+- **Bewusst NICHT angefasst:** die bestehende Druckansicht/`#shoppingRow`
+  (`js/print.js`, `printGuide()`/`printShoppingList()`) bleibt vollständig unverändert;
+  kein PDF-Export für Einkaufsliste oder Ergebnis-Panel; kein neues Feature-Flag; keine
+  Cloud-/Server-Komponente.
+
+**Tests** (`tests/test.html`, neue Sektion „21 · PDF-Export der Anleitung (js/pdf.js)",
++28 neue Prüfungen, 470 → **498**): reine Datenfunktionen getestet (`buildGuidePdfBytes()`/
+`collectGuideContent()`/`sanitizeText()`), kein `window.print()`-artiger Seiteneffekt
+unit-getestet (analog zu `buildShoppingList()` vs. `printGuide()`/`printShoppingList()`
+in Sektion 15). Geprüft: PDF-Grundstruktur (Header `%PDF-1.4`, Catalog-/Page-Objekte,
+Content-Stream, xref/Trailer, endet mit `%%EOF`); reale Anleitungstexte als
+Klartext-Regressionsanker (Titel, „Kneten", „Stockgare", „Teiglinge formen",
+„Tipp: "-Präfix); Biga-Vorteig erzeugt Tagesabschnitte + Vorteig-Schritte im PDF ohne
+Fehler bei größerem Inhalt (mehrseitiges Layout); eine bekannte Mehl-Warnung
+(Gärzeit zu lang, aus Sektion 6 wiederverwendet) fließt als „Achtung: "-präfigierter
+Block ins PDF ein; `collectGuideContent()` liefert ausschließlich WinAnsi-taugliche
+Blöcke (kein Emoji-Byte > 0xFF) mit allen erwarteten Block-Typen; `sanitizeText()`
+entfernt Emoji vollständig, bildet „→" auf „->" ab, erhält deutsche Umlaute/ß, hält
+Gedankenstriche WinAnsi-tauglich, liefert bei leerer/`undefined`-Eingabe einen leeren
+String statt eines Fehlers. Alle 498 Prüfungen grün (Headless-Edge-Dump,
+`msedge --headless --disable-gpu --virtual-time-budget=8000 --dump-dom` gegen die
+absolute `file://`-URL — ein relativer Pfad liefert Edges interne Offline-Seite statt
+der echten Datei). Kein `test-generator`-Lauf nötig (kein Logik-Eingriff in
+`js/calc.js`/`js/schedule.js`/`js/guide.js` — reine Ergänzung eines neuen,
+eigenständigen Moduls, Tests selbst geschrieben).
+
+**Geändert:** `js/pdf.js` (neu), `js/settings.js`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`, `tests/test.html`. `?v=` auf `3.25.0` gezogen (Desktop +
+Mobil, Cache-Busting + Footer-Version). `pizza-rechner-mobile-standalone.html` neu
+gebaut (`python build-mobile-standalone.py`).
+`Versionen/v3.25.0 - PDF-Export der Anleitung/` enthält den vollständigen Schnappschuss.
+
+## Zucker-Regler-Sync beim Rezept-Laden (v3.24.1)
 
 Kleiner Bugfix, vom Nutzer per `/define-feature` strukturiert und bestätigt. Kein
 neues Feature, keine Änderung an der Zucker-Berechnungslogik selbst — behebt den in
@@ -2427,8 +2536,8 @@ Keine Code-Änderung durch den Audit nötig.
   (Android-Intent + .ics-Kalendererinnerung als iOS-Ersatz, da keine offizielle Web-API
   existiert) **ergänzt in v3.15.0**
 - ~~Teilen-Link (State als Base64-JSON in der URL)~~ — **erledigt in v3.14.0**; Export
-  als PDF weiterhin offen (bewusst nicht mitgebaut, s. Abschnitt oben — Nutzer wollte
-  nur den reinen Teilen-Link, keinen zusätzlichen PDF-Button)
+  als PDF war damals bewusst nicht mitgebaut (Nutzer wollte nur den reinen Teilen-Link)
+  — **jetzt eigenständig nachgeholt in v3.25.0** (s. u.)
 - ~~Mehrere gespeicherte Rezepte (statt einem localStorage-Slot)~~ — **erledigt in v3.10.0**
 - ~~Mobil-Overflow bei sehr schmalen Viewports (~430 px)~~ — **untersucht/gehärtet in
   v3.13.1**: kein reproduzierbarer DOM-Overflow in Chromium nachweisbar (ursprünglicher
@@ -2463,14 +2572,22 @@ Keine Code-Änderung durch den Audit nötig.
   v3.22.0, kein Backlog-Punkt im engeren Sinne, direkter Nutzerauftrag per
   `/define-feature`; s. Abschnitt „Zucker-Regler-Sync beim Rezept-Laden (v3.24.1)"
   oben).
+- ~~Export als PDF (offen gebliebene Teilaufgabe aus der Teilen-Link-Zeile, v3.14.0)~~ —
+  **erledigt in v3.25.0**: eigener Button „Als PDF speichern" neben den Druck-Buttons,
+  handgeschriebener PDF-1.4-Generator ohne externe Bibliothek (s. Abschnitt „PDF-Export
+  der Anleitung (v3.25.0)" oben).
+- Nebenbefund aus dem v3.25.0-Accessibility-Audit (nicht behoben, außerhalb des
+  angefragten Scopes): `#recipeIOLiveMsg` (`js/main.js`) hat wie ursprünglich
+  `#pdfGuideLiveMsg` kein Clear-Reset vor dem Setzen des Live-Region-Texts — bei zwei
+  wortgleichen Meldungen hintereinander (selten, da die Meldung meist eine variable
+  Rezeptanzahl enthält) könnten Screenreader die zweite Ansage unterdrücken. Beim
+  nächsten Storage-bezogenen Zyklus mit beheben (analog zum in v3.25.0 gefixten Muster).
 
-**Stand v3.24.1: alle bisherigen Backlog-Punkte inkl. aller bisherigen Nebenbefunde
-sind abgearbeitet** (durchgestrichen oben). Einzige offen gebliebene Teilaufgabe
-eines bereits erledigten Punkts: **Export als PDF** (s. „Teilen-Link"-Zeile oben —
-bewusst nicht mitgebaut, da der Nutzer damals nur den reinen Teilen-Link wollte).
-Für den nächsten Zyklus braucht es daher frisches Brainstorming in Phase 1 (neue
-Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes, oder eben der PDF-Export als
-nahliegender Kandidat) statt eines vorgegebenen Backlog-Punkts.
+**Stand v3.25.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+oben), einziger offener Punkt ist der oben notierte Live-Region-Nebenbefund
+(`#recipeIOLiveMsg`). Für den nächsten Zyklus braucht es daher frisches Brainstorming
+in Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes, oder der eben
+genannte Live-Region-Nebenbefund) statt eines vorgegebenen Backlog-Punkts.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 
