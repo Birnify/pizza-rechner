@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-15 · Aktuelle Version: v3.17.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-15 · Aktuelle Version: v3.18.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -159,7 +159,102 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Mobil-Hamburger-Navigation (v3.17.x) + gezielter Accessibility-Audit = aktueller Stand
+## Mobil-Kopf-/Fußbereich aufgeräumt (v3.18.0) + gezielter Accessibility-Audit = aktueller Stand
+
+Reines Aufräumen/Verschieben bestehender Anzeigen in `pizza-rechner-mobile.html` +
+`css/mobile.css` — **kein neues Feature, keine Logik-Änderung**, Desktop
+(`pizza-rechner.html`) bewusst unberührt außer dem gemeinsam gezogenen `?v=`/Footer-
+Versionsstand (etabliertes Muster seit v3.13.1/v3.17.1). Auslöser: der Nutzer empfand
+die Mobil-Kopf-/Fußzeile an mehreren Stellen als redundant/überladen. Sechs Einzelpunkte:
+
+- **Doppelte Mengenanzeige an den 10 Reglern entfernt** (Teiglinge, Gewicht/Teigling,
+  Hydration, Salz, Öl, Vorteig-Mehlanteil, Biga-Hydration, Hefemenge, Zieltemperatur,
+  Raumtemperatur): die rote Zahl im `<label>` oberhalb des Sliders (`<span class="val">`)
+  ist weg — die Zahl im Zahlenfeld neben dem Slider genügt. Damit keine Einheit
+  (g/%/°C) verloren geht (Nutzer-Vorgabe: "ohne Informationsverlust"), steht jetzt
+  stattdessen ein **statischer** `<span class="unit" id="XUnit">` neben dem Zahlenfeld
+  (z. B. "g"/"%"/"°C"), und sowohl `<input type="range">` als auch `<input
+  type="number">` bekamen zusätzlich `aria-describedby="XUnit"` (neben ihrem
+  bestehenden `aria-labelledby`). `js/ui.js` (`link()`-Funktion) ist unverändert:
+  `$(key + 'V')` liefert auf Mobil jetzt `null` (Element existiert nicht mehr), der
+  vorhandene `if (v) v.textContent = …`-Guard fängt das ab — Desktop (behält die
+  `.val`-Spans) ist davon nicht betroffen, dieselbe Funktion bedient beide Seiten
+  sicher. `aria-valuetext` auf dem Slider (seit v3.x bereits vorhanden, mit Einheit)
+  bleibt zusätzlich bestehen. `#prefStageLabel` ("Vorteig-Reife") behält seinen
+  `.val`-Span unverändert — das ist ein Pills-Feld ohne Zahlenfeld-Duplikat, also keine
+  echte Redundanz.
+- **Methoden-Untertitel entfernt:** `<p>Neapolitanisch · Biga · Poolish — komplett
+  offline</p>` unter dem `<h1>` ist auf Mobil raus (Desktop behält ihn unverändert).
+- **Desktop-Link ins Burger-Menü verschoben:** `<a class="viewlink">Zur
+  Desktop-Ansicht</a>` ist aus dem Header raus, steht jetzt als eigener
+  `<a class="nav-link" id="navDesktopLink">` am Ende der `#navMenu`-Liste, per
+  `<div class="nav-divider" role="separator">` optisch von den vier
+  Bereichs-Buttons abgesetzt. Bewusst **kein** `.nav-item`/`<button>` (der Link
+  verlässt die Seite, statt eine Ansicht umzuschalten) — deshalb eigene Klasse
+  `.nav-link`, damit er nicht versehentlich in die `data-goto`-Klick-Logik
+  hineinrutscht. Die Tastatur-Fokus-Trap (`focusablesInPanel()` im Inline-Script)
+  wurde um dieses Element ergänzt: `[navClose].concat(navItems).concat(navDesktopLink
+  ? [navDesktopLink] : [])` — Tab/Shift+Tab zyklieren jetzt korrekt über alle sechs
+  fokussierbaren Elemente im Panel.
+- **Footer-Erklärtext entfernt:** die zwei Zeilen ("Alles wird lokal…"/"Bäckerprozente…")
+  sind auf Mobil raus, nur `<span id="appVersion">` bleibt — rechtsbündig
+  (`footer{text-align:right;}`, mobile-only CSS-Regel). Desktop-Footer unverändert
+  (behält den Erklärtext).
+- **Gesamtteigmenge um Teiglingsanzahl ergänzt — an der Quick-Bar, nicht am
+  Ergebnis-Panel:** das Ergebnis-Panel (`.total .lbl`) zeigte "Gesamtteig · 4 × 250 g"
+  schon vorher auf beiden Seiten. Was fehlte, war die immer sichtbare, sticky
+  Quick-Bar unten (`#qbTotal`) — die zeigte nur "1018 g · Gesamtteig ↓". Jetzt zeigt
+  sie "1018 g · 4 Teiglinge" (`#qbBalls`, per zweitem `MutationObserver` auf
+  `#ballsOut` gespiegelt, analog zum bestehenden `#totalW`→`#qbTotal`-Muster im
+  Inline-Script). Der Sprungpfeil-Hinweis "↓" ist dabei weggefallen — der
+  Accessibility-Audit (s. u.) hat das aufgefangen.
+- **Burger-Menü-Button von links nach rechts verschoben:** reine CSS-Änderung in
+  `css/mobile.css`, `.nav-toggle` von `left:` auf `right:` (gleiche Größe/Abstand,
+  nur horizontal gespiegelt). DOM-Reihenfolge (Button steht weiterhin vor dem `<h1>`)
+  bewusst unverändert gelassen — Tab-Reihenfolge ist unabhängig von der visuellen
+  CSS-Position, vom Audit als unkritisch bestätigt (etabliertes Hamburger-Menü-Muster).
+
+**Gezielter WCAG-2.1-AA-Audit für genau diese Änderungen** (`accessibility-expert`-Agent):
+1 Major-Fund, Rest geprüft ohne Fund oder als bewusste Nutzer-Entscheidung markiert.
+
+- **Major — Quick-Bar-Sprunglink ohne erkennbaren Linkzweck (2.4.4 Link Purpose):**
+  Nach Wegfall von "↓" bestand der sichtbare Linktext nur noch aus "1018 g ·
+  4 Teiglinge" — weder Text noch Kontext verrät Screenreader-Nutzern, dass es ein
+  Sprunglink zum Ergebnis-Bereich ist (sie hören nur Zahlen + "Link"). Fix: neuer,
+  visuell versteckter Präfix `<span class="visually-hidden">Zum Ergebnis springen:
+  </span>` vor `#qbTotal` — nutzt die bereits vorhandene `.visually-hidden`-Utility,
+  kein neues CSS, sichtbarer Text unverändert.
+- **Geprüft, kein Fix nötig:**
+  - `aria-labelledby` + `aria-describedby` auf demselben Slider/Zahlenfeld ist
+    spezkonform (Name aus labelledby, zusätzliche Beschreibung aus describedby, keine
+    Kollision); `aria-valuetext` mit Einheit bleibt zusätzlich bestehen — die Einheit
+    geht Screenreader-Nutzern an keiner Stelle verloren.
+  - Kontrast `.unit` und `.nav-link` (beide `var(--muted)` `#6e6359` auf Weiß/Karten-
+    Hintergrund): rechnerisch **~5,85:1**, besteht AA klar.
+  - `role="separator"` auf dem leeren `.nav-divider`-`<div>` ist eine zulässige, rein
+    dekorative Trenner-Semantik (analog `<hr>`).
+  - Fokus-Trap-Reihenfolge (`focusablesInPanel()`) korrekt: Tab-Zyklus jetzt
+    navClose → 4× nav-item → navDesktopLink → (Tab) zurück zu navClose; Shift+Tab von
+    navClose direkt zu navDesktopLink.
+  - Button vor `<h1>` im DOM trotz visueller Rechts-Position (1.3.2 Meaningful
+    Sequence): unkritisch, Tab-Reihenfolge ist CSS-Position-unabhängig, etabliertes
+    Hamburger-Menü-Muster.
+  - **Bewusste Nutzer-Entscheidung, kein WCAG-Verstoß:** der entfernte
+    Privacy-/Datenschutz-Hinweis ("Alles läuft lokal … keine Internetverbindung
+    nötig") existiert im Mobil-Footer nicht mehr — betrifft sehende wie
+    Screenreader-Nutzer gleichermaßen (reine Inhaltskürzung, kein
+    Screenreader-spezifischer Ausschluss), Desktop-Footer behält den Hinweis weiterhin.
+
+**Tests:** `js/guide.js` unangetastet, `qb-jump`/`qbTotal`/`qbBalls`/`.unit`/`.nav-link`
+kommen in `tests/test.html` nicht vor (reine Markup-/CSS-Änderung, kein String-Matching-
+Ziel betroffen). Alle 338 Prüfungen weiterhin grün (Headless-Edge-Dump verifiziert, vor
+und nach dem Accessibility-Fix). `?v=` auf `3.18.0` gezogen (Desktop + Mobil, gleicher
+Cache-Busting-/Footer-Versionsstand, Desktop-Markup/-Logik inhaltlich unverändert).
+`pizza-rechner-mobile-standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v3.18.0 - Mobil Kopf-Fussbereich aufgeraeumt/` enthält den vollständigen
+Schnappschuss.
+
+## Mobil-Hamburger-Navigation (v3.17.x) + gezielter Accessibility-Audit
 
 `pizza-rechner-mobile.html` wurde von einem durchgehenden One-Pager-Akkordeon auf eine
 Hamburger-Menü-Navigation mit vier Bereichen umgestellt (**nur Mobil**, `pizza-rechner.html`

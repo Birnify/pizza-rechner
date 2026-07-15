@@ -355,7 +355,7 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 /* Hamburger-Navigation: Bereichs-Umschaltung statt durchgehendem One-Pager */
 header{position:relative;}
 .nav-toggle{
-  position:absolute;top:calc(14px + env(safe-area-inset-top));left:calc(14px + env(safe-area-inset-left));
+  position:absolute;top:calc(14px + env(safe-area-inset-top));right:calc(14px + env(safe-area-inset-right));
   width:44px;height:44px;border:1px solid rgba(255,255,255,.8);border-radius:var(--radius);
   background:rgba(255,255,255,.14);color:#fff;font-size:20px;line-height:1;cursor:pointer;
   -webkit-backdrop-filter:blur(2px);
@@ -393,6 +393,25 @@ header{position:relative;}
 .nav-item:active{background:var(--bg);}
 .nav-item.active{background:var(--bg);border-left:3px solid var(--tomato);color:var(--tomato-dark);}
 
+/* Desktop-Link am Ende des Menüs: eigenes <a>, kein .nav-item (verlässt die Seite statt
+   eine Ansicht umzuschalten) — optisch fast identisch, nur dezent abgesetzt durch den
+   Trenner davor und etwas gedämpfte Textfarbe. */
+.nav-divider{height:1px;background:var(--line);margin:6px 0;border:none;}
+.nav-link{
+  display:block;width:100%;text-align:left;padding:13px 14px;min-height:44px;
+  border:1px solid transparent;border-radius:var(--radius);background:none;
+  color:var(--muted);font-size:14px;font-weight:600;text-decoration:none;box-sizing:border-box;
+}
+.nav-link:active{background:var(--bg);}
+
+/* Statische Einheit neben Slider+Zahlenfeld (ersetzt die frühere doppelte rote Zahl
+   oberhalb im Label) — rein visueller Hinweis, Screenreader bekommen die Einheit über
+   aria-describedby auf beiden Eingabefeldern. */
+.row .unit{font-size:13px;color:var(--muted);flex-shrink:0;}
+
+/* Footer nur noch mit Versionsnummer — rechtsbündig statt zentriert */
+footer{text-align:right;}
+
 @media print{.quickbar{display:none;}.nav-toggle,.nav-overlay{display:none!important;}}
 
 </style>
@@ -403,8 +422,6 @@ header{position:relative;}
     <span aria-hidden="true">☰</span>
   </button>
   <h1>🍕 Pizzateig-Rechner</h1>
-  <p>Neapolitanisch · Biga · Poolish — komplett offline</p>
-  <a class="viewlink" href="pizza-rechner.html">Zur Desktop-Ansicht</a>
 </header>
 
 <nav id="navMenu" class="nav-overlay" hidden>
@@ -419,6 +436,8 @@ header{position:relative;}
       <li><button type="button" class="nav-item" data-goto="zeitplan">Zeitplan</button></li>
       <li><button type="button" class="nav-item" data-goto="einstellungen">Einstellungen</button></li>
     </ul>
+    <div class="nav-divider" role="separator"></div>
+    <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html">Zur Desktop-Ansicht</a>
   </div>
 </nav>
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
@@ -463,7 +482,7 @@ header{position:relative;}
         </div>
 
         <div class="field">
-          <label id="ballsLabel">Anzahl Teiglinge <span class="val"><span id="ballsV">4</span></span></label>
+          <label id="ballsLabel">Anzahl Teiglinge</label>
           <div class="row">
             <input type="range" id="balls" min="1" max="20" step="1" value="4" aria-labelledby="ballsLabel">
             <input type="number" id="ballsN" min="1" max="50" value="4" aria-labelledby="ballsLabel">
@@ -471,10 +490,11 @@ header{position:relative;}
         </div>
 
         <div class="field">
-          <label id="ballwLabel">Gewicht pro Teigling <span class="val"><span id="ballwV">250</span> g</span></label>
+          <label id="ballwLabel">Gewicht pro Teigling</label>
           <div class="row">
-            <input type="range" id="ballw" min="150" max="400" step="5" value="250" aria-labelledby="ballwLabel">
-            <input type="number" id="ballwN" min="100" max="500" value="250" aria-labelledby="ballwLabel">
+            <input type="range" id="ballw" min="150" max="400" step="5" value="250" aria-labelledby="ballwLabel" aria-describedby="ballwUnit">
+            <input type="number" id="ballwN" min="100" max="500" value="250" aria-labelledby="ballwLabel" aria-describedby="ballwUnit">
+            <span class="unit" id="ballwUnit">g</span>
           </div>
           <div class="pills">
             <button data-ballw="180">Mini 180</button>
@@ -485,28 +505,31 @@ header{position:relative;}
         </div>
 
         <div class="field">
-          <label id="hydLabel">Hydration (Wasser) <span class="val"><span id="hydV">62</span> %</span></label>
+          <label id="hydLabel">Hydration (Wasser)</label>
           <div class="row">
-            <input type="range" id="hyd" min="50" max="85" step="1" value="62" aria-labelledby="hydLabel">
-            <input type="number" id="hydN" min="40" max="100" value="62" aria-labelledby="hydLabel">
+            <input type="range" id="hyd" min="50" max="85" step="1" value="62" aria-labelledby="hydLabel" aria-describedby="hydUnit">
+            <input type="number" id="hydN" min="40" max="100" value="62" aria-labelledby="hydLabel" aria-describedby="hydUnit">
+            <span class="unit" id="hydUnit">%</span>
           </div>
           <div class="hint">Anfänger 60–62 % · Klassisch Napoli 65 % · Profi 68–70 %+</div>
         </div>
 
         <div class="field">
-          <label id="saltLabel">Salz <span class="val"><span id="saltV">2.8</span> %</span></label>
+          <label id="saltLabel">Salz</label>
           <div class="row">
-            <input type="range" id="salt" min="0" max="4" step="0.1" value="2.8" aria-labelledby="saltLabel">
-            <input type="number" id="saltN" min="0" max="5" step="0.1" value="2.8" aria-labelledby="saltLabel">
+            <input type="range" id="salt" min="0" max="4" step="0.1" value="2.8" aria-labelledby="saltLabel" aria-describedby="saltUnit">
+            <input type="number" id="saltN" min="0" max="5" step="0.1" value="2.8" aria-labelledby="saltLabel" aria-describedby="saltUnit">
+            <span class="unit" id="saltUnit">%</span>
           </div>
           <div class="hint">Napoli-Standard: 2,5–3 % (≈ 50–55 g/L Wasser)</div>
         </div>
 
         <div class="field" style="margin-bottom:0;">
-          <label id="oilLabel">Olivenöl <span class="val"><span id="oilV">2.0</span> %</span></label>
+          <label id="oilLabel">Olivenöl</label>
           <div class="row">
-            <input type="range" id="oil" min="0" max="8" step="0.5" value="2" aria-labelledby="oilLabel">
-            <input type="number" id="oilN" min="0" max="10" step="0.5" value="2" aria-labelledby="oilLabel">
+            <input type="range" id="oil" min="0" max="8" step="0.5" value="2" aria-labelledby="oilLabel" aria-describedby="oilUnit">
+            <input type="number" id="oilN" min="0" max="10" step="0.5" value="2" aria-labelledby="oilLabel" aria-describedby="oilUnit">
+            <span class="unit" id="oilUnit">%</span>
           </div>
           <div class="hint">Macht den Teig geschmeidiger &amp; fördert die Bräunung. Klassisch Napoli 0 %, mit Öl 1–3 %, Blech/Teglia 3–5 %. Kommt spät zum Teig — nach dem Salz.</div>
         </div>
@@ -528,19 +551,21 @@ header{position:relative;}
         </div>
 
         <div class="field collapse" id="prefBlock">
-          <label id="prefLabel">Anteil Mehl im Vorteig <span class="val"><span id="prefV">70</span> %</span></label>
+          <label id="prefLabel">Anteil Mehl im Vorteig</label>
           <div class="row">
-            <input type="range" id="pref" min="10" max="100" step="5" value="70" aria-labelledby="prefLabel">
-            <input type="number" id="prefN" min="10" max="100" value="70" aria-labelledby="prefLabel">
+            <input type="range" id="pref" min="10" max="100" step="5" value="70" aria-labelledby="prefLabel" aria-describedby="prefUnit">
+            <input type="number" id="prefN" min="10" max="100" value="70" aria-labelledby="prefLabel" aria-describedby="prefUnit">
+            <span class="unit" id="prefUnit">%</span>
           </div>
           <div class="hint" id="prefHint">Biga klassisch: 70–100 % des Mehls.</div>
         </div>
 
         <div class="field collapse" id="bigaHydBlock">
-          <label id="bhydLabel">Biga-Hydration <span class="val"><span id="bhydV">45</span> %</span></label>
+          <label id="bhydLabel">Biga-Hydration</label>
           <div class="row">
-            <input type="range" id="bhyd" min="40" max="55" step="1" value="45" aria-labelledby="bhydLabel">
-            <input type="number" id="bhydN" min="35" max="60" value="45" aria-labelledby="bhydLabel">
+            <input type="range" id="bhyd" min="40" max="55" step="1" value="45" aria-labelledby="bhydLabel" aria-describedby="bhydUnit">
+            <input type="number" id="bhydN" min="35" max="60" value="45" aria-labelledby="bhydLabel" aria-describedby="bhydUnit">
+            <span class="unit" id="bhydUnit">%</span>
           </div>
           <div class="hint">Steife Biga: 44–48 %. Poolish ist fix 100 % (1:1).</div>
         </div>
@@ -560,10 +585,11 @@ header{position:relative;}
         </div>
 
         <div class="field">
-          <label id="yeastLabel">Hefemenge <span class="val"><span id="yeastV">0.30</span> %</span></label>
+          <label id="yeastLabel">Hefemenge</label>
           <div class="row">
-            <input type="range" id="yeast" min="0.05" max="3" step="0.05" value="0.30" aria-labelledby="yeastLabel">
-            <input type="number" id="yeastN" min="0.01" max="5" step="0.01" value="0.30" aria-labelledby="yeastLabel">
+            <input type="range" id="yeast" min="0.05" max="3" step="0.05" value="0.30" aria-labelledby="yeastLabel" aria-describedby="yeastUnit">
+            <input type="number" id="yeastN" min="0.01" max="5" step="0.01" value="0.30" aria-labelledby="yeastLabel" aria-describedby="yeastUnit">
+            <span class="unit" id="yeastUnit">%</span>
           </div>
           <div class="hint" id="yeastHint">Prozent bezogen auf Frischhefe. Lange/warme Gare = weniger.</div>
           <div class="pills" id="yeastPills">
@@ -590,18 +616,20 @@ header{position:relative;}
       <summary><h2 aria-label="Teigtemperatur &amp; Eiswasser">Teigtemperatur &amp; Eiswasser</h2></summary>
       <div class="acc-body">
         <div class="field">
-          <label id="ddtLabel">Ziel-Teigtemperatur <span class="val"><span id="ddtV">24</span> °C</span></label>
+          <label id="ddtLabel">Ziel-Teigtemperatur</label>
           <div class="row">
-            <input type="range" id="ddt" min="20" max="28" step="0.5" value="24" aria-labelledby="ddtLabel">
-            <input type="number" id="ddtN" min="18" max="30" step="0.5" value="24" aria-labelledby="ddtLabel">
+            <input type="range" id="ddt" min="20" max="28" step="0.5" value="24" aria-labelledby="ddtLabel" aria-describedby="ddtUnit">
+            <input type="number" id="ddtN" min="18" max="30" step="0.5" value="24" aria-labelledby="ddtLabel" aria-describedby="ddtUnit">
+            <span class="unit" id="ddtUnit">°C</span>
           </div>
           <div class="hint">Napoli-Ziel nach dem Kneten: 23–25 °C.</div>
         </div>
         <div class="field">
-          <label id="roomLabel">Mehl-/Raumtemperatur <span class="val"><span id="roomV">21</span> °C</span></label>
+          <label id="roomLabel">Mehl-/Raumtemperatur</label>
           <div class="row">
-            <input type="range" id="room" min="10" max="32" step="1" value="21" aria-labelledby="roomLabel">
-            <input type="number" id="roomN" min="0" max="40" value="21" aria-labelledby="roomLabel">
+            <input type="range" id="room" min="10" max="32" step="1" value="21" aria-labelledby="roomLabel" aria-describedby="roomUnit">
+            <input type="number" id="roomN" min="0" max="40" value="21" aria-labelledby="roomLabel" aria-describedby="roomUnit">
+            <span class="unit" id="roomUnit">°C</span>
           </div>
         </div>
         <div class="field">
@@ -762,13 +790,11 @@ header{position:relative;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  Alles wird lokal in deinem Browser gerechnet &amp; gespeichert · keine Internetverbindung nötig<br>
-  Bäckerprozente — Wasser, Salz &amp; Hefe immer relativ zur Mehlmenge (= 100 %)<br>
-  <span id="appVersion" style="opacity:.7;">v3.17.1</span>
+  <span id="appVersion" style="opacity:.7;">v3.18.0</span>
 </footer>
 
 <div class="quickbar">
-  <a class="qb-jump" href="#result"><span id="qbTotal">–</span> g<small>Gesamtteig ↓</small></a>
+  <a class="qb-jump" href="#result"><span class="visually-hidden">Zum Ergebnis springen: </span><span id="qbTotal">–</span> g<small>· <span id="qbBalls">–</span> Teiglinge</small></a>
   <button type="button" class="qb-save" id="qbSave">Speichern</button>
 </div>
 
@@ -2506,13 +2532,20 @@ header{position:relative;}
 <script>
   // Mobil-only UI-Glue (kein Eingriff in die PZ-Rechenmodule)
   (function(){
-    // 1) Quick-Bar spiegelt live das Gesamtgewicht aus #totalW
+    // 1) Quick-Bar spiegelt live das Gesamtgewicht aus #totalW und die Teiglingszahl aus #ballsOut
     var src = document.getElementById('totalW');
     var out = document.getElementById('qbTotal');
     if (src && out) {
       var sync = function(){ out.textContent = src.textContent; };
       new MutationObserver(sync).observe(src, { childList: true, characterData: true, subtree: true });
       sync();
+    }
+    var ballsSrc = document.getElementById('ballsOut');
+    var ballsOut = document.getElementById('qbBalls');
+    if (ballsSrc && ballsOut) {
+      var syncBalls = function(){ ballsOut.textContent = ballsSrc.textContent; };
+      new MutationObserver(syncBalls).observe(ballsSrc, { childList: true, characterData: true, subtree: true });
+      syncBalls();
     }
 
     // 2) Speichern aus der Quick-Bar löst denselben Handler wie #saveBtn aus
@@ -2547,13 +2580,17 @@ header{position:relative;}
     var navOverlay = document.getElementById('navMenu');
     var navClose = document.getElementById('navClose');
     var navItems = navOverlay ? Array.prototype.slice.call(navOverlay.querySelectorAll('.nav-item')) : [];
+    var navDesktopLink = document.getElementById('navDesktopLink');
     var viewEls = Array.prototype.slice.call(document.querySelectorAll('[data-view]')).filter(function(el){
       return el.closest && !el.closest('.nav-overlay');
     });
     var lastFocused = null;
 
+    // Reihenfolge entspricht der DOM-/visuellen Reihenfolge im Panel: Schließen-Button,
+    // die vier Bereichs-Buttons, zuletzt der Desktop-Link (eigenes <a>, kein .nav-item —
+    // navigiert weg statt eine Ansicht umzuschalten, s. activateView-Klick-Handler unten).
     function focusablesInPanel(){
-      return [navClose].concat(navItems);
+      return [navClose].concat(navItems).concat(navDesktopLink ? [navDesktopLink] : []);
     }
 
     function onNavKeydown(e){

@@ -94,7 +94,7 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 /* Hamburger-Navigation: Bereichs-Umschaltung statt durchgehendem One-Pager */
 header{position:relative;}
 .nav-toggle{
-  position:absolute;top:calc(14px + env(safe-area-inset-top));left:calc(14px + env(safe-area-inset-left));
+  position:absolute;top:calc(14px + env(safe-area-inset-top));right:calc(14px + env(safe-area-inset-right));
   width:44px;height:44px;border:1px solid rgba(255,255,255,.8);border-radius:var(--radius);
   background:rgba(255,255,255,.14);color:#fff;font-size:20px;line-height:1;cursor:pointer;
   -webkit-backdrop-filter:blur(2px);
@@ -131,5 +131,24 @@ header{position:relative;}
 }
 .nav-item:active{background:var(--bg);}
 .nav-item.active{background:var(--bg);border-left:3px solid var(--tomato);color:var(--tomato-dark);}
+
+/* Desktop-Link am Ende des Menüs: eigenes <a>, kein .nav-item (verlässt die Seite statt
+   eine Ansicht umzuschalten) — optisch fast identisch, nur dezent abgesetzt durch den
+   Trenner davor und etwas gedämpfte Textfarbe. */
+.nav-divider{height:1px;background:var(--line);margin:6px 0;border:none;}
+.nav-link{
+  display:block;width:100%;text-align:left;padding:13px 14px;min-height:44px;
+  border:1px solid transparent;border-radius:var(--radius);background:none;
+  color:var(--muted);font-size:14px;font-weight:600;text-decoration:none;box-sizing:border-box;
+}
+.nav-link:active{background:var(--bg);}
+
+/* Statische Einheit neben Slider+Zahlenfeld (ersetzt die frühere doppelte rote Zahl
+   oberhalb im Label) — rein visueller Hinweis, Screenreader bekommen die Einheit über
+   aria-describedby auf beiden Eingabefeldern. */
+.row .unit{font-size:13px;color:var(--muted);flex-shrink:0;}
+
+/* Footer nur noch mit Versionsnummer — rechtsbündig statt zentriert */
+footer{text-align:right;}
 
 @media print{.quickbar{display:none;}.nav-toggle,.nav-overlay{display:none!important;}}
