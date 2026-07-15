@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pizzateig-Rechner</title>
-<link rel="stylesheet" href="css/styles.css?v=3.18.0">
+<link rel="stylesheet" href="css/styles.css?v=3.19.0">
 </head>
 <body>
 <header>
@@ -239,14 +239,85 @@
     <div class="card">
       <h2 aria-label="Einstellungen">Einstellungen</h2>
       <div class="field" style="margin-bottom:0;">
-        <div class="hint" style="margin-bottom:10px;">Schalte einzelne Zusatzfunktionen ein oder aus — deine Wahl wird direkt im Browser gespeichert.</div>
-        <label class="switch-row"><input type="checkbox" id="flagTimer"> Gärzeit-Timer/Wecker je Anleitungsschritt</label>
-        <label class="switch-row"><input type="checkbox" id="flagTimerSystem"> System-Wecker/Kalender-Links beim Timer</label>
-        <label class="switch-row"><input type="checkbox" id="flagShare"> Teilen-Link (Rezept als Link kopieren)</label>
-        <label class="switch-row"><input type="checkbox" id="flagShopping"> Einkaufsliste &amp; separater Druck</label>
-        <label class="switch-row"><input type="checkbox" id="flagFreezeHint"> Einfrier-Hinweis in der Anleitung</label>
-        <label class="switch-row"><input type="checkbox" id="flagMultiRecipes"> Mehrere gespeicherte Rezepte</label>
-        <label class="switch-row"><input type="checkbox" id="flagHints"> Tooltip-/Hinweistexte (Erklärungen bei Feldern &amp; Buttons)</label>
+        <div class="hint" style="margin-bottom:10px;">Schalte einzelne Zusatzfunktionen ein oder aus — deine Wahl wird direkt im Browser gespeichert. Klick auf „i“ zeigt eine kurze Erklärung.</div>
+
+        <div class="flag-item">
+          <div class="switch-row">
+            <div class="switch-row-main">
+              <label class="switch-name" for="flagTimer">Gärzeit-Timer</label>
+              <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagTimerInfo" aria-label="Erklärung zu „Gärzeit-Timer“ ein-/ausblenden">i</button>
+            </div>
+            <span class="switch"><input type="checkbox" id="flagTimer" role="switch" aria-describedby="flagTimerInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+          </div>
+          <p class="switch-info" id="flagTimerInfo" hidden>Countdown mit optionalem Wecker für jeden Anleitungsschritt (z. B. Stockgare, Stückgare).</p>
+        </div>
+
+        <div class="flag-item">
+          <div class="switch-row">
+            <div class="switch-row-main">
+              <label class="switch-name" for="flagTimerSystem">System-Wecker</label>
+              <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagTimerSystemInfo" aria-label="Erklärung zu „System-Wecker“ ein-/ausblenden">i</button>
+            </div>
+            <span class="switch"><input type="checkbox" id="flagTimerSystem" role="switch" aria-describedby="flagTimerSystemInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+          </div>
+          <p class="switch-info" id="flagTimerSystemInfo" hidden>Zusätzliche Links zum Android-Wecker oder Kalender, direkt beim Timer.</p>
+        </div>
+
+        <div class="flag-item">
+          <div class="switch-row">
+            <div class="switch-row-main">
+              <label class="switch-name" for="flagShare">Teilen-Link</label>
+              <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagShareInfo" aria-label="Erklärung zu „Teilen-Link“ ein-/ausblenden">i</button>
+            </div>
+            <span class="switch"><input type="checkbox" id="flagShare" role="switch" aria-describedby="flagShareInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+          </div>
+          <p class="switch-info" id="flagShareInfo" hidden>Rezept als Link kopieren, um es ohne Login oder Server zu teilen.</p>
+        </div>
+
+        <div class="flag-item">
+          <div class="switch-row">
+            <div class="switch-row-main">
+              <label class="switch-name" for="flagShopping">Einkaufsliste</label>
+              <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagShoppingInfo" aria-label="Erklärung zu „Einkaufsliste“ ein-/ausblenden">i</button>
+            </div>
+            <span class="switch"><input type="checkbox" id="flagShopping" role="switch" aria-describedby="flagShoppingInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+          </div>
+          <p class="switch-info" id="flagShoppingInfo" hidden>Einkaufsliste aus den Gesamtmengen erzeugen und separat drucken.</p>
+        </div>
+
+        <div class="flag-item">
+          <div class="switch-row">
+            <div class="switch-row-main">
+              <label class="switch-name" for="flagFreezeHint">Einfrier-Hinweis</label>
+              <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagFreezeHintInfo" aria-label="Erklärung zu „Einfrier-Hinweis“ ein-/ausblenden">i</button>
+            </div>
+            <span class="switch"><input type="checkbox" id="flagFreezeHint" role="switch" aria-describedby="flagFreezeHintInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+          </div>
+          <p class="switch-info" id="flagFreezeHintInfo" hidden>Zusätzlicher Hinweis in der Anleitung zum Einfrieren geformter Teiglinge.</p>
+        </div>
+
+        <div class="flag-item">
+          <div class="switch-row">
+            <div class="switch-row-main">
+              <label class="switch-name" for="flagMultiRecipes">Mehrere Rezepte</label>
+              <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagMultiRecipesInfo" aria-label="Erklärung zu „Mehrere Rezepte“ ein-/ausblenden">i</button>
+            </div>
+            <span class="switch"><input type="checkbox" id="flagMultiRecipes" role="switch" aria-describedby="flagMultiRecipesInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+          </div>
+          <p class="switch-info" id="flagMultiRecipesInfo" hidden>Mehrere benannte Rezepte speichern und verwalten statt nur eines.</p>
+        </div>
+
+        <div class="flag-item">
+          <div class="switch-row">
+            <div class="switch-row-main">
+              <label class="switch-name" for="flagHints">Hinweistexte</label>
+              <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagHintsInfo" aria-label="Erklärung zu „Hinweistexte“ ein-/ausblenden">i</button>
+            </div>
+            <span class="switch"><input type="checkbox" id="flagHints" role="switch" aria-describedby="flagHintsInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+          </div>
+          <p class="switch-info" id="flagHintsInfo" hidden>Erklärende Kurztexte bei Feldern &amp; Buttons ein- oder ausblenden.</p>
+        </div>
+
       </div>
     </div>
 
@@ -328,23 +399,23 @@
 <footer>
   Alles wird lokal in deinem Browser gerechnet &amp; gespeichert · keine Internetverbindung nötig<br>
   Bäckerprozente — Wasser, Salz &amp; Hefe immer relativ zur Mehlmenge (= 100 %)<br>
-  <span id="appVersion" style="opacity:.7;">v3.18.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.19.0</span>
 </footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.18.0"></script>
-<script src="js/state.js?v=3.18.0"></script>
-<script src="js/settings.js?v=3.18.0"></script>
-<script src="js/flour.js?v=3.18.0"></script>
-<script src="js/calc.js?v=3.18.0"></script>
-<script src="js/schedule.js?v=3.18.0"></script>
-<script src="js/guide.js?v=3.18.0"></script>
-<script src="js/timer.js?v=3.18.0"></script>
-<script src="js/ui.js?v=3.18.0"></script>
-<script src="js/print.js?v=3.18.0"></script>
-<script src="js/presets.js?v=3.18.0"></script>
-<script src="js/storage.js?v=3.18.0"></script>
-<script src="js/share.js?v=3.18.0"></script>
-<script src="js/main.js?v=3.18.0"></script>
+<script src="js/dom.js?v=3.19.0"></script>
+<script src="js/state.js?v=3.19.0"></script>
+<script src="js/settings.js?v=3.19.0"></script>
+<script src="js/flour.js?v=3.19.0"></script>
+<script src="js/calc.js?v=3.19.0"></script>
+<script src="js/schedule.js?v=3.19.0"></script>
+<script src="js/guide.js?v=3.19.0"></script>
+<script src="js/timer.js?v=3.19.0"></script>
+<script src="js/ui.js?v=3.19.0"></script>
+<script src="js/print.js?v=3.19.0"></script>
+<script src="js/presets.js?v=3.19.0"></script>
+<script src="js/storage.js?v=3.19.0"></script>
+<script src="js/share.js?v=3.19.0"></script>
+<script src="js/main.js?v=3.19.0"></script>
 </body>
 </html>

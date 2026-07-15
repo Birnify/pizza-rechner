@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-15 · Aktuelle Version: v3.18.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-15 · Aktuelle Version: v3.19.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -159,7 +159,121 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Mobil-Kopf-/Fußbereich aufgeräumt (v3.18.0) + gezielter Accessibility-Audit = aktueller Stand
+## Einstellungen-Menü & Header überarbeitet (v3.19.0) + gezielter Accessibility-Audit = aktueller Stand
+
+Zwei zusammenhängende Design-/Bedienbarkeits-Fixes, vom Nutzer selbst initiiert (kein
+Backlog-Punkt) — **kein neues Feature, keine Logik-Änderung**, `js/calc.js`/
+`schedule.js`/`guide.js` unangetastet. Auslöser: der Burger-Menü-Button auf Mobil
+überlappte visuell mit dem Header-Titel, und die 7 Einstellungspunkte im Feature-
+Flag-Menü wirkten unruhig (uneinheitliche Zeilenlängen, lange Fließtexte direkt in
+der Liste, Checkbox unpassend für einen reinen Ein/Aus-Schalter). Gilt einheitlich
+für Desktop (`pizza-rechner.html`) UND Mobil (`pizza-rechner-mobile.html`).
+
+**1. Mobil-Header-Layout (nur `css/mobile.css`, kein Markup geändert):**
+`header` ist jetzt ein 3-Spalten-Grid (`grid-template-columns:44px 1fr 44px;
+align-items:center;column-gap:10px;`) statt zentriertem `text-align:center`-Titel mit
+`position:absolute` positioniertem `.nav-toggle` darüber. Der Button bekommt
+`grid-column:3;justify-self:end` (eigene Spalte, kann den Titel strukturell nicht
+mehr überlagern), der Titel `grid-column:2;justify-self:center` — die leere erste
+Spalte hält ihn trotzdem optisch zentriert. Bricht der Titel auf schmalen Screens
+zweizeilig um (z. B. bei 320–390 px CSS-Breite, per CDP-`Emulation.setDeviceMetrics
+Override` verifiziert — die bekannte `--window-size`-Klemme aus v3.13.1 macht den
+reinen `--screenshot`-Weg hierfür weiterhin unbrauchbar), bleibt der Button dank
+`align-items:center` senkrecht zentriert daneben stehen, nie mehr überlappend.
+Desktop (`pizza-rechner.html`) hat keinen Hamburger-Button, daher unberührt.
+
+**2. Einstellungen-Karte: Checkbox → Toggle-Switch + Info-Knopf statt Fließtext-Zeile.**
+Vorher: `<label class="switch-row"><input type="checkbox" id="flagX"> Langer
+erklärender Text</label>` je Flag. Jetzt pro Flag ein `.flag-item`-Block:
+```html
+<div class="flag-item">
+  <div class="switch-row">
+    <div class="switch-row-main">
+      <label class="switch-name" for="flagTimer">Gärzeit-Timer</label>
+      <button type="button" class="info-btn" aria-expanded="false"
+        aria-controls="flagTimerInfo" aria-label="Erklärung zu „Gärzeit-Timer“ …">i</button>
+    </div>
+    <span class="switch"><input type="checkbox" id="flagTimer" role="switch"
+      aria-describedby="flagTimerInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+  </div>
+  <p class="switch-info" id="flagTimerInfo" hidden>Countdown mit optionalem Wecker …</p>
+</div>
+```
+Alle 7 Flags (Timer, TimerSystem, Share, Shopping, FreezeHint, MultiRecipes, Hints)
+bekamen kurze, gleichlange Namen statt der bisherigen Ein-Zeile-Romane; die
+ausführliche Erklärung steckt jetzt im `<p class="switch-info">`, standardmäßig
+`hidden`, nur per Klick auf den Info-Knopf sichtbar (`aria-expanded`/`hidden`
+synchron gehalten — klassisches Disclosure-Widget-Muster).
+
+- `js/settings.js`: `wireCheckboxes()` **unverändert** — liest/schreibt weiterhin
+  `el.checked`/`change`-Event auf denselben `<input type=checkbox>`-IDs, nur die
+  CSS-Optik ist jetzt ein Schalter (`role="switch"` ist eine laut ARIA-in-HTML
+  zulässige Rollen-Transformation für `input[type=checkbox]`, kein neues Verhalten
+  nötig). Neu: `wireInfoButtons()` togglet `hidden` auf dem `.switch-info`-Absatz +
+  `aria-expanded` auf dem `.info-btn`, komplett unabhängig von der Flag-Logik.
+- **Bewusst NICHT** von der bestehenden „Hinweistexte"-Flag (`body.hints-off .hint
+  {display:none}`) betroffen: die neuen `.switch-info`-Erklärtexte tragen keine
+  `.hint`-Klasse, da sie On-Demand über den Info-Knopf sind statt ambient sichtbar —
+  sonst könnte man nicht mehr nachlesen, was „Hinweistexte" selbst bedeutet, nachdem
+  man sie ausgeschaltet hat (Henne-Ei-Problem vermieden).
+- `.switch` ist ein `<span>` (kein zweites `<label>` — würde mit dem externen
+  `<label for="flagX">` kollidieren), das `<input>` liegt `position:absolute;inset:0`
+  darin und deckt die komplette Klickfläche ab (auf Mobil `44×44px` per
+  `.switch{width:44px;height:44px;}` in `css/mobile.css`, Desktop `40×26px`).
+- CSS neu in `css/styles.css`: `.flag-item`, `.switch-row`, `.switch-row-main`,
+  `.switch-name`, `.info-btn`, `.switch-info`, `.switch`, `.switch-slider` (ersetzt
+  die alte `.switch-row`-Definition komplett). `css/mobile.css` ergänzt nur
+  `.info-btn{width:28px;height:28px;}` + `.switch{width:44px;height:44px;}` als
+  Touch-Ziel-Vergrößerung.
+
+**Gezielter WCAG-2.1-AA-Audit nur für diese beiden Änderungen**
+(`accessibility-expert`-Agent) — 1 Major, 1 Minor, Rest geprüft ohne Fund:
+
+- **Major — Toggle-Switch im „Aus"-Zustand praktisch unsichtbar (1.4.11 Non-text
+  Contrast):** `.switch-slider{background:var(--line)}` (`#ece3d8`) gegen die weiße
+  Karte ergab nur **~1,27:1** (Soll 3:1) — betraf konkret die drei im Ausgangszustand
+  ausgeschalteten Flags (`timerSystem`, `shopping`, `freezeHint`), deren Schalter für
+  sehschwache Nutzer kaum erkennbar war. Fix: Grundfarbe auf `var(--muted)`
+  (`#6e6359`) → **~5,85:1**. „Ein"-Zustand (`var(--tomato)`, **~4,86:1**) war bereits ok.
+- **Minor — `.info-btn`-Rahmen zu kontrastarm (1.4.11), analog zum bereits
+  akzeptierten `.nav-toggle`-Fund aus v3.17.1:** `border:1px solid var(--line)` gegen
+  Weiß ebenfalls nur **~1,27:1**. Fix: Rahmenfarbe auf `var(--muted)` → **~5,85:1**.
+- **Geprüft, kein Fix nötig:** `role="switch"` + externes `<label for>` +
+  `aria-describedby` auf demselben `<input>` ist spezkonform (keine Namens-/
+  Rollen-Kollision); `aria-describedby` auf ein `hidden`-Element wird trotzdem in die
+  Accessible Description aufgenommen (etablierte Ausnahme für per Referenz
+  eingebundene versteckte Inhalte); Tab-Reihenfolge je `.flag-item` ist
+  `info-btn` → `switch`-Input (entspricht der visuellen Anordnung), keine positiven
+  `tabindex`; `:focus-visible` auf `.info-btn` und (via `input:focus-visible +
+  .switch-slider`, da das echte `<input>` `opacity:0` hat) auf dem sichtbaren
+  Sibling-Element sichtbar; Kontraste `.switch-name`/`.switch-info`-Text bestehen AA
+  klar (**~15,3:1** bzw. **~5,85:1**); Touch-Ziel `.info-btn` (28×28px auf Mobil)
+  liegt unter der 44px-Konvention, ist aber **keine WCAG-2.1-AA-Pflicht** (Zielgröße
+  ist erst WCAG 2.2 AA/2.1 AAA) — als Nebenbefund fürs Backlog vermerkt, s. u.;
+  `#navToggle` weiterhin vor `<h1>` im DOM trotz visueller Rechts-Position ist
+  unkritisch (1.3.2 Meaningful Sequence, identische Begründung wie v3.18.0 — Tab-
+  Reihenfolge ist CSS-Position-unabhängig, etabliertes Hamburger-Menü-Muster).
+
+**Tests:** `js/calc.js`/`schedule.js`/`guide.js` unangetastet, keine der neuen
+IDs/Klassen (`flag-item`, `switch-row`, `info-btn`, `switch-info` usw.) taucht in
+`tests/test.html` auf (die Test-Sektion zu den Flags prüft nur `PZ.FLAG_DEFAULTS`/
+`PZ.setFlag()`-Logik, keine DOM-IDs). Alle 338 Prüfungen weiterhin grün
+(Headless-Edge-Dump verifiziert, vor und nach dem Accessibility-Fix). `?v=` auf
+`3.19.0` gezogen (Desktop + Mobil). `pizza-rechner-mobile-standalone.html` neu
+gebaut (`python build-mobile-standalone.py`). `Versionen/v3.19.0 - Einstellungen-
+Menue und Header ueberarbeitet/` enthält den vollständigen Schnappschuss.
+
+**Verifikations-Hinweis fürs Vorgehen:** Für einen echten schmalen Mobil-Viewport
+per Headless-Screenshot (statt der klemmenden `--window-size`-Methode, s. v3.13.1)
+funktioniert `msedge --headless=new --remote-debugging-port=<port>
+--remote-allow-origins=*` + CDP `Emulation.setDeviceMetricsOverride` über eine
+WebSocket-Verbindung (Python + `websocket-client`). Ohne `--remote-allow-origins=*`
+verweigert Edge die WebSocket-Verbindung von `127.0.0.1` mit HTTP 403 („Rejected an
+incoming WebSocket connection … Use --remote-allow-origins=…"); `localhost` statt
+`127.0.0.1` als Zieladresse führte in dieser Umgebung zusätzlich zu einem
+`PermissionError`-Socketfehler auf Windows — `127.0.0.1` durchgängig verwenden.
+
+## Mobil-Kopf-/Fußbereich aufgeräumt (v3.18.0) + gezielter Accessibility-Audit
 
 Reines Aufräumen/Verschieben bestehender Anzeigen in `pizza-rechner-mobile.html` +
 `css/mobile.css` — **kein neues Feature, keine Logik-Änderung**, Desktop
@@ -1574,6 +1688,12 @@ Keine Code-Änderung durch den Audit nötig.
   Falls auf einem echten iPhone SE/Mini (Safari) doch noch ein sichtbares Abschneiden
   auftritt, bitte mit Screenshot/genauer iOS-Version melden — dann gezielt mit Safari-
   spezifischen Workarounds nachfassen (in Chromium nicht nachstellbar).
+- **Nebenbefund aus v3.19.0 (Accessibility-Audit):** `.info-btn` (Info-Knopf neben
+  jedem Einstellungspunkt) ist auf Mobil 28×28px groß — unter der sonst im Projekt
+  verfolgten 44px-Touch-Ziel-Konvention, aber keine WCAG-2.1-AA-Pflicht (Zielgröße ist
+  erst WCAG 2.2 AA/2.1 AAA), daher bewusst nicht im Audit gefixt. Bei Bedarf mit dem
+  `mobile-optimizer`-Agent gezielt nachschärfen (z. B. größere unsichtbare Tap-Fläche
+  analog zum `.switch`-Muster).
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

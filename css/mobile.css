@@ -59,6 +59,8 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 .selectbox{min-height:44px;font-size:16px;}
 .actions button{min-height:48px;font-size:14px;}
 .timerbtn{min-height:40px;}
+.info-btn{width:28px;height:28px;font-size:13px;}
+.switch{width:44px;height:44px;}
 
 /* Sichtbares Touch-Feedback (kein Hover auf Touch) */
 .seg button:active{transform:scale(.97);}
@@ -91,10 +93,20 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 
 #result{scroll-margin-top:16px;}
 
-/* Hamburger-Navigation: Bereichs-Umschaltung statt durchgehendem One-Pager */
-header{position:relative;}
+/* Hamburger-Navigation: Bereichs-Umschaltung statt durchgehendem One-Pager.
+   v3.19.0: Kopfzeile ist jetzt ein 3-Spalten-Grid (Button-Breite | Titel | Button)
+   statt zentriertem Titel + absolut positioniertem Button darüber — der Button bekommt
+   dadurch strukturell eine eigene Spalte und kann den Titel nie mehr überlagern/
+   "verschwimmen". Die leere linke Spalte hält den Titel trotzdem optisch zentriert.
+   Bricht der Titel auf sehr schmalen Screens zweizeilig um, bleibt der Button dank
+   align-items:center senkrecht zentriert neben ihm stehen. */
+header{
+  position:relative;display:grid;grid-template-columns:44px 1fr 44px;
+  align-items:center;column-gap:10px;
+}
+header h1{grid-column:2;justify-self:center;text-align:center;}
 .nav-toggle{
-  position:absolute;top:calc(14px + env(safe-area-inset-top));right:calc(14px + env(safe-area-inset-right));
+  grid-column:3;justify-self:end;
   width:44px;height:44px;border:1px solid rgba(255,255,255,.8);border-radius:var(--radius);
   background:rgba(255,255,255,.14);color:#fff;font-size:20px;line-height:1;cursor:pointer;
   -webkit-backdrop-filter:blur(2px);

@@ -120,6 +120,25 @@
     });
   }
 
+  // Info-Knöpfe neben jedem Einstellungspunkt (v3.19.0): reines Anzeige-Detail, rührt
+  // keine Flags an. Klick/Enter/Space blendet den zugehörigen Erklär-Absatz
+  // (<p class="switch-info" id="…">) per hidden-Attribut ein/aus und spiegelt den
+  // Zustand in aria-expanded — klassisches Disclosure-Widget-Muster. Läuft identisch
+  // auf Desktop + Mobil (beide laden dieselbe Karte/Markup-Struktur).
+  function wireInfoButtons() {
+    const btns = document.querySelectorAll('.info-btn[aria-controls]');
+    Array.prototype.forEach.call(btns, function (btn) {
+      btn.addEventListener('click', function () {
+        const panel = document.getElementById(btn.getAttribute('aria-controls'));
+        if (!panel) return;
+        const expanded = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', String(!expanded));
+        if (expanded) panel.setAttribute('hidden', ''); else panel.removeAttribute('hidden');
+      });
+    });
+  }
+
   wireCheckboxes();
+  wireInfoButtons();
   applyFlags();
 })(window);

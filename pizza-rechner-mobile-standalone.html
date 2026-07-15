@@ -115,14 +115,49 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .pills button:hover{border-color:var(--tomato);color:var(--tomato);}
 .pills button.active{background:var(--tomato);border-color:var(--tomato);color:#fff;font-weight:600;}
-/* Einstellungen: Feature-Flag-Umschalter (native Checkboxen — voller Tastatur-/AT-Support
-   ohne eigene ARIA-Nacharbeit). min-height 44px = Touch-Ziel-Konvention (v3.5.0/mobile-optimizer). */
-.switch-row{
-  display:flex;align-items:center;gap:10px;min-height:44px;padding:6px 0;
-  font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid var(--line);
+/* Einstellungen: Feature-Flag-Umschalter (v3.19.0 — kurzer Name + Info-Knopf +
+   Toggle-Switch statt langer Fließtext-Checkbox-Zeile). Jeder Punkt ist ein .flag-item
+   (Trennlinie sitzt hier, nicht mehr an .switch-row, damit der ausgeklappte Erklärtext
+   den letzten Punkt nicht doppelt einrahmt). Native <input type=checkbox role=switch>
+   bleibt die Datenquelle (voller Tastatur-/AT-Support ohne eigene Nacharbeit) — nur die
+   Optik wird per CSS zum Schalter, js/settings.js (wireCheckboxes) ist unverändert. */
+.flag-item{border-bottom:1px solid var(--line);}
+.flag-item:last-child{border-bottom:none;}
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;padding:6px 0;}
+.switch-row-main{display:flex;align-items:center;gap:6px;min-width:0;}
+.switch-name{font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;}
+.info-btn{
+  /* Rahmen bewusst var(--muted) statt var(--line) — Letzteres liegt gegen die weiße
+     Karte nur bei ~1,27:1 (WCAG 1.4.11 Non-text Contrast verlangt 3:1 für UI-Komponenten-
+     Umrandungen), var(--muted) liegt bei ~5,85:1. Analoger Fund/Fix wie .nav-toggle in
+     v3.17.1 (dort: rgba-Rahmen gegen Header-Hintergrund). */
+  width:22px;height:22px;flex-shrink:0;border-radius:50%;border:1px solid var(--muted);
+  background:#fff;color:var(--muted);font-size:12px;font-weight:700;font-style:italic;
+  font-family:Georgia,'Times New Roman',serif;line-height:1;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;padding:0;
 }
-.switch-row:last-child{border-bottom:none;}
-.switch-row input[type=checkbox]{width:18px;height:18px;flex-shrink:0;accent-color:var(--tomato);cursor:pointer;}
+.info-btn:hover{border-color:var(--tomato);color:var(--tomato);}
+.info-btn:focus-visible{outline:2px solid var(--tomato-dark);outline-offset:2px;}
+.info-btn[aria-expanded="true"]{background:var(--tomato);border-color:var(--tomato);color:#fff;}
+.switch-info{font-size:11.5px;color:var(--muted);line-height:1.4;margin:0 0 10px;padding-right:54px;}
+/* Toggle-Switch: sichtbare Spur+Daumen per Pseudo-Elementen, das echte <input> deckt per
+   position:absolute;inset:0 den kompletten Klick-/Touch-Bereich ab (größer als die
+   sichtbare Spur — bessere Trefferfläche als die reine 38×22px-Optik). */
+.switch{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:26px;flex-shrink:0;cursor:pointer;}
+.switch input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;}
+/* Aus-Zustand bewusst var(--muted) statt var(--line) — Letzteres liegt gegen die weiße
+   Karte nur bei ~1,27:1 (WCAG 1.4.11 Non-text Contrast, 3:1-Soll für den Zustand einer
+   UI-Komponente), var(--muted) liegt bei ~5,85:1. Ohne diesen Fix war der "Aus"-Zustand
+   des Schalters auf einer weißen Karte praktisch unsichtbar — betrifft alle Flags, die
+   im Ausgangszustand aus sind (timerSystem/shopping/freezeHint). */
+.switch-slider{width:38px;height:22px;border-radius:999px;background:var(--muted);position:relative;transition:background .15s;pointer-events:none;}
+.switch-slider::before{
+  content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .15s;
+}
+.switch input:checked+.switch-slider{background:var(--tomato);}
+.switch input:checked+.switch-slider::before{transform:translateX(16px);}
+.switch input:focus-visible+.switch-slider{outline:2px solid var(--tomato-dark);outline-offset:2px;}
 /* Results */
 .result{position:sticky;top:20px;}
 .result .total{
@@ -320,6 +355,8 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 .selectbox{min-height:44px;font-size:16px;}
 .actions button{min-height:48px;font-size:14px;}
 .timerbtn{min-height:40px;}
+.info-btn{width:28px;height:28px;font-size:13px;}
+.switch{width:44px;height:44px;}
 
 /* Sichtbares Touch-Feedback (kein Hover auf Touch) */
 .seg button:active{transform:scale(.97);}
@@ -352,10 +389,20 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 
 #result{scroll-margin-top:16px;}
 
-/* Hamburger-Navigation: Bereichs-Umschaltung statt durchgehendem One-Pager */
-header{position:relative;}
+/* Hamburger-Navigation: Bereichs-Umschaltung statt durchgehendem One-Pager.
+   v3.19.0: Kopfzeile ist jetzt ein 3-Spalten-Grid (Button-Breite | Titel | Button)
+   statt zentriertem Titel + absolut positioniertem Button darüber — der Button bekommt
+   dadurch strukturell eine eigene Spalte und kann den Titel nie mehr überlagern/
+   "verschwimmen". Die leere linke Spalte hält den Titel trotzdem optisch zentriert.
+   Bricht der Titel auf sehr schmalen Screens zweizeilig um, bleibt der Button dank
+   align-items:center senkrecht zentriert neben ihm stehen. */
+header{
+  position:relative;display:grid;grid-template-columns:44px 1fr 44px;
+  align-items:center;column-gap:10px;
+}
+header h1{grid-column:2;justify-self:center;text-align:center;}
 .nav-toggle{
-  position:absolute;top:calc(14px + env(safe-area-inset-top));right:calc(14px + env(safe-area-inset-right));
+  grid-column:3;justify-self:end;
   width:44px;height:44px;border:1px solid rgba(255,255,255,.8);border-radius:var(--radius);
   background:rgba(255,255,255,.14);color:#fff;font-size:20px;line-height:1;cursor:pointer;
   -webkit-backdrop-filter:blur(2px);
@@ -775,14 +822,85 @@ footer{text-align:right;}
       <summary><h2 aria-label="Einstellungen">Einstellungen</h2></summary>
       <div class="acc-body">
         <div class="field" style="margin-bottom:0;">
-          <div class="hint" style="margin-bottom:10px;">Schalte einzelne Zusatzfunktionen ein oder aus — deine Wahl wird direkt im Browser gespeichert.</div>
-          <label class="switch-row"><input type="checkbox" id="flagTimer"> Gärzeit-Timer/Wecker je Anleitungsschritt</label>
-          <label class="switch-row"><input type="checkbox" id="flagTimerSystem"> System-Wecker/Kalender-Links beim Timer</label>
-          <label class="switch-row"><input type="checkbox" id="flagShare"> Teilen-Link (Rezept als Link kopieren)</label>
-          <label class="switch-row"><input type="checkbox" id="flagShopping"> Einkaufsliste &amp; separater Druck</label>
-          <label class="switch-row"><input type="checkbox" id="flagFreezeHint"> Einfrier-Hinweis in der Anleitung</label>
-          <label class="switch-row"><input type="checkbox" id="flagMultiRecipes"> Mehrere gespeicherte Rezepte</label>
-          <label class="switch-row"><input type="checkbox" id="flagHints"> Tooltip-/Hinweistexte (Erklärungen bei Feldern &amp; Buttons)</label>
+          <div class="hint" style="margin-bottom:10px;">Schalte einzelne Zusatzfunktionen ein oder aus — deine Wahl wird direkt im Browser gespeichert. Tipp auf „i“ zeigt eine kurze Erklärung.</div>
+
+          <div class="flag-item">
+            <div class="switch-row">
+              <div class="switch-row-main">
+                <label class="switch-name" for="flagTimer">Gärzeit-Timer</label>
+                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagTimerInfo" aria-label="Erklärung zu „Gärzeit-Timer“ ein-/ausblenden">i</button>
+              </div>
+              <span class="switch"><input type="checkbox" id="flagTimer" role="switch" aria-describedby="flagTimerInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+            </div>
+            <p class="switch-info" id="flagTimerInfo" hidden>Countdown mit optionalem Wecker für jeden Anleitungsschritt (z. B. Stockgare, Stückgare).</p>
+          </div>
+
+          <div class="flag-item">
+            <div class="switch-row">
+              <div class="switch-row-main">
+                <label class="switch-name" for="flagTimerSystem">System-Wecker</label>
+                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagTimerSystemInfo" aria-label="Erklärung zu „System-Wecker“ ein-/ausblenden">i</button>
+              </div>
+              <span class="switch"><input type="checkbox" id="flagTimerSystem" role="switch" aria-describedby="flagTimerSystemInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+            </div>
+            <p class="switch-info" id="flagTimerSystemInfo" hidden>Zusätzliche Links zum Android-Wecker oder Kalender, direkt beim Timer.</p>
+          </div>
+
+          <div class="flag-item">
+            <div class="switch-row">
+              <div class="switch-row-main">
+                <label class="switch-name" for="flagShare">Teilen-Link</label>
+                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagShareInfo" aria-label="Erklärung zu „Teilen-Link“ ein-/ausblenden">i</button>
+              </div>
+              <span class="switch"><input type="checkbox" id="flagShare" role="switch" aria-describedby="flagShareInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+            </div>
+            <p class="switch-info" id="flagShareInfo" hidden>Rezept als Link kopieren, um es ohne Login oder Server zu teilen.</p>
+          </div>
+
+          <div class="flag-item">
+            <div class="switch-row">
+              <div class="switch-row-main">
+                <label class="switch-name" for="flagShopping">Einkaufsliste</label>
+                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagShoppingInfo" aria-label="Erklärung zu „Einkaufsliste“ ein-/ausblenden">i</button>
+              </div>
+              <span class="switch"><input type="checkbox" id="flagShopping" role="switch" aria-describedby="flagShoppingInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+            </div>
+            <p class="switch-info" id="flagShoppingInfo" hidden>Einkaufsliste aus den Gesamtmengen erzeugen und separat drucken.</p>
+          </div>
+
+          <div class="flag-item">
+            <div class="switch-row">
+              <div class="switch-row-main">
+                <label class="switch-name" for="flagFreezeHint">Einfrier-Hinweis</label>
+                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagFreezeHintInfo" aria-label="Erklärung zu „Einfrier-Hinweis“ ein-/ausblenden">i</button>
+              </div>
+              <span class="switch"><input type="checkbox" id="flagFreezeHint" role="switch" aria-describedby="flagFreezeHintInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+            </div>
+            <p class="switch-info" id="flagFreezeHintInfo" hidden>Zusätzlicher Hinweis in der Anleitung zum Einfrieren geformter Teiglinge.</p>
+          </div>
+
+          <div class="flag-item">
+            <div class="switch-row">
+              <div class="switch-row-main">
+                <label class="switch-name" for="flagMultiRecipes">Mehrere Rezepte</label>
+                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagMultiRecipesInfo" aria-label="Erklärung zu „Mehrere Rezepte“ ein-/ausblenden">i</button>
+              </div>
+              <span class="switch"><input type="checkbox" id="flagMultiRecipes" role="switch" aria-describedby="flagMultiRecipesInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+            </div>
+            <p class="switch-info" id="flagMultiRecipesInfo" hidden>Mehrere benannte Rezepte speichern und verwalten statt nur eines.</p>
+          </div>
+
+          <div class="flag-item">
+            <div class="switch-row">
+              <div class="switch-row-main">
+                <label class="switch-name" for="flagHints">Hinweistexte</label>
+                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagHintsInfo" aria-label="Erklärung zu „Hinweistexte“ ein-/ausblenden">i</button>
+              </div>
+              <span class="switch"><input type="checkbox" id="flagHints" role="switch" aria-describedby="flagHintsInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+            </div>
+            <p class="switch-info" id="flagHintsInfo" hidden>Erklärende Kurztexte bei Feldern &amp; Buttons ein- oder ausblenden.</p>
+          </div>
+
         </div>
       </div>
     </details>
@@ -790,7 +908,7 @@ footer{text-align:right;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.18.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.19.0</span>
 </footer>
 
 <div class="quickbar">
@@ -955,7 +1073,26 @@ footer{text-align:right;}
     });
   }
 
+  // Info-Knöpfe neben jedem Einstellungspunkt (v3.19.0): reines Anzeige-Detail, rührt
+  // keine Flags an. Klick/Enter/Space blendet den zugehörigen Erklär-Absatz
+  // (<p class="switch-info" id="…">) per hidden-Attribut ein/aus und spiegelt den
+  // Zustand in aria-expanded — klassisches Disclosure-Widget-Muster. Läuft identisch
+  // auf Desktop + Mobil (beide laden dieselbe Karte/Markup-Struktur).
+  function wireInfoButtons() {
+    const btns = document.querySelectorAll('.info-btn[aria-controls]');
+    Array.prototype.forEach.call(btns, function (btn) {
+      btn.addEventListener('click', function () {
+        const panel = document.getElementById(btn.getAttribute('aria-controls'));
+        if (!panel) return;
+        const expanded = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', String(!expanded));
+        if (expanded) panel.setAttribute('hidden', ''); else panel.removeAttribute('hidden');
+      });
+    });
+  }
+
   wireCheckboxes();
+  wireInfoButtons();
   applyFlags();
 })(window);
 

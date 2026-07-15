@@ -104,14 +104,49 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .pills button:hover{border-color:var(--tomato);color:var(--tomato);}
 .pills button.active{background:var(--tomato);border-color:var(--tomato);color:#fff;font-weight:600;}
-/* Einstellungen: Feature-Flag-Umschalter (native Checkboxen — voller Tastatur-/AT-Support
-   ohne eigene ARIA-Nacharbeit). min-height 44px = Touch-Ziel-Konvention (v3.5.0/mobile-optimizer). */
-.switch-row{
-  display:flex;align-items:center;gap:10px;min-height:44px;padding:6px 0;
-  font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid var(--line);
+/* Einstellungen: Feature-Flag-Umschalter (v3.19.0 — kurzer Name + Info-Knopf +
+   Toggle-Switch statt langer Fließtext-Checkbox-Zeile). Jeder Punkt ist ein .flag-item
+   (Trennlinie sitzt hier, nicht mehr an .switch-row, damit der ausgeklappte Erklärtext
+   den letzten Punkt nicht doppelt einrahmt). Native <input type=checkbox role=switch>
+   bleibt die Datenquelle (voller Tastatur-/AT-Support ohne eigene Nacharbeit) — nur die
+   Optik wird per CSS zum Schalter, js/settings.js (wireCheckboxes) ist unverändert. */
+.flag-item{border-bottom:1px solid var(--line);}
+.flag-item:last-child{border-bottom:none;}
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;padding:6px 0;}
+.switch-row-main{display:flex;align-items:center;gap:6px;min-width:0;}
+.switch-name{font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;}
+.info-btn{
+  /* Rahmen bewusst var(--muted) statt var(--line) — Letzteres liegt gegen die weiße
+     Karte nur bei ~1,27:1 (WCAG 1.4.11 Non-text Contrast verlangt 3:1 für UI-Komponenten-
+     Umrandungen), var(--muted) liegt bei ~5,85:1. Analoger Fund/Fix wie .nav-toggle in
+     v3.17.1 (dort: rgba-Rahmen gegen Header-Hintergrund). */
+  width:22px;height:22px;flex-shrink:0;border-radius:50%;border:1px solid var(--muted);
+  background:#fff;color:var(--muted);font-size:12px;font-weight:700;font-style:italic;
+  font-family:Georgia,'Times New Roman',serif;line-height:1;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;padding:0;
 }
-.switch-row:last-child{border-bottom:none;}
-.switch-row input[type=checkbox]{width:18px;height:18px;flex-shrink:0;accent-color:var(--tomato);cursor:pointer;}
+.info-btn:hover{border-color:var(--tomato);color:var(--tomato);}
+.info-btn:focus-visible{outline:2px solid var(--tomato-dark);outline-offset:2px;}
+.info-btn[aria-expanded="true"]{background:var(--tomato);border-color:var(--tomato);color:#fff;}
+.switch-info{font-size:11.5px;color:var(--muted);line-height:1.4;margin:0 0 10px;padding-right:54px;}
+/* Toggle-Switch: sichtbare Spur+Daumen per Pseudo-Elementen, das echte <input> deckt per
+   position:absolute;inset:0 den kompletten Klick-/Touch-Bereich ab (größer als die
+   sichtbare Spur — bessere Trefferfläche als die reine 38×22px-Optik). */
+.switch{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:26px;flex-shrink:0;cursor:pointer;}
+.switch input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;}
+/* Aus-Zustand bewusst var(--muted) statt var(--line) — Letzteres liegt gegen die weiße
+   Karte nur bei ~1,27:1 (WCAG 1.4.11 Non-text Contrast, 3:1-Soll für den Zustand einer
+   UI-Komponente), var(--muted) liegt bei ~5,85:1. Ohne diesen Fix war der "Aus"-Zustand
+   des Schalters auf einer weißen Karte praktisch unsichtbar — betrifft alle Flags, die
+   im Ausgangszustand aus sind (timerSystem/shopping/freezeHint). */
+.switch-slider{width:38px;height:22px;border-radius:999px;background:var(--muted);position:relative;transition:background .15s;pointer-events:none;}
+.switch-slider::before{
+  content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .15s;
+}
+.switch input:checked+.switch-slider{background:var(--tomato);}
+.switch input:checked+.switch-slider::before{transform:translateX(16px);}
+.switch input:focus-visible+.switch-slider{outline:2px solid var(--tomato-dark);outline-offset:2px;}
 /* Results */
 .result{position:sticky;top:20px;}
 .result .total{
