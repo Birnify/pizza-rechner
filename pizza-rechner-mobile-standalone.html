@@ -355,7 +355,17 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 .selectbox{min-height:44px;font-size:16px;}
 .actions button{min-height:48px;font-size:14px;}
 .timerbtn{min-height:40px;}
-.info-btn{width:28px;height:28px;font-size:13px;}
+.info-btn{width:28px;height:28px;font-size:13px;position:relative;}
+/* Sichtbare Kreisoptik bleibt 28px (s.o.), aber die Trefferfläche wird per unsichtbarem
+   ::before auf 44×44px erweitert (Apple-HIG-Touch-Ziel) — gleiches Prinzip wie
+   .switch input{position:absolute;inset:0;...}, das ebenfalls eine größere unsichtbare
+   Fläche als die sichtbare Optik abdeckt. Asymmetrisch: links nur -4px (die feste 6px-
+   Lücke zu .switch-name in .switch-row-main lässt 2px Puffer, damit der Klick auf den
+   Flag-Namen nicht versehentlich den Info-Knopf trifft), rechts -12px (dort liegt dank
+   justify-content:space-between auf .switch-row reichlich Freiraum vor dem Toggle-
+   Switch). Oben/unten je -8px füllt exakt die 44px-Zeilenhöhe, die .switch (ebenfalls
+   44×44px auf Mobil) in der Reihe ohnehin vorgibt — keine Überlappung mit Nachbarzeilen. */
+.info-btn::before{content:'';position:absolute;top:-8px;bottom:-8px;left:-4px;right:-12px;}
 .switch{width:44px;height:44px;}
 
 /* Sichtbares Touch-Feedback (kein Hover auf Touch) */
@@ -908,7 +918,7 @@ footer{text-align:right;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.19.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.19.1</span>
 </footer>
 
 <div class="quickbar">

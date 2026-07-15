@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-15 · Aktuelle Version: v3.19.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-15 · Aktuelle Version: v3.19.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -159,7 +159,58 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Einstellungen-Menü & Header überarbeitet (v3.19.0) + gezielter Accessibility-Audit = aktueller Stand
+## Info-Knopf-Touch-Ziel auf 44×44px vergrößert (v3.19.1, `mobile-optimizer`-Agent) = aktueller Stand
+
+Reiner Mobil-Layout-Fix, kein neues Feature, keine Logik-Änderung — greift den
+Nebenbefund aus dem v3.19.0-Accessibility-Audit auf (s. Abschnitt „Mögliche nächste
+Schritte" unten): `.info-btn` (Info-Knopf neben jedem Einstellungspunkt, öffnet den
+`<p class="switch-info">`-Erklärtext) hatte auf Mobil eine Tap-Fläche von nur **28×28px**
+— unter der sonst im Projekt konsequent eingehaltenen 44px-Touch-Ziel-Konvention
+(Apple-HIG; vgl. `.seg button,.pills button{min-height:44px;}`, `.nav-toggle`
+44×44px, `.switch{width:44px;height:44px;}` direkt daneben). Keine WCAG-2.1-AA-Pflicht
+(Zielgröße ist erst WCAG 2.2 AA/2.1 AAA), aber ein klarer Bedienbarkeits-Fix.
+
+**Nur `css/mobile.css` geändert** (reines Mobil-Layout, `css/styles.css`/Desktop-HTML/
+Mobil-HTML unangetastet — Desktop-Mausnutzer profitieren nicht von größeren
+Trefferflächen, aber es entsteht dort auch kein Schaden, also bewusst nicht dort
+ergänzt). Die sichtbare 28px-Kreisoptik bleibt exakt gleich — nur die unsichtbare
+Klickfläche wächst, analog zum bereits etablierten `.switch input{position:absolute;
+inset:0;...}`-Muster direkt daneben:
+
+```css
+.info-btn{width:28px;height:28px;font-size:13px;position:relative;}
+.info-btn::before{content:'';position:absolute;top:-8px;bottom:-8px;left:-4px;right:-12px;}
+```
+
+- **Asymmetrisch statt einem einfachen `inset:-8px` ringsum**, weil links nur 6px
+  Platz bis zum `.switch-name`-Flag-Namen ist (fester `gap:6px` in `.switch-row-main`):
+  `left:-4px` lässt 2px Puffer, damit ein Tap auf das Namens-Label nicht versehentlich
+  den Info-Knopf statt des Checkbox-Labels trifft. `right:-12px` nutzt stattdessen den
+  großzügigen Freiraum, den `justify-content:space-between` auf `.switch-row` vor dem
+  Toggle-Switch lässt (dort ist deutlich mehr als 12px Luft, da `.switch-row-main` nur
+  seine Inhaltsbreite beansprucht). `top:-8px`/`bottom:-8px` füllen exakt die Zeilenhöhe,
+  die das benachbarte `.switch` (ebenfalls `44×44px` auf Mobil) in der Reihe ohnehin
+  vorgibt (`align-items:center` auf `.switch-row`) — keine Überlappung mit den
+  `border-bottom`-getrennten Nachbarzeilen der anderen sechs `.flag-item`-Blöcke.
+- **Verifiziert per Headless-Edge-Dump + CDP `Emulation.setDeviceMetricsOverride`**
+  (WebSocket, wie in v3.19.0 etabliert): für alle 7 Flags bei 375px Breite und für
+  den längsten Flag-Namen („Mehrere Rezepte") zusätzlich bei 320px Breite (iPhone SE)
+  `getBoundingClientRect()` von `.info-btn` + `getComputedStyle(info, '::before')`
+  ausgelesen und die tatsächliche Trefferfläche berechnet: **in jedem Fall exakt
+  44×44px**, `hit.left` blieb immer > `switch-name`-`right`-Kante (kein Überlapp mit
+  dem Label), `hit.right` blieb immer < `.switch`-`left`-Kante (kein Überlapp mit dem
+  Toggle-Switch).
+
+**Tests:** reine CSS-Änderung, `.info-btn` kommt in `tests/test.html` nicht vor (die
+Test-Sektion zu den Flags prüft nur `PZ.FLAG_DEFAULTS`/`PZ.setFlag()`-Logik, keine
+DOM-IDs/CSS). Alle 338 Prüfungen weiterhin grün (Headless-Edge-Dump verifiziert). `?v=`
+auf `3.19.1` gezogen (Desktop + Mobil, gleicher Cache-Busting-/Footer-Versionsstand,
+Desktop-Markup/-Logik inhaltlich unverändert — etabliertes Muster seit v3.13.1/v3.17.1/
+v3.18.0). `pizza-rechner-mobile-standalone.html` neu gebaut (`python
+build-mobile-standalone.py`). `Versionen/v3.19.1 - Info-Knopf Touch-Ziel/` enthält den
+vollständigen Schnappschuss.
+
+## Einstellungen-Menü & Header überarbeitet (v3.19.0) + gezielter Accessibility-Audit
 
 Zwei zusammenhängende Design-/Bedienbarkeits-Fixes, vom Nutzer selbst initiiert (kein
 Backlog-Punkt) — **kein neues Feature, keine Logik-Änderung**, `js/calc.js`/
@@ -1688,12 +1739,9 @@ Keine Code-Änderung durch den Audit nötig.
   Falls auf einem echten iPhone SE/Mini (Safari) doch noch ein sichtbares Abschneiden
   auftritt, bitte mit Screenshot/genauer iOS-Version melden — dann gezielt mit Safari-
   spezifischen Workarounds nachfassen (in Chromium nicht nachstellbar).
-- **Nebenbefund aus v3.19.0 (Accessibility-Audit):** `.info-btn` (Info-Knopf neben
-  jedem Einstellungspunkt) ist auf Mobil 28×28px groß — unter der sonst im Projekt
-  verfolgten 44px-Touch-Ziel-Konvention, aber keine WCAG-2.1-AA-Pflicht (Zielgröße ist
-  erst WCAG 2.2 AA/2.1 AAA), daher bewusst nicht im Audit gefixt. Bei Bedarf mit dem
-  `mobile-optimizer`-Agent gezielt nachschärfen (z. B. größere unsichtbare Tap-Fläche
-  analog zum `.switch`-Muster).
+- ~~Nebenbefund aus v3.19.0 (Accessibility-Audit): `.info-btn`-Touch-Ziel auf Mobil nur
+  28×28px~~ — **erledigt in v3.19.1**: unsichtbare Tap-Fläche per `::before` auf 44×44px
+  vergrößert (sichtbare 28px-Kreisoptik unverändert), analog zum `.switch`-Muster.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 
