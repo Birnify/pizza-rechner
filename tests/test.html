@@ -48,6 +48,8 @@
   <select id="flour"><option value="caputo_pizzeria" selected></option></select>
   <input type="text" id="timeISO">
   <div id="recipesCard"></div><div id="shareBlock"></div><div id="shoppingRow"></div>
+  <select id="preset"><option value=""></option><option value="newyork_style"></option></select>
+  <div id="sugarBlock"></div><input type="checkbox" id="flagNewYorkStyle">
   <div class="hint" id="testHintStub">Erklärender Beispiel-Hinweistext</div>
   <button type="button" id="testDescribedBtn" aria-describedby="testHintStub">Beispiel-Button</button>
 </div>
@@ -1493,6 +1495,63 @@
         { label: 'hints=true entfernt die body-Klasse "hints-off" wieder', ok: bodyOffClassRemoved, actual: bodyOffClassRemoved, expected: true, tol: null },
         { label: 'hints=true macht den .hint-Stub wieder sichtbar', ok: stubVisibleAgain, actual: stubVisibleAgain, expected: true, tol: null }
       ]);
+    })();
+
+    // --- Render-Effekt (v3.19.3): #sugarBlock ist sichtbar, wenn ENTWEDER das Flag
+    // manuell/dauerhaft an ist ODER das Preset "New York Style" gerade im #preset-Select
+    // aktiv gewählt ist — presets.js ist hier nicht geladen (reine Logik-/Render-Tests),
+    // daher wird PZ.PRESETS minimal gestubbt. Wichtig: die Checkbox #flagNewYorkStyle
+    // (Einstellungen-Menü) darf NUR den echten persistenten Flag-Zustand widerspiegeln,
+    // nicht die temporäre preset-getriebene Sichtbarkeit (sonst würde sie fälschlich "an"
+    // erscheinen, obwohl der Nutzer den Schalter nie selbst gesetzt hat).
+    (function () {
+      const presetsBackup = PZ.PRESETS;
+      PZ.PRESETS = { newyork_style: { flag: 'newYorkStyle' } };
+      const presetEl = document.getElementById('preset');
+      const sugarBlock = document.getElementById('sugarBlock');
+      const checkbox = document.getElementById('flagNewYorkStyle');
+
+      PZ.setFlag('newYorkStyle', false);
+      presetEl.value = '';
+      PZ.applyFlags();
+      const hiddenByDefault = !sugarBlock.classList.contains('show');
+      const checkboxOffByDefault = checkbox.checked === false;
+
+      presetEl.value = 'newyork_style';
+      PZ.applyFlags();
+      const shownViaActivePreset = sugarBlock.classList.contains('show');
+      const checkboxStillOffWithActivePreset = checkbox.checked === false;
+
+      presetEl.value = '';
+      PZ.applyFlags();
+      const hiddenAgainAfterLeavingPreset = !sugarBlock.classList.contains('show');
+
+      PZ.setFlag('newYorkStyle', true);
+      presetEl.value = '';
+      PZ.applyFlags();
+      const shownViaManualFlagAlone = sugarBlock.classList.contains('show');
+      const checkboxOnWithManualFlag = checkbox.checked === true;
+
+      presetEl.value = 'newyork_style';
+      PZ.applyFlags();
+      const shownWithBothFlagAndPreset = sugarBlock.classList.contains('show');
+
+      renderBox('#sugarBlock-Sichtbarkeit: aktives Preset ODER manuelles Flag (Checkbox bleibt reiner Flag-Spiegel)', [
+        { label: 'Flag aus + kein Preset aktiv -> #sugarBlock ohne "show"', ok: hiddenByDefault, actual: hiddenByDefault, expected: true, tol: null },
+        { label: 'Checkbox im Ausgangszustand unchecked', ok: checkboxOffByDefault, actual: checkboxOffByDefault, expected: true, tol: null },
+        { label: 'Flag aus + Preset "New York Style" aktiv -> #sugarBlock bekommt "show"', ok: shownViaActivePreset, actual: shownViaActivePreset, expected: true, tol: null },
+        { label: 'Checkbox bleibt unchecked, obwohl #sugarBlock nur wegen des aktiven Presets sichtbar ist', ok: checkboxStillOffWithActivePreset, actual: checkboxStillOffWithActivePreset, expected: true, tol: null },
+        { label: 'Zurück zu "Eigene Einstellung" (Flag weiterhin aus) -> #sugarBlock verliert "show" wieder', ok: hiddenAgainAfterLeavingPreset, actual: hiddenAgainAfterLeavingPreset, expected: true, tol: null },
+        { label: 'Flag manuell an + kein Preset aktiv -> #sugarBlock bleibt via "show" sichtbar', ok: shownViaManualFlagAlone, actual: shownViaManualFlagAlone, expected: true, tol: null },
+        { label: 'Checkbox spiegelt den manuell gesetzten Flag-Zustand (checked)', ok: checkboxOnWithManualFlag, actual: checkboxOnWithManualFlag, expected: true, tol: null },
+        { label: 'Flag an UND Preset aktiv -> #sugarBlock weiterhin sichtbar (Kombination)', ok: shownWithBothFlagAndPreset, actual: shownWithBothFlagAndPreset, expected: true, tol: null }
+      ]);
+
+      // Aufräumen: Preset-Stub-Select + PZ.PRESETS wieder auf Ausgangszustand.
+      presetEl.value = '';
+      PZ.setFlag('newYorkStyle', false);
+      PZ.applyFlags();
+      PZ.PRESETS = presetsBackup;
     })();
 
     // --- Aufräumen: echten localStorage-Stand + PZ.FLAGS-Objekt wiederherstellen ---

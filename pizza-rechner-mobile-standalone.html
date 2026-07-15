@@ -946,7 +946,7 @@ footer{text-align:right;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.19.2</span>
+  <span id="appVersion" style="opacity:.7;">v3.19.3</span>
 </footer>
 
 <div class="quickbar">
@@ -1080,8 +1080,17 @@ footer{text-align:right;}
     // Zucker-Regler (New-York-Style): nutzt das etablierte .collapse/.show-Muster
     // (wie prefBlock/bigaHydBlock) statt style.display — verhindert einen Flackerer
     // vorm ersten applyFlags()-Lauf, da .collapse per CSS schon vor JS-Ausführung greift.
+    // Sichtbar, wenn ENTWEDER das Flag dauerhaft/manuell an ist ODER das Preset „New York
+    // Style" gerade aktiv im #preset-Select gewählt ist (v3.19.3 — vorher schaltete das
+    // Preset das Flag beim Anwenden dauerhaft an und ließ den Regler danach für immer
+    // sichtbar, s. pizza-rechner-KONTEXT.md). Fragt dafür live den #preset-Select ab statt
+    // einen zusätzlichen State zu duplizieren — presets.js ruft applyFlags() bei jedem
+    // Preset-Wechsel (inkl. "Eigene Einstellung") neu auf, s. dort.
+    const presetEl = document.getElementById('preset');
+    const activePreset = (presetEl && PZ.PRESETS) ? PZ.PRESETS[presetEl.value] : null;
+    const presetWantsSugar = !!(activePreset && activePreset.flag === 'newYorkStyle');
     const sugarBlock = document.getElementById('sugarBlock');
-    if (sugarBlock) sugarBlock.classList.toggle('show', !!f.newYorkStyle);
+    if (sugarBlock) sugarBlock.classList.toggle('show', !!f.newYorkStyle || presetWantsSugar);
     // Tooltip-/Hinweistexte: EIN globaler Body-Klassen-Schalter statt Dutzender
     // Einzel-Elemente. CSS blendet darüber alle .hint/.timersys-hint/.timerhint-Elemente
     // per display:none aus — die Elemente (und ihre IDs) bleiben dabei im DOM erhalten,
@@ -2306,7 +2315,14 @@ footer{text-align:right;}
   function applyPreset(key) {
     const state = PZ.state, set = PZ.set;
     const p = PRESETS[key];
-    if (!p) { $('presetDesc').textContent = DEFAULT_DESC; return; }
+    if (!p) {
+      $('presetDesc').textContent = DEFAULT_DESC;
+      // Zurück zu "Eigene Einstellung" (oder unbekannter Key): preset-gated Regler
+      // (aktuell nur der Zucker-Regler) wieder ausblenden, sofern das zugehörige Flag
+      // nicht manuell/dauerhaft an ist — applyFlags() liest dafür live aus #preset (s. dort).
+      if (PZ.applyFlags) PZ.applyFlags();
+      return;
+    }
     if (p.method) { state.method = p.method; PZ.selectSeg('method', 'm', p.method); PZ.applyMethod(); }
     if (p.yeastType) { state.yeastType = p.yeastType; PZ.selectSeg('yeastType', 'y', p.yeastType); }
     if (p.knead != null) { state.knead = String(p.knead); PZ.selectSeg('knead', 'k', p.knead); }
@@ -2324,9 +2340,13 @@ footer{text-align:right;}
     // Vorteig-Reife-Stufe setzt Reifezeit + Hefe passend (nach applyMethod, das die Pills rendert)
     if (p.prefStage && PZ.selectPrefStage) PZ.selectPrefStage(state.method, p.prefStage);
     // Manche Presets brauchen einen sonst standardmäßig ausgeblendeten Regler sichtbar
-    // (z. B. „New York Style" den Zucker-Regler) — schaltet das zugehörige Feature-Flag
-    // dauerhaft an (persistiert), kein automatisches Zurücksetzen bei anderen Presets.
-    if (p.flag && PZ.setFlag) { PZ.setFlag(p.flag, true); if (PZ.applyFlags) PZ.applyFlags(); }
+    // (z. B. „New York Style" den Zucker-Regler) — NUR solange dieses Preset aktiv gewählt
+    // ist (v3.19.3). Kein automatisches, dauerhaftes Anschalten des Feature-Flags mehr
+    // (vorher: PZ.setFlag(p.flag, true) — das ließ den Regler auch nach dem Wechsel auf ein
+    // anderes Preset oder „Eigene Einstellung" für immer sichtbar, s. Kontext-Datei). Der
+    // manuelle Flag-Schalter im Einstellungen-Menü bleibt davon unberührt und wirkt weiterhin
+    // dauerhaft — applyFlags() kombiniert beides (s. js/settings.js).
+    if (PZ.applyFlags) PZ.applyFlags();
     $('presetDesc').textContent = p.desc;
     PZ.calc();
   }

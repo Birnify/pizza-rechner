@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-15 · Aktuelle Version: v3.19.2 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-15 · Aktuelle Version: v3.19.3 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -168,7 +168,86 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Zucker-Feld / New York Style (v3.19.2) = aktueller Stand
+## New York Style: nur temporäre statt dauerhafte Zucker-Regler-Sichtbarkeit (v3.19.3) = aktueller Stand
+
+Korrektur am gerade erst umgesetzten Feature aus v3.19.2 (s. Abschnitt „Zucker-Feld /
+New York Style" direkt darunter), vom Nutzer per `/define-feature` strukturiert. Kein
+neues Feature, keine Änderung an Berechnungslogik/Preset-Inhalt — nur eine Verhaltens-
+korrektur, wann der Zucker-Regler sichtbar ist.
+
+**Problem (v3.19.2):** Preset „New York Style" schaltete beim Anwenden `PZ.setFlag
+('newYorkStyle', true)` **dauerhaft/persistent** an. Der Zucker-Regler blieb danach für
+immer sichtbar — auch nach Wechsel auf ein anderes Preset oder „Eigene Einstellung".
+Ungewollt: die Sichtbarkeit sollte an das **aktuell gewählte Preset** gekoppelt sein,
+nicht an eine dauerhafte Einstellungsänderung.
+
+**Fix:** `#sugarBlock` ist jetzt sichtbar, wenn **entweder** (a) das Feature-Flag
+`newYorkStyle` manuell im Einstellungen-Menü dauerhaft eingeschaltet ist, **oder** (b)
+das Preset „New York Style" gerade aktiv im `#preset`-Select gewählt ist — beides ODER-
+verknüpft, keine Persistenz mehr allein durchs Anwenden des Presets.
+
+- **`js/presets.js` (`applyPreset()`):** ruft `PZ.setFlag(p.flag, true)` beim Anwenden
+  **nicht mehr** auf. Ruft stattdessen am Ende **immer** (unabhängig von `p.flag`, und
+  auch im early-return-Zweig für „Eigene Einstellung"/unbekannten Key) `PZ.applyFlags()`
+  auf, damit die Sichtbarkeit bei jedem expliziten Preset-Wechsel über den `#preset`-
+  Select neu ausgewertet wird. Das `p.flag`-Feld selbst bleibt (weiterhin generisch für
+  künftige Presets nutzbar), wird jetzt aber nur noch **gelesen**, nicht mehr geschrieben.
+- **`js/settings.js` (`applyFlags()`):** liest live `document.getElementById('preset')
+  .value` aus, schlägt den Preset-Key in `PZ.PRESETS` nach und prüft, ob dessen `flag`-
+  Feld `'newYorkStyle'` ist (`presetWantsSugar`). `#sugarBlock` bekommt die `show`-Klasse
+  bei `f.newYorkStyle || presetWantsSugar`. Kein zusätzlicher, dopplender State — der
+  `#preset`-Select ist bereits die Source of Truth für „welches Preset ist gerade aktiv"
+  (jede manuelle Regler-Änderung setzt ihn ohnehin schon auf `''` zurück, etabliertes
+  Muster seit den ersten Presets).
+- **Checkbox `#flagNewYorkStyle` bleibt ein reiner Spiegel des persistenten Flags**
+  (nicht der kombinierten Sichtbarkeit): der Sync-Block in `applyFlags()`
+  (`el.checked = !!f[...]`) liest weiterhin nur `PZ.FLAGS`, nicht `presetWantsSugar` —
+  wählt der Nutzer das Preset „New York Style", erscheint der Zucker-Regler zwar, die
+  Checkbox im Einstellungen-Menü bleibt aber unverändert unchecked, bis der Nutzer sie
+  selbst betätigt. Per CDP verifiziert (s. u.).
+- **Bewusste Design-Entscheidung — Sichtbarkeit reagiert auf den `#preset`-Select, NICHT
+  auf jede einzelne Regler-Änderung:** das bestehende Muster „jede Regler-Eingabe setzt
+  `#preset` still auf `''` zurück" feuert auf jedes `input`-Event (jeden Slider-Pixel).
+  Würde die Zucker-Sichtbarkeit ebenfalls an dieses `input`-Event gekoppelt, würde der
+  Zucker-Regler verschwinden, sobald der Nutzer z. B. an der Hydration dreht — inklusive
+  dem Extremfall, dass der Regler unter der eigenen Hand verschwindet, wenn der Nutzer
+  gerade **am Zucker-Regler selbst** zieht. Stattdessen wird nur bei einem **expliziten**
+  Preset-Wechsel über das Dropdown (inkl. „Eigene Einstellung") sowie beim Checkbox-
+  Toggle und beim initialen Laden neu ausgewertet — deckt den im Scope beschriebenen
+  Hauptfall ab („Wechselt der Nutzer weg vom Preset … verschwindet der Regler wieder"),
+  vermeidet aber sowohl die UX-Falle als auch unnötige `buildGuide()`-Aufrufe pro
+  Slider-Pixel (`applyFlags()` ruft `buildGuide()` mit auf). Nebeneffekt: tweakt der
+  Nutzer nach Preset-Wahl einen anderen Regler (z. B. Hydration) manuell, bleibt der
+  Zucker-Regler bis zum nächsten expliziten Preset-Wechsel sichtbar, auch wenn das
+  Dropdown selbst optisch schon auf „Eigene Einstellung" zurückgesprungen ist — bewusst
+  in Kauf genommen, damit der zuvor über das Preset sichtbar gemachte Zucker-Wert
+  weiterhin erreichbar/editierbar bleibt, statt kommentarlos zu verschwinden.
+
+**Tests** (`tests/test.html`, Sektion 18, +8 neue Prüfungen, 391 → **399**): neuer
+Render-Effekt-Block „`#sugarBlock`-Sichtbarkeit: aktives Preset ODER manuelles Flag" —
+`#preset`/`#sugarBlock`/`#flagNewYorkStyle` als neue Stub-Elemente im `#stubs`-Block
+ergänzt, `PZ.PRESETS` minimal gestubbt (presets.js ist in `tests/test.html` bewusst nicht
+geladen). Geprüft: Default aus, Preset aktiv → sichtbar (Checkbox bleibt unchecked),
+zurück zu „Eigene Einstellung" → wieder aus, manuelles Flag allein → sichtbar (Checkbox
+checked), Flag + Preset kombiniert → weiterhin sichtbar. Alle 399 Prüfungen grün
+(Headless-Edge-Dump). Zusätzlich per Headless-Edge-CDP auf Desktop **und** Mobil den
+kompletten Ablauf gegen das echte DOM verifiziert (Preset wählen → sichtbar, Preset
+wechseln → unsichtbar, `state.sugar`-Wert bleibt beim Ausblenden erhalten statt
+zurückgesetzt zu werden, manuelles Flag persistiert über Preset-Wechsel hinweg, Checkbox
+bleibt in allen Fällen reiner Flag-Spiegel) — identisches Ergebnis auf beiden Seiten.
+
+**Kein Accessibility-/Mobile-Audit nötig:** reine JS-Logik-Änderung in `js/settings.js`/
+`js/presets.js`, kein neues/verändertes Markup, keine neue CSS, das etablierte
+`.collapse`/`.show`-Sichtbarkeitsmuster für `#sugarBlock` selbst (inkl. der in v3.19.2
+bereits geprüften Barrierefreiheit) ist unverändert.
+
+**Geändert:** `js/settings.js`, `js/presets.js`, `tests/test.html`. `?v=` auf `3.19.3`
+gezogen (Desktop + Mobil, Cache-Busting + Footer-Version). `pizza-rechner-mobile-
+standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v3.19.3 - New York Style temporaere Sichtbarkeit/` enthält den vollständigen
+Schnappschuss.
+
+## Zucker-Feld / New York Style (v3.19.2)
 
 Neues Feature, vom Nutzer über `/define-feature` strukturiert und in einer Rückfrage-Runde
 präzisiert: ein Zucker-Regler als Bäckerprozent (analog zu Öl, s. v3.3.0) plus ein neues
@@ -201,12 +280,16 @@ Temperaturlogik, keine Krustenform-Logik) — nur der Regler + das Preset.
   Row-Abstand zwischen Öl und sichtbarem Zucker-Feld 18 px (Standard-Feldabstand).
 - **Feature-Flag `newYorkStyle`** (`js/settings.js`, Default **AUS**, Checkbox `#flagNewYorkStyle`
   im Einstellungen-Menü „New York Style"): blendet den Zucker-Regler standardmäßig aus — die
-  meisten neapolitanischen Rezepte brauchen ihn nicht. Wird vom Preset automatisch angeschaltet
-  (`applyPreset()` ruft bei einem gesetzten `p.flag` generisch `PZ.setFlag(p.flag, true)` +
-  `PZ.applyFlags()` auf — aktuell nutzt nur dieses eine Preset das `flag`-Feld, das Muster ist
-  aber für künftige Presets wiederverwendbar) und bleibt danach dauerhaft an (kein
-  automatisches Zurückschalten bei anderen Presets oder bei „Eigene Einstellung").
-  **Bugfix während der Umsetzung:** `applyFlags()` synct jetzt bei jedem Aufruf auch alle
+  meisten neapolitanischen Rezepte brauchen ihn nicht.
+  **⚠️ Überholt seit v3.19.3, hier nur zur historischen Einordnung stehen gelassen:** in
+  v3.19.2 schaltete `applyPreset()` das Flag beim Anwenden noch generisch dauerhaft an
+  (`PZ.setFlag(p.flag, true)`) und ließ den Regler danach für immer sichtbar, auch nach
+  Wechsel auf ein anderes Preset oder „Eigene Einstellung". Das war ungewollt und wurde in
+  v3.19.3 korrigiert — der Regler ist jetzt nur sichtbar, solange das Preset „New York
+  Style" aktiv gewählt ist ODER das Flag manuell im Einstellungen-Menü an ist, s. Abschnitt
+  „New York Style: nur temporäre statt dauerhafte Zucker-Regler-Sichtbarkeit (v3.19.3)"
+  weiter oben (= aktueller Stand).
+  **Bugfix während der v3.19.2-Umsetzung (weiterhin gültig):** `applyFlags()` synct jetzt bei jedem Aufruf auch alle
   Checkbox-`.checked`-Zustände aus `PZ.FLAGS` (vorher setzte `wireCheckboxes()` das nur
   einmalig beim Laden — ein programmatisch gesetztes Flag wie hier hätte die Checkbox
   optisch auf „aus" stehen lassen, obwohl das Feature technisch an war). Per Headless-CDP
