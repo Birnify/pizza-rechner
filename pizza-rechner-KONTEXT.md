@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-16 · Aktuelle Version: v3.25.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-19 · Aktuelle Version: v3.26.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,97 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## PDF-Export der Anleitung (v3.25.0) = aktueller Stand
+## Burgermenü-Navigation auch auf Desktop (v3.26.0) = aktueller Stand
+
+Kein Backlog-Punkt, direkter Nutzerauftrag (in einer vorherigen Session begonnen, als
+uncommitteter Zwischenstand ohne Doku übergeben — dieser Zyklus hat ihn geprüft,
+gehärtet und abgeschlossen). Motivation: die bestehende Mobil-Ansicht hatte schon seit
+v3.17.x/v3.18.0 eine Burgermenü-Navigation mit vier Bereichen (Rechner/Rezepte/
+Zeitplan/Einstellungen), die Desktop-Seite zeigte stattdessen alle Bereiche
+untereinander auf einer langen Seite. Jetzt hat auch Desktop dieselbe
+Bereichs-Navigation — kürzere, fokussiertere Ansicht pro Bereich statt einer langen
+Scroll-Seite.
+
+- **`pizza-rechner.html`:** Header wurde zu einer `.header-bar` (Grid mit
+  Hamburger-Button links, zentriertem `<h1>`, drittes Grid-Feld für den Button rechts
+  im CSS-Raster) umgebaut; der bisherige `.viewlink`-Textlink „Zur Mobil-Ansicht" ist
+  jetzt `#navMobileLink` im neuen `#navMenu`-Panel. Die vier bisherigen Cards/Bereiche
+  wurden auf vier `data-view`-Container verteilt (`rechner` bleibt der bisherige
+  Zwei-Spalten-`.wrap` inkl. Ergebnis-Panel + Anleitung; `rezepte` — „Meine Rezepte" +
+  „Neues Rezept anlegen"; `zeitplan`; `einstellungen`), jeweils bis auf `rechner` mit
+  `hidden` im HTML vorbelegt (funktioniert dadurch auch ohne JS sinnvoll als Fallback:
+  nur der Rechner-Bereich ist ohne aktives Script sichtbar). Neue Klasse `.wrap.single`
+  (`css/styles.css`) erzwingt für die Nicht-Rechner-Bereiche eine einzelne volle Spalte
+  statt der für den Rechner reservierten 360px-Ergebnis-Spalte.
+- **1:1-Kopie des etablierten Mobil-Musters, bewusst nicht als gemeinsames Modul:**
+  eigenes Inline-`<script>` am Ende von `pizza-rechner.html` (analog zum bereits
+  bestehenden Mobil-Inline-Script) mit `openNav()`/`closeNav()`/`activateView()`/
+  `announceView()`/`focusView()` und einer eigenen Tab-Trap (`onNavKeydown`) —
+  identische Logik wie auf Mobil, aber eigenständig kopiert statt die bestehende
+  Mobil-Implementierung anzufassen oder in ein gemeinsames Modul auszulagern (Vorgabe:
+  die bewährte Mobil-Umsetzung bleibt unangetastet). Ebenso wurden die
+  `.header-bar`/`.nav-toggle`/`.nav-overlay`/`.nav-panel`/`.nav-item`/`.nav-link`/
+  `.nav-divider`-CSS-Regeln in `css/styles.css` (dem gemeinsamen Stylesheet) ergänzt —
+  auf der Mobil-Seite überschreibt `css/mobile.css` dieselben Selektoren ohnehin mit
+  identischen Werten (lädt nach `styles.css`), also keine Verhaltensänderung dort, nur
+  bewusste Redundanz zugunsten der strikten Abgrenzung.
+- **Bereichswechsel:** Klick auf einen `.nav-item` blendet alle `data-view`-Container
+  bis auf den gewählten per `hidden`-Attribut aus/ein, setzt `aria-current="page"` /
+  `.active` auf den passenden Nav-Eintrag, schließt das Panel **ohne** den Fokus auf den
+  Hamburger-Button zurückzusetzen (`closeNav(false)`), sondern springt stattdessen auf
+  die `<h2>` des neu sichtbaren Bereichs (`focusView()`, setzt bei Bedarf `tabindex="-1"`)
+  — analog zum SPA-Routenwechsel-Muster, WCAG-konform statt einfach nur visuell
+  umzuschalten.
+- **`js/settings.js` — `applyFlags()`:** Die Zeile, die bei abgeschaltetem
+  `multiRecipes`-Flag den `.nav-item[data-goto="rezepte"]` ausblendet, existierte
+  bereits aus der Mobil-Umsetzung; ihr Kommentar behauptete fälschlich „Auf Desktop
+  existiert kein `.nav-item`-Element, no-op dort" — seit diesem Feature stimmt das nicht
+  mehr (Desktop hat jetzt genau denselben Selektor-Treffer). Kommentar auf den
+  aktuellen Stand korrigiert, keine Verhaltensänderung (der Code selbst war schon
+  korrekt, traf nur vorher tatsächlich nichts auf Desktop).
+- **Accessibility-Fix während des gezielten Audits** (`accessibility-expert`-Agent, nur
+  auf die neuen Desktop-Nav-Stellen fokussiert): **WCAG 4.1.3 (Status Messages, Level
+  AA)** — `announceView()` setzte `#viewAnnounce`s `textContent` direkt ohne
+  vorheriges Leeren; bei zwei Bereichswechseln mit identischem Label hintereinander
+  (z. B. versehentlich zweimal „Rechner" anklicken) hätten Screenreader die zweite
+  Ansage ggf. unterdrückt — dasselbe, bereits in v3.25.0 an `#pdfGuideLiveMsg`
+  behobene Muster. Fix: Live-Region wird zuerst geleert, der Text erst im nächsten
+  Tick (`setTimeout(…, 50)`) gesetzt. Alle übrigen geprüften Punkte (Fokus-Falle/
+  Tab-Reihenfolge im Panel inkl. `#navMobileLink`, Escape-Handling, `aria-expanded`/
+  `aria-controls`, `role="dialog"`/`aria-modal`, Kontraste der neuen Farben, Klickziele,
+  Fallback ohne JS) ohne Befund.
+- **Nebenbefund fürs Backlog (nicht behoben, außerhalb des Scopes dieses Audits):**
+  dasselbe Live-Region-Muster (kein Clear-Reset vor dem Setzen) steckt 1:1 identisch im
+  `announceView()` des bestehenden Mobil-Inline-Scripts (`pizza-rechner-mobile.html`) —
+  dort laut Auftrag nicht angefasst. Beim nächsten Zyklus, der die Mobil-Seite ohnehin
+  berührt, mitziehen (ebenso das schon länger bekannte `#recipeIOLiveMsg`-Muster aus
+  dem v3.25.0-Backlog-Eintrag).
+- **Bewusst NICHT angefasst:** `pizza-rechner-mobile.html` und `css/mobile.css` selbst
+  (nur Versions-Query-Strings hochgezogen, keine strukturelle Änderung — das Mobil-Muster
+  war schon vorher fertig und ist die Vorlage für dieses Feature); keine Änderung an
+  Rechenlogik (`js/calc.js`/`js/schedule.js`/`js/guide.js`).
+
+**Tests:** reine Markup-/CSS-/UI-Glue-Änderung ohne Auswirkung auf Rechenlogik —
+`tests/test.html` bleibt unverändert bei **498** Prüfungen, alle grün
+(Headless-Edge-Dump). Kein `test-generator`-Lauf nötig. Interaktiv per
+Headless-Edge-CDP (WebSocket, `--remote-allow-origins=*`) auf einer isolierten Kopie
+gegen das echte DOM verifiziert: Hamburger-Button öffnet/schließt das Panel
+(`aria-expanded` synchron), Klick auf „Rezepte"/„Zeitplan"/„Einstellungen"/„Rechner"
+schaltet jeweils korrekt zwischen den vier Bereichen um (nur der gewählte Container ist
+sichtbar, alle anderen inkl. der Anleitungs-`<section>` haben `hidden`), Live-Region
+meldet „Ansicht: …", Fokus springt auf die `<h2>` des neuen Bereichs, Escape schließt
+das Panel und stellt den vorherigen Fokus wieder her, das `multiRecipes`-Flag blendet
+sowohl `#recipesCard` als auch den passenden `.nav-item` korrekt aus, keine
+JavaScript-Konsolenfehler während des gesamten Durchlaufs.
+
+**Geändert:** `pizza-rechner.html`, `pizza-rechner-mobile.html` (nur `?v=`),
+`css/styles.css`, `js/settings.js` (nur Kommentar). `?v=` auf `3.26.0` gezogen
+(Desktop + Mobil, Cache-Busting + Footer-Version). `pizza-rechner-mobile-
+standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v3.26.0 - Burgermenü-Navigation auch auf Desktop/` enthält den
+vollständigen Schnappschuss.
+
+## PDF-Export der Anleitung (v3.25.0)
 
 Neues Feature, vom Nutzer per `/define-feature` strukturiert und bestätigt. Motivation:
 der bestehende „Anleitung drucken"-Button (v3.9.0, `js/print.js`) braucht weiterhin den
@@ -2582,12 +2672,22 @@ Keine Code-Änderung durch den Audit nötig.
   wortgleichen Meldungen hintereinander (selten, da die Meldung meist eine variable
   Rezeptanzahl enthält) könnten Screenreader die zweite Ansage unterdrücken. Beim
   nächsten Storage-bezogenen Zyklus mit beheben (analog zum in v3.25.0 gefixten Muster).
+- ~~Burgermenü-Navigation auch auf Desktop~~ — **erledigt in v3.26.0** (kein
+  Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt „Burgermenü-Navigation auch auf
+  Desktop (v3.26.0)" oben).
+- Nebenbefund aus dem v3.26.0-Accessibility-Audit (nicht behoben, außerhalb des
+  angefragten Scopes): dasselbe Live-Region-Muster (kein Clear-Reset vor dem Setzen)
+  steckt auch in `announceView()` des bestehenden Mobil-Inline-Scripts
+  (`pizza-rechner-mobile.html`) — dort bewusst nicht angefasst (Vorgabe: Mobil-Seite
+  bleibt in diesem Zyklus unverändert). Beim nächsten Zyklus, der die Mobil-Seite
+  ohnehin berührt, mitziehen (zusammen mit dem `#recipeIOLiveMsg`-Nebenbefund oben).
 
-**Stand v3.25.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
-oben), einziger offener Punkt ist der oben notierte Live-Region-Nebenbefund
-(`#recipeIOLiveMsg`). Für den nächsten Zyklus braucht es daher frisches Brainstorming
-in Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes, oder der eben
-genannte Live-Region-Nebenbefund) statt eines vorgegebenen Backlog-Punkts.
+**Stand v3.26.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+oben), offene Punkte sind die beiden oben notierten Live-Region-Nebenbefunde
+(`#recipeIOLiveMsg`, Mobil-`announceView()`). Für den nächsten Zyklus braucht es daher
+frisches Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen,
+Bugfixes, oder die eben genannten Live-Region-Nebenbefunde) statt eines vorgegebenen
+Backlog-Punkts.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

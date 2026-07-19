@@ -45,10 +45,63 @@ header h1{
   letter-spacing:.2px;
 }
 header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
-.viewlink{display:inline-block;margin-top:9px;font-size:12px;color:#fff;opacity:.85;text-decoration:underline;text-underline-offset:2px;}
 .wrap{max-width:980px;margin:0 auto;padding:20px;display:grid;gap:20px;grid-template-columns:1fr;}
 @media(min-width:860px){.wrap{grid-template-columns:1fr 360px;align-items:start;}}
 .wrap>*{min-width:0;}
+/* Bereiche ohne Ergebnis-Panel (Rezepte/Zeitplan/Einstellungen, s. Burgermenü-Navigation
+   unten) sollen nicht die für den Rechner-Bereich reservierte 360px-Spalte frei lassen —
+   erzwingt bei jeder Breite eine einzige, volle Spalte. */
+.wrap.single{grid-template-columns:1fr!important;}
+
+/* Burgermenü-Navigation auch auf Desktop (v3.26.0) — 1:1 dieselbe Struktur/CSS wie das
+   etablierte Mobil-Muster (css/mobile.css, v3.17.x/v3.18.0), hier in die gemeinsame
+   Stylesheet-Datei dupliziert statt css/mobile.css zu ändern (Vorgabe: bestehende
+   Mobil-Umsetzung bleibt unangetastet). Auf der Mobil-Seite überschreibt css/mobile.css
+   dieselben Selektoren ohnehin mit identischen Werten (lädt nach dieser Datei) — keine
+   Verhaltensänderung dort, nur Redundanz zugunsten der strikten Abgrenzung. */
+.header-bar{
+  display:grid;grid-template-columns:44px 1fr 44px;align-items:center;column-gap:10px;
+}
+.header-bar h1{grid-column:2;justify-self:center;text-align:center;}
+.nav-toggle{
+  width:44px;height:44px;border:1px solid rgba(255,255,255,.8);border-radius:var(--radius);
+  background:rgba(255,255,255,.14);color:#fff;font-size:20px;line-height:1;cursor:pointer;
+}
+.header-bar .nav-toggle{grid-column:3;justify-self:end;}
+.nav-toggle:hover,.nav-toggle:active{background:rgba(255,255,255,.28);}
+[data-view][hidden]{display:none!important;}
+.nav-overlay{
+  position:fixed;inset:0;z-index:60;background:rgba(30,22,18,.5);
+  display:flex;align-items:flex-start;justify-content:flex-start;
+}
+.nav-overlay[hidden]{display:none;}
+.nav-panel{
+  background:var(--card);color:var(--ink);width:min(78vw,300px);height:100%;
+  box-shadow:2px 0 18px rgba(0,0,0,.25);padding:18px;
+  display:flex;flex-direction:column;gap:4px;overflow-y:auto;
+}
+.nav-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.nav-panel-title{font-family:var(--font-head);font-size:18px;font-weight:700;}
+.nav-close{
+  width:40px;height:40px;border:1px solid var(--line);border-radius:var(--radius);
+  background:#fff;font-size:16px;cursor:pointer;
+}
+.nav-close:hover{border-color:var(--tomato);color:var(--tomato);}
+.nav-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;}
+.nav-item{
+  display:block;width:100%;text-align:left;padding:13px 14px;min-height:44px;
+  border:1px solid transparent;border-radius:var(--radius);background:none;
+  color:var(--ink);font-size:15px;font-weight:600;cursor:pointer;
+}
+.nav-item:hover,.nav-item:active{background:var(--bg);}
+.nav-item.active{background:var(--bg);border-left:3px solid var(--tomato);color:var(--tomato-dark);}
+.nav-divider{height:1px;background:var(--line);margin:6px 0;border:none;}
+.nav-link{
+  display:block;width:100%;text-align:left;padding:13px 14px;min-height:44px;
+  border:1px solid transparent;border-radius:var(--radius);background:none;
+  color:var(--muted);font-size:14px;font-weight:600;text-decoration:none;box-sizing:border-box;
+}
+.nav-link:hover,.nav-link:active{background:var(--bg);}
 .card{
   background:var(--card);border-radius:var(--radius);padding:20px;
   border:1px solid var(--line);border-left:3px solid var(--tomato);
@@ -276,6 +329,7 @@ footer{text-align:center;font-size:11.5px;color:var(--muted);padding:0 20px 30px
 #shoppingList{display:none;}
 @media print{
   header,.actions,.controls-col,footer{display:none;}
+  .nav-toggle,.nav-overlay{display:none!important;}
   .wrap{grid-template-columns:1fr;}
   .result{position:static;}
   body{background:#fff;}
@@ -1142,7 +1196,7 @@ footer{text-align:right;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.25.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.26.0</span>
 </footer>
 
 <div class="quickbar">
@@ -1264,9 +1318,10 @@ footer{text-align:right;}
     const f = PZ.FLAGS;
     const recipesCard = document.getElementById('recipesCard');
     if (recipesCard) recipesCard.style.display = f.multiRecipes ? '' : 'none';
-    // Mobil-Hamburger-Nav (falls vorhanden, s. pizza-rechner-mobile.html): Menüpunkt
-    // "Rezepte" führt bei abgeschaltetem Flag nur zu einer leeren Ansicht — Punkt
-    // ausblenden. Auf Desktop existiert kein `.nav-item`-Element, no-op dort.
+    // Hamburger-Nav (Mobil UND seit v3.26.0 auch Desktop, s. pizza-rechner-mobile.html /
+    // pizza-rechner.html): Menüpunkt "Rezepte" führt bei abgeschaltetem Flag nur zu einer
+    // leeren Ansicht — Punkt in beiden Nav-Panels ausblenden (ein gemeinsamer Selektor
+    // trifft auf beiden Seiten, da beide dasselbe `.nav-item[data-goto]`-Markup nutzen).
     const recipesNavItem = document.querySelector('.nav-item[data-goto="rezepte"]');
     if (recipesNavItem) recipesNavItem.style.display = f.multiRecipes ? '' : 'none';
     const shareBlock = document.getElementById('shareBlock');

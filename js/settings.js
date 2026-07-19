@@ -77,9 +77,10 @@
     const f = PZ.FLAGS;
     const recipesCard = document.getElementById('recipesCard');
     if (recipesCard) recipesCard.style.display = f.multiRecipes ? '' : 'none';
-    // Mobil-Hamburger-Nav (falls vorhanden, s. pizza-rechner-mobile.html): Menüpunkt
-    // "Rezepte" führt bei abgeschaltetem Flag nur zu einer leeren Ansicht — Punkt
-    // ausblenden. Auf Desktop existiert kein `.nav-item`-Element, no-op dort.
+    // Hamburger-Nav (Mobil UND seit v3.26.0 auch Desktop, s. pizza-rechner-mobile.html /
+    // pizza-rechner.html): Menüpunkt "Rezepte" führt bei abgeschaltetem Flag nur zu einer
+    // leeren Ansicht — Punkt in beiden Nav-Panels ausblenden (ein gemeinsamer Selektor
+    // trifft auf beiden Seiten, da beide dasselbe `.nav-item[data-goto]`-Markup nutzen).
     const recipesNavItem = document.querySelector('.nav-item[data-goto="rezepte"]');
     if (recipesNavItem) recipesNavItem.style.display = f.multiRecipes ? '' : 'none';
     const shareBlock = document.getElementById('shareBlock');
