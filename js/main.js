@@ -85,9 +85,24 @@
   }
 
   // --- Rezepte-Backup: Export/Import als Datei (js/storage.js) ----------
+  // Live-Region wird (wie an anderen Stellen der App, z. B. #pdfGuideLiveMsg seit
+  // v3.25.0, #partyCreateLiveMsg seit v3.27.0) erst geleert und der eigentliche Text
+  // erst im nächsten Tick gesetzt — sonst erkennen viele Screenreader bei zwei
+  // wortgleichen Meldungen hintereinander (z. B. zweimal "Import fehlgeschlagen: ...")
+  // keine echte DOM-Mutation und unterdrücken die zweite Ansage (WCAG 4.1.3). Ein
+  // Generation-Zähler (analog zu announcePartyCreate() in js/party.js) verhindert
+  // dabei ein Race: löst ein Klick sehr schnell hintereinander zwei unterschiedliche
+  // Meldungen aus, gewinnt immer die zuletzt angeforderte — ältere, noch ausstehende
+  // Timeouts werden zu No-ops.
+  let recipeIOMsgGen = 0;
   function showRecipeIOMsg(msg) {
     const el = $('recipeIOLiveMsg');
-    if (el) el.textContent = msg;
+    if (!el) return;
+    const gen = ++recipeIOMsgGen;
+    el.textContent = '';
+    window.setTimeout(function () {
+      if (gen === recipeIOMsgGen) el.textContent = msg;
+    }, 50);
   }
 
   const recipeExportBtn = $('recipeExportBtn');

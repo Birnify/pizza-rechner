@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-19 · Aktuelle Version: v3.28.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-19 · Aktuelle Version: v3.28.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,71 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Sprachversion Deutsch/Englisch (v3.28.0) = aktueller Stand
+## Live-Region-Fix `#recipeIOLiveMsg` (v3.28.1) = aktueller Stand
+
+Kleiner Bugfix, vom Nutzer direkt beauftragt (Backlog-Nebenbefund aus dem
+v3.25.0-Accessibility-Audit, seither mehrfach mitgeschleppt). Kein neues Feature,
+keine Änderung an der Rezepte-Backup-Logik selbst.
+
+**Problem:** `showRecipeIOMsg()` (`js/main.js`) setzte `#recipeIOLiveMsg`s
+`textContent` direkt, ohne die Region vorher zu leeren — bei zwei wortgleichen
+Meldungen hintereinander (z. B. zweimal hintereinander „Als Datei sichern" ohne
+gespeicherte Rezepte, oder zweimal ein fehlgeschlagener Import) erkennen viele
+Screenreader keine echte DOM-Mutation und unterdrücken die zweite Ansage
+(WCAG 4.1.3, Level AA) — derselbe Fehlerklasse wie beim ursprünglich in v3.25.0
+gefundenen und dort gefixten `#pdfGuideLiveMsg`.
+
+- **Fix:** `showRecipeIOMsg()` nutzt jetzt dasselbe „erst leeren, dann im nächsten
+  Tick setzen"-Muster (`setTimeout(…, 50)`), **plus** einen Generation-Zähler
+  (analog zu `announcePartyCreate()` aus `js/party.js`, v3.27.0) — verhindert, dass
+  eine verzögerte ältere Meldung eine inzwischen aktuellere überschreibt, falls zwei
+  *unterschiedliche* `showRecipeIOMsg()`-Aufrufe sehr schnell hintereinander erfolgen
+  (z. B. Export-Fehlermeldung sofort gefolgt von einem Import-Ergebnis). Das ist eine
+  Verschärfung gegenüber dem einfacheren v3.25.0-Muster (dort ohne Zähler), da
+  `showRecipeIOMsg()` (anders als `setPdfMsg()`) von sechs verschiedenen Stellen mit
+  unterschiedlichen Texten aufgerufen wird.
+- **Geprüft, ob derselbe Fehler noch anderswo vorkommt:** eine Codesuche nach allen
+  `textContent = `-Zuweisungen auf `role="status"`/`aria-live`-Elementen im gesamten
+  `js/`-Verzeichnis ergab keine weiteren offenen Fälle — `#pdfGuideLiveMsg`
+  (v3.25.0), `#viewAnnounce`/`#langAnnounce` (v3.26.0/v3.28.0) und
+  `#partyCreateLiveMsg` (v3.27.0) haben das Muster bereits; `#shareLiveMsg`
+  (`js/share.js`) und `#nrLiveMsg`/`#recipeIOLiveMsg` waren die einzigen
+  verbleibenden — `#recipeIOLiveMsg` ist mit diesem Fix jetzt behoben.
+  *Neuer Nebenbefund fürs Backlog (nicht behoben, außerhalb des angefragten Scopes):*
+  `#shareLiveMsg` (`js/share.js`, `copyShareLink()`) und `#nrLiveMsg`
+  (`js/newrecipe.js`, `showNrMsg()`) setzen ihren Text ebenfalls noch direkt ohne
+  vorheriges Leeren — bei `#shareLiveMsg` in der Praxis meist unkritisch (die
+  Meldung wechselt typischerweise zwischen „Link kopiert!"/„Kopieren
+  fehlgeschlagen" und wird nach 1,8 s wieder geleert), bei `#nrLiveMsg` enthält der
+  Text meist einen variablen Rezeptnamen — beide daher niedrigere Priorität als der
+  jetzt gefixte Fall, aber beim nächsten Storage-/Formular-bezogenen Zyklus
+  mit aufgreifen.
+- **Bewusst NICHT geändert:** keine Änderung an der Export-/Import-Logik selbst
+  (`js/storage.js`), an den übrigen Live-Region-Stellen (s. Nebenbefund oben), oder
+  an sonstiger UI/Markup.
+
+**Tests:** reine JS-Logik-Änderung ohne Auswirkung auf Rechenlogik — `tests/test.html`
+bleibt unverändert bei **552** Prüfungen, alle grün (Headless-Edge-Dump). Kein
+`test-generator`-Lauf nötig (keine Änderung an `js/calc.js`/`js/schedule.js`/
+`js/guide.js`). `js/main.js` wird in `tests/test.html` wie bisher nicht geladen (reine
+UI-Verdrahtung, kein Rechenlogik-Modul) — stattdessen per Headless-Edge-CDP
+interaktiv gegen das echte DOM verifiziert: zwei aufeinanderfolgende Klicks auf
+„Als Datei sichern" (ohne gespeicherte Rezepte, identische Meldung beide Male) lösen
+zuverlässig eine echte Zwischen-Leerung aus (`#recipeIOLiveMsg` ist unmittelbar nach
+dem zweiten Klick leer, bevor der Text nach 50 ms erneut gesetzt wird) — das war vor
+dem Fix nicht der Fall. Keine JavaScript-Konsolenfehler. Kein separater
+`accessibility-expert`-Lauf nötig (reine Anwendung eines bereits an mehreren Stellen
+etablierten, mehrfach auditierten Musters auf eine weitere Stelle, keine neue
+UI/kein neues Markup — die WCAG-4.1.3-relevante Verhaltensänderung selbst wurde
+gezielt interaktiv verifiziert).
+
+**Geändert:** `js/main.js`. `?v=` auf `3.28.1` gezogen (Desktop + Mobil,
+Cache-Busting + Footer-Version). `pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.28.1 - Live-Region-Fix recipeIOLiveMsg/` enthält den vollständigen
+Schnappschuss.
+
+## Sprachversion Deutsch/Englisch (v3.28.0)
 
 Neues, großes Feature, vom Nutzer per `/define-feature` strukturiert und bestätigt.
 Deckt laut Auftrag die **komplette Oberfläche** ab: statische UI-Texte (Labels, Buttons,
@@ -2930,12 +2994,10 @@ Keine Code-Änderung durch den Audit nötig.
   **erledigt in v3.25.0**: eigener Button „Als PDF speichern" neben den Druck-Buttons,
   handgeschriebener PDF-1.4-Generator ohne externe Bibliothek (s. Abschnitt „PDF-Export
   der Anleitung (v3.25.0)" oben).
-- Nebenbefund aus dem v3.25.0-Accessibility-Audit (nicht behoben, außerhalb des
-  angefragten Scopes): `#recipeIOLiveMsg` (`js/main.js`) hat wie ursprünglich
-  `#pdfGuideLiveMsg` kein Clear-Reset vor dem Setzen des Live-Region-Texts — bei zwei
-  wortgleichen Meldungen hintereinander (selten, da die Meldung meist eine variable
-  Rezeptanzahl enthält) könnten Screenreader die zweite Ansage unterdrücken. Beim
-  nächsten Storage-bezogenen Zyklus mit beheben (analog zum in v3.25.0 gefixten Muster).
+- ~~Nebenbefund aus dem v3.25.0-Accessibility-Audit: `#recipeIOLiveMsg`
+  (`js/main.js`) hat wie ursprünglich `#pdfGuideLiveMsg` kein Clear-Reset vor dem
+  Setzen des Live-Region-Texts~~ — **erledigt in v3.28.1** (s. Abschnitt
+  „Live-Region-Fix `#recipeIOLiveMsg` (v3.28.1)" oben).
 - ~~Burgermenü-Navigation auch auf Desktop~~ — **erledigt in v3.26.0** (kein
   Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt „Burgermenü-Navigation auch auf
   Desktop (v3.26.0)" oben).
@@ -2950,12 +3012,21 @@ Keine Code-Änderung durch den Audit nötig.
 - ~~Sprachversion Deutsch/Englisch~~ — **erledigt in v3.28.0** (kein Backlog-Punkt,
   direkter Nutzerauftrag per `/define-feature`; s. Abschnitt „Sprachversion
   Deutsch/Englisch (v3.28.0)" oben).
+- Nebenbefund aus dem v3.28.1-Fix (nicht behoben, außerhalb des angefragten Scopes):
+  `#shareLiveMsg` (`js/share.js`, `copyShareLink()`) und `#nrLiveMsg`
+  (`js/newrecipe.js`, `showNrMsg()`) setzen ihren Live-Region-Text ebenfalls noch
+  direkt ohne vorheriges Leeren (dasselbe WCAG-4.1.3-Muster wie der jetzt gefixte
+  `#recipeIOLiveMsg`-Fall) — niedrigere Priorität, da `#shareLiveMsg` nach 1,8 s
+  automatisch wieder geleert wird und `#nrLiveMsg` meist einen variablen
+  Rezeptnamen enthält (beides mindert das Risiko unterdrückter Ansagen). Beim
+  nächsten Storage-/Formular-bezogenen Zyklus mit aufgreifen.
 
-**Stand v3.28.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
-oben), einziger offener Punkt ist der oben notierte Live-Region-Nebenbefund
-(`#recipeIOLiveMsg`, `js/main.js`). Für den nächsten Zyklus braucht es daher frisches
+**Stand v3.28.1: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+oben), offene Punkte sind die beiden oben notierten Live-Region-Nebenbefunde
+(`#shareLiveMsg`, `#nrLiveMsg`). Für den nächsten Zyklus braucht es daher frisches
 Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes,
-oder der eben genannte Live-Region-Nebenbefund) statt eines vorgegebenen Backlog-Punkts.
+oder die eben genannten Live-Region-Nebenbefunde) statt eines vorgegebenen
+Backlog-Punkts.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 
