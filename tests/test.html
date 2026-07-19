@@ -56,6 +56,7 @@
 
 <script src="../js/dom.js"></script>
 <script src="../js/state.js"></script>
+<script src="../js/i18n.js"></script>
 <script src="../js/settings.js"></script>
 <script src="../js/flour.js"></script>
 <script src="../js/schedule.js"></script>
@@ -72,6 +73,17 @@
 (function () {
   const results = document.getElementById('results');
   let passed = 0, failed = 0;
+
+  // --- Sprachversion (js/i18n.js, v3.28.0): Determinismus erzwingen -----------------
+  // Die gesamte restliche Testsuite prüft deutsche Textausgaben 1:1 als String-Literale
+  // (z. B. "Kneten", "Stockgare", "Rezept 1", "Tipp: "). PZ.t() liefert je nach aktiver
+  // Sprache unterschiedlichen Text — ohne diesen Fix würde die automatische
+  // Spracherkennung (navigator.language des Test-Browsers) oder ein alter, im selben
+  // Browser-Profil liegender "pizzaLang"-Wert aus einem echten Nutzungslauf hier
+  // durchschlagen und praktisch alle Textvergleiche unten zum Flackern bringen. Deshalb
+  // hier VOR jedem Testlauf explizit auf Deutsch fixieren, unabhängig vom Browser/Profil.
+  try { localStorage.removeItem('pizzaLang'); } catch (e) { /* ignore */ }
+  if (PZ.setLang) PZ.setLang('de');
 
   // Basis-Zustand für alle Tests
   const BASE = {
@@ -2306,6 +2318,99 @@
     // Ursprünglichen Party-Stand (falls vorhanden) wiederherstellen, sonst Testspuren entfernen
     if (backup !== null) localStorage.setItem(PARTY_KEY, backup);
     else localStorage.removeItem(PARTY_KEY);
+  })();
+
+  // ─────────────────────────────────────────────────────────────
+  heading('23 · Sprachversion Deutsch/Englisch (js/i18n.js)');
+
+  // Reine Funktions-/Datenschicht getestet (PZ.t/getLang/setLang/i18nOnChange) — die
+  // DOM-Verdrahtung (applyStaticI18n()/data-i18n-Attribute, Sprachumschalter-UI) läuft
+  // in tests/test.html mangels passendem Markup nicht mit, analog zum etablierten Umgang
+  // mit anderen UI-Modulen hier (js/ui.js, js/newrecipe.js). Jeder Testblock stellt am
+  // Ende wieder Deutsch her (Baseline für alle anderen Sektionen dieser Datei).
+  (function () {
+    const LANG_KEY = 'pizzaLang';
+    const backup = localStorage.getItem(LANG_KEY);
+
+    // --- t(): liefert deutschen Text per Default (Baseline dieser Testsuite) ---
+    renderBox('t() liefert den deutschen Text für einen bekannten Key', [
+      { label: 'label.hyd (de)', ok: PZ.t('label.hyd') === 'Hydration (Wasser)', actual: PZ.t('label.hyd'), expected: 'Hydration (Wasser)', tol: null },
+      { label: 'btn.save (de)', ok: PZ.t('btn.save') === 'Speichern', actual: PZ.t('btn.save'), expected: 'Speichern', tol: null }
+    ]);
+
+    // --- t(): {platzhalter}-Interpolation ---
+    renderBox('t() interpoliert {platzhalter} in vars korrekt', [
+      { label: 'party.summaryMany mit n=5', ok: PZ.t('party.summaryMany', { n: 5 }) === '5 Pizzen insgesamt', actual: PZ.t('party.summaryMany', { n: 5 }), expected: '5 Pizzen insgesamt', tol: null },
+      { label: 'nav.viewAnnounce mit label="Rezepte"', ok: PZ.t('nav.viewAnnounce', { label: 'Rezepte' }) === 'Ansicht: Rezepte', actual: PZ.t('nav.viewAnnounce', { label: 'Rezepte' }), expected: 'Ansicht: Rezepte', tol: null },
+      { label: 'storage.defaultRecipeName mit n=3', ok: PZ.t('storage.defaultRecipeName', { n: 3 }) === 'Rezept 3', actual: PZ.t('storage.defaultRecipeName', { n: 3 }), expected: 'Rezept 3', tol: null }
+    ]);
+
+    // --- t(): unbekannter Key -> Key selbst zurück (kein Crash, kein leerer Text) ---
+    renderBox('t() liefert bei unbekanntem Key den Key selbst zurück statt zu crashen', [
+      { label: 'nicht existierender Key', ok: PZ.t('does.not.exist.at.all') === 'does.not.exist.at.all', actual: PZ.t('does.not.exist.at.all'), expected: 'does.not.exist.at.all', tol: null }
+    ]);
+
+    // --- t(): Key nur in Deutsch vorhanden -> Fallback auf Deutsch statt leer/Crash ---
+    (function () {
+      PZ._i18nAdd('test.onlyGerman', 'Nur Deutsch vorhanden', undefined);
+      // Simuliert eine unvollständige Übersetzung: Englisch-Wert fehlt im Wörterbuch.
+      delete PZ._I18N_DICT.en['test.onlyGerman'];
+      PZ.setLang('en');
+      const val = PZ.t('test.onlyGerman');
+      PZ.setLang('de');
+      renderBox('t() fällt bei fehlender Übersetzung in der Zielsprache auf Deutsch zurück', [
+        { label: 'Englisch angefragt, Key nur auf Deutsch vorhanden -> deutscher Text', ok: val === 'Nur Deutsch vorhanden', actual: val, expected: 'Nur Deutsch vorhanden', tol: null }
+      ]);
+      delete PZ._I18N_DICT.de['test.onlyGerman'];
+    })();
+
+    // --- getLang()/setLang(): Umschalten + Persistenz ---
+    (function () {
+      localStorage.removeItem(LANG_KEY);
+      const before = PZ.getLang();
+      PZ.setLang('en');
+      const afterEn = PZ.getLang();
+      const storedEn = localStorage.getItem(LANG_KEY);
+      const textEn = PZ.t('btn.save');
+      PZ.setLang('de');
+      const afterDe = PZ.getLang();
+      const storedDe = localStorage.getItem(LANG_KEY);
+      const textDe = PZ.t('btn.save');
+      renderBox('setLang()/getLang() schalten die Sprache um und persistieren in localStorage', [
+        { label: 'Baseline ist Deutsch', ok: before === 'de', actual: before, expected: 'de', tol: null },
+        { label: 'setLang("en") -> getLang() liefert "en"', ok: afterEn === 'en', actual: afterEn, expected: 'en', tol: null },
+        { label: 'setLang("en") persistiert "en" in localStorage', ok: storedEn === 'en', actual: storedEn, expected: 'en', tol: null },
+        { label: 't() liefert danach den englischen Text', ok: textEn === 'Save', actual: textEn, expected: 'Save', tol: null },
+        { label: 'setLang("de") -> getLang() liefert "de"', ok: afterDe === 'de', actual: afterDe, expected: 'de', tol: null },
+        { label: 'setLang("de") persistiert "de" in localStorage', ok: storedDe === 'de', actual: storedDe, expected: 'de', tol: null },
+        { label: 't() liefert danach wieder den deutschen Text', ok: textDe === 'Speichern', actual: textDe, expected: 'Speichern', tol: null }
+      ]);
+    })();
+
+    // --- setLang(): ungültiger Sprachcode wird ignoriert (kein Crash, keine Änderung) ---
+    (function () {
+      PZ.setLang('de');
+      PZ.setLang('fr'); // nicht unterstützt (nur de/en laut Feature-Auftrag)
+      renderBox('setLang() ignoriert nicht unterstützte Sprachcodes', [
+        { label: 'Sprache bleibt bei "de"', ok: PZ.getLang() === 'de', actual: PZ.getLang(), expected: 'de', tol: null }
+      ]);
+    })();
+
+    // --- i18nOnChange(): registrierter Callback feuert bei jedem setLang()-Aufruf ---
+    (function () {
+      let calls = 0;
+      PZ.i18nOnChange(function () { calls++; });
+      PZ.setLang('en');
+      PZ.setLang('de');
+      renderBox('i18nOnChange() registrierte Callbacks feuern bei jedem Sprachwechsel', [
+        { label: 'Callback lief genau 2× (2 setLang()-Aufrufe)', ok: calls === 2, actual: calls, expected: 2, tol: null }
+      ]);
+    })();
+
+    // Ursprünglichen Sprach-Stand (falls vorhanden) wiederherstellen, sonst auf Deutsch
+    // zurücksetzen — Baseline für alle vorangegangenen Testsektionen in dieser Datei.
+    if (backup !== null) { localStorage.setItem(LANG_KEY, backup); PZ.setLang(backup); }
+    else { localStorage.removeItem(LANG_KEY); PZ.setLang('de'); }
   })();
 
   // ─────────────────────────────────────────────────────────────

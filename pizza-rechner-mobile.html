@@ -8,32 +8,32 @@
 <meta name="apple-mobile-web-app-title" content="Teigmeister">
 <meta name="theme-color" content="#c8442e">
 <title>Teigmeister · Mobil</title>
-<link rel="stylesheet" href="css/styles.css?v=3.27.0">
-<link rel="stylesheet" href="css/mobile.css?v=3.27.0">
+<link rel="stylesheet" href="css/styles.css?v=3.28.0">
+<link rel="stylesheet" href="css/mobile.css?v=3.28.0">
 </head>
 <body>
 <header>
-  <button type="button" id="navToggle" class="nav-toggle" aria-expanded="false" aria-controls="navMenu" aria-label="Menü öffnen">
+  <button type="button" id="navToggle" class="nav-toggle" aria-expanded="false" aria-controls="navMenu" data-i18n-attr="aria-label:nav.menuOpen">
     <span aria-hidden="true">☰</span>
   </button>
-  <h1>🍕 Teigmeister</h1>
+  <h1>🍕 <span data-i18n="app.title">Teigmeister</span></h1>
 </header>
 
 <nav id="navMenu" class="nav-overlay" hidden>
-  <div class="nav-panel" role="dialog" aria-modal="true" aria-label="Bereiche auswählen">
+  <div class="nav-panel" role="dialog" aria-modal="true" data-i18n-attr="aria-label:nav.areasDialogLabel">
     <div class="nav-panel-head">
-      <span class="nav-panel-title">Bereiche</span>
-      <button type="button" id="navClose" class="nav-close" aria-label="Menü schließen">✕</button>
+      <span class="nav-panel-title" data-i18n="nav.areasTitle">Bereiche</span>
+      <button type="button" id="navClose" class="nav-close" data-i18n-attr="aria-label:nav.menuClose">✕</button>
     </div>
     <ul class="nav-list">
-      <li><button type="button" class="nav-item active" data-goto="rechner" aria-current="page">Rechner</button></li>
-      <li><button type="button" class="nav-item" data-goto="rezepte">Rezepte</button></li>
-      <li><button type="button" class="nav-item" data-goto="zeitplan">Zeitplan</button></li>
-      <li><button type="button" class="nav-item" data-goto="party">Pizza Party</button></li>
-      <li><button type="button" class="nav-item" data-goto="einstellungen">Einstellungen</button></li>
+      <li><button type="button" class="nav-item active" data-goto="rechner" aria-current="page" data-i18n="nav.rechner">Rechner</button></li>
+      <li><button type="button" class="nav-item" data-goto="rezepte" data-i18n="nav.rezepte">Rezepte</button></li>
+      <li><button type="button" class="nav-item" data-goto="zeitplan" data-i18n="nav.zeitplan">Zeitplan</button></li>
+      <li><button type="button" class="nav-item" data-goto="party" data-i18n="nav.party">Pizza Party</button></li>
+      <li><button type="button" class="nav-item" data-goto="einstellungen" data-i18n="nav.einstellungen">Einstellungen</button></li>
     </ul>
     <div class="nav-divider" role="separator"></div>
-    <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html">Zur Desktop-Ansicht</a>
+    <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
   </div>
 </nav>
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
@@ -43,44 +43,44 @@
   <div class="controls-col" style="display:grid;gap:20px;">
 
     <details class="card" open>
-      <summary><h2 aria-label="Fertiges Rezept wählen">Fertiges Rezept wählen</h2></summary>
+      <summary><h2 data-i18n="card.preset.title" data-i18n-attr="aria-label:card.preset.title">Fertiges Rezept wählen</h2></summary>
       <div class="acc-body">
         <div class="field" style="margin-bottom:0;">
-          <select id="preset" class="selectbox selectbox-lg" aria-label="Fertiges Rezept auswählen">
-            <option value="" disabled hidden>Kein Rezept ausgewählt</option>
-            <optgroup label="Neapolitanisch · Direkt">
-              <option value="napoli_klassisch">Napoli Klassisch (AVPN) · 24 h</option>
-              <option value="napoli_65">Napoli 65 % · 24 h (einsteigerfreundlich)</option>
-              <option value="napoli_kalt">Napoli Lange Kaltgare · 48–72 h</option>
-              <option value="schnell">Schnell · gleicher Tag (4–6 h)</option>
+          <select id="preset" class="selectbox selectbox-lg" data-i18n-attr="aria-label:card.preset.selectLabel">
+            <option value="" disabled hidden data-i18n="option.preset.none">Kein Rezept ausgewählt</option>
+            <optgroup label="Neapolitanisch · Direkt" data-i18n-attr="label:optgroup.napoliDirect">
+              <option value="napoli_klassisch" data-i18n="option.napoliKlassisch">Napoli Klassisch (AVPN) · 24 h</option>
+              <option value="napoli_65" data-i18n="option.napoli65">Napoli 65 % · 24 h (einsteigerfreundlich)</option>
+              <option value="napoli_kalt" data-i18n="option.napoliKalt">Napoli Lange Kaltgare · 48–72 h</option>
+              <option value="schnell" data-i18n="option.schnell">Schnell · gleicher Tag (4–6 h)</option>
             </optgroup>
-            <optgroup label="Neapolitanisch · Vorteig">
-              <option value="napoli_biga">Napoli mit Biga · 16–24 h</option>
-              <option value="napoli_poolish">Napoli mit Poolish · 24–48 h</option>
+            <optgroup label="Neapolitanisch · Vorteig" data-i18n-attr="label:optgroup.napoliPref">
+              <option value="napoli_biga" data-i18n="option.napoliBiga">Napoli mit Biga · 16–24 h</option>
+              <option value="napoli_poolish" data-i18n="option.napoliPoolish">Napoli mit Poolish · 24–48 h</option>
             </optgroup>
-            <optgroup label="Andere Stile">
-              <option value="teglia">Teglia / Blech · hohe Hydration 75 %</option>
-              <option value="newyork_style">New York Style · Zucker &amp; Öl, ~26 h</option>
+            <optgroup label="Andere Stile" data-i18n-attr="label:optgroup.otherStyles">
+              <option value="teglia" data-i18n="option.teglia">Teglia / Blech · hohe Hydration 75 %</option>
+              <option value="newyork_style" data-i18n-html="option.newyorkStyle">New York Style · Zucker &amp; Öl, ~26 h</option>
             </optgroup>
-            <optgroup label="Eigene Rezepte" id="presetCustomGroup"></optgroup>
+            <optgroup label="Eigene Rezepte" id="presetCustomGroup" data-i18n-attr="label:optgroup.customRecipes"></optgroup>
           </select>
-          <div class="hint" id="presetDesc" style="margin-top:8px;">Wähle ein erprobtes Rezept — alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.</div>
+          <div class="hint" id="presetDesc" style="margin-top:8px;" data-i18n="preset.defaultDesc">Wähle ein erprobtes Rezept — alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.</div>
         </div>
       </div>
     </details>
 
     <details class="card" open>
-      <summary><h2 aria-label="Grundeinstellungen">Grundeinstellungen</h2></summary>
+      <summary><h2 data-i18n="card.basics.title" data-i18n-attr="aria-label:card.basics.title">Grundeinstellungen</h2></summary>
       <div class="acc-body">
 
         <div class="field">
-          <label for="flour">Mehl</label>
+          <label for="flour" data-i18n="label.flour">Mehl</label>
           <select id="flour" class="selectbox"></select>
-          <div class="hint">W-Wert = Glutenstärke. Schwaches Mehl verträgt keine langen Gärzeiten — sehr starkes Mehl braucht sie. Wird per Preset mitgesetzt.</div>
+          <div class="hint" data-i18n-html="hint.flour">W-Wert = Glutenstärke. Schwaches Mehl verträgt keine langen Gärzeiten — sehr starkes Mehl braucht sie. Wird per Preset mitgesetzt.</div>
         </div>
 
         <div class="field">
-          <label id="ballsLabel">Anzahl Teiglinge</label>
+          <label id="ballsLabel" data-i18n="label.balls">Anzahl Teiglinge</label>
           <div class="row">
             <input type="range" id="balls" min="1" max="20" step="1" value="4" aria-labelledby="ballsLabel">
             <input type="number" id="ballsN" min="1" max="50" value="4" aria-labelledby="ballsLabel">
@@ -88,48 +88,48 @@
         </div>
 
         <div class="field">
-          <label id="ballwLabel">Gewicht pro Teigling</label>
+          <label id="ballwLabel" data-i18n="label.ballw">Gewicht pro Teigling</label>
           <div class="row">
             <input type="range" id="ballw" min="150" max="400" step="5" value="250" aria-labelledby="ballwLabel" aria-describedby="ballwUnit">
             <input type="number" id="ballwN" min="100" max="500" value="250" aria-labelledby="ballwLabel" aria-describedby="ballwUnit">
             <span class="unit" id="ballwUnit">g</span>
           </div>
           <div class="pills">
-            <button data-ballw="180">Mini 180</button>
-            <button data-ballw="250">Napoli 250</button>
-            <button data-ballw="280">Napoli XL 280</button>
-            <button data-ballw="320">Teglia 320</button>
+            <button data-ballw="180" data-i18n="pill.mini180">Mini 180</button>
+            <button data-ballw="250" data-i18n="pill.napoli250">Napoli 250</button>
+            <button data-ballw="280" data-i18n="pill.napoliXl280">Napoli XL 280</button>
+            <button data-ballw="320" data-i18n="pill.teglia320">Teglia 320</button>
           </div>
         </div>
 
         <div class="field">
-          <label id="hydLabel">Hydration (Wasser)</label>
+          <label id="hydLabel" data-i18n="label.hyd">Hydration (Wasser)</label>
           <div class="row">
             <input type="range" id="hyd" min="50" max="85" step="1" value="62" aria-labelledby="hydLabel" aria-describedby="hydUnit">
             <input type="number" id="hydN" min="40" max="100" value="62" aria-labelledby="hydLabel" aria-describedby="hydUnit">
             <span class="unit" id="hydUnit">%</span>
           </div>
-          <div class="hint">Anfänger 60–62 % · Klassisch Napoli 65 % · Profi 68–70 %+</div>
+          <div class="hint" data-i18n="hint.hyd">Anfänger 60–62 % · Klassisch Napoli 65 % · Profi 68–70 %+</div>
         </div>
 
         <div class="field">
-          <label id="saltLabel">Salz</label>
+          <label id="saltLabel" data-i18n="label.salt">Salz</label>
           <div class="row">
             <input type="range" id="salt" min="0" max="4" step="0.1" value="2.8" aria-labelledby="saltLabel" aria-describedby="saltUnit">
             <input type="number" id="saltN" min="0" max="5" step="0.1" value="2.8" aria-labelledby="saltLabel" aria-describedby="saltUnit">
             <span class="unit" id="saltUnit">%</span>
           </div>
-          <div class="hint">Napoli-Standard: 2,5–3 % (≈ 50–55 g/L Wasser)</div>
+          <div class="hint" data-i18n="hint.salt">Napoli-Standard: 2,5–3 % (≈ 50–55 g/L Wasser)</div>
         </div>
 
         <div class="field" style="margin-bottom:0;">
-          <label id="oilLabel">Olivenöl</label>
+          <label id="oilLabel" data-i18n="label.oil">Olivenöl</label>
           <div class="row">
             <input type="range" id="oil" min="0" max="8" step="0.5" value="2" aria-labelledby="oilLabel" aria-describedby="oilUnit">
             <input type="number" id="oilN" min="0" max="10" step="0.5" value="2" aria-labelledby="oilLabel" aria-describedby="oilUnit">
             <span class="unit" id="oilUnit">%</span>
           </div>
-          <div class="hint">Macht den Teig geschmeidiger &amp; fördert die Bräunung. Klassisch Napoli 0 %, mit Öl 1–3 %, Blech/Teglia 3–5 %. Kommt spät zum Teig — nach dem Salz.</div>
+          <div class="hint" data-i18n-html="hint.oil">Macht den Teig geschmeidiger &amp; fördert die Bräunung. Klassisch Napoli 0 %, mit Öl 1–3 %, Blech/Teglia 3–5 %. Kommt spät zum Teig — nach dem Salz.</div>
         </div>
 
         <!-- margin-top statt margin-bottom aufs Öl-Feld: .field:last-child{margin-bottom:0}
@@ -137,107 +137,107 @@
              bekommt seinen Kartenboden-Abstand daher fix per Inline-Style, dieses Feld den
              Row-Abstand nach oben, wenn es sichtbar ist. -->
         <div class="field collapse" id="sugarBlock" style="margin-top:18px;margin-bottom:0;">
-          <label id="sugarLabel">Zucker</label>
+          <label id="sugarLabel" data-i18n="label.sugar">Zucker</label>
           <div class="row">
             <input type="range" id="sugar" min="0" max="5" step="0.5" value="0" aria-labelledby="sugarLabel" aria-describedby="sugarUnit">
             <input type="number" id="sugarN" min="0" max="8" step="0.5" value="0" aria-labelledby="sugarLabel" aria-describedby="sugarUnit">
             <span class="unit" id="sugarUnit">%</span>
           </div>
-          <div class="hint">New-York-Style: unterstützt die Hefeaktivität &amp; die Krustenbräunung. Wird früh zugegeben (mit Mehl/Wasser/Hefe), nicht spät wie Öl.</div>
+          <div class="hint" data-i18n-html="hint.sugar">New-York-Style: unterstützt die Hefeaktivität &amp; die Krustenbräunung. Wird früh zugegeben (mit Mehl/Wasser/Hefe), nicht spät wie Öl.</div>
         </div>
       </div>
     </details>
 
     <details class="card">
-      <summary><h2 aria-label="Methode &amp; Hefe">Methode &amp; Hefe</h2></summary>
+      <summary><h2 data-i18n-html="card.method.title" data-i18n-attr="aria-label:card.method.title">Methode &amp; Hefe</h2></summary>
       <div class="acc-body">
 
         <div class="field">
-          <label id="methodLabel">Teigführung</label>
+          <label id="methodLabel" data-i18n="label.method">Teigführung</label>
           <div class="seg" id="method" role="group" aria-labelledby="methodLabel">
-            <button data-m="direct" class="active" aria-pressed="true">Direkt</button>
-            <button data-m="biga" aria-pressed="false">Biga</button>
-            <button data-m="poolish" aria-pressed="false">Poolish</button>
+            <button data-m="direct" class="active" aria-pressed="true" data-i18n="seg.direct">Direkt</button>
+            <button data-m="biga" aria-pressed="false" data-i18n="seg.biga">Biga</button>
+            <button data-m="poolish" aria-pressed="false" data-i18n="seg.poolish">Poolish</button>
           </div>
-          <div class="hint" id="methodHint">Direkt: alle Zutaten auf einmal. Einfachster Weg.</div>
+          <div class="hint" id="methodHint" data-i18n-html="hint.method.direct">Direkt: alle Zutaten auf einmal. Einfachster Weg.</div>
         </div>
 
         <div class="field collapse" id="prefBlock">
-          <label id="prefLabel">Anteil Mehl im Vorteig</label>
+          <label id="prefLabel" data-i18n="label.pref">Anteil Mehl im Vorteig</label>
           <div class="row">
             <input type="range" id="pref" min="10" max="100" step="5" value="70" aria-labelledby="prefLabel" aria-describedby="prefUnit">
             <input type="number" id="prefN" min="10" max="100" value="70" aria-labelledby="prefLabel" aria-describedby="prefUnit">
             <span class="unit" id="prefUnit">%</span>
           </div>
-          <div class="hint" id="prefHint">Biga klassisch: 70–100 % des Mehls.</div>
+          <div class="hint" id="prefHint" data-i18n="hint.pref.biga">Biga klassisch: 70–100 % des Mehls.</div>
         </div>
 
         <div class="field collapse" id="bigaHydBlock">
-          <label id="bhydLabel">Biga-Hydration</label>
+          <label id="bhydLabel" data-i18n="label.bhyd">Biga-Hydration</label>
           <div class="row">
             <input type="range" id="bhyd" min="40" max="55" step="1" value="45" aria-labelledby="bhydLabel" aria-describedby="bhydUnit">
             <input type="number" id="bhydN" min="35" max="60" value="45" aria-labelledby="bhydLabel" aria-describedby="bhydUnit">
             <span class="unit" id="bhydUnit">%</span>
           </div>
-          <div class="hint">Steife Biga: 44–48 %. Poolish ist fix 100 % (1:1).</div>
+          <div class="hint" data-i18n="hint.bhyd">Steife Biga: 44–48 %. Poolish ist fix 100 % (1:1).</div>
         </div>
 
         <div class="field collapse" id="prefStageBlock">
-          <label id="prefStageLabel">Vorteig-Reife <span class="val" id="prefStageVal">24 h</span></label>
+          <label id="prefStageLabel"><span data-i18n="label.prefStage">Vorteig-Reife</span> <span class="val" id="prefStageVal">24 h</span></label>
           <div class="pills" id="prefStage" role="group" aria-labelledby="prefStageLabel"></div>
-          <div class="hint" id="prefStageHint">Reifezeit und Hefemenge hängen zusammen — die Stufe setzt beides passend. Längere Reife = weniger Hefe + kühler stellen (steht in der Anleitung).</div>
+          <div class="hint" id="prefStageHint" data-i18n="hint.prefStage">Reifezeit und Hefemenge hängen zusammen — die Stufe setzt beides passend. Längere Reife = weniger Hefe + kühler stellen (steht in der Anleitung).</div>
         </div>
 
         <div class="field">
-          <label id="yeastTypeLabel">Hefe-Art</label>
+          <label id="yeastTypeLabel" data-i18n="label.yeastType">Hefe-Art</label>
           <div class="seg" id="yeastType" role="group" aria-labelledby="yeastTypeLabel">
-            <button data-y="fresh" class="active" aria-pressed="true">Frischhefe</button>
-            <button data-y="dry" aria-pressed="false">Trockenhefe</button>
+            <button data-y="fresh" class="active" aria-pressed="true" data-i18n="seg.freshYeast">Frischhefe</button>
+            <button data-y="dry" aria-pressed="false" data-i18n="seg.dryYeast">Trockenhefe</button>
           </div>
         </div>
 
         <div class="field">
-          <label id="yeastLabel">Hefemenge</label>
+          <label id="yeastLabel" data-i18n="label.yeast">Hefemenge</label>
           <div class="row">
             <input type="range" id="yeast" min="0.05" max="3" step="0.05" value="0.30" aria-labelledby="yeastLabel" aria-describedby="yeastUnit">
             <input type="number" id="yeastN" min="0.01" max="5" step="0.01" value="0.30" aria-labelledby="yeastLabel" aria-describedby="yeastUnit">
             <span class="unit" id="yeastUnit">%</span>
           </div>
-          <div class="hint" id="yeastHint">Prozent bezogen auf Frischhefe. Lange/warme Gare = weniger.</div>
+          <div class="hint" id="yeastHint" data-i18n="hint.yeast.normal">Prozent bezogen auf Frischhefe. Lange/warme Gare = weniger.</div>
           <div class="pills" id="yeastPills">
-            <button data-yeast="0.05">Extrem lang (72h+)</button>
-            <button data-yeast="0.1">Sehr lang (48h kühl)</button>
-            <button data-yeast="0.3">Lang (24h)</button>
-            <button data-yeast="1">Mittel (8h RT)</button>
-            <button data-yeast="2.5">Schnell (4h)</button>
+            <button data-yeast="0.05" data-i18n="pill.yeastExtremeLong">Extrem lang (72h+)</button>
+            <button data-yeast="0.1" data-i18n="pill.yeastVeryLong">Sehr lang (48h kühl)</button>
+            <button data-yeast="0.3" data-i18n="pill.yeastLong">Lang (24h)</button>
+            <button data-yeast="1" data-i18n="pill.yeastMedium">Mittel (8h RT)</button>
+            <button data-yeast="2.5" data-i18n="pill.yeastFast">Schnell (4h)</button>
           </div>
         </div>
 
         <div class="field" style="margin-bottom:0;">
-          <label id="coldStageLabel">Kalte Gare — wo verbringt der Teig die Kühlschrank-Zeit?</label>
+          <label id="coldStageLabel" data-i18n="label.coldStage">Kalte Gare — wo verbringt der Teig die Kühlschrank-Zeit?</label>
           <div class="seg" id="coldStage" role="group" aria-labelledby="coldStageLabel">
-            <button data-cs="balls" class="active" aria-pressed="true">Als Teiglinge (praktisch)</button>
-            <button data-cs="bulk" aria-pressed="false">Im Stück (klassisch)</button>
+            <button data-cs="balls" class="active" aria-pressed="true" data-i18n="seg.coldBalls">Als Teiglinge (praktisch)</button>
+            <button data-cs="bulk" aria-pressed="false" data-i18n="seg.coldBulk">Im Stück (klassisch)</button>
           </div>
-          <div class="hint">Greift nur bei kühlen Führungen (24 h+). <b>Teiglinge:</b> nach 2 h formen, dann kalt — am Backtag nur noch temperieren &amp; backen. <b>Im Stück:</b> der ganze Teig gärt kalt, Formen und Stückgare erst am Backtag.</div>
+          <div class="hint" data-i18n-html="hint.coldStage">Greift nur bei kühlen Führungen (24 h+). <b>Teiglinge:</b> nach 2 h formen, dann kalt — am Backtag nur noch temperieren &amp; backen. <b>Im Stück:</b> der ganze Teig gärt kalt, Formen und Stückgare erst am Backtag.</div>
         </div>
       </div>
     </details>
 
     <details class="card">
-      <summary><h2 aria-label="Teigtemperatur &amp; Eiswasser">Teigtemperatur &amp; Eiswasser</h2></summary>
+      <summary><h2 data-i18n-html="card.temp.title" data-i18n-attr="aria-label:card.temp.title">Teigtemperatur &amp; Eiswasser</h2></summary>
       <div class="acc-body">
         <div class="field">
-          <label id="ddtLabel">Ziel-Teigtemperatur</label>
+          <label id="ddtLabel" data-i18n="label.ddt">Ziel-Teigtemperatur</label>
           <div class="row">
             <input type="range" id="ddt" min="20" max="28" step="0.5" value="24" aria-labelledby="ddtLabel" aria-describedby="ddtUnit">
             <input type="number" id="ddtN" min="18" max="30" step="0.5" value="24" aria-labelledby="ddtLabel" aria-describedby="ddtUnit">
             <span class="unit" id="ddtUnit">°C</span>
           </div>
-          <div class="hint">Napoli-Ziel nach dem Kneten: 23–25 °C.</div>
+          <div class="hint" data-i18n="hint.ddt">Napoli-Ziel nach dem Kneten: 23–25 °C.</div>
         </div>
         <div class="field">
-          <label id="roomLabel">Raumtemperatur</label>
+          <label id="roomLabel" data-i18n="label.room">Raumtemperatur</label>
           <div class="row">
             <input type="range" id="room" min="10" max="32" step="1" value="21" aria-labelledby="roomLabel" aria-describedby="roomUnit">
             <input type="number" id="roomN" min="0" max="40" value="21" aria-labelledby="roomLabel" aria-describedby="roomUnit">
@@ -245,21 +245,21 @@
           </div>
         </div>
         <div class="field">
-          <label id="flourTempLabel">Mehltemperatur</label>
+          <label id="flourTempLabel" data-i18n="label.flourTemp">Mehltemperatur</label>
           <div class="row">
             <input type="range" id="flourTemp" min="4" max="32" step="1" value="21" aria-labelledby="flourTempLabel" aria-describedby="flourTempUnit">
             <input type="number" id="flourTempN" min="0" max="40" value="21" aria-labelledby="flourTempLabel" aria-describedby="flourTempUnit">
             <span class="unit" id="flourTempUnit">°C</span>
           </div>
-          <div class="hint">Startet gleich der Raumtemperatur, aber unabhängig änderbar — z. B. kühler bei Mehl aus dem Keller oder Kühlschrank.</div>
+          <div class="hint" data-i18n="hint.flourTemp">Startet gleich der Raumtemperatur, aber unabhängig änderbar — z. B. kühler bei Mehl aus dem Keller oder Kühlschrank.</div>
         </div>
         <div class="field">
-          <label id="kneadLabel">Knetart</label>
+          <label id="kneadLabel" data-i18n="label.knead">Knetart</label>
           <div class="seg" id="knead" role="group" aria-labelledby="kneadLabel">
-            <button data-k="3" class="active" aria-pressed="true">Hand</button>
-            <button data-k="6" aria-pressed="false">Maschine</button>
+            <button data-k="3" class="active" aria-pressed="true" data-i18n="seg.hand">Hand</button>
+            <button data-k="6" aria-pressed="false" data-i18n="seg.machine">Maschine</button>
           </div>
-          <div class="hint">Maschine erzeugt Reibungswärme → kälteres Wasser nötig.</div>
+          <div class="hint" data-i18n="hint.knead">Maschine erzeugt Reibungswärme → kälteres Wasser nötig.</div>
         </div>
       </div>
     </details>
@@ -269,47 +269,47 @@
   <!-- ERGEBNIS -->
   <div class="result" id="result">
     <div class="card">
-      <h2 aria-label="Rezept">Rezept</h2>
+      <h2 data-i18n="card.result.title" data-i18n-attr="aria-label:card.result.title">Rezept</h2>
 
       <div class="total">
         <div class="big"><span id="totalW">1018</span> g</div>
-        <div class="lbl">Gesamtteig · <span id="ballsOut">4</span> × <span id="ballwOut">250</span> g</div>
+        <div class="lbl"><span data-i18n="result.totalDough">Gesamtteig</span> · <span id="ballsOut">4</span> × <span id="ballwOut">250</span> g</div>
       </div>
 
-      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:0 0 4px;border:none;padding:0;">Gesamtmengen</h3>
-      <div class="ing"><span class="name"><span class="dot" style="background:#d8b878"></span>Mehl</span><span class="amt"><span id="gFlour">600</span> g</span></div>
-      <div class="ing"><span class="name"><span class="dot" style="background:#5aa0d8"></span>Wasser</span><span class="amt"><span id="gWater">372</span> g</span></div>
-      <div class="ing"><span class="name"><span class="dot" style="background:#cfc9c0"></span>Salz</span><span class="amt"><span id="gSalt">16.8</span> g</span></div>
-      <div class="ing"><span class="name"><span class="dot" style="background:#e0a85a"></span>Hefe <small id="yLabel">(frisch)</small></span><span class="amt"><span id="gYeast">1.8</span> g</span></div>
-      <div class="ing" id="gOilRow"><span class="name"><span class="dot" style="background:#8a9a3b"></span>Olivenöl</span><span class="amt"><span id="gOil">12.0</span> g</span></div>
-      <div class="ing" id="gSugarRow"><span class="name"><span class="dot" style="background:#e39fb0"></span>Zucker</span><span class="amt"><span id="gSugar">0</span> g</span></div>
+      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:0 0 4px;border:none;padding:0;" data-i18n="result.totalAmounts">Gesamtmengen</h3>
+      <div class="ing"><span class="name"><span class="dot" style="background:#d8b878"></span><span data-i18n="ing.flour">Mehl</span></span><span class="amt"><span id="gFlour">600</span> g</span></div>
+      <div class="ing"><span class="name"><span class="dot" style="background:#5aa0d8"></span><span data-i18n="ing.water">Wasser</span></span><span class="amt"><span id="gWater">372</span> g</span></div>
+      <div class="ing"><span class="name"><span class="dot" style="background:#cfc9c0"></span><span data-i18n="ing.salt">Salz</span></span><span class="amt"><span id="gSalt">16.8</span> g</span></div>
+      <div class="ing"><span class="name"><span class="dot" style="background:#e0a85a"></span><span data-i18n="ing.yeast">Hefe</span> <small id="yLabel" data-i18n="yeast.fresh">(frisch)</small></span><span class="amt"><span id="gYeast">1.8</span> g</span></div>
+      <div class="ing" id="gOilRow"><span class="name"><span class="dot" style="background:#8a9a3b"></span><span data-i18n="ing.oil">Olivenöl</span></span><span class="amt"><span id="gOil">12.0</span> g</span></div>
+      <div class="ing" id="gSugarRow"><span class="name"><span class="dot" style="background:#e39fb0"></span><span data-i18n="ing.sugar">Zucker</span></span><span class="amt"><span id="gSugar">0</span> g</span></div>
 
       <!-- Vorteig-Stufe -->
       <div class="stage biga collapse" id="stagePref">
         <h3 id="prefTitle">Biga (Vortag)</h3>
-        <div class="ing"><span class="name">Mehl</span><span class="amt"><span id="pFlour">0</span> g</span></div>
-        <div class="ing"><span class="name">Wasser</span><span class="amt"><span id="pWater">0</span> g</span></div>
-        <div class="ing"><span class="name">Hefe <small id="pyLabel">(frisch)</small></span><span class="amt"><span id="pYeast">0</span> g</span></div>
+        <div class="ing"><span class="name" data-i18n="ing.flour">Mehl</span><span class="amt"><span id="pFlour">0</span> g</span></div>
+        <div class="ing"><span class="name" data-i18n="ing.water">Wasser</span><span class="amt"><span id="pWater">0</span> g</span></div>
+        <div class="ing"><span class="name"><span data-i18n="ing.yeast">Hefe</span> <small id="pyLabel" data-i18n="yeast.fresh">(frisch)</small></span><span class="amt"><span id="pYeast">0</span> g</span></div>
       </div>
 
       <!-- Hauptteig-Stufe -->
       <div class="stage collapse" id="stageMain">
-        <h3>Hauptteig (am Backtag)</h3>
-        <div class="ing"><span class="name">+ Mehl</span><span class="amt"><span id="mFlour">0</span> g</span></div>
-        <div class="ing"><span class="name">+ Wasser</span><span class="amt"><span id="mWater">0</span> g</span></div>
-        <div class="ing"><span class="name">+ Salz</span><span class="amt"><span id="mSalt">0</span> g</span></div>
-        <div class="ing" id="mYeastRow"><span class="name">+ Hefe <small>(frisch)</small></span><span class="amt"><span id="mYeast">0</span> g</span></div>
-        <div class="ing" id="mOilRow"><span class="name">+ Olivenöl</span><span class="amt"><span id="mOil">0</span> g</span></div>
-        <div class="ing" id="mSugarRow"><span class="name">+ Zucker</span><span class="amt"><span id="mSugar">0</span> g</span></div>
-        <div class="ing"><span class="name">+ ganze Biga/Poolish</span><span class="amt">alles</span></div>
+        <h3 data-i18n="result.mainDough">Hauptteig (am Backtag)</h3>
+        <div class="ing"><span class="name" data-i18n="ing.plusFlour">+ Mehl</span><span class="amt"><span id="mFlour">0</span> g</span></div>
+        <div class="ing"><span class="name" data-i18n="ing.plusWater">+ Wasser</span><span class="amt"><span id="mWater">0</span> g</span></div>
+        <div class="ing"><span class="name" data-i18n="ing.plusSalt">+ Salz</span><span class="amt"><span id="mSalt">0</span> g</span></div>
+        <div class="ing" id="mYeastRow"><span class="name"><span data-i18n="ing.plusYeast">+ Hefe</span> <small data-i18n="yeast.fresh">(frisch)</small></span><span class="amt"><span id="mYeast">0</span> g</span></div>
+        <div class="ing" id="mOilRow"><span class="name" data-i18n="ing.plusOil">+ Olivenöl</span><span class="amt"><span id="mOil">0</span> g</span></div>
+        <div class="ing" id="mSugarRow"><span class="name" data-i18n="ing.plusSugar">+ Zucker</span><span class="amt"><span id="mSugar">0</span> g</span></div>
+        <div class="ing"><span class="name" data-i18n="ing.plusWholePref">+ ganze Biga/Poolish</span><span class="amt" data-i18n="ing.all">alles</span></div>
       </div>
 
       <!-- Temperatur -->
       <div class="stage">
-        <h3 style="color:var(--tomato);">Wassertemperatur</h3>
+        <h3 style="color:var(--tomato);" data-i18n="result.waterTemp">Wassertemperatur</h3>
         <div class="temp-out">
-          <div class="temp-box"><div class="v"><span id="waterTemp">19</span>°</div><div class="l">Schüttwasser</div></div>
-          <div class="temp-box"><div class="v"><span id="iceAmt">0</span> g</div><div class="l">davon Eis</div></div>
+          <div class="temp-box"><div class="v"><span id="waterTemp">19</span>°</div><div class="l" data-i18n="result.mixingWater">Schüttwasser</div></div>
+          <div class="temp-box"><div class="v"><span id="iceAmt">0</span> g</div><div class="l" data-i18n="result.ofWhichIce">davon Eis</div></div>
         </div>
         <div class="note" id="iceNote"></div>
       </div>
@@ -317,19 +317,19 @@
       <div id="shoppingList" class="shoppinglist-card"></div>
 
       <div class="actions">
-        <button class="primary" id="saveBtn">Speichern</button>
+        <button class="primary" id="saveBtn" data-i18n="btn.save">Speichern</button>
         <div class="row2" id="shoppingRow">
-          <button onclick="PZ.printShoppingList()">Einkaufsliste drucken</button>
-          <button onclick="PZ.printGuide()">Anleitung drucken</button>
+          <button onclick="PZ.printShoppingList()" data-i18n="btn.printShoppingList">Einkaufsliste drucken</button>
+          <button onclick="PZ.printGuide()" data-i18n="btn.printGuide">Anleitung drucken</button>
         </div>
         <div id="pdfGuideBlock" style="display:flex;flex-direction:column;gap:8px;">
-          <button type="button" id="pdfGuideBtn" onclick="PZ.downloadGuidePDF()" aria-describedby="pdfGuideHint">Als PDF speichern</button>
-          <div class="hint" id="pdfGuideHint" style="margin-top:-4px;">Lädt die Schritt-für-Schritt-Anleitung direkt als PDF-Datei herunter — ganz ohne Druckdialog.</div>
+          <button type="button" id="pdfGuideBtn" onclick="PZ.downloadGuidePDF()" aria-describedby="pdfGuideHint" data-i18n="btn.savePdf">Als PDF speichern</button>
+          <div class="hint" id="pdfGuideHint" style="margin-top:-4px;" data-i18n="hint.savePdf">Lädt die Schritt-für-Schritt-Anleitung direkt als PDF-Datei herunter — ganz ohne Druckdialog.</div>
           <div id="pdfGuideLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
         </div>
         <div id="shareBlock" style="display:flex;flex-direction:column;gap:8px;">
-          <button type="button" id="shareLinkBtn" onclick="PZ.copyShareLink(this)" aria-describedby="shareHint">Link kopieren</button>
-          <div class="hint" id="shareHint" style="margin-top:-4px;">Kopiert einen Link, der dieses Rezept komplett enthält — zum Teilen, ohne Login oder Server.</div>
+          <button type="button" id="shareLinkBtn" onclick="PZ.copyShareLink(this)" aria-describedby="shareHint" data-i18n="btn.copyShareLink">Link kopieren</button>
+          <div class="hint" id="shareHint" style="margin-top:-4px;" data-i18n="hint.copyShareLink">Kopiert einen Link, der dieses Rezept komplett enthält — zum Teilen, ohne Login oder Server.</div>
           <div id="shareLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
         </div>
       </div>
@@ -339,7 +339,7 @@
 
 <section class="guidewrap view" data-view="rechner" id="guide">
   <div class="guidehead">
-    <h2>Schritt-für-Schritt-Anleitung</h2>
+    <h2 data-i18n="guide.headTitle">Schritt-für-Schritt-Anleitung</h2>
     <span id="guideSummary" style="font-size:12px;"></span>
   </div>
   <div id="flourWarn" style="margin-bottom:8px;" aria-live="polite" aria-atomic="true"></div>
@@ -349,49 +349,49 @@
 <div class="wrap view" data-view="rezepte" hidden>
   <div class="controls-col" style="display:grid;gap:20px;">
     <details class="card" id="recipesCard" open>
-      <summary><h2 aria-label="Meine Rezepte">Meine Rezepte</h2></summary>
+      <summary><h2 data-i18n="card.myRecipes.title" data-i18n-attr="aria-label:card.myRecipes.title">Meine Rezepte</h2></summary>
       <div class="acc-body">
         <div class="field" style="margin-bottom:0;">
-          <label id="myRecipesLabel" for="recipeSelect">Gespeichertes Rezept</label>
+          <label id="myRecipesLabel" for="recipeSelect" data-i18n="label.savedRecipe">Gespeichertes Rezept</label>
           <select id="recipeSelect" class="selectbox" aria-labelledby="myRecipesLabel">
-            <option value="">— noch keins gespeichert —</option>
+            <option value="" data-i18n="option.noneSavedYet">— noch keins gespeichert —</option>
           </select>
           <div class="row" style="margin-top:8px;gap:8px;">
-            <label for="recipeName" class="visually-hidden">Name für neues Rezept</label>
-            <input type="text" id="recipeName" class="selectbox" placeholder="Name für neues Rezept" style="flex:2;">
-            <button type="button" id="recipeSaveNew" style="flex:1;">Neu</button>
+            <label for="recipeName" class="visually-hidden" data-i18n="label.newRecipeName">Name für neues Rezept</label>
+            <input type="text" id="recipeName" class="selectbox" placeholder="Name für neues Rezept" data-i18n-attr="placeholder:placeholder.newRecipeName" style="flex:2;">
+            <button type="button" id="recipeSaveNew" style="flex:1;" data-i18n="btn.new">Neu</button>
           </div>
           <div class="row" style="margin-top:8px;gap:8px;">
-            <button type="button" id="recipeRename" style="flex:1;">Umbenennen</button>
-            <button type="button" id="recipeDelete" style="flex:1;">Löschen</button>
+            <button type="button" id="recipeRename" style="flex:1;" data-i18n="btn.rename">Umbenennen</button>
+            <button type="button" id="recipeDelete" style="flex:1;" data-i18n="btn.delete">Löschen</button>
           </div>
-          <div class="hint" id="recipeHint" style="margin-top:8px;">Eigene Rezepte sind unabhängig von den Presets oben — hier landen deine per „Speichern" gesicherten Stände.</div>
+          <div class="hint" id="recipeHint" style="margin-top:8px;" data-i18n="hint.myRecipes">Eigene Rezepte sind unabhängig von den Presets oben — hier landen deine per „Speichern" gesicherten Stände.</div>
           <div class="row" style="margin-top:14px;gap:8px;">
-            <button type="button" id="recipeExportBtn" style="flex:1;">Als Datei sichern</button>
-            <button type="button" id="recipeImportBtn" style="flex:1;">Aus Datei laden</button>
-            <label for="recipeImportInput" class="visually-hidden">Backup-Datei mit Rezepten auswählen</label>
+            <button type="button" id="recipeExportBtn" style="flex:1;" data-i18n="btn.exportFile">Als Datei sichern</button>
+            <button type="button" id="recipeImportBtn" style="flex:1;" data-i18n="btn.importFile">Aus Datei laden</button>
+            <label for="recipeImportInput" class="visually-hidden" data-i18n="label.importFile">Backup-Datei mit Rezepten auswählen</label>
             <input type="file" id="recipeImportInput" accept="application/json,.json" class="visually-hidden" tabindex="-1">
           </div>
-          <div class="hint" id="recipeIOHint" style="margin-top:8px;">Sichert alle gespeicherten Rezepte als Datei (z. B. vor dem Löschen von Websitedaten) oder lädt eine solche Datei wieder ein — importierte Rezepte werden ergänzt, nichts wird überschrieben.</div>
+          <div class="hint" id="recipeIOHint" style="margin-top:8px;" data-i18n="hint.recipeIO">Sichert alle gespeicherten Rezepte als Datei (z. B. vor dem Löschen von Websitedaten) oder lädt eine solche Datei wieder ein — importierte Rezepte werden ergänzt, nichts wird überschrieben.</div>
           <div id="recipeIOLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
         </div>
       </div>
     </details>
 
     <details class="card" id="newRecipeCard">
-      <summary><h2 aria-label="Neues Rezept anlegen">Neues Rezept anlegen</h2></summary>
+      <summary><h2 data-i18n="card.newRecipe.title" data-i18n-attr="aria-label:card.newRecipe.title">Neues Rezept anlegen</h2></summary>
       <div class="acc-body">
-        <div class="hint" style="margin-bottom:16px;">Legt ein neues, eigenständiges Rezept an — die aktuelle Berechnung im Rechner-Bereich bleibt dabei unverändert. Erscheint danach in „Meine Rezepte“ und im „Fertiges Rezept wählen“-Dropdown unter „Eigene Rezepte“.</div>
+        <div class="hint" style="margin-bottom:16px;" data-i18n="hint.newRecipe">Legt ein neues, eigenständiges Rezept an — die aktuelle Berechnung im Rechner-Bereich bleibt dabei unverändert. Erscheint danach in „Meine Rezepte“ und im „Fertiges Rezept wählen“-Dropdown unter „Eigene Rezepte“.</div>
 
-        <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:0 0 12px;border:none;padding:0;">Grundeinstellungen</h3>
+        <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:0 0 12px;border:none;padding:0;" data-i18n="heading.basics">Grundeinstellungen</h3>
 
         <div class="field">
-          <label for="nrFlour">Mehl</label>
+          <label for="nrFlour" data-i18n="label.flour">Mehl</label>
           <select id="nrFlour" class="selectbox"></select>
         </div>
 
         <div class="field">
-          <label id="nrBallsLabel">Anzahl Teiglinge</label>
+          <label id="nrBallsLabel" data-i18n="label.balls">Anzahl Teiglinge</label>
           <div class="row">
             <input type="range" id="nrBalls" min="1" max="20" step="1" value="4" aria-labelledby="nrBallsLabel">
             <input type="number" id="nrBallsN" min="1" max="50" value="4" aria-labelledby="nrBallsLabel">
@@ -399,22 +399,22 @@
         </div>
 
         <div class="field">
-          <label id="nrBallwLabel">Gewicht pro Teigling</label>
+          <label id="nrBallwLabel" data-i18n="label.ballw">Gewicht pro Teigling</label>
           <div class="row">
             <input type="range" id="nrBallw" min="150" max="400" step="5" value="250" aria-labelledby="nrBallwLabel" aria-describedby="nrBallwUnit">
             <input type="number" id="nrBallwN" min="100" max="500" value="250" aria-labelledby="nrBallwLabel" aria-describedby="nrBallwUnit">
             <span class="unit" id="nrBallwUnit">g</span>
           </div>
           <div class="pills">
-            <button type="button" data-nrballw="180">Mini 180</button>
-            <button type="button" data-nrballw="250">Napoli 250</button>
-            <button type="button" data-nrballw="280">Napoli XL 280</button>
-            <button type="button" data-nrballw="320">Teglia 320</button>
+            <button type="button" data-nrballw="180" data-i18n="pill.mini180">Mini 180</button>
+            <button type="button" data-nrballw="250" data-i18n="pill.napoli250">Napoli 250</button>
+            <button type="button" data-nrballw="280" data-i18n="pill.napoliXl280">Napoli XL 280</button>
+            <button type="button" data-nrballw="320" data-i18n="pill.teglia320">Teglia 320</button>
           </div>
         </div>
 
         <div class="field">
-          <label id="nrHydLabel">Hydration (Wasser)</label>
+          <label id="nrHydLabel" data-i18n="label.hyd">Hydration (Wasser)</label>
           <div class="row">
             <input type="range" id="nrHyd" min="50" max="85" step="1" value="62" aria-labelledby="nrHydLabel" aria-describedby="nrHydUnit">
             <input type="number" id="nrHydN" min="40" max="100" value="62" aria-labelledby="nrHydLabel" aria-describedby="nrHydUnit">
@@ -423,7 +423,7 @@
         </div>
 
         <div class="field">
-          <label id="nrSaltLabel">Salz</label>
+          <label id="nrSaltLabel" data-i18n="label.salt">Salz</label>
           <div class="row">
             <input type="range" id="nrSalt" min="0" max="4" step="0.1" value="2.8" aria-labelledby="nrSaltLabel" aria-describedby="nrSaltUnit">
             <input type="number" id="nrSaltN" min="0" max="5" step="0.1" value="2.8" aria-labelledby="nrSaltLabel" aria-describedby="nrSaltUnit">
@@ -432,7 +432,7 @@
         </div>
 
         <div class="field">
-          <label id="nrOilLabel">Olivenöl</label>
+          <label id="nrOilLabel" data-i18n="label.oil">Olivenöl</label>
           <div class="row">
             <input type="range" id="nrOil" min="0" max="8" step="0.5" value="2" aria-labelledby="nrOilLabel" aria-describedby="nrOilUnit">
             <input type="number" id="nrOilN" min="0" max="10" step="0.5" value="2" aria-labelledby="nrOilLabel" aria-describedby="nrOilUnit">
@@ -441,28 +441,28 @@
         </div>
 
         <div class="field" style="margin-bottom:0;">
-          <label id="nrSugarLabel">Zucker</label>
+          <label id="nrSugarLabel" data-i18n="label.sugar">Zucker</label>
           <div class="row">
             <input type="range" id="nrSugar" min="0" max="5" step="0.5" value="0" aria-labelledby="nrSugarLabel" aria-describedby="nrSugarUnit">
             <input type="number" id="nrSugarN" min="0" max="8" step="0.5" value="0" aria-labelledby="nrSugarLabel" aria-describedby="nrSugarUnit">
             <span class="unit" id="nrSugarUnit">%</span>
           </div>
-          <div class="hint">Nicht flag-/preset-gebunden wie im Hauptrechner — im eigenständigen Formular immer verfügbar.</div>
+          <div class="hint" data-i18n="hint.newRecipeSugar">Nicht flag-/preset-gebunden wie im Hauptrechner — im eigenständigen Formular immer verfügbar.</div>
         </div>
 
-        <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:20px 0 12px;border:none;padding:0;">Methode &amp; Hefe</h3>
+        <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:20px 0 12px;border:none;padding:0;" data-i18n="heading.methodYeast">Methode &amp; Hefe</h3>
 
         <div class="field">
-          <label id="nrMethodLabel">Teigführung</label>
+          <label id="nrMethodLabel" data-i18n="label.method">Teigführung</label>
           <div class="seg" id="nrMethod" role="group" aria-labelledby="nrMethodLabel">
-            <button type="button" data-m="direct" class="active" aria-pressed="true">Direkt</button>
-            <button type="button" data-m="biga" aria-pressed="false">Biga</button>
-            <button type="button" data-m="poolish" aria-pressed="false">Poolish</button>
+            <button type="button" data-m="direct" class="active" aria-pressed="true" data-i18n="seg.direct">Direkt</button>
+            <button type="button" data-m="biga" aria-pressed="false" data-i18n="seg.biga">Biga</button>
+            <button type="button" data-m="poolish" aria-pressed="false" data-i18n="seg.poolish">Poolish</button>
           </div>
         </div>
 
         <div class="field collapse" id="nrPrefBlock">
-          <label id="nrPrefLabel">Anteil Mehl im Vorteig</label>
+          <label id="nrPrefLabel" data-i18n="label.pref">Anteil Mehl im Vorteig</label>
           <div class="row">
             <input type="range" id="nrPref" min="10" max="100" step="5" value="70" aria-labelledby="nrPrefLabel" aria-describedby="nrPrefUnit">
             <input type="number" id="nrPrefN" min="10" max="100" value="70" aria-labelledby="nrPrefLabel" aria-describedby="nrPrefUnit">
@@ -471,7 +471,7 @@
         </div>
 
         <div class="field collapse" id="nrBigaHydBlock">
-          <label id="nrBhydLabel">Biga-Hydration</label>
+          <label id="nrBhydLabel" data-i18n="label.bhyd">Biga-Hydration</label>
           <div class="row">
             <input type="range" id="nrBhyd" min="40" max="55" step="1" value="45" aria-labelledby="nrBhydLabel" aria-describedby="nrBhydUnit">
             <input type="number" id="nrBhydN" min="35" max="60" value="45" aria-labelledby="nrBhydLabel" aria-describedby="nrBhydUnit">
@@ -480,38 +480,38 @@
         </div>
 
         <div class="field collapse" id="nrPrefStageBlock">
-          <label id="nrPrefStageLabel">Vorteig-Reife <span class="val" id="nrPrefStageVal">24 h</span></label>
+          <label id="nrPrefStageLabel"><span data-i18n="label.prefStage">Vorteig-Reife</span> <span class="val" id="nrPrefStageVal">24 h</span></label>
           <div class="pills" id="nrPrefStage" role="group" aria-labelledby="nrPrefStageLabel"></div>
         </div>
 
         <div class="field">
-          <label id="nrYeastTypeLabel">Hefe-Art</label>
+          <label id="nrYeastTypeLabel" data-i18n="label.yeastType">Hefe-Art</label>
           <div class="seg" id="nrYeastType" role="group" aria-labelledby="nrYeastTypeLabel">
-            <button type="button" data-y="fresh" class="active" aria-pressed="true">Frischhefe</button>
-            <button type="button" data-y="dry" aria-pressed="false">Trockenhefe</button>
+            <button type="button" data-y="fresh" class="active" aria-pressed="true" data-i18n="seg.freshYeast">Frischhefe</button>
+            <button type="button" data-y="dry" aria-pressed="false" data-i18n="seg.dryYeast">Trockenhefe</button>
           </div>
         </div>
 
         <div class="field" style="margin-bottom:0;">
-          <label id="nrYeastLabel">Hefemenge</label>
+          <label id="nrYeastLabel" data-i18n="label.yeast">Hefemenge</label>
           <div class="row">
             <input type="range" id="nrYeast" min="0.05" max="3" step="0.05" value="0.30" aria-labelledby="nrYeastLabel" aria-describedby="nrYeastUnit">
             <input type="number" id="nrYeastN" min="0.01" max="5" step="0.01" value="0.30" aria-labelledby="nrYeastLabel" aria-describedby="nrYeastUnit">
             <span class="unit" id="nrYeastUnit">%</span>
           </div>
           <div class="pills" id="nrYeastPills">
-            <button type="button" data-nryeast="0.05">Extrem lang (72h+)</button>
-            <button type="button" data-nryeast="0.1">Sehr lang (48h kühl)</button>
-            <button type="button" data-nryeast="0.3">Lang (24h)</button>
-            <button type="button" data-nryeast="1">Mittel (8h RT)</button>
-            <button type="button" data-nryeast="2.5">Schnell (4h)</button>
+            <button type="button" data-nryeast="0.05" data-i18n="pill.yeastExtremeLong">Extrem lang (72h+)</button>
+            <button type="button" data-nryeast="0.1" data-i18n="pill.yeastVeryLong">Sehr lang (48h kühl)</button>
+            <button type="button" data-nryeast="0.3" data-i18n="pill.yeastLong">Lang (24h)</button>
+            <button type="button" data-nryeast="1" data-i18n="pill.yeastMedium">Mittel (8h RT)</button>
+            <button type="button" data-nryeast="2.5" data-i18n="pill.yeastFast">Schnell (4h)</button>
           </div>
         </div>
 
-        <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:20px 0 12px;border:none;padding:0;">Teigtemperatur &amp; Eiswasser</h3>
+        <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:20px 0 12px;border:none;padding:0;" data-i18n="heading.tempIce">Teigtemperatur &amp; Eiswasser</h3>
 
         <div class="field">
-          <label id="nrDdtLabel">Ziel-Teigtemperatur</label>
+          <label id="nrDdtLabel" data-i18n="label.ddt">Ziel-Teigtemperatur</label>
           <div class="row">
             <input type="range" id="nrDdt" min="20" max="28" step="0.5" value="24" aria-labelledby="nrDdtLabel" aria-describedby="nrDdtUnit">
             <input type="number" id="nrDdtN" min="18" max="30" step="0.5" value="24" aria-labelledby="nrDdtLabel" aria-describedby="nrDdtUnit">
@@ -520,7 +520,7 @@
         </div>
 
         <div class="field">
-          <label id="nrRoomLabel">Raumtemperatur</label>
+          <label id="nrRoomLabel" data-i18n="label.room">Raumtemperatur</label>
           <div class="row">
             <input type="range" id="nrRoom" min="10" max="32" step="1" value="21" aria-labelledby="nrRoomLabel" aria-describedby="nrRoomUnit">
             <input type="number" id="nrRoomN" min="0" max="40" value="21" aria-labelledby="nrRoomLabel" aria-describedby="nrRoomUnit">
@@ -529,7 +529,7 @@
         </div>
 
         <div class="field">
-          <label id="nrFlourTempLabel">Mehltemperatur</label>
+          <label id="nrFlourTempLabel" data-i18n="label.flourTemp">Mehltemperatur</label>
           <div class="row">
             <input type="range" id="nrFlourTemp" min="4" max="32" step="1" value="21" aria-labelledby="nrFlourTempLabel" aria-describedby="nrFlourTempUnit">
             <input type="number" id="nrFlourTempN" min="0" max="40" value="21" aria-labelledby="nrFlourTempLabel" aria-describedby="nrFlourTempUnit">
@@ -538,18 +538,18 @@
         </div>
 
         <div class="field">
-          <label id="nrKneadLabel">Knetart</label>
+          <label id="nrKneadLabel" data-i18n="label.knead">Knetart</label>
           <div class="seg" id="nrKnead" role="group" aria-labelledby="nrKneadLabel">
-            <button type="button" data-k="3" class="active" aria-pressed="true">Hand</button>
-            <button type="button" data-k="6" aria-pressed="false">Maschine</button>
+            <button type="button" data-k="3" class="active" aria-pressed="true" data-i18n="seg.hand">Hand</button>
+            <button type="button" data-k="6" aria-pressed="false" data-i18n="seg.machine">Maschine</button>
           </div>
         </div>
 
         <div class="field" style="margin-top:6px;margin-bottom:0;">
-          <label for="nrName" class="visually-hidden">Name für das neue Rezept</label>
-          <input type="text" id="nrName" class="selectbox" placeholder="Name für das neue Rezept" style="margin-bottom:10px;">
-          <button type="button" id="nrCreateBtn" style="width:100%;">Rezept anlegen</button>
-          <div class="hint" id="nrHint" style="margin-top:8px;">Kalte Gare startet für neu angelegte Rezepte auf „Als Teiglinge (praktisch)“, Zeitplan bleibt leer — beides nach dem Laden im Rechner-Bereich änderbar.</div>
+          <label for="nrName" class="visually-hidden" data-i18n="label.newRecipeFullName">Name für das neue Rezept</label>
+          <input type="text" id="nrName" class="selectbox" placeholder="Name für das neue Rezept" data-i18n-attr="placeholder:placeholder.newRecipeFullName" style="margin-bottom:10px;">
+          <button type="button" id="nrCreateBtn" style="width:100%;" data-i18n="btn.createRecipe">Rezept anlegen</button>
+          <div class="hint" id="nrHint" style="margin-top:8px;" data-i18n="hint.createRecipe">Kalte Gare startet für neu angelegte Rezepte auf „Als Teiglinge (praktisch)“, Zeitplan bleibt leer — beides nach dem Laden im Rechner-Bereich änderbar.</div>
           <div id="nrLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
         </div>
       </div>
@@ -560,22 +560,22 @@
 <div class="wrap view" data-view="zeitplan" hidden>
   <div class="controls-col" style="display:grid;gap:20px;">
     <details class="card" open>
-      <summary><h2 aria-label="Zeitplan">Zeitplan</h2></summary>
+      <summary><h2 data-i18n="card.schedule.title" data-i18n-attr="aria-label:card.schedule.title">Zeitplan</h2></summary>
       <div class="acc-body">
         <div class="field">
-          <label id="timeModeLabel">Bezugspunkt</label>
+          <label id="timeModeLabel" data-i18n="label.timeReference">Bezugspunkt</label>
           <div class="seg" id="timeMode" role="group" aria-labelledby="timeModeLabel">
-            <button data-tm="start" class="active" aria-pressed="true">Ich starte um…</button>
-            <button data-tm="target" aria-pressed="false">Fertig sein um…</button>
+            <button data-tm="start" class="active" aria-pressed="true" data-i18n="seg.timeStart">Ich starte um…</button>
+            <button data-tm="target" aria-pressed="false" data-i18n="seg.timeTarget">Fertig sein um…</button>
           </div>
         </div>
         <div class="field" style="margin-bottom:0;">
-          <label id="timeLabel" for="timeISO">Startzeitpunkt</label>
+          <label id="timeLabel" for="timeISO" data-i18n="label.timeMode.start">Startzeitpunkt</label>
           <div class="row">
             <input type="datetime-local" id="timeISO" style="flex:1;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:16px;color:var(--ink);">
-            <button id="nowBtn" type="button" style="padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;font-weight:600;font-size:13px;min-height:44px;">Jetzt</button>
+            <button id="nowBtn" type="button" style="padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;font-weight:600;font-size:13px;min-height:44px;" data-i18n="btn.now">Jetzt</button>
           </div>
-          <div class="hint" id="timeHint">Trag eine Uhrzeit ein — dann bekommt jeder Schritt der Anleitung unten eine konkrete Uhrzeit.</div>
+          <div class="hint" id="timeHint" data-i18n="hint.timeMode.start">Trag eine Uhrzeit ein — dann bekommt jeder Schritt der Anleitung unten eine konkrete Uhrzeit.</div>
         </div>
       </div>
     </details>
@@ -585,97 +585,112 @@
 <div class="wrap view" data-view="einstellungen" hidden>
   <div class="controls-col" style="display:grid;gap:20px;">
     <details class="card" open>
-      <summary><h2 aria-label="Einstellungen">Einstellungen</h2></summary>
+      <summary><h2 data-i18n="card.settings.title" data-i18n-attr="aria-label:card.settings.title">Einstellungen</h2></summary>
       <div class="acc-body">
         <div class="field" style="margin-bottom:0;">
-          <div class="hint" style="margin-bottom:10px;">Schalte einzelne Zusatzfunktionen ein oder aus — deine Wahl wird direkt im Browser gespeichert. Tipp auf „i“ zeigt eine kurze Erklärung.</div>
+          <div class="hint" style="margin-bottom:10px;" data-i18n="hint.settings.mobile">Schalte einzelne Zusatzfunktionen ein oder aus — deine Wahl wird direkt im Browser gespeichert. Tipp auf „i“ zeigt eine kurze Erklärung.</div>
 
           <div class="flag-item">
             <div class="switch-row">
               <div class="switch-row-main">
-                <label class="switch-name" for="flagTimer">Gärzeit-Timer</label>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagTimerInfo" aria-label="Erklärung zu „Gärzeit-Timer“ ein-/ausblenden">i</button>
+                <span class="switch-name" id="langLabel" data-i18n="flag.lang.name">Sprache</span>
+                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagLangInfo" data-i18n-attr="aria-label:flag.lang.infoBtn">i</button>
+              </div>
+              <div class="seg" id="langSwitch" role="group" aria-labelledby="langLabel" style="width:auto;">
+                <button type="button" data-lang="de" data-i18n="lang.german">Deutsch</button>
+                <button type="button" data-lang="en" data-i18n="lang.english">Englisch</button>
+              </div>
+            </div>
+            <p class="switch-info" id="flagLangInfo" hidden data-i18n="flag.lang.info">Deutsch oder Englisch für die komplette Oberfläche, Anleitung und Exporte. Automatisch anhand deiner Browser-Sprache vorausgewählt, hier jederzeit manuell umschaltbar — deine Wahl wird gespeichert.</p>
+            <div id="langAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
+          </div>
+
+          <div class="flag-item">
+            <div class="switch-row">
+              <div class="switch-row-main">
+                <label class="switch-name" for="flagTimer" data-i18n="flag.timer.name">Gärzeit-Timer</label>
+                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagTimerInfo" data-i18n-attr="aria-label:flag.timer.infoBtn">i</button>
               </div>
               <span class="switch"><input type="checkbox" id="flagTimer" role="switch" aria-describedby="flagTimerInfo"><span class="switch-slider" aria-hidden="true"></span></span>
             </div>
-            <p class="switch-info" id="flagTimerInfo" hidden>Countdown mit optionalem Wecker für jeden Anleitungsschritt (z. B. Stockgare, Stückgare).</p>
+            <p class="switch-info" id="flagTimerInfo" hidden data-i18n="flag.timer.info">Countdown mit optionalem Wecker für jeden Anleitungsschritt (z. B. Stockgare, Stückgare).</p>
           </div>
 
           <div class="flag-item">
             <div class="switch-row">
               <div class="switch-row-main">
-                <label class="switch-name" for="flagTimerSystem">System-Wecker</label>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagTimerSystemInfo" aria-label="Erklärung zu „System-Wecker“ ein-/ausblenden">i</button>
+                <label class="switch-name" for="flagTimerSystem" data-i18n="flag.timerSystem.name">System-Wecker</label>
+                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagTimerSystemInfo" data-i18n-attr="aria-label:flag.timerSystem.infoBtn">i</button>
               </div>
               <span class="switch"><input type="checkbox" id="flagTimerSystem" role="switch" aria-describedby="flagTimerSystemInfo"><span class="switch-slider" aria-hidden="true"></span></span>
             </div>
-            <p class="switch-info" id="flagTimerSystemInfo" hidden>Zusätzliche Links zum Android-Wecker oder Kalender, direkt beim Timer.</p>
+            <p class="switch-info" id="flagTimerSystemInfo" hidden data-i18n="flag.timerSystem.info">Zusätzliche Links zum Android-Wecker oder Kalender, direkt beim Timer.</p>
           </div>
 
           <div class="flag-item">
             <div class="switch-row">
               <div class="switch-row-main">
-                <label class="switch-name" for="flagShare">Teilen-Link</label>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagShareInfo" aria-label="Erklärung zu „Teilen-Link“ ein-/ausblenden">i</button>
+                <label class="switch-name" for="flagShare" data-i18n="flag.share.name">Teilen-Link</label>
+                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagShareInfo" data-i18n-attr="aria-label:flag.share.infoBtn">i</button>
               </div>
               <span class="switch"><input type="checkbox" id="flagShare" role="switch" aria-describedby="flagShareInfo"><span class="switch-slider" aria-hidden="true"></span></span>
             </div>
-            <p class="switch-info" id="flagShareInfo" hidden>Rezept als Link kopieren, um es ohne Login oder Server zu teilen.</p>
+            <p class="switch-info" id="flagShareInfo" hidden data-i18n="flag.share.info">Rezept als Link kopieren, um es ohne Login oder Server zu teilen.</p>
           </div>
 
           <div class="flag-item">
             <div class="switch-row">
               <div class="switch-row-main">
-                <label class="switch-name" for="flagShopping">Einkaufsliste</label>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagShoppingInfo" aria-label="Erklärung zu „Einkaufsliste“ ein-/ausblenden">i</button>
+                <label class="switch-name" for="flagShopping" data-i18n="flag.shopping.name">Einkaufsliste</label>
+                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagShoppingInfo" data-i18n-attr="aria-label:flag.shopping.infoBtn">i</button>
               </div>
               <span class="switch"><input type="checkbox" id="flagShopping" role="switch" aria-describedby="flagShoppingInfo"><span class="switch-slider" aria-hidden="true"></span></span>
             </div>
-            <p class="switch-info" id="flagShoppingInfo" hidden>Einkaufsliste aus den Gesamtmengen erzeugen und separat drucken.</p>
+            <p class="switch-info" id="flagShoppingInfo" hidden data-i18n="flag.shopping.info">Einkaufsliste aus den Gesamtmengen erzeugen und separat drucken.</p>
           </div>
 
           <div class="flag-item">
             <div class="switch-row">
               <div class="switch-row-main">
-                <label class="switch-name" for="flagFreezeHint">Einfrier-Hinweis</label>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagFreezeHintInfo" aria-label="Erklärung zu „Einfrier-Hinweis“ ein-/ausblenden">i</button>
+                <label class="switch-name" for="flagFreezeHint" data-i18n="flag.freezeHint.name">Einfrier-Hinweis</label>
+                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagFreezeHintInfo" data-i18n-attr="aria-label:flag.freezeHint.infoBtn">i</button>
               </div>
               <span class="switch"><input type="checkbox" id="flagFreezeHint" role="switch" aria-describedby="flagFreezeHintInfo"><span class="switch-slider" aria-hidden="true"></span></span>
             </div>
-            <p class="switch-info" id="flagFreezeHintInfo" hidden>Zusätzlicher Hinweis in der Anleitung zum Einfrieren geformter Teiglinge.</p>
+            <p class="switch-info" id="flagFreezeHintInfo" hidden data-i18n="flag.freezeHint.info">Zusätzlicher Hinweis in der Anleitung zum Einfrieren geformter Teiglinge.</p>
           </div>
 
           <div class="flag-item">
             <div class="switch-row">
               <div class="switch-row-main">
-                <label class="switch-name" for="flagMultiRecipes">Mehrere Rezepte</label>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagMultiRecipesInfo" aria-label="Erklärung zu „Mehrere Rezepte“ ein-/ausblenden">i</button>
+                <label class="switch-name" for="flagMultiRecipes" data-i18n="flag.multiRecipes.name">Mehrere Rezepte</label>
+                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagMultiRecipesInfo" data-i18n-attr="aria-label:flag.multiRecipes.infoBtn">i</button>
               </div>
               <span class="switch"><input type="checkbox" id="flagMultiRecipes" role="switch" aria-describedby="flagMultiRecipesInfo"><span class="switch-slider" aria-hidden="true"></span></span>
             </div>
-            <p class="switch-info" id="flagMultiRecipesInfo" hidden>Mehrere benannte Rezepte speichern und verwalten statt nur eines.</p>
+            <p class="switch-info" id="flagMultiRecipesInfo" hidden data-i18n="flag.multiRecipes.info">Mehrere benannte Rezepte speichern und verwalten statt nur eines.</p>
           </div>
 
           <div class="flag-item">
             <div class="switch-row">
               <div class="switch-row-main">
-                <label class="switch-name" for="flagNewYorkStyle">New York Style</label>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagNewYorkStyleInfo" aria-label="Erklärung zu „New York Style“ ein-/ausblenden">i</button>
+                <label class="switch-name" for="flagNewYorkStyle" data-i18n="flag.newYorkStyle.name">New York Style</label>
+                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagNewYorkStyleInfo" data-i18n-attr="aria-label:flag.newYorkStyle.infoBtn">i</button>
               </div>
               <span class="switch"><input type="checkbox" id="flagNewYorkStyle" role="switch" aria-describedby="flagNewYorkStyleInfo"><span class="switch-slider" aria-hidden="true"></span></span>
             </div>
-            <p class="switch-info" id="flagNewYorkStyleInfo" hidden>Blendet den Zucker-Regler (Bäckerprozent, wie Öl) bei den Grundeinstellungen ein — für New-York-Style-Teige. Wird auch automatisch angeschaltet, wenn du das „New York Style"-Preset wählst.</p>
+            <p class="switch-info" id="flagNewYorkStyleInfo" hidden data-i18n="flag.newYorkStyle.info">Blendet den Zucker-Regler (Bäckerprozent, wie Öl) bei den Grundeinstellungen ein — für New-York-Style-Teige. Wird auch automatisch angeschaltet, wenn du das „New York Style"-Preset wählst.</p>
           </div>
 
           <div class="flag-item">
             <div class="switch-row">
               <div class="switch-row-main">
-                <label class="switch-name" for="flagHints">Hinweistexte</label>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagHintsInfo" aria-label="Erklärung zu „Hinweistexte“ ein-/ausblenden">i</button>
+                <label class="switch-name" for="flagHints" data-i18n="flag.hints.name">Hinweistexte</label>
+                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagHintsInfo" data-i18n-attr="aria-label:flag.hints.infoBtn">i</button>
               </div>
               <span class="switch"><input type="checkbox" id="flagHints" role="switch" aria-describedby="flagHintsInfo"><span class="switch-slider" aria-hidden="true"></span></span>
             </div>
-            <p class="switch-info" id="flagHintsInfo" hidden>Erklärende Kurztexte bei Feldern &amp; Buttons ein- oder ausblenden.</p>
+            <p class="switch-info" id="flagHintsInfo" hidden data-i18n="flag.hints.info">Erklärende Kurztexte bei Feldern &amp; Buttons ein- oder ausblenden.</p>
           </div>
 
         </div>
@@ -687,35 +702,35 @@
 <div class="wrap view" data-view="party" hidden>
   <div class="controls-col" style="display:grid;gap:20px;">
     <details class="card" open>
-      <summary><h2 aria-label="Pizza Party">Pizza Party</h2></summary>
+      <summary><h2 data-i18n="card.party.title" data-i18n-attr="aria-label:card.party.title">Pizza Party</h2></summary>
       <div class="acc-body">
-        <div class="hint" style="margin-bottom:16px;">Wähle Pizzen mit Stückzahl aus — vorgegebene oder eigene, s. u. Unten erscheint eine aggregierte, ungefähre Zutatenliste für die ganze Party. Eigenständiger Bereich: die „Anzahl Teiglinge" im Rechner-Bereich wird hier nicht berücksichtigt.</div>
+        <div class="hint" style="margin-bottom:16px;" data-i18n="hint.party">Wähle Pizzen mit Stückzahl aus — vorgegebene oder eigene, s. u. Unten erscheint eine aggregierte, ungefähre Zutatenliste für die ganze Party. Eigenständiger Bereich: die „Anzahl Teiglinge" im Rechner-Bereich wird hier nicht berücksichtigt.</div>
         <div id="partyPizzaList"></div>
       </div>
     </details>
 
     <details class="card">
-      <summary><h2 aria-label="Eigene Pizza anlegen">Eigene Pizza anlegen</h2></summary>
+      <summary><h2 data-i18n="card.newPizza.title" data-i18n-attr="aria-label:card.newPizza.title">Eigene Pizza anlegen</h2></summary>
       <div class="acc-body">
         <div class="field">
-          <label for="partyNewName">Name</label>
-          <input type="text" id="partyNewName" class="selectbox" placeholder="z. B. Peperoni-Spezial">
+          <label for="partyNewName" data-i18n="label.partyPizzaName">Name</label>
+          <input type="text" id="partyNewName" class="selectbox" placeholder="z. B. Peperoni-Spezial" data-i18n-attr="placeholder:placeholder.partyPizzaName">
         </div>
         <div class="field" style="margin-bottom:10px;">
-          <label id="partyIngLabel">Zutaten (Menge pro EINER Pizza dieser Sorte)</label>
+          <label id="partyIngLabel" data-i18n="label.partyIngredients">Zutaten (Menge pro EINER Pizza dieser Sorte)</label>
           <div id="partyIngredientRows" role="group" aria-labelledby="partyIngLabel"></div>
-          <button type="button" id="partyAddIngRow">+ Zutat</button>
+          <button type="button" id="partyAddIngRow" data-i18n="btn.addIngredient">+ Zutat</button>
         </div>
-        <button type="button" id="partyCreateBtn" style="width:100%;">Pizza anlegen</button>
-        <div class="hint" style="margin-top:8px;">Bei der Auswahl oben wird die Menge automatisch mit der gewählten Stückzahl hochgerechnet.</div>
+        <button type="button" id="partyCreateBtn" style="width:100%;" data-i18n="btn.createPizza">Pizza anlegen</button>
+        <div class="hint" style="margin-top:8px;" data-i18n="hint.partyCreate">Bei der Auswahl oben wird die Menge automatisch mit der gewählten Stückzahl hochgerechnet.</div>
         <div id="partyCreateLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
       </div>
     </details>
 
     <details class="card">
-      <summary><h2 aria-label="Zutatenliste für die Party">Zutatenliste für die Party</h2></summary>
+      <summary><h2 data-i18n="card.partyResult.title" data-i18n-attr="aria-label:card.partyResult.title">Zutatenliste für die Party</h2></summary>
       <div class="acc-body">
-        <div class="hint" style="margin-bottom:10px;">Ungefähre Richtmengen für den Einkauf — keine exakte Rezeptberechnung wie beim Teig.</div>
+        <div class="hint" style="margin-bottom:10px;" data-i18n="hint.partyResult">Ungefähre Richtmengen für den Einkauf — keine exakte Rezeptberechnung wie beim Teig.</div>
         <div id="partyResultSummary" style="font-weight:600;margin-bottom:6px;"></div>
         <div id="partyResultList"></div>
       </div>
@@ -724,32 +739,33 @@
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.27.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.28.0</span>
 </footer>
 
 <div class="quickbar">
-  <a class="qb-jump" href="#result"><span class="visually-hidden">Zum Ergebnis springen: </span><span id="qbTotal">–</span> g<small>· <span id="qbBalls">–</span> Teiglinge</small></a>
-  <button type="button" class="qb-save" id="qbSave">Speichern</button>
+  <a class="qb-jump" href="#result"><span class="visually-hidden" data-i18n="quickbar.jumpToResult">Zum Ergebnis springen: </span><span id="qbTotal">–</span> g<small>· <span id="qbBalls">–</span> <span data-i18n="quickbar.doughBalls">Teiglinge</span></small></a>
+  <button type="button" class="qb-save" id="qbSave" data-i18n="btn.save">Speichern</button>
 </div>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.27.0"></script>
-<script src="js/state.js?v=3.27.0"></script>
-<script src="js/settings.js?v=3.27.0"></script>
-<script src="js/flour.js?v=3.27.0"></script>
-<script src="js/calc.js?v=3.27.0"></script>
-<script src="js/schedule.js?v=3.27.0"></script>
-<script src="js/guide.js?v=3.27.0"></script>
-<script src="js/timer.js?v=3.27.0"></script>
-<script src="js/ui.js?v=3.27.0"></script>
-<script src="js/print.js?v=3.27.0"></script>
-<script src="js/pdf.js?v=3.27.0"></script>
-<script src="js/presets.js?v=3.27.0"></script>
-<script src="js/storage.js?v=3.27.0"></script>
-<script src="js/newrecipe.js?v=3.27.0"></script>
-<script src="js/share.js?v=3.27.0"></script>
-<script src="js/party.js?v=3.27.0"></script>
-<script src="js/main.js?v=3.27.0"></script>
+<script src="js/dom.js?v=3.28.0"></script>
+<script src="js/state.js?v=3.28.0"></script>
+<script src="js/i18n.js?v=3.28.0"></script>
+<script src="js/settings.js?v=3.28.0"></script>
+<script src="js/flour.js?v=3.28.0"></script>
+<script src="js/calc.js?v=3.28.0"></script>
+<script src="js/schedule.js?v=3.28.0"></script>
+<script src="js/guide.js?v=3.28.0"></script>
+<script src="js/timer.js?v=3.28.0"></script>
+<script src="js/ui.js?v=3.28.0"></script>
+<script src="js/print.js?v=3.28.0"></script>
+<script src="js/pdf.js?v=3.28.0"></script>
+<script src="js/presets.js?v=3.28.0"></script>
+<script src="js/storage.js?v=3.28.0"></script>
+<script src="js/newrecipe.js?v=3.28.0"></script>
+<script src="js/share.js?v=3.28.0"></script>
+<script src="js/party.js?v=3.28.0"></script>
+<script src="js/main.js?v=3.28.0"></script>
 <script>
   // Mobil-only UI-Glue (kein Eingriff in die PZ-Rechenmodule)
   (function(){
@@ -776,9 +792,9 @@
     if (qs && real) {
       qs.addEventListener('click', function(){
         real.click();
-        var t = qs.textContent;
-        qs.textContent = '✓ Gespeichert';
-        setTimeout(function(){ qs.textContent = t; }, 1400);
+        var orig = qs.textContent;
+        qs.textContent = (window.PZ && PZ.t) ? PZ.t('main.saved') : '✓ Gespeichert';
+        setTimeout(function(){ qs.textContent = orig; }, 1400);
       });
     }
 
@@ -874,7 +890,7 @@
       // Ansage (WCAG 4.1.3). Analog zum selben Fix auf der Desktop-Seite (v3.26.0,
       // s. pizza-rechner-KONTEXT.md) und zum etablierten #pdfGuideLiveMsg-Muster.
       el.textContent = '';
-      window.setTimeout(function(){ el.textContent = 'Ansicht: ' + label; }, 50);
+      window.setTimeout(function(){ el.textContent = (window.PZ && PZ.t) ? PZ.t('nav.viewAnnounce', { label: label }) : ('Ansicht: ' + label); }, 50);
     }
     function focusView(view){
       var h = document.querySelector('[data-view="' + view + '"] h2');

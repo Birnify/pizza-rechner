@@ -1,34 +1,45 @@
-/* guide.js — adaptive Schritt-für-Schritt-Anleitung + Zeitberechnung */
+/* guide.js — adaptive Schritt-für-Schritt-Anleitung + Zeitberechnung
+ *
+ * Übersetzt (js/i18n.js, v3.28.0): jeder zuvor hartkodierte deutsche Textbaustein ist
+ * jetzt ein PZ.t()-Aufruf mit {platzhaltern} für die interpolierten Werte (Mengen,
+ * Zeiten, Mehlname …). Die Struktur/Logik (welcher Schritt wann erscheint, welche
+ * Bedingungen greifen) ist unverändert — nur die Textbausteine kommen jetzt aus dem
+ * Wörterbuch statt als String-Literal im Code zu stehen. `t` unten ist ein dünner
+ * Wrapper: liefert bei fehlender js/i18n.js (sollte nicht vorkommen) den deutschen
+ * Default zurück statt zu crashen.
+ */
 (function (global) {
   'use strict';
   const PZ = global.PZ || (global.PZ = {});
   const $ = PZ.$;
 
+  function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
+
   // Rundung für Mengenangaben
   function g(x) { return x < 10 ? (Math.round(x * 100) / 100) : Math.round(x); }
 
   function fmtClock(d) {
-    const wd = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()];
+    const wd = [0, 1, 2, 3, 4, 5, 6].map(function (i) { return t('guide.weekday.' + i); })[d.getDay()];
     const p = n => String(n).padStart(2, '0');
     return `${wd} ${p(d.getDate())}.${p(d.getMonth() + 1)}. · ${p(d.getHours())}:${p(d.getMinutes())}`;
   }
   function fmtDur(min) {
     min = Math.round(min);
-    if (min < 60) return min + ' min';
+    if (min < 60) return min + ' ' + t('guide.dur.min');
     const h = Math.round(min / 60);
-    if (h < 24) return h + ' h';
+    if (h < 24) return h + ' ' + t('guide.dur.h');
     const d = Math.floor(h / 24), r = h % 24;
-    return d + ' Tg' + (r ? ' ' + r + ' h' : '');
+    return d + ' ' + t('guide.dur.day') + (r ? ' ' + r + ' ' + t('guide.dur.h') : '');
   }
 
   // Bausteine für die _items-Liste
   let _items = [];
-  function sec(t) { _items.push({ sec: t }); }
+  function sec(txt) { _items.push({ sec: txt }); }
   function st(title, chip, body, extra, dur, opts) {
     _items.push(Object.assign({ title, chip, body, extra: extra || '', dur: dur || 0 }, opts || {}));
   }
-  function tip(t) { return `<div class="tip">💡 ${t}</div>`; }
-  function warn(t) { return `<div class="warn">⚠️ ${t}</div>`; }
+  function tip(txt) { return `<div class="tip">💡 ${txt}</div>`; }
+  function warn(txt) { return `<div class="warn">⚠️ ${txt}</div>`; }
   // Timer-Widget-Platzhalter für Schritte mit nennenswerter Wartezeit (js/timer.js rendert hinein).
   // Feature-Flag "timer" (js/settings.js): ist das Feature deaktiviert, wird gar kein
   // Platzhalter gerendert — js/timer.js findet dann nichts zu verdrahten, und das damit
@@ -53,175 +64,178 @@
       const totalH = (f.bulkMin + f.proofMin) / 60 + prefH;
       const warnMsgs = [];
       if (totalH > fl.maxH) {
-        warnMsgs.push(`Gärzeit zu lang für <b>${fl.name}</b> (W${fl.w}): ~${Math.round(totalH)} h geplant, max. ${fl.maxH} h empfohlen. Das Gluten baut ab — Teig wird klebrig und reißt. Entweder stärkeres Mehl wählen oder Hefemenge erhöhen.`);
+        warnMsgs.push(t('guide.warn.gareTooLong', { flourName: fl.name, flourW: fl.w, hours: Math.round(totalH), maxH: fl.maxH }));
       } else if (fl.minH > 0 && totalH < fl.minH) {
-        warnMsgs.push(`Gärzeit zu kurz für <b>${fl.name}</b> (W${fl.w}): ~${Math.round(totalH)} h geplant, mind. ${fl.minH} h empfohlen. Das Gluten hat keine Zeit sich auszuentspannen — der Teig federt zurück und lässt sich kaum ausziehen. Entweder schwächeres Mehl wählen oder Hefemenge reduzieren.`);
+        warnMsgs.push(t('guide.warn.gareTooShort', { flourName: fl.name, flourW: fl.w, hours: Math.round(totalH), minH: fl.minH }));
       }
       if (state.hyd > fl.hydMax) {
-        warnMsgs.push(`Hydration zu hoch für <b>${fl.name}</b>: ${state.hyd} % gewählt, max. ${fl.hydMax} % empfohlen. Der Teig kann sehr klebrig werden und schwer zu formen sein.`);
+        warnMsgs.push(t('guide.warn.hydTooHigh', { flourName: fl.name, hyd: state.hyd, hydMax: fl.hydMax }));
       } else if (state.hyd < fl.hydMin) {
-        warnMsgs.push(`Hydration etwas niedrig für <b>${fl.name}</b>: ${state.hyd} % gewählt, ${fl.hydMin}–${fl.hydMax} % wären ideal.`);
+        warnMsgs.push(t('guide.warn.hydTooLow', { flourName: fl.name, hyd: state.hyd, hydMin: fl.hydMin, hydMax: fl.hydMax }));
       }
       const warnEl = document.getElementById('flourWarn');
       if (warnEl) warnEl.innerHTML = warnMsgs.map(w => `<div class="warn">⚠️ ${w}</div>`).join('');
     }
 
     const m = state.method, isBiga = m === 'biga', pref = m !== 'direct';
+    const prefName = isBiga ? 'Biga' : 'Poolish'; // Eigenname, sprachunabhängig
     const hi = state.hyd >= 70;               // hohe Hydration → Stretch & Fold
     const hasOil = R.oil >= 0.05;             // Öl im Rezept?
     // Öl kommt spät zum Teig (nach dem Salz, wenn das Gluten steht) — als Satzbaustein
-    const oilStep = hasOil
-      ? ` Zum Schluss <b>${g(R.oil)} g Olivenöl</b> nach und nach einarbeiten, bis der Teig es vollständig aufgenommen hat und wieder glatt ist.`
-      : '';
-    const oilTip = hasOil
-      ? tip('Öl <b>erst nach dem Salz</b> zugeben — kommt es zu früh, umhüllt es das Mehl und stört die Glutenbildung. Langsam einarbeiten, dann wird der Teig geschmeidig.')
-      : '';
+    const oilStep = hasOil ? t('guide.oilStep', { oil: g(R.oil) }) : '';
+    const oilTip = hasOil ? tip(t('guide.oilTip')) : '';
     const hasSugar = R.sugar >= 0.05;         // Zucker im Rezept? (New-York-Style-Feld)
     // Zucker kommt anders als Öl früh in den Teig (mit Mehl/Wasser/Hefe) — er
     // unterstützt die Hefeaktivität, statt (wie Öl) das Glutennetz zu stören.
-    const sugarPhrase = hasSugar ? ` sowie <b>${g(R.sugar)} g Zucker</b>` : '';
-    const sugarTip = hasSugar
-      ? tip('Zucker <b>früh mit Mehl, Wasser &amp; Hefe</b> zugeben — er unterstützt die Hefeaktivität und sorgt beim Backen für die typische New-York-Style-Krustenbräunung.')
-      : '';
-    const iceTxt = R.ice > 0 ? ` (davon <b>${R.ice} g Eis</b>)` : '';
+    const sugarPhrase = hasSugar ? t('guide.sugarPhrase', { sugar: g(R.sugar) }) : '';
+    const sugarTip = hasSugar ? tip(t('guide.sugarTip')) : '';
+    const iceTxt = R.ice > 0 ? t('guide.iceTxt', { ice: R.ice }) : '';
     let matureMin = 0;                        // Vorteig-Reifezeit (nur bei Biga/Poolish)
     _items = [];
 
     // ===== VORTEIG (Biga / Poolish) =====
     if (pref) {
       matureMin = Math.round(state.prefMature * 60);
-      sec(isBiga ? 'Vorteig — Biga ansetzen' : 'Vorteig — Poolish ansetzen');
+      sec(isBiga ? t('guide.sec.prefBiga') : t('guide.sec.prefPoolish'));
       const clampNote = R.prefClamped
-        ? warn(`Der Vorteig-Anteil wurde automatisch auf <b>${Math.round(R.prefEff)} %</b> begrenzt: bei ${state.hyd} % Hydration passt nicht mehr Wasser in den ${isBiga ? 'Biga' : 'Poolish (1:1)'} als insgesamt im Teig ist.`)
+        ? warn(t('guide.pref.clampNote', { prefEff: Math.round(R.prefEff), hyd: state.hyd, prefType: isBiga ? 'Biga' : 'Poolish (1:1)' }))
         : '';
-      st('Vorteig abwiegen', '~5 min',
-        `Für den ${isBiga ? 'Biga' : 'Poolish'}: <b>${g(R.pf)} g Mehl</b>, <b>${g(R.pw)} g Wasser</b> (${isBiga ? state.bhyd + '%' : '100% — also 1:1'}) und <b>${g(R.pYeast)} g Hefe ${R.yWord}</b>.`,
-        clampNote + tip('Wasser hier <b>zimmerwarm</b> (nicht eisgekühlt) – der Vorteig soll ja in Ruhe arbeiten.'), 5);
+      st(t('guide.step.prefWeigh.title'), t('guide.chip.5min'),
+        t('guide.step.prefWeigh.body', {
+          prefName: prefName, pf: g(R.pf), pw: g(R.pw),
+          hydTxt: isBiga ? state.bhyd + '%' : t('guide.pref.poolishRatio'),
+          pYeast: g(R.pYeast), yWord: R.yWord
+        }),
+        clampNote + tip(t('guide.step.prefWeigh.tip')), 5);
       if (isBiga) {
-        st('Biga grob mischen', 'mit der Hand',
-          `Hefe im Wasser auflösen, übers Mehl geben und <b>mit den Händen nur grob vermengen</b> – ca. <b>1–2 min</b>, bis keine trockenen Mehlnester mehr da sind. Die Biga bleibt krümelig-stückig, <b>nicht glatt kneten</b>. (Hier keine Maschine nutzen – zu festes Kneten zerstört die Struktur.)`,
-          warn('Es soll aussehen wie nasse Brösel oder grober Streusel, nicht wie ein normaler Teig.'), 10);
+        st(t('guide.step.bigaMix.title'), t('guide.step.bigaMix.chip'),
+          t('guide.step.bigaMix.body'),
+          warn(t('guide.step.bigaMix.warn')), 10);
         const bigaTempTxt = state.prefMature <= 20
-          ? 'Abgedeckt bei <b>ca. 18 °C</b> reifen lassen (Keller, Speisekammer, Kühlschranktür).'
+          ? t('guide.biga.temp.cool')
           : state.prefMature <= 32
-            ? 'Abgedeckt <b>kühl bei ~14–16 °C</b> reifen lassen (kühler Keller / Kühlschranktür).'
-            : '<b>2 h</b> bei Raumtemp anspringen lassen, dann in den <b>Kühlschrank (4–6 °C)</b>.';
-        st('Biga reifen lassen', `${state.prefMature} h`,
-          `${bigaTempTxt} Sie lockert sich auf und duftet säuerlich-hefig.`,
-          tip('Längere Reife braucht <b>weniger Hefe</b> im Vorteig und/oder <b>kühlere</b> Lagerung. Fertig = luftig-schwammig, gerade eben eingefallen.') + timerBox('biga-reifen', matureMin), matureMin);
+            ? t('guide.biga.temp.cooler')
+            : t('guide.biga.temp.cold');
+        st(t('guide.step.bigaRest.title'), `${state.prefMature} ${t('guide.dur.h')}`,
+          t('guide.step.bigaRest.body', { bigaTempTxt: bigaTempTxt }),
+          tip(t('guide.step.bigaRest.tip')) + timerBox('biga-reifen', matureMin), matureMin);
       } else {
-        st('Poolish verrühren', 'mit Löffel / Schneebesen',
-          `Hefe im Wasser auflösen, dann Mehl einrühren – <b>mit einem Löffel oder Schneebesen ca. 2–3 min rühren</b>, bis ein <b>zäher, klumpenfreier Pfannkuchenteig</b> entsteht. Abdecken.`, '', 10);
+        st(t('guide.step.poolishMix.title'), t('guide.step.poolishMix.chip'),
+          t('guide.step.poolishMix.body'), '', 10);
         const poolishTempTxt = state.prefMature <= 14
-          ? '<b>1 h</b> bei Raumtemp anspringen lassen, dann bei <b>~20 °C</b> ausreifen.'
-          : '<b>1 h</b> bei Raumtemp anspringen lassen, dann <b>kühl stellen (Kühlschrank)</b> und langsam ausreifen.';
-        st('Poolish reifen lassen', `${state.prefMature} h`,
-          `${poolishTempTxt} Reif = Oberfläche <b>voller Blasen</b>, kurz bevor er wieder einfällt.`,
-          tip('Fingertest: riecht angenehm nach Hefe/Joghurt, nicht stechend nach Alkohol. Länger als ~24 h zieht er nicht durch.') + timerBox('poolish-reifen', matureMin), matureMin);
+          ? t('guide.poolish.temp.warm')
+          : t('guide.poolish.temp.cold');
+        st(t('guide.step.poolishRest.title'), `${state.prefMature} ${t('guide.dur.h')}`,
+          t('guide.step.poolishRest.body', { poolishTempTxt: poolishTempTxt }),
+          tip(t('guide.step.poolishRest.tip')) + timerBox('poolish-reifen', matureMin), matureMin);
       }
-      sec('Hauptteig');
+      sec(t('guide.sec.main'));
       const hasMW = R.mWater >= 1, hasMF = R.mFlour >= 1;
       if (hasMW) {
-        st('Schüttwasser temperieren', `${R.wT} °C`,
-          `<b>${g(R.mWater)} g Wasser</b> auf <b>${R.wT} °C</b> bringen${iceTxt}. Das ist das Restwasser für den Hauptteig.`,
-          R.ice > 0 ? tip('Eis vorher exakt abwiegen und auflösen, bis die Zieltemperatur steht.') : '', 5);
+        st(t('guide.step.waterTemp.title'), `${R.wT} °C`,
+          t('guide.step.waterTemp.body', { mWater: g(R.mWater), wT: R.wT, iceTxt: iceTxt }),
+          R.ice > 0 ? tip(t('guide.step.waterTemp.tip')) : '', 5);
       }
       const addParts = [];
-      if (hasMW) addParts.push(`mit dem <b>${g(R.mWater)} g Wasser</b> lösen`);
-      if (hasMF) addParts.push(`<b>${g(R.mFlour)} g Mehl</b>${R.mYeast >= 0.05 ? ` und <b>${g(R.mYeast)} g Hefe ${R.yWord}</b>` : ''}${hasSugar ? ` und <b>${g(R.sugar)} g Zucker</b>` : ''} zugeben`);
-      st('Vorteig' + (hasMW ? ' + Wasser' : '') + (hasMF ? ' + Mehl' : '') + (hasSugar ? ' + Zucker' : ''), '~5 min',
-        `Den ganzen ${isBiga ? 'Biga' : 'Poolish'} ` + (addParts.length ? addParts.join(', dann ') : 'in die Schüssel geben') + ' und '
-        + (state.knead === '6'
-          ? `<b>in der Maschine ca. 2–3 min auf niedriger Stufe vermengen</b>, bis ein grober Teig entsteht.`
-          : `<b>von Hand ca. 3–5 min vermengen</b> (drücken, falten, drehen), bis kein trockenes Mehl mehr sichtbar ist.`), sugarTip, 5);
-      st('Salz zugeben' + (hasOil ? ' & Öl' : ''), 'nach 2–3 min',
-        `Erst wenn alles grob zusammenhängt, <b>${g(R.salt)} g Salz</b> `
-        + (state.knead === '6'
-          ? `zugeben und <b>weitere 2–3 min auf mittlerer Stufe einarbeiten</b>.`
-          : `einstreuen und <b>von Hand ca. 2–3 min einkneten</b>.`)
-        + oilStep,
-        warn('Salz nie direkt auf die Hefe – es bremst sie. Immer zeitversetzt zugeben.') + oilTip, 3);
+      if (hasMW) addParts.push(t('guide.pref.addWater', { mWater: g(R.mWater) }));
+      if (hasMF) {
+        const yeastPart = R.mYeast >= 0.05 ? t('guide.pref.addFlour.yeastPart', { mYeast: g(R.mYeast), yWord: R.yWord }) : '';
+        const sugarPart = hasSugar ? t('guide.pref.addFlour.sugarPart', { sugar: g(R.sugar) }) : '';
+        addParts.push(t('guide.pref.addFlour', { mFlour: g(R.mFlour), yeastPart: yeastPart, sugarPart: sugarPart }));
+      }
+      const titleSuffix = (hasMW ? t('guide.titleSuffix.water') : '') + (hasMF ? t('guide.titleSuffix.flour') : '') + (hasSugar ? t('guide.titleSuffix.sugar') : '');
+      st(t('guide.prefGenericTitle') + titleSuffix, t('guide.chip.5min'),
+        t('guide.step.prefCombine.body', {
+          prefName: prefName,
+          addParts: addParts.length ? addParts.join(t('guide.pref.joinThen')) : t('guide.pref.noAddParts'),
+          mixPhrase: state.knead === '6' ? t('guide.mix.machine') : t('guide.mix.hand')
+        }), sugarTip, 5);
+      st(t('guide.step.saltAdd.title') + (hasOil ? t('guide.suffix.oil') : ''), t('guide.step.saltAdd.chip'),
+        t('guide.step.saltAdd.body', {
+          salt: g(R.salt),
+          saltPhrase: state.knead === '6' ? t('guide.salt.machine') : t('guide.salt.hand'),
+          oilStep: oilStep
+        }),
+        warn(t('guide.step.saltAdd.warn')) + oilTip, 3);
     }
 
     // ===== DIREKT =====
     if (!pref) {
-      sec('Vorbereitung');
-      st('Zutaten abwiegen', '~5 min',
-        `<b>${g(R.flour)} g Mehl</b> · <b>${g(R.water)} g Wasser</b> · <b>${g(R.salt)} g Salz</b> · <b>${g(R.yeast)} g Hefe ${R.yWord}</b>${hasSugar ? ` · <b>${g(R.sugar)} g Zucker</b>` : ''}${hasOil ? ` · <b>${g(R.oil)} g Olivenöl</b>` : ''}.`,
-        tip('Für Hefe & Salz eine <b>0,1-g-Feinwaage</b> nutzen – bei diesen kleinen Mengen entscheidend.'), 5);
-      st('Schüttwasser temperieren', `${R.wT} °C`,
-        `Das <b>${g(R.water)} g Wasser</b> auf <b>${R.wT} °C</b> bringen${iceTxt}. So landet der Teig nach dem Kneten bei ~${state.ddt} °C.`,
-        R.ice > 0 ? tip('Eis abwiegen, im Wasser auflösen bis die Temperatur passt – dann erst loslegen.') : '', 5);
+      sec(t('guide.sec.prep'));
+      st(t('guide.step.weighIngredients.title'), t('guide.chip.5min'),
+        t('guide.step.weighIngredients.body', {
+          flour: g(R.flour), water: g(R.water), salt: g(R.salt), yeast: g(R.yeast), yWord: R.yWord,
+          sugarPart: hasSugar ? t('guide.weighIngredients.sugarPart', { sugar: g(R.sugar) }) : '',
+          oilPart: hasOil ? t('guide.weighIngredients.oilPart', { oil: g(R.oil) }) : ''
+        }),
+        tip(t('guide.step.weighIngredients.tip')), 5);
+      st(t('guide.step.waterTemp.title'), `${R.wT} °C`,
+        t('guide.step.waterTempDirect.body', { water: g(R.water), wT: R.wT, iceTxt: iceTxt, ddt: state.ddt }),
+        R.ice > 0 ? tip(t('guide.step.waterTempDirect.tip')) : '', 5);
       if (state.yeast < 1.2) {
         // Autolyse: Hefe kommt erst DANACH in den Teig — kein Widerspruch in der Reihenfolge
         const tinyYeast = R.yeast < 1;   // < 1 g lässt sich trocken kaum gleichmäßig verteilen
         const reserveWaterTip = (state.yeastType !== 'dry' || tinyYeast)
-          ? tip('Behalte <b>2–3 EL vom Schüttwasser</b> zurück, um danach die Hefe darin aufzulösen.')
+          ? tip(t('guide.reserveWaterTip'))
           : '';
-        st('Autolyse (empfohlen)', '20–40 min',
-          `Nur <b>Mehl + Wasser</b> grob mischen (Salz und Hefe kommen erst später), abdecken, ruhen lassen. Weniger Knetarbeit, dehnbarerer Teig.`,
-          warn('Ohne Salz arbeiten die Enzyme im Mehl ungebremst – <b>Autolyse nicht über ~40–60 min ausdehnen</b>. Länger baut das Klebergerüst eher ab als auf (Teig wird zunehmend klebrig-schwach statt elastisch).') + reserveWaterTip + timerBox('autolyse', 30), 30);
-        st('Hefe zugeben', '~2 min',
+        st(t('guide.step.autolyse.title'), t('guide.step.autolyse.chip'),
+          t('guide.step.autolyse.body'),
+          warn(t('guide.step.autolyse.warn')) + reserveWaterTip + timerBox('autolyse', 30), 30);
+        st(t('guide.step.addYeast.title'), t('guide.chip.2min'),
           tinyYeast
-            ? `Bei dieser sehr kleinen Menge (<b>${g(R.yeast)} g</b>) die ${state.yeastType === 'dry' ? 'Trockenhefe' : 'Frischhefe'} im <b>zurückbehaltenen Wasser auflösen</b> und gleichmäßig über den Teig geben – trocken eingestreut verteilt sie sich bei so wenig Menge kaum gleichmäßig.`
-            : (state.yeastType === 'dry'
-                ? `Trockenhefe gleichmäßig <b>über den Autolyse-Teig streuen</b> und kurz einarbeiten.`
-                : `Frischhefe im <b>zurückbehaltenen Wasser auflösen</b> und über den Teig geben.`),
-          tinyYeast ? tip('Für so kleine Mengen eine <b>0,01-g-Feinwaage</b> nutzen – normale Küchenwaagen liegen hier schnell 30 % daneben.') : '', 2);
+            ? t('guide.yeast.tinyBody', { yeast: g(R.yeast), yeastTypeName: state.yeastType === 'dry' ? t('guide.yeastType.dry') : t('guide.yeastType.fresh') })
+            : (state.yeastType === 'dry' ? t('guide.yeast.dryBody') : t('guide.yeast.freshBody')),
+          tinyYeast ? tip(t('guide.yeast.tinyTip')) : '', 2);
       } else {
-        st('Hefe lösen', '~2 min',
-          state.yeastType === 'dry'
-            ? `Trockenhefe <b>direkt ins Mehl</b> mischen – sie muss nicht vorgelöst werden.`
-            : `Frischhefe im <b>temperierten Wasser auflösen</b>, bis keine Stückchen mehr da sind.`, '', 2);
+        st(t('guide.step.dissolveYeast.title'), t('guide.chip.2min'),
+          state.yeastType === 'dry' ? t('guide.yeast.dryDirect') : t('guide.yeast.freshDirect'), '', 2);
       }
-      sec('Kneten');
-      st('Mischen' + (hasSugar ? ' & Zucker' : '') + ' & Salz' + (hasOil ? ' & Öl' : ''), 'nach 2–3 min',
+      sec(t('guide.sec.knead'));
+      st(t('guide.step.mixSalt.title') + (hasSugar ? t('guide.suffix.sugar') : '') + t('guide.suffix.salt') + (hasOil ? t('guide.suffix.oil') : ''), t('guide.step.saltAdd.chip'),
         (state.knead === '6'
-          ? `Mehl, Wasser & Hefe${sugarPhrase} in die Maschine geben und <b>ca. 2–3 min auf niedriger Stufe vermengen</b>, dann <b>${g(R.salt)} g Salz zugeben und weitere 2–3 min auf mittlerer Stufe einarbeiten</b>.`
-          : `Mehl, Wasser & Hefe${sugarPhrase} <b>von Hand ca. 3–5 min grob vermengen</b> (bis kein trockenes Mehl mehr bleibt), dann <b>${g(R.salt)} g Salz einstreuen und weitere 2–3 min einkneten</b>.`) + oilStep,
-        warn('Salz zeitversetzt zur Hefe zugeben – nie direkt aufeinander.') + sugarTip + oilTip, 5);
+          ? t('guide.mixSalt.machine', { sugarPhrase: sugarPhrase, salt: g(R.salt) })
+          : t('guide.mixSalt.hand', { sugarPhrase: sugarPhrase, salt: g(R.salt) })) + oilStep,
+        warn(t('guide.step.mixSalt.warn')) + sugarTip + oilTip, 5);
     }
 
     // ===== GEMEINSAME SCHRITTE (Kneten → Backen) =====
     if (hi) {
-      st('Stretch &amp; Fold statt Kneten', '4 × alle 30 min',
-        `Bei <b>${state.hyd}% Hydration</b> ist der Teig zu klebrig zum klassischen Kneten. Kurz mischen, dann <b>4 Runden Dehnen & Falten</b> alle 30 min mit <b>nassen Händen</b>.`,
-        tip('Zwischen den Runden abgedeckt ruhen lassen – das Gluten entwickelt sich von selbst.') + timerBox('stretch-fold', 120), 120);
+      st(t('guide.step.stretchFold.title'), t('guide.step.stretchFold.chip'),
+        t('guide.step.stretchFold.body', { hyd: state.hyd }),
+        tip(t('guide.step.stretchFold.tip')) + timerBox('stretch-fold', 120), 120);
     } else {
-      st('Kneten', state.knead === '6' ? '8–12 min' : '10–15 min',
-        `${state.knead === '6' ? 'Maschine: <b>8–12 min</b> auf niedriger/mittlerer Stufe' : 'Von Hand: <b>10–15 min</b> (kneten, dehnen, falten)'}, bis der Teig <b>glatt & elastisch</b> ist. Fenstertest: dünn ausziehbar ohne zu reißen.`, '', state.knead === '6' ? 10 : 13);
+      st(t('guide.step.knead.title'), state.knead === '6' ? t('guide.step.knead.chipMachine') : t('guide.step.knead.chipHand'),
+        `${state.knead === '6' ? t('guide.knead.machineBody') : t('guide.knead.handBody')}${t('guide.step.knead.bodySuffix')}`, '', state.knead === '6' ? 10 : 13);
     }
-    st('Teigtemperatur prüfen', 'Ziel 23–25 °C',
-      `Thermometer in den Teig: <b>${state.ddt} °C</b> angepeilt. Wärmer → schnellere Gare, kälter → langsamer.`, '', 2);
+    st(t('guide.step.checkTemp.title'), t('guide.step.checkTemp.chip'),
+      t('guide.step.checkTemp.body', { ddt: state.ddt }), '', 2);
 
     const ballsCold = f.cold && state.coldStage !== 'bulk';
-    sec('Gare & Formen');
-    st('Stockgare (im Stück)', f.cold && !ballsCold ? 'Raumtemp + kühl' : 'Raumtemp',
-      `Teig zur Kugel formen, in eine geölte/abgedeckte Schüssel. ${f.bulk}.`, timerBox('stockgare', f.bulkMin), f.bulkMin);
-    st('Teiglinge formen', `${R.N} × ${R.W} g`,
-      `In <b>${R.N} Stücke à ${R.W} g</b> teilen. Jedes zu einer <b>straffen Kugel</b> formen (Oberfläche spannen, Schluss nach unten). Mit Abstand in eine ${ballsCold ? 'kühlschranktaugliche, dicht schließende Box' : 'Box'}.`,
-      tip('Straff geformte Kugeln = runde Pizzen mit gleichmäßigem Rand (Cornicione).')
+    sec(t('guide.sec.rise'));
+    st(t('guide.step.bulkRise.title'), f.cold && !ballsCold ? t('guide.step.bulkRise.chipColdBalls') : t('guide.step.bulkRise.chipDefault'),
+      t('guide.step.bulkRise.body', { bulk: f.bulk }), timerBox('stockgare', f.bulkMin), f.bulkMin);
+    st(t('guide.step.formBalls.title'), `${R.N} × ${R.W} g`,
+      t('guide.step.formBalls.body', { N: R.N, W: R.W, boxTxt: ballsCold ? t('guide.box.cold') : t('guide.box.normal') }),
+      tip(t('guide.step.formBalls.tip'))
       // Feature-Flag "freezeHint" (js/settings.js): Default AUS, optionaler Zusatz-Tipp.
       // `PZ.FLAGS` fehlt in Tests bewusst -> dort weiterhin sichtbar (altes Verhalten).
-      + (PZ.FLAGS && PZ.FLAGS.freezeHint === false ? '' : tip('Einfrieren möglich: Teiglinge dünn mit Öl bestreichen, einzeln (nicht berührend) einfrieren – so <b>2–3 Monate</b> haltbar. Auftauen: <b>über Nacht im Kühlschrank</b>, dann <b>3–5 h bei Raumtemperatur</b> und <b>2–4 h Stückgare</b> wie gewohnt.')), 10);
-    st('Stückgare (Teiglinge)', ballsCold ? 'kühl · Fingertest' : 'Fingertest',
-      `${f.proof}. <b>Fertig</b>, wenn ein leichter Fingerdruck <b>langsam</b> zurückfedert (eine kleine Delle bleibt).`,
-      (f.cold ? tip('Teiglinge vor dem Backen wirklich auf Raumtemperatur kommen lassen – kalter Teig reißt beim Ausziehen.') : '') + timerBox('stueckgare', f.proofMin), f.proofMin);
+      + (PZ.FLAGS && PZ.FLAGS.freezeHint === false ? '' : tip(t('guide.freezeTip'))), 10);
+    st(t('guide.step.finalProof.title'), ballsCold ? t('guide.step.finalProof.chipCold') : t('guide.step.finalProof.chipDefault'),
+      t('guide.step.finalProof.body', { proof: f.proof }),
+      (f.cold ? tip(t('guide.step.finalProof.tip')) : '') + timerBox('stueckgare', f.proofMin), f.proofMin);
 
-    sec('Backen');
-    st('Ofen vorheizen', '30–45 min',
-      `Pizzastein/-stahl auf <b>höchste Stufe</b> vorheizen. Pizzaofen (Gas/Holz) <b>430–480 °C</b>; Haushaltsofen Maximum (250–300 °C) + Grill, Stein ganz oben.`,
-      tip('Der Stein muss richtig durchglühen – lieber 10 min länger. (Startzeit = 50 min vor dem Backen.)') + timerBox('ofen-vorheizen', 40), 0, { back: 50 });
-    st('Pizza ausziehen', 'kein Nudelholz!',
-      `Teigling in Mehl/Grieß betten, von der Mitte mit den <b>Fingerspitzen flachdrücken</b>, Rand (~1,5 cm) stehen lassen, über die Handrücken auf Größe ziehen.`,
-      warn('Nie ein Nudelholz – das drückt die Luft aus dem Rand. Der Cornicione lebt von der Gärblase.'), 5);
-    const bakeTxt = state.ballw <= 260
-      ? 'Pizzaofen bei ~450 °C: <b>60–90 Sekunden</b> (einmal drehen). Haushaltsofen: <b>5–8 min</b> unter dem Grill.'
-      : 'Größere Teiglinge: Pizzaofen <b>~2 min</b>, Haushaltsofen <b>8–12 min</b>.';
+    sec(t('guide.sec.bake'));
+    st(t('guide.step.preheat.title'), t('guide.step.preheat.chip'),
+      t('guide.step.preheat.body'),
+      tip(t('guide.step.preheat.tip')) + timerBox('ofen-vorheizen', 40), 0, { back: 50 });
+    st(t('guide.step.shape.title'), t('guide.step.shape.chip'),
+      t('guide.step.shape.body'),
+      warn(t('guide.step.shape.warn')), 5);
+    const bakeTxt = state.ballw <= 260 ? t('guide.bake.small') : t('guide.bake.large');
     const bakeDur = Math.max(10, R.N * (state.ballw <= 260 ? 5 : 7));
-    st('Belegen & Backen', '',
-      `Zügig belegen (wenig Sauce, gut abgetropfter Mozzarella), sofort einschießen. ${bakeTxt} Fertig beim <b>aufgegangenen, gefleckten Rand</b> (Leoparding).`,
-      tip('Alles vorher bereitstellen – ab dem Ausziehen geht es schnell.'), bakeDur);
+    st(t('guide.step.bakeTopping.title'), '',
+      t('guide.step.bakeTopping.body', { bakeTxt: bakeTxt }),
+      tip(t('guide.step.bakeTopping.tip')), bakeDur);
 
     // ===== Zeiten berechnen =====
     const steps = _items.filter(i => !i.sec);
@@ -232,10 +246,10 @@
     R.matureMin = matureMin;    // Vorteig-Reifezeit (0 bei Direkt)
     let base = null, valid = false;
     if (state.timeISO) {
-      const t = new Date(state.timeISO);
-      if (!isNaN(t.getTime())) {
+      const tISO = new Date(state.timeISO);
+      if (!isNaN(tISO.getTime())) {
         valid = true;
-        base = state.timeMode === 'target' ? new Date(t.getTime() - totalMin * 60000) : t;
+        base = state.timeMode === 'target' ? new Date(tISO.getTime() - totalMin * 60000) : tISO;
       }
     }
 
@@ -243,12 +257,11 @@
     let html = '';
     if (valid) {
       const endT = new Date(base.getTime() + totalMin * 60000);
-      html += `<div class="schedbar">⏱️ <b>Gesamtdauer ca. ${fmtDur(totalMin)}</b><br>
-        <span class="big">▶ Start ${fmtClock(base)}</span> &nbsp;→&nbsp; <span class="big">🍕 Fertig ${fmtClock(endT)}</span></div>`;
-      $('guideSummary').innerHTML = `${f.label} · ${R.N} × ${R.W} g · ${state.hyd}% Hydration`;
+      html += `<div class="schedbar">${t('guide.schedbar.withTime', { dur: fmtDur(totalMin), startClock: fmtClock(base), endClock: fmtClock(endT) })}</div>`;
+      $('guideSummary').innerHTML = t('guide.summary.withTime', { label: f.label, N: R.N, W: R.W, hyd: state.hyd });
     } else {
-      html += `<div class="schedbar" style="background:linear-gradient(135deg,#8a7f76,#6f655c)">⏱️ Gesamtdauer ca. <b>${fmtDur(totalMin)}</b> — gib oben eine <b>Start-</b> oder <b>Zielzeit</b> an, dann bekommt jeder Schritt eine Uhrzeit.</div>`;
-      $('guideSummary').innerHTML = `${f.label} · Gesamt ~${fmtDur(totalMin)}`;
+      html += `<div class="schedbar" style="background:linear-gradient(135deg,#8a7f76,#6f655c)">${t('guide.schedbar.noTime', { dur: fmtDur(totalMin) })}</div>`;
+      $('guideSummary').innerHTML = t('guide.summary.noTime', { label: f.label, dur: fmtDur(totalMin) });
     }
     let n = 1;
     _items.forEach(i => {
@@ -267,4 +280,8 @@
   }
 
   PZ.buildGuide = buildGuide;
+  // Sprachwechsel: kein eigener Hook nötig — js/calc.js registriert bereits einen
+  // Hook, der calc() neu aufruft, und calc() ruft am Ende immer buildGuide() auf
+  // (s. PZ.R = {...}; PZ.buildGuide(); ganz unten in calc.js). Ein zweiter, separater
+  // Hook hier würde buildGuide() bei jedem Sprachwechsel unnötig doppelt ausführen.
 })(window);

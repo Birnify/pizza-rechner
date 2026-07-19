@@ -8,6 +8,8 @@
   'use strict';
   const PZ = global.PZ || (global.PZ = {});
 
+  function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
+
   const LS_KEY = 'pizzaRechnerTimers';
   const HINT_KEY = 'pizzaRechnerTimerHintShown';
   let audioCtx = null;
@@ -65,7 +67,7 @@
     let shown = false;
     if ('Notification' in window && Notification.permission === 'granted') {
       try {
-        new Notification('⏰ Timer fertig', { body: label, tag: 'pz-timer-' + label });
+        new Notification(t('timer.notificationTitle'), { body: label, tag: 'pz-timer-' + label });
         shown = true;
       } catch (e) { /* ignore */ }
     }
@@ -80,7 +82,7 @@
     hint.className = 'timerhint';
     hint.setAttribute('role', 'status');
     hint.setAttribute('aria-live', 'polite');
-    hint.innerHTML = 'ℹ️ Der Timer läuft nur, solange dieser Tab/dieses Fenster geöffnet ist — kein Wecker mehr, wenn du den Tab schließt.';
+    hint.innerHTML = t('timer.hint');
     box.parentNode.insertBefore(hint, box.nextSibling);
     setTimeout(() => hint.remove(), 9000);
   }
@@ -90,7 +92,7 @@
     const defaultMin = parseFloat(box.dataset.timerMin) || 0;
     if (defaultMin <= 0) { box.innerHTML = ''; return; }
     const all = readTimers();
-    const t = all[key];
+    const tData = all[key];
 
     // Live-Region auf dem STATISCHEN .timerbox-Container (nicht auf dynamisch ersetzten
     // Kindern) — analog zu #flourWarn, sonst feuert es nicht zuverlässig bei jedem Update.
@@ -104,17 +106,17 @@
     const wrap = document.createElement('div');
     wrap.className = 'timerwrap';
 
-    if (t && t.endAt) {
-      const remain = t.endAt - Date.now();
+    if (tData && tData.endAt) {
+      const remain = tData.endAt - Date.now();
       if (remain <= 0) {
-        wrap.innerHTML = `<span class="timerdone" role="status">🔔 Fertig!</span>
-          <button type="button" class="timerbtn" data-act="dismiss">Zurücksetzen</button>`;
+        wrap.innerHTML = `<span class="timerdone" role="status">${t('timer.done')}</span>
+          <button type="button" class="timerbtn" data-act="dismiss">${t('timer.reset')}</button>`;
       } else {
-        wrap.innerHTML = `<span class="timerclock">⏳ <span class="timerclock-val" aria-hidden="true"></span> verbleibend</span>
-          <button type="button" class="timerbtn" data-act="stop">Abbrechen</button>`;
+        wrap.innerHTML = `<span class="timerclock">${t('timer.remaining.prefix')}<span class="timerclock-val" aria-hidden="true"></span>${t('timer.remaining.suffix')}</span>
+          <button type="button" class="timerbtn" data-act="stop">${t('timer.cancel')}</button>`;
       }
     } else {
-      wrap.innerHTML = `<button type="button" class="timerbtn timerbtn-start" data-act="start">⏰ Timer starten (${fmtDurLabel(defaultMin)})</button>
+      wrap.innerHTML = `<button type="button" class="timerbtn timerbtn-start" data-act="start">${t('timer.start', { dur: fmtDurLabel(defaultMin) })}</button>
         ${systemTimerHtml(defaultMin, stepLabel(box), key)}`;
     }
     box.appendChild(wrap);
@@ -137,14 +139,14 @@
     });
 
     clearTick(key);
-    if (t && t.endAt && t.endAt - Date.now() > 0) startTick(key, box, t.endAt, t.label);
+    if (tData && tData.endAt && tData.endAt - Date.now() > 0) startTick(key, box, tData.endAt, tData.label);
   }
 
   function fmtDurLabel(min) {
     min = Math.round(min);
-    if (min < 60) return min + ' min';
+    if (min < 60) return min + ' ' + t('guide.dur.min');
     const h = Math.floor(min / 60), r = min % 60;
-    return r ? `${h} h ${r} min` : `${h} h`;
+    return r ? `${h} ${t('guide.dur.h')} ${r} ${t('guide.dur.min')}` : `${h} ${t('guide.dur.h')}`;
   }
 
   function stepLabel(box) {
@@ -183,7 +185,7 @@
 
   function androidTimerUrl(minutes, label) {
     const seconds = Math.max(1, Math.round(minutes * 60));
-    const msg = encodeURIComponent(label || 'Pizza-Teig');
+    const msg = encodeURIComponent(label || t('timer.androidDefaultLabel'));
     return `intent:#Intent;action=android.intent.action.SET_TIMER;` +
       `S.android.intent.extra.alarm.MESSAGE=${msg};` +
       `i.android.intent.extra.alarm.LENGTH=${seconds};` +
@@ -205,8 +207,8 @@
     const now = new Date();
     const target = new Date(now.getTime() + minutes * 60000);
     const end = new Date(target.getTime() + 60000);
-    const sum = icsEscape('🍕 ' + (label || 'Pizza-Timer'));
-    const desc = icsEscape('Erinnerung vom Teigmeister: ' + (label || 'Timer') + ' ist fertig.');
+    const sum = icsEscape(t('timer.icsSummaryPrefix') + (label || t('timer.icsDefaultLabel')));
+    const desc = icsEscape(t('timer.icsDescription', { label: label || t('timer.notifyDefaultLabel') }));
     const uid = 'pz-' + Date.now() + '-' + Math.random().toString(36).slice(2) + '@pizza-rechner';
     const lines = [
       'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Pizzateig-Rechner//Timer//DE', 'CALSCALE:GREGORIAN',
@@ -231,12 +233,10 @@
     const hintId = `timersys-hint-${key}`;
     const links = [];
     if (isAndroid()) {
-      links.push(`<a class="timerbtn timerbtn-alt" href="${androidTimerUrl(defaultMin, label)}" aria-describedby="${hintId}">📱 Android-Wecker stellen</a>`);
+      links.push(`<a class="timerbtn timerbtn-alt" href="${androidTimerUrl(defaultMin, label)}" aria-describedby="${hintId}">${t('timer.androidBtn')}</a>`);
     }
-    links.push(`<a class="timerbtn timerbtn-alt" href="${icsDataUrl(defaultMin, label)}" download="pizza-timer-${key}.ics" aria-describedby="${hintId}">📅 Kalender-Erinnerung</a>`);
-    const hint = isAndroid()
-      ? 'Öffnet die Uhr-App mit vorausgefülltem Timer (Chrome) — oder lade alternativ eine Kalender-Erinnerung herunter.'
-      : 'iOS bietet keine Web-Schnittstelle für System-Timer — lade stattdessen eine Kalender-Erinnerung herunter (öffnet die Kalender-App mit Alarm zur richtigen Zeit).';
+    links.push(`<a class="timerbtn timerbtn-alt" href="${icsDataUrl(defaultMin, label)}" download="pizza-timer-${key}.ics" aria-describedby="${hintId}">${t('timer.icsBtn')}</a>`);
+    const hint = isAndroid() ? t('timer.hint.android') : t('timer.hint.ios');
     return `<div class="timersys">
         <span class="timersys-hint" id="${hintId}">${hint}</span>
         <span class="timersys-links">${links.join(' ')}</span>
@@ -276,7 +276,7 @@
 
   function onExpire(key, box, label) {
     beep();
-    notify(label || 'Timer');
+    notify(label || t('timer.notifyDefaultLabel'));
     render(box);
   }
 

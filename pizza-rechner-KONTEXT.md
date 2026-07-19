@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-19 · Aktuelle Version: v3.27.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-19 · Aktuelle Version: v3.28.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,157 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Pizza-Party-Planer (v3.27.0) = aktueller Stand
+## Sprachversion Deutsch/Englisch (v3.28.0) = aktueller Stand
+
+Neues, großes Feature, vom Nutzer per `/define-feature` strukturiert und bestätigt.
+Deckt laut Auftrag die **komplette Oberfläche** ab: statische UI-Texte (Labels, Buttons,
+Hinweise, Einstellungen-Beschreibungen), die generierte Schritt-für-Schritt-Anleitung
+(`js/guide.js`, `js/schedule.js`, `js/calc.js`), den PDF-Export (`js/pdf.js`), die
+Druckansicht/Einkaufsliste (`js/print.js`), den `.ics`-Kalendertext (`js/timer.js`)
+sowie die Pizza-Party-Presets (`js/party.js`). Deutsch bleibt Standard/Fallback, es gibt
+nur Deutsch/Englisch (kein weiteres Sprachenmenü).
+
+- **Sprachwahl (laut Feature-Auftrag):** automatische Vorauswahl per
+  `navigator.language` beim allerersten Aufruf (`de`/`at`/`ch`-Locale-Codes → Deutsch,
+  sonst Englisch), plus ein manueller Umschalter in den Einstellungen (neuer Punkt
+  „Sprache", Segment-Control „Deutsch"/„Englisch"), der die Automatik übersteuert. Die
+  manuelle Wahl wird in einem **eigenen** localStorage-Key (`pizzaLang`, getrennt vom
+  Feature-Flags-Key `pizzaRechnerFeatureFlags` aus `js/settings.js`) persistiert und hat
+  bei künftigen Aufrufen Vorrang vor der Auto-Erkennung — bewusst kein Ein/Aus-Flag,
+  da „noch nie manuell gewählt" von „explizit auf Deutsch gewählt" unterscheidbar
+  bleiben muss (sonst würde Auto-Erkennung nie mehr greifen können bzw. andersherum
+  eine explizite Deutsch-Wahl bei jedem Aufruf erneut von der Browser-Sprache
+  überschrieben).
+- **Neues zentrales Modul `js/i18n.js`:** ein flaches Wörterbuch `{ de: {...},
+  en: {...} }` mit punktnotierten Keys (z. B. `label.hyd`, `guide.step.knead.title`).
+  `PZ.t(key, vars)` liefert den Text der aktuell aktiven Sprache, interpoliert
+  `{platzhalter}` in `vars`, fällt bei fehlendem Key in der Zielsprache auf Deutsch
+  zurück und als allerletzten Rückfall auf den Key selbst (kein Crash, kein leerer
+  Text). Statische HTML-Texte werden deklarativ verdrahtet:
+  - `data-i18n="key"` → `el.textContent = t(key)`
+  - `data-i18n-html="key"` → `el.innerHTML = t(key)` (nur für Keys mit fest
+    hinterlegtem, sicherem Markup wie `<b>`/`<br>` — nie mit Nutzereingaben kombiniert)
+  - `data-i18n-attr="attr1:key1,attr2:key2"` → setzt beliebig viele Attribute
+    (`aria-label`, `placeholder`, `optgroup`-`label` usw.)
+
+  `applyStaticI18n()` läuft bei jedem Sprachwechsel erneut und aktualisiert
+  `document.documentElement`s `lang`-Attribut (WCAG 3.1.1). Alle **dynamischen** Texte
+  (Anleitung, PDF, Druck, Timer, Party-Presets, Presets-Beschreibungen,
+  Mehl-Dropdown-Zeitangaben, Rezept-Default-Namen, Live-Region-Meldungen …) rufen
+  `PZ.t()` direkt in ihrem jeweiligen Modul auf, statt über das generische
+  Attribut-System zu laufen. `PZ.i18nOnChange(fn)` registriert Re-Render-Hooks, die bei
+  jedem Sprachwechsel laufen (z. B. `js/calc.js` ruft `calc()` erneut auf, was am Ende
+  automatisch `buildGuide()` mit anstößt — ein einziger zentraler Hook statt eines
+  separaten in `js/guide.js`, um doppeltes Rendering zu vermeiden).
+- **Betroffene Module (Auflistung, da sehr viele):** `js/i18n.js` (neu, Wörterbuch +
+  Infrastruktur), `js/guide.js` (komplette Anleitung, ~90 Textbausteine mit
+  `{platzhaltern}` statt fester deutscher Strings), `js/schedule.js` (13 Gärzeit-Fahrplan-
+  Zweige × label/bulk/proof), `js/calc.js` (Hefe-Label „(frisch)"/„(trocken)",
+  Eiswasser-Hinweistext), `js/print.js` (Einkaufsliste), `js/pdf.js` (Titel,
+  „Tipp:"/„Achtung:"-Präfixe — der Rest kommt automatisch aus dem bereits übersetzten,
+  gerenderten Anleitungs-DOM, s. bestehende Architektur aus v3.25.0), `js/timer.js`
+  (Timer-Widget-Texte, System-Wecker-Hinweise, `.ics`-Kalendertext — der interne
+  `PRODID`-Header bleibt bewusst unübersetzt, analog zur v3.24.0-Abgrenzung „keine
+  internen Code-Bezeichner"), `js/party.js` (8 Preset-Pizzen + UI-Texte — Presets werden
+  über eine Funktion `getPresetPizzas()` bei **jedem** Aufruf frisch aus dem Wörterbuch
+  gebaut, nicht einmalig beim Laden „eingefroren", sonst würde ein späterer
+  Sprachwechsel die Namen nicht mehr aktualisieren), `js/ui.js` (Regler-Einheiten als
+  `aria-valuetext`, Methode-/Zeitplan-Hinweistexte), `js/flour.js` (Mehl-Dropdown-
+  Zeitangabe „bis 48 h" → „up to 48 h"; Mehlnamen/Markennamen wie „Caputo Pizzeria
+  Tradizionale" bleiben bewusst unübersetzt), `js/presets.js` (8 Preset-Beschreibungen),
+  `js/newrecipe.js` (Regler-Einheiten, Erfolgsmeldung), `js/storage.js`
+  (automatisch generierte Rezeptnamen „Rezept N"/„Mein Rezept"/„Importiertes Rezept"),
+  `js/main.js` (Prompt-/Confirm-Dialoge, Import/Export-Meldungen), `js/share.js`
+  (Kopier-Feedback).
+- **Neuer Menüpunkt „Sprache"** in den Einstellungen (Desktop + Mobil, identisches
+  Markup): Segment-Control „Deutsch"/„Englisch" statt eines Ein/Aus-Schalters (wie bei
+  den übrigen Feature-Flags) — passend zur 2-Werte-Natur der Sprachwahl. Info-Button
+  mit Erklärtext folgt demselben Disclosure-Muster wie alle anderen
+  Einstellungen-Punkte.
+- **Ausnahmen (laut Feature-Auftrag, analog zum v3.24.0-Präzedenzfall
+  „Teigmeister"-Umbenennung):** `pizza-rechner-KONTEXT.md`, `README.md` und
+  `tests/test.html` bleiben unangetastet/Deutsch-only (interne Doku/Tooling, kein
+  Nutzer-UI). `tests/test.html` bindet `js/i18n.js` zwar als **technische Abhängigkeit**
+  ein (da `js/guide.js`/`js/schedule.js`/etc. jetzt `PZ.t()` aufrufen), erzwingt aber
+  ganz am Anfang explizit `PZ.setLang('de')` (nach `localStorage.removeItem('pizzaLang')`)
+  — damit bleiben alle bestehenden deutschen String-Vergleiche in der Testsuite
+  deterministisch unabhängig vom Browser-Profil/der Browser-Sprache der Test-Umgebung.
+- **Zwei echte Bugs beim eigenen Vortest gefunden und behoben** (bevor der
+  `accessibility-expert`-Agent überhaupt lief): (1) In `js/guide.js` blieb der
+  Schritt-Titel „Vorteig + Wasser + Mehl" (Kombinieren von Vorteig in den Hauptteig)
+  zunächst hartkodiert deutsch stehen („+ Wasser"/„+ Mehl"/„+ Zucker" sowie das
+  Verbindungswort „dann" beim Auflisten mehrerer Zutaten) — mit eigens geschriebenen
+  Mehrfach-Branch-Tests (Autolyse/Stretch&Fold/Maschine/Poolish+Trockenhefe+Zucker+Öl/
+  Biga+Stück-Kaltgare) über Headless-Edge-CDP gefunden, korrigiert (neue Keys
+  `guide.titleSuffix.*`, `guide.pref.joinThen`, `guide.prefGenericTitle`) und erneut
+  gegen alle Branches verifiziert (kein Leck mehr). (2) 11 englische Übersetzungen im
+  Wörterbuch enthielten fälschlich SQL-Stil-Escaping (`can''t` statt `can\'t`), was
+  `js/i18n.js` beim Parsen mit `SyntaxError: missing ) after argument list` zum
+  Absturz brachte — per Function-Constructor-Syntaxcheck (Headless-Edge) lokalisiert und
+  mit einem gezielten, Backslash-sicheren Such-/Ersetzungsskript korrigiert.
+- **Accessibility-Fix während des gezielten Audits** (`accessibility-expert`-Agent, nur
+  auf den neuen Sprachumschalter fokussiert): **WCAG 4.1.3 (Status Messages, Level
+  AA)** — ein Klick auf „Deutsch"/„English" löst eine komplette Neu-Übersetzung der
+  sichtbaren Oberfläche aus (alle Labels, Ergebnis-Panel, komplette Anleitung), ohne
+  dass sich der Fokus bewegt oder es eine Live-Region-Ansage gibt; `aria-pressed` am
+  geklickten Button allein reicht für Screenreader-Nutzer nicht als Beleg der
+  seitenweiten Änderung. Fix: neue Live-Region `#langAnnounce` (identisch zum
+  etablierten `#viewAnnounce`-Muster aus v3.26.0) meldet „Sprache: Deutsch"/„Language:
+  English" nach jedem manuellen Wechsel, mit demselben „erst leeren, dann im nächsten
+  Tick setzen"-Muster gegen das bekannte Zwei-Klicks-mit-gleichem-Text-Problem. Alle
+  übrigen geprüften Punkte (`aria-pressed`/`role="group"` am Segment-Control,
+  `document.documentElement.lang`-Aktualisierung, Kontraste/Klickziele des
+  `.seg`-Elements, Info-Button-Disclosure-Muster) ohne Befund.
+- **Bewusst NICHT angefasst:** `pizza-rechner-KONTEXT.md`, `README.md`,
+  `tests/test.html` (s. Ausnahmen oben); Dateinamen (`pizza-rechner.html` usw.) und der
+  Repo-Name bleiben Deutsch/unverändert; keine Änderung an der Berechnungslogik selbst
+  (Zahlenwerte/Formeln unverändert, nur die Textausgabe drumherum); keine
+  Einheiten-Umrechnung (g bleibt g, °C bleibt °C in beiden Sprachen); Mehl-/Marken-Namen
+  und Pizza-Party-Eigennamen wie „Biga"/„Poolish"/„Margherita" bleiben unübersetzt
+  (italienische Fachbegriffe/Eigennamen); eigene, vom Nutzer angelegte Rezepte/Pizzen
+  behalten ihren eingegebenen Namen unabhängig von der Sprache (keine Übersetzung von
+  Nutzereingaben).
+
+**Tests** (`tests/test.html`, neue Sektion „23 · Sprachversion Deutsch/Englisch
+(js/i18n.js)", +16 neue Prüfungen, 536 → **552**): reine Funktions-/Datenschicht
+getestet (`PZ.t()`/`getLang()`/`setLang()`/`i18nOnChange()`) — die DOM-Verdrahtung
+(`applyStaticI18n()`, Sprachumschalter-UI) läuft in `tests/test.html` mangels
+passendem Markup nicht mit, analog zum etablierten Umgang mit anderen UI-Modulen dort.
+Geprüft: `t()` liefert den korrekten deutschen Text per Default; `{platzhalter}`-
+Interpolation; unbekannter Key liefert den Key selbst zurück statt zu crashen;
+fehlende Übersetzung in der Zielsprache fällt auf Deutsch zurück; `setLang()`/
+`getLang()` schalten korrekt um und persistieren in `localStorage`; ungültige
+Sprachcodes (z. B. `"fr"`) werden ignoriert; `i18nOnChange()`-Callbacks feuern bei
+jedem Sprachwechsel. Alle bisherigen 536 Prüfungen bleiben unverändert grün (Beweis,
+dass die deutschen Wörterbuch-Werte 1:1 mit den vorher hartkodierten Strings
+übereinstimmen). Zusätzlich sehr ausführlich interaktiv per Headless-Edge-CDP
+(WebSocket, `--remote-allow-origins=*`, sowie `fetch()`+`new Function()` für
+Syntaxchecks) auf isolierten Kopien gegen das echte DOM verifiziert, auf **beiden**
+Seiten (Desktop + Mobil): Sprachumschalter schaltet um, persistiert, aktualisiert
+`<html lang>`; komplette Neu-Übersetzung von Labels/Ergebnis-Panel/Anleitung/
+Party-Presets/Mehl-Dropdown/Presets-Beschreibung; fünf verschiedene Anleitungs-
+Branches (Autolyse mit Mini-Hefemenge, hohe Hydration/Stretch&Fold, Maschinenknetung,
+Poolish mit Trockenhefe+Zucker+Öl, Biga mit Stück-Kaltgare) auf englische Leckstellen
+gescannt (keine gefunden); Mehl-Warnung, PDF-Export (`Tip: `-Präfix, Titel), Druck-
+Einkaufsliste, Timer-Start-Button, Party-Pizza-Anlegen, Rezept-Anlegen-Erfolgsmeldung
+alle korrekt in Englisch; Live-Region-Ansagen (`#langAnnounce`, `#viewAnnounce`)
+korrekt; keine JavaScript-Konsolenfehler während der gesamten Durchläufe. Alle 552
+Prüfungen grün (Headless-Edge-Dump). Kein separater `test-generator`-Lauf nötig (die
+Berechnungslogik selbst — Zahlenwerte/Formeln in `js/calc.js`/`js/schedule.js`/
+`js/guide.js` — ist unverändert, nur die Textausgabe drumherum wurde umgebaut; die
+neuen i18n-spezifischen Tests wurden selbst geschrieben, analog zum Vorgehen bei
+`js/pdf.js` in v3.25.0 und `js/party.js` in v3.27.0).
+
+**Geändert:** `js/i18n.js` (neu), `js/guide.js`, `js/schedule.js`, `js/calc.js`,
+`js/print.js`, `js/pdf.js`, `js/timer.js`, `js/party.js`, `js/ui.js`, `js/flour.js`,
+`js/presets.js`, `js/newrecipe.js`, `js/storage.js`, `js/main.js`, `js/share.js`,
+`pizza-rechner.html`, `pizza-rechner-mobile.html`, `tests/test.html`. `?v=` auf
+`3.28.0` gezogen (Desktop + Mobil, Cache-Busting + Footer-Version).
+`pizza-rechner-mobile-standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v3.28.0 - Sprachversion Deutsch-Englisch/` enthält den vollständigen
+Schnappschuss.
+
+## Pizza-Party-Planer (v3.27.0)
 
 Neues Feature, vom Nutzer per `/define-feature` strukturiert und bestätigt. Motivation:
 beim Planen einer Pizzaparty mit mehreren Sorten will man auf einen Blick wissen, welche
@@ -2797,8 +2947,11 @@ Keine Code-Änderung durch den Audit nötig.
 - ~~Pizza-Party-Planer (Zutatenliste nach Pizzenauswahl)~~ — **erledigt in v3.27.0**
   (kein Backlog-Punkt, direkter Nutzerauftrag per `/define-feature`; s. Abschnitt
   „Pizza-Party-Planer (v3.27.0)" oben).
+- ~~Sprachversion Deutsch/Englisch~~ — **erledigt in v3.28.0** (kein Backlog-Punkt,
+  direkter Nutzerauftrag per `/define-feature`; s. Abschnitt „Sprachversion
+  Deutsch/Englisch (v3.28.0)" oben).
 
-**Stand v3.27.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.28.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben), einziger offener Punkt ist der oben notierte Live-Region-Nebenbefund
 (`#recipeIOLiveMsg`, `js/main.js`). Für den nächsten Zyklus braucht es daher frisches
 Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes,

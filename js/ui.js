@@ -5,10 +5,16 @@
   const $ = PZ.$;
   const state = PZ.state;
 
+  function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
+
   // --- Slider <-> Number Verknüpfung ---
-  // `unit` liefert einen aria-valuetext fürs Screenreader-Ansagen (z. B. "62 Prozent Hydration"
-  // statt einer nackten Zahl) — reine a11y-Ergänzung, ändert keine Berechnungslogik.
-  function link(slider, number, key, decimals, unit) {
+  // `unitKey` liefert (per PZ.t()) einen aria-valuetext fürs Screenreader-Ansagen
+  // (z. B. "62 percent hydration" statt einer nackten Zahl) — reine a11y-Ergänzung,
+  // ändert keine Berechnungslogik. Ein Wörterbuch-KEY statt eines fertigen Strings,
+  // damit ein späterer Sprachwechsel den bereits gesetzten aria-valuetext auf den
+  // vorhandenen Slidern aktualisieren kann (s. refreshUnits() weiter unten).
+  const unitLinks = []; // { slider, unitKey } — für refreshUnits() bei Sprachwechsel
+  function link(slider, number, key, decimals, unitKey) {
     const s = $(slider), n = $(number), v = $(key + 'V');
     function fmt(val) { return decimals != null ? val.toFixed(decimals) : val; }
     function set(val, from) {
@@ -19,10 +25,10 @@
       if (from !== 'n') n.value = val;
       const disp = fmt(val);
       if (v) v.textContent = disp;
-      if (unit) s.setAttribute('aria-valuetext', disp + ' ' + unit);
+      if (unitKey) s.setAttribute('aria-valuetext', disp + ' ' + t(unitKey));
       PZ.calc();
     }
-    if (unit) s.setAttribute('aria-valuetext', fmt(parseFloat(s.value)) + ' ' + unit);
+    if (unitKey) { s.setAttribute('aria-valuetext', fmt(parseFloat(s.value)) + ' ' + t(unitKey)); unitLinks.push({ slider: s, unitKey: unitKey, fmt: fmt }); }
     s.addEventListener('input', () => set(s.value, 's'));
     n.addEventListener('input', () => set(n.value, 'n'));
     return set;
@@ -30,19 +36,27 @@
 
   // Setter-Sammlung (von presets.js und storage.js genutzt)
   PZ.set = {
-    balls: link('balls', 'ballsN', 'balls', 0, 'Teiglinge'),
-    ballw: link('ballw', 'ballwN', 'ballw', 0, 'Gramm'),
-    hyd:   link('hyd', 'hydN', 'hyd', 0, 'Prozent Hydration'),
-    salt:  link('salt', 'saltN', 'salt', 1, 'Prozent Salz'),
-    oil:   link('oil', 'oilN', 'oil', 1, 'Prozent Olivenöl'),
-    sugar: link('sugar', 'sugarN', 'sugar', 1, 'Prozent Zucker'),
-    pref:  link('pref', 'prefN', 'pref', 0, 'Prozent Mehl im Vorteig'),
-    bhyd:  link('bhyd', 'bhydN', 'bhyd', 0, 'Prozent Biga-Hydration'),
-    yeast: link('yeast', 'yeastN', 'yeast', 2, 'Prozent Hefe'),
-    ddt:   link('ddt', 'ddtN', 'ddt', 1, 'Grad Celsius Teigtemperatur'),
-    room:  link('room', 'roomN', 'room', 0, 'Grad Celsius Raumtemperatur'),
-    flourTemp: link('flourTemp', 'flourTempN', 'flourTemp', 0, 'Grad Celsius Mehltemperatur')
+    balls: link('balls', 'ballsN', 'balls', 0, 'unit.balls'),
+    ballw: link('ballw', 'ballwN', 'ballw', 0, 'unit.grams'),
+    hyd:   link('hyd', 'hydN', 'hyd', 0, 'unit.percentHyd'),
+    salt:  link('salt', 'saltN', 'salt', 1, 'unit.percentSalt'),
+    oil:   link('oil', 'oilN', 'oil', 1, 'unit.percentOil'),
+    sugar: link('sugar', 'sugarN', 'sugar', 1, 'unit.percentSugar'),
+    pref:  link('pref', 'prefN', 'pref', 0, 'unit.percentPref'),
+    bhyd:  link('bhyd', 'bhydN', 'bhyd', 0, 'unit.percentBhyd'),
+    yeast: link('yeast', 'yeastN', 'yeast', 2, 'unit.percentYeast'),
+    ddt:   link('ddt', 'ddtN', 'ddt', 1, 'unit.celsiusDdt'),
+    room:  link('room', 'roomN', 'room', 0, 'unit.celsiusRoom'),
+    flourTemp: link('flourTemp', 'flourTempN', 'flourTemp', 0, 'unit.celsiusFlourTemp')
   };
+
+  // Bei Sprachwechsel: aria-valuetext aller Regler neu setzen (Wert bleibt gleich,
+  // nur die Einheit übersetzt sich), s. Aufruf ganz unten in dieser Datei.
+  function refreshUnits() {
+    unitLinks.forEach(function (u) {
+      u.slider.setAttribute('aria-valuetext', u.fmt(parseFloat(u.slider.value)) + ' ' + t(u.unitKey));
+    });
+  }
 
   // --- Quick-Pills ---
   document.querySelectorAll('[data-ballw]').forEach(b => b.onclick = () => PZ.set.ballw(b.dataset.ballw));
@@ -122,11 +136,6 @@
     });
   }
 
-  const methodHints = {
-    direct: 'Direkt: alle Zutaten auf einmal. Einfachster Weg.',
-    biga: 'Biga: steifer Vorteig (Vortag, 16–20 h bei ~18 °C). Mehr Aroma &amp; Struktur.',
-    poolish: 'Poolish: flüssiger Vorteig 1:1 (12–16 h). Milder, dehnbarer Teig.'
-  };
   function applyMethod() {
     const m = state.method;
     const isPref = m !== 'direct';
@@ -137,14 +146,10 @@
     $('stageMain').classList.toggle('show', isPref);
     // Bei Vorteig steuert die Reife-Stufe die Hefe → generische Hefe-Pills ausblenden
     $('yeastPills').style.display = isPref ? 'none' : '';
-    $('yeastHint').innerHTML = isPref
-      ? 'Wird von der <b>Vorteig-Reife</b> oben gesetzt. Feintuning per Regler möglich.'
-      : 'Prozent bezogen auf Frischhefe. Lange/warme Gare = weniger.';
-    $('methodHint').innerHTML = methodHints[m];
-    $('prefTitle').textContent = m === 'biga' ? 'Biga (Vortag)' : 'Poolish (Vortag)';
-    $('prefHint').innerHTML = m === 'biga'
-      ? 'Biga klassisch: 70–100 % des Mehls.'
-      : 'Poolish: meist 30–50 % des Mehls (Wasser 1:1 dazu). Mehr als die Hydration-% geht nicht — sonst wäre mehr Wasser im Poolish als im ganzen Teig.';
+    $('yeastHint').innerHTML = isPref ? t('hint.yeast.pref') : t('hint.yeast.normal');
+    $('methodHint').innerHTML = t('hint.method.' + m);
+    $('prefTitle').textContent = m === 'biga' ? t('label.prefTitle.biga') : t('label.prefTitle.poolish');
+    $('prefHint').innerHTML = m === 'biga' ? t('hint.pref.biga') : t('hint.pref.poolish');
     // Reife-Stufen für die gewählte Methode rendern und eine gültige Stufe aktivieren
     if (isPref) {
       renderPrefStages(m);
@@ -156,11 +161,9 @@
 
   // --- Zeitplan-Eingaben ---
   function updateTimeLabel() {
-    const t = state.timeMode === 'target';
-    $('timeLabel').textContent = t ? 'Soll fertig sein um' : 'Startzeitpunkt';
-    $('timeHint').textContent = t
-      ? 'Die Anleitung rechnet rückwärts und sagt dir, wann du anfangen musst.'
-      : 'Die Anleitung rechnet vorwärts und zeigt, wann die Pizza fertig ist.';
+    const isTarget = state.timeMode === 'target';
+    $('timeLabel').textContent = isTarget ? t('label.timeMode.target') : t('label.timeMode.start');
+    $('timeHint').textContent = isTarget ? t('hint.timeMode.target') : t('hint.timeMode.start');
   }
 
   seg('method', 'm', 'method', applyMethod);
@@ -180,4 +183,15 @@
   PZ.selectSeg = selectSeg;
   PZ.applyMethod = applyMethod;
   PZ.updateTimeLabel = updateTimeLabel;
+
+  // Sprachwechsel: Regler-Einheiten (aria-valuetext), Methode-/Zeitplan-Hinweistexte
+  // und die Vorteig-Reife-Pills (deren Labels selbst sprachneutral aus Zahlen bestehen,
+  // aber ihre umgebenden Hinweise nicht) neu rendern.
+  if (PZ.i18nOnChange) {
+    PZ.i18nOnChange(function () {
+      refreshUnits();
+      applyMethod();
+      updateTimeLabel();
+    });
+  }
 })(window);

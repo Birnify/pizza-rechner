@@ -4,43 +4,46 @@
   const PZ = global.PZ || (global.PZ = {});
   const $ = PZ.$;
 
-  const DEFAULT_DESC = 'Wähle ein erprobtes Rezept — alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.';
+  function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
 
   // Jedes Preset empfiehlt auch ein passendes Mehl (flour) — geprüft gegen die
   // Warnlogik in guide.js: keine der Kombinationen löst eine Mehl-Warnung aus.
+  // "descKey" statt eines fertigen Texts (js/i18n.js, v3.28.0) — presetDesc wird
+  // live über t(descKey) nachgeschlagen, damit ein Sprachwechsel den aktuell
+  // angezeigten Beschreibungstext mit aktualisiert (s. Re-Render-Hook unten).
   const PRESETS = {
     napoli_klassisch: {
       method: 'direct', hyd: 60, salt: 2.8, oil: 2, yeastType: 'fresh', yeast: 0.2, ballw: 250, ddt: 24, flour: 'caputo_pizzeria',
-      desc: 'AVPN-Standard: 60 % Hydration, Tipo 00, 2 % Olivenöl. ~24 h Gesamtgare. Wenig Hefe, klassischer Geschmack.'
+      descKey: 'preset.napoliKlassisch.desc'
     },
     napoli_65: {
       method: 'direct', hyd: 65, salt: 2.8, oil: 2, yeastType: 'fresh', yeast: 0.3, ballw: 250, ddt: 24, flour: 'caputo_pizzeria',
-      desc: '65 % macht den Teig dehnbarer & verzeihlicher, 2 % Olivenöl. ~24 h: 2 h Raumtemp, dann kühl, vor dem Backen temperieren.'
+      descKey: 'preset.napoli65.desc'
     },
     napoli_kalt: {
       method: 'direct', hyd: 65, salt: 3.0, oil: 2, yeastType: 'fresh', yeast: 0.1, ballw: 250, ddt: 23, flour: 'caputo_cuoco',
-      desc: 'Lange Kaltgare ~48 h im Kühlschrank (4 °C), 2 % Olivenöl. Sehr wenig Hefe, maximales Aroma. Braucht ein starkes Mehl (W300+).'
+      descKey: 'preset.napoliKalt.desc'
     },
     schnell: {
       method: 'direct', hyd: 62, salt: 2.5, oil: 2, yeastType: 'fresh', yeast: 1.5, ballw: 250, ddt: 25, flour: 'caputo_pizzeria',
-      desc: 'Gleicher Tag: ~2 h Stockgare + 2–3 h Stückgare bei warmer Raumtemp (24–26 °C), 2 % Olivenöl. Mehr Hefe, weniger Aroma — aber spontan.'
+      descKey: 'preset.schnell.desc'
     },
     napoli_biga: {
       method: 'biga', hyd: 65, salt: 2.8, oil: 2, pref: 100, bhyd: 45, prefStage: 'b24', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'caputo_cuoco',
-      desc: '100 % Biga (steifer Vorteig, 45 % Hydration). 24 h reifen lassen, dann Hauptteig mit Restwasser, Salz & 2 % Öl. Sehr offene Krume.'
+      descKey: 'preset.napoliBiga.desc'
     },
     napoli_poolish: {
       method: 'poolish', hyd: 66, salt: 2.5, oil: 2, pref: 66, prefStage: 'p14', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'dallag_monica',
-      desc: 'Poolish (flüssig 1:1) mit ~66 % des Mehls. 14 h reifen, dann Hauptteig (mit 2 % Öl) — ~22 h Gesamtreife. Milder, luftiger Teig.'
+      descKey: 'preset.napoliPoolish.desc'
     },
     teglia: {
       method: 'direct', hyd: 75, salt: 2.5, oil: 4, yeastType: 'fresh', yeast: 0.3, ballw: 320, ddt: 24, flour: 'caputo_nuvola_super',
-      desc: 'Römische Blechpizza: 75 % Hydration, 4 % Olivenöl, sehr lockere Krume. Teig ist klebrig — mit Stretch & Fold statt langem Kneten arbeiten. 24 h kühl. Braucht sehr starkes Mehl (W330+).'
+      descKey: 'preset.teglia.desc'
     },
     newyork_style: {
       method: 'direct', hyd: 62, salt: 2.5, oil: 3, sugar: 2, yeastType: 'fresh', yeast: 0.2, ballw: 300, ddt: 24, flour: 'dallag_napoletana',
       flag: 'newYorkStyle',
-      desc: 'New York Style: 62 % Hydration, 3 % Öl, 2 % Zucker (Bräunung &amp; Hefeaktivität) — größere, dünnere Teiglinge. ~26 h Kaltgare für Aroma &amp; knusprig-zähe Kruste. Braucht ein mittelstarkes Mehl (W300+).'
+      descKey: 'preset.newyorkStyle.desc'
     }
   };
 
@@ -49,6 +52,7 @@
   // Reglereingabe still auf '' zurücksetzt, s. u.) — nur so lässt sich erkennen, ob der
   // Nutzer gerade WEG von „New York Style" wechselt (v3.20.1, s. u.).
   let lastAppliedPresetKey = '';
+  let lastLoadedRecipeName = null; // für den Re-Render-Hook bei Sprachwechsel (s. u.)
 
   function applyPreset(key) {
     const state = PZ.state, set = PZ.set;
@@ -61,8 +65,9 @@
       set.sugar(0);
     }
     lastAppliedPresetKey = key;
+    lastLoadedRecipeName = null;
     if (!p) {
-      $('presetDesc').textContent = DEFAULT_DESC;
+      $('presetDesc').textContent = t('preset.defaultDesc');
       // Zurück zu "Eigene Einstellung" (oder unbekannter Key): preset-gated Regler
       // (aktuell nur der Zucker-Regler) wieder ausblenden, sofern das zugehörige Flag
       // nicht manuell/dauerhaft an ist — applyFlags() liest dafür live aus #preset (s. dort).
@@ -97,7 +102,7 @@
     // js/settings.js prüft dafür exakt den Preset-Key, nicht mehr das generische
     // `flag`-Feld).
     if (PZ.applyFlags) PZ.applyFlags();
-    $('presetDesc').textContent = p.desc;
+    $('presetDesc').textContent = t(p.descKey);
     PZ.calc();
   }
 
@@ -112,9 +117,8 @@
       lastAppliedPresetKey = value;
       if (PZ.loadRecipe) PZ.loadRecipe(id);
       const rec = (PZ.listRecipes ? PZ.listRecipes() : []).find(r => r.id === id);
-      $('presetDesc').textContent = rec
-        ? 'Eigenes Rezept „' + rec.name + '“ geladen — Werte wurden übernommen.'
-        : DEFAULT_DESC;
+      lastLoadedRecipeName = rec ? rec.name : null;
+      $('presetDesc').textContent = rec ? t('preset.customRecipeLoaded', { name: rec.name }) : t('preset.defaultDesc');
       return;
     }
     applyPreset(value);
@@ -131,4 +135,21 @@
 
   PZ.PRESETS = PRESETS;
   PZ.applyPreset = applyPreset;
+
+  // Sprachwechsel: den aktuell angezeigten presetDesc-Text neu auflösen (Preset-
+  // Beschreibung ODER "eigenes Rezept geladen"-Hinweis ODER Standardtext) — sonst
+  // bliebe er nach dem Umschalten in der alten Sprache stehen, obwohl der Rest der
+  // Karte schon übersetzt ist.
+  if (PZ.i18nOnChange) {
+    PZ.i18nOnChange(function () {
+      const p = PRESETS[lastAppliedPresetKey];
+      if (p) {
+        $('presetDesc').textContent = t(p.descKey);
+      } else if (lastLoadedRecipeName) {
+        $('presetDesc').textContent = t('preset.customRecipeLoaded', { name: lastLoadedRecipeName });
+      } else {
+        $('presetDesc').textContent = t('preset.defaultDesc');
+      }
+    });
+  }
 })(window);

@@ -10,6 +10,8 @@
   const $ = PZ.$;
   const KEY = 'pizzaRechner';
 
+  function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
+
   // --- Rohdaten lesen/schreiben ---------------------------------------
   function readRaw() {
     const raw = localStorage.getItem(KEY);
@@ -42,7 +44,7 @@
       // Alter Einzel-Slot-Stand -> erstes Rezept "Mein Rezept"
       const id = makeId();
       data = {
-        recipes: [{ id, name: 'Mein Rezept', state: data, savedAt: Date.now() }],
+        recipes: [{ id, name: t('storage.migratedRecipeName'), state: data, savedAt: Date.now() }],
         activeId: id
       };
       writeRaw(data);
@@ -81,8 +83,8 @@
   function nextDefaultName(recipes) {
     let n = recipes.length + 1;
     const names = new Set(recipes.map(r => r.name));
-    while (names.has('Rezept ' + n)) n++;
-    return 'Rezept ' + n;
+    while (names.has(t('storage.defaultRecipeName', { n: n }))) n++;
+    return t('storage.defaultRecipeName', { n: n });
   }
 
   // --- Öffentliche API ---------------------------------------------------
@@ -206,10 +208,10 @@
   // "<Name> (importiert 3)", ...
   function uniqueImportName(base, existingNames) {
     if (!existingNames.has(base)) return base;
-    let name = base + ' (importiert)';
+    let name = t('storage.importedSuffix', { name: base });
     let n = 2;
     while (existingNames.has(name)) {
-      name = base + ' (importiert ' + n + ')';
+      name = t('storage.importedSuffixN', { name: base, n: n });
       n++;
     }
     return name;
@@ -235,7 +237,7 @@
     let imported = 0, skipped = 0;
     parsed.recipes.forEach(entry => {
       if (!isValidRecipeEntry(entry)) { skipped++; return; }
-      const baseName = (entry.name && String(entry.name).trim()) || 'Importiertes Rezept';
+      const baseName = (entry.name && String(entry.name).trim()) || t('storage.importedRecipeFallbackName');
       const name = uniqueImportName(baseName, existingNames);
       existingNames.add(name);
       data.recipes.push({

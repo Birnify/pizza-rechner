@@ -4,12 +4,14 @@
   const PZ = global.PZ;
   const $ = PZ.$;
 
+  function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
+
   $('saveBtn').onclick = () => {
     PZ.save();
     refreshRecipeSelect();
-    const b = $('saveBtn'); const t = b.textContent;
-    b.textContent = '✓ Gespeichert';
-    setTimeout(() => b.textContent = t, 1400);
+    const b = $('saveBtn'); const orig = b.textContent;
+    b.textContent = t('main.saved');
+    setTimeout(() => b.textContent = orig, 1400);
   };
 
   // --- Mehrere gespeicherte Rezepte (js/storage.js) ---------------------
@@ -52,9 +54,9 @@
       const rec = PZ.saveAsNew(nameEl ? nameEl.value : '');
       if (nameEl) nameEl.value = '';
       refreshRecipeSelect();
-      const b = recipeSaveNew; const t = b.textContent;
-      b.textContent = '✓ Gespeichert';
-      setTimeout(() => b.textContent = t, 1400);
+      const b = recipeSaveNew; const orig = b.textContent;
+      b.textContent = t('main.saved');
+      setTimeout(() => b.textContent = orig, 1400);
       void rec;
     };
   }
@@ -64,7 +66,7 @@
       const recipes = PZ.listRecipes();
       if (!recipes.length) return;
       const current = recipes.find(r => r.id === PZ.getActiveId());
-      const name = prompt('Neuer Name für dieses Rezept:', current ? current.name : '');
+      const name = prompt(t('main.renamePrompt'), current ? current.name : '');
       if (name && name.trim()) { PZ.renameActive(name); refreshRecipeSelect(); }
     };
   }
@@ -75,7 +77,7 @@
       const id = PZ.getActiveId();
       if (!recipes.length || !id) return;
       const current = recipes.find(r => r.id === id);
-      if (!confirm('„' + (current ? current.name : 'Rezept') + '" wirklich löschen?')) return;
+      if (!confirm(t('main.deleteConfirm', { name: current ? current.name : t('main.recipeFallbackName') }))) return;
       const nextId = PZ.deleteRecipe(id);
       refreshRecipeSelect();
       if (nextId) PZ.loadRecipe(nextId);
@@ -93,7 +95,7 @@
     recipeExportBtn.onclick = () => {
       const backup = PZ.exportRecipes();
       if (!backup.recipes.length) {
-        showRecipeIOMsg('Noch keine gespeicherten Rezepte zum Sichern vorhanden.');
+        showRecipeIOMsg(t('main.noRecipesToExport'));
         return;
       }
       const json = JSON.stringify(backup, null, 2);
@@ -107,7 +109,7 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       const n = backup.recipes.length;
-      showRecipeIOMsg(n + (n === 1 ? ' Rezept' : ' Rezepte') + ' als Datei gesichert.');
+      showRecipeIOMsg(n === 1 ? t('main.exportedOne') : t('main.exportedMany', { n: n }));
     };
   }
 
@@ -140,17 +142,17 @@
           const result = PZ.importRecipes(parsed);
           refreshRecipeSelect();
           if (result.imported === 0) {
-            showRecipeIOMsg('Keine gültigen Rezepte in dieser Datei gefunden.');
+            showRecipeIOMsg(t('main.noValidRecipesFound'));
           } else {
-            let msg = result.imported + (result.imported === 1 ? ' Rezept' : ' Rezepte') + ' importiert.';
-            if (result.skipped > 0) msg += ' ' + result.skipped + ' übersprungen (ungültig).';
+            let msg = result.imported === 1 ? t('main.importedOne') : t('main.importedMany', { n: result.imported });
+            if (result.skipped > 0) msg += t('main.skippedSuffix', { n: result.skipped });
             showRecipeIOMsg(msg);
           }
         } catch (e) {
-          showRecipeIOMsg('Import fehlgeschlagen: Datei ist kein gültiges Rezepte-Backup.');
+          showRecipeIOMsg(t('main.importFailedFormat'));
         }
       };
-      reader.onerror = () => showRecipeIOMsg('Import fehlgeschlagen: Datei konnte nicht gelesen werden.');
+      reader.onerror = () => showRecipeIOMsg(t('main.importFailedRead'));
       reader.readAsText(file);
     };
   }

@@ -4,6 +4,8 @@
   const PZ = global.PZ || (global.PZ = {});
   const $ = PZ.$;
 
+  function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
+
   // letzte Ergebnisse (für die Anleitung)
   PZ.R = {};
 
@@ -24,7 +26,7 @@
     const sugar = flour * su;
     let yeast   = flour * y;                       // immer als Frischhefe gerechnet
     if (state.yeastType === 'dry') yeast *= PZ.FRESH_TO_DRY;
-    const yWord = state.yeastType === 'dry' ? '(trocken)' : '(frisch)';
+    const yWord = state.yeastType === 'dry' ? t('yeast.dry') : t('yeast.fresh');
 
     // Vorteig-Werte (unten ggf. gefüllt)
     let pf = 0, pw = 0, pYeast = 0, mYeast = yeast, mFlour = flour, mWater = water;
@@ -94,13 +96,13 @@
       const c = 4.18, Lf = 334;
       const x = M * c * (Ttap - wT) / (Lf + c * wT + c * (Ttap - wT));
       ice = Math.max(0, Math.round(x));
-      note = `Nimm <b>${Math.round(M - ice)} g Leitungswasser (~${Ttap}°)</b> + <b>${ice} g Eis</b>, ergibt ~${wT}° Schüttwasser. Eis vorher abwiegen.`;
+      note = t('calc.ice.note', { tapWater: Math.round(M - ice), tapTemp: Ttap, ice: ice, wT: wT });
     } else if (wT > Ttap + 1) {
-      note = `Schüttwasser leicht anwärmen auf ~${wT}° (z.B. handwarm).`;
+      note = t('calc.warmNote', { wT: wT });
     } else {
-      note = `Leitungswasser bei ~${Ttap}° passt direkt — kein Eis nötig.`;
+      note = t('calc.tapOkNote', { tapTemp: Ttap });
     }
-    if (wT < 1) note += ' <b>Achtung:</b> sehr kalt — ggf. Mehl vorher kühlen.';
+    if (wT < 1) note += t('calc.veryColdWarn');
     $('iceAmt').textContent = ice;
     $('iceNote').innerHTML = note;
 
@@ -109,4 +111,7 @@
   }
 
   PZ.calc = calc;
+  // Sprachwechsel: kompletter Neu-Durchlauf (yWord-Label, Eiswasser-Hinweis, und am
+  // Ende automatisch auch buildGuide() über den bestehenden calc()-Aufruf).
+  if (PZ.i18nOnChange) PZ.i18nOnChange(function () { if (PZ.state && PZ.state.flour) calc(); });
 })(window);

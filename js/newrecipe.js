@@ -23,6 +23,8 @@
   const PZ = global.PZ || (global.PZ = {});
   const $ = PZ.$;
 
+  function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
+
   // --- Eigenständiger Mini-State (Schema identisch zu PZ.state, s. js/state.js,
   // damit das Ergebnis 1:1 als gültiges Rezept-state-Objekt gespeichert werden
   // kann) — bewusst eine eigene Kopie, keine Referenz auf PZ.state. ---
@@ -38,8 +40,11 @@
   if (!nrCard) return; // Karte nicht auf dieser Seite vorhanden -> Modul inaktiv
 
   // --- Slider <-> Zahlenfeld, analog zu link() in js/ui.js, aber OHNE PZ.calc()
-  // und OHNE Bezug auf PZ.state — schreibt ausschliesslich in nrState. ---
-  function nrLink(sliderId, numberId, key, decimals, unit) {
+  // und OHNE Bezug auf PZ.state — schreibt ausschliesslich in nrState. `unitKey`
+  // ist (wie in js/ui.js) ein Wörterbuch-Key, kein fertiger String, damit ein
+  // späterer Sprachwechsel den aria-valuetext auffrischen kann (s. nrUnitLinks).
+  const nrUnitLinks = [];
+  function nrLink(sliderId, numberId, key, decimals, unitKey) {
     const s = $(sliderId), n = $(numberId), v = $(sliderId + 'V');
     function fmt(val) { return decimals != null ? val.toFixed(decimals) : val; }
     function set(val, from) {
@@ -50,27 +55,27 @@
       if (from !== 'n') n.value = val;
       const disp = fmt(val);
       if (v) v.textContent = disp;
-      if (unit) s.setAttribute('aria-valuetext', disp + ' ' + unit);
+      if (unitKey) s.setAttribute('aria-valuetext', disp + ' ' + t(unitKey));
     }
-    if (unit) s.setAttribute('aria-valuetext', fmt(parseFloat(s.value)) + ' ' + unit);
+    if (unitKey) { s.setAttribute('aria-valuetext', fmt(parseFloat(s.value)) + ' ' + t(unitKey)); nrUnitLinks.push({ slider: s, unitKey: unitKey, fmt: fmt }); }
     s.addEventListener('input', () => set(s.value, 's'));
     n.addEventListener('input', () => set(n.value, 'n'));
     return set;
   }
 
   const nrSet = {
-    balls: nrLink('nrBalls', 'nrBallsN', 'balls', 0, 'Teiglinge'),
-    ballw: nrLink('nrBallw', 'nrBallwN', 'ballw', 0, 'Gramm'),
-    hyd: nrLink('nrHyd', 'nrHydN', 'hyd', 0, 'Prozent Hydration'),
-    salt: nrLink('nrSalt', 'nrSaltN', 'salt', 1, 'Prozent Salz'),
-    oil: nrLink('nrOil', 'nrOilN', 'oil', 1, 'Prozent Olivenöl'),
-    sugar: nrLink('nrSugar', 'nrSugarN', 'sugar', 1, 'Prozent Zucker'),
-    pref: nrLink('nrPref', 'nrPrefN', 'pref', 0, 'Prozent Mehl im Vorteig'),
-    bhyd: nrLink('nrBhyd', 'nrBhydN', 'bhyd', 0, 'Prozent Biga-Hydration'),
-    yeast: nrLink('nrYeast', 'nrYeastN', 'yeast', 2, 'Prozent Hefe'),
-    ddt: nrLink('nrDdt', 'nrDdtN', 'ddt', 1, 'Grad Celsius Teigtemperatur'),
-    room: nrLink('nrRoom', 'nrRoomN', 'room', 0, 'Grad Celsius Raumtemperatur'),
-    flourTemp: nrLink('nrFlourTemp', 'nrFlourTempN', 'flourTemp', 0, 'Grad Celsius Mehltemperatur')
+    balls: nrLink('nrBalls', 'nrBallsN', 'balls', 0, 'unit.balls'),
+    ballw: nrLink('nrBallw', 'nrBallwN', 'ballw', 0, 'unit.grams'),
+    hyd: nrLink('nrHyd', 'nrHydN', 'hyd', 0, 'unit.percentHyd'),
+    salt: nrLink('nrSalt', 'nrSaltN', 'salt', 1, 'unit.percentSalt'),
+    oil: nrLink('nrOil', 'nrOilN', 'oil', 1, 'unit.percentOil'),
+    sugar: nrLink('nrSugar', 'nrSugarN', 'sugar', 1, 'unit.percentSugar'),
+    pref: nrLink('nrPref', 'nrPrefN', 'pref', 0, 'unit.percentPref'),
+    bhyd: nrLink('nrBhyd', 'nrBhydN', 'bhyd', 0, 'unit.percentBhyd'),
+    yeast: nrLink('nrYeast', 'nrYeastN', 'yeast', 2, 'unit.percentYeast'),
+    ddt: nrLink('nrDdt', 'nrDdtN', 'ddt', 1, 'unit.celsiusDdt'),
+    room: nrLink('nrRoom', 'nrRoomN', 'room', 0, 'unit.celsiusRoom'),
+    flourTemp: nrLink('nrFlourTemp', 'nrFlourTempN', 'flourTemp', 0, 'unit.celsiusFlourTemp')
   };
 
   document.querySelectorAll('[data-nrballw]').forEach(b => b.onclick = () => nrSet.ballw(b.dataset.nrballw));
@@ -151,9 +156,10 @@
 
   // --- Mehl-Dropdown, analog zur Befüllung von #flour in js/flour.js — eigene
   // Kopie statt Wiederverwendung, da flour.js fest auf #flour/PZ.state verdrahtet ist. ---
-  (function populateNrFlour() {
+  function populateNrFlour() {
     const sel = $('nrFlour');
     if (!sel || !PZ.FLOURS) return;
+    const prevValue = sel.value || nrState.flour;
     sel.innerHTML = '';
     const groups = {};
     Object.keys(PZ.FLOURS).forEach(key => {
@@ -166,12 +172,14 @@
       }
       const o = document.createElement('option');
       o.value = key;
-      o.textContent = f.name + ' · W' + f.w + ' · ' + f.dur;
+      o.textContent = f.name + ' · W' + f.w + ' · ' + t(f.durKey);
       groups[f.group].appendChild(o);
     });
-    sel.value = nrState.flour;
-    sel.addEventListener('change', () => { nrState.flour = sel.value; });
-  })();
+    sel.value = prevValue;
+  }
+  populateNrFlour();
+  const nrFlourSel = $('nrFlour');
+  if (nrFlourSel) nrFlourSel.addEventListener('change', () => { nrState.flour = nrFlourSel.value; });
 
   // --- Anlegen ---
   function showNrMsg(msg) {
@@ -194,7 +202,7 @@
       const rec = PZ.addRecipeFromState(name, fullState);
       if (nameEl) nameEl.value = '';
       if (PZ.refreshRecipeSelect) PZ.refreshRecipeSelect();
-      showNrMsg('„' + rec.name + '“ wurde angelegt — zu finden in „Meine Rezepte“ und im Presets-Dropdown unter „Eigene Rezepte“. Die aktuelle Berechnung oben bleibt unverändert.');
+      showNrMsg(t('newrecipe.createdMsg', { name: rec.name }));
     };
   }
 
@@ -231,4 +239,15 @@
   }
   PZ.refreshPresetCustomRecipes = refreshPresetCustomRecipes;
   refreshPresetCustomRecipes();
+
+  // Sprachwechsel: Regler-Einheiten (aria-valuetext) und das Mehl-Dropdown (nur der
+  // "dur"-Teil je Option ändert sich) auffrischen.
+  if (PZ.i18nOnChange) {
+    PZ.i18nOnChange(function () {
+      nrUnitLinks.forEach(function (u) {
+        u.slider.setAttribute('aria-valuetext', u.fmt(parseFloat(u.slider.value)) + ' ' + t(u.unitKey));
+      });
+      populateNrFlour();
+    });
+  }
 })(window);

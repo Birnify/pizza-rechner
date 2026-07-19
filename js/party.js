@@ -1,4 +1,4 @@
-/* party.js — Pizza-Party-Planer (v3.27.0)
+/* party.js — Pizza-Party-Planer (v3.27.0, Sprachversion ergänzt in v3.28.0)
  *
  * Neuer, eigenständiger Bereich ("Pizza Party"), komplett getrennt vom Teig-Rechner:
  * kein Zugriff auf PZ.state, kein PZ.calc()-Aufruf. Kernidee laut Feature-Auftrag:
@@ -12,6 +12,13 @@
  * Eigener localStorage-Key ("pizzaPartyPlanner"), komplett getrennt vom
  * Rezepte-Key ("pizzaRechner", js/storage.js) — unabhängiger Datensatz, kein
  * Migrationsrisiko für bestehende Rezepte.
+ *
+ * Sprachversion (v3.28.0): die 8 Preset-Pizzen (Namen + Zutatennamen) sind ins
+ * Wörterbuch gewandert (js/i18n.js). WICHTIG: die Preset-Liste wird über
+ * getPresetPizzas() bei JEDEM Aufruf frisch aus dem Wörterbuch gebaut (PZ.t() live
+ * ausgewertet) statt einmalig beim Laden der Datei — sonst würde ein späterer
+ * Sprachwechsel (oder ein Testlauf, der die Sprache erst nach dem Laden der Module
+ * explizit setzt) die bereits "eingefrorenen" deutschen Namen nicht mehr aktualisieren.
  */
 (function (global) {
   'use strict';
@@ -19,57 +26,65 @@
   const $ = PZ.$ || function (id) { return document.getElementById(id); };
   const KEY = 'pizzaPartyPlanner';
 
+  function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
+
   // --- Vorgegebene Beispielpizzen ------------------------------------------------
   // Ungefähre Richtmengen an Belag für EINE Standard-Pizza (~250–280 g Teigling,
-  // 28–30 cm) — grobe Küchenerfahrungswerte, keine exakte Rezeptur.
-  const PRESET_PIZZAS = [
-    { id: 'preset_margherita', name: 'Margherita', ingredients: [
-      { name: 'Tomatensauce', amount: 80, unit: 'g' },
-      { name: 'Mozzarella', amount: 100, unit: 'g' },
-      { name: 'Basilikum', amount: 3, unit: 'Blätter' }
-    ] },
-    { id: 'preset_salami', name: 'Salami', ingredients: [
-      { name: 'Tomatensauce', amount: 80, unit: 'g' },
-      { name: 'Mozzarella', amount: 90, unit: 'g' },
-      { name: 'Salami', amount: 40, unit: 'g' }
-    ] },
-    { id: 'preset_funghi', name: 'Funghi', ingredients: [
-      { name: 'Tomatensauce', amount: 80, unit: 'g' },
-      { name: 'Mozzarella', amount: 90, unit: 'g' },
-      { name: 'Champignons', amount: 60, unit: 'g' }
-    ] },
-    { id: 'preset_diavola', name: 'Diavola', ingredients: [
-      { name: 'Tomatensauce', amount: 80, unit: 'g' },
-      { name: 'Mozzarella', amount: 90, unit: 'g' },
-      { name: 'Scharfe Salami', amount: 40, unit: 'g' },
-      { name: 'Peperoncini', amount: 5, unit: 'g' }
-    ] },
-    { id: 'preset_prosciutto', name: 'Prosciutto', ingredients: [
-      { name: 'Tomatensauce', amount: 80, unit: 'g' },
-      { name: 'Mozzarella', amount: 90, unit: 'g' },
-      { name: 'Kochschinken', amount: 50, unit: 'g' }
-    ] },
-    { id: 'preset_quattro_formaggi', name: 'Quattro Formaggi', ingredients: [
-      { name: 'Mozzarella', amount: 60, unit: 'g' },
-      { name: 'Gorgonzola', amount: 30, unit: 'g' },
-      { name: 'Parmesan', amount: 20, unit: 'g' },
-      { name: 'Provolone', amount: 30, unit: 'g' }
-    ] },
-    { id: 'preset_verdure', name: 'Verdure', ingredients: [
-      { name: 'Tomatensauce', amount: 80, unit: 'g' },
-      { name: 'Mozzarella', amount: 80, unit: 'g' },
-      { name: 'Zucchini', amount: 30, unit: 'g' },
-      { name: 'Paprika', amount: 30, unit: 'g' },
-      { name: 'Aubergine', amount: 30, unit: 'g' }
-    ] },
-    { id: 'preset_hawaii', name: 'Hawaii', ingredients: [
-      { name: 'Tomatensauce', amount: 80, unit: 'g' },
-      { name: 'Mozzarella', amount: 90, unit: 'g' },
-      { name: 'Kochschinken', amount: 40, unit: 'g' },
-      { name: 'Ananas', amount: 40, unit: 'g' }
-    ] }
-  ];
-  PZ.PARTY_PRESET_PIZZAS = PRESET_PIZZAS;
+  // 28–30 cm) — grobe Küchenerfahrungswerte, keine exakte Rezeptur. Struktur/ids
+  // bleiben sprachunabhängig fest, nur name/ingredients[].name kommen aus t().
+  function getPresetPizzas() {
+    return [
+      { id: 'preset_margherita', name: t('party.preset.margherita.name'), ingredients: [
+        { name: t('party.ing.tomatoSauce'), amount: 80, unit: 'g' },
+        { name: t('party.ing.mozzarella'), amount: 100, unit: 'g' },
+        { name: t('party.ing.basil'), amount: 3, unit: t('party.unit.leaves') }
+      ] },
+      { id: 'preset_salami', name: t('party.preset.salami.name'), ingredients: [
+        { name: t('party.ing.tomatoSauce'), amount: 80, unit: 'g' },
+        { name: t('party.ing.mozzarella'), amount: 90, unit: 'g' },
+        { name: t('party.ing.salami'), amount: 40, unit: 'g' }
+      ] },
+      { id: 'preset_funghi', name: t('party.preset.funghi.name'), ingredients: [
+        { name: t('party.ing.tomatoSauce'), amount: 80, unit: 'g' },
+        { name: t('party.ing.mozzarella'), amount: 90, unit: 'g' },
+        { name: t('party.ing.mushrooms'), amount: 60, unit: 'g' }
+      ] },
+      { id: 'preset_diavola', name: t('party.preset.diavola.name'), ingredients: [
+        { name: t('party.ing.tomatoSauce'), amount: 80, unit: 'g' },
+        { name: t('party.ing.mozzarella'), amount: 90, unit: 'g' },
+        { name: t('party.ing.spicySalami'), amount: 40, unit: 'g' },
+        { name: t('party.ing.chiliFlakes'), amount: 5, unit: 'g' }
+      ] },
+      { id: 'preset_prosciutto', name: t('party.preset.prosciutto.name'), ingredients: [
+        { name: t('party.ing.tomatoSauce'), amount: 80, unit: 'g' },
+        { name: t('party.ing.mozzarella'), amount: 90, unit: 'g' },
+        { name: t('party.ing.cookedHam'), amount: 50, unit: 'g' }
+      ] },
+      { id: 'preset_quattro_formaggi', name: t('party.preset.quattroFormaggi.name'), ingredients: [
+        { name: t('party.ing.mozzarella'), amount: 60, unit: 'g' },
+        { name: t('party.ing.gorgonzola'), amount: 30, unit: 'g' },
+        { name: t('party.ing.parmesan'), amount: 20, unit: 'g' },
+        { name: t('party.ing.provolone'), amount: 30, unit: 'g' }
+      ] },
+      { id: 'preset_verdure', name: t('party.preset.verdure.name'), ingredients: [
+        { name: t('party.ing.tomatoSauce'), amount: 80, unit: 'g' },
+        { name: t('party.ing.mozzarella'), amount: 80, unit: 'g' },
+        { name: t('party.ing.zucchini'), amount: 30, unit: 'g' },
+        { name: t('party.ing.paprika'), amount: 30, unit: 'g' },
+        { name: t('party.ing.eggplant'), amount: 30, unit: 'g' }
+      ] },
+      { id: 'preset_hawaii', name: t('party.preset.hawaii.name'), ingredients: [
+        { name: t('party.ing.tomatoSauce'), amount: 80, unit: 'g' },
+        { name: t('party.ing.mozzarella'), amount: 90, unit: 'g' },
+        { name: t('party.ing.cookedHam'), amount: 40, unit: 'g' },
+        { name: t('party.ing.pineapple'), amount: 40, unit: 'g' }
+      ] }
+    ];
+  }
+  // Bewusst KEIN Modul-globaler Snapshot (z.B. "PZ.PARTY_PRESET_PIZZAS = getPresetPizzas()")
+  // mehr — das würde die Presets beim Laden des Scripts einmalig in der zu diesem
+  // Zeitpunkt aktiven Sprache "einfrieren". Aufrufer nutzen ausschließlich
+  // PZ.partyGetAllPizzas(), die getPresetPizzas() bei jedem Aufruf frisch auswertet.
 
   // --- Storage ---------------------------------------------------------------
   function readRaw() {
@@ -94,7 +109,7 @@
   // Presets + eigene Pizzen, in dieser Reihenfolge (Presets zuerst, stabil).
   function getAllPizzas() {
     const data = readStore();
-    return PRESET_PIZZAS.map(function (p) {
+    return getPresetPizzas().map(function (p) {
       return { id: p.id, name: p.name, ingredients: p.ingredients, custom: false };
     }).concat(data.customPizzas.map(function (p) {
       return { id: p.id, name: p.name, ingredients: p.ingredients, custom: true };
@@ -106,6 +121,9 @@
   // stillschweigend verworfen (Formular-Robustheit gegen leere Zeilen). Liefert
   // die neue Pizza zurück, oder null bei ungültiger Eingabe (kein Name / keine
   // gültige Zutat) — der Aufrufer zeigt dann eine Fehlermeldung statt anzulegen.
+  // Eigene Pizzen werden bewusst NICHT übersetzt (Nutzereingabe, keine App-Texte) —
+  // sie bleiben unabhängig von der aktuellen Sprache exakt so gespeichert, wie
+  // eingegeben.
   function addCustomPizza(name, ingredients) {
     const clean = (ingredients || []).map(function (i) {
       return {
@@ -174,8 +192,9 @@
         totals.set(key, cur);
       });
     });
+    const locale = (PZ.getLang ? PZ.getLang() : 'de') === 'en' ? 'en' : 'de';
     const ingredients = Array.from(totals.values()).sort(function (a, b) {
-      return a.name.localeCompare(b.name, 'de');
+      return a.name.localeCompare(b.name, locale);
     });
     return { totalPizzaCount: totalPizzaCount, ingredients: ingredients };
   }
@@ -210,7 +229,7 @@
     if (!pizzas.length) {
       const p = document.createElement('div');
       p.className = 'hint';
-      p.textContent = 'Noch keine Pizzen vorhanden.';
+      p.textContent = t('party.noPizzas');
       pizzaListEl.appendChild(p);
       return;
     }
@@ -234,13 +253,13 @@
       const stepper = document.createElement('div');
       stepper.className = 'party-qty-stepper';
       stepper.setAttribute('role', 'group');
-      stepper.setAttribute('aria-label', 'Anzahl ' + pizza.name);
+      stepper.setAttribute('aria-label', t('party.qtyGroupLabel', { name: pizza.name }));
 
       const minus = document.createElement('button');
       minus.type = 'button';
       minus.className = 'party-qty-btn';
       minus.textContent = '−';
-      minus.setAttribute('aria-label', pizza.name + ': Anzahl verringern');
+      minus.setAttribute('aria-label', t('party.qtyDecrease', { name: pizza.name }));
       minus.addEventListener('click', function () {
         const cur = getQty(pizza.id);
         const next = setQty(pizza.id, cur - 1);
@@ -254,7 +273,7 @@
       input.min = '0';
       input.max = '50';
       input.value = String(qty);
-      input.setAttribute('aria-label', 'Anzahl ' + pizza.name);
+      input.setAttribute('aria-label', t('party.qtyGroupLabel', { name: pizza.name }));
       input.addEventListener('change', function () {
         const next = setQty(pizza.id, input.value);
         input.value = next;
@@ -265,7 +284,7 @@
       plus.type = 'button';
       plus.className = 'party-qty-btn';
       plus.textContent = '+';
-      plus.setAttribute('aria-label', pizza.name + ': Anzahl erhöhen');
+      plus.setAttribute('aria-label', t('party.qtyIncrease', { name: pizza.name }));
       plus.addEventListener('click', function () {
         const cur = getQty(pizza.id);
         const next = setQty(pizza.id, cur + 1);
@@ -284,10 +303,10 @@
         const del = document.createElement('button');
         del.type = 'button';
         del.className = 'party-delete-btn';
-        del.setAttribute('aria-label', 'Eigene Pizza „' + pizza.name + '“ löschen');
+        del.setAttribute('aria-label', t('party.deleteBtn', { name: pizza.name }));
         del.textContent = '🗑';
         del.addEventListener('click', function () {
-          if (!confirm('„' + pizza.name + '“ wirklich löschen?')) return;
+          if (!confirm(t('party.deleteConfirm', { name: pizza.name }))) return;
           deleteCustomPizza(pizza.id);
           renderPartyList();
           renderPartyResult();
@@ -297,7 +316,7 @@
           // Analog zu focusView() im Burger-Menü-Script: Fokus auf die Bereichs-
           // überschrift, zusätzlich Löschung per Live-Region ansagen (WCAG 4.1.3).
           focusPartyHeading();
-          announcePartyCreate('„' + pizza.name + '“ wurde gelöscht.');
+          announcePartyCreate(t('party.deletedMsg', { name: pizza.name }));
         });
         row.appendChild(del);
       }
@@ -316,11 +335,13 @@
       listEl.innerHTML = '';
       const hint = document.createElement('div');
       hint.className = 'hint';
-      hint.textContent = 'Noch keine Pizza ausgewählt — stelle oben Stückzahlen ein.';
+      hint.textContent = t('party.noneSelectedHint');
       listEl.appendChild(hint);
       return;
     }
-    summaryEl.textContent = result.totalPizzaCount + (result.totalPizzaCount === 1 ? ' Pizza insgesamt' : ' Pizzen insgesamt');
+    summaryEl.textContent = result.totalPizzaCount === 1
+      ? t('party.summaryOne')
+      : t('party.summaryMany', { n: result.totalPizzaCount });
     listEl.innerHTML = '';
     result.ingredients.forEach(function (ing) {
       const row = document.createElement('div');
@@ -354,7 +375,7 @@
     const rows = ingRowsEl.querySelectorAll('.party-ing-row');
     rows.forEach(function (row, i) {
       const btn = row.querySelector('.party-ing-remove');
-      if (btn) btn.setAttribute('aria-label', 'Zutatenzeile ' + (i + 1) + ' entfernen');
+      if (btn) btn.setAttribute('aria-label', t('party.ingRemoveLabel', { n: i + 1 }));
     });
   }
 
@@ -366,27 +387,27 @@
     const nameEl = document.createElement('input');
     nameEl.type = 'text';
     nameEl.className = 'selectbox party-ing-name';
-    nameEl.placeholder = 'Zutat, z. B. Mozzarella';
-    nameEl.setAttribute('aria-label', 'Zutatname');
+    nameEl.placeholder = t('party.ingNamePlaceholder');
+    nameEl.setAttribute('aria-label', t('party.ingNameLabel'));
 
     const amountEl = document.createElement('input');
     amountEl.type = 'number';
     amountEl.className = 'party-ing-amount';
     amountEl.min = '0';
     amountEl.step = '1';
-    amountEl.placeholder = 'Menge';
-    amountEl.setAttribute('aria-label', 'Menge');
+    amountEl.placeholder = t('party.ingAmountLabel');
+    amountEl.setAttribute('aria-label', t('party.ingAmountLabel'));
 
     const unitEl = document.createElement('input');
     unitEl.type = 'text';
     unitEl.className = 'selectbox party-ing-unit';
-    unitEl.value = 'g';
-    unitEl.setAttribute('aria-label', 'Einheit');
+    unitEl.value = t('party.defaultUnit');
+    unitEl.setAttribute('aria-label', t('party.ingUnitLabel'));
 
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
     removeBtn.className = 'party-ing-remove';
-    removeBtn.setAttribute('aria-label', 'Zutatenzeile entfernen');
+    removeBtn.setAttribute('aria-label', t('party.ingRemoveLabel', { n: 1 }));
     removeBtn.textContent = '✕';
     removeBtn.addEventListener('click', function () {
       // Fokus-Ziel VOR dem Entfernen ermitteln: der geklickte Button verschwindet
@@ -450,7 +471,7 @@
       });
       const pizza = addCustomPizza(name, ingredients);
       if (!pizza) {
-        announcePartyCreate('Bitte einen Namen und mindestens eine Zutat mit Menge > 0 angeben.');
+        announcePartyCreate(t('party.createInvalidMsg'));
         // Fokus auf das wahrscheinlichste fehlerhafte Feld lenken (WCAG 3.3.1
         // Error Identification) statt die Fehlermeldung nur akustisch/visuell
         // ohne jeden Bezugspunkt im Formular zu melden.
@@ -466,11 +487,23 @@
       resetIngRows();
       renderPartyList();
       renderPartyResult();
-      announcePartyCreate('„' + pizza.name + '“ wurde angelegt.');
+      announcePartyCreate(t('party.createdMsg', { name: pizza.name }));
     });
   }
 
   resetIngRows();
   renderPartyList();
   renderPartyResult();
+
+  // Sprachwechsel: komplette Neu-Darstellung (Presets in der neuen Sprache, Formular-
+  // Platzhalter/Labels, Ergebnisliste inkl. neuer Sortierreihenfolge). Eigene Pizzen
+  // ändern ihren gespeicherten Namen/ihre Zutaten NICHT (Nutzereingabe), nur die
+  // Presets + die Rahmen-UI-Texte wechseln.
+  if (PZ.i18nOnChange) {
+    PZ.i18nOnChange(function () {
+      PZ.PARTY_PRESET_PIZZAS = getPresetPizzas();
+      renderPartyList();
+      renderPartyResult();
+    });
+  }
 })(window);

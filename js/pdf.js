@@ -30,6 +30,8 @@
   const PZ = global.PZ || (global.PZ = {});
   const $ = PZ.$;
 
+  function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
+
   // ---- Seiten-Geometrie (A4, Punkte) ----
   const PAGE_W = 595.28, PAGE_H = 841.89;
   const MARGIN = 50;
@@ -99,7 +101,7 @@
   // ---- Anleitungsinhalt aus dem bereits gerenderten DOM einsammeln ----
   function collectGuideContent() {
     const blocks = [];
-    blocks.push({ type: 'title', text: 'Schritt-für-Schritt-Anleitung' });
+    blocks.push({ type: 'title', text: t('guide.title') });
 
     const summary = textOf(document.getElementById('guideSummary'));
     if (summary) blocks.push({ type: 'summary', text: summary });
@@ -213,8 +215,8 @@
         case 'day': addWrapped(b.text, 'F2', 13, 0, 16); break;
         case 'stepTitle': addWrapped((b.num ? b.num + '. ' : '') + b.text, 'F2', 12, 0, 12); break;
         case 'body': addWrapped(b.text, 'F1', 10, 10, 3); break;
-        case 'tip': addWrapped('Tipp: ' + b.text, 'F1', 9, 14, 3, BASIL); break;
-        case 'warn': addWrapped('Achtung: ' + b.text, 'F1', 9, 14, 3, TOMATO); break;
+        case 'tip': addWrapped(t('pdf.tipPrefix') + b.text, 'F1', 9, 14, 3, BASIL); break;
+        case 'warn': addWrapped(t('pdf.warnPrefix') + b.text, 'F1', 9, 14, 3, TOMATO); break;
       }
     });
     if (page.lines.length) pages.push(page);
@@ -306,7 +308,7 @@
   function downloadGuidePDF() {
     if (PZ.FLAGS && PZ.FLAGS.shopping === false) return;
     const R = PZ.R;
-    if (!R || !R.total) { setPdfMsg('Noch keine Anleitung berechnet.'); return; }
+    if (!R || !R.total) { setPdfMsg(t('pdf.notCalculatedYet')); return; }
     const bytes = buildGuidePdfBytes();
     const blob = new Blob([bytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
@@ -317,7 +319,7 @@
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    setPdfMsg('Anleitung als PDF gespeichert.');
+    setPdfMsg(t('pdf.savedMsg'));
   }
 
   // Für Tests exponiert (reine Datenfunktionen, kein Download/DOM-Seiteneffekt).

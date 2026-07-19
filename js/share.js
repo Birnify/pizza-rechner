@@ -90,8 +90,9 @@
   function copyShareLink(btn) {
     const link = buildShareLink();
     const liveMsg = document.getElementById('shareLiveMsg');
+    const t = PZ.t ? PZ.t : function (k) { return k; };
     const showFeedback = (ok) => {
-      const msg = ok ? 'Link kopiert!' : 'Kopieren fehlgeschlagen';
+      const msg = ok ? t('share.linkCopied') : t('share.copyFailed');
       if (liveMsg) liveMsg.textContent = msg;
       if (!btn) return;
       const original = btn.dataset.origLabel || btn.textContent;
