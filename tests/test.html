@@ -65,6 +65,7 @@
 <script src="../js/pdf.js"></script>
 <script src="../js/storage.js"></script>
 <script src="../js/share.js"></script>
+<script src="../js/party.js"></script>
 
 <script>
 "use strict";
@@ -2119,6 +2120,192 @@
     ];
     renderBox('sanitizeText() — Emoji-Bereinigung & WinAnsi-Tauglichkeit', cases.map(c =>
       ({ label: c.label, ok: c.ok, actual: c.ok, expected: true, tol: null })));
+  })();
+
+  // ─────────────────────────────────────────────────────────────
+  heading('22 · Pizza-Party-Planer (js/party.js)');
+
+  // Reine Datenfunktionen getestet (js/party.js hat keine UI-Markup-Elemente in
+  // dieser Testseite -> die UI-Verdrahtung im Modul läuft nach dem frühen
+  // "return" gar nicht erst an, s. Kommentar in js/party.js). Eigener
+  // localStorage-Key ("pizzaPartyPlanner"), komplett getrennt vom
+  // Rezepte-Key ("pizzaRechner") — analog zum withCleanStorage()-Muster aus
+  // Sektion 16/20, aber mit eigenem Key, damit echte Nutzerdaten in beiden
+  // Keys unangetastet bleiben.
+  (function () {
+    const PARTY_KEY = 'pizzaPartyPlanner';
+    const backup = localStorage.getItem(PARTY_KEY);
+
+    function withCleanPartyStorage(fn) {
+      localStorage.removeItem(PARTY_KEY);
+      try { fn(); } finally { localStorage.removeItem(PARTY_KEY); }
+    }
+
+    // --- getAllPizzas(): 8 vorgegebene Beispielpizzen, keine eigenen ohne Anlegen ---
+    withCleanPartyStorage(() => {
+      const pizzas = PZ.partyGetAllPizzas();
+      renderBox('getAllPizzas() liefert die 8 vorgegebenen Beispielpizzen (leere Bibliothek)', [
+        { label: 'Genau 8 Pizzen', ok: pizzas.length === 8, actual: pizzas.length, expected: 8, tol: null },
+        { label: 'Alle als custom:false markiert', ok: pizzas.every(p => p.custom === false), actual: pizzas.map(p => p.custom), expected: 'alle false', tol: null },
+        { label: '"Margherita" ist enthalten', ok: pizzas.some(p => p.name === 'Margherita'), actual: pizzas.map(p => p.name), expected: 'enthält Margherita', tol: null },
+        { label: 'Jede Pizza hat mindestens eine Zutat', ok: pizzas.every(p => p.ingredients.length > 0), actual: pizzas.map(p => p.ingredients.length), expected: 'alle > 0', tol: null }
+      ]);
+    });
+
+    // --- addCustomPizza(): gültige Eingabe legt eine neue, als custom markierte Pizza an ---
+    withCleanPartyStorage(() => {
+      const pizza = PZ.partyAddCustomPizza('Peperoni-Spezial', [
+        { name: 'Peperoni', amount: 30, unit: 'g' },
+        { name: 'Mozzarella', amount: 90, unit: 'g' }
+      ]);
+      const all = PZ.partyGetAllPizzas();
+      renderBox('addCustomPizza() legt eine neue eigene Pizza an', [
+        { label: 'Rückgabe ist die neue Pizza (Name korrekt)', ok: !!pizza && pizza.name === 'Peperoni-Spezial', actual: pizza && pizza.name, expected: 'Peperoni-Spezial', tol: null },
+        { label: 'Pizza bekommt eine id', ok: !!pizza && typeof pizza.id === 'string' && pizza.id.length > 0, actual: pizza && pizza.id, expected: 'String', tol: null },
+        { label: 'Jetzt 9 Pizzen insgesamt (8 Presets + 1 eigene)', ok: all.length === 9, actual: all.length, expected: 9, tol: null },
+        { label: 'Neue Pizza ist als custom:true markiert', ok: all.find(p => p.id === pizza.id).custom === true, actual: all.find(p => p.id === pizza.id).custom, expected: true, tol: null }
+      ]);
+    });
+
+    // --- addCustomPizza(): leere/ungültige Zutatenzeilen werden gefiltert, nicht übernommen ---
+    withCleanPartyStorage(() => {
+      const pizza = PZ.partyAddCustomPizza('Testpizza', [
+        { name: 'Ananas', amount: 25, unit: 'g' },
+        { name: '', amount: 10, unit: 'g' },       // kein Name -> verworfen
+        { name: 'Ohne Menge', amount: 0, unit: 'g' }, // Menge 0 -> verworfen
+        { name: '  ', amount: 5, unit: 'g' }        // nur Leerzeichen -> verworfen
+      ]);
+      renderBox('addCustomPizza() filtert Zutatenzeilen ohne Namen oder mit Menge <= 0', [
+        { label: 'Pizza wurde trotzdem angelegt (1 gültige Zutat reicht)', ok: !!pizza, actual: !!pizza, expected: true, tol: null },
+        { label: 'Nur die 1 gültige Zutat übernommen', ok: pizza.ingredients.length === 1, actual: pizza.ingredients.length, expected: 1, tol: null },
+        { label: 'Übernommene Zutat ist "Ananas"', ok: pizza.ingredients[0].name === 'Ananas', actual: pizza.ingredients[0].name, expected: 'Ananas', tol: null }
+      ]);
+    });
+
+    // --- addCustomPizza(): komplett ungültige Eingabe (kein Name / keine gültige Zutat) -> null ---
+    withCleanPartyStorage(() => {
+      const noName = PZ.partyAddCustomPizza('', [{ name: 'Salami', amount: 40, unit: 'g' }]);
+      const noValidIng = PZ.partyAddCustomPizza('Leere Pizza', [{ name: '', amount: 0, unit: 'g' }]);
+      const onlyWhitespaceName = PZ.partyAddCustomPizza('   ', [{ name: 'Salami', amount: 40, unit: 'g' }]);
+      const all = PZ.partyGetAllPizzas();
+      renderBox('addCustomPizza() liefert null bei fehlendem Namen oder ohne gültige Zutat — legt nichts an', [
+        { label: 'Ohne Namen -> null', ok: noName === null, actual: noName, expected: null, tol: null },
+        { label: 'Ohne gültige Zutat -> null', ok: noValidIng === null, actual: noValidIng, expected: null, tol: null },
+        { label: 'Nur-Leerzeichen-Name -> null', ok: onlyWhitespaceName === null, actual: onlyWhitespaceName, expected: null, tol: null },
+        { label: 'Keine der 3 Fehlversuche legt eine Pizza an (weiterhin nur 8 Presets)', ok: all.length === 8, actual: all.length, expected: 8, tol: null }
+      ]);
+    });
+
+    // --- deleteCustomPizza(): entfernt Pizza UND eine ggf. gesetzte Stückzahl ---
+    withCleanPartyStorage(() => {
+      const pizza = PZ.partyAddCustomPizza('Zu löschen', [{ name: 'Testzutat', amount: 10, unit: 'g' }]);
+      PZ.partySetQty(pizza.id, 3);
+      PZ.partyDeleteCustomPizza(pizza.id);
+      const all = PZ.partyGetAllPizzas();
+      renderBox('deleteCustomPizza() entfernt die Pizza und ihre Stückzahl', [
+        { label: 'Wieder nur 8 Pizzen (Presets)', ok: all.length === 8, actual: all.length, expected: 8, tol: null },
+        { label: 'Gelöschte Pizza taucht nicht mehr auf', ok: !all.some(p => p.id === pizza.id), actual: all.map(p => p.id), expected: 'ohne gelöschte id', tol: null },
+        { label: 'Stückzahl ist mit weg (getQty liefert 0)', ok: PZ.partyGetQty(pizza.id) === 0, actual: PZ.partyGetQty(pizza.id), expected: 0, tol: null }
+      ]);
+    });
+
+    // --- setQty()/getQty(): klemmt auf 0–50, 0 entfernt den Eintrag wieder ---
+    withCleanPartyStorage(() => {
+      const r1 = PZ.partySetQty('preset_margherita', 5);
+      const r2 = PZ.partySetQty('preset_margherita', 999); // über dem Maximum
+      const r3 = PZ.partySetQty('preset_margherita', -3);  // unter dem Minimum
+      const r4 = PZ.partySetQty('preset_margherita', 0);   // zurück auf 0
+      renderBox('setQty() klemmt auf 0–50 (ganzzahlig), 0 setzt effektiv zurück', [
+        { label: 'setQty(5) liefert 5', ok: r1 === 5, actual: r1, expected: 5, tol: null },
+        { label: 'setQty(999) klemmt auf 50', ok: r2 === 50, actual: r2, expected: 50, tol: null },
+        { label: 'setQty(-3) klemmt auf 0', ok: r3 === 0, actual: r3, expected: 0, tol: null },
+        { label: 'setQty(0) liefert 0, getQty() danach ebenfalls 0', ok: r4 === 0 && PZ.partyGetQty('preset_margherita') === 0, actual: [r4, PZ.partyGetQty('preset_margherita')], expected: '[0, 0]', tol: null }
+      ]);
+    });
+
+    // --- computeAggregatedList(): Kernrechnung — Mengen × Stückzahl, dedupliziert nach Name+Einheit ---
+    withCleanPartyStorage(() => {
+      PZ.partySetQty('preset_margherita', 3); // 3× 100g Mozzarella, 80g Tomatensauce, 3 Blätter Basilikum
+      PZ.partySetQty('preset_salami', 2);     // 2× 90g Mozzarella, 80g Tomatensauce, 40g Salami
+      const result = PZ.partyComputeAggregatedList();
+      const byName = name => result.ingredients.find(i => i.name === name);
+      renderBox('computeAggregatedList() — 3× Margherita + 2× Salami, aggregiert & dedupliziert', [
+        { label: 'totalPizzaCount = 5', ok: result.totalPizzaCount === 5, actual: result.totalPizzaCount, expected: 5, tol: null },
+        { label: '4 unterschiedliche Zutaten (Tomatensauce, Mozzarella, Basilikum, Salami)', ok: result.ingredients.length === 4, actual: result.ingredients.map(i => i.name), expected: 4, tol: null },
+        { label: 'Mozzarella dedupliziert: 3×100 + 2×90 = 480 g', ok: byName('Mozzarella').amount === 480, actual: byName('Mozzarella').amount, expected: 480, tol: null },
+        { label: 'Tomatensauce dedupliziert: 3×80 + 2×80 = 400 g', ok: byName('Tomatensauce').amount === 400, actual: byName('Tomatensauce').amount, expected: 400, tol: null },
+        { label: 'Salami (nur bei einer Pizza): 2×40 = 80 g', ok: byName('Salami').amount === 80, actual: byName('Salami').amount, expected: 80, tol: null },
+        { label: 'Basilikum behält seine eigene Einheit ("Blätter")', ok: byName('Basilikum').unit === 'Blätter', actual: byName('Basilikum').unit, expected: 'Blätter', tol: null }
+      ]);
+    });
+
+    // --- computeAggregatedList(): Pizzen mit Stückzahl 0 fließen nicht ein ---
+    withCleanPartyStorage(() => {
+      PZ.partySetQty('preset_margherita', 2);
+      PZ.partySetQty('preset_hawaii', 0); // explizit auf 0 gesetzt -> zählt nicht
+      const result = PZ.partyComputeAggregatedList();
+      renderBox('computeAggregatedList() ignoriert Pizzen mit Stückzahl 0', [
+        { label: 'totalPizzaCount = 2 (nur Margherita)', ok: result.totalPizzaCount === 2, actual: result.totalPizzaCount, expected: 2, tol: null },
+        { label: 'Kein "Ananas" in der Liste (Hawaii-Zutat, Stückzahl 0)', ok: !result.ingredients.some(i => i.name === 'Ananas'), actual: result.ingredients.map(i => i.name), expected: 'ohne Ananas', tol: null }
+      ]);
+    });
+
+    // --- computeAggregatedList(): keine Auswahl -> leere, aber gültige Struktur ---
+    withCleanPartyStorage(() => {
+      const result = PZ.partyComputeAggregatedList();
+      renderBox('computeAggregatedList() ohne jede Auswahl liefert eine leere, gültige Struktur', [
+        { label: 'totalPizzaCount = 0', ok: result.totalPizzaCount === 0, actual: result.totalPizzaCount, expected: 0, tol: null },
+        { label: 'ingredients ist ein leeres Array (kein Fehler)', ok: Array.isArray(result.ingredients) && result.ingredients.length === 0, actual: result.ingredients, expected: '[]', tol: null }
+      ]);
+    });
+
+    // --- Eigene Pizzen fließen genauso in die Aggregation ein wie Presets ---
+    withCleanPartyStorage(() => {
+      const pizza = PZ.partyAddCustomPizza('Eigene Kreation', [{ name: 'Trüffelöl', amount: 10, unit: 'g' }]);
+      PZ.partySetQty(pizza.id, 4);
+      const result = PZ.partyComputeAggregatedList();
+      const truffle = result.ingredients.find(i => i.name === 'Trüffelöl');
+      renderBox('Eigene Pizzen fließen in computeAggregatedList() genauso ein wie Presets', [
+        { label: 'totalPizzaCount = 4', ok: result.totalPizzaCount === 4, actual: result.totalPizzaCount, expected: 4, tol: null },
+        { label: 'Trüffelöl: 4×10 = 40 g', ok: !!truffle && truffle.amount === 40, actual: truffle && truffle.amount, expected: 40, tol: null }
+      ]);
+    });
+
+    // --- Eigener localStorage-Key, komplett getrennt vom Rezepte-Key ---
+    (function () {
+      const RECIPE_KEY = 'pizzaRechner';
+      const recipeBackup = localStorage.getItem(RECIPE_KEY);
+      withCleanPartyStorage(() => {
+        localStorage.removeItem(RECIPE_KEY);
+        try {
+          PZ.partyAddCustomPizza('Isolationstest', [{ name: 'X', amount: 1, unit: 'g' }]);
+          const recipeRaw = localStorage.getItem(RECIPE_KEY);
+          renderBox('Pizza-Party-Daten landen unter einem eigenen localStorage-Key, nicht im Rezepte-Key', [
+            { label: '"pizzaPartyPlanner" enthält jetzt Daten', ok: !!localStorage.getItem(PARTY_KEY), actual: !!localStorage.getItem(PARTY_KEY), expected: true, tol: null },
+            { label: '"pizzaRechner" (Rezepte-Key) bleibt unberührt (weiterhin leer)', ok: recipeRaw === null, actual: recipeRaw, expected: null, tol: null }
+          ]);
+        } finally {
+          if (recipeBackup !== null) localStorage.setItem(RECIPE_KEY, recipeBackup);
+          else localStorage.removeItem(RECIPE_KEY);
+        }
+      });
+    })();
+
+    // --- Robustheit: korruptes JSON im Party-localStorage darf nicht crashen ---
+    withCleanPartyStorage(() => {
+      localStorage.setItem(PARTY_KEY, '{ das ist kein gültiges JSON');
+      let threw = false;
+      let pizzas = [];
+      try { pizzas = PZ.partyGetAllPizzas(); } catch (e) { threw = true; }
+      renderBox('Korruptes JSON im Party-localStorage — keine Exception, fällt auf die 8 Presets zurück', [
+        { label: 'Kein Fehler beim Lesen', ok: !threw, actual: threw, expected: false, tol: null },
+        { label: 'Trotzdem die 8 Presets verfügbar', ok: pizzas.length === 8, actual: pizzas.length, expected: 8, tol: null }
+      ]);
+    });
+
+    // Ursprünglichen Party-Stand (falls vorhanden) wiederherstellen, sonst Testspuren entfernen
+    if (backup !== null) localStorage.setItem(PARTY_KEY, backup);
+    else localStorage.removeItem(PARTY_KEY);
   })();
 
   // ─────────────────────────────────────────────────────────────

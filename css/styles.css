@@ -91,6 +91,41 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
   color:var(--muted);font-size:14px;font-weight:600;text-decoration:none;box-sizing:border-box;
 }
 .nav-link:hover,.nav-link:active{background:var(--bg);}
+
+/* Pizza-Party-Planer (v3.27.0, js/party.js) — Pizzenauswahl mit Stückzahl-Stepper +
+   dynamisches Zutatenzeilen-Formular fürs Anlegen eigener Pizzen. Gemeinsames
+   Stylesheet: identisch auf Desktop und Mobil. */
+.party-pizza-row{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap;
+}
+.party-pizza-row:last-child{border-bottom:none;}
+.party-pizza-info{flex:1 1 160px;min-width:0;}
+.party-pizza-name{font-weight:600;font-size:14.5px;}
+.party-pizza-ings{margin-top:2px;}
+.party-qty-stepper{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.party-qty-btn{
+  width:40px;height:40px;border:1px solid var(--line);border-radius:var(--radius);
+  background:#fff;font-size:17px;font-weight:700;cursor:pointer;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;
+}
+.party-qty-btn:hover{border-color:var(--tomato);color:var(--tomato);}
+.party-qty-input{width:52px;text-align:center;padding:9px 4px;}
+.party-delete-btn{
+  width:40px;height:40px;border:1px solid var(--line);border-radius:var(--radius);
+  background:#fff;cursor:pointer;font-size:15px;flex-shrink:0;
+}
+.party-delete-btn:hover{border-color:var(--tomato);color:var(--tomato);}
+.party-ing-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
+.party-ing-row .party-ing-name{flex:2 1 140px;min-width:0;}
+.party-ing-row .party-ing-amount{flex:1 1 70px;min-width:0;width:auto;text-align:left;}
+.party-ing-row .party-ing-unit{flex:1 1 60px;min-width:0;width:auto;}
+.party-ing-remove{
+  width:36px;height:36px;border:1px solid var(--line);border-radius:var(--radius);
+  background:#fff;cursor:pointer;flex-shrink:0;
+}
+.party-ing-remove:hover{border-color:var(--tomato);color:var(--tomato);}
+
 .card{
   background:var(--card);border-radius:var(--radius);padding:20px;
   border:1px solid var(--line);border-left:3px solid var(--tomato);

@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-19 · Aktuelle Version: v3.26.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-19 · Aktuelle Version: v3.27.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,121 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Burgermenü-Navigation auch auf Desktop (v3.26.0) = aktueller Stand
+## Pizza-Party-Planer (v3.27.0) = aktueller Stand
+
+Neues Feature, vom Nutzer per `/define-feature` strukturiert und bestätigt. Motivation:
+beim Planen einer Pizzaparty mit mehreren Sorten will man auf einen Blick wissen, welche
+Beläge in welcher ungefähren Menge eingekauft werden müssen, statt das für jede Sorte
+einzeln im Kopf zusammenzurechnen. Bewusst ein **komplett eigenständiger Bereich**,
+getrennt vom Teig-Rechner: kein automatischer Abgleich mit der „Anzahl Teiglinge" dort,
+keine exakte/rezeptgenaue Mengenberechnung wie bei den Teig-Grundzutaten (`js/calc.js`)
+— nur ungefähre Richtmengen für die Beläge.
+
+- **Neuer Bereich „Pizza Party"** über die Burgermenü-Navigation (v3.26.0) erreichbar —
+  fünfter Nav-Eintrag (`data-goto="party"` / `data-view="party"`) zwischen „Zeitplan" und
+  „Einstellungen", identisch auf Desktop (`pizza-rechner.html`) und Mobil
+  (`pizza-rechner-mobile.html`, dort im etablierten `<details class="card">`-Akkordeon-
+  Muster, erste Card `open`). Drei Karten: **„Pizza Party"** (Pizzenauswahl mit
+  Stückzahl-Stepper), **„Eigene Pizza anlegen"** (Mini-Formular), **„Zutatenliste für die
+  Party"** (live berechnetes Ergebnis).
+- **Neues, eigenständiges Modul `js/party.js`:** komplett getrennt von `PZ.state`/
+  `PZ.calc()` — kein Zugriff auf den Teig-Rechner-Zustand. Eigener localStorage-Key
+  `pizzaPartyPlanner` (getrennt vom Rezepte-Key `pizzaRechner`, `js/storage.js`), Format
+  `{ customPizzas: [{id, name, ingredients:[{name, amount, unit}]}], qty: {pizzaId: n} }`.
+  Robust gegen leeren/korrupten localStorage-Inhalt (fällt auf leere Struktur zurück,
+  kein Crash).
+- **8 vorgegebene Beispielpizzen** (`PZ.PARTY_PRESET_PIZZAS`, feste ids `preset_*`):
+  Margherita, Salami, Funghi, Diavola, Prosciutto, Quattro Formaggi, Verdure, Hawaii —
+  je mit 3–5 Zutaten und groben Richtmengen für eine Standard-Pizza (~250–280 g Teigling,
+  28–30 cm), keine exakte Rezeptur.
+- **Stückzahl-Stepper** pro Pizze (Minus-Button, `<input type="number">` 0–50, Plus-Button,
+  `role="group" aria-label="Anzahl <Pizza>"`) — Änderungen persistieren sofort
+  (`PZ.partySetQty()`, klemmt auf 0–50, 0 entfernt den Eintrag wieder) und lösen live ein
+  Neu-Rendern der aggregierten Ergebnisliste aus, kein „Speichern"-Button nötig.
+- **Eigene Pizza anlegen:** Namensfeld + dynamische Zutatenzeilen (Name/Menge/Einheit,
+  Start mit 3 leeren Zeilen, „+ Zutat" fügt beliebig viele hinzu, „✕" entfernt eine
+  Zeile). `PZ.partyAddCustomPizza(name, ingredients)` filtert Zeilen ohne Namen oder mit
+  Menge ≤ 0 automatisch heraus (Formular-Robustheit); liefert `null` bei komplett
+  ungültiger Eingabe (kein Name ODER keine einzige gültige Zutat) statt eine leere/kaputte
+  Pizza anzulegen — der Aufrufer zeigt dann eine Fehlermeldung statt zu speichern. Eigene
+  Pizzen bekommen einen Löschen-Button (🗑, nur bei `custom:true`), mit
+  `confirm()`-Bestätigung (analog zum bestehenden Rezept-Löschen-Muster).
+- **Aggregation (`PZ.partyComputeAggregatedList()`):** summiert alle ausgewählten Pizzen
+  (Stückzahl > 0) zu einer deduplizierten Zutatenliste. Gruppierungsschlüssel = Zutatenname
+  (getrimmt, klein geschrieben) **+ Einheit** (ebenso normalisiert) — zwei Zutaten mit
+  demselben Namen aber unterschiedlicher Einheit (z. B. Basilikum in „Blättern" vs. „g")
+  bleiben bewusst getrennte Zeilen, da **keine Einheiten-Umrechnung** stattfindet (passend
+  zur Abgrenzung „keine exakte Mengenberechnung" im Feature-Auftrag). Liefert zusätzlich
+  `totalPizzaCount` (Summe aller Stückzahlen) für die Kopfzeile des Ergebnisses. Ergebnis
+  alphabetisch sortiert (`localeCompare` mit `'de'`-Locale).
+- **Accessibility-Fixes während des gezielten Audits** (`accessibility-expert`-Agent, nur
+  auf die neuen Party-Stellen fokussiert):
+  - **WCAG 2.4.3 (Focus Order)** — Löschen einer eigenen Pizza entfernte den geklickten
+    Button per Re-Render aus dem DOM, ohne den Fokus umzulenken (fiel auf `<body>`
+    zurück). Fix: `focusPartyHeading()` (Muster identisch zu `focusView()` aus der
+    Burger-Nav) lenkt den Fokus nach dem Löschen auf die `<h2>` der „Pizza Party"-Card,
+    zusätzlich Ansage über die Live-Region.
+  - **WCAG 2.4.3 (Focus Order)** — dasselbe Problem beim Entfernen einer Zutatenzeile im
+    Anlege-Formular (`✕`-Button), hier ohne Bestätigungsdialog also bei jeder Nutzung
+    reproduzierbar. Fix: Fokus wandert auf das Namensfeld der nächsten verbleibenden
+    Zeile (oder auf „+ Zutat" als Fallback, wenn keine Zeile mehr übrig ist).
+  - **WCAG 2.4.6 (Headings and Labels)** — alle „Zutatenzeile entfernen"-Buttons hatten
+    identische `aria-label`s, bei mehreren Zeilen für Screenreader nicht unterscheidbar.
+    Fix: `renumberIngRowLabels()` nummeriert durch („Zutatenzeile 1 entfernen", „…2…").
+  - **WCAG 3.3.1 (Error Identification)** — bei ungültiger Eingabe im Anlege-Formular
+    sprang der Fokus nicht zum betroffenen Feld. Fix: Fokus auf `#partyNewName` bei
+    fehlendem Namen, sonst auf das erste Zutatname-Feld.
+  - Alle übrigen geprüften Punkte (Stepper-Gruppierung/-Beschriftung, Live-Region-Anbindung
+    inkl. Generation-Zähler gegen Race-Conditions, Kontraste, Klickzielgrößen 40×40/36×36
+    konsistent zum Rest der App, Fallback ohne JS) ohne Befund.
+- **Race-Condition-Fix (im Zuge des eigenen Vortests gefunden, vor dem Audit selbst
+  behoben):** die Live-Region (`#partyCreateLiveMsg`) nutzt das etablierte
+  „erst leeren, dann im nächsten Tick setzen"-Muster (WCAG 4.1.3, wie `#pdfGuideLiveMsg`/
+  `#viewAnnounce`) — das kann aber bei zwei schnell aufeinanderfolgenden Aktionen
+  (z. B. erfolgreich anlegen, dann sofort nochmal mit leerem Namen versuchen) dazu
+  führen, dass eine verzögerte ältere Meldung eine neuere überschreibt. Fix:
+  `announcePartyCreate()` nutzt einen Generation-Zähler — nur der jeweils neueste Aufruf
+  darf seinen Text tatsächlich setzen, ältere ausstehende Timeouts werden zu No-ops.
+- **Bewusst NICHT angefasst:** Teig-Rechner-Zustand/-Logik (`js/calc.js`/`js/schedule.js`/
+  `js/guide.js`), bestehende Rezepte-Verwaltung, die Burger-Nav-Logik selbst (v3.26.0,
+  nur der generische `[data-view]`/`.nav-item[data-goto]`-Mechanismus wird
+  mitgenutzt — kein Nav-Code geändert); kein Print-/PDF-Export für die Party-Zutatenliste
+  (nicht im Scope der Feature-Definition); keine Einheiten-Umrechnung.
+
+**Tests** (`tests/test.html`, neue Sektion „22 · Pizza-Party-Planer (js/party.js)",
++38 neue Prüfungen, 498 → **536**): reine Datenfunktionen getestet (`partyGetAllPizzas`/
+`partyAddCustomPizza`/`partyDeleteCustomPizza`/`partySetQty`/`partyGetQty`/
+`partyComputeAggregatedList`), kein DOM-Rendering unit-getestet (die UI-Verdrahtung in
+`js/party.js` läuft in `tests/test.html` mangels `#partyPizzaList`-Markup gar nicht erst
+an — die Datenschicht ist aber vollständig unabhängig davon nutzbar, analog zum
+`newrecipe.js`-Ansatz aus v3.22.0). Geprüft: 8 Presets bei leerer Bibliothek; gültige
+Custom-Pizza-Anlage inkl. `custom:true`-Markierung; automatisches Filtern leerer/
+ungültiger Zutatenzeilen (Name fehlt, Menge ≤ 0, nur Leerzeichen); `null`-Rückgabe bei
+komplett ungültiger Eingabe ohne Seiteneffekt; Löschen entfernt Pizza UND Stückzahl;
+`setQty()`-Klemmung auf 0–50 inkl. Rückführung auf 0; Aggregationsmathematik im Detail
+(3× Margherita + 2× Salami → korrekt aufsummierte, deduplizierte Mengen je Zutat,
+unterschiedliche Einheiten bleiben getrennt); Pizzen mit Stückzahl 0 fließen nicht ein;
+leere Auswahl liefert eine leere, aber gültige Struktur statt eines Fehlers; eigene
+Pizzen fließen genauso in die Aggregation ein wie Presets; eigener localStorage-Key
+komplett getrennt vom Rezepte-Key (Isolationstest); korruptes JSON im Party-Storage
+verursacht keinen Absturz. Zusätzlich interaktiv per Headless-Edge-CDP (WebSocket,
+`--remote-allow-origins=*`) auf einer isolierten Kopie gegen das echte DOM verifiziert
+(Desktop **und** Mobil): Bereichswechsel über die Burger-Nav, Stepper-Klicks aktualisieren
+Anzeige und Ergebnis live, Mengen-Klemmung bei Eingabe > 50, eigene Pizza anlegen inkl.
+Zeilenfilterung, Löschen mit Bestätigungsdialog, sowie gezielt die beiden
+Fokus-Fixes (Fokus landet nach Pizza-Löschen auf der `<h2>`, nach Zutatenzeile-Entfernen
+auf dem nächsten Namensfeld — nie auf `<body>`) und die Label-Nummerierung. Alle 536
+Prüfungen grün (Headless-Edge-Dump). Kein `test-generator`-Lauf nötig (kein Logik-
+Eingriff in `js/calc.js`/`js/schedule.js`/`js/guide.js` — eigenständiges neues Modul,
+Tests selbst geschrieben, analog zum Vorgehen bei `js/pdf.js` in v3.25.0).
+
+**Geändert:** `js/party.js` (neu), `pizza-rechner.html`, `pizza-rechner-mobile.html`,
+`css/styles.css`, `tests/test.html`. `?v=` auf `3.27.0` gezogen (Desktop + Mobil,
+Cache-Busting + Footer-Version). `pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.27.0 - Pizza-Party-Planer/` enthält den vollständigen Schnappschuss.
+
+## Burgermenü-Navigation auch auf Desktop (v3.26.0)
 
 Kein Backlog-Punkt, direkter Nutzerauftrag (in einer vorherigen Session begonnen, als
 uncommitteter Zwischenstand ohne Doku übergeben — dieser Zyklus hat ihn geprüft,
@@ -2675,19 +2789,20 @@ Keine Code-Änderung durch den Audit nötig.
 - ~~Burgermenü-Navigation auch auf Desktop~~ — **erledigt in v3.26.0** (kein
   Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt „Burgermenü-Navigation auch auf
   Desktop (v3.26.0)" oben).
-- Nebenbefund aus dem v3.26.0-Accessibility-Audit (nicht behoben, außerhalb des
-  angefragten Scopes): dasselbe Live-Region-Muster (kein Clear-Reset vor dem Setzen)
-  steckt auch in `announceView()` des bestehenden Mobil-Inline-Scripts
-  (`pizza-rechner-mobile.html`) — dort bewusst nicht angefasst (Vorgabe: Mobil-Seite
-  bleibt in diesem Zyklus unverändert). Beim nächsten Zyklus, der die Mobil-Seite
-  ohnehin berührt, mitziehen (zusammen mit dem `#recipeIOLiveMsg`-Nebenbefund oben).
+- ~~Nebenbefund aus dem v3.26.0-Accessibility-Audit: dasselbe Live-Region-Muster
+  (kein Clear-Reset vor dem Setzen) steckt auch in `announceView()` des Mobil-
+  Inline-Scripts~~ — **erledigt in v3.27.0**: da `pizza-rechner-mobile.html` in diesem
+  Zyklus ohnehin für den Pizza-Party-Planer angefasst wurde, direkt mitgezogen (gleicher
+  Clear-then-delayed-set-Fix wie auf Desktop).
+- ~~Pizza-Party-Planer (Zutatenliste nach Pizzenauswahl)~~ — **erledigt in v3.27.0**
+  (kein Backlog-Punkt, direkter Nutzerauftrag per `/define-feature`; s. Abschnitt
+  „Pizza-Party-Planer (v3.27.0)" oben).
 
-**Stand v3.26.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
-oben), offene Punkte sind die beiden oben notierten Live-Region-Nebenbefunde
-(`#recipeIOLiveMsg`, Mobil-`announceView()`). Für den nächsten Zyklus braucht es daher
-frisches Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen,
-Bugfixes, oder die eben genannten Live-Region-Nebenbefunde) statt eines vorgegebenen
-Backlog-Punkts.
+**Stand v3.27.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+oben), einziger offener Punkt ist der oben notierte Live-Region-Nebenbefund
+(`#recipeIOLiveMsg`, `js/main.js`). Für den nächsten Zyklus braucht es daher frisches
+Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes,
+oder der eben genannte Live-Region-Nebenbefund) statt eines vorgegebenen Backlog-Punkts.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 
