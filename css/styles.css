@@ -101,8 +101,16 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 }
 .party-pizza-row:last-child{border-bottom:none;}
 .party-pizza-info{flex:1 1 160px;min-width:0;}
+/* Name + Info-Button ("i", Zutaten ein-/ausblenden) in einer Zeile — wiederverwendet
+   die etablierten .info-btn/.switch-info-Klassen aus den Einstellungen (v3.19.0),
+   damit Optik/Verhalten für Nutzer konsistent bleiben. */
+.party-pizza-name-row{display:flex;align-items:center;gap:6px;min-height:22px;}
 .party-pizza-name{font-weight:600;font-size:14.5px;}
-.party-pizza-ings{margin-top:2px;}
+.party-pizza-ings{margin-top:4px;}
+/* .switch-info hat serienmäßig padding-right:54px, um in den Einstellungen nicht
+   unter den dortigen Toggle-Switch zu laufen — in der schmaleren Party-Zeile gibt es
+   keinen Switch daneben, das würde nur unnötig Platz verschwenden/umbrechen lassen. */
+.party-pizza-ings.switch-info{padding-right:0;margin-bottom:0;}
 .party-qty-stepper{display:flex;align-items:center;gap:6px;flex-shrink:0;}
 .party-qty-btn{
   width:40px;height:40px;border:1px solid var(--line);border-radius:var(--radius);

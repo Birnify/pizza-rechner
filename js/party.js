@@ -241,13 +241,45 @@
 
       const info = document.createElement('div');
       info.className = 'party-pizza-info';
-      const nameEl = document.createElement('div');
+
+      // Name + Info-Button in einer Zeile, analog zum etablierten .info-btn/.switch-info-
+      // Aufklapp-Muster aus den Einstellungen (js/settings.js wireInfoButtons()) — hier
+      // aber pro dynamisch erzeugter Zeile direkt verdrahtet, da renderPartyList() bei
+      // jeder Sprachumschaltung/Anlegen/Löschen neu läuft und die statische, einmalige
+      // wireInfoButtons()-Verdrahtung neu erzeugte Buttons nie erreichen würde.
+      const nameRow = document.createElement('div');
+      nameRow.className = 'party-pizza-name-row';
+      const nameEl = document.createElement('span');
       nameEl.className = 'party-pizza-name';
       nameEl.textContent = pizza.name;
-      const ingEl = document.createElement('div');
-      ingEl.className = 'party-pizza-ings hint';
+
+      const ingId = 'partyIng-' + pizza.id;
+      const infoBtn = document.createElement('button');
+      infoBtn.type = 'button';
+      infoBtn.className = 'info-btn';
+      infoBtn.setAttribute('aria-expanded', 'false');
+      infoBtn.setAttribute('aria-controls', ingId);
+      infoBtn.setAttribute('aria-label', t('party.infoBtnLabel', { name: pizza.name }));
+      infoBtn.textContent = 'i';
+
+      const ingEl = document.createElement('p');
+      ingEl.className = 'party-pizza-ings switch-info';
+      ingEl.id = ingId;
+      ingEl.hidden = true;
+      // Bewusst NUR Zutatennamen, KEINE Mengenangaben (Abgrenzung laut Feature-Auftrag) —
+      // Mengen bleiben ausschließlich der aggregierten Zutatenliste (#partyResultList)
+      // vorbehalten, die auf Basis der gewählten Stückzahlen berechnet wird.
       ingEl.textContent = (pizza.ingredients || []).map(function (i) { return i.name; }).join(' · ');
-      info.appendChild(nameEl);
+
+      infoBtn.addEventListener('click', function () {
+        const expanded = infoBtn.getAttribute('aria-expanded') === 'true';
+        infoBtn.setAttribute('aria-expanded', String(!expanded));
+        ingEl.hidden = expanded;
+      });
+
+      nameRow.appendChild(nameEl);
+      nameRow.appendChild(infoBtn);
+      info.appendChild(nameRow);
       info.appendChild(ingEl);
 
       const stepper = document.createElement('div');

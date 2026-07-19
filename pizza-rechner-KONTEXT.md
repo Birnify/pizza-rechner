@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-19 · Aktuelle Version: v3.28.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-20 · Aktuelle Version: v3.29.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,61 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Live-Region-Fix `#recipeIOLiveMsg` (v3.28.1) = aktueller Stand
+## Zutaten-Info je Pizza im Pizza-Party-Bereich (v3.29.0) = aktueller Stand
+
+Kleines neues Feature, vom Nutzer per `/define-feature` strukturiert und bestätigt.
+Motivation: vor der Auswahl sehen können, was auf einer Pizza tatsächlich drauf ist,
+ohne das erst über die aggregierte Einkaufsliste erschließen zu müssen.
+
+- **Info-Button pro Pizza** (vorgegebene wie eigene) in `#partyPizzaList`
+  (`js/party.js`, `renderPartyList()`): ein Info-Button ("i", Klasse `.info-btn`,
+  identisch zum bereits etablierten Disclosure-Muster in den Einstellungen,
+  `js/settings.js` `wireInfoButtons()`) neben dem Pizzennamen klappt eine zuvor
+  versteckte Zutatenliste auf/zu (`<p class="party-pizza-ings switch-info" hidden>`).
+  Anders als die generische, nur einmal beim Laden laufende `wireInfoButtons()` wird
+  der Klick-Handler hier **pro dynamisch erzeugter Zeile direkt in
+  `renderPartyList()`** verdrahtet — die Party-Liste wird bei jedem
+  Sprachwechsel/Anlegen/Löschen einer Pizza neu gerendert, die statische Verdrahtung
+  würde neu erzeugte Buttons nie erreichen.
+- **Bewusst NUR Zutatennamen, keine Mengenangaben** (Abgrenzung laut
+  Feature-Auftrag) — Mengen bleiben ausschließlich der aggregierten Zutatenliste
+  weiter unten vorbehalten, die auf Basis der gewählten Stückzahlen berechnet wird.
+  Keine Änderung an der bestehenden Aggregations-/Mengenlogik
+  (`PZ.partyComputeAggregatedList()` unverändert).
+- **Eindeutige `aria-label`s je Pizza** (`party.infoBtnLabel`, enthält den
+  Pizzennamen) und `aria-expanded`/`aria-controls`-Verdrahtung analog zum
+  Settings-Muster — Fokus bleibt beim Auf-/Zuklappen auf dem Info-Button selbst (kein
+  DOM-Ersatz beim Klick, anders als beim v3.27.0-Löschen-Button-Fall, wo das Element
+  aus dem DOM verschwand).
+- **Neue CSS-Klassen** `.party-pizza-name-row` (Name + Info-Button in einer
+  Flex-Zeile) und `.party-pizza-ings.switch-info` (Override von `.switch-info`s
+  serienmäßigem `padding-right:54px`, das in den Einstellungen Platz für den
+  danebenliegenden Toggle-Switch lässt — in der schmaleren Party-Zeile gibt es
+  keinen Switch, das würde nur unnötig Platz verschwenden).
+- **Accessibility-Audit** (`accessibility-expert`-Agent, gezielt nur auf diese neue
+  Stelle fokussiert): keine Befunde bei Info-Button-Disclosure, Tab-Reihenfolge,
+  Fokus-Verhalten, Kontrasten/Klickzielen (`.info-btn` bleibt unverändert 22×22px,
+  `flex-shrink:0` verhindert ein Zusammendrücken; lange eigene Pizzennamen brechen
+  normal um statt abgeschnitten zu werden).
+- **Bewusst NICHT angefasst:** die Aggregations-/Mengenlogik selbst, die restliche
+  Pizza-Party-Struktur (Presets, eigene Pizzen anlegen/löschen), keine Änderung an
+  anderen Bereichen der App.
+
+**Tests:** reine UI-Erweiterung (Disclosure-Widget, kein neuer Datenfunktions-Bedarf)
+— `tests/test.html` bleibt unverändert bei **552** Prüfungen, alle grün
+(Headless-Edge-Dump). Kein `test-generator`-Lauf nötig (keine Änderung an
+`js/calc.js`/`js/schedule.js`/`js/guide.js`). Interaktiv per Headless-Edge-CDP auf
+Desktop **und** Mobil (Deutsch **und** Englisch) verifiziert: Info-Button togglet
+`aria-expanded` + sichtbaren Panel-Zustand korrekt, zeigt nur Zutatennamen ohne
+Zahlen/Mengen, zweiter Klick klappt wieder zu; keine JavaScript-Konsolenfehler.
+
+**Geändert:** `js/party.js`, `js/i18n.js`, `css/styles.css`. `?v=` auf `3.29.0`
+gezogen (Desktop + Mobil, Cache-Busting + Footer-Version).
+`pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.29.0 - Zutaten-Info je Pizza/` enthält den vollständigen Schnappschuss.
+
+## Live-Region-Fix `#recipeIOLiveMsg` (v3.28.1)
 
 Kleiner Bugfix, vom Nutzer direkt beauftragt (Backlog-Nebenbefund aus dem
 v3.25.0-Accessibility-Audit, seither mehrfach mitgeschleppt). Kein neues Feature,
@@ -3020,8 +3074,11 @@ Keine Code-Änderung durch den Audit nötig.
   automatisch wieder geleert wird und `#nrLiveMsg` meist einen variablen
   Rezeptnamen enthält (beides mindert das Risiko unterdrückter Ansagen). Beim
   nächsten Storage-/Formular-bezogenen Zyklus mit aufgreifen.
+- ~~Zutaten-Info je Pizza im Pizza-Party-Bereich~~ — **erledigt in v3.29.0** (kein
+  Backlog-Punkt, direkter Nutzerauftrag per `/define-feature`; s. Abschnitt
+  „Zutaten-Info je Pizza im Pizza-Party-Bereich (v3.29.0)" oben).
 
-**Stand v3.28.1: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.29.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben), offene Punkte sind die beiden oben notierten Live-Region-Nebenbefunde
 (`#shareLiveMsg`, `#nrLiveMsg`). Für den nächsten Zyklus braucht es daher frisches
 Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes,

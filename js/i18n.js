@@ -356,6 +356,7 @@
   add('party.createInvalidMsg', 'Bitte einen Namen und mindestens eine Zutat mit Menge > 0 angeben.', 'Please enter a name and at least one ingredient with an amount > 0.');
   add('party.createdMsg', '„{name}“ wurde angelegt.', '"{name}" was created.');
   add('party.defaultUnit', 'g', 'g');
+  add('party.infoBtnLabel', 'Zutaten von „{name}“ ein-/ausblenden', 'Show/hide ingredients for "{name}"');
 
   // ---- js/print.js — Einkaufsliste (Druckansicht) --------------------------------
   add('print.title', '🛒 Einkaufsliste', '🛒 Shopping list');
