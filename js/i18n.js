@@ -511,6 +511,8 @@
   add('nav.zeitplan', 'Zeitplan', 'Schedule');
   add('nav.party', 'Pizza Party', 'Pizza Party');
   add('nav.einstellungen', 'Einstellungen', 'Settings');
+  add('nav.group.dough', 'Teig-Rechner', 'Dough calculator');
+  add('nav.group.party', 'Pizza Party', 'Pizza Party');
   add('nav.toMobile', 'Zur Mobil-Ansicht', 'Switch to mobile view');
   add('nav.toDesktop', 'Zur Desktop-Ansicht', 'Switch to desktop view');
   add('nav.viewAnnounce', 'Ansicht: {label}', 'View: {label}');

@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-20 · Aktuelle Version: v3.35.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-20 · Aktuelle Version: v3.36.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,79 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Sticky Quickbar für Pizza Party auf Mobil (v3.35.0) = aktueller Stand
+## Gruppierte Menü-Navigation (v3.36.0) = aktueller Stand
+
+Feature, vom Nutzer beauftragt: Das Bereiche-Menü clustert die vorhandenen
+Menüpunkte sichtbar in zwei Gruppen mit kurzer Zwischenüberschrift —
+„Teig-Rechner" (Rechner, Rezepte, Zeitplan) und „Pizza Party" (Pizza Party)
+— getrennt von „Einstellungen" als eigenständigem Utility-Punkt. Hintergrund:
+die bisher flache Menüliste verschleierte, dass Rechner/Rezepte/Zeitplan
+zusammengehören (rund um ein Teig-Rezept), während Pizza Party ein
+unabhängiges, eigenständiges Werkzeug ist.
+
+- **Struktur (Desktop + Mobil, identisch):** die fünf Menüpunkte stecken
+  jetzt in drei separaten `<ul class="nav-list">`-Blöcken statt einer
+  einzigen Liste, getrennt durch das bereits bestehende
+  `<div class="nav-divider" role="separator">`-Muster (wiederverwendet, wie
+  in der Feature-Definition gefordert):
+  „Teig-Rechner" (Rechner/Rezepte/Zeitplan) → Divider → „Pizza Party"
+  (Pizza Party) → Divider → Einstellungen (ohne eigene Gruppenüberschrift,
+  bleibt bewusst unbenannter Utility-Punkt) → Divider → Cross-Link
+  (Mobil-/Desktop-Ansicht).
+- **Neue Gruppen-Beschriftung:** `<div class="nav-group-title">` (neue
+  CSS-Klasse, kleine graue Uppercase-Beschriftung) vor den ersten beiden
+  Listen, i18n-Keys `nav.group.dough`/`nav.group.party`.
+- **Keine funktionale Änderung:** Reihenfolge/Klickziele der Menüpunkte
+  unverändert, DOM-Reihenfolge der `.nav-item`-Buttons bleibt
+  Rechner→Rezepte→Zeitplan→Party→Einstellungen — die bestehende Tab-Trap-
+  Logik (`focusablesInPanel()`) baut auf `querySelectorAll('.nav-item')` in
+  DOM-Reihenfolge auf und funktioniert dadurch unverändert über mehrere
+  `<ul>`-Elemente hinweg. Cross-Links (Zur Mobil-/Desktop-Ansicht)
+  unangetastet.
+
+**Härten (gezielter `accessibility-expert`-Audit, nur diese Änderung) —
+1 Blocker gefunden und behoben:**
+- **WCAG 1.3.1 (Info and Relationships):** `.nav-group-title` war zunächst
+  ein rein visuelles `<div>` ohne jede programmatische Verbindung zur
+  folgenden `<ul>` — beim Tab-Fokussieren eines Menüpunkts (z. B. „Rechner")
+  kam für Screenreader-Nutzer **kein** Kontext zur Gruppe „Teig-Rechner" an
+  (per Headless-Edge-Accessibility-Snapshot verifiziert: nur ein isolierter
+  `text`-Knoten, keine Verbindung). Nur sehende Nutzer sahen die Cluster-
+  Bildung — echter Informationsverlust, kein „nice to have".
+- **Fix:** `id="navGroupDough"`/`id="navGroupParty"` auf die
+  `.nav-group-title`-Divs, `role="group" aria-labelledby="…"` auf die jeweils
+  zugehörige `<ul class="nav-list">` — konsistent mit bereits etabliertem
+  Muster im Projekt (`#method`, `#coldStage`, `#partyIngredientRows` nutzen
+  dasselbe `role="group"`/`aria-labelledby`-Paar). „Einstellungen" bekam
+  bewusst **keine** Gruppierung (kein `role="group"`, keine
+  `.nav-group-title`) — bleibt wie gefordert eigenständiger Utility-Punkt.
+  Vorher/nachher per AX-Snapshot verifiziert: vorher `text: Teig-Rechner` /
+  `list`, nachher `text: Teig-Rechner` / `group "Teig-Rechner"`.
+- Tab-Reihenfolge/Fokus-Trap nach dem Fix erneut geprüft: unverändert
+  korrekt (Schließen → 5 Bereichs-Buttons → Cross-Link → Wrap zurück).
+- Kontrast `.nav-group-title` (`--muted` #6e6359 auf `--card` #ffffff,
+  11px): **≈5,83:1**, über der WCAG-AA-Schwelle 4,5:1.
+
+**Tests:** reine Markup-/Struktur-Änderung ohne Auswirkung auf
+Rechenlogik — `tests/test.html` bleibt unverändert bei **567** Prüfungen,
+alle grün (Headless-Edge-Dump). Kein `test-generator`-Lauf nötig.
+Zusätzlich per gezieltem Headless-Edge-Skript interaktiv verifiziert
+(Desktop + Mobil): Panel-Kinder-Reihenfolge exakt wie geplant
+(Titel → Liste → Divider → Titel → Liste → Divider → Liste →
+Divider → Cross-Link), Klick auf jeden Menüpunkt in jeder Gruppe schaltet
+korrekt die zugehörige Ansicht frei, DOM-Reihenfolge der `.nav-item`-Buttons
+unverändert, Pizza-Party-Quickbar (v3.35.0) funktioniert weiterhin korrekt
+in Kombination mit der neuen Navigation.
+
+**Geändert:** `pizza-rechner.html`, `pizza-rechner-mobile.html`,
+`css/styles.css`, `js/i18n.js`. `?v=` auf `3.36.0` gezogen (Desktop + Mobil,
+Cache-Busting + `#appVersion`-Fußzeile separat aktualisiert).
+`pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.36.0 - Gruppierte Menü-Navigation/` enthält den vollständigen
+Schnappschuss.
+
+## Sticky Quickbar für Pizza Party auf Mobil (v3.35.0)
 
 Feature, vom Nutzer beauftragt: Eine kompakte, sticky Quickbar am unteren
 Bildschirmrand für den Pizza-Party-Bereich auf Mobil, nach demselben Muster
@@ -3608,10 +3680,9 @@ Keine Code-Änderung durch den Audit nötig.
 - ~~Sticky Quickbar für Pizza Party auf Mobil~~ — **erledigt in v3.35.0**
   (kein Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt „Sticky Quickbar
   für Pizza Party auf Mobil (v3.35.0)" oben).
-- Gruppierte Menü-Navigation (Bereiche-Menü clustert „Teig-Rechner"
-  Rechner/Rezepte/Zeitplan und „Pizza Party" getrennt von „Einstellungen", nutzt
-  `.nav-divider`) — vom Nutzer beauftragt, als eigener Zyklus in
-  Bearbeitung/geplant.
+- ~~Gruppierte Menü-Navigation~~ — **erledigt in v3.36.0** (kein
+  Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt „Gruppierte
+  Menü-Navigation (v3.36.0)" oben).
 - Pizza-Glossar (neuer Menü-Bereich mit ~24 zweisprachigen Lexikon-Artikeln zu
   Pizza-Hintergrundwissen, z. B. W-Wert, Pizzaofen vs. Backofen, echte
   neapolitanische Pizza, San-Marzano-Tomaten) — vom Nutzer beauftragt, deutlich
@@ -3627,7 +3698,7 @@ Keine Code-Änderung durch den Audit nötig.
   `data-goto="zeitplan"`), Desktop + Mobil, inkl. EN-Übersetzung — vom Nutzer
   beauftragt, als eigener Zyklus in Bearbeitung/geplant.
 
-**Stand v3.35.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.36.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben); die drei oben notierten Nebenbefunde
 (`#shareLiveMsg`/`#nrLiveMsg`-Live-Region-Fehlen, `<details>`-zugeklappt-Problematik
 bei Mobil-Live-Regionen) bleiben offen für einen künftigen Accessibility-Zyklus.
