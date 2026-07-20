@@ -96,6 +96,11 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 }
 .header-bar .nav-toggle{grid-column:3;justify-self:end;}
 .nav-toggle:hover,.nav-toggle:active{background:rgba(255,255,255,.3);}
+/* Eigener sichtbarer Fokus-Ring (v3.42.0, WCAG 2.4.7) für die seit v3.41.0 kreisrunden
+   Icon-Buttons -- vorher griff nur der Browser-Standard-Fokusring, der bei einem Kreis
+   optisch nicht sauber zur Form passt. Weißer Ring hier, da .nav-toggle auf dem
+   dunklen Foto-Header sitzt (analog zu .schedbar-goto-zeitplan:focus-visible). */
+.nav-toggle:focus-visible{outline:2px solid #fff;outline-offset:2px;}
 [data-view][hidden]{display:none!important;}
 .nav-overlay{
   position:fixed;inset:0;z-index:60;background:rgba(30,22,18,.5);
@@ -114,6 +119,12 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
   background:#fff;font-size:16px;cursor:pointer;
 }
 .nav-close:hover{border-color:var(--tomato);color:var(--tomato);}
+/* Eigener sichtbarer Fokus-Ring (v3.42.0, WCAG 2.4.7) für die seit v3.41.0 kreisrunden
+   Icon-Buttons auf hellem Grund -- identisches Muster wie .info-btn:focus-visible. */
+.nav-close:focus-visible,
+.party-qty-btn:focus-visible,
+.party-delete-btn:focus-visible,
+.party-ing-remove:focus-visible{outline:2px solid var(--tomato-dark);outline-offset:2px;}
 .nav-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;}
 .nav-item{
   display:block;width:100%;text-align:left;padding:13px 14px;min-height:44px;
@@ -430,6 +441,10 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   background:var(--basil);color:#fff;border-radius:var(--radius);
   padding:13px 16px;margin-bottom:14px;font-size:13.5px;line-height:1.5;
   border-left:4px solid var(--crust);
+  /* Zusätzliche Kontrast-Absicherung (v3.42.0) neben der bereits dunkleren
+     Gradient-Variante in js/guide.js (guide.schedbar.noTime) — schadet der
+     Standard-var(--basil)-Variante nicht, deren Kontrast bereits ausreichend ist. */
+  text-shadow:0 1px 2px rgba(0,0,0,.25);
 }
 .schedbar b{font-weight:800;}
 .schedbar .big{font-size:16px;font-weight:800;font-family:var(--font-head);}
@@ -1411,7 +1426,7 @@ footer{text-align:right;}
         <div id="partyPizzaList"></div>
         <button type="button" id="partyResetBtn" style="margin-top:14px;" data-i18n="btn.partyReset">Alle zurücksetzen</button>
         <div class="hint" style="margin-top:8px;margin-bottom:0;" data-i18n="hint.partyReset">Setzt nur die Stückzahlen zurück — deine eigenen Pizzen bleiben erhalten.</div>
-        <div id="partyResetLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
+        <div id="partyStatusLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
       </div>
     </details>
 
@@ -1445,7 +1460,7 @@ footer{text-align:right;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.41.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.42.0</span>
 </footer>
 
 <div class="quickbar" data-view="rechner">
@@ -3294,7 +3309,14 @@ footer{text-align:right;}
       // s. Kommentar bei guide.schedbar.noTime in js/i18n.js). Label kommt bewusst aus
       // demselben nav.zeitplan-Key wie der Menüpunkt selbst (keine doppelte Übersetzung).
       const zeitplanLink = `<button type="button" class="schedbar-goto-zeitplan" data-goto="zeitplan">${t('nav.zeitplan')}</button>`;
-      html += `<div class="schedbar" style="background:linear-gradient(135deg,#8a7f76,#6f655c)">${t('guide.schedbar.noTime', { dur: fmtDur(totalMin), zeitplan: zeitplanLink })}</div>`;
+      // Gradient-Endfarben dunkler als ursprünglich (#8a7f76/#6f655c): der hellere
+      // Farbton lag mit weißem Text bei nur ~3,91:1 (WCAG 1.4.3 verlangt 4,5:1 für
+      // Fließtext) -- Fund aus dem v3.38.0-Accessibility-Audit, behoben im gebündelten
+      // Accessibility-Zyklus v3.42.0. Neue Werte rechnerisch geprüft: hellstes Ende
+      // (#645c55) liegt bei ~6,55:1, deutliche Sicherheitsmarge statt nur knapp über
+      // der Schwelle. .schedbar bekommt zusätzlich per CSS einen text-shadow als
+      // zweite Absicherung (s. css/styles.css).
+      html += `<div class="schedbar" style="background:linear-gradient(135deg,#645c55,#4a443e)">${t('guide.schedbar.noTime', { dur: fmtDur(totalMin), zeitplan: zeitplanLink })}</div>`;
       $('guideSummary').innerHTML = t('guide.summary.noTime', { label: f.label, dur: fmtDur(totalMin) });
     }
     let n = 1;
@@ -4960,9 +4982,21 @@ footer{text-align:right;}
   if (nrFlourSel) nrFlourSel.addEventListener('change', () => { nrState.flour = nrFlourSel.value; });
 
   // --- Anlegen ---
+  // Generation-Zähler (identisches Muster wie announcePartyCreate() in js/party.js
+  // bzw. showRecipeIOMsg() in js/main.js): Text wird erst geleert und im nächsten
+  // Tick gesetzt, sonst erkennen viele Screenreader bei zwei wortgleichen Meldungen
+  // hintereinander keine echte DOM-Mutation und unterdrücken die zweite Ansage
+  // (WCAG 4.1.3 Status Messages). Behoben im gebündelten Accessibility-Zyklus
+  // v3.42.0 (vorher wurde direkt gesetzt).
+  let nrMsgGen = 0;
   function showNrMsg(msg) {
     const el = $('nrLiveMsg');
-    if (el) el.textContent = msg;
+    if (!el) return;
+    const gen = ++nrMsgGen;
+    el.textContent = '';
+    window.setTimeout(function () {
+      if (gen === nrMsgGen) el.textContent = msg;
+    }, 50);
   }
 
   const nrCreateBtn = $('nrCreateBtn');
@@ -5121,13 +5155,27 @@ footer{text-align:right;}
   // Effekt), daher reicht der reine btn.textContent-Wechsel für Screenreader-Nutzer nicht.
   // Bewusst NICHT role="status" direkt auf den Button selbst (würde dessen Button-Rolle
   // überschreiben) — stattdessen eine separate, visuell versteckte Live-Region.
+  // Generation-Zähler (identisches Muster wie announcePartyCreate() in js/party.js
+  // bzw. showRecipeIOMsg() in js/main.js, s. dortige Kommentare): der Live-Region-
+  // Text wird erst geleert und im nächsten Tick gesetzt, sonst erkennen viele
+  // Screenreader bei zwei wortgleichen Meldungen hintereinander (z. B. zweimal
+  // "Link kopiert" bei schnell aufeinanderfolgenden Klicks) keine echte DOM-Mutation
+  // und unterdrücken die zweite Ansage (WCAG 4.1.3 Status Messages). Behoben im
+  // gebündelten Accessibility-Zyklus v3.42.0 (vorher wurde direkt gesetzt).
+  let shareMsgGen = 0;
   function copyShareLink(btn) {
     const link = buildShareLink();
     const liveMsg = document.getElementById('shareLiveMsg');
     const t = PZ.t ? PZ.t : function (k) { return k; };
     const showFeedback = (ok) => {
       const msg = ok ? t('share.linkCopied') : t('share.copyFailed');
-      if (liveMsg) liveMsg.textContent = msg;
+      if (liveMsg) {
+        const gen = ++shareMsgGen;
+        liveMsg.textContent = '';
+        window.setTimeout(function () {
+          if (gen === shareMsgGen) liveMsg.textContent = msg;
+        }, 50);
+      }
       if (!btn) return;
       const original = btn.dataset.origLabel || btn.textContent;
       btn.dataset.origLabel = original;
@@ -5535,7 +5583,15 @@ footer{text-align:right;}
           // Analog zu focusView() im Burger-Menü-Script: Fokus auf die Bereichs-
           // überschrift, zusätzlich Löschung per Live-Region ansagen (WCAG 4.1.3).
           focusPartyHeading();
-          announcePartyCreate(t('party.deletedMsg', { name: pizza.name }));
+          // NICHT announcePartyCreate()/#partyCreateLiveMsg (das liegt in der
+          // separaten Karte "Eigene Pizza anlegen", die auf Mobil per <details>
+          // standardmäßig ZUGEKLAPPT ist und beim Löschen einer Pizza aus der
+          // "Pizza Party"-Karte heraus meist nicht offen ist -- eine dort
+          // liegende Live-Region würde dann nicht announced, WCAG 4.1.3).
+          // Stattdessen die immer im selben, gerade sichtbaren Bereich liegende
+          // #partyStatusLiveMsg nutzen (Fund/Fix im gebündelten Accessibility-
+          // Zyklus v3.42.0, s. Kommentar bei announcePartyStatus() unten).
+          announcePartyStatus(t('party.deletedMsg', { name: pizza.name }));
         });
         row.appendChild(del);
       }
@@ -5717,19 +5773,26 @@ footer{text-align:right;}
   // Liste gleichzeitig, ohne den Fokus dorthin zu bewegen — für Screenreader-Nutzer
   // sonst nicht erkennbar, dass überhaupt etwas passiert ist (anders als ein
   // einzelner +/--Klick, bei dem der Fokus direkt auf dem betroffenen Element sitzt).
-  // Eigene Live-Region #partyResetLiveMsg IM SELBEN, immer sichtbaren "Pizza Party"-
+  // Eigene Live-Region #partyStatusLiveMsg IM SELBEN, immer sichtbaren "Pizza Party"-
   // Bereich (nicht die bestehende #partyCreateLiveMsg aus der Karte "Eigene Pizza
   // anlegen") — auf Mobil ist diese Karte per <details> standardmäßig zugeklappt,
-  // eine dort liegende Live-Region würde in dem Zustand nicht announced.
+  // eine dort liegende Live-Region würde in dem Zustand nicht announced. Ursprünglich
+  // (v3.30.0) nur für den Reset-Button gebaut und "#partyResetLiveMsg"/
+  // "announcePartyReset" genannt; im gebündelten Accessibility-Zyklus v3.42.0 auf den
+  // generischeren Namen "#partyStatusLiveMsg"/"announcePartyStatus" umbenannt, weil
+  // dieselbe, bereits korrekt platzierte Live-Region jetzt AUCH für die "Pizza
+  // gelöscht"-Ansage beim Löschen einer eigenen Pizza mitgenutzt wird (derselbe
+  // Cross-Card-Fund, s. Kommentar oben bei announcePartyStatus()-Aufruf im
+  // Lösch-Handler).
   const resetBtn = $('partyResetBtn');
-  const resetLiveMsg = $('partyResetLiveMsg');
-  let resetLiveMsgGen = 0;
-  function announcePartyReset(text) {
-    if (!resetLiveMsg) return;
-    const gen = ++resetLiveMsgGen;
-    resetLiveMsg.textContent = '';
+  const statusLiveMsg = $('partyStatusLiveMsg');
+  let statusLiveMsgGen = 0;
+  function announcePartyStatus(text) {
+    if (!statusLiveMsg) return;
+    const gen = ++statusLiveMsgGen;
+    statusLiveMsg.textContent = '';
     window.setTimeout(function () {
-      if (gen === resetLiveMsgGen) resetLiveMsg.textContent = text;
+      if (gen === statusLiveMsgGen) statusLiveMsg.textContent = text;
     }, 50);
   }
   if (resetBtn) {
@@ -5737,7 +5800,7 @@ footer{text-align:right;}
       resetAllQuantities();
       renderPartyList();
       renderPartyResult();
-      announcePartyReset(t('party.resetMsg'));
+      announcePartyStatus(t('party.resetMsg'));
     });
   }
 

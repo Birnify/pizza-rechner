@@ -87,13 +87,27 @@
   // Effekt), daher reicht der reine btn.textContent-Wechsel für Screenreader-Nutzer nicht.
   // Bewusst NICHT role="status" direkt auf den Button selbst (würde dessen Button-Rolle
   // überschreiben) — stattdessen eine separate, visuell versteckte Live-Region.
+  // Generation-Zähler (identisches Muster wie announcePartyCreate() in js/party.js
+  // bzw. showRecipeIOMsg() in js/main.js, s. dortige Kommentare): der Live-Region-
+  // Text wird erst geleert und im nächsten Tick gesetzt, sonst erkennen viele
+  // Screenreader bei zwei wortgleichen Meldungen hintereinander (z. B. zweimal
+  // "Link kopiert" bei schnell aufeinanderfolgenden Klicks) keine echte DOM-Mutation
+  // und unterdrücken die zweite Ansage (WCAG 4.1.3 Status Messages). Behoben im
+  // gebündelten Accessibility-Zyklus v3.42.0 (vorher wurde direkt gesetzt).
+  let shareMsgGen = 0;
   function copyShareLink(btn) {
     const link = buildShareLink();
     const liveMsg = document.getElementById('shareLiveMsg');
     const t = PZ.t ? PZ.t : function (k) { return k; };
     const showFeedback = (ok) => {
       const msg = ok ? t('share.linkCopied') : t('share.copyFailed');
-      if (liveMsg) liveMsg.textContent = msg;
+      if (liveMsg) {
+        const gen = ++shareMsgGen;
+        liveMsg.textContent = '';
+        window.setTimeout(function () {
+          if (gen === shareMsgGen) liveMsg.textContent = msg;
+        }, 50);
+      }
       if (!btn) return;
       const original = btn.dataset.origLabel || btn.textContent;
       btn.dataset.origLabel = original;

@@ -360,7 +360,15 @@
           // Analog zu focusView() im Burger-Menü-Script: Fokus auf die Bereichs-
           // überschrift, zusätzlich Löschung per Live-Region ansagen (WCAG 4.1.3).
           focusPartyHeading();
-          announcePartyCreate(t('party.deletedMsg', { name: pizza.name }));
+          // NICHT announcePartyCreate()/#partyCreateLiveMsg (das liegt in der
+          // separaten Karte "Eigene Pizza anlegen", die auf Mobil per <details>
+          // standardmäßig ZUGEKLAPPT ist und beim Löschen einer Pizza aus der
+          // "Pizza Party"-Karte heraus meist nicht offen ist -- eine dort
+          // liegende Live-Region würde dann nicht announced, WCAG 4.1.3).
+          // Stattdessen die immer im selben, gerade sichtbaren Bereich liegende
+          // #partyStatusLiveMsg nutzen (Fund/Fix im gebündelten Accessibility-
+          // Zyklus v3.42.0, s. Kommentar bei announcePartyStatus() unten).
+          announcePartyStatus(t('party.deletedMsg', { name: pizza.name }));
         });
         row.appendChild(del);
       }
@@ -542,19 +550,26 @@
   // Liste gleichzeitig, ohne den Fokus dorthin zu bewegen — für Screenreader-Nutzer
   // sonst nicht erkennbar, dass überhaupt etwas passiert ist (anders als ein
   // einzelner +/--Klick, bei dem der Fokus direkt auf dem betroffenen Element sitzt).
-  // Eigene Live-Region #partyResetLiveMsg IM SELBEN, immer sichtbaren "Pizza Party"-
+  // Eigene Live-Region #partyStatusLiveMsg IM SELBEN, immer sichtbaren "Pizza Party"-
   // Bereich (nicht die bestehende #partyCreateLiveMsg aus der Karte "Eigene Pizza
   // anlegen") — auf Mobil ist diese Karte per <details> standardmäßig zugeklappt,
-  // eine dort liegende Live-Region würde in dem Zustand nicht announced.
+  // eine dort liegende Live-Region würde in dem Zustand nicht announced. Ursprünglich
+  // (v3.30.0) nur für den Reset-Button gebaut und "#partyResetLiveMsg"/
+  // "announcePartyReset" genannt; im gebündelten Accessibility-Zyklus v3.42.0 auf den
+  // generischeren Namen "#partyStatusLiveMsg"/"announcePartyStatus" umbenannt, weil
+  // dieselbe, bereits korrekt platzierte Live-Region jetzt AUCH für die "Pizza
+  // gelöscht"-Ansage beim Löschen einer eigenen Pizza mitgenutzt wird (derselbe
+  // Cross-Card-Fund, s. Kommentar oben bei announcePartyStatus()-Aufruf im
+  // Lösch-Handler).
   const resetBtn = $('partyResetBtn');
-  const resetLiveMsg = $('partyResetLiveMsg');
-  let resetLiveMsgGen = 0;
-  function announcePartyReset(text) {
-    if (!resetLiveMsg) return;
-    const gen = ++resetLiveMsgGen;
-    resetLiveMsg.textContent = '';
+  const statusLiveMsg = $('partyStatusLiveMsg');
+  let statusLiveMsgGen = 0;
+  function announcePartyStatus(text) {
+    if (!statusLiveMsg) return;
+    const gen = ++statusLiveMsgGen;
+    statusLiveMsg.textContent = '';
     window.setTimeout(function () {
-      if (gen === resetLiveMsgGen) resetLiveMsg.textContent = text;
+      if (gen === statusLiveMsgGen) statusLiveMsg.textContent = text;
     }, 50);
   }
   if (resetBtn) {
@@ -562,7 +577,7 @@
       resetAllQuantities();
       renderPartyList();
       renderPartyResult();
-      announcePartyReset(t('party.resetMsg'));
+      announcePartyStatus(t('party.resetMsg'));
     });
   }
 

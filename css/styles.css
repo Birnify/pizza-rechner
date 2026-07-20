@@ -85,6 +85,11 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 }
 .header-bar .nav-toggle{grid-column:3;justify-self:end;}
 .nav-toggle:hover,.nav-toggle:active{background:rgba(255,255,255,.3);}
+/* Eigener sichtbarer Fokus-Ring (v3.42.0, WCAG 2.4.7) für die seit v3.41.0 kreisrunden
+   Icon-Buttons -- vorher griff nur der Browser-Standard-Fokusring, der bei einem Kreis
+   optisch nicht sauber zur Form passt. Weißer Ring hier, da .nav-toggle auf dem
+   dunklen Foto-Header sitzt (analog zu .schedbar-goto-zeitplan:focus-visible). */
+.nav-toggle:focus-visible{outline:2px solid #fff;outline-offset:2px;}
 [data-view][hidden]{display:none!important;}
 .nav-overlay{
   position:fixed;inset:0;z-index:60;background:rgba(30,22,18,.5);
@@ -103,6 +108,12 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
   background:#fff;font-size:16px;cursor:pointer;
 }
 .nav-close:hover{border-color:var(--tomato);color:var(--tomato);}
+/* Eigener sichtbarer Fokus-Ring (v3.42.0, WCAG 2.4.7) für die seit v3.41.0 kreisrunden
+   Icon-Buttons auf hellem Grund -- identisches Muster wie .info-btn:focus-visible. */
+.nav-close:focus-visible,
+.party-qty-btn:focus-visible,
+.party-delete-btn:focus-visible,
+.party-ing-remove:focus-visible{outline:2px solid var(--tomato-dark);outline-offset:2px;}
 .nav-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;}
 .nav-item{
   display:block;width:100%;text-align:left;padding:13px 14px;min-height:44px;
@@ -419,6 +430,10 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   background:var(--basil);color:#fff;border-radius:var(--radius);
   padding:13px 16px;margin-bottom:14px;font-size:13.5px;line-height:1.5;
   border-left:4px solid var(--crust);
+  /* Zusätzliche Kontrast-Absicherung (v3.42.0) neben der bereits dunkleren
+     Gradient-Variante in js/guide.js (guide.schedbar.noTime) — schadet der
+     Standard-var(--basil)-Variante nicht, deren Kontrast bereits ausreichend ist. */
+  text-shadow:0 1px 2px rgba(0,0,0,.25);
 }
 .schedbar b{font-weight:800;}
 .schedbar .big{font-size:16px;font-weight:800;font-family:var(--font-head);}

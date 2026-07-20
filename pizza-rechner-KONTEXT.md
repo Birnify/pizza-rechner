@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-20 · Aktuelle Version: v3.41.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-20 · Aktuelle Version: v3.42.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,89 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Visuelles Redesign — Header-Foto-Platzhalter, Bereichs-Icons & Buttons (v3.41.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Gebündelter Accessibility-Zyklus (v3.42.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Direkter Nutzerauftrag (kein Brainstorming nötig, alle vier Punkte waren bereits als
+Nebenbefunde aus früheren Zyklen diagnostiziert und im Backlog notiert). Reine
+Härtung — keine Änderung an Berechnungslogik, keine neue Funktionalität.
+
+**1. Live-Region ohne vorheriges Leeren (WCAG 4.1.3), analog zum `#recipeIOLiveMsg`-
+Fix aus v3.28.1:**
+- `js/share.js` (`copyShareLink()`): neuer Generation-Zähler `shareMsgGen`. Die
+  Erfolgs-/Fehlermeldung wird jetzt erst geleert (`textContent=''`), dann per
+  `window.setTimeout(...,50)` gesetzt (geprüft gegen den Zähler) — identisches
+  Muster wie `announcePartyStatus()`/`showRecipeIOMsg()`. Der bestehende
+  1800-ms-Auto-Clear am Ende bleibt unverändert erhalten.
+- `js/newrecipe.js` (`showNrMsg()`): identischer Clear-then-delayed-set-Fix mit
+  neuem Zähler `nrMsgGen`.
+
+**2. `<details>`-zugeklappt-Problematik bei Mobil-Live-Regions (WCAG 4.1.3) —
+geprüft, ein echter Fund + ein Fehlalarm:**
+- **Echter Fund:** Der "🗑 Pizza gelöscht"-Klick (`.party-delete-btn`, `js/party.js`)
+  meldete bisher über `announcePartyCreate()`/`#partyCreateLiveMsg` — diese
+  Live-Region liegt aber in der SEPARATEN Karte "Eigene Pizza anlegen", die auf
+  Mobil per `<details>` standardmäßig ZUGEKLAPPT ist. Der Lösch-Button selbst liegt
+  aber in der (zum Klicken zwangsläufig offenen) "Pizza Party"-Karte — ein
+  Cross-Card-Fall, der Screenreadern die Ansage verschluckt hätte, wenn "Eigene
+  Pizza anlegen" gerade zu ist (der Regelfall). **Fix:** Wiederverwendung der
+  bereits korrekt platzierten `#partyResetLiveMsg`-Live-Region (v3.30.0, für den
+  „Alle zurücksetzen"-Button gebaut, liegt in der SELBEN "Pizza Party"-Karte wie
+  der Lösch-Button) — dabei generischer umbenannt zu `#partyStatusLiveMsg` /
+  `announcePartyStatus()` (HTML-ID in beiden Dateien angepasst, `js/party.js`
+  entsprechend), da sie jetzt sowohl für „Alle zurückgesetzt" als auch „Pizza
+  gelöscht" zuständig ist. `announcePartyCreate()`/`#partyCreateLiveMsg` bleiben
+  unverändert für die Create-Erfolgs-/Fehlermeldung (dort liegt der auslösende
+  Button in derselben Karte wie die Live-Region — die Karte muss zum Klicken
+  zwangsläufig offen sein, kein Cross-Card-Problem).
+- **Fehlalarm (geprüft, kein Fix nötig):** `#nrLiveMsg` ("Neues Rezept anlegen")
+  hat nur einen einzigen Trigger (`nrCreateBtn`), der in DERSELBEN `<details>`-Karte
+  liegt wie die Live-Region selbst — die Karte muss beim Klicken zwangsläufig
+  offen sein (per `<details>`-Browser-Semantik ist deren Inhalt bei geschlossenem
+  Zustand gar nicht klickbar/gerendert). Codesuche bestätigt: kein zweiter,
+  Cross-Card-Aufruf von `showNrMsg()` vorhanden. Bekommt trotzdem den
+  Clear-then-delayed-set-Fix aus Punkt 1 (unabhängiges WCAG-4.1.3-Muster:
+  doppelte wortgleiche Meldungen hintereinander).
+
+**3. `.schedbar`-Bannertext-Kontrast (WCAG 1.4.3), Nebenbefund aus dem
+v3.38.0-Audit:** Die Variante OHNE gesetzte Zeit (`guide.schedbar.noTime`,
+`js/guide.js`) hatte einen inline `background:linear-gradient(135deg,#8a7f76,#6f655c)`
+— am helleren Ende lag weißer Text nur bei ~3,91:1. Der reguläre grüne
+`.schedbar`-Grund (`var(--basil)`, Variante MIT Zeit) war davon nicht betroffen
+(bereits ausreichend Kontrast). **Fix:** Gradient auf `#645c55`/`#4a443e`
+gedunkelt (helleres Ende jetzt rechnerisch ~6,56:1). Zusätzlich `text-shadow:0 1px 2px rgba(0,0,0,.25)`
+auf `.schedbar` allgemein ergänzt (`css/styles.css`) als zweite Absicherung,
+schadet der bereits ausreichend kontrastreichen Basil-Variante nicht.
+
+**4. Fehlender eigener Fokus-Ring für die seit v3.41.0 kreisrunden Icon-Buttons
+(WCAG 2.4.7), Nebenbefund aus dem v3.41.0-Redesign:** `.nav-toggle` (dunkler
+Foto-Header-Hintergrund) bekommt `:focus-visible{outline:2px solid #fff;...}`.
+`.nav-close`, `.party-qty-btn`, `.party-delete-btn`, `.party-ing-remove` (heller
+Karten-Hintergrund) bekommen `:focus-visible{outline:2px solid var(--tomato-dark);...}`
+(identisches Muster wie das bereits bestehende `.info-btn:focus-visible`).
+
+**Härten (gezielter `accessibility-expert`-Audit, synchron, reine Verifikation):**
+Alle vier Fixes gegengeprüft — korrekt umgesetzt, keine weiteren Änderungen nötig.
+Kontraste konkret nachgerechnet: `.schedbar`-Fix ~6,56:1 (weit über 4,5:1), neue
+Fokusring-Farben `var(--tomato-dark)` auf Weiß ~6,61:1 (über der 3:1-Schwelle für
+Non-Text-Kontrast). Kein Clipping des `outline-offset:2px` durch `overflow:hidden`
+(das einzige `overflow:hidden` bei `details.card` hat 18–20px Innenabstand, weit
+mehr als nötig). `announcePartyStatus`-Hoisting (Funktionsdeklaration, vor ihrer
+Definition im Lösch-Handler aufgerufen) funktioniert korrekt in JS, kein Bug.
+
+**Tests:** `tests/test.html` unverändert bei **577 Prüfungen**, alle grün
+(Headless-Edge-Dump, mehrfach verifiziert — vor den Fixes, nach den Fixes, nach
+dem Audit). Kein `test-generator`-Lauf nötig (reine Timing-/ID-/Kontrast-Fixes,
+keine neue Berechnungslogik, `js/calc.js`/`js/schedule.js` unangetastet).
+
+**Geändert:** `js/share.js`, `js/newrecipe.js`, `js/party.js`, `js/guide.js`,
+`css/styles.css`, `pizza-rechner.html`, `pizza-rechner-mobile.html`. `?v=` auf
+`3.42.0` gezogen (Desktop + Mobil, alle `<link>`/`<script>`-Tags + `#appVersion`-
+Fußzeile). `pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.42.0 - Gebuendelter Accessibility-Zyklus/` enthält den
+vollständigen Schnappschuss.
+
+## Visuelles Redesign — Header-Foto-Platzhalter, Bereichs-Icons & Buttons (v3.41.0)
 
 Direkter Nutzerauftrag per `/define-feature` (Motivation: Freund + Nutzer fanden die
 App optisch "zu nüchtern/KI-typisch"; Referenz-Screenshot eines Mobil-Mockups als
@@ -4282,19 +4364,27 @@ Keine Code-Änderung durch den Audit nötig.
   CSS-Platzhalter (Bokeh-Verlauf, kein echtes Bild) — sobald der Nutzer ein
   generiertes Pizza-Foto bereitstellt, s. `assets/HEADER-FOTO-README.txt` für den
   Ein-Wert-Austausch.
+- ~~Gebündelter Accessibility-Zyklus (Live-Region-Fixes, `<details>`-Zugeklappt-
+  Problematik, `.schedbar`-Kontrast, Fokus-Ring kreisrunde Icon-Buttons)~~ —
+  **erledigt in v3.42.0** (kein Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt
+  „Gebündelter Accessibility-Zyklus (v3.42.0)" oben).
 
-**Stand v3.41.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
-oben); die drei oben notierten Live-Region-Nebenbefunde
-(`#shareLiveMsg`/`#nrLiveMsg`-Live-Region-Fehlen, `<details>`-zugeklappt-Problematik
-bei Mobil-Live-Regionen), der `.schedbar`-Kontrast-Nebenbefund sowie der neue Fund
-„kein eigener `:focus-visible`-Ring für die neuen kreisrunden Icon-Buttons" (s.
-Abschnitt v3.41.0 oben) bleiben offen für einen künftigen Accessibility-Zyklus. Der
-Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen, vollständig
-zurückgebaut, keine offene Frage mehr). Echtes Header-Foto einsetzen (s. o.) ist ein
-guter, konkret vorbereiteter Kandidat für den nächsten Zyklus, sobald ein Bild
-bereitsteht. Für den nächsten Zyklus braucht es sonst wieder frisches Brainstorming
-in Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes, oder die
-oben notierten Nebenbefunde) statt eines vorgegebenen Auftrags.
+**Stand v3.42.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen,
+vollständig zurückgebaut, keine offene Frage mehr). Echtes Header-Foto einsetzen
+(s. o.) ist ein guter, konkret vorbereiteter Kandidat für einen künftigen Zyklus,
+sobald ein Bild bereitsteht — **zwei weitere Aufträge liegen dem Orchestrator
+bereits als Warteschlange vor** (direkt im Anschluss an diesen Commit/Push
+abzuarbeiten, ohne auf eine neue Nutzer-Bestätigung zu warten): (1) „Icon-Farben,
+farbige Quickbar & Fokusring (Redesign-Korrektur)" — Card-Icon-Badges und Quickbar
+wieder auf satte Terrakotta-Flächen wie im Referenz-Screenshot statt der blassen
+v3.41.0-Optik, plus weißer Fokusring für die dadurch farbig/rund gestalteten
+Elemente; (2) danach „Echtes Header-Foto einsetzen" — der Nutzer hat
+`assets/header-pizza.jpg` bereits bereitgestellt, nur noch `--header-photo`
+umbiegen + Kontrast/Cache-Busting/Standalone-Build/Doku wie in
+`assets/HEADER-FOTO-README.txt` beschrieben. Für jeden weiteren, danach folgenden
+Zyklus braucht es wieder frisches Brainstorming in Phase 1 (neue Nutzer-Ideen,
+Design-/Layout-Überarbeitungen, Bugfixes) statt eines vorgegebenen Auftrags.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

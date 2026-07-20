@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Teigmeister</title>
-<link rel="stylesheet" href="css/styles.css?v=3.41.0">
+<link rel="stylesheet" href="css/styles.css?v=3.42.0">
 </head>
 <body>
 <header>
@@ -682,7 +682,7 @@
       <div id="partyPizzaList"></div>
       <button type="button" id="partyResetBtn" style="margin-top:14px;" data-i18n="btn.partyReset">Alle zurücksetzen</button>
       <div class="hint" style="margin-top:8px;margin-bottom:0;" data-i18n="hint.partyReset">Setzt nur die Stückzahlen zurück — deine eigenen Pizzen bleiben erhalten.</div>
-      <div id="partyResetLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
+      <div id="partyStatusLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
     </div>
 
     <div class="card">
@@ -714,29 +714,29 @@
 </div>
 
 <footer>
-  <span id="appVersion" style="opacity:.7;">v3.41.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.42.0</span>
 </footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.41.0"></script>
-<script src="js/state.js?v=3.41.0"></script>
-<script src="js/i18n.js?v=3.41.0"></script>
-<script src="js/settings.js?v=3.41.0"></script>
-<script src="js/flour.js?v=3.41.0"></script>
-<script src="js/calc.js?v=3.41.0"></script>
-<script src="js/schedule.js?v=3.41.0"></script>
-<script src="js/guide.js?v=3.41.0"></script>
-<script src="js/timer.js?v=3.41.0"></script>
-<script src="js/ui.js?v=3.41.0"></script>
-<script src="js/print.js?v=3.41.0"></script>
-<script src="js/pdf.js?v=3.41.0"></script>
-<script src="js/presets.js?v=3.41.0"></script>
-<script src="js/storage.js?v=3.41.0"></script>
-<script src="js/newrecipe.js?v=3.41.0"></script>
-<script src="js/share.js?v=3.41.0"></script>
-<script src="js/party.js?v=3.41.0"></script>
-<script src="js/glossary.js?v=3.41.0"></script>
-<script src="js/main.js?v=3.41.0"></script>
+<script src="js/dom.js?v=3.42.0"></script>
+<script src="js/state.js?v=3.42.0"></script>
+<script src="js/i18n.js?v=3.42.0"></script>
+<script src="js/settings.js?v=3.42.0"></script>
+<script src="js/flour.js?v=3.42.0"></script>
+<script src="js/calc.js?v=3.42.0"></script>
+<script src="js/schedule.js?v=3.42.0"></script>
+<script src="js/guide.js?v=3.42.0"></script>
+<script src="js/timer.js?v=3.42.0"></script>
+<script src="js/ui.js?v=3.42.0"></script>
+<script src="js/print.js?v=3.42.0"></script>
+<script src="js/pdf.js?v=3.42.0"></script>
+<script src="js/presets.js?v=3.42.0"></script>
+<script src="js/storage.js?v=3.42.0"></script>
+<script src="js/newrecipe.js?v=3.42.0"></script>
+<script src="js/share.js?v=3.42.0"></script>
+<script src="js/party.js?v=3.42.0"></script>
+<script src="js/glossary.js?v=3.42.0"></script>
+<script src="js/main.js?v=3.42.0"></script>
 <script>
   // Desktop-only UI-Glue (kein Eingriff in die PZ-Rechenmodule): Burger-Menü-Navigation,
   // 1:1 dieselbe Logik wie das etablierte Mobil-Muster (pizza-rechner-mobile.html, v3.17.x/

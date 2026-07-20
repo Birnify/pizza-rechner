@@ -186,9 +186,21 @@
   if (nrFlourSel) nrFlourSel.addEventListener('change', () => { nrState.flour = nrFlourSel.value; });
 
   // --- Anlegen ---
+  // Generation-Zähler (identisches Muster wie announcePartyCreate() in js/party.js
+  // bzw. showRecipeIOMsg() in js/main.js): Text wird erst geleert und im nächsten
+  // Tick gesetzt, sonst erkennen viele Screenreader bei zwei wortgleichen Meldungen
+  // hintereinander keine echte DOM-Mutation und unterdrücken die zweite Ansage
+  // (WCAG 4.1.3 Status Messages). Behoben im gebündelten Accessibility-Zyklus
+  // v3.42.0 (vorher wurde direkt gesetzt).
+  let nrMsgGen = 0;
   function showNrMsg(msg) {
     const el = $('nrLiveMsg');
-    if (el) el.textContent = msg;
+    if (!el) return;
+    const gen = ++nrMsgGen;
+    el.textContent = '';
+    window.setTimeout(function () {
+      if (gen === nrMsgGen) el.textContent = msg;
+    }, 50);
   }
 
   const nrCreateBtn = $('nrCreateBtn');

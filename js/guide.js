@@ -264,7 +264,14 @@
       // s. Kommentar bei guide.schedbar.noTime in js/i18n.js). Label kommt bewusst aus
       // demselben nav.zeitplan-Key wie der Menüpunkt selbst (keine doppelte Übersetzung).
       const zeitplanLink = `<button type="button" class="schedbar-goto-zeitplan" data-goto="zeitplan">${t('nav.zeitplan')}</button>`;
-      html += `<div class="schedbar" style="background:linear-gradient(135deg,#8a7f76,#6f655c)">${t('guide.schedbar.noTime', { dur: fmtDur(totalMin), zeitplan: zeitplanLink })}</div>`;
+      // Gradient-Endfarben dunkler als ursprünglich (#8a7f76/#6f655c): der hellere
+      // Farbton lag mit weißem Text bei nur ~3,91:1 (WCAG 1.4.3 verlangt 4,5:1 für
+      // Fließtext) -- Fund aus dem v3.38.0-Accessibility-Audit, behoben im gebündelten
+      // Accessibility-Zyklus v3.42.0. Neue Werte rechnerisch geprüft: hellstes Ende
+      // (#645c55) liegt bei ~6,55:1, deutliche Sicherheitsmarge statt nur knapp über
+      // der Schwelle. .schedbar bekommt zusätzlich per CSS einen text-shadow als
+      // zweite Absicherung (s. css/styles.css).
+      html += `<div class="schedbar" style="background:linear-gradient(135deg,#645c55,#4a443e)">${t('guide.schedbar.noTime', { dur: fmtDur(totalMin), zeitplan: zeitplanLink })}</div>`;
       $('guideSummary').innerHTML = t('guide.summary.noTime', { label: f.label, dur: fmtDur(totalMin) });
     }
     let n = 1;
