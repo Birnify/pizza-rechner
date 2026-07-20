@@ -35,6 +35,7 @@
     </ul>
     <div class="nav-divider" role="separator"></div>
     <ul class="nav-list">
+      <li><button type="button" class="nav-item" data-goto="glossar" data-i18n="nav.glossar">Glossar</button></li>
       <li><button type="button" class="nav-item" data-goto="einstellungen" data-i18n="nav.einstellungen">Einstellungen</button></li>
     </ul>
     <div class="nav-divider" role="separator"></div>
@@ -547,6 +548,16 @@
   </div>
 </div>
 
+<div class="wrap view single" data-view="glossar" hidden>
+  <div class="controls-col" style="display:grid;gap:20px;">
+    <div class="card">
+      <h2 data-i18n="card.glossary.title" data-i18n-attr="aria-label:card.glossary.title">Pizza-Glossar</h2>
+      <div class="hint" style="margin-bottom:14px;" data-i18n="hint.glossary">Kurze Lexikon-Artikel zu Begriffen und Hintergrundwissen rund um Pizza — zum Nachlesen, unabhängig vom Rechner.</div>
+      <div id="glossaryList"></div>
+    </div>
+  </div>
+</div>
+
 <div class="wrap view single" data-view="einstellungen" hidden>
   <div class="controls-col" style="display:grid;gap:20px;">
     <div class="card">
@@ -724,6 +735,7 @@
 <script src="js/newrecipe.js?v=3.36.0"></script>
 <script src="js/share.js?v=3.36.0"></script>
 <script src="js/party.js?v=3.36.0"></script>
+<script src="js/glossary.js?v=3.36.0"></script>
 <script src="js/main.js?v=3.36.0"></script>
 <script>
   // Desktop-only UI-Glue (kein Eingriff in die PZ-Rechenmodule): Burger-Menü-Navigation,

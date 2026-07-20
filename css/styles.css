@@ -147,6 +147,29 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 }
 .party-ing-remove:hover{border-color:var(--tomato);color:var(--tomato);}
 
+/* Pizza-Glossar (v3.37.0, js/glossary.js) — Liste kurzer Lexikon-Artikel als
+   verschachtelte <details>-Einträge innerhalb einer Karte (gemeinsames
+   Stylesheet: identisch auf Desktop und Mobil, analog zum Party-Muster
+   oben). Eigener Chevron-Marker analog zu details.card in css/mobile.css,
+   hier aber in der gemeinsamen Datei, da glossary.js auf beiden Seiten
+   dieselbe Struktur rendert. */
+.glossary-item{border-bottom:1px solid var(--line);}
+.glossary-item:last-child{border-bottom:none;}
+.glossary-item summary{
+  cursor:pointer;list-style:none;padding:12px 22px 12px 0;position:relative;
+  font-weight:600;font-size:14.5px;min-height:22px;-webkit-tap-highlight-color:transparent;
+}
+.glossary-item summary::-webkit-details-marker{display:none;}
+.glossary-item summary::after{
+  content:'▾';position:absolute;right:0;top:12px;color:var(--muted);
+  font-size:14px;transition:transform .15s;
+}
+.glossary-item[open] summary::after{transform:rotate(180deg);}
+.glossary-item summary:hover{color:var(--tomato-dark);}
+.glossary-body{margin:0 0 14px;font-size:13.5px;line-height:1.6;color:var(--ink);}
+.glossary-body p{margin:0 0 8px;}
+.glossary-body p:last-child{margin-bottom:0;}
+
 .card{
   background:var(--card);border-radius:var(--radius);padding:20px;
   border:1px solid var(--line);border-left:3px solid var(--tomato);
