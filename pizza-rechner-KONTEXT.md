@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-20 · Aktuelle Version: v3.33.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-20 · Aktuelle Version: v3.34.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,60 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## "Name für neues Rezept"-Feld ersetzt durch Rezept-Duplizieren (v3.33.0) = aktueller Stand
+## Sticky Zutatenliste im Pizza-Party-Bereich (v3.34.0) = aktueller Stand
+
+Feature, vom Nutzer beauftragt: Die aggregierte Zutatenliste im
+Pizza-Party-Bereich wird auf Desktop-Breite als sticky Seitenleiste
+dargestellt, genau wie das Ergebnis-Panel im Teig-Rechner — bleibt beim
+Durchscrollen der Pizza-Auswahl weiterhin sichtbar.
+
+- **Layout-Umbau in `pizza-rechner.html`:** die Party-Ansicht
+  (`data-view="party"`) nutzte bisher `class="wrap view single"` (erzwungene
+  einspaltige Darstellung, alle drei Cards untereinander in einer
+  `.controls-col`) — jetzt `class="wrap view"` (ohne `single`), identisches
+  Zwei-Spalten-Grid-Muster wie der Teig-Rechner
+  (`.wrap{grid-template-columns:1fr}`, ab 860px Breite
+  `grid-template-columns:1fr 360px`, `css/styles.css`).
+- **Linke Spalte** (`.controls-col`): „Pizza Party" (Pizzen-Auswahl) und
+  „Eigene Pizza anlegen" — unverändert, nur aus der bisherigen gemeinsamen
+  dritten Karte herausgelöst.
+- **Rechte Spalte** (neu: `<div class="result" id="partyResult">`, analog zu
+  `#result` im Teig-Rechner): enthält nur noch die Karte „Zutatenliste für
+  die Party" — durch die bereits bestehende, generische `.result{position:
+  sticky;top:20px;}`-Regel automatisch sticky, keine neue CSS-Regel nötig.
+- **Mobil unverändert** (Abgrenzung der Feature-Definition): 
+  `pizza-rechner-mobile.html` wurde nicht angefasst, bleibt einspaltiges
+  Akkordeon wie bisher.
+- **Keine Änderung** an der Berechnungs-/Aggregationslogik der Zutatenliste
+  (`js/party.js` unangetastet) — reine Layout-Maßnahme.
+
+**Tests:** reine CSS-/Markup-Umstrukturierung ohne Logikänderung —
+`tests/test.html` bleibt unverändert bei **567** Prüfungen, alle grün
+(Headless-Edge-Dump). Kein `test-generator`-Lauf nötig. Zusätzlich per
+gezieltem Headless-Edge-Skript interaktiv verifiziert: bei ≥860px Breite
+`grid-template-columns` der Party-Ansicht = `560px 360px` (Zwei-Spalten),
+`#partyResult` `position:sticky;top:20px`, rechte Spalte visuell rechts von
+der linken (`offsetLeft` verglichen); bei schmaler Fensterbreite (390px)
+fällt das Grid korrekt auf eine Spalte zurück (identisches, bereits
+etabliertes Verhalten wie beim Teig-Rechner — `.result` bleibt technisch
+weiterhin sticky positioniert, wie im Teig-Rechner auch schon immer, nur
+`@media print` setzt `position:static`, kein neues Verhalten). DOM-Reihenfolge
+(Controls-Spalte vor Ergebnis-Spalte im Markup, wie beim Teig-Rechner)
+bestätigt — Tab-/Lesereihenfolge unverändert gegenüber dem bisher schon
+etablierten, geprüften Muster. Kein dediziertes `accessibility-expert`-Audit
+nötig (reine Wiederverwendung des bereits vorhandenen, andernorts geprüften
+Zwei-Spalten/Sticky-Musters, keine neuen interaktiven Elemente).
+
+**Geändert:** `pizza-rechner.html`. `?v=` auf `3.34.0` gezogen (Desktop +
+Mobil, Cache-Busting + `#appVersion`-Fußzeile separat aktualisiert, auch
+wenn Mobil inhaltlich unverändert blieb — Versions-Konsistenz).
+`pizza-rechner-mobile-standalone.html` neu gebaut (`python
+build-mobile-standalone.py` — Quelle ist `pizza-rechner-mobile.html`, daher
+inhaltlich unverändert, nur der `?v=`-Stand zieht mit).
+`Versionen/v3.34.0 - Sticky Zutatenliste Pizza-Party/` enthält den
+vollständigen Schnappschuss.
+
+## "Name für neues Rezept"-Feld ersetzt durch Rezept-Duplizieren (v3.33.0)
 
 Feature, vom Nutzer beauftragt: Das Namensfeld + „Neu"-Button in der Card
 „Meine Rezepte" wurde entfernt und durch eine „Kopieren"-Funktion ersetzt, die
@@ -3466,9 +3519,9 @@ Keine Code-Änderung durch den Audit nötig.
   **erledigt in v3.33.0** (kein Backlog-Punkt, direkter Nutzerauftrag; s.
   Abschnitt „"Name für neues Rezept"-Feld ersetzt durch Rezept-Duplizieren
   (v3.33.0)" oben).
-- Sticky Zutatenliste im Pizza-Party-Bereich (Desktop, zweispaltiges Layout wie
-  beim Teig-Rechner) — vom Nutzer beauftragt, als eigener Zyklus in
-  Bearbeitung/geplant.
+- ~~Sticky Zutatenliste im Pizza-Party-Bereich~~ — **erledigt in v3.34.0**
+  (kein Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt „Sticky
+  Zutatenliste im Pizza-Party-Bereich (v3.34.0)" oben).
 - Sticky Quickbar für Pizza Party auf Mobil (analog zur bestehenden
   Rechner-Quickbar) — vom Nutzer beauftragt, als eigener Zyklus in
   Bearbeitung/geplant.
@@ -3491,7 +3544,7 @@ Keine Code-Änderung durch den Audit nötig.
   `data-goto="zeitplan"`), Desktop + Mobil, inkl. EN-Übersetzung — vom Nutzer
   beauftragt, als eigener Zyklus in Bearbeitung/geplant.
 
-**Stand v3.33.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.34.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben); die drei oben notierten Nebenbefunde
 (`#shareLiveMsg`/`#nrLiveMsg`-Live-Region-Fehlen, `<details>`-zugeklappt-Problematik
 bei Mobil-Live-Regionen) bleiben offen für einen künftigen Accessibility-Zyklus.
