@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-20 · Aktuelle Version: v3.37.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-20 · Aktuelle Version: v3.38.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,83 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Pizza-Glossar (v3.37.0) = aktueller Stand
+## Fix: veralteter Hinweistext im Anleitungs-Banner (v3.38.0) = aktueller Stand
+
+Bugfix, vom Nutzer klar umrissen (kein `/define-feature` nötig): Der graue
+Banner über der Schritt-für-Schritt-Anleitung, der erscheint wenn noch keine
+Start-/Zielzeit gesetzt ist (`guide.schedbar.noTime`, `js/guide.js`), verwies
+noch auf „gib oben eine Start- oder Zielzeit an" — seit der Burgermenü-
+Navigation (v3.26.0) liegen die Start-/Zielzeit-Felder aber im eigenen
+Menüpunkt „Zeitplan" (`data-view="zeitplan"`), nicht mehr im selben Bereich
+wie die Anleitung.
+
+- **Text angepasst** UND **„Zeitplan" darin klickbar gemacht** (springt
+  direkt zum Menüpunkt) — DE: „…lege im Bereich **Zeitplan** eine Start-
+  oder Zielzeit fest…", EN: „…set a start or target time in the
+  **Schedule** section…". Der Linktext kommt bewusst aus demselben
+  `nav.zeitplan`-Key wie der Menüpunkt selbst (keine doppelte Übersetzung).
+- **`js/guide.js`:** baut den Link als
+  `<button type="button" class="schedbar-goto-zeitplan" data-goto="zeitplan">…</button>`
+  und interpoliert ihn über einen neuen `{zeitplan}`-Platzhalter in
+  `guide.schedbar.noTime`. Da `#guideSteps` bei JEDER Eingabe (Slider/
+  Zahlenfeld) komplett per `innerHTML` neu aufgebaut wird, hängt der
+  Klick-Handler NICHT direkt am Button, sondern ist EIN einziger, dauerhaft
+  delegierter `click`-Listener auf dem stabilen `#guideSteps`-Container
+  selbst (`e.target.closest('.schedbar-goto-zeitplan')`) — bleibt über
+  beliebig viele Re-Renders hinweg zuverlässig funktionsfähig.
+- **Neue Funktion `PZ.gotoView(view)`** (identisch in `pizza-rechner.html`
+  und `pizza-rechner-mobile.html`, Burgermenü-Inline-Script): macht exakt
+  dasselbe wie der bestehende `.nav-item`-Klick-Handler
+  (`activateView(view); announceView(item.textContent); closeNav(false);
+  focusView(view);`), aber aufrufbar von AUSSERHALB des Bereiche-Menüs —
+  wiederverwendbar für künftige ähnliche Sprung-Links.
+- **CSS** (`css/styles.css`, neue Klasse `.schedbar-goto-zeitplan`): sieht
+  wie ein unterstrichenes Wort im Fließtext aus (kein sichtbarer
+  Button-Rahmen), ist aber ein echter `<button>` (Tastatur/Screenreader-
+  bedienbar), mit `:focus-visible`-Ring in Weiß (Banner hat dunklen
+  Hintergrund).
+- Gilt für Desktop UND Mobil (gemeinsamer `js/guide.js`-Code, identische
+  `PZ.gotoView()`-Ergänzung in beiden HTML-Dateien).
+
+**Härten (gezielter `accessibility-expert`-Audit, nur diese Änderung):**
+keine Befunde, keine Code-Änderungen nötig. Verifiziert per Headless-Edge
+(echtes DOM/Klick-Verhalten, nicht nur Code-Lesen): Accessible Name des
+Buttons = „Zeitplan"/„Schedule" (Linktext = Zielbereichs-Name ist eine
+anerkannte WCAG-2.4.4-Technik, keine Namenskollision mit dem gleichnamigen
+Menüpunkt, da dieser im geschlossenen Overlay per `hidden` aus dem
+Accessibility-Tree entfernt ist); Fokus-Kontrast des `:focus-visible`-Rings
+auf dem Banner-Gradient ~3,91–5,69:1 (über der 3:1-Schwelle für
+Fokusindikatoren); Tab-Reihenfolge unauffällig; Live-Region-Ansage
+(„Ansicht: Zeitplan") funktioniert nach Klick zuverlässig, inkl. bekanntem
+Clear-then-delayed-set-Timing; Fokus landet korrekt auf der `<h2>` des
+Zeitplan-Bereichs; delegierter Klick-Handler bleibt nach erzwungenem
+Re-Render von `#guideSteps` funktionsfähig (kein Listener-Verlust, kein
+doppeltes Auslösen).
+- **Nebenbefund (nicht behoben, außerhalb des Scopes):** der reguläre
+  Bannertext selbst (weißer Text auf dem helleren Ende des
+  `.schedbar`-Gradients, `#8a7f76`) liegt bei ~3,91:1 Kontrast — unter der
+  4,5:1-Schwelle für Fließtext (WCAG 1.4.3). Vorbestehender, von dieser
+  Änderung unabhängiger Zustand des gesamten `.schedbar`-Bausteins (der neue
+  Button erbt exakt dieselbe Farbe wie der umgebende Text) — fürs Backlog
+  vermerkt.
+
+**Tests:** reine Text-/Markup-/JS-Ergänzung ohne Berechnungslogik-Bezug —
+`tests/test.html` bleibt unverändert bei **567** Prüfungen, alle grün
+(Headless-Edge-Dump). Kein `test-generator`-Lauf nötig. Zusätzlich per
+gezieltem Headless-Edge-Skript interaktiv verifiziert (Desktop + Mobil):
+Klick auf den neuen Link wechselt zur Zeitplan-Ansicht (Rechner-Ansicht wird
+`hidden`, Zeitplan-Ansicht sichtbar, passender Menüpunkt als aktiv markiert),
+Link-Text übersetzt sich bei Sprachwechsel korrekt zu „Schedule".
+
+**Geändert:** `js/i18n.js`, `js/guide.js`, `css/styles.css`,
+`pizza-rechner.html`, `pizza-rechner-mobile.html`. `?v=` auf `3.38.0`
+gezogen (Desktop + Mobil, Cache-Busting + `#appVersion`-Fußzeile separat
+aktualisiert). `pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.38.0 - Fix Anleitungs-Banner Zeitplan-Link/` enthält den
+vollständigen Schnappschuss.
+
+## Pizza-Glossar (v3.37.0)
 
 Feature, vom Nutzer beauftragt: Ein neuer, eigenständiger Menü-Bereich mit
 kurzen Lexikon-Artikeln, die Begriffe und Hintergrundwissen rund um Pizza
@@ -3780,15 +3856,9 @@ Keine Code-Änderung durch den Audit nötig.
   Menü-Navigation (v3.36.0)" oben).
 - ~~Pizza-Glossar~~ — **erledigt in v3.37.0** (kein Backlog-Punkt, direkter
   Nutzerauftrag; s. Abschnitt „Pizza-Glossar (v3.37.0)" oben).
-- Fix: veralteter Hinweistext im Anleitungs-Banner (`guide.schedbar.noTime`,
-  `js/guide.js` ~Zeile 263) verweist noch auf „gib oben eine Start- oder
-  Zielzeit an" — seit der Burgermenü-Navigation (v3.26.0) liegen die
-  Start-/Zielzeit-Felder im eigenen Menüpunkt „Zeitplan"
-  (`data-view="zeitplan"`), nicht mehr im selben Bereich wie die Anleitung.
-  Text anpassen + „Zeitplan" darin klickbar machen (Sprung zum Menüpunkt via
-  `data-goto="zeitplan"`), Desktop + Mobil, inkl. EN-Übersetzung — vom Nutzer
-  beauftragt, als eigener Zyklus in Bearbeitung/geplant (letzter offener
-  Punkt der laufenden Warteschlange).
+- ~~Fix: veralteter Hinweistext im Anleitungs-Banner~~ — **erledigt in
+  v3.38.0** (kein Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt
+  „Fix: veralteter Hinweistext im Anleitungs-Banner (v3.38.0)" oben).
 - Nebenbefund aus dem v3.37.0-Accessibility-Audit (bereits mitgefixt, hier
   nur zur Nachvollziehbarkeit dokumentiert): `details.card summary::after`
   (`css/mobile.css`) nutzte `content:'▾'` ohne Alt-Text-Syntax, wodurch der
@@ -3796,15 +3866,24 @@ Keine Code-Änderung durch den Audit nötig.
   auf Mobil einfloss — behoben auf `content:'▾' / '';` (CSS Generated
   Content Module Level 3), betraf ALLE Akkordeon-Karten, nicht nur das neue
   Glossar.
+- Nebenbefund aus dem v3.38.0-Accessibility-Audit (nicht behoben, außerhalb
+  des angefragten Scopes): der reguläre `.schedbar`-Bannertext (weißer Text
+  auf dem helleren Ende des Gradients `#8a7f76`) liegt bei ~3,91:1 Kontrast
+  — unter der 4,5:1-Schwelle für Fließtext (WCAG 1.4.3). Vorbestehender,
+  von diesem Zyklus unabhängiger Zustand des gesamten `.schedbar`-Bausteins.
+  Beim nächsten Kontrast-/Accessibility-Zyklus mit aufgreifen (z. B. dunklere
+  Gradient-Endfarbe oder Text-Shadow).
 
-**Stand v3.37.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.38.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben); die drei oben notierten Nebenbefunde
 (`#shareLiveMsg`/`#nrLiveMsg`-Live-Region-Fehlen, `<details>`-zugeklappt-Problematik
-bei Mobil-Live-Regionen) bleiben offen für einen künftigen Accessibility-Zyklus.
-Von der vom Nutzer vorgegebenen Warteschlange von zehn direkten Aufträgen ist nur
-noch der letzte Punkt offen (Fix des veralteten Hinweistexts im Anleitungs-Banner,
-s. oben) — dafür entfällt weiterhin das sonst übliche Phase-1-Brainstorming, da
-bereits vollständig definiert und vom Nutzer freigegeben.
+bei Mobil-Live-Regionen) sowie der zuletzt notierte `.schedbar`-Kontrast-
+Nebenbefund bleiben offen für einen künftigen Accessibility-Zyklus. Die vom
+Nutzer vorgegebene Warteschlange von zehn direkten Aufträgen ist damit
+**vollständig abgearbeitet** — für den nächsten Zyklus braucht es wieder
+frisches Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/Layout-
+Überarbeitungen, Bugfixes, oder die oben notierten Nebenbefunde) statt
+eines vorgegebenen Auftrags.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

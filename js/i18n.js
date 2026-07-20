@@ -308,8 +308,14 @@
   add('guide.schedbar.withTime', '⏱️ <b>Gesamtdauer ca. {dur}</b><br><span class="big">▶ Start {startClock}</span> &nbsp;→&nbsp; <span class="big">🍕 Fertig {endClock}</span>',
     '⏱️ <b>Total time approx. {dur}</b><br><span class="big">▶ Start {startClock}</span> &nbsp;→&nbsp; <span class="big">🍕 Ready {endClock}</span>');
   add('guide.summary.withTime', '{label} · {N} × {W} g · {hyd}% Hydration', '{label} · {N} × {W} g · {hyd}% hydration');
-  add('guide.schedbar.noTime', '⏱️ Gesamtdauer ca. <b>{dur}</b> — gib oben eine <b>Start-</b> oder <b>Zielzeit</b> an, dann bekommt jeder Schritt eine Uhrzeit.',
-    '⏱️ Total time approx. <b>{dur}</b> — enter a <b>start</b> or <b>target time</b> above, then every step gets a clock time.');
+  // Bugfix (v3.38.0): "gib oben eine Start-/Zielzeit an" stimmte seit der
+  // Burgermenü-Navigation (v3.26.0) nicht mehr — Start-/Zielzeit-Felder liegen
+  // seitdem im eigenen Menüpunkt "Zeitplan", nicht mehr im selben Bereich wie
+  // die Anleitung. Der {zeitplan}-Platzhalter wird in js/guide.js mit einem
+  // klickbaren <button data-goto="zeitplan">-Snippet befüllt (springt direkt
+  // zum Menüpunkt, s. PZ.gotoView() in beiden HTML-Dateien).
+  add('guide.schedbar.noTime', '⏱️ Gesamtdauer ca. <b>{dur}</b> — lege im Bereich {zeitplan} eine <b>Start-</b> oder <b>Zielzeit</b> fest, dann bekommt jeder Schritt eine Uhrzeit.',
+    '⏱️ Total time approx. <b>{dur}</b> — set a <b>start</b> or <b>target time</b> in the {zeitplan} section, then every step gets a clock time.');
   add('guide.summary.noTime', '{label} · Gesamt ~{dur}', '{label} · Total ~{dur}');
 
   // ---- js/party.js — Pizza-Party-Planer: 8 Presets + UI-Strings -----------------------

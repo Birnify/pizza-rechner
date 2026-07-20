@@ -384,6 +384,15 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .schedbar b{font-weight:800;}
 .schedbar .big{font-size:16px;font-weight:800;font-family:var(--font-head);}
+/* Klickbarer "Zeitplan"-Sprung im Banner ohne Zeitangabe (v3.38.0-Fix) — sieht wie ein
+   unterstrichenes Wort im Fließtext aus, ist aber ein echter <button> (Tastatur/Screen-
+   reader-bedienbar), s. js/guide.js. */
+.schedbar-goto-zeitplan{
+  background:none;border:none;padding:0;margin:0;color:inherit;font:inherit;
+  font-weight:800;text-decoration:underline;cursor:pointer;
+}
+.schedbar-goto-zeitplan:hover{opacity:.85;}
+.schedbar-goto-zeitplan:focus-visible{outline:2px solid #fff;outline-offset:2px;border-radius:1px;}
 .step .body .tip{
   margin-top:7px;font-size:12.5px;color:var(--basil);background:#f1f7f1;border-radius:2px;
   padding:7px 10px;border-left:3px solid var(--basil);
@@ -1379,7 +1388,7 @@ footer{text-align:right;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.37.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.38.0</span>
 </footer>
 
 <div class="quickbar" data-view="rechner">
@@ -1742,8 +1751,14 @@ footer{text-align:right;}
   add('guide.schedbar.withTime', '⏱️ <b>Gesamtdauer ca. {dur}</b><br><span class="big">▶ Start {startClock}</span> &nbsp;→&nbsp; <span class="big">🍕 Fertig {endClock}</span>',
     '⏱️ <b>Total time approx. {dur}</b><br><span class="big">▶ Start {startClock}</span> &nbsp;→&nbsp; <span class="big">🍕 Ready {endClock}</span>');
   add('guide.summary.withTime', '{label} · {N} × {W} g · {hyd}% Hydration', '{label} · {N} × {W} g · {hyd}% hydration');
-  add('guide.schedbar.noTime', '⏱️ Gesamtdauer ca. <b>{dur}</b> — gib oben eine <b>Start-</b> oder <b>Zielzeit</b> an, dann bekommt jeder Schritt eine Uhrzeit.',
-    '⏱️ Total time approx. <b>{dur}</b> — enter a <b>start</b> or <b>target time</b> above, then every step gets a clock time.');
+  // Bugfix (v3.38.0): "gib oben eine Start-/Zielzeit an" stimmte seit der
+  // Burgermenü-Navigation (v3.26.0) nicht mehr — Start-/Zielzeit-Felder liegen
+  // seitdem im eigenen Menüpunkt "Zeitplan", nicht mehr im selben Bereich wie
+  // die Anleitung. Der {zeitplan}-Platzhalter wird in js/guide.js mit einem
+  // klickbaren <button data-goto="zeitplan">-Snippet befüllt (springt direkt
+  // zum Menüpunkt, s. PZ.gotoView() in beiden HTML-Dateien).
+  add('guide.schedbar.noTime', '⏱️ Gesamtdauer ca. <b>{dur}</b> — lege im Bereich {zeitplan} eine <b>Start-</b> oder <b>Zielzeit</b> fest, dann bekommt jeder Schritt eine Uhrzeit.',
+    '⏱️ Total time approx. <b>{dur}</b> — set a <b>start</b> or <b>target time</b> in the {zeitplan} section, then every step gets a clock time.');
   add('guide.summary.noTime', '{label} · Gesamt ~{dur}', '{label} · Total ~{dur}');
 
   // ---- js/party.js — Pizza-Party-Planer: 8 Presets + UI-Strings -----------------------
@@ -3218,7 +3233,11 @@ footer{text-align:right;}
       html += `<div class="schedbar">${t('guide.schedbar.withTime', { dur: fmtDur(totalMin), startClock: fmtClock(base), endClock: fmtClock(endT) })}</div>`;
       $('guideSummary').innerHTML = t('guide.summary.withTime', { label: f.label, N: R.N, W: R.W, hyd: state.hyd });
     } else {
-      html += `<div class="schedbar" style="background:linear-gradient(135deg,#8a7f76,#6f655c)">${t('guide.schedbar.noTime', { dur: fmtDur(totalMin) })}</div>`;
+      // {zeitplan}-Platzhalter: klickbarer Sprung zum Menüpunkt "Zeitplan" (v3.38.0-Fix,
+      // s. Kommentar bei guide.schedbar.noTime in js/i18n.js). Label kommt bewusst aus
+      // demselben nav.zeitplan-Key wie der Menüpunkt selbst (keine doppelte Übersetzung).
+      const zeitplanLink = `<button type="button" class="schedbar-goto-zeitplan" data-goto="zeitplan">${t('nav.zeitplan')}</button>`;
+      html += `<div class="schedbar" style="background:linear-gradient(135deg,#8a7f76,#6f655c)">${t('guide.schedbar.noTime', { dur: fmtDur(totalMin), zeitplan: zeitplanLink })}</div>`;
       $('guideSummary').innerHTML = t('guide.summary.noTime', { label: f.label, dur: fmtDur(totalMin) });
     }
     let n = 1;
@@ -3242,6 +3261,24 @@ footer{text-align:right;}
   // Hook, der calc() neu aufruft, und calc() ruft am Ende immer buildGuide() auf
   // (s. PZ.R = {...}; PZ.buildGuide(); ganz unten in calc.js). Ein zweiter, separater
   // Hook hier würde buildGuide() bei jedem Sprachwechsel unnötig doppelt ausführen.
+
+  // Klickbarer "Zeitplan"-Sprung im Banner ohne Zeitangabe (v3.38.0-Fix): #guideSteps
+  // wird bei JEDEM buildGuide()-Aufruf komplett per innerHTML neu aufgebaut (s. o.) —
+  // ein direkt am Button hängender Listener würde also bei jeder Eingabe verloren
+  // gehen. Stattdessen EIN einziger, dauerhaft delegierter Listener auf dem stabilen
+  // #guideSteps-Container selbst, der auf Klicks auf .schedbar-goto-zeitplan reagiert
+  // (Event-Bubbling), egal wie oft der Inhalt neu gerendert wird. PZ.gotoView() wird
+  // von den Burgermenü-Inline-Scripts beider Seiten bereitgestellt (Desktop + Mobil,
+  // identisches Muster) — falls aus irgendeinem Grund nicht vorhanden (z. B. isolierte
+  // Testumgebung ohne Menü-Markup), passiert einfach nichts (kein Crash).
+  const guideStepsEl = $('guideSteps');
+  if (guideStepsEl) {
+    guideStepsEl.addEventListener('click', function (e) {
+      const btn = e.target.closest('.schedbar-goto-zeitplan');
+      if (!btn) return;
+      if (PZ.gotoView) PZ.gotoView('zeitplan');
+    });
+  }
 })(window);
 
 </script>
@@ -6092,6 +6129,19 @@ footer{text-align:right;}
         h.focus({ preventScroll: true });
       }
     }
+
+    // Wechselt die Ansicht identisch zum Klick auf einen Menüpunkt, aber OHNE über
+    // das Bereiche-Menü zu gehen — genutzt vom klickbaren "Zeitplan"-Sprung im
+    // Anleitungs-Banner ohne Zeitangabe (v3.38.0-Fix, s. js/guide.js). closeNav(false)
+    // ist hier defensiv/für den unwahrscheinlichen Fall, dass das Menü doch offen ist.
+    function gotoView(view){
+      var item = navItems.filter(function(b){ return b.getAttribute('data-goto') === view; })[0];
+      activateView(view);
+      announceView(item ? item.textContent : view);
+      closeNav(false);
+      focusView(view);
+    }
+    PZ.gotoView = gotoView;
 
     if (navToggle && navOverlay) {
       navToggle.addEventListener('click', function(){

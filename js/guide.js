@@ -260,7 +260,11 @@
       html += `<div class="schedbar">${t('guide.schedbar.withTime', { dur: fmtDur(totalMin), startClock: fmtClock(base), endClock: fmtClock(endT) })}</div>`;
       $('guideSummary').innerHTML = t('guide.summary.withTime', { label: f.label, N: R.N, W: R.W, hyd: state.hyd });
     } else {
-      html += `<div class="schedbar" style="background:linear-gradient(135deg,#8a7f76,#6f655c)">${t('guide.schedbar.noTime', { dur: fmtDur(totalMin) })}</div>`;
+      // {zeitplan}-Platzhalter: klickbarer Sprung zum Menüpunkt "Zeitplan" (v3.38.0-Fix,
+      // s. Kommentar bei guide.schedbar.noTime in js/i18n.js). Label kommt bewusst aus
+      // demselben nav.zeitplan-Key wie der Menüpunkt selbst (keine doppelte Übersetzung).
+      const zeitplanLink = `<button type="button" class="schedbar-goto-zeitplan" data-goto="zeitplan">${t('nav.zeitplan')}</button>`;
+      html += `<div class="schedbar" style="background:linear-gradient(135deg,#8a7f76,#6f655c)">${t('guide.schedbar.noTime', { dur: fmtDur(totalMin), zeitplan: zeitplanLink })}</div>`;
       $('guideSummary').innerHTML = t('guide.summary.noTime', { label: f.label, dur: fmtDur(totalMin) });
     }
     let n = 1;
@@ -284,4 +288,22 @@
   // Hook, der calc() neu aufruft, und calc() ruft am Ende immer buildGuide() auf
   // (s. PZ.R = {...}; PZ.buildGuide(); ganz unten in calc.js). Ein zweiter, separater
   // Hook hier würde buildGuide() bei jedem Sprachwechsel unnötig doppelt ausführen.
+
+  // Klickbarer "Zeitplan"-Sprung im Banner ohne Zeitangabe (v3.38.0-Fix): #guideSteps
+  // wird bei JEDEM buildGuide()-Aufruf komplett per innerHTML neu aufgebaut (s. o.) —
+  // ein direkt am Button hängender Listener würde also bei jeder Eingabe verloren
+  // gehen. Stattdessen EIN einziger, dauerhaft delegierter Listener auf dem stabilen
+  // #guideSteps-Container selbst, der auf Klicks auf .schedbar-goto-zeitplan reagiert
+  // (Event-Bubbling), egal wie oft der Inhalt neu gerendert wird. PZ.gotoView() wird
+  // von den Burgermenü-Inline-Scripts beider Seiten bereitgestellt (Desktop + Mobil,
+  // identisches Muster) — falls aus irgendeinem Grund nicht vorhanden (z. B. isolierte
+  // Testumgebung ohne Menü-Markup), passiert einfach nichts (kein Crash).
+  const guideStepsEl = $('guideSteps');
+  if (guideStepsEl) {
+    guideStepsEl.addEventListener('click', function (e) {
+      const btn = e.target.closest('.schedbar-goto-zeitplan');
+      if (!btn) return;
+      if (PZ.gotoView) PZ.gotoView('zeitplan');
+    });
+  }
 })(window);

@@ -373,6 +373,15 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .schedbar b{font-weight:800;}
 .schedbar .big{font-size:16px;font-weight:800;font-family:var(--font-head);}
+/* Klickbarer "Zeitplan"-Sprung im Banner ohne Zeitangabe (v3.38.0-Fix) — sieht wie ein
+   unterstrichenes Wort im Fließtext aus, ist aber ein echter <button> (Tastatur/Screen-
+   reader-bedienbar), s. js/guide.js. */
+.schedbar-goto-zeitplan{
+  background:none;border:none;padding:0;margin:0;color:inherit;font:inherit;
+  font-weight:800;text-decoration:underline;cursor:pointer;
+}
+.schedbar-goto-zeitplan:hover{opacity:.85;}
+.schedbar-goto-zeitplan:focus-visible{outline:2px solid #fff;outline-offset:2px;border-radius:1px;}
 .step .body .tip{
   margin-top:7px;font-size:12.5px;color:var(--basil);background:#f1f7f1;border-radius:2px;
   padding:7px 10px;border-left:3px solid var(--basil);
