@@ -580,7 +580,7 @@
   add('pill.yeastLong', 'Lang (24h)', 'Long (24h)');
   add('pill.yeastMedium', 'Mittel (8h RT)', 'Medium (8h room temp)');
   add('pill.yeastFast', 'Schnell (4h)', 'Fast (4h)');
-  add('label.coldStage', 'Kalte Gare — wo verbringt der Teig die Kühlschrank-Zeit?', 'Cold rise — where does the dough spend its fridge time?');
+  add('label.coldStage', 'Wie verbringt der Teig die Kühlschrank-Zeit?', 'How does the dough spend its fridge time?');
   add('seg.coldBalls', 'Als Teiglinge (praktisch)', 'As dough balls (convenient)');
   add('seg.coldBulk', 'Im Stück (klassisch)', 'In bulk (classic)');
   add('hint.coldStage', 'Greift nur bei kühlen Führungen (24 h+). <b>Teiglinge:</b> nach 2 h formen, dann kalt — am Backtag nur noch temperieren &amp; backen. <b>Im Stück:</b> der ganze Teig gärt kalt, Formen und Stückgare erst am Backtag.',

@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-20 · Aktuelle Version: v3.30.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-20 · Aktuelle Version: v3.30.2 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,39 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Desktop-Untertitel entfernt (v3.30.1) = aktueller Stand
+## Textkorrektur Kaltgare-Segment-Titel (v3.30.2) = aktueller Stand
+
+Kleiner direkter Text-Fix, vom Nutzer beauftragt (keine Logik-/Strukturänderung).
+Der Titel über dem Kaltgare-Segment („Als Teiglinge (praktisch)" / „Im Stück
+(klassisch)") lautete „Kalte Gare — wo verbringt der Teig die Kühlschrank-Zeit?"
+und wurde als sprachlich holprig/redundant empfunden („Kalte Gare" und
+„Kühlschrank-Zeit" sagen im selben Satz zweimal dasselbe).
+
+- **Neuer Text:** „Wie verbringt der Teig die Kühlschrank-Zeit?" (DE) /
+  „How does the dough spend its fridge time?" (EN) — ersetzt den alten Titel
+  vollständig, gleicher i18n-Key `label.coldStage`.
+- **Geändert:** `js/i18n.js` (Wörterbucheintrag `label.coldStage`, DE + EN),
+  statischer Fallback-Text im `<label id="coldStageLabel">` in
+  `pizza-rechner.html` und `pizza-rechner-mobile.html` (beide auf den neuen
+  Text angeglichen, damit vor dem JS-Rendering kein alter Text aufblitzt).
+
+**Tests:** reine Textänderung ohne Auswirkung auf Rechenlogik oder Struktur —
+`tests/test.html` bleibt unverändert bei **558** Prüfungen, alle grün
+(Headless-Edge-Dump). Kein `test-generator`-Lauf nötig (kein Logik-Code
+geändert). Kein `accessibility-expert`-Lauf nötig (reiner Label-Text, keine
+neue/veränderte interaktive Struktur).
+
+**Geändert:** `js/i18n.js`, `pizza-rechner.html`, `pizza-rechner-mobile.html`.
+`?v=` auf `3.30.2` gezogen (Desktop + Mobil, Cache-Busting + `#appVersion`-
+Fußzeile separat aktualisiert, wie seit v3.28.1 bekannt). Alte Textreste per
+Codesuche verifiziert (keine verbleibenden Referenzen außer im vor dem
+Rebuild noch alten Standalone-File).
+`pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.30.2 - Textkorrektur Kaltgare-Segment-Titel/` enthält den
+vollständigen Schnappschuss.
+
+## Desktop-Untertitel entfernt (v3.30.1)
 
 Kleiner direkter Fix, vom Nutzer beauftragt (Desktop→Mobil-Angleichung, kein Feature).
 Der Header-Untertitel („Neapolitanisch · Biga · Poolish — komplett offline") und die
@@ -3214,13 +3246,38 @@ Keine Code-Änderung durch den Audit nötig.
 - ~~Desktop-Untertitel entfernen (Header-Tagline + Footer-Beschreibungszeilen, Angleichung an Mobil)~~
   — **erledigt in v3.30.1** (kein Backlog-Punkt, direkter Nutzerauftrag; s.
   Abschnitt „Desktop-Untertitel entfernt (v3.30.1)" oben).
+- ~~Textkorrektur Kaltgare-Segment-Titel~~ — **erledigt in v3.30.2** (kein
+  Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt „Textkorrektur
+  Kaltgare-Segment-Titel (v3.30.2)" oben).
+- Sichtbare Kopplung Vorteig-Reife ↔ Hefemenge (Hefemenge-Regler bei aktiver
+  Biga/Poolish-Reifestufe optisch als abhängig/gesperrt darstellen) — vom Nutzer
+  beauftragt, als eigener Zyklus in Bearbeitung/geplant.
+- Bugfix: inkonsistente Dezimaltrennzeichen zwischen der roten Regler-Wertanzeige
+  (`js/ui.js`/`js/newrecipe.js`, `.toFixed()`, immer Punkt) und der nativen
+  `<input type="number">`-Anzeige (Browser rendert je nach OS-Locale mit Komma) —
+  vom Nutzer beauftragt, als eigener Zyklus in Bearbeitung/geplant.
+- „Name für neues Rezept"-Feld (`#recipeName`/`#recipeSaveNew`) durch eine
+  Kopieren/Duplizieren-Funktion für das im Dropdown gewählte gespeicherte Rezept
+  ersetzen — vom Nutzer beauftragt, als eigener Zyklus in Bearbeitung/geplant.
+- Sticky Zutatenliste im Pizza-Party-Bereich (Desktop, zweispaltiges Layout wie
+  beim Teig-Rechner) — vom Nutzer beauftragt, als eigener Zyklus in
+  Bearbeitung/geplant.
+- Sticky Quickbar für Pizza Party auf Mobil (analog zur bestehenden
+  Rechner-Quickbar) — vom Nutzer beauftragt, als eigener Zyklus in
+  Bearbeitung/geplant.
+- Gruppierte Menü-Navigation (Bereiche-Menü clustert „Teig-Rechner"
+  Rechner/Rezepte/Zeitplan und „Pizza Party" getrennt von „Einstellungen", nutzt
+  `.nav-divider`) — vom Nutzer beauftragt, als eigener Zyklus in
+  Bearbeitung/geplant.
 
-**Stand v3.30.1: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
-oben), offene Punkte sind die drei oben notierten Nebenbefunde
+**Stand v3.30.2: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+oben); die drei oben notierten Nebenbefunde
 (`#shareLiveMsg`/`#nrLiveMsg`-Live-Region-Fehlen, `<details>`-zugeklappt-Problematik
-bei Mobil-Live-Regionen). Für den nächsten Zyklus braucht es daher frisches
-Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes,
-oder die eben genannten Nebenbefunde) statt eines vorgegebenen Backlog-Punkts.
+bei Mobil-Live-Regionen) bleiben offen für einen künftigen Accessibility-Zyklus.
+Aktuell läuft eine vom Nutzer vorgegebene Warteschlange von acht direkten Aufträgen
+(s. Punkte oben, jeweils „in Bearbeitung/geplant") — für diese Punkte entfällt das
+sonst übliche Phase-1-Brainstorming, da bereits vollständig definiert und vom Nutzer
+freigegeben.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 
