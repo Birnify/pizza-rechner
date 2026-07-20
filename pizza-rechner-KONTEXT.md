@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-20 · Aktuelle Version: v3.29.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-20 · Aktuelle Version: v3.30.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,91 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Zutaten-Info je Pizza im Pizza-Party-Bereich (v3.29.0) = aktueller Stand
+## Pizza-Party zurücksetzen (v3.30.0) = aktueller Stand
+
+Kleines neues Feature, vom Nutzer per `/define-feature` strukturiert und bestätigt.
+Direkt im Anschluss an „Zutaten-Info je Pizza" (v3.29.0) im selben Pizza-Party-Bereich
+umgesetzt — beide Vorhaben wurden im selben Arbeitsgang implementiert, aber bewusst
+in zwei getrennte, eigenständige Versions-Zyklen mit je eigenem Commit aufgeteilt
+(per gezielter Git-Patch-Trennung der bereits interleavten Änderungen), damit die
+Versionshistorie weiterhin ein Feature = ein Commit abbildet.
+
+- **Neuer Button „Alle zurücksetzen"** (`#partyResetBtn`) direkt unter der
+  Pizzenliste in der „Pizza Party"-Karte (Desktop + Mobil, identisches Markup).
+  Setzt über die neue, reine Datenfunktion `PZ.partyResetAllQuantities()`
+  (`js/party.js`) alle Stückzahlen — Presets **und** eigene Pizzen — auf 0 zurück,
+  in einem einzigen `writeRaw()`-Aufruf statt N einzelner `setQty()`-Aufrufe.
+  **Löscht dabei bewusst KEINE eigenen Pizzen** (Abgrenzung laut Feature-Auftrag) —
+  nur die Auswahl/Mengen werden zurückgesetzt, die Pizza-Bibliothek bleibt
+  unangetastet.
+- **Kein Bestätigungsdialog** (bewusste Entscheidung: reversible, geringschwellige
+  Aktion, anders als das mit `confirm()` abgesicherte Löschen einer eigenen Pizza,
+  das unwiederbringliche Nutzerdaten entfernt).
+- **Accessibility-Fix während des gezielten Audits** (`accessibility-expert`-Agent):
+  **WCAG 4.1.3 (Status Messages, Level AA)** — der Reset-Klick ändert alle
+  Stepper-Werte der Liste gleichzeitig, ohne Fokusbewegung; anders als bei einem
+  einzelnen +/−-Klick (Fokus sitzt direkt auf dem betroffenen Element) war für
+  Screenreader-Nutzer nicht erkennbar, dass überhaupt etwas passiert ist — die
+  etablierte Linie „kein Live-Region-Bedarf für die laufend neu berechnete
+  Ergebnisliste" aus dem v3.27.0-Audit bezog sich auf lokale, fokusnahe
+  Einzeländerungen und lässt sich nicht auf eine Sammelaktion über die ganze Liste
+  übertragen. Fix: neue, eigene Live-Region `#partyResetLiveMsg` **in derselben,
+  auf Mobil immer sichtbaren „Pizza Party"-Karte** (bewusst NICHT die bestehende
+  `#partyCreateLiveMsg` aus der Karte „Eigene Pizza anlegen" wiederverwendet — die
+  ist auf Mobil per `<details>` standardmäßig zugeklappt, eine dort liegende
+  Live-Region würde im zugeklappten Zustand nicht vorgelesen). Meldet „Alle
+  Stückzahlen wurden zurückgesetzt." nach jedem Klick, mit demselben „erst leeren,
+  dann im nächsten Tick setzen"-Muster + Generation-Zähler wie
+  `announcePartyCreate()`.
+- **Nebenbefund fürs Backlog (nicht behoben, außerhalb des Scopes):** dieselbe
+  `<details>`-zugeklappt-Problematik (Live-Region in einer standardmäßig
+  eingeklappten Mobil-Karte wird dort nicht vorgelesen) betrifft vermutlich auch
+  das bestehende `#partyCreateLiveMsg` selbst sowie ältere Formular-Live-Regionen
+  wie `#nrLiveMsg` — nicht neu durch dieses Feature verursacht, aber beim nächsten
+  Accessibility-Durchlauf über die Formulare mit prüfen.
+- **Bewusst NICHT angefasst:** die Pizza-Bibliothek (Presets/eigene Pizzen)
+  selbst, die Aggregations-/Mengenlogik, das Löschen einzelner eigener Pizzen
+  (weiterhin mit `confirm()` abgesichert).
+- **Prozess-Fix während der Finalisierung (vom Nutzer gemeldet):** die
+  Footer-Versionsanzeige (`#appVersion`) blieb seit v3.28.1 fälschlich bei
+  „v3.28.0" stehen, obwohl die `?v=`-Cache-Busting-Parameter in denselben
+  HTML-Dateien korrekt bei jeder Version mit hochgezählt wurden. Ursache: die
+  Versions-Bumps für v3.28.1/v3.29.0/v3.30.0 liefen jeweils per
+  `sed 's/v=3\.X\.Y/v=3.A.B/g'` — dieses Muster verlangt zwingend ein `=`-Zeichen
+  und traf daher nur die `?v=…`-Query-Strings in den `<script src>`/`<link
+  href>`-Tags, nicht aber den bloßen Text `v3.28.0` im Footer-`<span
+  id="appVersion">` (keine `=`-Signatur dort). Für v3.28.0 selbst (Sprachversion)
+  war die Footer-Zeile noch korrekt, weil sie dort per gezieltem `Edit`-Aufruf
+  mitgezogen wurde — die drei folgenden Versionen nutzten stattdessen
+  ausschließlich das schnellere, aber zu eng gefasste `sed`-Muster. Für v3.30.0
+  jetzt in `pizza-rechner.html`, `pizza-rechner-mobile.html` und (automatisch über
+  den Neu-Build) `pizza-rechner-mobile-standalone.html` korrigiert. **Lehre fürs
+  nächste Mal:** bei künftigen Versions-Bumps IMMER zusätzlich gezielt nach
+  `id="appVersion"` suchen und den literalen Versionstext dort separat
+  aktualisieren, nicht nur die `?v=`-Parameter per Sed ersetzen.
+
+**Tests** (`tests/test.html`, Sektion „22 · Pizza-Party-Planer", +6 neue Prüfungen,
+552 → **558**): `PZ.partyResetAllQuantities()` als reine Datenfunktion getestet —
+setzt alle Stückzahlen (Presets **und** eine eigene Test-Pizza) zurück auf 0, die
+eigene Pizza bleibt aber weiterhin in `getAllPizzas()` vorhanden (nicht gelöscht),
+die aggregierte Liste ist danach wieder leer. Alle 558 Prüfungen grün
+(Headless-Edge-Dump). Kein `test-generator`-Lauf nötig (keine Änderung an
+`js/calc.js`/`js/schedule.js`/`js/guide.js`). Zusätzlich interaktiv per
+Headless-Edge-CDP auf Desktop verifiziert: Reset-Button setzt alle sichtbaren
+Stepper-Werte auf 0 zurück, die aggregierte Liste zeigt wieder den
+„noch keine Pizza ausgewählt"-Hinweis, eine währenddessen neu angelegte eigene
+Pizza übersteht den Reset unverändert, die Live-Region meldet den Reset korrekt;
+keine JavaScript-Konsolenfehler.
+
+**Geändert:** `js/party.js`, `js/i18n.js`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`, `tests/test.html`. `?v=` auf `3.30.0` gezogen
+(Desktop + Mobil, Cache-Busting + Footer-Version).
+`pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.30.0 - Pizza-Party zuruecksetzen/` enthält den vollständigen
+Schnappschuss.
+
+## Zutaten-Info je Pizza im Pizza-Party-Bereich (v3.29.0)
 
 Kleines neues Feature, vom Nutzer per `/define-feature` strukturiert und bestätigt.
 Motivation: vor der Auswahl sehen können, was auf einer Pizza tatsächlich drauf ist,
@@ -3077,13 +3161,23 @@ Keine Code-Änderung durch den Audit nötig.
 - ~~Zutaten-Info je Pizza im Pizza-Party-Bereich~~ — **erledigt in v3.29.0** (kein
   Backlog-Punkt, direkter Nutzerauftrag per `/define-feature`; s. Abschnitt
   „Zutaten-Info je Pizza im Pizza-Party-Bereich (v3.29.0)" oben).
+- ~~Pizza-Party zurücksetzen~~ — **erledigt in v3.30.0** (kein Backlog-Punkt,
+  direkter Nutzerauftrag per `/define-feature`; s. Abschnitt „Pizza-Party
+  zurücksetzen (v3.30.0)" oben).
+- Nebenbefund aus dem v3.30.0-Accessibility-Audit (nicht behoben, außerhalb des
+  angefragten Scopes): dieselbe `<details>`-zugeklappt-Problematik (eine
+  Live-Region in einer standardmäßig eingeklappten Mobil-Akkordeon-Karte wird dort
+  nicht vom Screenreader vorgelesen) betrifft vermutlich auch das bestehende
+  `#partyCreateLiveMsg` (Karte „Eigene Pizza anlegen") sowie `#nrLiveMsg`
+  (Formular „Neues Rezept anlegen") — beim nächsten Accessibility-Durchlauf über
+  die Mobil-Formulare mit prüfen.
 
-**Stand v3.29.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
-oben), offene Punkte sind die beiden oben notierten Live-Region-Nebenbefunde
-(`#shareLiveMsg`, `#nrLiveMsg`). Für den nächsten Zyklus braucht es daher frisches
+**Stand v3.30.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+oben), offene Punkte sind die drei oben notierten Nebenbefunde
+(`#shareLiveMsg`/`#nrLiveMsg`-Live-Region-Fehlen, `<details>`-zugeklappt-Problematik
+bei Mobil-Live-Regionen). Für den nächsten Zyklus braucht es daher frisches
 Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes,
-oder die eben genannten Live-Region-Nebenbefunde) statt eines vorgegebenen
-Backlog-Punkts.
+oder die eben genannten Nebenbefunde) statt eines vorgegebenen Backlog-Punkts.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

@@ -168,6 +168,18 @@
   }
   PZ.partySetQty = setQty;
 
+  // Setzt die Stückzahl JEDER Pizze (Presets + eigene) auf 0 zurück — löscht dabei
+  // bewusst KEINE eigenen Pizzen (Abgrenzung laut Feature-Auftrag "Pizza-Party
+  // zurücksetzen", v3.30.0). Ein einziger writeRaw()-Aufruf statt N einzelner
+  // setQty()-Aufrufe, damit der Reset bei vielen Pizzen nicht unnötig oft in
+  // localStorage schreibt.
+  function resetAllQuantities() {
+    const data = readStore();
+    data.qty = {};
+    writeRaw(data);
+  }
+  PZ.partyResetAllQuantities = resetAllQuantities;
+
   // Aggregiert alle ausgewählten Pizzen (Stückzahl > 0) zu einer deduplizierten
   // Zutatenliste. Gruppierungsschlüssel = Zutatenname (getrimmt, klein geschrieben)
   // + Einheit (ebenso normalisiert) — zwei Zutaten mit demselben Namen aber
@@ -520,6 +532,37 @@
       renderPartyList();
       renderPartyResult();
       announcePartyCreate(t('party.createdMsg', { name: pizza.name }));
+    });
+  }
+
+  // --- Alle Stückzahlen zurücksetzen (bewusst OHNE Pizzen zu löschen) --------
+  // Kein Bestätigungsdialog (reversible, geringschwellige Aktion — anders als das
+  // confirm()-abgesicherte Löschen einer eigenen Pizza), ABER eine Live-Region-
+  // Ansage (WCAG 4.1.3 Status Messages): der Klick ändert alle Stepper-Werte in der
+  // Liste gleichzeitig, ohne den Fokus dorthin zu bewegen — für Screenreader-Nutzer
+  // sonst nicht erkennbar, dass überhaupt etwas passiert ist (anders als ein
+  // einzelner +/--Klick, bei dem der Fokus direkt auf dem betroffenen Element sitzt).
+  // Eigene Live-Region #partyResetLiveMsg IM SELBEN, immer sichtbaren "Pizza Party"-
+  // Bereich (nicht die bestehende #partyCreateLiveMsg aus der Karte "Eigene Pizza
+  // anlegen") — auf Mobil ist diese Karte per <details> standardmäßig zugeklappt,
+  // eine dort liegende Live-Region würde in dem Zustand nicht announced.
+  const resetBtn = $('partyResetBtn');
+  const resetLiveMsg = $('partyResetLiveMsg');
+  let resetLiveMsgGen = 0;
+  function announcePartyReset(text) {
+    if (!resetLiveMsg) return;
+    const gen = ++resetLiveMsgGen;
+    resetLiveMsg.textContent = '';
+    window.setTimeout(function () {
+      if (gen === resetLiveMsgGen) resetLiveMsg.textContent = text;
+    }, 50);
+  }
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function () {
+      resetAllQuantities();
+      renderPartyList();
+      renderPartyResult();
+      announcePartyReset(t('party.resetMsg'));
     });
   }
 

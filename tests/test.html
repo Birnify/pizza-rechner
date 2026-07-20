@@ -2283,6 +2283,25 @@
       ]);
     });
 
+    // --- partyResetAllQuantities() (v3.30.0): alle Stückzahlen auf 0, Pizzen bleiben ---
+    withCleanPartyStorage(() => {
+      const pizza = PZ.partyAddCustomPizza('Bleibt erhalten', [{ name: 'Y', amount: 5, unit: 'g' }]);
+      PZ.partySetQty('preset_margherita', 3);
+      PZ.partySetQty('preset_salami', 2);
+      PZ.partySetQty(pizza.id, 4);
+      PZ.partyResetAllQuantities();
+      const all = PZ.partyGetAllPizzas();
+      const result = PZ.partyComputeAggregatedList();
+      renderBox('partyResetAllQuantities() setzt alle Stückzahlen zurück, löscht aber keine Pizzen', [
+        { label: 'Weiterhin 9 Pizzen (8 Presets + 1 eigene) — nichts gelöscht', ok: all.length === 9, actual: all.length, expected: 9, tol: null },
+        { label: 'Margherita-Stückzahl ist jetzt 0', ok: PZ.partyGetQty('preset_margherita') === 0, actual: PZ.partyGetQty('preset_margherita'), expected: 0, tol: null },
+        { label: 'Salami-Stückzahl ist jetzt 0', ok: PZ.partyGetQty('preset_salami') === 0, actual: PZ.partyGetQty('preset_salami'), expected: 0, tol: null },
+        { label: 'Eigene Pizza-Stückzahl ist jetzt 0', ok: PZ.partyGetQty(pizza.id) === 0, actual: PZ.partyGetQty(pizza.id), expected: 0, tol: null },
+        { label: 'Aggregierte Liste ist wieder leer (totalPizzaCount = 0)', ok: result.totalPizzaCount === 0, actual: result.totalPizzaCount, expected: 0, tol: null },
+        { label: 'Eigene Pizza "Bleibt erhalten" ist weiterhin in getAllPizzas() vorhanden', ok: all.some(p => p.id === pizza.id && p.name === 'Bleibt erhalten'), actual: all.map(p => p.name), expected: 'enthält "Bleibt erhalten"', tol: null }
+      ]);
+    });
+
     // --- Eigener localStorage-Key, komplett getrennt vom Rezepte-Key ---
     (function () {
       const RECIPE_KEY = 'pizzaRechner';

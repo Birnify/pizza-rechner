@@ -357,6 +357,9 @@
   add('party.createdMsg', '„{name}“ wurde angelegt.', '"{name}" was created.');
   add('party.defaultUnit', 'g', 'g');
   add('party.infoBtnLabel', 'Zutaten von „{name}“ ein-/ausblenden', 'Show/hide ingredients for "{name}"');
+  add('btn.partyReset', 'Alle zurücksetzen', 'Reset all');
+  add('hint.partyReset', 'Setzt nur die Stückzahlen zurück — deine eigenen Pizzen bleiben erhalten.', 'Only resets the quantities — your custom pizzas stay saved.');
+  add('party.resetMsg', 'Alle Stückzahlen wurden zurückgesetzt.', 'All quantities have been reset.');
 
   // ---- js/print.js — Einkaufsliste (Druckansicht) --------------------------------
   add('print.title', '🛒 Einkaufsliste', '🛒 Shopping list');
