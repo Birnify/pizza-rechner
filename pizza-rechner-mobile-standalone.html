@@ -504,6 +504,7 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 .quickbar .qb-save:active{background:rgba(255,255,255,.28);}
 
 #result{scroll-margin-top:16px;}
+#partyResultSummary{scroll-margin-top:16px;}
 
 /* Hamburger-Navigation: Bereichs-Umschaltung statt durchgehendem One-Pager.
    v3.19.0: Kopfzeile ist jetzt ein 3-Spalten-Grid (Button-Breite | Titel | Button)
@@ -1306,12 +1307,22 @@ footer{text-align:right;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.34.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.35.0</span>
 </footer>
 
-<div class="quickbar">
+<div class="quickbar" data-view="rechner">
   <a class="qb-jump" href="#result"><span class="visually-hidden" data-i18n="quickbar.jumpToResult">Zum Ergebnis springen: </span><span id="qbTotal">–</span> g<small>· <span id="qbBalls">–</span> <span data-i18n="quickbar.doughBalls">Teiglinge</span></small></a>
   <button type="button" class="qb-save" id="qbSave" data-i18n="btn.save">Speichern</button>
+</div>
+
+<!-- Sticky Quick-Bar für die Pizza-Party-Ansicht (v3.35.0): kompakte Kennzahl
+     (Anzahl ausgewählter Pizzen) + Sprung-Link zur aggregierten Zutatenliste.
+     Bewusst OHNE Speichern-Button (Party-Daten persistieren automatisch bei
+     jeder Mengenänderung, kein manueller Speicherschritt wie beim Rechner).
+     Nutzt dieselbe [data-view]-Sichtbarkeitslogik wie die übrigen Bereiche
+     (activateView() weiter unten) -- nur in der Party-Ansicht sichtbar. -->
+<div class="quickbar" id="partyQuickbar" data-view="party" hidden>
+  <a class="qb-jump" href="#partyResultSummary"><span class="visually-hidden" data-i18n="quickbar.jumpToPartyResult">Zur Zutatenliste springen: </span><span id="qbPartyCount">–</span></a>
 </div>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
@@ -2092,6 +2103,8 @@ footer{text-align:right;}
   // -- Quick-Bar (nur Mobil) -----------------------------------------------------------------
   add('quickbar.jumpToResult', 'Zum Ergebnis springen: ', 'Jump to result: ');
   add('quickbar.doughBalls', 'Teiglinge', 'dough balls');
+  add('quickbar.jumpToPartyResult', 'Zur Zutatenliste springen: ', 'Jump to ingredient list: ');
+  add('quickbar.partyNoneYet', 'Noch keine Pizza ausgewählt', 'No pizza selected yet');
 
   // ---- js/calc.js — Eiswasser-Hinweis (dynamisch berechneter Text) ----------------
   add('calc.ice.note', 'Nimm <b>{tapWater} g Leitungswasser (~{tapTemp}°)</b> + <b>{ice} g Eis</b>, ergibt ~{wT}° Schüttwasser. Eis vorher abwiegen.',
@@ -5634,6 +5647,38 @@ footer{text-align:right;}
       var syncBalls = function(){ ballsOut.textContent = ballsSrc.textContent; };
       new MutationObserver(syncBalls).observe(ballsSrc, { childList: true, characterData: true, subtree: true });
       syncBalls();
+    }
+
+    // 1b) Party-Quick-Bar (v3.35.0) spiegelt die kompakte Kennzahl aus
+    //     #partyResultSummary ("X Pizzen insgesamt"). Ist noch keine Pizza
+    //     ausgewählt, ist die Quelle leer (party.js zeigt dann stattdessen
+    //     einen Hinweistext in der Karte selbst) — die Quick-Bar bekommt für
+    //     diesen Fall einen eigenen, kurzen Platzhaltertext.
+    var partySrc = document.getElementById('partyResultSummary');
+    var partyOut = document.getElementById('qbPartyCount');
+    function syncPartyCount(){
+      if (!partySrc || !partyOut) return;
+      var txt = partySrc.textContent.trim();
+      partyOut.textContent = txt || ((window.PZ && PZ.t) ? PZ.t('quickbar.partyNoneYet') : 'Noch keine Pizza ausgewählt');
+    }
+    if (partySrc && partyOut) {
+      new MutationObserver(syncPartyCount).observe(partySrc, { childList: true, characterData: true, subtree: true });
+      syncPartyCount();
+      // Sprachwechsel: bei leerer Quelle (noch keine Pizza gewählt) löst der
+      // MutationObserver nichts aus (kein DOM-Wechsel), der Platzhaltertext
+      // muss dann separat neu übersetzt werden.
+      if (window.PZ && PZ.i18nOnChange) PZ.i18nOnChange(syncPartyCount);
+    }
+    // Sprung-Link öffnet bei Bedarf die (standardmäßig eingeklappte) Ergebnis-Card
+    // vor dem Scrollen -- moderne Browser tun das zwar bereits automatisch bei
+    // Fragment-Navigation zu einem Ziel in einer geschlossenen <details>, dieser
+    // explizite Fallback macht es unabhängig davon zuverlässig.
+    var partyJump = document.querySelector('#partyQuickbar .qb-jump');
+    if (partyJump && partySrc) {
+      partyJump.addEventListener('click', function(){
+        var details = partySrc.closest('details.card');
+        if (details && !details.open) details.open = true;
+      });
     }
 
     // 2) Speichern aus der Quick-Bar löst denselben Handler wie #saveBtn aus

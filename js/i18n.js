@@ -741,6 +741,8 @@
   // -- Quick-Bar (nur Mobil) -----------------------------------------------------------------
   add('quickbar.jumpToResult', 'Zum Ergebnis springen: ', 'Jump to result: ');
   add('quickbar.doughBalls', 'Teiglinge', 'dough balls');
+  add('quickbar.jumpToPartyResult', 'Zur Zutatenliste springen: ', 'Jump to ingredient list: ');
+  add('quickbar.partyNoneYet', 'Noch keine Pizza ausgewählt', 'No pizza selected yet');
 
   // ---- js/calc.js — Eiswasser-Hinweis (dynamisch berechneter Text) ----------------
   add('calc.ice.note', 'Nimm <b>{tapWater} g Leitungswasser (~{tapTemp}°)</b> + <b>{ice} g Eis</b>, ergibt ~{wT}° Schüttwasser. Eis vorher abwiegen.',

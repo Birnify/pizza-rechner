@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-20 · Aktuelle Version: v3.34.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-20 · Aktuelle Version: v3.35.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,90 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Sticky Zutatenliste im Pizza-Party-Bereich (v3.34.0) = aktueller Stand
+## Sticky Quickbar für Pizza Party auf Mobil (v3.35.0) = aktueller Stand
+
+Feature, vom Nutzer beauftragt: Eine kompakte, sticky Quickbar am unteren
+Bildschirmrand für den Pizza-Party-Bereich auf Mobil, nach demselben Muster
+wie die bereits bestehende Quickbar im Teig-Rechner — bleibt beim Auswählen/
+Anpassen der Pizzen-Stückzahlen sichtbar, mit Sprung-Link zur Zutatenliste.
+
+- **Neu:** `<div class="quickbar" id="partyQuickbar" data-view="party" hidden>`
+  in `pizza-rechner-mobile.html` — enthält NUR einen Sprung-Link
+  (`.qb-jump`, kompakte Kennzahl `#qbPartyCount`, z. B. „3 Pizzen insgesamt"),
+  bewusst OHNE Speichern-Button (Party-Daten persistieren automatisch bei
+  jeder Mengenänderung, kein manueller Speicherschritt wie beim Rechner).
+- **Sichtbarkeits-Umbau der bestehenden Rechner-Quickbar:** bekam zusätzlich
+  `data-view="rechner"` (vorher kein `data-view`-Attribut, dadurch auf ALLEN
+  Ansichten permanent sichtbar — auch mit veralteten Rechner-Daten z. B. in
+  der Party-Ansicht). Beide Quickbars nutzen jetzt dieselbe, bereits
+  etablierte `[data-view]`-Sichtbarkeits-Infrastruktur (`activateView()`) wie
+  alle Bereichs-Container — notwendige Anpassung, damit nicht zwei
+  überlappende sticky Bottom-Bars gleichzeitig sichtbar sind (der Kern des
+  Features "nur in der Party-Ansicht sichtbar" verlangt zwingend, dass die
+  andere Quickbar dafür ausgeblendet wird). Inhalt/Verhalten der
+  Rechner-Quickbar selbst (Text, Speichern-Button-Logik) bleibt unverändert.
+- **JS (Inline-Script):** `MutationObserver` auf `#partyResultSummary`
+  spiegelt dessen Text (von `js/party.js` `renderPartyResult()` gesetzt) in
+  `#qbPartyCount`. Ist noch keine Pizza ausgewählt, ist die Quelle leer —
+  eigener kurzer Platzhaltertext (`quickbar.partyNoneYet`) statt eines langen
+  Hinweissatzes. Klick auf den Sprung-Link öffnet zusätzlich per JS die
+  standardmäßig eingeklappte `<details class="card">` der Zutatenliste
+  (Sicherheitsnetz zusätzlich zum nativen Browser-Verhalten, das geschlossene
+  `<details>`-Vorfahren bei Fragment-Navigation ohnehin automatisch öffnet).
+  Sprachwechsel-Hook (`PZ.i18nOnChange`) übersetzt den Platzhaltertext neu,
+  falls die Quelle leer bleibt (der `MutationObserver` allein würde das nicht
+  auslösen, da keine DOM-Änderung stattfindet).
+- **i18n:** neue Keys `quickbar.jumpToPartyResult`, `quickbar.partyNoneYet`.
+- **CSS:** eine neue Zeile `#partyResultSummary{scroll-margin-top:16px;}`
+  (`css/mobile.css`, analog zu `#result{scroll-margin-top:16px;}`) — kein
+  neues `.quickbar`-Styling nötig, die Party-Quickbar erbt die bestehende
+  `.quickbar`/`.qb-jump`-Optik vollständig.
+- **Desktop unverändert** (Abgrenzung der Feature-Definition) — die sticky
+  Seitenleiste aus v3.34.0 deckt dasselbe Bedürfnis dort bereits ab.
+
+**Tests:** reine Mobil-UI-/Markup-Änderung ohne Logikbezug —
+`tests/test.html` bleibt unverändert bei **567** Prüfungen, alle grün
+(Headless-Edge-Dump). Kein `test-generator`-Lauf nötig. Zusätzlich per
+gezieltem Headless-Edge-Skript interaktiv verifiziert: Wechsel Rechner→Party
+blendet die Rechner-Quickbar aus und die Party-Quickbar ein (und umgekehrt);
+`#qbPartyCount` spiegelt „3 Pizzen insgesamt" korrekt nach einer
+Mengenänderung (inkl. Microtask-Timing der `MutationObserver`-Zustellung);
+Rückfall auf „Noch keine Pizza ausgewählt" bei 0 Pizzen; Sprachwechsel
+übersetzt den Platzhaltertext korrekt zu „No pizza selected yet"; Klick auf
+den Sprung-Link öffnet die zuvor geschlossene Zutatenliste-Card.
+
+**Härten (gezielter `accessibility-expert`-Audit, nur diese Änderung):**
+keine Befunde, keine Code-Änderungen nötig — Beschriftung des Sprung-Links
+identisch zum bestehenden Muster der Rechner-Quickbar, Touch-Ziel gemessen
+461×44px (deutlich über dem 44×44px-Minimum, da kein zweiter Button die
+Breite teilt), Fokus wechselt beim Ansichtswechsel sauber auf die neue
+Bereichsüberschrift (kein verwaistes Fokus-Ziel, identisches `focusView()`-
+Muster wie bei allen anderen Bereichswechseln), keine `aria-live`-Ergänzung
+nötig (konsistent mit dem bestehenden `#qbTotal`/`#qbBalls`-Muster der
+Rechner-Quickbar). Kein separater `mobile-optimizer`-Lauf nötig (Touch-Ziel-
+Größe und Safe-Area bereits durch den Accessibility-Audit abgedeckt bzw. von
+der unveränderten `.quickbar`-Basis geerbt).
+
+**Nebenbei verifiziert (Nutzer-Meldung, siehe Rückmeldung des Nutzers während
+dieses Zyklus):** ein gemeldeter Verdacht „Kopieren/Umbenennen-Button
+funktionieren nach dem Speichern eines Teigrezepts nicht" ließ sich in drei
+Szenarien (erstes Speichern, Überschreiben eines aktiven Rezepts, Speichern
+über die Quick-Bar `#qbSave`) auf Desktop UND Mobil NICHT reproduzieren —
+`activeId`/`#recipeSelect`-Wert blieben in allen Fällen synchron, beide
+Buttons funktionierten korrekt. Vermutlich ein zwischenzeitlich erwischter
+Arbeitsstand während der laufenden Sticky-Layout-/Quickbar-Änderungen dieses
+Zyklus. Keine Code-Änderung nötig.
+
+**Geändert:** `pizza-rechner-mobile.html`, `js/i18n.js`, `css/mobile.css`.
+`?v=` auf `3.35.0` gezogen (Desktop + Mobil, Cache-Busting +
+`#appVersion`-Fußzeile separat aktualisiert, auch wenn Desktop inhaltlich
+unverändert blieb — Versions-Konsistenz).
+`pizza-rechner-mobile-standalone.html` neu gebaut (`python
+build-mobile-standalone.py`).
+`Versionen/v3.35.0 - Sticky Quickbar Pizza-Party Mobil/` enthält den
+vollständigen Schnappschuss.
+
+## Sticky Zutatenliste im Pizza-Party-Bereich (v3.34.0)
 
 Feature, vom Nutzer beauftragt: Die aggregierte Zutatenliste im
 Pizza-Party-Bereich wird auf Desktop-Breite als sticky Seitenleiste
@@ -3522,9 +3605,9 @@ Keine Code-Änderung durch den Audit nötig.
 - ~~Sticky Zutatenliste im Pizza-Party-Bereich~~ — **erledigt in v3.34.0**
   (kein Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt „Sticky
   Zutatenliste im Pizza-Party-Bereich (v3.34.0)" oben).
-- Sticky Quickbar für Pizza Party auf Mobil (analog zur bestehenden
-  Rechner-Quickbar) — vom Nutzer beauftragt, als eigener Zyklus in
-  Bearbeitung/geplant.
+- ~~Sticky Quickbar für Pizza Party auf Mobil~~ — **erledigt in v3.35.0**
+  (kein Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt „Sticky Quickbar
+  für Pizza Party auf Mobil (v3.35.0)" oben).
 - Gruppierte Menü-Navigation (Bereiche-Menü clustert „Teig-Rechner"
   Rechner/Rezepte/Zeitplan und „Pizza Party" getrennt von „Einstellungen", nutzt
   `.nav-divider`) — vom Nutzer beauftragt, als eigener Zyklus in
@@ -3544,7 +3627,7 @@ Keine Code-Änderung durch den Audit nötig.
   `data-goto="zeitplan"`), Desktop + Mobil, inkl. EN-Übersetzung — vom Nutzer
   beauftragt, als eigener Zyklus in Bearbeitung/geplant.
 
-**Stand v3.34.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.35.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben); die drei oben notierten Nebenbefunde
 (`#shareLiveMsg`/`#nrLiveMsg`-Live-Region-Fehlen, `<details>`-zugeklappt-Problematik
 bei Mobil-Live-Regionen) bleiben offen für einen künftigen Accessibility-Zyklus.
