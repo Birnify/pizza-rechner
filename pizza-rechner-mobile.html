@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-title" content="Teigmeister">
 <meta name="theme-color" content="#c8442e">
 <title>Teigmeister · Mobil</title>
-<link rel="stylesheet" href="css/styles.css?v=3.45.0">
-<link rel="stylesheet" href="css/mobile.css?v=3.45.0">
+<link rel="stylesheet" href="css/styles.css?v=3.46.0">
+<link rel="stylesheet" href="css/mobile.css?v=3.46.0">
 </head>
 <body>
 <header>
@@ -43,6 +43,7 @@
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
+    <span class="nav-version" id="appVersion">v3.46.0</span>
   </div>
 </nav>
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
@@ -758,9 +759,12 @@
   </div>
 </div>
 
-<footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.45.0</span>
-</footer>
+<!-- v3.46.0: enthält seit der Versionsnummer-Verlagerung ins Menü (s. .nav-version)
+     keinen Text mehr, dient nur noch als Scroll-Puffer vor der fixierten Quickbar --
+     aria-hidden, damit die leere <footer>-Landmark (implizite contentinfo-Rolle als
+     direktes body-Kind) Screenreader-Nutzern bei der Landmark-Navigation nicht als
+     Sackgasse begegnet. -->
+<footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));" aria-hidden="true"></footer>
 
 <div class="quickbar" data-view="rechner">
   <a class="qb-jump" href="#result"><span class="visually-hidden" data-i18n="quickbar.jumpToResult">Zum Ergebnis springen: </span><span id="qbTotal">–</span> g<small>· <span id="qbBalls">–</span> <span data-i18n="quickbar.doughBalls">Teiglinge</span></small></a>
@@ -778,25 +782,25 @@
 </div>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.45.0"></script>
-<script src="js/state.js?v=3.45.0"></script>
-<script src="js/i18n.js?v=3.45.0"></script>
-<script src="js/settings.js?v=3.45.0"></script>
-<script src="js/flour.js?v=3.45.0"></script>
-<script src="js/calc.js?v=3.45.0"></script>
-<script src="js/schedule.js?v=3.45.0"></script>
-<script src="js/guide.js?v=3.45.0"></script>
-<script src="js/timer.js?v=3.45.0"></script>
-<script src="js/ui.js?v=3.45.0"></script>
-<script src="js/print.js?v=3.45.0"></script>
-<script src="js/pdf.js?v=3.45.0"></script>
-<script src="js/presets.js?v=3.45.0"></script>
-<script src="js/storage.js?v=3.45.0"></script>
-<script src="js/newrecipe.js?v=3.45.0"></script>
-<script src="js/share.js?v=3.45.0"></script>
-<script src="js/party.js?v=3.45.0"></script>
-<script src="js/glossary.js?v=3.45.0"></script>
-<script src="js/main.js?v=3.45.0"></script>
+<script src="js/dom.js?v=3.46.0"></script>
+<script src="js/state.js?v=3.46.0"></script>
+<script src="js/i18n.js?v=3.46.0"></script>
+<script src="js/settings.js?v=3.46.0"></script>
+<script src="js/flour.js?v=3.46.0"></script>
+<script src="js/calc.js?v=3.46.0"></script>
+<script src="js/schedule.js?v=3.46.0"></script>
+<script src="js/guide.js?v=3.46.0"></script>
+<script src="js/timer.js?v=3.46.0"></script>
+<script src="js/ui.js?v=3.46.0"></script>
+<script src="js/print.js?v=3.46.0"></script>
+<script src="js/pdf.js?v=3.46.0"></script>
+<script src="js/presets.js?v=3.46.0"></script>
+<script src="js/storage.js?v=3.46.0"></script>
+<script src="js/newrecipe.js?v=3.46.0"></script>
+<script src="js/share.js?v=3.46.0"></script>
+<script src="js/party.js?v=3.46.0"></script>
+<script src="js/glossary.js?v=3.46.0"></script>
+<script src="js/main.js?v=3.46.0"></script>
 <script>
   // Mobil-only UI-Glue (kein Eingriff in die PZ-Rechenmodule)
   (function(){

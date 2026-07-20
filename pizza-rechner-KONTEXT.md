@@ -171,7 +171,67 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Icon-Zentrierung & -Größe Korrektur (v3.45.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Versionsnummer nur im Menü statt im Footer (v3.46.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Direkter Nutzerauftrag per `/define-feature` (kein Backlog-Punkt, direkt im Anschluss
+an den Icon-Zentrierung-Zyklus v3.45.0 nachgeschoben). Motivation: `#appVersion` stand
+bisher in einem dauerhaft sichtbaren `<footer>` auf jeder Seite/Ansicht — für den
+normalen Gebrauch nicht relevant, reicht bei geöffnetem Burgermenü. **Reine
+Markup-/CSS-Verschiebung, keine Änderung an der Versionsnummer-Pflege selbst**
+(weiterhin manuell bei jedem Release hochgezählt, kein `js/*`-Eingriff).
+
+**1. Versionsnummer ins Menü verschoben:** `<span id="appVersion">` wandert aus dem
+`<footer>` in beide `.nav-panel`-Dialoge (`<nav id="navMenu">`), als letztes
+Kind-Element nach dem bestehenden `.nav-link` („Zur Mobil-Ansicht"/„Zur
+Desktop-Ansicht"): `<span class="nav-version" id="appVersion">v3.46.0</span>`.
+Neue Regel `.nav-version{margin-top:auto;padding:14px 14px 2px;font-size:11.5px;
+color:var(--muted);}` in `css/styles.css` (gilt gemeinsam für Desktop + Mobil) —
+`margin-top:auto` schiebt sie im flex-column `.nav-panel` unabhängig von der Höhe der
+Liste darüber ans untere Ende (per Screenshot mit erzwungen offenem Menü verifiziert,
+sowohl Desktop als auch Mobil).
+
+**2. `<footer>`-Elemente bleiben bestehen, sind aber jetzt leer:** Desktop
+`<footer aria-hidden="true"></footer>`, Mobil `<footer style="padding-bottom:
+calc(84px + env(safe-area-inset-bottom));" aria-hidden="true"></footer>` — die
+Mobil-Padding-Angabe bleibt bewusst erhalten (dient als Scroll-Puffer, damit die
+fixierte Sticky-Quickbar den letzten Karteninhalt nicht verdeckt, hat nichts mit der
+Versionsnummer zu tun). In `css/mobile.css` wurde die dadurch gegenstandslose Regel
+`footer{text-align:right;}` samt Kommentar entfernt (nichts mehr auszurichten).
+
+**Härten (gezielter `accessibility-expert`-Audit, synchron) — zwei echte Funde,
+beide selbst durch den Audit-Agenten behoben:**
+- **Major (WCAG 1.4.3):** `.nav-version` kombinierte `color:var(--muted)` zusätzlich
+  mit `opacity:.7` (Übernahme aus dem alten `style="opacity:.7"` am Footer-Span) —
+  auf dem hellen `.nav-panel`-Hintergrund nur **~3,07:1**, unter der 4,5:1-Schwelle.
+  **Exakt derselbe Fehler wie bereits einmal bei `.quickbar .qb-jump small` in
+  v3.41.0** (dort ebenfalls durch Entfernen der `opacity` behoben) — offenbar ein
+  wiederkehrendes Muster bei Muted+Opacity-Kombinationen, künftig direkt vermeiden.
+  Fix: `opacity:.7` aus `.nav-version` entfernt, `var(--muted)` allein liegt auf Weiß
+  bei ~5,84:1.
+- **Minor (Landmark-Best-Practice):** Die jetzt leeren `<footer>`-Elemente mappen als
+  direktes `<body>`-Kind auf die implizite `contentinfo`-Landmark-Rolle — für
+  Screenreader-Nutzer mit Landmark-Navigation eine Sackgasse ohne Inhalt. Kein harter
+  WCAG-SC-Blocker, trotzdem behoben: `aria-hidden="true"` auf beide leeren
+  `<footer>`-Elemente ergänzt (Padding-/Print-Regeln unangetastet, `@media print{...
+  footer{display:none}}` bleibt über den Tag-Selektor weiterhin wirksam).
+- **Kein Fund:** `.nav-version` als reines `<span>` (kein `tabindex`, nicht im
+  Tab-Trap-Fokusarray `js/ui.js`) — korrekt unauffällig im Dialog-Lesefluss, keine
+  Änderung nötig. Desktop/Mobil blieben deckungsgleich.
+
+**Tests:** `tests/test.html` unverändert bei **577 Prüfungen**, alle grün
+(Headless-Edge-Dump, vor und nach den Audit-Fixes verifiziert) — reine
+CSS-/Markup-Änderung ohne Bezug zu per String-Matching geprüften Texten,
+`js/calc.js`/`js/schedule.js`/`js/guide.js` unangetastet, kein `test-generator`-Lauf
+nötig.
+
+**Geändert:** `css/styles.css`, `css/mobile.css`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`. `?v=` auf `3.46.0` gezogen (Desktop + Mobil, alle
+`<link>`/`<script>`-Tags + `.nav-version`-Versionstext). `pizza-rechner-mobile-
+standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v3.46.0 - Versionsnummer nur im Menue statt im Footer/` enthält den
+vollständigen Schnappschuss.
+
+## Icon-Zentrierung & -Größe Korrektur (v3.45.0)
 
 Direkter Nutzerauftrag per `/define-feature` (kein Backlog-Punkt — Stand v3.44.0 war
 das Backlog leer). Auslöser: einige `.card-icon`-Badges wirkten optisch nicht exakt
@@ -4595,7 +4655,15 @@ Keine Code-Änderung durch den Audit nötig.
   Pfad-Symmetrie zum viewBox-Mittelpunkt (12,12) direkt beim Entwurf prüfen, statt
   erst nachträglich per Pixelmessung zu korrigieren.
 
-**Stand v3.45.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+- ~~Versionsnummer nur im Menü statt im Footer~~ — **erledigt in v3.46.0** (kein
+  Backlog-Punkt, direkter Nutzerauftrag per `/define-feature`; s. Abschnitt
+  „Versionsnummer nur im Menü statt im Footer (v3.46.0)" oben). Nebenbefund aus dem
+  Härten: `.nav-version` hatte anfangs denselben Muted+Opacity-Kontrastfehler wie
+  `.quickbar .qb-jump small` in v3.41.0 — beim nächsten Mal direkt vermeiden, wenn
+  gedämpfter/leiser Text auf hellem Grund entsteht: `var(--muted)` alleine reicht
+  (~5,84:1), `opacity` zusätzlich drückt es unter 4,5:1.
+
+**Stand v3.46.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen,
 vollständig zurückgebaut, keine offene Frage mehr). Keine Warteschlange mehr offen —
 für den nächsten Zyklus braucht es wieder frisches Brainstorming in Phase 1 (neue

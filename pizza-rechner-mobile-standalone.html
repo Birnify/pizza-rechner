@@ -167,6 +167,15 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
   color:var(--muted);font-size:14px;font-weight:600;text-decoration:none;box-sizing:border-box;
 }
 .nav-link:hover,.nav-link:active{background:var(--bg);}
+/* v3.46.0: Versionsnummer aus dem dauerhaft sichtbaren Footer entfernt, steht jetzt nur
+   noch hier unten im geöffneten Menü (für den normalen Gebrauch nicht relevant).
+   margin-top:auto schiebt sie im flex-column .nav-panel ans untere Ende, unabhängig
+   von der Höhe der Liste darüber. Bewusst OHNE zusätzliches opacity (anders als der
+   ursprüngliche Entwurf) -- var(--muted) plus opacity:.7 auf dem hellen --card-Grund
+   fiel bei der Kontrastprüfung auf rechnerisch ~3,07:1 (unter der 4,5:1-Schwelle für
+   Fließtext, WCAG 1.4.3), identischer Fehler wie bei `.quickbar .qb-jump small` in
+   v3.41.0. var(--muted) allein liegt auf Weiß bei ~5,84:1. */
+.nav-version{margin-top:auto;padding:14px 14px 2px;font-size:11.5px;color:var(--muted);}
 
 /* Pizza-Party-Planer (v3.27.0, js/party.js) — Pizzenauswahl mit Stückzahl-Stepper +
    dynamisches Zutatenzeilen-Formular fürs Anlegen eigener Pizzen. Gemeinsames
@@ -737,9 +746,6 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
    aria-describedby auf beiden Eingabefeldern. */
 .row .unit{font-size:13px;color:var(--muted);flex-shrink:0;}
 
-/* Footer nur noch mit Versionsnummer — rechtsbündig statt zentriert */
-footer{text-align:right;}
-
 @media print{.quickbar{display:none;}.nav-toggle,.nav-overlay{display:none!important;}}
 
 </style>
@@ -776,6 +782,7 @@ footer{text-align:right;}
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
+    <span class="nav-version" id="appVersion">v3.46.0</span>
   </div>
 </nav>
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
@@ -1491,9 +1498,12 @@ footer{text-align:right;}
   </div>
 </div>
 
-<footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.45.0</span>
-</footer>
+<!-- v3.46.0: enthält seit der Versionsnummer-Verlagerung ins Menü (s. .nav-version)
+     keinen Text mehr, dient nur noch als Scroll-Puffer vor der fixierten Quickbar --
+     aria-hidden, damit die leere <footer>-Landmark (implizite contentinfo-Rolle als
+     direktes body-Kind) Screenreader-Nutzern bei der Landmark-Navigation nicht als
+     Sackgasse begegnet. -->
+<footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));" aria-hidden="true"></footer>
 
 <div class="quickbar" data-view="rechner">
   <a class="qb-jump" href="#result"><span class="visually-hidden" data-i18n="quickbar.jumpToResult">Zum Ergebnis springen: </span><span id="qbTotal">–</span> g<small>· <span id="qbBalls">–</span> <span data-i18n="quickbar.doughBalls">Teiglinge</span></small></a>
