@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-20 · Aktuelle Version: v3.38.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-20 · Aktuelle Version: v3.39.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,115 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Bugfix: activeId-Desync bei "Neues Rezept anlegen"/Import in leere Bibliothek (v3.38.1) = aktueller Stand
+## EXPERIMENTELL: Bring!-Deeplink-Testaufbau (v3.39.0) = aktueller Stand
+
+**Ausdrücklich kein reguläres Feature** — ein vom Nutzer beauftragter
+technischer Testaufbau, um live auf einem echten iPhone mit der echten
+Bring!-App zu prüfen, ob eine bestimmte Integration funktioniert. Bewusst
+als Wegwerf-Testcode markiert (Kommentare in allen betroffenen Dateien) —
+falls sich die Idee nicht bestätigt, ist alles gezielt und rückstandslos
+wieder entfernbar.
+
+**Hintergrund/offene Frage:** die Shopping-List-App „Bring!" bietet einen
+offiziellen Import-Deeplink
+(`https://api.getbring.com/rest/bringrecipes/deeplink?url=${url}&source=web`,
+dokumentiert unter getbring.com/en/integration-check), der KEINEN
+API-Key/Login braucht — Bring! holt sich beim Öffnen des Links selbst
+`schema.org/Recipe`-JSON-LD von der übergebenen `url`. Nur mit echtem
+Gerät+App zu klären: akzeptiert Bring! dafür auch CLIENTSEITIG per
+JavaScript nachträglich eingefügtes JSON-LD, oder nur bereits im initialen
+HTML vorhandenes?
+
+- **Neue, komplett eigenständige statische Seite `bring-import.html`**
+  (Repo-Root, NICHT Teil der regulären Navigation) — liest einen kompakt
+  kodierten Party-Zustand (Rezeptname + aggregierte Zutatenliste) aus dem
+  Base64-JSON-Query-Parameter `?d=` (identisches Kodierungsmuster wie
+  `js/share.js`, v3.14.0, hier aber bewusst dupliziert statt importiert,
+  damit die Seite komplett unabhängig von den übrigen App-Modulen bleibt —
+  kein `<script src="js/…">`). Fügt beim Laden per JavaScript ein
+  `<script type="application/ld+json">` mit `schema.org/Recipe` (Name +
+  `recipeIngredient`-Liste) in den `<head>` ein — genau das ist der Kern
+  des Tests. Rendert zusätzlich sichtbaren Inhalt (Überschrift + Liste) zur
+  visuellen Kontrolle. Muss über GitHub Pages öffentlich erreichbar sein
+  (nicht nur `file://`) — Voraussetzung, damit Bring!s Server die Seite
+  überhaupt serverseitig abrufen kann.
+- **Neues, eigenständiges Modul `js/bring-test.js`:** baut aus
+  `PZ.partyComputeAggregatedList()` (`js/party.js`, unverändert
+  wiederverwendet) den Base64-Payload, hängt ihn an
+  `https://birnify.github.io/pizza-rechner/bring-import.html?d=…` an und
+  bettet diese komplette URL wiederum als `url`-Parameter in den
+  offiziellen Bring!-Deeplink ein. `PZ.buildBringTestDeeplink()` zusätzlich
+  für manuelles Nachtesten in der Browser-Konsole zugänglich gemacht.
+- **Neuer Button „Test: Mit Bring! teilen (experimentell)"** (`#bringTestBtn`,
+  neue i18n-Keys `btn.bringTest`/`hint.bringTest`/`bring.recipeName`) in
+  der Pizza-Party-Card „Zutatenliste für die Party" — Desktop UND Mobil,
+  identisch, unterhalb von `#partyResultList`, sichtbar durch
+  `border-top:1px dashed` abgetrennt, mit erklärendem Hinweistext direkt
+  darunter. **Immer sichtbar** (kein neues Feature-Flag) — bewusste
+  Einschätzung, dass ein neuer Settings-Umschalter für einen einmaligen,
+  klar als experimentell/Wegwerf gekennzeichneten Test unverhältnismäßig
+  viel Zusatzaufwand/Dokumentationslast wäre.
+- Klick navigiert direkt weg (`location.href = …`, kein `window.open`, für
+  App-Deeplink-Handoffs auf iOS Safari das zuverlässigere Muster) — bewusst
+  ohne Fehlerbehandlung/Fallback-UI (Abgrenzung der Aufgabenstellung: reiner
+  Testaufruf, kein fertiges Feature).
+- **`.btn-experimental`-CSS** (`css/styles.css`): gestrichelter Rahmen als
+  zusätzliche visuelle „experimentell"-Kennzeichnung (nicht alleiniger
+  Signalträger — Button-Text und Hinweistext benennen es bereits explizit).
+
+**Härten (gezielter `accessibility-expert`-Audit, nur diese Änderung) —
+2 Major-Befunde gefunden und behoben:**
+- **WCAG 1.3.1/4.1.2:** der Warnhinweis unter dem Button (macht klar: nur
+  experimentell, nur mit installierter Bring!-App) war nur visuell
+  sichtbar, nicht programmatisch mit dem Button verknüpft — Screenreader-
+  Nutzer hätten vor dem sofort wegnavigierenden Klick nichts davon
+  mitbekommen. **Fix:** `id="bringTestHint"` + `aria-describedby` auf dem
+  Button, identisches Muster wie bereits `#pdfGuideBtn`/`#pdfGuideHint` und
+  `#shareLinkBtn`/`#shareHint`.
+- **Touch-Ziel/Konsistenz:** `#bringTestBtn` liegt außerhalb von
+  `.actions`/`.pills`/`.seg` und bekam dadurch ursprünglich GAR KEIN
+  App-Button-Styling — nur nackter Browser-Default-Button, gemessen **21px
+  Höhe** statt der sonst überall im Code üblichen ~39px. **Fix:**
+  `.btn-experimental` um Padding/Radius/Font/Farbe identisch zu
+  `.actions button` ergänzt (Höhe jetzt korrekt **39px**, per Headless-Edge
+  nachgemessen), gestrichelter Rahmen bleibt als Kennzeichnung erhalten.
+- Kein Fund bei `bring-import.html` (eigenständige Testseite): `lang="de"`
+  gesetzt, sinnvolle `<h1>`, alle Textfarb-Kombinationen rechnerisch
+  geprüft (Body-Text 14,18:1, Badge 5,28:1, Hint 5,43:1 — alle über der
+  4,5:1-Schwelle).
+
+**Tests:** reine Test-/Anzeige-Ergänzung ohne Berechnungslogik-Bezug —
+`tests/test.html` bleibt unverändert bei **577** Prüfungen, alle grün
+(Headless-Edge-Dump). Kein `test-generator`-Lauf nötig. Zusätzlich per
+gezieltem Headless-Edge-Skript interaktiv verifiziert (Desktop + Mobil):
+`PZ.buildBringTestDeeplink()` liefert eine korrekt strukturierte URL
+(äußerer Bring!-Deeplink → `url`-Parameter zeigt auf
+`bring-import.html?d=…` → dekodierter Payload enthält Rezeptname +
+vollständige, korrekt aggregierte Zutatenliste); `bring-import.html`
+direkt mit einem echten `?d=`-Parameter aufgerufen: JSON-LD korrekt in
+`<head>` eingefügt, sichtbare Liste stimmt überein; ohne `?d=`-Parameter:
+Hinweistext sichtbar, kein JSON-LD eingefügt (kein Crash); Button-Text
+übersetzt sich bei Sprachwechsel korrekt zu „Test: Share with Bring!
+(experimental)"; Button-Höhe nach dem CSS-Fix 39px, `aria-describedby`
+korrekt verdrahtet.
+
+**Geändert:** `bring-import.html` (neu), `js/bring-test.js` (neu),
+`js/i18n.js`, `css/styles.css`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`. `?v=` auf `3.39.0` gezogen (Desktop + Mobil,
+Cache-Busting + `#appVersion`-Fußzeile separat aktualisiert).
+`pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.39.0 - Experimentell Bring-Deeplink-Test/` enthält den
+vollständigen Schnappschuss.
+
+**Nächster Schritt liegt beim Nutzer:** Live-Test auf dem iPhone mit der
+echten Bring!-App — Ergebnis (funktioniert der clientseitig eingefügte
+JSON-LD-Ansatz oder nicht) entscheidet, ob dieser Testaufbau zu einem
+echten Feature ausgebaut oder wieder vollständig entfernt wird (s. Liste
+der zu löschenden Dateien/Blöcke in den Code-Kommentaren, z. B. oberster
+Kommentar in `js/bring-test.js`).
+
+## Bugfix: activeId-Desync bei "Neues Rezept anlegen"/Import in leere Bibliothek (v3.38.1)
 
 Bugfix, vom Nutzer live reproduziert und mit exakter Root-Cause-Analyse
 gemeldet (die eigene Verifikation im vorherigen Zyklus hatte den Fall knapp
@@ -3950,14 +4058,21 @@ Keine Code-Änderung durch den Audit nötig.
   live reproduzierter und gemeldeter Bug; s. Abschnitt „Bugfix:
   activeId-Desync bei 'Neues Rezept anlegen'/Import in leere Bibliothek
   (v3.38.1)" oben).
+- EXPERIMENTELL, offener Ausgang (v3.39.0): Bring!-Deeplink-Testaufbau —
+  wartet auf Live-Test des Nutzers mit der echten Bring!-App auf einem
+  iPhone (s. Abschnitt „EXPERIMENTELL: Bring!-Deeplink-Testaufbau
+  (v3.39.0)" oben). Je nach Ergebnis entweder zu einem echten Feature
+  ausbauen (z. B. Fehlerbehandlung, Feature-Flag, Fallback für Nutzer ohne
+  Bring!-App) oder wieder vollständig entfernen (Datei-/Block-Liste steht
+  in den Code-Kommentaren, u. a. `js/bring-test.js`).
 
-**Stand v3.38.1: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.39.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben); die drei oben notierten Live-Region-Nebenbefunde
 (`#shareLiveMsg`/`#nrLiveMsg`-Live-Region-Fehlen, `<details>`-zugeklappt-Problematik
-bei Mobil-Live-Regionen) sowie der zuletzt notierte `.schedbar`-Kontrast-
-Nebenbefund bleiben offen für einen künftigen Accessibility-Zyklus. Die vom
-Nutzer vorgegebene Warteschlange von zehn direkten Aufträgen ist
-**vollständig abgearbeitet** — für den nächsten Zyklus braucht es wieder
+bei Mobil-Live-Regionen), der `.schedbar`-Kontrast-Nebenbefund sowie der offene
+Ausgang des Bring!-Testaufbaus (s. oben) bleiben offen für den/die nächsten
+Zyklen. Die vom Nutzer vorgegebene Warteschlange von zehn direkten Aufträgen ist
+**vollständig abgearbeitet** — für den nächsten regulären Zyklus braucht es wieder
 frisches Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/Layout-
 Überarbeitungen, Bugfixes, oder die oben notierten Nebenbefunde) statt
 eines vorgegebenen Auftrags.

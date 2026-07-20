@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<!--
+  EXPERIMENTELLER TESTAUFBAU (v3.39.0, NICHT Teil des regulären Pizzateig-Rechner-
+  Feature-Umfangs, kein fertiges Feature).
+
+  Prüft eine offene technische Frage: die Shopping-List-App "Bring!" bietet einen
+  offiziellen Import-Deeplink (https://getbring.com/en/integration-check), der ohne
+  API-Key/Login auskommt -- die Bring!-App holt sich beim Öffnen des Deeplinks selbst
+  schema.org/Recipe-JSON-LD von der übergebenen url. Unklar (nur mit echtem Gerät +
+  App zu klären): akzeptiert Bring! dafür auch CLIENTSEITIG per JS nachträglich
+  eingefügtes JSON-LD (wie hier, s. u.), oder nur bereits im initialen HTML
+  vorhandenes?
+
+  Komplett eigenständige, von den übrigen App-Dateien unabhängige Seite (kein
+  <script src="js/...">, keine gemeinsamen Module) -- absichtlich so gehalten, damit
+  sie sich bei Bedarf rückstandslos entfernen lässt. Liest den Party-Zustand
+  (Rezept-Name + aggregierte Zutatenliste) aus dem Base64-JSON-Query-Parameter "?d=",
+  den js/bring-test.js beim Klick auf "Test: Mit Bring! teilen (experimentell)" in
+  pizza-rechner.html/pizza-rechner-mobile.html erzeugt (identisches Kodierungsmuster
+  wie js/share.js, hier aber bewusst dupliziert statt importiert).
+
+  Muss über eine echte https://-URL (GitHub Pages) erreichbar sein, NICHT nur per
+  file:// -- Bring!s Server ruft diese Seite serverseitig ab, eine lokale Datei wäre
+  dafür nicht erreichbar.
+
+  Abgrenzung (bewusst, s. Auftrag): kein Fallback für Nutzer ohne Bring!-App, keine
+  echte Fehlerbehandlung -- bewusster Testaufruf, kein fertiges Feature.
+
+  FALLS SICH DIE IDEE NICHT BESTÄTIGT: rückstandslos entfernbar durch Löschen von
+  -- dieser Datei
+  -- js/bring-test.js
+  -- dem <script src="js/bring-test.js">-Tag + dem #bringTestBtn-Block in
+     pizza-rechner.html UND pizza-rechner-mobile.html
+  -- den i18n-Keys btn.bringTest/hint.bringTest/bring.recipeName in js/i18n.js
+  -- der .btn-experimental-Regel in css/styles.css
+-->
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Pizza Party – Zutatenliste (Bring!-Test)</title>
+<style>
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    max-width:600px;margin:40px auto;padding:0 20px;color:#2b2420;background:#faf6f0;
+    line-height:1.5;
+  }
+  h1{font-size:20px;margin-bottom:4px;}
+  .badge{
+    display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.5px;color:#8a4a3a;background:#f3e0da;border-radius:3px;
+    padding:3px 8px;margin-bottom:16px;
+  }
+  ul{padding-left:20px;}
+  li{margin-bottom:4px;}
+  .hint{font-size:13px;color:#6e6359;margin-top:24px;border-top:1px solid #d8cfc2;padding-top:12px;}
+  code{background:#f0e9df;padding:1px 5px;border-radius:3px;font-size:12px;}
+</style>
+</head>
+<body>
+  <div class="badge">Experimenteller Testaufbau — kein fertiges Feature</div>
+  <h1 id="recipeName">Pizza Party – Zutatenliste</h1>
+  <ul id="ingredientList"></ul>
+  <p id="emptyHint" class="hint" hidden>Kein Zustand übergeben — diese Seite wird normalerweise mit einem <code>?d=</code>-Parameter aus dem Pizzateig-Rechner geöffnet (Button „Test: Mit Bring! teilen" im Pizza-Party-Bereich).</p>
+  <p class="hint">Testseite für einen experimentellen Bring!-Import (kein Teil der regulären Pizzateig-Rechner-App, s. Kommentar im Quelltext). Fügt beim Laden per JavaScript ein <code>schema.org/Recipe</code>-JSON-LD-Tag in den <code>&lt;head&gt;</code> ein — Bring! liest das beim Öffnen dieser Seite über den offiziellen Import-Deeplink.</p>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // UTF-8-sichere Base64-Dekodierung, identisches Muster wie b64Decode() in
+      // js/share.js -- hier bewusst dupliziert, damit diese Seite komplett
+      // eigenständig bleibt (kein Zugriff auf andere App-Dateien nötig).
+      function b64Decode(str) {
+        return decodeURIComponent(Array.prototype.map.call(atob(str), function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+      }
+
+      function fmtIngredient(i) {
+        var amt = Math.round(i.amount * 10) / 10;
+        return amt + ' ' + i.unit + ' ' + i.name;
+      }
+
+      try {
+        var params = new URLSearchParams(location.search);
+        var raw = params.get('d');
+        if (!raw) {
+          document.getElementById('emptyHint').hidden = false;
+          return;
+        }
+        var payload = JSON.parse(b64Decode(raw));
+        var name = (payload && payload.name) || 'Pizza Party';
+        var ingredients = (payload && Array.isArray(payload.ingredients)) ? payload.ingredients : [];
+
+        document.getElementById('recipeName').textContent = name;
+        var listEl = document.getElementById('ingredientList');
+        var recipeIngredient = [];
+        ingredients.forEach(function (i) {
+          var text = fmtIngredient(i);
+          var li = document.createElement('li');
+          li.textContent = text;
+          listEl.appendChild(li);
+          recipeIngredient.push(text);
+        });
+
+        // Kern des Tests: schema.org/Recipe als JSON-LD CLIENTSEITIG per JS
+        // einfügen (nicht im initial ausgelieferten HTML vorhanden) -- offene
+        // Frage, ob Bring! das beim Abruf über den Deeplink akzeptiert.
+        var ld = {
+          '@context': 'https://schema.org/',
+          '@type': 'Recipe',
+          name: name,
+          recipeIngredient: recipeIngredient
+        };
+        var script = document.createElement('script');
+        script.type = 'application/ld+json';
+        script.textContent = JSON.stringify(ld);
+        document.head.appendChild(script);
+      } catch (e) {
+        // Bewusst keine echte Fehlerbehandlung (Testseite, s. Abgrenzung oben) --
+        // nur nicht abstürzen.
+        document.getElementById('emptyHint').hidden = false;
+      }
+    })();
+  </script>
+</body>
+</html>

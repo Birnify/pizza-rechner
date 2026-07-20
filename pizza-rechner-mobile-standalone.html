@@ -436,6 +436,20 @@ footer{text-align:center;font-size:11.5px;color:var(--muted);padding:0 20px 30px
 .collapse{display:none;}
 .collapse.show{display:block;}
 #shoppingList{display:none;}
+/* EXPERIMENTELLER TESTAUFBAU (v3.39.0, js/bring-test.js, kein fertiges Feature) —
+   #bringTestBtn steht außerhalb von .actions/.pills/.seg und bekäme ohne diese Regel
+   GAR KEIN App-Styling (nur nackter Browser-Default-Button, ~21px hoch statt der
+   sonst überall im Code üblichen Button-Größe — Accessibility-Audit v3.39.0 hat das
+   als reales Problem identifiziert, nicht nur den gestrichelten Rahmen). Padding/
+   Radius/Font/Farbe hier bewusst identisch zu ".actions button" nachgebaut, damit
+   Touch-Ziel und Kontrast konsistent zum Rest der App sind; der gestrichelte statt
+   durchgezogene Rahmen bleibt die visuelle "experimentell"-Kennzeichnung. Bei
+   Entfernung des Testaufbaus zusammen mit den übrigen "bring."-Bestandteilen
+   (s. Kommentar in js/bring-test.js) mit entfernen. */
+.btn-experimental{
+  padding:11px;border-radius:var(--radius);border:1px solid var(--line);border-style:dashed!important;
+  background:#fff;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink);
+}
 @media print{
   header,.actions,.controls-col,footer{display:none;}
   .nav-toggle,.nav-overlay{display:none!important;}
@@ -1382,13 +1396,24 @@ footer{text-align:right;}
         <div class="hint" style="margin-bottom:10px;" data-i18n="hint.partyResult">Ungefähre Richtmengen für den Einkauf — keine exakte Rezeptberechnung wie beim Teig.</div>
         <div id="partyResultSummary" style="font-weight:600;margin-bottom:6px;"></div>
         <div id="partyResultList"></div>
+
+        <!-- EXPERIMENTELLER TESTAUFBAU (v3.39.0, kein fertiges Feature) — prüft, ob
+             Bring! per Deeplink auch clientseitig per JS eingefügtes schema.org/Recipe-
+             JSON-LD akzeptiert. Kein Fallback/Fehlerbehandlung, s. js/bring-test.js +
+             bring-import.html. Rückstandslos entfernbar: diese Datei + dieser Block +
+             der Script-Tag unten + die "bring."/"btn.bringTest"/"hint.bringTest"-Keys
+             in js/i18n.js. -->
+        <div style="margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);">
+          <button type="button" id="bringTestBtn" class="btn-experimental" aria-describedby="bringTestHint" data-i18n="btn.bringTest">Test: Mit Bring! teilen (experimentell)</button>
+          <div class="hint" id="bringTestHint" style="margin-top:8px;margin-bottom:0;" data-i18n="hint.bringTest">Experimenteller technischer Test (kein fertiges Feature) — prüft, ob die Zutatenliste per Bring!-Deeplink übernommen werden kann. Funktioniert nur, wenn die Bring!-App installiert ist.</div>
+        </div>
       </div>
     </details>
   </div>
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.38.1</span>
+  <span id="appVersion" style="opacity:.7;">v3.39.0</span>
 </footer>
 
 <div class="quickbar" data-view="rechner">
@@ -2317,6 +2342,15 @@ footer{text-align:right;}
   add('card.partyResult.title', 'Zutatenliste für die Party', 'Ingredient list for the party');
   add('hint.partyResult', 'Ungefähre Richtmengen für den Einkauf — keine exakte Rezeptberechnung wie beim Teig.',
     'Approximate guideline amounts for shopping — not an exact recipe calculation like the dough.');
+
+  // -- EXPERIMENTELLER TESTAUFBAU (v3.39.0, js/bring-test.js, kein fertiges Feature) --------
+  // Prüft, ob die Bring!-App eine Zutatenliste per offiziellem Deeplink übernehmen kann.
+  // Falls sich die Idee nicht bestätigt: diese drei Keys zusammen mit js/bring-test.js,
+  // bring-import.html und dem zugehörigen HTML-Block wieder entfernen (s. Kommentar dort).
+  add('btn.bringTest', 'Test: Mit Bring! teilen (experimentell)', 'Test: Share with Bring! (experimental)');
+  add('hint.bringTest', 'Experimenteller technischer Test (kein fertiges Feature) — prüft, ob die Zutatenliste per Bring!-Deeplink übernommen werden kann. Funktioniert nur, wenn die Bring!-App installiert ist.',
+    'Experimental technical test (not a finished feature) — checks whether the ingredient list can be picked up via the Bring! deeplink. Only works if the Bring! app is installed.');
+  add('bring.recipeName', 'Pizza Party – Zutatenliste', 'Pizza Party – Ingredient List');
 
   // -- Quick-Bar (nur Mobil) -----------------------------------------------------------------
   add('quickbar.jumpToResult', 'Zum Ergebnis springen: ', 'Jump to result: ');
@@ -5793,6 +5827,87 @@ footer{text-align:right;}
   // Sprachwechsel: komplette Neu-Darstellung (Titel + Text in der neuen
   // Sprache), Aufklapp-Zustand bleibt erhalten (s. o.).
   if (PZ.i18nOnChange) PZ.i18nOnChange(renderGlossary);
+})(window);
+
+</script>
+<!-- EXPERIMENTELLER TESTAUFBAU (v3.39.0) — s. Kommentar in js/bring-test.js -->
+<script>
+/* bring-test.js — EXPERIMENTELLER TESTAUFBAU (v3.39.0, NICHT Teil des regulären
+ * Feature-Umfangs, kein fertiges Feature)
+ *
+ * Prüft eine offene technische Frage: die Shopping-List-App "Bring!" bietet einen
+ * offiziellen Import-Deeplink (https://getbring.com/en/integration-check), der KEINEN
+ * API-Key/Login braucht — die Bring!-App holt sich beim Öffnen des Links selbst
+ * schema.org/Recipe-JSON-LD von der übergebenen url. Unklar (nur mit echtem Gerät +
+ * App zu klären): akzeptiert Bring! dafür auch CLIENTSEITIG per JS nachträglich
+ * eingefügtes JSON-LD (s. bring-import.html), oder nur bereits im initialen HTML
+ * vorhandenes?
+ *
+ * Baut aus der aktuell aggregierten Pizza-Party-Zutatenliste (PZ.partyComputeAggregatedList(),
+ * js/party.js) einen kompakten Base64-JSON-Zustand (identisches Muster wie js/share.js,
+ * v3.14.0 — hier aber bewusst eigenständig dupliziert statt importiert, damit
+ * bring-import.html komplett unabhängig von den übrigen App-Modulen bleibt) und hängt
+ * ihn als ?d=-Parameter an die GitHub-Pages-URL von bring-import.html. Diese komplette
+ * URL wird wiederum als url-Parameter in den offiziellen Bring!-Deeplink eingebettet.
+ *
+ * Abgrenzung (bewusst, s. Auftrag): kein Fallback für Nutzer ohne Bring!-App, keine
+ * echte Fehlerbehandlung — bewusster Testaufruf, kein fertiges Feature.
+ *
+ * FALLS SICH DIE IDEE NICHT BESTÄTIGT: rückstandslos entfernbar durch Löschen von
+ * — dieser Datei
+ * — bring-import.html
+ * — dem <script src="js/bring-test.js">-Tag + dem #bringTestBtn-Block in
+ *   pizza-rechner.html UND pizza-rechner-mobile.html
+ * — den i18n-Keys btn.bringTest/hint.bringTest/bring.recipeName in js/i18n.js
+ * — der .btn-experimental-Regel in css/styles.css
+ * Kein anderer bestehender Code (js/party.js, js/share.js, …) wird von diesem Modul
+ * verändert oder vorausgesetzt.
+ */
+(function (global) {
+  'use strict';
+  const PZ = global.PZ || (global.PZ = {});
+  const $ = PZ.$;
+
+  function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
+
+  // Muss eine echte, öffentlich über https:// erreichbare URL sein (GitHub Pages) —
+  // Bring!s Server ruft diese URL SERVERSEITIG ab, um das JSON-LD zu lesen; eine
+  // lokale file://-URL wäre für Bring! nicht erreichbar, unabhängig davon, ob diese
+  // Seite hier gerade lokal per Doppelklick oder über GitHub Pages läuft.
+  const BRING_IMPORT_URL = 'https://birnify.github.io/pizza-rechner/bring-import.html';
+
+  // UTF-8-sichere Base64-Kodierung — identisches Muster wie b64Encode() in js/share.js,
+  // hier absichtlich dupliziert statt von dort importiert (s. Kommentar oben: bewusst
+  // eigenständiges, leicht wieder entfernbares Testmodul).
+  function b64Encode(str) {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+      (_, hex) => String.fromCharCode(parseInt(hex, 16))));
+  }
+
+  function buildDeeplink() {
+    const result = PZ.partyComputeAggregatedList ? PZ.partyComputeAggregatedList() : { ingredients: [] };
+    const payload = {
+      name: t('bring.recipeName'),
+      ingredients: result.ingredients.map(function (i) {
+        return { name: i.name, amount: i.amount, unit: i.unit };
+      })
+    };
+    const encoded = b64Encode(JSON.stringify(payload));
+    const importUrl = BRING_IMPORT_URL + '?d=' + encoded;
+    return 'https://api.getbring.com/rest/bringrecipes/deeplink?url=' + encodeURIComponent(importUrl) + '&source=web';
+  }
+  // Für manuelles Nachtesten in der Browser-Konsole (z. B. PZ.buildBringTestDeeplink())
+  // zugänglich gemacht, ohne extra Klick nötig zu haben.
+  PZ.buildBringTestDeeplink = buildDeeplink;
+
+  const btn = $('bringTestBtn');
+  if (btn) {
+    btn.addEventListener('click', function () {
+      // Direkte Navigation (nicht window.open) — für App-Deeplink-Handoffs auf iOS
+      // Safari das zuverlässigere Muster als ein neuer Tab per window.open().
+      location.href = buildDeeplink();
+    });
+  }
 })(window);
 
 </script>
