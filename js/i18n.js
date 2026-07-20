@@ -501,7 +501,6 @@
 
   // -- Kopf / Navigation ------------------------------------------------------------
   add('app.title', 'Teigmeister', 'Teigmeister');
-  add('app.tagline', 'Neapolitanisch · Biga · Poolish — komplett offline', 'Neapolitan · Biga · Poolish — fully offline');
   add('nav.menuOpen', 'Menü öffnen', 'Open menu');
   add('nav.menuClose', 'Menü schließen', 'Close menu');
   add('nav.areasDialogLabel', 'Bereiche auswählen', 'Select area');
@@ -738,12 +737,6 @@
   add('card.partyResult.title', 'Zutatenliste für die Party', 'Ingredient list for the party');
   add('hint.partyResult', 'Ungefähre Richtmengen für den Einkauf — keine exakte Rezeptberechnung wie beim Teig.',
     'Approximate guideline amounts for shopping — not an exact recipe calculation like the dough.');
-
-  // -- Footer ------------------------------------------------------------------------------
-  add('footer.line1', 'Alles wird lokal in deinem Browser gerechnet &amp; gespeichert · keine Internetverbindung nötig',
-    'Everything is calculated &amp; saved locally in your browser · no internet connection needed');
-  add('footer.line2', 'Bäckerprozente — Wasser, Salz &amp; Hefe immer relativ zur Mehlmenge (= 100 %)',
-    'Baker\'s percentages — water, salt &amp; yeast always relative to the flour amount (= 100%)');
 
   // -- Quick-Bar (nur Mobil) -----------------------------------------------------------------
   add('quickbar.jumpToResult', 'Zum Ergebnis springen: ', 'Jump to result: ');

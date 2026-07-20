@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-20 · Aktuelle Version: v3.30.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-20 · Aktuelle Version: v3.30.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,47 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Pizza-Party zurücksetzen (v3.30.0) = aktueller Stand
+## Desktop-Untertitel entfernt (v3.30.1) = aktueller Stand
+
+Kleiner direkter Fix, vom Nutzer beauftragt (Desktop→Mobil-Angleichung, kein Feature).
+Der Header-Untertitel („Neapolitanisch · Biga · Poolish — komplett offline") und die
+zwei Footer-Beschreibungszeilen („Alles wird lokal in deinem Browser gerechnet &
+gespeichert …" / „Bäckerprozente — Wasser, Salz & Hefe immer relativ zur Mehlmenge …")
+existierten bisher nur auf Desktop (`pizza-rechner.html`) — die Mobil-Seite
+(`pizza-rechner-mobile.html`) hatte sie nie (Header nur `<h1>🍕 Teigmeister</h1>`,
+Footer nur die Versionsnummer). Desktop wurde jetzt exakt an diesen bereits
+bestehenden Mobil-Zustand angeglichen.
+
+- **Entfernt aus `pizza-rechner.html`:** das `<p data-i18n="app.tagline">`-Element
+  direkt unter dem `<h1>` im Header; die beiden `<span data-i18n-html="footer.line1">`/
+  `<span data-i18n-html="footer.line2">`-Zeilen im Footer (samt ihrer `<br>`-Trenner)
+  — der Footer zeigt jetzt nur noch die Versionsnummer, identisch zur Mobil-Seite.
+- **Tote i18n-Keys entfernt:** `app.tagline`, `footer.line1`, `footer.line2` wurden
+  nach der Entfernung nirgends mehr referenziert (Codesuche über alle `.html`/`.js`-
+  Dateien bestätigt das) und wurden daher auch aus dem Wörterbuch (`js/i18n.js`)
+  gelöscht statt als toter Code liegen zu bleiben.
+- **Mobil-Seite unverändert** (hatte diese Texte nie) — nur die `?v=`-Cache-Busting-
+  Parameter wurden zur Versions-Konsistenz mit hochgezogen, obwohl
+  `pizza-rechner-mobile.html` inhaltlich nicht geändert wurde.
+
+**Tests:** reine Markup-/Wörterbuch-Entfernung ohne Auswirkung auf Rechenlogik —
+`tests/test.html` bleibt unverändert bei **558** Prüfungen, alle grün
+(Headless-Edge-Dump). Kein `test-generator`-Lauf nötig. Kein
+`accessibility-expert`-Lauf nötig (reine Entfernung von dekorativem Text, keine neue
+interaktive Struktur — analog zur Begründung bei v3.23.0 „Card-Überschriften ohne
+Nummerierung"). Visuell per Headless-Edge-Dump verifiziert: Header zeigt nur noch
+`<h1>`, Footer nur noch die Versionsnummer, keine JavaScript-Konsolenfehler.
+
+**Geändert:** `pizza-rechner.html`, `js/i18n.js`. `?v=` auf `3.30.1` gezogen
+(Desktop + Mobil, Cache-Busting + Footer-Version — inkl. dem seit v3.28.1 bekannten
+Stolperstein, dass die bloße `#appVersion`-Fußzeile separat vom `sed`-basierten
+`?v=`-Bump aktualisiert werden muss).
+`pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.30.1 - Desktop-Untertitel entfernt/` enthält den vollständigen
+Schnappschuss.
+
+## Pizza-Party zurücksetzen (v3.30.0)
 
 Kleines neues Feature, vom Nutzer per `/define-feature` strukturiert und bestätigt.
 Direkt im Anschluss an „Zutaten-Info je Pizza" (v3.29.0) im selben Pizza-Party-Bereich
@@ -3171,8 +3211,11 @@ Keine Code-Änderung durch den Audit nötig.
   `#partyCreateLiveMsg` (Karte „Eigene Pizza anlegen") sowie `#nrLiveMsg`
   (Formular „Neues Rezept anlegen") — beim nächsten Accessibility-Durchlauf über
   die Mobil-Formulare mit prüfen.
+- ~~Desktop-Untertitel entfernen (Header-Tagline + Footer-Beschreibungszeilen, Angleichung an Mobil)~~
+  — **erledigt in v3.30.1** (kein Backlog-Punkt, direkter Nutzerauftrag; s.
+  Abschnitt „Desktop-Untertitel entfernt (v3.30.1)" oben).
 
-**Stand v3.30.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.30.1: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben), offene Punkte sind die drei oben notierten Nebenbefunde
 (`#shareLiveMsg`/`#nrLiveMsg`-Live-Region-Fehlen, `<details>`-zugeklappt-Problematik
 bei Mobil-Live-Regionen). Für den nächsten Zyklus braucht es daher frisches
