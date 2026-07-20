@@ -42,7 +42,14 @@ details.card summary{
 details.card summary::-webkit-details-marker{display:none;}
 details.card summary h2{margin:0;}
 details.card summary::after{
-  content:'▾';color:var(--muted);font-size:16px;transition:transform .18s;flex-shrink:0;
+  /* content:'▾' / ''; (Alt-Text-Syntax, CSS Generated Content Module Level 3)
+     statt nur content:'▾' -- Nebenbefund aus dem gezielten a11y-Audit zum
+     Pizza-Glossar (v3.37.0, dort dasselbe Marker-Muster neu eingeführt):
+     ohne den leeren Alt-Text wird der generierte Pfeil-Text in den
+     Accessible Name des <summary> übernommen ("Einstellungen ▾" statt
+     "Einstellungen") -- per Headless-Edge/CDP verifiziert, betraf ALLE
+     details.card-Akkordeons auf Mobil. Visuelle Darstellung unverändert. */
+  content:'▾' / '';color:var(--muted);font-size:16px;transition:transform .18s;flex-shrink:0;
 }
 details.card[open] summary::after{transform:rotate(180deg);}
 details.card summary:active{background:var(--bg);}

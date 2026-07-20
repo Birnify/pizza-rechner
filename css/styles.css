@@ -161,7 +161,15 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 }
 .glossary-item summary::-webkit-details-marker{display:none;}
 .glossary-item summary::after{
-  content:'▾';position:absolute;right:0;top:12px;color:var(--muted);
+  /* content:"…" / "" — die Alt-Text-Syntax (CSS Generated Content Module
+     Level 3) hängt hier bewusst eine LEERE Alt-Beschreibung an: ohne sie
+     zieht Chromium/Edge den generierten Pfeil-Text in die Accessible-Name-
+     Berechnung des <summary>-Elements mit ein (verifiziert per CDP
+     Accessibility.getPartialAXTree: Name wurde z. B. "W-Wert (Mehlstärke) ▾"
+     statt nur "W-Wert (Mehlstärke)"). Mit der leeren Alt-Beschreibung bleibt
+     der Pfeil optisch unverändert, taucht aber nicht mehr im Accessible Tree
+     auf (WCAG 4.1.2) — betrifft alle 24 Glossar-Einträge. */
+  content:'▾' / '';position:absolute;right:0;top:12px;color:var(--muted);
   font-size:14px;transition:transform .15s;
 }
 .glossary-item[open] summary::after{transform:rotate(180deg);}

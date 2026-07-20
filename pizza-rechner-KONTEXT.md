@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-20 · Aktuelle Version: v3.36.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-20 · Aktuelle Version: v3.37.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,102 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Gruppierte Menü-Navigation (v3.36.0) = aktueller Stand
+## Pizza-Glossar (v3.37.0) = aktueller Stand
+
+Feature, vom Nutzer beauftragt: Ein neuer, eigenständiger Menü-Bereich mit
+kurzen Lexikon-Artikeln, die Begriffe und Hintergrundwissen rund um Pizza
+erklären — startend mit den vorgegebenen Beispielthemen (W-Wert, Pizzaofen
+vs. Backofen, echte neapolitanische Pizza, San-Marzano-Tomaten) plus 20
+weiteren, selbst recherchierten/verfassten Artikeln zu verwandten
+Pizza-Themen. Alle 24 Artikel von Anfang an zweisprachig (DE/EN).
+
+- **Neuer Menüpunkt „Glossar"** (`data-goto="glossar"`), eingehängt in die
+  bereits bestehende unbenannte Utility-Zeile neben „Einstellungen" (kein
+  eigenes `role="group"`, analog zu „Einstellungen" selbst — beide sind
+  reine Utility-/Zusatz-Bereiche, keine der beiden thematischen Gruppen aus
+  v3.36.0). DOM-Reihenfolge: Rechner → Rezepte → Zeitplan → Pizza Party →
+  Glossar → Einstellungen.
+- **Neue Ansicht** `data-view="glossar"` (Desktop: `<div class="card">`,
+  Mobil: `<details class="card" open>`, identisch zum bestehenden Muster
+  anderer einfacher Bereiche wie „Einstellungen") — eine Karte „Pizza-Glossar"
+  mit Hinweistext und einem Container `<div id="glossaryList"></div>`.
+- **Neues JS-Modul `js/glossary.js`:** rendert die 24 Artikel dynamisch als
+  verschachtelte `<details class="glossary-item" data-id="…">`-Elemente
+  INNERHALB der Karte (`<summary>` = Titel, `<div class="glossary-body">` =
+  Text per `innerHTML`, darf `<p>`-Tags enthalten). `PZ.GLOSSARY_TOPICS`
+  (Array von IDs) legt Reihenfolge/Themenliste fest — grob thematisch
+  sortiert (Mehl-/Teig-Grundlagen → Vorteig-/Gärmethoden → Zutaten →
+  Pizza-Stile), aber ohne sichtbare Zwischenüberschriften (Abgrenzung: keine
+  Kategorisierung über eine einfache Liste hinaus). Aufklapp-Zustand bleibt
+  bei Sprachwechsel erhalten (Re-Render merkt sich offene IDs vor dem
+  Neuaufbau).
+- **Die 24 Themen** (i18n-Keys `glossary.<id>.title`/`glossary.<id>.body`,
+  DE+EN vollständig): W-Wert, 00-Mehl (Tipo 00), Bäckerprozente, Hydration,
+  Gluten, Stretch & Fold, Windowpane-Test, Autolyse, Poolish, Biga,
+  Kalte Gare, Malzmehl (Malto), Pizzaofen vs. Backofen, San-Marzano-Tomaten,
+  Passata di Pomodoro, Fior di Latte vs. Mozzarella, Olivenöl (Extra
+  Vergine), Frisches Basilikum, Echte neapolitanische Pizza (AVPN), Pizza
+  Margherita (Namensgeschichte), Neapolitanische vs. Römische Pizza,
+  New York Style Pizza, Detroit-Style Pizza, Sizilianische Pizza
+  (Sfincione).
+- **CSS** (`css/styles.css`, gemeinsam Desktop+Mobil): `.glossary-item`/
+  `.glossary-body` — eigener Chevron-Marker (▾) analog zum bestehenden
+  `details.card`-Akkordeon-Muster in `css/mobile.css`.
+- **Abgrenzung eingehalten:** keine Verlinkung aus bestehenden
+  Rechner-Hinweistexten in dieser ersten Fassung, keine Suchfunktion, keine
+  nutzergenerierten/editierbaren Einträge — reine, feste Liste zum
+  Nachlesen.
+
+**Härten (gezielter `accessibility-expert`-Audit, nur diese neue
+Funktion) — 1 Major-Befund gefunden und behoben:**
+- **WCAG 4.1.2 (Name, Role, Value) — Major:** native `<details>`/`<summary>`-
+  Semantik selbst war korrekt (Rolle „DisclosureTriangle", `expanded`-Status
+  automatisch korrekt, per CDP-AX-Snapshot verifiziert) — das eigentliche
+  Problem war der neue CSS-Chevron-Marker (`summary::after{content:'▾'}`):
+  er wurde entgegen der Erwartung NICHT vom Accessible-Name-Algorithmus
+  ignoriert, sondern hängte sich an jeden der 24 Artikel-Titel an (Accessible
+  Name z. B. „W-Wert (Mehlstärke) ▾" statt „W-Wert (Mehlstärke)" — verifiziert
+  per `Accessibility.getPartialAXTree`).
+- **Fix:** CSS-Alt-Text-Syntax (`content:'▾' / '';`, CSS Generated Content
+  Module Level 3) statt nur `content:'▾';` — verifiziert per CDP, dass der
+  Accessible Name danach wieder sauber nur den Titel enthält, visuelle
+  Darstellung unverändert (`computed ::after content: "▾" / ""`, per
+  `getComputedStyle(el,'::after').content` gegengeprüft).
+- **Nebenbefund proaktiv mitgefixt:** derselbe Marker-Fehler steckte auch im
+  bereits bestehenden `details.card summary::after` in `css/mobile.css`
+  (betraf ALLE Akkordeon-Karten auf Mobil, nicht nur das neue Glossar) — da
+  Fix und Ursache identisch und der Aufwand trivial war, direkt mit
+  behoben statt als offener Backlog-Punkt liegen zu lassen.
+- Tab-Reihenfolge (Schließen → Rechner/Rezepte/Zeitplan → Pizza Party →
+  Glossar → Einstellungen → Cross-Link) nach dem Hinzufügen des neuen
+  Menüpunkts weiterhin korrekt. Enter/Space toggeln jeden der 24 Einträge
+  zuverlässig (stichprobenartig per CDP-Keyboard-Events verifiziert). Kein
+  Performance-/Fokus-Problem bei den >20 verschachtelten `<details>`
+  festgestellt. Kontrast Chevron/Titeltext unproblematisch (`--muted`
+  ~5,85:1, `--ink` sehr hoher Kontrast).
+
+**Tests:** reine Anzeige-Funktion ohne Berechnungslogik-Bezug —
+`tests/test.html` bleibt unverändert bei **567** Prüfungen, alle grün
+(Headless-Edge-Dump). Kein `test-generator`-Lauf nötig. Zusätzlich per
+gezieltem Headless-Edge-Skript interaktiv verifiziert: alle 24 Artikel
+rendern mit korrektem Titel/Text (keine fehlenden/Fallback-i18n-Keys),
+Aufklapp-Zustand bleibt bei DE↔EN-Sprachwechsel erhalten und Titel/Text
+übersetzen sich korrekt, Chevron-Alt-Text-Fix per `getComputedStyle`
+gegengeprüft.
+
+**Geändert:** `pizza-rechner.html`, `pizza-rechner-mobile.html`,
+`js/glossary.js` (neu), `js/i18n.js`, `css/styles.css`, `css/mobile.css`.
+`?v=` auf `3.37.0` gezogen (Desktop + Mobil, Cache-Busting +
+`#appVersion`-Fußzeile separat aktualisiert).
+`pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.37.0 - Pizza-Glossar/` enthält den vollständigen Schnappschuss.
+Hinweis: wegen des Umfangs dieses Zyklus (24 zweisprachige Artikel) wurde
+zusätzlich zwischendurch lokal committet (Sicherungs-Commit vor dem
+Härten), auf ausdrücklichen Wunsch des Nutzers wegen zuvor aufgetretener
+Sitzungsabbrüche.
+
+## Gruppierte Menü-Navigation (v3.36.0)
 
 Feature, vom Nutzer beauftragt: Das Bereiche-Menü clustert die vorhandenen
 Menüpunkte sichtbar in zwei Gruppen mit kurzer Zwischenüberschrift —
@@ -3683,12 +3778,8 @@ Keine Code-Änderung durch den Audit nötig.
 - ~~Gruppierte Menü-Navigation~~ — **erledigt in v3.36.0** (kein
   Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt „Gruppierte
   Menü-Navigation (v3.36.0)" oben).
-- Pizza-Glossar (neuer Menü-Bereich mit ~24 zweisprachigen Lexikon-Artikeln zu
-  Pizza-Hintergrundwissen, z. B. W-Wert, Pizzaofen vs. Backofen, echte
-  neapolitanische Pizza, San-Marzano-Tomaten) — vom Nutzer beauftragt, deutlich
-  größerer Zyklus als die übrigen, ggf. in Unterschritte (Struktur/Anzeige-
-  Mechanik zuerst, dann Content-Batches) aufzuteilen; als eigener Zyklus
-  geplant.
+- ~~Pizza-Glossar~~ — **erledigt in v3.37.0** (kein Backlog-Punkt, direkter
+  Nutzerauftrag; s. Abschnitt „Pizza-Glossar (v3.37.0)" oben).
 - Fix: veralteter Hinweistext im Anleitungs-Banner (`guide.schedbar.noTime`,
   `js/guide.js` ~Zeile 263) verweist noch auf „gib oben eine Start- oder
   Zielzeit an" — seit der Burgermenü-Navigation (v3.26.0) liegen die
@@ -3696,16 +3787,24 @@ Keine Code-Änderung durch den Audit nötig.
   (`data-view="zeitplan"`), nicht mehr im selben Bereich wie die Anleitung.
   Text anpassen + „Zeitplan" darin klickbar machen (Sprung zum Menüpunkt via
   `data-goto="zeitplan"`), Desktop + Mobil, inkl. EN-Übersetzung — vom Nutzer
-  beauftragt, als eigener Zyklus in Bearbeitung/geplant.
+  beauftragt, als eigener Zyklus in Bearbeitung/geplant (letzter offener
+  Punkt der laufenden Warteschlange).
+- Nebenbefund aus dem v3.37.0-Accessibility-Audit (bereits mitgefixt, hier
+  nur zur Nachvollziehbarkeit dokumentiert): `details.card summary::after`
+  (`css/mobile.css`) nutzte `content:'▾'` ohne Alt-Text-Syntax, wodurch der
+  generierte Pfeil in den Accessible Name jeder Akkordeon-Karten-Überschrift
+  auf Mobil einfloss — behoben auf `content:'▾' / '';` (CSS Generated
+  Content Module Level 3), betraf ALLE Akkordeon-Karten, nicht nur das neue
+  Glossar.
 
-**Stand v3.36.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.37.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben); die drei oben notierten Nebenbefunde
 (`#shareLiveMsg`/`#nrLiveMsg`-Live-Region-Fehlen, `<details>`-zugeklappt-Problematik
 bei Mobil-Live-Regionen) bleiben offen für einen künftigen Accessibility-Zyklus.
-Aktuell läuft eine vom Nutzer vorgegebene Warteschlange von zehn direkten Aufträgen
-(s. Punkte oben, jeweils „in Bearbeitung/geplant") — für diese Punkte entfällt das
-sonst übliche Phase-1-Brainstorming, da bereits vollständig definiert und vom Nutzer
-freigegeben.
+Von der vom Nutzer vorgegebenen Warteschlange von zehn direkten Aufträgen ist nur
+noch der letzte Punkt offen (Fix des veralteten Hinweistexts im Anleitungs-Banner,
+s. oben) — dafür entfällt weiterhin das sonst übliche Phase-1-Brainstorming, da
+bereits vollständig definiert und vom Nutzer freigegeben.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

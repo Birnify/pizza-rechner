@@ -172,7 +172,15 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 }
 .glossary-item summary::-webkit-details-marker{display:none;}
 .glossary-item summary::after{
-  content:'▾';position:absolute;right:0;top:12px;color:var(--muted);
+  /* content:"…" / "" — die Alt-Text-Syntax (CSS Generated Content Module
+     Level 3) hängt hier bewusst eine LEERE Alt-Beschreibung an: ohne sie
+     zieht Chromium/Edge den generierten Pfeil-Text in die Accessible-Name-
+     Berechnung des <summary>-Elements mit ein (verifiziert per CDP
+     Accessibility.getPartialAXTree: Name wurde z. B. "W-Wert (Mehlstärke) ▾"
+     statt nur "W-Wert (Mehlstärke)"). Mit der leeren Alt-Beschreibung bleibt
+     der Pfeil optisch unverändert, taucht aber nicht mehr im Accessible Tree
+     auf (WCAG 4.1.2) — betrifft alle 24 Glossar-Einträge. */
+  content:'▾' / '';position:absolute;right:0;top:12px;color:var(--muted);
   font-size:14px;transition:transform .15s;
 }
 .glossary-item[open] summary::after{transform:rotate(180deg);}
@@ -480,7 +488,14 @@ details.card summary{
 details.card summary::-webkit-details-marker{display:none;}
 details.card summary h2{margin:0;}
 details.card summary::after{
-  content:'▾';color:var(--muted);font-size:16px;transition:transform .18s;flex-shrink:0;
+  /* content:'▾' / ''; (Alt-Text-Syntax, CSS Generated Content Module Level 3)
+     statt nur content:'▾' -- Nebenbefund aus dem gezielten a11y-Audit zum
+     Pizza-Glossar (v3.37.0, dort dasselbe Marker-Muster neu eingeführt):
+     ohne den leeren Alt-Text wird der generierte Pfeil-Text in den
+     Accessible Name des <summary> übernommen ("Einstellungen ▾" statt
+     "Einstellungen") -- per Headless-Edge/CDP verifiziert, betraf ALLE
+     details.card-Akkordeons auf Mobil. Visuelle Darstellung unverändert. */
+  content:'▾' / '';color:var(--muted);font-size:16px;transition:transform .18s;flex-shrink:0;
 }
 details.card[open] summary::after{transform:rotate(180deg);}
 details.card summary:active{background:var(--bg);}
@@ -1364,7 +1379,7 @@ footer{text-align:right;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.36.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.37.0</span>
 </footer>
 
 <div class="quickbar" data-view="rechner">
