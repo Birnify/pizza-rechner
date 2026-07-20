@@ -25,6 +25,15 @@ html = SRC.read_text(encoding="utf-8")
 def inline_css(match):
     href = match.group(1).split("?")[0]
     css = (ROOT / href).read_text(encoding="utf-8")
+    # Die CSS-Datei liegt im css/-Unterordner; relative url(...)-Pfade darin sind
+    # relativ zu CSS-DATEI-Verzeichnis gemeint (z.B. url('../assets/foto.jpg') zeigt
+    # von css/ aus eine Ebene hoch auf den Projekt-Root). Nach dem Inlinen sitzt
+    # derselbe Pfad aber direkt in dieser Root-Level-HTML-Datei -- url()-Werte in
+    # <style>-Blöcken lösen relativ zur HTML-Datei selbst auf, nicht zur
+    # Ursprungsdatei. Ein führendes "../" muss deshalb beim Inlinen entfernt werden,
+    # sonst zeigt der Pfad eine Ebene zu hoch (Bug beim ersten Header-Foto-Einbau in
+    # v3.44.0 entdeckt: das Bild blieb in der Standalone-Datei unsichtbar).
+    css = re.sub(r"url\((['\"]?)\.\./", r"url(\1", css)
     return f"<style>\n{css}\n</style>"
 
 def inline_js(match):

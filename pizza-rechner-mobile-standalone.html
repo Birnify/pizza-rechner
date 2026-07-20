@@ -27,12 +27,18 @@
      pizza-rechner-KONTEXT.md. */
   --radius:14px;
   --radius-chip:999px;
-  /* Header-Foto-Slot: Platzhalter-Wert "none", solange kein echtes Foto vorliegt — die
-     Fallback-Gradient-Ebenen in header{} sorgen für eine foto-ähnliche Anmutung ganz
-     ohne Bilddatei. Sobald ein echtes, generiertes Pizza-Foto bereitsteht: hier NUR
-     diesen einen Wert ändern, z. B. --header-photo:url('assets/header-pizza.jpg'); —
-     keine weitere Struktur-Änderung nötig (s. assets/HEADER-FOTO-README.txt). */
-  --header-photo:none;
+  /* Header-Foto-Slot (v3.41.0 als Platzhalter-Mechanismus eingeführt, echtes Bild
+     seit v3.44.0 aktiv: assets/header-pizza.jpg, vom Nutzer bereitgestellt — s.
+     Abschnitt "Echtes Header-Foto eingebunden (v3.44.0)" in pizza-rechner-KONTEXT.md
+     und assets/HEADER-FOTO-README.txt für ein künftiges Ersatzfoto). Ohne Foto
+     (--header-photo:none) erzeugen die Fallback-Gradient-Ebenen in header{} eine
+     warme, foto-ähnliche Anmutung ganz ohne Bilddatei. WICHTIG: der Pfad ist relativ
+     zu DIESER CSS-Datei (css/styles.css), nicht zu den HTML-Dateien im Projekt-Root
+     — deshalb "../assets/…", nicht "assets/…" (Bug beim ersten Einbau in v3.44.0,
+     s. HEADER-FOTO-README.txt; build-mobile-standalone.py korrigiert diesen Pfad
+     beim Inlinen automatisch für pizza-rechner-mobile-standalone.html, die im
+     Projekt-Root selbst liegt). */
+  --header-photo:url('assets/header-pizza.jpg');
 }
 *{box-sizing:border-box;}
 .visually-hidden{
@@ -46,15 +52,19 @@ body{
 }
 header{
   position:relative;
-  /* Foto-Header (v3.41.0): var(--header-photo) ist der einzige Austausch-Slot für ein
-     künftiges echtes Bild (s. Kommentar bei --header-photo in :root). Bis dahin erzeugen
-     die Bokeh-artigen radial-gradient-Ebenen darunter eine warme, foto-ähnliche
-     Anmutung ganz ohne Bilddatei. Die oberste, blickdichte Abdunklungs-Ebene sorgt
-     dafür, dass weißer Text/Hamburger-Icon AUCH über einem künftigen hellen Foto noch
-     ausreichend Kontrast hat (WCAG 1.4.3) — beim Einsetzen eines echten Fotos den
-     Kontrast trotzdem stichprobenartig gegenprüfen, falls das Foto sehr hell ist. */
+  /* Foto-Header (v3.41.0, echtes Bild seit v3.44.0): var(--header-photo) ist der
+     Austausch-Slot fürs Foto (s. Kommentar bei --header-photo in :root; ohne Foto
+     erzeugen die Bokeh-artigen radial-gradient-Ebenen darunter eine warme, foto-
+     ähnliche Anmutung ganz ohne Bilddatei). Die oberste, blickdichte Abdunklungs-
+     Ebene sorgt dafür, dass weißer Text/Hamburger-Icon ausreichend Kontrast haben
+     (WCAG 1.4.3). Opazität in v3.44.0 von .55 auf .62 erhöht: mit dem echten Foto
+     (assets/header-pizza.jpg) lag der schlechteste gemessene Fall (helle Mozzarella-
+     Stelle hinter dem Text) bei nur ~4,75–4,9:1 (knapp über der 4,5:1-Schwelle,
+     per Headless-Edge-Screenshot + Pixel-Sampling bei mehreren Viewport-Breiten
+     verifiziert) — mit .62 liegt derselbe Fall rechnerisch bei ~6,05:1, deutlich
+     komfortablere Marge. */
   background-image:
-    linear-gradient(rgba(20,9,5,.55),rgba(20,9,5,.55)),
+    linear-gradient(rgba(20,9,5,.62),rgba(20,9,5,.62)),
     var(--header-photo),
     radial-gradient(58% 85% at 16% 12%,rgba(255,214,153,.6),transparent 58%),
     radial-gradient(55% 85% at 86% 82%,rgba(232,110,52,.55),transparent 62%),
@@ -1474,7 +1484,7 @@ footer{text-align:right;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.43.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.44.0</span>
 </footer>
 
 <div class="quickbar" data-view="rechner">

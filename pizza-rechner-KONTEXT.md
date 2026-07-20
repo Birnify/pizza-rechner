@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-21 · Aktuelle Version: v3.43.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-21 · Aktuelle Version: v3.44.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,68 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Redesign-Korrektur: Icon-Farben, farbige Quickbar & Fokusring (v3.43.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Echtes Header-Foto eingebunden (v3.44.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Kleiner, klar umrissener Auftrag (kein `/define-feature`, kein Brainstorming) —
+der in v3.41.0 vorbereitete `--header-photo`-Slot bekommt sein erstes echtes Bild.
+Der Nutzer hat `assets/header-pizza.jpg` bereitgestellt (1920×1079px JPEG, ~257 KB,
+Nahaufnahme einer Margherita auf dunklem Holztisch) und selbst nach
+`assets/HEADER-FOTO-README.txt` umgesetzt.
+
+**Umsetzung laut README, plus zwei dabei gefundene Bugs (beide in der eigenen
+v3.41.0-Doku/Infrastruktur, nicht im Nutzer-Bild):**
+
+1. `--header-photo` in `css/styles.css` (`:root`) von `none` auf ein `url(...)`
+   umgestellt.
+2. **Bug 1 gefunden (Pfad-Bug):** Die ursprüngliche README-Anleitung nannte
+   `url('assets/header-pizza.jpg')` — das ist aber relativ zu `css/styles.css`
+   selbst gemeint (liegt im Unterordner `css/`), nicht relativ zum Projekt-Root.
+   Ohne Korrektur landete das Bild dadurch unsichtbar (still, ohne Fehlermeldung —
+   nur der CSS-Fallback-Verlauf blieb sichtbar), erst per Vorher/Nachher-Screenshot-
+   Vergleich entdeckt. **Fix:** `url('../assets/header-pizza.jpg')` (ein Verzeichnis
+   hoch von `css/` aus). `assets/HEADER-FOTO-README.txt` entsprechend korrigiert.
+3. **Bug 2 gefunden (Standalone-Build-Bug):** `build-mobile-standalone.py` inlined
+   `css/styles.css` unverändert in ein `<style>`-Tag der Root-Level-Datei
+   `pizza-rechner-mobile-standalone.html` — dabei verschiebt sich die effektive
+   Basis für relative `url()`-Pfade eine Ebene nach oben (von `css/` auf den
+   Projekt-Root), wodurch das frisch gefixte `../assets/…` in der Standalone-Datei
+   NOCHMAL falsch gezeigt hätte (diesmal eine Ebene ÜBER dem Projekt-Root). **Fix:**
+   `inline_css()` im Build-Skript entfernt jetzt automatisch ein führendes `../` aus
+   jedem `url(...)` beim Inlinen (generischer Fix, nicht nur für diesen einen Pfad)
+   — verifiziert per Headless-Edge-Screenshot direkt gegen die erzeugte Standalone-
+   Datei, Bild erscheint dort jetzt korrekt.
+4. **Kontrast konkret gemessen statt geschätzt** (WCAG 1.4.3): Pixel-Sampling
+   (Python/Pillow) auf Headless-Edge-Screenshots bei mehreren Viewport-Breiten
+   (390/860/1280/1920px), Text-/Button-Bereiche gezielt ausgeschlossen, um die
+   tatsächliche Hintergrundfarbe HINTER dem Text zu messen statt versehentlich die
+   weißen Textpixel selbst. Mit der ursprünglichen Abdunklungs-Ebene
+   (`rgba(20,9,5,.55)`) lag der schlechteste gemessene Fall (helle Mozzarella-Stelle
+   im Foto, direkt hinter dem `<h1>`) bei nur **~4,75–4,9:1** — über der 4,5:1-
+   Schwelle, aber mit wenig Marge. Abdunklungs-Ebene auf **.62** erhöht (im vom
+   README empfohlenen .6–.65-Bereich): derselbe Fall liegt jetzt bei **~6,0–6,1:1**,
+   konsistent über alle getesteten Breiten.
+5. Header ist strukturell sehr breit/flach im Vergleich zum Foto-Seitenverhältnis
+   (`background-size:cover` zeigt dadurch nur einen schmalen horizontalen Streifen
+   der vollen Bildbreite, keinen horizontalen Ausschnitt) — beim aktuellen Foto
+   zeigt der mittige Streifen zufällig einen gut erkennbaren, appetitlichen
+   Ausschnitt (Kruste, Mozzarella, Basilikum). In `assets/HEADER-FOTO-README.txt`
+   dokumentiert für den Fall eines künftigen Ersatzfotos mit anderem Bildaufbau.
+
+**Tests:** `tests/test.html` unverändert bei **577 Prüfungen**, alle grün
+(Headless-Edge-Dump) — reine CSS-/Build-Skript-Änderung ohne Bezug zu per
+String-Matching geprüften Texten. Kein `test-generator`-, kein
+`accessibility-expert`-Vollaudit nötig (Auftrag sah nur den gezielten
+Kontrast-Check vor, s. o. — der wurde rechnerisch statt geschätzt durchgeführt).
+
+**Geändert:** `css/styles.css`, `assets/HEADER-FOTO-README.txt`,
+`build-mobile-standalone.py`, `pizza-rechner.html`, `pizza-rechner-mobile.html`,
+neu (jetzt erstmals committet): `assets/header-pizza.jpg`. `?v=` auf `3.44.0`
+gezogen (Desktop + Mobil, alle `<link>`/`<script>`-Tags + `#appVersion`-Fußzeile).
+`pizza-rechner-mobile-standalone.html` neu gebaut (`python build-mobile-standalone.py`,
+jetzt mit dem Pfad-Korrektur-Fix).
+`Versionen/v3.44.0 - Echtes Header-Foto/` enthält den vollständigen Schnappschuss.
+
+## Redesign-Korrektur: Icon-Farben, farbige Quickbar & Fokusring (v3.43.0)
 
 Direkter Nutzerauftrag (kein Backlog-Punkt, kein `/define-feature`-Brainstorming
 nötig — Auftrag kam bereits vollständig spezifiziert). Auslöser: Der Nutzer fand
@@ -4428,18 +4489,20 @@ Keine Code-Änderung durch den Audit nötig.
 - ~~Redesign-Korrektur: Icon-Farben, farbige Quickbar & Fokusring~~ — **erledigt
   in v3.43.0** (kein Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt
   „Redesign-Korrektur: Icon-Farben, farbige Quickbar & Fokusring (v3.43.0)" oben).
+- ~~Echtes Header-Foto einsetzen~~ — **erledigt in v3.44.0** (kein Backlog-Punkt,
+  direkter Nutzerauftrag; s. Abschnitt „Echtes Header-Foto eingebunden (v3.44.0)"
+  oben). Dabei zwei Infrastruktur-Bugs gefunden/behoben (Pfad-Bug in der
+  README-Anleitung, fehlende Pfad-Korrektur beim CSS-Inlinen in
+  `build-mobile-standalone.py`) — beide für künftige `url(...)`-Referenzen in
+  `css/*.css` relevant, nicht nur für dieses eine Bild.
 
-**Stand v3.43.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
-oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen,
-vollständig zurückgebaut, keine offene Frage mehr). **Ein weiterer Auftrag liegt
-dem Orchestrator bereits als Warteschlange vor** (direkt im Anschluss an diesen
-Commit/Push abzuarbeiten, ohne auf eine neue Nutzer-Bestätigung zu warten): „Echtes
-Header-Foto einsetzen" — der Nutzer hat `assets/header-pizza.jpg` bereits
-bereitgestellt (1920×1079px JPEG, ~257 KB), nur noch `--header-photo` umbiegen +
-Kontrast/Cache-Busting/Standalone-Build/Doku wie in `assets/HEADER-FOTO-README.txt`
-beschrieben. Für jeden weiteren, danach folgenden Zyklus braucht es wieder frisches
-Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen,
-Bugfixes) statt eines vorgegebenen Auftrags.
+**Stand v3.44.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+oben), inklusive des vorherigen offenen Punkts „echtes Header-Foto". Der
+Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen, vollständig
+zurückgebaut, keine offene Frage mehr). Keine Warteschlange mehr offen — für den
+nächsten Zyklus braucht es wieder frisches Brainstorming in Phase 1 (neue
+Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes) statt eines vorgegebenen
+Auftrags.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 
