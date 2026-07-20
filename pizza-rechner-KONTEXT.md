@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-20 · Aktuelle Version: v3.31.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-20 · Aktuelle Version: v3.32.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,72 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Sichtbare Kopplung Vorteig-Reife ↔ Hefemenge (v3.31.0) = aktueller Stand
+## Bugfix: inkonsistente Dezimaltrennzeichen bei Regler-Wertanzeigen (v3.32.0) = aktueller Stand
+
+Bugfix, vom Nutzer selbst diagnostiziert: Auf Desktop zeigt jedes Regler-Feld
+(Salz, Öl, Zucker, Hefemenge) den aktuellen Wert **zweimal** — einmal als rote
+Zahl im Label (`#saltV`/`#oilV`/`#sugarV`/`#yeastV`, per `link()` in `js/ui.js`
+bzw. `nrLink()` in `js/newrecipe.js`) und einmal im nativen
+`<input type="number">` darunter. Die rote Zahl kam bisher immer über
+`val.toFixed(decimals)` zustande (fest mit Punkt, z. B. „2.8"), während der
+native `<input type="number">` browserseitig je nach OS-Locale gerendert wird
+(z. B. deutsches Windows/Edge: „2,8" mit Komma) — **derselbe Wert sah dadurch
+wie zwei unterschiedliche Zahlen aus.**
+
+- **Fix:** `fmt()` in `link()` (`js/ui.js`) und in `nrLink()`
+  (`js/newrecipe.js`) hängt jetzt `.replace('.', ',')` an `toFixed()` an — die
+  rote Wertanzeige normiert sich fest auf Komma, unabhängig von der OS-Locale
+  des Browsers (analog zum bereits bestehenden Komma-Format der Pizza-Party-
+  Zutatenliste, `fmtAmount()` in `js/party.js`). `state[key]` bleibt intern
+  ein normaler JS-Fließkommawert mit Punkt — nur die **Anzeige** wird
+  umformatiert, nirgends wird aus dem angezeigten Text zurückgeparst (per
+  Codesuche verifiziert: keine Stelle liest `#saltV`/`#yeastV` &c. per
+  `parseFloat` wieder ein).
+- **Statische HTML-Fallback-Texte mitgezogen:** die Werte, die vor dem ersten
+  JS-Rendering (`applyState()`/`PZ.calc()`) im Markup stehen (`saltV="2.8"`,
+  `oilV="2.0"`, `sugarV="0.0"`, `yeastV="0.30"` — sowohl im Hauptformular als
+  auch im unabhängigen „Neues Rezept anlegen"-Formular) wurden ebenfalls auf
+  Komma umgestellt, damit auch der allererste Seitenaufruf (vor jeder
+  Nutzerinteraktion bzw. bei fehlendem gespeicherten Rezept, `PZ.load()` ruft
+  dann kein `applyState()` auf) schon konsistent ist.
+- **Mobil ist von diesem Bug nicht betroffen** (Codesuche bestätigt: die
+  Mobil-Seite hat für Salz/Öl/Zucker/Hefe **keine** rote Zahl-Duplikat-Anzeige
+  im Label — nur den nativen `<input type="number">` selbst, also keine zwei
+  Darstellungen desselben Werts, die auseinanderlaufen könnten). Entsprechend
+  wurden auf `pizza-rechner-mobile.html` keine Markup-Änderungen nötig. Die
+  JS-Fix-Logik in `link()` (geteiltes `js/ui.js`) ist trotzdem korrekt: sollte
+  Mobil künftig doch einen `#xxxV`-Span für ein Feld bekommen, greift der Fix
+  automatisch mit.
+- **`ddtV` (Ziel-Teigtemperatur) bewusst nicht angefasst:** zeigt als
+  statischer Fallback „24" (kein Dezimalpunkt) trotz `decimals:1` in der
+  `link()`-Konfiguration — ein vorbestehender, von diesem Bug unabhängiger
+  Anzeige-Sonderfall (keine Nachkommastelle bei ganzzahligen Default-Werten
+  vor der ersten Interaktion), außerhalb des gemeldeten Scopes.
+
+**Tests:** reine Anzeige-Formatierung, keine Berechnungslogik geändert —
+`tests/test.html` bleibt unverändert bei **558** Prüfungen, alle grün
+(Headless-Edge-Dump; keine bestehende Prüfung liest die betroffenen
+`#xxxV`-Spans, daher keine Anpassung nötig). Kein `test-generator`-Lauf nötig.
+Zusätzlich per gezieltem Headless-Edge-Skript interaktiv verifiziert:
+`PZ.set.yeast(0.35)` → `#yeastV` zeigt „0,35"; Tippen „0.42" ins Zahlenfeld →
+`#yeastV` zeigt „0,42" und `state.yeast` bleibt korrekt `0.42` (intern
+weiterhin Punkt); `aria-valuetext` des Sliders zeigt ebenfalls Komma
+(„3,3 Prozent Salz" statt „3.3 Prozent Salz" — bei `lang="de"` liest ein
+deutschsprachiger Screenreader das korrekt als „drei Komma drei" vor, keine
+Regression). Kein dediziertes `accessibility-expert`-Audit nötig (reine
+Textformatierungs-Änderung ohne neue/veränderte interaktive Struktur, analog
+zur Begründung bei v3.23.0/v3.30.1/v3.30.2).
+
+**Geändert:** `js/ui.js`, `js/newrecipe.js`, `pizza-rechner.html` (nur
+statische Fallback-Texte). `?v=` auf `3.32.0` gezogen (Desktop + Mobil,
+Cache-Busting + `#appVersion`-Fußzeile separat aktualisiert).
+`pizza-rechner-mobile-standalone.html` neu gebaut (`python
+build-mobile-standalone.py` — inline-JS betroffen, auch wenn kein
+Mobil-Markup geändert wurde).
+`Versionen/v3.32.0 - Bugfix Dezimaltrennzeichen Regler-Wertanzeigen/` enthält
+den vollständigen Schnappschuss.
+
+## Sichtbare Kopplung Vorteig-Reife ↔ Hefemenge (v3.31.0)
 
 Feature, vom Nutzer beauftragt: Der Hefemenge-Regler wird bei aktiver Vorteig-Reife-
 Auswahl (Biga/Poolish) optisch als abhängig/gesperrt dargestellt, statt wie ein
@@ -3321,10 +3386,10 @@ Keine Code-Änderung durch den Audit nötig.
 - ~~Sichtbare Kopplung Vorteig-Reife ↔ Hefemenge~~ — **erledigt in v3.31.0** (kein
   Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt „Sichtbare Kopplung
   Vorteig-Reife ↔ Hefemenge (v3.31.0)" oben).
-- Bugfix: inkonsistente Dezimaltrennzeichen zwischen der roten Regler-Wertanzeige
-  (`js/ui.js`/`js/newrecipe.js`, `.toFixed()`, immer Punkt) und der nativen
-  `<input type="number">`-Anzeige (Browser rendert je nach OS-Locale mit Komma) —
-  vom Nutzer beauftragt, als eigener Zyklus in Bearbeitung/geplant.
+- ~~Bugfix: inkonsistente Dezimaltrennzeichen bei Regler-Wertanzeigen~~ —
+  **erledigt in v3.32.0** (kein Backlog-Punkt, direkter Nutzerauftrag; s.
+  Abschnitt „Bugfix: inkonsistente Dezimaltrennzeichen bei
+  Regler-Wertanzeigen (v3.32.0)" oben).
 - „Name für neues Rezept"-Feld (`#recipeName`/`#recipeSaveNew`) durch eine
   Kopieren/Duplizieren-Funktion für das im Dropdown gewählte gespeicherte Rezept
   ersetzen — vom Nutzer beauftragt, als eigener Zyklus in Bearbeitung/geplant.
@@ -3344,12 +3409,20 @@ Keine Code-Änderung durch den Audit nötig.
   größerer Zyklus als die übrigen, ggf. in Unterschritte (Struktur/Anzeige-
   Mechanik zuerst, dann Content-Batches) aufzuteilen; als eigener Zyklus
   geplant.
+- Fix: veralteter Hinweistext im Anleitungs-Banner (`guide.schedbar.noTime`,
+  `js/guide.js` ~Zeile 263) verweist noch auf „gib oben eine Start- oder
+  Zielzeit an" — seit der Burgermenü-Navigation (v3.26.0) liegen die
+  Start-/Zielzeit-Felder im eigenen Menüpunkt „Zeitplan"
+  (`data-view="zeitplan"`), nicht mehr im selben Bereich wie die Anleitung.
+  Text anpassen + „Zeitplan" darin klickbar machen (Sprung zum Menüpunkt via
+  `data-goto="zeitplan"`), Desktop + Mobil, inkl. EN-Übersetzung — vom Nutzer
+  beauftragt, als eigener Zyklus in Bearbeitung/geplant.
 
-**Stand v3.31.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.32.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben); die drei oben notierten Nebenbefunde
 (`#shareLiveMsg`/`#nrLiveMsg`-Live-Region-Fehlen, `<details>`-zugeklappt-Problematik
 bei Mobil-Live-Regionen) bleiben offen für einen künftigen Accessibility-Zyklus.
-Aktuell läuft eine vom Nutzer vorgegebene Warteschlange von neun direkten Aufträgen
+Aktuell läuft eine vom Nutzer vorgegebene Warteschlange von zehn direkten Aufträgen
 (s. Punkte oben, jeweils „in Bearbeitung/geplant") — für diese Punkte entfällt das
 sonst übliche Phase-1-Brainstorming, da bereits vollständig definiert und vom Nutzer
 freigegeben.

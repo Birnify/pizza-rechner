@@ -1310,7 +1310,7 @@ footer{text-align:right;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.31.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.32.0</span>
 </footer>
 
 <div class="quickbar">
@@ -3351,7 +3351,16 @@ footer{text-align:right;}
   const unitLinks = []; // { slider, unitKey } — für refreshUnits() bei Sprachwechsel
   function link(slider, number, key, decimals, unitKey) {
     const s = $(slider), n = $(number), v = $(key + 'V');
-    function fmt(val) { return decimals != null ? val.toFixed(decimals) : val; }
+    // Deutsches Komma statt Punkt (v3.32.0-Bugfix): das native <input type="number">
+    // darunter rendert je nach OS-Locale mit Komma (z. B. deutsches Windows), während
+    // `toFixed()` immer einen Punkt liefert — derselbe Wert sah dadurch wie zwei
+    // unterschiedliche Zahlen aus. Fix: die rote Wertanzeige wird unabhängig von der
+    // OS-Locale fest auf Komma normiert (passend zur durchgehend deutschsprachigen
+    // App, analog zum bereits bestehenden Komma-Format der Pizza-Party-Zutatenliste,
+    // s. fmtAmount() in js/party.js). `state[key]` bleibt intern immer ein normaler
+    // JS-Fließkommawert (Punkt) — nur die Anzeige wird umformatiert, nichts wird aus
+    // dem angezeigten Text zurückgeparst.
+    function fmt(val) { return decimals != null ? val.toFixed(decimals).replace('.', ',') : val; }
     function set(val, from) {
       val = parseFloat(val);
       if (isNaN(val)) return;
@@ -4446,7 +4455,8 @@ footer{text-align:right;}
   const nrUnitLinks = [];
   function nrLink(sliderId, numberId, key, decimals, unitKey) {
     const s = $(sliderId), n = $(numberId), v = $(sliderId + 'V');
-    function fmt(val) { return decimals != null ? val.toFixed(decimals) : val; }
+    // Deutsches Komma statt Punkt (v3.32.0-Bugfix), analog zu link() in js/ui.js.
+    function fmt(val) { return decimals != null ? val.toFixed(decimals).replace('.', ',') : val; }
     function set(val, from) {
       val = parseFloat(val);
       if (isNaN(val)) return;

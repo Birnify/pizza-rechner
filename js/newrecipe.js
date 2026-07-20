@@ -46,7 +46,8 @@
   const nrUnitLinks = [];
   function nrLink(sliderId, numberId, key, decimals, unitKey) {
     const s = $(sliderId), n = $(numberId), v = $(sliderId + 'V');
-    function fmt(val) { return decimals != null ? val.toFixed(decimals) : val; }
+    // Deutsches Komma statt Punkt (v3.32.0-Bugfix), analog zu link() in js/ui.js.
+    function fmt(val) { return decimals != null ? val.toFixed(decimals).replace('.', ',') : val; }
     function set(val, from) {
       val = parseFloat(val);
       if (isNaN(val)) return;
