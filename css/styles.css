@@ -226,15 +226,17 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 /* Runder Icon-Badge vor jedem Card-Titel (v3.41.0) — Inline-SVG-Line-Icons statt Emoji
    (Emoji wurden in v3.13.0 bewusst entfernt, s. dortiger Kommentar; Line-Icons wirken
    konsistenter/hochwertiger). Rein dekorativ (aria-hidden), der Accessible Name der
-   Überschrift kommt weiterhin aus data-i18n-attr="aria-label:..." auf dem <h2> selbst. */
+   Überschrift kommt weiterhin aus data-i18n-attr="aria-label:..." auf dem <h2> selbst.
+   v3.43.0: satte gefüllte Terrakotta-/Basil-Fläche statt des blassen Tint-Tons aus
+   v3.41.0 — näher am Referenz-Screenshot, den der Nutzer als Stilvorlage teilte. */
 .card h2{display:flex;align-items:center;gap:10px;}
 .card-icon{
   width:34px;height:34px;flex-shrink:0;border-radius:50%;
-  background:rgba(200,68,46,.12);color:var(--tomato-dark);
+  background:var(--tomato);color:#fff;
   display:flex;align-items:center;justify-content:center;
 }
 .card-icon svg{width:18px;height:18px;display:block;}
-.result .card-icon{background:rgba(58,125,68,.14);color:var(--basil);}
+.result .card-icon{background:var(--basil);color:#fff;}
 .selectbox{
   width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:var(--radius);
   font-size:14px;color:var(--ink);background:#fff;cursor:pointer;

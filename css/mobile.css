@@ -85,36 +85,48 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 .actions button:active{filter:brightness(.94);}
 
 /* Sticky Quick-Bar unten: links Sprung zum Ergebnis, rechts Speichern (Daumenzone).
-   v3.41.0: heller Fußleisten-Grund statt dunklem Tomate-Verlauf, mit einer gefüllten
-   Terrakotta-Pille als "Speichern"-CTA — angelehnt an den vom Nutzer geteilten
-   Referenz-Screenshot (helle Fußleiste, farbiger Pill-Button). */
+   v3.41.0 hatte kurzzeitig auf einen hellen Fußleisten-Grund umgestellt; v3.43.0
+   (Redesign-Korrektur, direkter Nutzerauftrag) kehrt zur satten Terrakotta-Fläche
+   zurück, die der Nutzer im Referenz-Screenshot vermisst hatte — Textur/Farbton
+   identisch zum Foto-Header (css/styles.css header{}), damit Kopf- und Fußzeile
+   optisch zusammengehören. Die "Speichern"-Pille bleibt gefüllt (var(--tomato)),
+   bekommt aber einen weißen Rahmen zur Abgrenzung von der jetzt ebenfalls
+   terrakottafarbenen Bar (sonst würden beide Flächen ineinanderlaufen). */
 .quickbar{
   position:fixed;left:0;right:0;bottom:0;z-index:20;
-  background:var(--card);color:var(--ink);
+  background:var(--tomato-dark)
+    repeating-linear-gradient(-55deg,rgba(255,255,255,.06) 0 2px,transparent 2px 14px);
+  color:#fff;
   display:flex;align-items:stretch;gap:10px;
   padding:10px calc(14px + env(safe-area-inset-right))
           calc(10px + env(safe-area-inset-bottom))
           calc(14px + env(safe-area-inset-left));
-  border-top:1px solid var(--line);
-  box-shadow:0 -6px 18px rgba(120,90,60,.14);
+  border-top:2px solid var(--crust);
+  box-shadow:0 -6px 18px rgba(30,14,9,.3);
 }
 .quickbar .qb-jump{
   flex:1;display:flex;align-items:center;gap:6px;min-height:44px;
-  color:var(--ink);text-decoration:none;font-size:15px;font-weight:700;font-family:var(--font-head);
+  color:#fff;text-decoration:none;font-size:15px;font-weight:700;font-family:var(--font-head);
 }
-/* Kein zusaetzliches opacity-Fade mehr (das war auf den frueheren dunklen Balken
-   abgestimmt) -- var(--muted) allein liegt gegen den jetzt hellen Quickbar-Grund
-   bereits bei ~5,85:1 (derselbe, im Projekt an anderer Stelle bereits gegengeprüfte
-   Farbwert, s. Kommentar bei .switch-slider in css/styles.css). Mit zusaetzlicher
-   opacity:.75 waere der Kontrast auf ~3,4:1 gefallen -- unter der 4,5:1-Schwelle
-   fuer Fliesstext (WCAG 1.4.3), beim Redesign-Audit v3.41.0 gefunden und behoben. */
-.quickbar .qb-jump small{font-weight:500;font-size:11px;margin-left:2px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--muted);}
+/* Weiß mit reduzierter Deckkraft statt var(--muted) (das war auf den hellen
+   v3.41.0-Zwischenstand abgestimmt) -- gegen den jetzt wieder dunklen Terrakotta-
+   Grund rechnerisch geprüft: die effektive Mischfarbe liegt bei ~5,2:1 gegen den
+   Bar-Hintergrund, über der 4,5:1-Schwelle für Fließtext (WCAG 1.4.3). */
+.quickbar .qb-jump small{font-weight:500;font-size:11px;margin-left:2px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:rgba(255,255,255,.85);}
 .quickbar .qb-save{
-  flex-shrink:0;min-height:44px;padding:0 22px;border:none;border-radius:999px;
+  flex-shrink:0;min-height:44px;padding:0 22px;border:2px solid #fff;border-radius:999px;
   background:var(--tomato);color:#fff;font-size:14px;font-weight:700;
-  cursor:pointer;box-shadow:0 3px 10px rgba(200,68,46,.35);
+  cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.3);
 }
 .quickbar .qb-save:active{background:var(--tomato-dark);}
+/* Eigener weißer Fokus-Ring (WCAG 2.4.7/1.4.11): der Button sitzt jetzt auf einer
+   ebenfalls terrakottafarbenen Bar -- ein evtl. browser-eigener (oft bläulicher)
+   Standard-Fokusring wäre gegen diese warme Farbkombination nicht zuverlässig
+   kontrastreich genug. Kein genereller Fokusring-Umbau (der ist bereits im
+   gebündelten Accessibility-Zyklus v3.42.0 für die unveränderten hellen/dunklen
+   Kontexte erledigt) -- nur dieses eine, durch die Farb-Korrektur neu betroffene
+   Element bekommt hier einen eigenen, garantiert sichtbaren Ring. */
+.quickbar .qb-save:focus-visible{outline:2px solid #fff;outline-offset:2px;}
 
 #result{scroll-margin-top:16px;}
 #partyResultSummary{scroll-margin-top:16px;}

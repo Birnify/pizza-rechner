@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-20 · Aktuelle Version: v3.42.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-21 · Aktuelle Version: v3.43.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,64 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Gebündelter Accessibility-Zyklus (v3.42.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Redesign-Korrektur: Icon-Farben, farbige Quickbar & Fokusring (v3.43.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Direkter Nutzerauftrag (kein Backlog-Punkt, kein `/define-feature`-Brainstorming
+nötig — Auftrag kam bereits vollständig spezifiziert). Auslöser: Der Nutzer fand
+die Icon-Farben aus dem v3.41.0-Redesign nicht passend zum geteilten Referenz-
+Screenshot (dort: satte, gefüllte Terrakotta-Flächen) und vermisste die vorherige
+farbige Optik der unteren Mobil-Sticky-Leiste (v3.41.0 hatte sie versehentlich zu
+nüchtern/hell umgestellt). Reine Farb-/Stil-Korrektur, keine Struktur-/
+Funktionsänderung.
+
+**1. `.card-icon`-Badges (13 Karten, Desktop + Mobil) — von blassem Tint-Ton auf
+satte gefüllte Fläche:** `css/styles.css`. Vorher `background:rgba(200,68,46,.12);
+color:var(--tomato-dark)` (blasser Terrakotta-Hauch, farbiger Strich) → jetzt
+`background:var(--tomato);color:#fff` (volle Terrakotta-Fläche, weißes Icon).
+`.result .card-icon` analog von `rgba(58,125,68,.14)`/`var(--basil)` auf volle
+`var(--basil)`-Fläche mit weißem Icon. Rein dekorativ (`aria-hidden`), kein
+Kontrastkriterium zwingend, aber weiß auf `var(--tomato)`/`var(--basil)` liegt
+ohnehin deutlich über AA (bereits in v3.41.0/v3.42.0 für andere Elemente
+gegengerechnet).
+
+**2. Mobile Sticky-Quickbar (`css/mobile.css`) — zurück zur farbigen Fläche:**
+v3.41.0 hatte den Grund auf `var(--card)` (hell/neutral) umgestellt; jetzt wieder
+`var(--tomato-dark)` + dieselbe Diagonal-Textur wie der Foto-Header (optische
+Klammer Kopf-/Fußzeile). `.qb-jump`-Text zurück auf `#fff`, `.qb-jump small`
+von `var(--muted)` auf `rgba(255,255,255,.85)` (gegen den jetzt dunklen Grund
+gerechnet: ~5,2:1, über der 4,5:1-Schwelle). `.qb-save` bleibt gefüllt
+`var(--tomato)`, bekommt aber einen 2px weißen Rahmen, damit sich der Button von
+der jetzt ebenfalls terrakottafarbenen Bar optisch abhebt (sonst liefen beide
+Flächen ineinander).
+
+**3. Neuer Fokus-Ring `.quickbar .qb-save:focus-visible` (WCAG 2.4.7/1.4.11):**
+Einziges durch diese Farbänderung neu betroffenes interaktives Element (saß vorher
+auf hellem Grund ohne eigene Fokus-Ring-Definition, jetzt auf farbigem Terrakotta-
+Grund, wo ein evtl. bläulicher Browser-Standard-Fokusring nicht zuverlässig
+kontrastreich genug wäre) — `outline:2px solid #fff`. **Bewusst kein weiterer
+Fokusring-Umbau:** `.nav-toggle`, `.nav-close`, `.party-qty-btn`,
+`.party-delete-btn`, `.party-ing-remove` sind von dieser Farbänderung nicht
+betroffen (unveränderte Hintergründe) — ihre im v3.42.0-Accessibility-Zyklus
+gesetzten Fokus-Ringe (`#fff` auf dem dunklen Header bzw. `var(--tomato-dark)`
+auf hellen Karten) bleiben unverändert korrekt, ein pauschales Umfärben auf Weiß
+hätte sie gegen ihre weißen Karten-Hintergründe sogar unsichtbar gemacht.
+
+**Tests:** `tests/test.html` unverändert bei **577 Prüfungen**, alle grün
+(Headless-Edge-Dump) — reine CSS-Änderung ohne Bezug zu per String-Matching
+geprüften Texten. Visuell per Headless-Edge-Screenshot (Desktop + Mobil)
+gegengeprüft. Kein `test-generator`-, kein `accessibility-expert`-Lauf nötig
+(reine Farbkorrektur ohne neues Custom-Control/neue Live-Region/neue
+Kontrastfrage über die oben bereits mitgerechneten Werte hinaus).
+
+**Geändert:** `css/styles.css`, `css/mobile.css`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`. `?v=` auf `3.43.0` gezogen (Desktop + Mobil, alle
+`<link>`/`<script>`-Tags + `#appVersion`-Fußzeile).
+`pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.43.0 - Redesign-Korrektur Icon-Farben Quickbar Fokusring/` enthält
+den vollständigen Schnappschuss.
+
+## Gebündelter Accessibility-Zyklus (v3.42.0)
 
 Direkter Nutzerauftrag (kein Brainstorming nötig, alle vier Punkte waren bereits als
 Nebenbefunde aus früheren Zyklen diagnostiziert und im Backlog notiert). Reine
@@ -4368,23 +4425,21 @@ Keine Code-Änderung durch den Audit nötig.
   Problematik, `.schedbar`-Kontrast, Fokus-Ring kreisrunde Icon-Buttons)~~ —
   **erledigt in v3.42.0** (kein Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt
   „Gebündelter Accessibility-Zyklus (v3.42.0)" oben).
+- ~~Redesign-Korrektur: Icon-Farben, farbige Quickbar & Fokusring~~ — **erledigt
+  in v3.43.0** (kein Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt
+  „Redesign-Korrektur: Icon-Farben, farbige Quickbar & Fokusring (v3.43.0)" oben).
 
-**Stand v3.42.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.43.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen,
-vollständig zurückgebaut, keine offene Frage mehr). Echtes Header-Foto einsetzen
-(s. o.) ist ein guter, konkret vorbereiteter Kandidat für einen künftigen Zyklus,
-sobald ein Bild bereitsteht — **zwei weitere Aufträge liegen dem Orchestrator
-bereits als Warteschlange vor** (direkt im Anschluss an diesen Commit/Push
-abzuarbeiten, ohne auf eine neue Nutzer-Bestätigung zu warten): (1) „Icon-Farben,
-farbige Quickbar & Fokusring (Redesign-Korrektur)" — Card-Icon-Badges und Quickbar
-wieder auf satte Terrakotta-Flächen wie im Referenz-Screenshot statt der blassen
-v3.41.0-Optik, plus weißer Fokusring für die dadurch farbig/rund gestalteten
-Elemente; (2) danach „Echtes Header-Foto einsetzen" — der Nutzer hat
-`assets/header-pizza.jpg` bereits bereitgestellt, nur noch `--header-photo`
-umbiegen + Kontrast/Cache-Busting/Standalone-Build/Doku wie in
-`assets/HEADER-FOTO-README.txt` beschrieben. Für jeden weiteren, danach folgenden
-Zyklus braucht es wieder frisches Brainstorming in Phase 1 (neue Nutzer-Ideen,
-Design-/Layout-Überarbeitungen, Bugfixes) statt eines vorgegebenen Auftrags.
+vollständig zurückgebaut, keine offene Frage mehr). **Ein weiterer Auftrag liegt
+dem Orchestrator bereits als Warteschlange vor** (direkt im Anschluss an diesen
+Commit/Push abzuarbeiten, ohne auf eine neue Nutzer-Bestätigung zu warten): „Echtes
+Header-Foto einsetzen" — der Nutzer hat `assets/header-pizza.jpg` bereits
+bereitgestellt (1920×1079px JPEG, ~257 KB), nur noch `--header-photo` umbiegen +
+Kontrast/Cache-Busting/Standalone-Build/Doku wie in `assets/HEADER-FOTO-README.txt`
+beschrieben. Für jeden weiteren, danach folgenden Zyklus braucht es wieder frisches
+Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen,
+Bugfixes) statt eines vorgegebenen Auftrags.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 
