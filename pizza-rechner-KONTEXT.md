@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-20 · Aktuelle Version: v3.38.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-20 · Aktuelle Version: v3.38.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,79 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Fix: veralteter Hinweistext im Anleitungs-Banner (v3.38.0) = aktueller Stand
+## Bugfix: activeId-Desync bei "Neues Rezept anlegen"/Import in leere Bibliothek (v3.38.1) = aktueller Stand
+
+Bugfix, vom Nutzer live reproduziert und mit exakter Root-Cause-Analyse
+gemeldet (die eigene Verifikation im vorherigen Zyklus hatte den Fall knapp
+verfehlt — dort waren nur Szenarien mit bereits vorhandenem aktivem Rezept
+getestet worden).
+
+**Reproduktion:** Frischer Zustand (kein Rezept aktiv, `activeId: null`) →
+über „Neues Rezept anlegen" (`#nrCreateBtn`) ein Rezept anlegen → zu „Meine
+Rezepte" wechseln (`#recipeSelect` zeigt das neue Rezept bereits sichtbar
+ausgewählt) → „Kopieren"/„Umbenennen"/„Löschen" klicken → **wirkungslos**.
+
+**Root Cause:** `addRecipeFromState()` (`js/storage.js`, „Neues Rezept
+anlegen"-Formular, `js/newrecipe.js`) setzt bewusst NIE `data.activeId` —
+Kernidee von v3.22.0: das unabhängige Anlege-Formular darf den
+Hauptrechner-Zustand nicht antasten. `refreshRecipeSelect()` (`js/main.js`)
+hat aber nur einen rein visuellen Fallback
+(`sel.value = activeId || recipes[0].id`), der NICHT in den Storage
+zurückgeschrieben wird — das Dropdown zeigte das neue Rezept dadurch zwar
+als „ausgewählt", aber `PZ.getActiveId()` blieb `null`.
+`#recipeDuplicate`/`#recipeRename`/`#recipeDelete` lesen aber alle
+`PZ.getActiveId()` (nicht den Select-Wert) und brachen intern mit
+`if (!id) return;` bzw. `if (!rec) return;` in `renameActive()`/
+`duplicateRecipe()`/`deleteRecipe()` wirkungslos ab. Betraf **nur** den
+Fall, dass zum Anlage-/Import-Zeitpunkt noch kein Rezept aktiv war — der
+reguläre „Speichern"-Pfad (`save()`/`saveAsNew()`/`duplicateRecipe()`)
+setzt `data.activeId` immer korrekt selbst.
+- **Derselbe Mechanismus betraf zusätzlich `importRecipes()`** (Rezepte-
+  Backup-Import, v3.21.0) beim Importieren in eine vorher leere Bibliothek —
+  auch dort wird `activeId` bewusst nie selbst gesetzt (per zusätzlichem
+  Test bestätigt, s. u.).
+
+- **Fix:** neue Funktion `PZ.ensureActiveId()` (`js/storage.js`): repariert
+  `data.activeId` im Storage, falls es auf kein existierendes Rezept mehr
+  zeigt, obwohl bereits Rezepte vorhanden sind — reines Storage-
+  Housekeeping, rührt **niemals** `PZ.state`/den Hauptrechner-Zustand an
+  (kein `loadRecipe()`/`applyState()`-Aufruf, dadurch bleibt die
+  v3.22.0-Kernidee vollständig gewahrt). `refreshRecipeSelect()`
+  (`js/main.js`) ruft `PZ.ensureActiveId()` jetzt VOR jedem Lesen von
+  `activeId` auf — da diese Funktion nach praktisch jeder Rezepte-
+  Bibliotheks-Änderung aufgerufen wird (Neu/Umbenennen/Löschen/Import/
+  Anlegen über das Mini-Formular), heilt sich ein Desync an genau der
+  Stelle, an der er entsteht, sofort selbst.
+- Heilt auch bereits VOR diesem Fix persistierte kaputte Zustände (z. B.
+  wenn ein Nutzer den Bug schon vor dem Update ausgelöst hat): beim
+  nächsten Seitenaufruf durchläuft `PZ.load()` → `refreshRecipeSelect()` →
+  `PZ.ensureActiveId()` denselben Reparaturpfad automatisch.
+- Betrifft Desktop UND Mobil gleichermaßen (gemeinsamer `js/storage.js`/
+  `js/main.js`-Code, keine separate Mobil-Anpassung nötig).
+
+**Tests:** 10 neue Unit-Tests in `tests/test.html` (`ensureActiveId()`:
+Reparatur nach `addRecipeFromState()` in leere Bibliothek, Reparatur nach
+`importRecipes()` in leere Bibliothek, `PZ.state` bleibt unangetastet,
+Idempotenz bei bereits gültiger `activeId`, kein Crash bei komplett leerer
+Bibliothek) — **577** Prüfungen insgesamt, alle grün (Headless-Edge-Dump,
+vorher 567). Zusätzlich per gezieltem Headless-Edge-Skript exakt den vom
+Nutzer gemeldeten Repro-Ablauf nachgestellt (Desktop UND Mobil): „Neues
+Rezept anlegen" in leere Bibliothek → zu „Meine Rezepte" wechseln →
+Kopieren (+1 Rezept), Umbenennen (Name geändert), Löschen (−1 Rezept) — alle
+drei jetzt korrekt wirksam. Bonus-Szenario (Import in leere Bibliothek,
+danach Kopieren) ebenfalls verifiziert funktionsfähig.
+
+Kein `accessibility-expert`-Audit nötig (reine JS-Logik-Änderung in
+`js/storage.js`/`js/main.js`, kein HTML-/CSS-/Markup-Bezug).
+
+**Geändert:** `js/storage.js`, `js/main.js`, `tests/test.html`. `?v=` auf
+`3.38.1` gezogen (Desktop + Mobil, Cache-Busting + `#appVersion`-Fußzeile
+separat aktualisiert). `pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.38.1 - Bugfix activeId-Desync/` enthält den vollständigen
+Schnappschuss.
+
+## Fix: veralteter Hinweistext im Anleitungs-Banner (v3.38.0)
 
 Bugfix, vom Nutzer klar umrissen (kein `/define-feature` nötig): Der graue
 Banner über der Schritt-für-Schritt-Anleitung, der erscheint wenn noch keine
@@ -3873,13 +3945,18 @@ Keine Code-Änderung durch den Audit nötig.
   von diesem Zyklus unabhängiger Zustand des gesamten `.schedbar`-Bausteins.
   Beim nächsten Kontrast-/Accessibility-Zyklus mit aufgreifen (z. B. dunklere
   Gradient-Endfarbe oder Text-Shadow).
+- ~~Bugfix: activeId-Desync bei "Neues Rezept anlegen"/Import in leere
+  Bibliothek~~ — **erledigt in v3.38.1** (kein Backlog-Punkt, vom Nutzer
+  live reproduzierter und gemeldeter Bug; s. Abschnitt „Bugfix:
+  activeId-Desync bei 'Neues Rezept anlegen'/Import in leere Bibliothek
+  (v3.38.1)" oben).
 
-**Stand v3.38.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
-oben); die drei oben notierten Nebenbefunde
+**Stand v3.38.1: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+oben); die drei oben notierten Live-Region-Nebenbefunde
 (`#shareLiveMsg`/`#nrLiveMsg`-Live-Region-Fehlen, `<details>`-zugeklappt-Problematik
 bei Mobil-Live-Regionen) sowie der zuletzt notierte `.schedbar`-Kontrast-
 Nebenbefund bleiben offen für einen künftigen Accessibility-Zyklus. Die vom
-Nutzer vorgegebene Warteschlange von zehn direkten Aufträgen ist damit
+Nutzer vorgegebene Warteschlange von zehn direkten Aufträgen ist
 **vollständig abgearbeitet** — für den nächsten Zyklus braucht es wieder
 frisches Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/Layout-
 Überarbeitungen, Bugfixes, oder die oben notierten Nebenbefunde) statt

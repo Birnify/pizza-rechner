@@ -18,8 +18,16 @@
   function refreshRecipeSelect() {
     const sel = $('recipeSelect');
     if (!sel) return;
+    // ensureActiveId() VOR dem Lesen: repariert data.activeId im Storage, falls es
+    // (z. B. nach addRecipeFromState()/importRecipes() in eine vorher leere
+    // Bibliothek) noch nie gesetzt wurde — sonst würde das <select> unten zwar
+    // korrekt ein Rezept anzeigen (per Fallback), aber PZ.getActiveId() bliebe
+    // null und #recipeDuplicate/#recipeRename/#recipeDelete (lesen alle
+    // PZ.getActiveId(), nicht den Select-Wert) würden wirkungslos abbrechen
+    // (Bug gemeldet + reproduziert, v3.38.1). Rührt PZ.state/den Hauptrechner
+    // NICHT an (reines Storage-Housekeeping, s. ensureActiveId() in js/storage.js).
+    const activeId = PZ.ensureActiveId ? PZ.ensureActiveId() : PZ.getActiveId();
     const recipes = PZ.listRecipes();
-    const activeId = PZ.getActiveId();
     sel.innerHTML = '';
     if (!recipes.length) {
       sel.appendChild(new Option('— noch keins gespeichert —', ''));

@@ -1277,6 +1277,76 @@
       ]);
     });
 
+    // --- ensureActiveId() (v3.38.1-Bugfix): repariert activeId, wenn addRecipeFromState()
+    // (oder importRecipes()) ein Rezept in eine vorher LEERE Bibliothek anlegt/importiert.
+    // Beide Funktionen setzen activeId bewusst NIE selbst (s. Kommentare dort) — vorher blieb
+    // activeId dadurch dauerhaft null, obwohl #recipeSelect das Rezept per Fallback in
+    // refreshRecipeSelect() bereits als "ausgewählt" anzeigte. #recipeDuplicate/#recipeRename/
+    // #recipeDelete lesen aber PZ.getActiveId() (nicht den Select-Wert) und brachen deshalb
+    // wirkungslos ab (vom Nutzer gemeldet und reproduziert). ---
+    withCleanStorage(() => {
+      // Szenario A: addRecipeFromState() in eine leere Bibliothek (exakter Repro-Fall)
+      const rec = PZ.addRecipeFromState('Via Formular', Object.assign({}, BASE, { balls: 5 }));
+      const activeIdBeforeEnsure = PZ.getActiveId(); // erwartungsgemäß noch null
+
+      const healedId = PZ.ensureActiveId();
+      const activeIdAfterEnsure = PZ.getActiveId();
+
+      // Darf PZ.state (den Live-Rechner-Zustand) NICHT anfassen — Kernidee von
+      // addRecipeFromState() bleibt gewahrt, ensureActiveId() ist reines Storage-Housekeeping.
+      const liveStateUntouched = PZ.state.balls !== 5;
+
+      // Idempotent: erneuter Aufruf ändert nichts mehr, liefert dieselbe id
+      const secondCall = PZ.ensureActiveId();
+
+      renderBox('ensureActiveId() — activeId-Desync-Bugfix (v3.38.1)', [
+        { label: 'addRecipeFromState() in leere Bibliothek setzt activeId noch NICHT selbst', ok: activeIdBeforeEnsure === null, actual: activeIdBeforeEnsure, expected: null, tol: null },
+        { label: 'ensureActiveId() repariert activeId auf das einzige vorhandene Rezept', ok: healedId === rec.id && activeIdAfterEnsure === rec.id, actual: activeIdAfterEnsure, expected: rec.id, tol: null },
+        { label: 'ensureActiveId() rührt PZ.state (Hauptrechner-Live-Zustand) NICHT an', ok: liveStateUntouched, actual: PZ.state.balls, expected: '!= 5', tol: null },
+        { label: 'Erneuter Aufruf ist idempotent (liefert dieselbe, bereits gültige id)', ok: secondCall === rec.id, actual: secondCall, expected: rec.id, tol: null }
+      ]);
+    });
+
+    withCleanStorage(() => {
+      // Szenario B: importRecipes() in eine leere Bibliothek (derselbe Mechanismus,
+      // importRecipes() setzt activeId ebenfalls nie selbst)
+      const result = PZ.importRecipes({
+        format: 'pizzaRechnerBackup', version: 1,
+        recipes: [{ name: 'Importiert', state: Object.assign({}, BASE, { balls: 6 }), savedAt: Date.now() }]
+      });
+      const activeIdBeforeEnsure = PZ.getActiveId();
+      const healedId = PZ.ensureActiveId();
+      const importedId = PZ.listRecipes()[0].id;
+
+      renderBox('ensureActiveId() nach importRecipes() in eine leere Bibliothek', [
+        { label: 'Import erfolgreich (1 Rezept)', ok: result.imported === 1, actual: result.imported, expected: 1, tol: null },
+        { label: 'importRecipes() setzt activeId noch NICHT selbst', ok: activeIdBeforeEnsure === null, actual: activeIdBeforeEnsure, expected: null, tol: null },
+        { label: 'ensureActiveId() repariert activeId auf das importierte Rezept', ok: healedId === importedId, actual: healedId, expected: importedId, tol: null }
+      ]);
+    });
+
+    withCleanStorage(() => {
+      // Szenario C: bereits gültige activeId bleibt unangetastet (kein unnötiges writeRaw())
+      Object.assign(PZ.state, BASE, { balls: 4 });
+      const rec1 = PZ.save();
+      const before = PZ.getActiveId();
+      const healed = PZ.ensureActiveId();
+      renderBox('ensureActiveId() bei bereits gültiger activeId — bleibt unverändert', [
+        { label: 'activeId war bereits gültig und bleibt es nach ensureActiveId()', ok: healed === before, actual: healed, expected: before, tol: null }
+      ]);
+      void rec1;
+    });
+
+    withCleanStorage(() => {
+      // Szenario D: leere Bibliothek ohne jedes Rezept — activeId bleibt null, kein Crash
+      let threw = false, result;
+      try { result = PZ.ensureActiveId(); } catch (e) { threw = true; }
+      renderBox('ensureActiveId() bei komplett leerer Bibliothek — kein Crash, activeId bleibt null', [
+        { label: 'Kein Fehler', ok: !threw, actual: threw, expected: false, tol: null },
+        { label: 'activeId bleibt null (keine Rezepte vorhanden)', ok: result === null, actual: result, expected: null, tol: null }
+      ]);
+    });
+
     // --- Leerer localStorage (kein Key vorhanden) — darf nicht crashen ---
     withCleanStorage(() => {
       let threw = false;

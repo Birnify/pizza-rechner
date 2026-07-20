@@ -62,6 +62,32 @@
     return readStore().activeId;
   }
 
+  // Repariert data.activeId, falls es auf kein existierendes Rezept mehr zeigt
+  // (z. B. noch nie gesetzt: null), obwohl bereits Rezepte vorhanden sind —
+  // reines Storage-Housekeeping, rührt NIE PZ.state/den Hauptrechner-Zustand an
+  // (kein loadRecipe()/applyState()-Aufruf). Notwendig, weil sowohl
+  // addRecipeFromState() (s. o., "Neues Rezept anlegen"-Formular) als auch
+  // importRecipes() bewusst NIE activeId setzen — landet ein so angelegtes/
+  // importiertes Rezept als erstes/einziges in einer vorher leeren Bibliothek,
+  // blieb activeId bislang dauerhaft null. refreshRecipeSelect() (js/main.js)
+  // zeigte es im <select> trotzdem als "ausgewählt" an (rein visueller
+  // `sel.value = activeId || recipes[0].id`-Fallback dort), wodurch
+  // #recipeDuplicate/#recipeRename/#recipeDelete — die alle PZ.getActiveId()
+  // lesen, nicht den Select-Wert — wirkungslos abbrachen (Bug gemeldet +
+  // reproduziert, v3.38.1). Wird von refreshRecipeSelect() vor jedem Lesen
+  // von activeId aufgerufen, damit Dropdown-Anzeige und echter Storage-Zustand
+  // nie mehr auseinanderlaufen können.
+  function ensureActiveId() {
+    const data = readStore();
+    if (data.activeId && data.recipes.some(r => r.id === data.activeId)) return data.activeId;
+    const fallback = data.recipes[0] ? data.recipes[0].id : null;
+    if (data.activeId !== fallback) {
+      data.activeId = fallback;
+      writeRaw(data);
+    }
+    return data.activeId;
+  }
+
   // Aktuellen PZ.state in ein Rezept schreiben (bestehendes überschreiben oder neu anlegen)
   function saveState(id, name) {
     const data = readStore();
@@ -315,6 +341,7 @@
   PZ.loadRecipe = loadRecipe;
   PZ.listRecipes = listRecipes;
   PZ.getActiveId = getActiveId;
+  PZ.ensureActiveId = ensureActiveId;
   PZ.exportRecipes = exportRecipes;
   PZ.importRecipes = importRecipes;
 })(window);
