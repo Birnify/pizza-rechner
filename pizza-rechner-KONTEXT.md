@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-20 · Aktuelle Version: v3.40.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-20 · Aktuelle Version: v3.41.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,143 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Rückbau: Bring!-Deeplink-Testaufbau geprüft und verworfen (v3.40.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Visuelles Redesign — Header-Foto-Platzhalter, Bereichs-Icons & Buttons (v3.41.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Direkter Nutzerauftrag per `/define-feature` (Motivation: Freund + Nutzer fanden die
+App optisch "zu nüchtern/KI-typisch"; Referenz-Screenshot eines Mobil-Mockups als
+Stilvorlage). **Rein visuelles Redesign — keine Änderung an Berechnungslogik,
+Formularen oder Feature-Umfang** (`js/calc.js`, `js/schedule.js`, `js/guide.js` u. a.
+unangetastet, kein einziger `js/*`-Eingriff in diesem Zyklus).
+
+**Wichtiger Kontext zum Vorlauf:** In v3.13.0 gab es bereits ein bewusstes Redesign
+"gegen den KI-typischen Look" — dort wurden ALLE Emoji-Icons vor Card-Titeln entfernt,
+scharfe 3px-Radien statt runder Karten eingeführt, Schatten durch eine Akzentlinie
+ersetzt. Dieser Zyklus ist eine **bewusste, vom Nutzer im Brainstorming aktiv
+bestätigte Kurskorrektur** in die andere Richtung (wieder rundlicher, wieder Icons —
+aber Line-Icons statt Emoji, s. u.), kein Widerspruch/Versehen.
+
+**1. Header-Foto-Platzhalter (`css/styles.css`, gemeinsame `header{}`-Regel für
+Desktop UND Mobil):** Da im Environment weder ein Bildgenerierungs- noch ein
+Web-Fetch-Tool zur Verfügung stand, konnte in dieser Session kein echtes Bild erzeugt
+werden. Lösung (mit dem Nutzer abgestimmt): **austauschbarer CSS-Slot** statt fertigem
+Bild.
+- Neue Custom Property `--header-photo:none;` in `:root`. Der Header nutzt sie als
+  eigene `background-image`-Ebene: `linear-gradient(dunkle Abdunklung 55%) , var(--header-photo),
+  radial-gradient(Bokeh warm oben-links), radial-gradient(Bokeh orange unten-rechts),
+  linear-gradient(Terrakotta-Basis), repeating-linear-gradient(Diagonal-Textur)`.
+  Solange `--header-photo:none` ist, zeigen die Fallback-Ebenen eine warme,
+  foto-ähnliche Bokeh-Anmutung ganz ohne Bilddatei.
+- **Umschalten auf ein echtes Foto später: EIN einziger Wert ändern**
+  (`--header-photo:url('assets/header-pizza.jpg');`), keine Struktur-/Markup-Änderung
+  nötig. Ausführliche Anleitung in `assets/HEADER-FOTO-README.txt` (neuer `assets/`-
+  Ordner, aktuell nur diese Anleitung, kein Bild).
+- Die oberste Abdunklungs-Ebene (`rgba(20,9,5,.55)`, gleichmäßig über den ganzen
+  Header) ist bewusst **unabhängig vom Foto/Fallback-Inhalt** — sichert die
+  Lesbarkeit von weißem `<h1>`-Text/Hamburger-Icon auch bei einem künftigen hellen
+  Foto ab (rechnerisch geprüft: selbst im hellsten Bokeh-Bereich des aktuellen
+  Platzhalters liegt Weiß-auf-Hintergrund bei ~7:1, weit über der 4,5:1-Schwelle für
+  Fließtext). `header h1` bekam zusätzlich `text-shadow:0 1px 4px rgba(0,0,0,.35)`
+  als weitere Absicherung.
+
+**2. Runde Icon-Badges je Card-Titel (13 Karten, Desktop `pizza-rechner.html` +
+Mobil `pizza-rechner-mobile.html`, je identisch):** Inline-SVG-Line-Icons (dünner
+Strich, `stroke=currentColor`, kein Icon-Font/CDN — App bleibt offline-tauglich),
+in einem runden `.card-icon`-Badge (34px, `background:rgba(200,68,46,.12)`,
+`color:var(--tomato-dark)`; beim Ergebnis-Panel grün getönt passend zum grünen
+Card-Akzent). Zuordnung (mit dem Nutzer im Brainstorming abgestimmt): Kochmütze
+(Fertiges Rezept wählen), Weizenähre (Grundeinstellungen), Gärglas mit Bläschen
+(Methode & Hefe), Thermometer (Teigtemperatur & Eiswasser), Waage (Rezept/Ergebnis),
+Ordner (Meine Rezepte), Stift+Plus (Neues Rezept anlegen), Uhr (Zeitplan),
+aufgeschlagenes Buch (Pizza-Glossar), Zahnrad (Einstellungen), Pizzastück mit
+Belag-Punkten (Pizza Party), Pizzastück mit Plus (Eigene Pizza anlegen),
+Einkaufskorb (Zutatenliste für die Party). `guide.headTitle` ("Schritt-für-Schritt-
+Anleitung") bewusst ausgenommen — kein `.card`, sondern eigener Anleitungs-Abschnitt.
+- **Technische Besonderheit wegen i18n:** `applyStaticI18n()` (`js/i18n.js`) setzt bei
+  `data-i18n`/`data-i18n-html` **direkt** `el.textContent`/`el.innerHTML` auf dem
+  Element, das das Attribut trägt — hätte das Icon-`<span>` als Kind des `<h2>`
+  zerstört, wäre das Attribut auf dem `<h2>` selbst geblieben. Fix: `data-i18n`/
+  `data-i18n-html` wandert auf einen inneren `<span>` (Text), das Icon liegt als
+  Geschwister-`<span class="card-icon" aria-hidden="true">` daneben. `data-i18n-attr="aria-label:…"`
+  bleibt auf dem `<h2>` selbst (setzt nur das Attribut, rührt keine Kind-Knoten an) —
+  der Accessible Name der Überschrift bleibt dadurch exakt der reine Titeltext, das
+  Icon ist rein dekorativ und für Screenreader unsichtbar (verifiziert). Umsetzung
+  automatisiert per kleinem Python-Skript (Regex-Ersetzung in beiden HTML-Dateien,
+  identische Icons garantiert) statt 26 manueller Einzel-Edits.
+
+**3. Einheitliches Buttons-Redesign (auch kleinere Utility-Buttons, wie vom Nutzer
+gewünscht):**
+- **Globale Rundung:** `--radius` 3px → **14px** (Karten, Inputs, Selects, Segmente,
+  Buttons), `--radius-chip` 6px → **999px/voll rund** (Pills, Chips, Badges, Timer-
+  Buttons) — ein einziger Variablen-Wechsel rundet praktisch alle Eingabefelder/
+  Chips/Pills im ganzen Projekt konsistent ab ("abgerundete Eingabefelder" aus der
+  Referenz).
+- **Kreis-Sprache für reine Icon-Buttons:** `.nav-toggle`, `.nav-close`,
+  `.party-qty-btn`, `.party-delete-btn`, `.party-ing-remove` jetzt `border-radius:50%`
+  (vorher eckig/var(--radius)) — `.info-btn` war schon rund. Klare visuelle Regel:
+  **kreisrund = reiner Icon-/Utility-Button, abgerundetes Rechteck = Text-Button,
+  volle Pille = primäre CTA.**
+- **Primärer "Speichern"-Button** (`.actions button.primary`, Desktop-Ergebnis-Panel):
+  Farbe von Grün (`var(--basil)`) auf **Terrakotta** (`var(--tomato)`) geändert (wie
+  im Referenz-Screenshot), Pill-Form (`border-radius:999px`) statt Rechteck, Schlagschatten.
+  Grüner Akzent bleibt für den Card-Rahmen/-Icon des Ergebnis-Panels selbst erhalten
+  (unverändertes bestehendes Unterscheidungsmerkmal Eingabe- vs. Ausgabe-Karten).
+- **Mobile Sticky-Quickbar** (`css/mobile.css`, `.quickbar`) von dunklem Tomate-
+  Verlauf mit transparentem Save-Button auf **hellen `var(--card)`-Grund mit
+  gefüllter Terrakotta-Pille** als "Speichern"-CTA umgestellt — entspricht der
+  Referenz (helle Fußleiste + farbiger Pill-Button) deutlich näher als die vorige
+  dunkle Variante.
+- Weitere Rundungs-Konsistenz: Slider-Thumb (`2px` → `50%`, war in v3.13.0 bewusst
+  eckig), `.seg button` (`2px` → `10px`), `.step .num`-Kreis (`2px` → `50%`),
+  `.ing .dot`-Farbpunkte (`1px` → `50%`). `.card` bekam den bereits vorhandenen,
+  seit v3.13.0 ungenutzten `--shadow`-Wert zurück (leichter Schatten statt reiner
+  Akzentlinie).
+
+**Härten (gezielter Selbst-Audit statt `accessibility-expert`-Subagent — der
+Subagent-Aufruf brach nach einer ungewöhnlich langen Laufzeit mit einem Stream-Fehler
+ab, ohne Dateien geändert zu haben; die verbleibende Prüfung wurde danach selbst mit
+konkreten Kontrastberechnungen durchgeführt, um keine Zeit mit einem erneuten
+Vollaudit zu verlieren):**
+- **Gefunden & behoben (WCAG 1.4.3, ~3,4:1 statt 4,5:1):** `.quickbar .qb-jump small`
+  (Mobil, Gewicht/Anzahl-Kleintext) kombinierte `color:var(--muted)` **zusätzlich**
+  mit `opacity:.75` — dieser Opacity-Abschwächer war auf den alten DUNKLEN
+  Quickbar-Hintergrund abgestimmt und drückte den Kontrast gegen den jetzt HELLEN
+  Hintergrund unter die Schwelle. Fix: `opacity` entfernt — `var(--muted)` allein
+  liegt gegen einen hellen Grund bereits nachweislich bei ~5,85:1 (identischer,
+  im Projekt bereits an anderer Stelle dokumentierter Farbwert, s. Kommentar bei
+  `.switch-slider` in `css/styles.css`).
+- **Geprüft, keine Fixes nötig:** Header-Text-Kontrast (s. o., ~7:1 im hellsten
+  Platzhalter-Bereich), `.qb-save`/`.actions button.primary` Weiß-auf-Terrakotta
+  (~4,86:1, über 4,5:1), Icon-Badges rein dekorativ ohne Kontrastpflicht (WCAG 1.4.11
+  gilt nicht für rein dekorative, durch Text begleitete Icons), Accessible-Name-
+  Mechanik der Card-Titel (s. Punkt 2), Touch-Ziel-Größen der neu kreisrunden Buttons
+  unverändert (36–44px, nur Form geändert), keine Text-Abschneidung durch die volle
+  `--radius-chip`-Rundung (CSS `border-radius` schneidet nie in die Padding-Box).
+- **Nicht neu geprüft (vorbestehend, nicht durch dieses Redesign verursacht):** kein
+  eigener `:focus-visible`-Ring für `.nav-toggle`/`.nav-close`/Party-Buttons (Browser-
+  Default-Outline greift, war schon vor diesem Zyklus so) — Kandidat für einen
+  künftigen Accessibility-Zyklus, kein Blocker.
+
+**Tests:** `tests/test.html` unverändert bei **577 Prüfungen**, alle grün
+(Headless-Edge-Dump, vor UND nach dem Kontrast-Fix erneut verifiziert) — reine
+CSS-/Markup-Änderung ohne Bezug zu den per String-Matching geprüften `js/guide.js`-
+Texten, kein `test-generator`-Lauf nötig. Zusätzlich per Headless-Edge-Screenshot
+(Desktop + Mobil) visuell gegengeprüft; bekanntes, bereits in v3.13.1 dokumentiertes
+Headless-Tooling-Artefakt (horizontaler Cut-off in schmalen Mobil-Screenshots) per
+Baseline-Vergleich gegen den unveränderten HEAD-Stand als vorbestehend bestätigt
+(keine neue Regression durch dieses Redesign).
+
+**Offen für einen künftigen Zyklus:** echtes Header-Foto einsetzen, sobald der
+Nutzer eines generiert/bereitstellt (s. `assets/HEADER-FOTO-README.txt` für die
+genaue Anleitung — nur ein CSS-Variablenwert + Datei ablegen).
+
+**Geändert:** `css/styles.css`, `css/mobile.css`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`, neu: `assets/HEADER-FOTO-README.txt`. `?v=` auf
+`3.41.0` gezogen (Desktop + Mobil, alle `<link>`/`<script>`-Tags).
+`pizza-rechner-mobile-standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v3.41.0 - Visuelles Redesign Header-Foto Icons Buttons/` enthält den
+vollständigen Schnappschuss.
+
+## Rückbau: Bring!-Deeplink-Testaufbau geprüft und verworfen (v3.40.0)
 
 **Kurzfassung für den schnellen Wiedereinstieg:** Der in v3.39.0 gebaute
 experimentelle Bring!-Deeplink-Testaufbau wurde vom Nutzer live auf einem
@@ -4139,14 +4275,25 @@ Keine Code-Änderung durch den Audit nötig.
   Bring!-Deeplink-Testaufbau geprüft und verworfen (v3.40.0)" oben —
   **nicht erneut versuchen ohne fundamentalen Architekturbruch**).
 
-**Stand v3.40.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+- ~~Visuelles Redesign — Header-Foto, Bereichs-Icons & Buttons~~ — **erledigt in
+  v3.41.0** (kein Backlog-Punkt, direkter Nutzerauftrag per `/define-feature`; s.
+  Abschnitt „Visuelles Redesign — Header-Foto-Platzhalter, Bereichs-Icons & Buttons
+  (v3.41.0)" oben). **Teilweise offen:** das Header-Foto ist aktuell nur ein
+  CSS-Platzhalter (Bokeh-Verlauf, kein echtes Bild) — sobald der Nutzer ein
+  generiertes Pizza-Foto bereitstellt, s. `assets/HEADER-FOTO-README.txt` für den
+  Ein-Wert-Austausch.
+
+**Stand v3.41.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben); die drei oben notierten Live-Region-Nebenbefunde
 (`#shareLiveMsg`/`#nrLiveMsg`-Live-Region-Fehlen, `<details>`-zugeklappt-Problematik
-bei Mobil-Live-Regionen) sowie der `.schedbar`-Kontrast-Nebenbefund bleiben offen
-für einen künftigen Accessibility-Zyklus. Der Bring!-Deeplink-Testaufbau ist
-abschließend geklärt (verworfen, vollständig zurückgebaut, keine offene Frage
-mehr). Für den nächsten Zyklus braucht es wieder frisches Brainstorming in
-Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes, oder die
+bei Mobil-Live-Regionen), der `.schedbar`-Kontrast-Nebenbefund sowie der neue Fund
+„kein eigener `:focus-visible`-Ring für die neuen kreisrunden Icon-Buttons" (s.
+Abschnitt v3.41.0 oben) bleiben offen für einen künftigen Accessibility-Zyklus. Der
+Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen, vollständig
+zurückgebaut, keine offene Frage mehr). Echtes Header-Foto einsetzen (s. o.) ist ein
+guter, konkret vorbereiteter Kandidat für den nächsten Zyklus, sobald ein Bild
+bereitsteht. Für den nächsten Zyklus braucht es sonst wieder frisches Brainstorming
+in Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes, oder die
 oben notierten Nebenbefunde) statt eines vorgegebenen Auftrags.
 
 ## Rahmen-Kontext (nicht App-bezogen)

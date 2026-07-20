@@ -21,8 +21,18 @@
   --line:#ece3d8;
   --shadow:0 2px 14px rgba(120,90,60,.10);
   --font-head:Georgia,'Iowan Old Style','Palatino Linotype','Book Antiqua',serif;
-  --radius:3px;
-  --radius-chip:6px;
+  /* Visuelles Redesign v3.41.0: zurück zu einer rundlicheren Optik (Karten, Eingaben,
+     Chips/Pills) statt der scharfen 3px/6px-Kanten aus v3.13.0 — bewusste, vom Nutzer
+     bestätigte Kurskorrektur, s. Abschnitt "Visuelles Redesign v3.41.0" in
+     pizza-rechner-KONTEXT.md. */
+  --radius:14px;
+  --radius-chip:999px;
+  /* Header-Foto-Slot: Platzhalter-Wert "none", solange kein echtes Foto vorliegt — die
+     Fallback-Gradient-Ebenen in header{} sorgen für eine foto-ähnliche Anmutung ganz
+     ohne Bilddatei. Sobald ein echtes, generiertes Pizza-Foto bereitsteht: hier NUR
+     diesen einen Wert ändern, z. B. --header-photo:url('assets/header-pizza.jpg'); —
+     keine weitere Struktur-Änderung nötig (s. assets/HEADER-FOTO-README.txt). */
+  --header-photo:none;
 }
 *{box-sizing:border-box;}
 .visually-hidden{
@@ -35,14 +45,30 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 header{
-  background:var(--tomato-dark)
-    repeating-linear-gradient(-55deg,rgba(255,255,255,.06) 0 2px,transparent 2px 14px);
-  color:#fff;padding:26px 20px 22px;text-align:center;
+  position:relative;
+  /* Foto-Header (v3.41.0): var(--header-photo) ist der einzige Austausch-Slot für ein
+     künftiges echtes Bild (s. Kommentar bei --header-photo in :root). Bis dahin erzeugen
+     die Bokeh-artigen radial-gradient-Ebenen darunter eine warme, foto-ähnliche
+     Anmutung ganz ohne Bilddatei. Die oberste, blickdichte Abdunklungs-Ebene sorgt
+     dafür, dass weißer Text/Hamburger-Icon AUCH über einem künftigen hellen Foto noch
+     ausreichend Kontrast hat (WCAG 1.4.3) — beim Einsetzen eines echten Fotos den
+     Kontrast trotzdem stichprobenartig gegenprüfen, falls das Foto sehr hell ist. */
+  background-image:
+    linear-gradient(rgba(20,9,5,.55),rgba(20,9,5,.55)),
+    var(--header-photo),
+    radial-gradient(58% 85% at 16% 12%,rgba(255,214,153,.6),transparent 58%),
+    radial-gradient(55% 85% at 86% 82%,rgba(232,110,52,.55),transparent 62%),
+    linear-gradient(150deg,#d5622f 0%,var(--tomato-dark) 55%,#5e2013 100%),
+    repeating-linear-gradient(-55deg,rgba(255,255,255,.05) 0 2px,transparent 2px 14px);
+  background-size:cover,cover,cover,cover,cover,auto;
+  background-position:center,center,center,center,center,center;
+  background-repeat:no-repeat,no-repeat,no-repeat,no-repeat,no-repeat,repeat;
+  color:#fff;padding:30px 20px 26px;text-align:center;
   border-bottom:3px solid var(--crust);
 }
 header h1{
   margin:0;font-family:var(--font-head);font-size:26px;font-weight:700;
-  letter-spacing:.2px;
+  letter-spacing:.2px;text-shadow:0 1px 4px rgba(0,0,0,.35);
 }
 header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .wrap{max-width:980px;margin:0 auto;padding:20px;display:grid;gap:20px;grid-template-columns:1fr;}
@@ -64,11 +90,12 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 }
 .header-bar h1{grid-column:2;justify-self:center;text-align:center;}
 .nav-toggle{
-  width:44px;height:44px;border:1px solid rgba(255,255,255,.8);border-radius:var(--radius);
-  background:rgba(255,255,255,.14);color:#fff;font-size:20px;line-height:1;cursor:pointer;
+  width:44px;height:44px;border:1px solid rgba(255,255,255,.8);border-radius:50%;
+  background:rgba(255,255,255,.16);color:#fff;font-size:20px;line-height:1;cursor:pointer;
+  backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
 }
 .header-bar .nav-toggle{grid-column:3;justify-self:end;}
-.nav-toggle:hover,.nav-toggle:active{background:rgba(255,255,255,.28);}
+.nav-toggle:hover,.nav-toggle:active{background:rgba(255,255,255,.3);}
 [data-view][hidden]{display:none!important;}
 .nav-overlay{
   position:fixed;inset:0;z-index:60;background:rgba(30,22,18,.5);
@@ -83,7 +110,7 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .nav-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .nav-panel-title{font-family:var(--font-head);font-size:18px;font-weight:700;}
 .nav-close{
-  width:40px;height:40px;border:1px solid var(--line);border-radius:var(--radius);
+  width:40px;height:40px;border:1px solid var(--line);border-radius:50%;
   background:#fff;font-size:16px;cursor:pointer;
 }
 .nav-close:hover{border-color:var(--tomato);color:var(--tomato);}
@@ -137,14 +164,14 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .party-pizza-ings.switch-info{padding-right:0;margin-bottom:0;}
 .party-qty-stepper{display:flex;align-items:center;gap:6px;flex-shrink:0;}
 .party-qty-btn{
-  width:40px;height:40px;border:1px solid var(--line);border-radius:var(--radius);
+  width:40px;height:40px;border:1px solid var(--line);border-radius:50%;
   background:#fff;font-size:17px;font-weight:700;cursor:pointer;color:var(--ink);
   display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;
 }
 .party-qty-btn:hover{border-color:var(--tomato);color:var(--tomato);}
 .party-qty-input{width:52px;text-align:center;padding:9px 4px;}
 .party-delete-btn{
-  width:40px;height:40px;border:1px solid var(--line);border-radius:var(--radius);
+  width:40px;height:40px;border:1px solid var(--line);border-radius:50%;
   background:#fff;cursor:pointer;font-size:15px;flex-shrink:0;
 }
 .party-delete-btn:hover{border-color:var(--tomato);color:var(--tomato);}
@@ -153,7 +180,7 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .party-ing-row .party-ing-amount{flex:1 1 70px;min-width:0;width:auto;text-align:left;}
 .party-ing-row .party-ing-unit{flex:1 1 60px;min-width:0;width:auto;}
 .party-ing-remove{
-  width:36px;height:36px;border:1px solid var(--line);border-radius:var(--radius);
+  width:36px;height:36px;border:1px solid var(--line);border-radius:50%;
   background:#fff;cursor:pointer;flex-shrink:0;
 }
 .party-ing-remove:hover{border-color:var(--tomato);color:var(--tomato);}
@@ -192,9 +219,22 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .card{
   background:var(--card);border-radius:var(--radius);padding:20px;
   border:1px solid var(--line);border-left:3px solid var(--tomato);
+  box-shadow:var(--shadow);
   min-width:0;
 }
 .result .card{border-left-color:var(--basil);}
+/* Runder Icon-Badge vor jedem Card-Titel (v3.41.0) — Inline-SVG-Line-Icons statt Emoji
+   (Emoji wurden in v3.13.0 bewusst entfernt, s. dortiger Kommentar; Line-Icons wirken
+   konsistenter/hochwertiger). Rein dekorativ (aria-hidden), der Accessible Name der
+   Überschrift kommt weiterhin aus data-i18n-attr="aria-label:..." auf dem <h2> selbst. */
+.card h2{display:flex;align-items:center;gap:10px;}
+.card-icon{
+  width:34px;height:34px;flex-shrink:0;border-radius:50%;
+  background:rgba(200,68,46,.12);color:var(--tomato-dark);
+  display:flex;align-items:center;justify-content:center;
+}
+.card-icon svg{width:18px;height:18px;display:block;}
+.result .card-icon{background:rgba(58,125,68,.14);color:var(--basil);}
 .selectbox{
   width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:var(--radius);
   font-size:14px;color:var(--ink);background:#fff;cursor:pointer;
@@ -239,11 +279,11 @@ input[type=range]{
   background:var(--line);outline:none;cursor:pointer;
 }
 input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:18px;height:18px;border-radius:2px;
+  -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
   background:var(--tomato);border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:pointer;
 }
 input[type=range]::-moz-range-thumb{
-  width:16px;height:16px;border-radius:2px;background:var(--tomato);
+  width:16px;height:16px;border-radius:50%;background:var(--tomato);
   border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:pointer;
 }
 input[type=number]{
@@ -253,7 +293,7 @@ input[type=number]{
 input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .seg{display:flex;gap:6px;background:var(--bg);padding:4px;border-radius:var(--radius);}
 .seg button{
-  flex:1;border:none;background:transparent;padding:9px 6px;border-radius:2px;
+  flex:1;border:none;background:transparent;padding:9px 6px;border-radius:10px;
   font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;
 }
 .seg button.active{background:var(--tomato);color:#fff;}
@@ -318,7 +358,7 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .ing{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px;}
 .ing:last-child{border-bottom:none;}
 .ing .name{display:flex;align-items:center;gap:8px;}
-.ing .dot{width:8px;height:8px;border-radius:1px;flex-shrink:0;}
+.ing .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .ing .amt{font-weight:700;font-variant-numeric:tabular-nums;}
 .ing .amt small{font-weight:500;color:var(--muted);font-size:11px;margin-left:3px;}
 .stage{margin-top:18px;}
@@ -340,9 +380,18 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .actions{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
 .actions button{
   padding:11px;border-radius:var(--radius);border:1px solid var(--line);background:#fff;
-  font-size:13px;font-weight:600;cursor:pointer;color:var(--ink);
+  font-size:13px;font-weight:600;cursor:pointer;color:var(--ink);transition:all .12s;
 }
-.actions button.primary{background:var(--basil);color:#fff;border-color:var(--basil);order:-1;padding:13px;font-size:14px;}
+.actions button:not(.primary):hover{border-color:var(--tomato);color:var(--tomato);}
+/* Primäre Aktion ("Speichern") in Terrakotta statt Grün (v3.41.0, Angleichung an den
+   Referenz-Stil) — Pill-Form hebt sie zusätzlich von den rechteckig-abgerundeten
+   sekundären Buttons ab (einheitliche Sprache: Pill = primäre CTA). */
+.actions button.primary{
+  background:var(--tomato);color:#fff;border-color:var(--tomato);order:-1;
+  padding:13px;font-size:14px;border-radius:999px;
+  box-shadow:0 3px 10px rgba(200,68,46,.3);
+}
+.actions button.primary:hover{background:var(--tomato-dark);border-color:var(--tomato-dark);}
 .actions .row2{display:flex;gap:8px;}
 .actions .row2 button{flex:1;min-width:0;background:transparent;font-weight:500;}
 /* Anleitung / Timeline */
@@ -362,7 +411,7 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   padding:16px 18px;margin-bottom:10px;
 }
 .step .num{
-  flex-shrink:0;width:28px;height:28px;border-radius:2px;background:var(--ink);color:#fff;
+  flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;
   display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;font-family:var(--font-head);
 }
 .step .body{flex:1;min-width:0;}
@@ -539,29 +588,37 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 .pills button:active{background:var(--bg);border-color:var(--tomato);}
 .actions button:active{filter:brightness(.94);}
 
-/* Sticky Quick-Bar unten: links Sprung zum Ergebnis, rechts Speichern (Daumenzone) */
+/* Sticky Quick-Bar unten: links Sprung zum Ergebnis, rechts Speichern (Daumenzone).
+   v3.41.0: heller Fußleisten-Grund statt dunklem Tomate-Verlauf, mit einer gefüllten
+   Terrakotta-Pille als "Speichern"-CTA — angelehnt an den vom Nutzer geteilten
+   Referenz-Screenshot (helle Fußleiste, farbiger Pill-Button). */
 .quickbar{
   position:fixed;left:0;right:0;bottom:0;z-index:20;
-  background:var(--tomato-dark)
-    repeating-linear-gradient(-55deg,rgba(255,255,255,.06) 0 2px,transparent 2px 14px);
-  color:#fff;
+  background:var(--card);color:var(--ink);
   display:flex;align-items:stretch;gap:10px;
   padding:10px calc(14px + env(safe-area-inset-right))
           calc(10px + env(safe-area-inset-bottom))
           calc(14px + env(safe-area-inset-left));
-  border-top:2px solid var(--crust);
+  border-top:1px solid var(--line);
+  box-shadow:0 -6px 18px rgba(120,90,60,.14);
 }
 .quickbar .qb-jump{
   flex:1;display:flex;align-items:center;gap:6px;min-height:44px;
-  color:#fff;text-decoration:none;font-size:15px;font-weight:700;font-family:var(--font-head);
+  color:var(--ink);text-decoration:none;font-size:15px;font-weight:700;font-family:var(--font-head);
 }
-.quickbar .qb-jump small{font-weight:500;opacity:.85;font-size:11px;margin-left:2px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+/* Kein zusaetzliches opacity-Fade mehr (das war auf den frueheren dunklen Balken
+   abgestimmt) -- var(--muted) allein liegt gegen den jetzt hellen Quickbar-Grund
+   bereits bei ~5,85:1 (derselbe, im Projekt an anderer Stelle bereits gegengeprüfte
+   Farbwert, s. Kommentar bei .switch-slider in css/styles.css). Mit zusaetzlicher
+   opacity:.75 waere der Kontrast auf ~3,4:1 gefallen -- unter der 4,5:1-Schwelle
+   fuer Fliesstext (WCAG 1.4.3), beim Redesign-Audit v3.41.0 gefunden und behoben. */
+.quickbar .qb-jump small{font-weight:500;font-size:11px;margin-left:2px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--muted);}
 .quickbar .qb-save{
-  flex-shrink:0;min-height:44px;padding:0 16px;border:1px solid rgba(255,255,255,.4);border-radius:var(--radius);
-  background:rgba(255,255,255,.14);color:#fff;font-size:14px;font-weight:700;
-  cursor:pointer;-webkit-backdrop-filter:blur(2px);
+  flex-shrink:0;min-height:44px;padding:0 22px;border:none;border-radius:999px;
+  background:var(--tomato);color:#fff;font-size:14px;font-weight:700;
+  cursor:pointer;box-shadow:0 3px 10px rgba(200,68,46,.35);
 }
-.quickbar .qb-save:active{background:rgba(255,255,255,.28);}
+.quickbar .qb-save:active{background:var(--tomato-dark);}
 
 #result{scroll-margin-top:16px;}
 #partyResultSummary{scroll-margin-top:16px;}
@@ -580,11 +637,11 @@ header{
 header h1{grid-column:2;justify-self:center;text-align:center;}
 .nav-toggle{
   grid-column:3;justify-self:end;
-  width:44px;height:44px;border:1px solid rgba(255,255,255,.8);border-radius:var(--radius);
-  background:rgba(255,255,255,.14);color:#fff;font-size:20px;line-height:1;cursor:pointer;
-  -webkit-backdrop-filter:blur(2px);
+  width:44px;height:44px;border:1px solid rgba(255,255,255,.8);border-radius:50%;
+  background:rgba(255,255,255,.16);color:#fff;font-size:20px;line-height:1;cursor:pointer;
+  -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
 }
-.nav-toggle:active{background:rgba(255,255,255,.28);}
+.nav-toggle:active{background:rgba(255,255,255,.3);}
 
 /* Von hidden-Attribut abhängige Sichtbarkeit: eigene author-Regel mit höherer
    Spezifität als [class]{display:...}, damit sie zuverlässig greift (kein
@@ -605,7 +662,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
 .nav-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .nav-panel-title{font-family:var(--font-head);font-size:18px;font-weight:700;}
 .nav-close{
-  width:40px;height:40px;border:1px solid var(--line);border-radius:var(--radius);
+  width:40px;height:40px;border:1px solid var(--line);border-radius:50%;
   background:#fff;font-size:16px;cursor:pointer;
 }
 .nav-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;}
@@ -681,7 +738,7 @@ footer{text-align:right;}
   <div class="controls-col" style="display:grid;gap:20px;">
 
     <details class="card" open>
-      <summary><h2 data-i18n="card.preset.title" data-i18n-attr="aria-label:card.preset.title">Fertiges Rezept wählen</h2></summary>
+      <summary><h2 data-i18n-attr="aria-label:card.preset.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11c-2 0-3.2-1.6-2.6-3.4C3.9 6 5.3 5 7 5.3 7.4 3.4 9.1 2 11 2s3.6 1.4 4 3.3c1.7-.3 3.1.7 3.6 2.3.6 1.8-.6 3.4-2.6 3.4"/><path d="M6 11v6a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-6"/><path d="M5 20h13"/></svg></span><span data-i18n="card.preset.title">Fertiges Rezept wählen</span></h2></summary>
       <div class="acc-body">
         <div class="field" style="margin-bottom:0;">
           <select id="preset" class="selectbox selectbox-lg" data-i18n-attr="aria-label:card.preset.selectLabel">
@@ -708,7 +765,7 @@ footer{text-align:right;}
     </details>
 
     <details class="card" open>
-      <summary><h2 data-i18n="card.basics.title" data-i18n-attr="aria-label:card.basics.title">Grundeinstellungen</h2></summary>
+      <summary><h2 data-i18n-attr="aria-label:card.basics.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M12 6 9 8M12 6l3 2M12 10 9 12M12 10l3 2M12 14 9 16M12 14l3 2M12 18l-2.5 1.5M12 18l2.5 1.5"/></svg></span><span data-i18n="card.basics.title">Grundeinstellungen</span></h2></summary>
       <div class="acc-body">
 
         <div class="field">
@@ -787,7 +844,7 @@ footer{text-align:right;}
     </details>
 
     <details class="card">
-      <summary><h2 data-i18n-html="card.method.title" data-i18n-attr="aria-label:card.method.title">Methode &amp; Hefe</h2></summary>
+      <summary><h2 data-i18n-attr="aria-label:card.method.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8"/><path d="M9 3v4l-3.5 9A2 2 0 0 0 7.4 19h9.2a2 2 0 0 0 1.9-2.6L15 7V3"/><circle cx="10" cy="14" r=".6" fill="currentColor" stroke="none"/><circle cx="13" cy="16.5" r=".6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r=".6" fill="currentColor" stroke="none"/></svg></span><span data-i18n-html="card.method.title">Methode &amp; Hefe</span></h2></summary>
       <div class="acc-body">
 
         <div class="field">
@@ -863,7 +920,7 @@ footer{text-align:right;}
     </details>
 
     <details class="card">
-      <summary><h2 data-i18n-html="card.temp.title" data-i18n-attr="aria-label:card.temp.title">Teigtemperatur &amp; Eiswasser</h2></summary>
+      <summary><h2 data-i18n-attr="aria-label:card.temp.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14.5V5a2 2 0 1 0-4 0v9.5a4 4 0 1 0 4 0Z"/><path d="M10 8h1.5"/></svg></span><span data-i18n-html="card.temp.title">Teigtemperatur &amp; Eiswasser</span></h2></summary>
       <div class="acc-body">
         <div class="field">
           <label id="ddtLabel" data-i18n="label.ddt">Ziel-Teigtemperatur</label>
@@ -907,7 +964,7 @@ footer{text-align:right;}
   <!-- ERGEBNIS -->
   <div class="result" id="result">
     <div class="card">
-      <h2 data-i18n="card.result.title" data-i18n-attr="aria-label:card.result.title">Rezept</h2>
+      <h2 data-i18n-attr="aria-label:card.result.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="16" height="7" rx="2"/><path d="M8 14v-2a4 4 0 0 1 8 0v2"/><path d="M10.5 17.5h3"/></svg></span><span data-i18n="card.result.title">Rezept</span></h2>
 
       <div class="total">
         <div class="big"><span id="totalW">1018</span> g</div>
@@ -987,7 +1044,7 @@ footer{text-align:right;}
 <div class="wrap view" data-view="rezepte" hidden>
   <div class="controls-col" style="display:grid;gap:20px;">
     <details class="card" id="recipesCard" open>
-      <summary><h2 data-i18n="card.myRecipes.title" data-i18n-attr="aria-label:card.myRecipes.title">Meine Rezepte</h2></summary>
+      <summary><h2 data-i18n-attr="aria-label:card.myRecipes.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A1.5 1.5 0 0 1 5.5 5h4l1.8 2H18.5A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5Z"/></svg></span><span data-i18n="card.myRecipes.title">Meine Rezepte</span></h2></summary>
       <div class="acc-body">
         <div class="field" style="margin-bottom:0;">
           <label id="myRecipesLabel" for="recipeSelect" data-i18n="label.savedRecipe">Gespeichertes Rezept</label>
@@ -1013,7 +1070,7 @@ footer{text-align:right;}
     </details>
 
     <details class="card" id="newRecipeCard">
-      <summary><h2 data-i18n="card.newRecipe.title" data-i18n-attr="aria-label:card.newRecipe.title">Neues Rezept anlegen</h2></summary>
+      <summary><h2 data-i18n-attr="aria-label:card.newRecipe.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 6.5 17.5 11 8 20.5 3.8 21l.5-4.2Z"/><path d="M11.3 8.2l3.5 3.5"/><path d="M19 3v4M17 5h4"/></svg></span><span data-i18n="card.newRecipe.title">Neues Rezept anlegen</span></h2></summary>
       <div class="acc-body">
         <div class="hint" style="margin-bottom:16px;" data-i18n="hint.newRecipe">Legt ein neues, eigenständiges Rezept an — die aktuelle Berechnung im Rechner-Bereich bleibt dabei unverändert. Erscheint danach in „Meine Rezepte“ und im „Fertiges Rezept wählen“-Dropdown unter „Eigene Rezepte“.</div>
 
@@ -1194,7 +1251,7 @@ footer{text-align:right;}
 <div class="wrap view" data-view="zeitplan" hidden>
   <div class="controls-col" style="display:grid;gap:20px;">
     <details class="card" open>
-      <summary><h2 data-i18n="card.schedule.title" data-i18n-attr="aria-label:card.schedule.title">Zeitplan</h2></summary>
+      <summary><h2 data-i18n-attr="aria-label:card.schedule.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span><span data-i18n="card.schedule.title">Zeitplan</span></h2></summary>
       <div class="acc-body">
         <div class="field">
           <label id="timeModeLabel" data-i18n="label.timeReference">Bezugspunkt</label>
@@ -1219,7 +1276,7 @@ footer{text-align:right;}
 <div class="wrap view" data-view="glossar" hidden>
   <div class="controls-col" style="display:grid;gap:20px;">
     <details class="card" open>
-      <summary><h2 data-i18n="card.glossary.title" data-i18n-attr="aria-label:card.glossary.title">Pizza-Glossar</h2></summary>
+      <summary><h2 data-i18n-attr="aria-label:card.glossary.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-1.6-1.3-3.6-2-6.5-2v12c2.9 0 4.9.7 6.5 2 1.6-1.3 3.6-2 6.5-2v-12c-2.9 0-4.9.7-6.5 2Z"/><path d="M12 6.5v12"/></svg></span><span data-i18n="card.glossary.title">Pizza-Glossar</span></h2></summary>
       <div class="acc-body">
         <div class="hint" style="margin-bottom:14px;" data-i18n="hint.glossary">Kurze Lexikon-Artikel zu Begriffen und Hintergrundwissen rund um Pizza — zum Nachlesen, unabhängig vom Rechner.</div>
         <div id="glossaryList"></div>
@@ -1231,7 +1288,7 @@ footer{text-align:right;}
 <div class="wrap view" data-view="einstellungen" hidden>
   <div class="controls-col" style="display:grid;gap:20px;">
     <details class="card" open>
-      <summary><h2 data-i18n="card.settings.title" data-i18n-attr="aria-label:card.settings.title">Einstellungen</h2></summary>
+      <summary><h2 data-i18n-attr="aria-label:card.settings.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.8"/><path d="M12 3.5v2M12 18.5v2M20.5 12h-2M5.5 12h-2M18 6l-1.4 1.4M7.4 16.6 6 18M18 18l-1.4-1.4M7.4 7.4 6 6"/></svg></span><span data-i18n="card.settings.title">Einstellungen</span></h2></summary>
       <div class="acc-body">
         <div class="field" style="margin-bottom:0;">
           <div class="hint" style="margin-bottom:10px;" data-i18n="hint.settings.mobile">Schalte einzelne Zusatzfunktionen ein oder aus — deine Wahl wird direkt im Browser gespeichert. Tipp auf „i“ zeigt eine kurze Erklärung.</div>
@@ -1348,7 +1405,7 @@ footer{text-align:right;}
 <div class="wrap view" data-view="party" hidden>
   <div class="controls-col" style="display:grid;gap:20px;">
     <details class="card" open>
-      <summary><h2 data-i18n="card.party.title" data-i18n-attr="aria-label:card.party.title">Pizza Party</h2></summary>
+      <summary><h2 data-i18n-attr="aria-label:card.party.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6 12 4l8 2-8 15Z"/><circle cx="11" cy="9" r=".6" fill="currentColor" stroke="none"/><circle cx="14" cy="12" r=".6" fill="currentColor" stroke="none"/><circle cx="10.5" cy="13.5" r=".6" fill="currentColor" stroke="none"/></svg></span><span data-i18n="card.party.title">Pizza Party</span></h2></summary>
       <div class="acc-body">
         <div class="hint" style="margin-bottom:16px;" data-i18n="hint.party">Wähle Pizzen mit Stückzahl aus — vorgegebene oder eigene, s. u. Unten erscheint eine aggregierte, ungefähre Zutatenliste für die ganze Party. Eigenständiger Bereich: die „Anzahl Teiglinge" im Rechner-Bereich wird hier nicht berücksichtigt.</div>
         <div id="partyPizzaList"></div>
@@ -1359,7 +1416,7 @@ footer{text-align:right;}
     </details>
 
     <details class="card">
-      <summary><h2 data-i18n="card.newPizza.title" data-i18n-attr="aria-label:card.newPizza.title">Eigene Pizza anlegen</h2></summary>
+      <summary><h2 data-i18n-attr="aria-label:card.newPizza.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7 12 4.5 19.5 7 12 20Z"/><path d="M12 9.5v5M9.5 12h5"/></svg></span><span data-i18n="card.newPizza.title">Eigene Pizza anlegen</span></h2></summary>
       <div class="acc-body">
         <div class="field">
           <label for="partyNewName" data-i18n="label.partyPizzaName">Name</label>
@@ -1377,7 +1434,7 @@ footer{text-align:right;}
     </details>
 
     <details class="card">
-      <summary><h2 data-i18n="card.partyResult.title" data-i18n-attr="aria-label:card.partyResult.title">Zutatenliste für die Party</h2></summary>
+      <summary><h2 data-i18n-attr="aria-label:card.partyResult.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9h14l-1.4 9.2a1.5 1.5 0 0 1-1.5 1.3H7.9a1.5 1.5 0 0 1-1.5-1.3Z"/><path d="M8.5 9 12 4l3.5 5"/></svg></span><span data-i18n="card.partyResult.title">Zutatenliste für die Party</span></h2></summary>
       <div class="acc-body">
         <div class="hint" style="margin-bottom:10px;" data-i18n="hint.partyResult">Ungefähre Richtmengen für den Einkauf — keine exakte Rezeptberechnung wie beim Teig.</div>
         <div id="partyResultSummary" style="font-weight:600;margin-bottom:6px;"></div>
@@ -1388,7 +1445,7 @@ footer{text-align:right;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.40.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.41.0</span>
 </footer>
 
 <div class="quickbar" data-view="rechner">

@@ -10,8 +10,18 @@
   --line:#ece3d8;
   --shadow:0 2px 14px rgba(120,90,60,.10);
   --font-head:Georgia,'Iowan Old Style','Palatino Linotype','Book Antiqua',serif;
-  --radius:3px;
-  --radius-chip:6px;
+  /* Visuelles Redesign v3.41.0: zurück zu einer rundlicheren Optik (Karten, Eingaben,
+     Chips/Pills) statt der scharfen 3px/6px-Kanten aus v3.13.0 — bewusste, vom Nutzer
+     bestätigte Kurskorrektur, s. Abschnitt "Visuelles Redesign v3.41.0" in
+     pizza-rechner-KONTEXT.md. */
+  --radius:14px;
+  --radius-chip:999px;
+  /* Header-Foto-Slot: Platzhalter-Wert "none", solange kein echtes Foto vorliegt — die
+     Fallback-Gradient-Ebenen in header{} sorgen für eine foto-ähnliche Anmutung ganz
+     ohne Bilddatei. Sobald ein echtes, generiertes Pizza-Foto bereitsteht: hier NUR
+     diesen einen Wert ändern, z. B. --header-photo:url('assets/header-pizza.jpg'); —
+     keine weitere Struktur-Änderung nötig (s. assets/HEADER-FOTO-README.txt). */
+  --header-photo:none;
 }
 *{box-sizing:border-box;}
 .visually-hidden{
@@ -24,14 +34,30 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 header{
-  background:var(--tomato-dark)
-    repeating-linear-gradient(-55deg,rgba(255,255,255,.06) 0 2px,transparent 2px 14px);
-  color:#fff;padding:26px 20px 22px;text-align:center;
+  position:relative;
+  /* Foto-Header (v3.41.0): var(--header-photo) ist der einzige Austausch-Slot für ein
+     künftiges echtes Bild (s. Kommentar bei --header-photo in :root). Bis dahin erzeugen
+     die Bokeh-artigen radial-gradient-Ebenen darunter eine warme, foto-ähnliche
+     Anmutung ganz ohne Bilddatei. Die oberste, blickdichte Abdunklungs-Ebene sorgt
+     dafür, dass weißer Text/Hamburger-Icon AUCH über einem künftigen hellen Foto noch
+     ausreichend Kontrast hat (WCAG 1.4.3) — beim Einsetzen eines echten Fotos den
+     Kontrast trotzdem stichprobenartig gegenprüfen, falls das Foto sehr hell ist. */
+  background-image:
+    linear-gradient(rgba(20,9,5,.55),rgba(20,9,5,.55)),
+    var(--header-photo),
+    radial-gradient(58% 85% at 16% 12%,rgba(255,214,153,.6),transparent 58%),
+    radial-gradient(55% 85% at 86% 82%,rgba(232,110,52,.55),transparent 62%),
+    linear-gradient(150deg,#d5622f 0%,var(--tomato-dark) 55%,#5e2013 100%),
+    repeating-linear-gradient(-55deg,rgba(255,255,255,.05) 0 2px,transparent 2px 14px);
+  background-size:cover,cover,cover,cover,cover,auto;
+  background-position:center,center,center,center,center,center;
+  background-repeat:no-repeat,no-repeat,no-repeat,no-repeat,no-repeat,repeat;
+  color:#fff;padding:30px 20px 26px;text-align:center;
   border-bottom:3px solid var(--crust);
 }
 header h1{
   margin:0;font-family:var(--font-head);font-size:26px;font-weight:700;
-  letter-spacing:.2px;
+  letter-spacing:.2px;text-shadow:0 1px 4px rgba(0,0,0,.35);
 }
 header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .wrap{max-width:980px;margin:0 auto;padding:20px;display:grid;gap:20px;grid-template-columns:1fr;}
@@ -53,11 +79,12 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 }
 .header-bar h1{grid-column:2;justify-self:center;text-align:center;}
 .nav-toggle{
-  width:44px;height:44px;border:1px solid rgba(255,255,255,.8);border-radius:var(--radius);
-  background:rgba(255,255,255,.14);color:#fff;font-size:20px;line-height:1;cursor:pointer;
+  width:44px;height:44px;border:1px solid rgba(255,255,255,.8);border-radius:50%;
+  background:rgba(255,255,255,.16);color:#fff;font-size:20px;line-height:1;cursor:pointer;
+  backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
 }
 .header-bar .nav-toggle{grid-column:3;justify-self:end;}
-.nav-toggle:hover,.nav-toggle:active{background:rgba(255,255,255,.28);}
+.nav-toggle:hover,.nav-toggle:active{background:rgba(255,255,255,.3);}
 [data-view][hidden]{display:none!important;}
 .nav-overlay{
   position:fixed;inset:0;z-index:60;background:rgba(30,22,18,.5);
@@ -72,7 +99,7 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .nav-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .nav-panel-title{font-family:var(--font-head);font-size:18px;font-weight:700;}
 .nav-close{
-  width:40px;height:40px;border:1px solid var(--line);border-radius:var(--radius);
+  width:40px;height:40px;border:1px solid var(--line);border-radius:50%;
   background:#fff;font-size:16px;cursor:pointer;
 }
 .nav-close:hover{border-color:var(--tomato);color:var(--tomato);}
@@ -126,14 +153,14 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .party-pizza-ings.switch-info{padding-right:0;margin-bottom:0;}
 .party-qty-stepper{display:flex;align-items:center;gap:6px;flex-shrink:0;}
 .party-qty-btn{
-  width:40px;height:40px;border:1px solid var(--line);border-radius:var(--radius);
+  width:40px;height:40px;border:1px solid var(--line);border-radius:50%;
   background:#fff;font-size:17px;font-weight:700;cursor:pointer;color:var(--ink);
   display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;
 }
 .party-qty-btn:hover{border-color:var(--tomato);color:var(--tomato);}
 .party-qty-input{width:52px;text-align:center;padding:9px 4px;}
 .party-delete-btn{
-  width:40px;height:40px;border:1px solid var(--line);border-radius:var(--radius);
+  width:40px;height:40px;border:1px solid var(--line);border-radius:50%;
   background:#fff;cursor:pointer;font-size:15px;flex-shrink:0;
 }
 .party-delete-btn:hover{border-color:var(--tomato);color:var(--tomato);}
@@ -142,7 +169,7 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .party-ing-row .party-ing-amount{flex:1 1 70px;min-width:0;width:auto;text-align:left;}
 .party-ing-row .party-ing-unit{flex:1 1 60px;min-width:0;width:auto;}
 .party-ing-remove{
-  width:36px;height:36px;border:1px solid var(--line);border-radius:var(--radius);
+  width:36px;height:36px;border:1px solid var(--line);border-radius:50%;
   background:#fff;cursor:pointer;flex-shrink:0;
 }
 .party-ing-remove:hover{border-color:var(--tomato);color:var(--tomato);}
@@ -181,9 +208,22 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .card{
   background:var(--card);border-radius:var(--radius);padding:20px;
   border:1px solid var(--line);border-left:3px solid var(--tomato);
+  box-shadow:var(--shadow);
   min-width:0;
 }
 .result .card{border-left-color:var(--basil);}
+/* Runder Icon-Badge vor jedem Card-Titel (v3.41.0) — Inline-SVG-Line-Icons statt Emoji
+   (Emoji wurden in v3.13.0 bewusst entfernt, s. dortiger Kommentar; Line-Icons wirken
+   konsistenter/hochwertiger). Rein dekorativ (aria-hidden), der Accessible Name der
+   Überschrift kommt weiterhin aus data-i18n-attr="aria-label:..." auf dem <h2> selbst. */
+.card h2{display:flex;align-items:center;gap:10px;}
+.card-icon{
+  width:34px;height:34px;flex-shrink:0;border-radius:50%;
+  background:rgba(200,68,46,.12);color:var(--tomato-dark);
+  display:flex;align-items:center;justify-content:center;
+}
+.card-icon svg{width:18px;height:18px;display:block;}
+.result .card-icon{background:rgba(58,125,68,.14);color:var(--basil);}
 .selectbox{
   width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:var(--radius);
   font-size:14px;color:var(--ink);background:#fff;cursor:pointer;
@@ -228,11 +268,11 @@ input[type=range]{
   background:var(--line);outline:none;cursor:pointer;
 }
 input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:18px;height:18px;border-radius:2px;
+  -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
   background:var(--tomato);border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:pointer;
 }
 input[type=range]::-moz-range-thumb{
-  width:16px;height:16px;border-radius:2px;background:var(--tomato);
+  width:16px;height:16px;border-radius:50%;background:var(--tomato);
   border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:pointer;
 }
 input[type=number]{
@@ -242,7 +282,7 @@ input[type=number]{
 input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .seg{display:flex;gap:6px;background:var(--bg);padding:4px;border-radius:var(--radius);}
 .seg button{
-  flex:1;border:none;background:transparent;padding:9px 6px;border-radius:2px;
+  flex:1;border:none;background:transparent;padding:9px 6px;border-radius:10px;
   font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;
 }
 .seg button.active{background:var(--tomato);color:#fff;}
@@ -307,7 +347,7 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .ing{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px;}
 .ing:last-child{border-bottom:none;}
 .ing .name{display:flex;align-items:center;gap:8px;}
-.ing .dot{width:8px;height:8px;border-radius:1px;flex-shrink:0;}
+.ing .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .ing .amt{font-weight:700;font-variant-numeric:tabular-nums;}
 .ing .amt small{font-weight:500;color:var(--muted);font-size:11px;margin-left:3px;}
 .stage{margin-top:18px;}
@@ -329,9 +369,18 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .actions{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
 .actions button{
   padding:11px;border-radius:var(--radius);border:1px solid var(--line);background:#fff;
-  font-size:13px;font-weight:600;cursor:pointer;color:var(--ink);
+  font-size:13px;font-weight:600;cursor:pointer;color:var(--ink);transition:all .12s;
 }
-.actions button.primary{background:var(--basil);color:#fff;border-color:var(--basil);order:-1;padding:13px;font-size:14px;}
+.actions button:not(.primary):hover{border-color:var(--tomato);color:var(--tomato);}
+/* Primäre Aktion ("Speichern") in Terrakotta statt Grün (v3.41.0, Angleichung an den
+   Referenz-Stil) — Pill-Form hebt sie zusätzlich von den rechteckig-abgerundeten
+   sekundären Buttons ab (einheitliche Sprache: Pill = primäre CTA). */
+.actions button.primary{
+  background:var(--tomato);color:#fff;border-color:var(--tomato);order:-1;
+  padding:13px;font-size:14px;border-radius:999px;
+  box-shadow:0 3px 10px rgba(200,68,46,.3);
+}
+.actions button.primary:hover{background:var(--tomato-dark);border-color:var(--tomato-dark);}
 .actions .row2{display:flex;gap:8px;}
 .actions .row2 button{flex:1;min-width:0;background:transparent;font-weight:500;}
 /* Anleitung / Timeline */
@@ -351,7 +400,7 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   padding:16px 18px;margin-bottom:10px;
 }
 .step .num{
-  flex-shrink:0;width:28px;height:28px;border-radius:2px;background:var(--ink);color:#fff;
+  flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;
   display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;font-family:var(--font-head);
 }
 .step .body{flex:1;min-width:0;}
