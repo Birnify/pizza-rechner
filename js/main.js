@@ -47,17 +47,25 @@
       if (e.target.value) PZ.loadRecipe(e.target.value);
     });
   }
-  const recipeSaveNew = $('recipeSaveNew');
-  if (recipeSaveNew) {
-    recipeSaveNew.onclick = () => {
-      const nameEl = $('recipeName');
-      const rec = PZ.saveAsNew(nameEl ? nameEl.value : '');
-      if (nameEl) nameEl.value = '';
-      refreshRecipeSelect();
-      const b = recipeSaveNew; const orig = b.textContent;
-      b.textContent = t('main.saved');
+  // "Kopieren"-Button (ersetzt seit v3.33.0 das Namensfeld + "Neu"-Button):
+  // dupliziert GENAU das aktuell im Dropdown ausgewählte gespeicherte Rezept
+  // (PZ.getActiveId() — der Select-Wert und die activeId laufen synchron, s.
+  // change-Handler oben) als neue, separate Kopie. Bezieht sich bewusst NICHT
+  // auf PZ.state (den evtl. ungespeicherten Live-Stand des Hauptrechners) —
+  // das übernimmt weiterhin ausschließlich das unabhängige "Neues Rezept
+  // anlegen"-Formular bzw. der bestehende "Speichern"-Button.
+  const recipeDuplicate = $('recipeDuplicate');
+  if (recipeDuplicate) {
+    recipeDuplicate.onclick = () => {
+      const recipes = PZ.listRecipes();
+      const id = PZ.getActiveId();
+      if (!recipes.length || !id) return;
+      const rec = PZ.duplicateRecipe(id);
+      if (!rec) return;
+      PZ.loadRecipe(rec.id); // macht die Kopie aktiv + selektiert + rendert sie (ruft intern refreshRecipeSelect())
+      const b = recipeDuplicate; const orig = b.textContent;
+      b.textContent = t('main.duplicated');
       setTimeout(() => b.textContent = orig, 1400);
-      void rec;
     };
   }
   const recipeRename = $('recipeRename');

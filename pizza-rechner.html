@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Teigmeister</title>
-<link rel="stylesheet" href="css/styles.css?v=3.32.0">
+<link rel="stylesheet" href="css/styles.css?v=3.33.0">
 </head>
 <body>
 <header>
@@ -334,11 +334,7 @@
           <option value="" data-i18n="option.noneSavedYet">— noch keins gespeichert —</option>
         </select>
         <div class="row" style="margin-top:8px;gap:8px;">
-          <label for="recipeName" class="visually-hidden" data-i18n="label.newRecipeName">Name für neues Rezept</label>
-          <input type="text" id="recipeName" class="selectbox" placeholder="Name für neues Rezept" data-i18n-attr="placeholder:placeholder.newRecipeName" style="flex:2;">
-          <button type="button" id="recipeSaveNew" style="flex:1;" data-i18n="btn.new">Neu</button>
-        </div>
-        <div class="row" style="margin-top:8px;gap:8px;">
+          <button type="button" id="recipeDuplicate" style="flex:1;" data-i18n="btn.duplicate">Kopieren</button>
           <button type="button" id="recipeRename" style="flex:1;" data-i18n="btn.rename">Umbenennen</button>
           <button type="button" id="recipeDelete" style="flex:1;" data-i18n="btn.delete">Löschen</button>
         </div>
@@ -695,28 +691,28 @@
 </div>
 
 <footer>
-  <span id="appVersion" style="opacity:.7;">v3.32.0</span>
+  <span id="appVersion" style="opacity:.7;">v3.33.0</span>
 </footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.32.0"></script>
-<script src="js/state.js?v=3.32.0"></script>
-<script src="js/i18n.js?v=3.32.0"></script>
-<script src="js/settings.js?v=3.32.0"></script>
-<script src="js/flour.js?v=3.32.0"></script>
-<script src="js/calc.js?v=3.32.0"></script>
-<script src="js/schedule.js?v=3.32.0"></script>
-<script src="js/guide.js?v=3.32.0"></script>
-<script src="js/timer.js?v=3.32.0"></script>
-<script src="js/ui.js?v=3.32.0"></script>
-<script src="js/print.js?v=3.32.0"></script>
-<script src="js/pdf.js?v=3.32.0"></script>
-<script src="js/presets.js?v=3.32.0"></script>
-<script src="js/storage.js?v=3.32.0"></script>
-<script src="js/newrecipe.js?v=3.32.0"></script>
-<script src="js/share.js?v=3.32.0"></script>
-<script src="js/party.js?v=3.32.0"></script>
-<script src="js/main.js?v=3.32.0"></script>
+<script src="js/dom.js?v=3.33.0"></script>
+<script src="js/state.js?v=3.33.0"></script>
+<script src="js/i18n.js?v=3.33.0"></script>
+<script src="js/settings.js?v=3.33.0"></script>
+<script src="js/flour.js?v=3.33.0"></script>
+<script src="js/calc.js?v=3.33.0"></script>
+<script src="js/schedule.js?v=3.33.0"></script>
+<script src="js/guide.js?v=3.33.0"></script>
+<script src="js/timer.js?v=3.33.0"></script>
+<script src="js/ui.js?v=3.33.0"></script>
+<script src="js/print.js?v=3.33.0"></script>
+<script src="js/pdf.js?v=3.33.0"></script>
+<script src="js/presets.js?v=3.33.0"></script>
+<script src="js/storage.js?v=3.33.0"></script>
+<script src="js/newrecipe.js?v=3.33.0"></script>
+<script src="js/share.js?v=3.33.0"></script>
+<script src="js/party.js?v=3.33.0"></script>
+<script src="js/main.js?v=3.33.0"></script>
 <script>
   // Desktop-only UI-Glue (kein Eingriff in die PZ-Rechenmodule): Burger-Menü-Navigation,
   // 1:1 dieselbe Logik wie das etablierte Mobil-Muster (pizza-rechner-mobile.html, v3.17.x/

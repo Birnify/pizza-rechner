@@ -1240,6 +1240,43 @@
       ]);
     });
 
+    // --- duplicateRecipe() (v3.33.0, ersetzt "Name für neues Rezept"-Feld) ---
+    withCleanStorage(() => {
+      Object.assign(PZ.state, BASE, { balls: 4, hyd: 60 });
+      const rec1 = PZ.saveAsNew('Original');
+      const beforeCount = PZ.listRecipes().length;
+
+      const copy = PZ.duplicateRecipe(rec1.id);
+      const afterCount = PZ.listRecipes().length;
+      const copyRec = PZ.listRecipes().find(r => r.id === copy.id);
+
+      // activeId bleibt unverändert (duplicateRecipe() rührt sie nicht an — das
+      // macht erst js/main.js über PZ.loadRecipe() nach dem Klick)
+      const activeStillOriginal = PZ.getActiveId() === rec1.id;
+
+      // Live-Stand nach dem Duplizieren verändern — die Kopie darf davon NICHT
+      // betroffen sein (dupliziert wird der gespeicherte Stand, nicht PZ.state)
+      PZ.state.balls = 99;
+      const copyUnaffectedByLiveState = PZ.listRecipes().find(r => r.id === copy.id).state.balls === 4;
+
+      const copyOfMissing = PZ.duplicateRecipe('does-not-exist');
+
+      // Namenskollision: zweimal dasselbe Rezept duplizieren -> fortlaufende Nummer
+      const copy2 = PZ.duplicateRecipe(rec1.id);
+
+      renderBox('duplicateRecipe() — Rezept-Kopieren-Funktion', [
+        { label: 'Kopie legt ein zusätzliches Rezept an', ok: afterCount === beforeCount + 1, actual: afterCount, expected: beforeCount + 1, tol: null },
+        { label: 'Kopie hat eigene, neue id (nicht identisch zum Original)', ok: copy.id !== rec1.id, actual: copy.id, expected: '!= ' + rec1.id, tol: null },
+        { label: 'Kopie-Name lautet "Kopie von Original"', ok: copy.name === 'Kopie von Original', actual: copy.name, expected: 'Kopie von Original', tol: null },
+        { label: 'Kopie übernimmt den Zustand 1:1 (balls)', ok: copyRec.state.balls === 4, actual: copyRec.state.balls, expected: 4, tol: null },
+        { label: 'Kopie übernimmt den Zustand 1:1 (hyd)', ok: copyRec.state.hyd === 60, actual: copyRec.state.hyd, expected: 60, tol: null },
+        { label: 'activeId bleibt beim Original (duplicateRecipe() wechselt nicht selbst um)', ok: activeStillOriginal, actual: activeStillOriginal, expected: true, tol: null },
+        { label: 'Kopie ist unabhängig vom späteren Live-Stand (PZ.state)', ok: copyUnaffectedByLiveState, actual: copyUnaffectedByLiveState, expected: true, tol: null },
+        { label: 'duplicateRecipe() mit unbekannter id liefert null (kein Crash)', ok: copyOfMissing === null, actual: copyOfMissing, expected: null, tol: null },
+        { label: 'Zweite Kopie desselben Rezepts bekommt fortlaufende Nummer', ok: copy2.name === 'Kopie von Original (2)', actual: copy2.name, expected: 'Kopie von Original (2)', tol: null }
+      ]);
+    });
+
     // --- Leerer localStorage (kein Key vorhanden) — darf nicht crashen ---
     withCleanStorage(() => {
       let threw = false;

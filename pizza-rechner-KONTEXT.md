@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-20 · Aktuelle Version: v3.32.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-20 · Aktuelle Version: v3.33.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,79 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Bugfix: inkonsistente Dezimaltrennzeichen bei Regler-Wertanzeigen (v3.32.0) = aktueller Stand
+## "Name für neues Rezept"-Feld ersetzt durch Rezept-Duplizieren (v3.33.0) = aktueller Stand
+
+Feature, vom Nutzer beauftragt: Das Namensfeld + „Neu"-Button in der Card
+„Meine Rezepte" wurde entfernt und durch eine „Kopieren"-Funktion ersetzt, die
+das aktuell im Dropdown ausgewählte gespeicherte Rezept als neue Kopie anlegt.
+Hintergrund: Das alte Feld (`#recipeName`/`#recipeSaveNew` → `PZ.saveAsNew()`)
+legte ein neues Rezept aus dem **Live-Stand des Hauptrechners** unter einem
+eingegebenen Namen an — das wurde als verwirrend/redundant neben dem separaten
+„Neues Rezept anlegen"-Formular empfunden (funktional unterschiedlich, aber
+in der UI zu ähnlich).
+
+- **Entfernt:** `#recipeName` (Textfeld + `.visually-hidden`-Label) und
+  `#recipeSaveNew` („Neu") aus der Card „Meine Rezepte" — Desktop + Mobil.
+  `PZ.saveAsNew()` selbst bleibt als Funktion unangetastet in `js/storage.js`
+  (falls künftig wieder gebraucht), nur die UI-Anbindung an diese Card wurde
+  entfernt.
+- **Neu:** Button `#recipeDuplicate` („Kopieren"/„Duplicate", i18n-Key
+  `btn.duplicate`) direkt unter `#recipeSelect`, in derselben Zeile wie die
+  bereits bestehenden Buttons `#recipeRename`/`#recipeDelete` — jetzt eine
+  Drei-Buttons-Reihe: Kopieren / Umbenennen / Löschen.
+- **Neue Funktion `PZ.duplicateRecipe(id)`** (`js/storage.js`): dupliziert
+  GENAU den gespeicherten `state` des Quell-Rezepts (per id, **nicht**
+  `PZ.state`/den evtl. ungespeicherten Live-Stand) als neuen, unabhängigen
+  Eintrag. Name automatisch „Kopie von {name}", bei Kollision fortlaufend
+  nummeriert („Kopie von {name} (2)", „(3)", …, analog zu
+  `uniqueImportName()`). Rührt `activeId` bewusst nicht selbst an — das
+  übernimmt der Aufrufer.
+- **Wiring in `js/main.js`:** Klick auf „Kopieren" → Guard
+  `if (!recipes.length || !id) return;` (identisch zum bestehenden Muster von
+  `#recipeRename`/`#recipeDelete`) → `PZ.duplicateRecipe(id)` →
+  `PZ.loadRecipe(rec.id)` (macht die Kopie sofort aktiv, ausgewählt im
+  Dropdown und lädt sie in den Hauptrechner — ruft intern bereits
+  `refreshRecipeSelect()` auf) → Button-Text kurz zu „✓ Kopiert"
+  (`main.duplicated`), 1,4 s, exakt das etablierte `#saveBtn`-Muster.
+- **Keine Änderung** an `save()`/`#saveBtn` (überschreibt weiterhin nur das
+  aktive Rezept) oder am unabhängigen „Neues Rezept anlegen"-Formular
+  (`js/newrecipe.js`, nutzt weiterhin `addRecipeFromState()`).
+- **i18n:** neue Keys `btn.duplicate`, `main.duplicated`,
+  `storage.duplicateName`. Tote Keys entfernt: `label.newRecipeName`,
+  `placeholder.newRecipeName` (nach Entfernung nirgends mehr referenziert,
+  Codesuche bestätigt).
+
+**Tests:** 9 neue Unit-Tests für `PZ.duplicateRecipe()` in `tests/test.html`
+(neues Rezept anlegen, unabhängige id, Namensgebung inkl. Kollisions-
+Nummerierung, 1:1-Zustandsübernahme, Unabhängigkeit vom späteren Live-Stand,
+`activeId` bleibt unverändert, `null` bei unbekannter id statt Crash) —
+**567** Prüfungen insgesamt, alle grün (Headless-Edge-Dump, vorher 558).
+Zusätzlich per gezieltem Headless-Edge-Skript interaktiv verifiziert:
+Klick auf „Kopieren" legt die Kopie an, wählt sie im Dropdown aus, `activeId`
+synchronisiert sich korrekt, Button zeigt „✓ Kopiert", Klick bei leerer
+Bibliothek wirft keinen Fehler (stiller No-op).
+
+**Härten (gezielter `accessibility-expert`-Audit, nur diese Änderung):**
+keine Befunde, keine Code-Änderungen nötig — `#recipeDuplicate` ist
+strukturell identisch zu den beiden Nachbar-Buttons (reiner
+`<button type="button">` mit aussagekräftigem sichtbaren Text), Tab-
+Reihenfolge nach Entfernen von `#recipeName` weiterhin logisch
+(Select → Kopieren → Umbenennen → Löschen), Text-Austausch „✓ Kopiert"
+verliert keinen Fokus (`PZ.loadRecipe()` ersetzt nur den Inhalt von
+`#recipeSelect`, nicht den Button selbst) — verhält sich exakt wie das
+etablierte `#saveBtn`-Muster, kein zusätzliches `aria-live` nötig. Der
+Guard bei leerer Bibliothek ist konsistent mit dem bereits akzeptierten
+Bestandsverhalten von `#recipeRename`/`#recipeDelete`.
+
+**Geändert:** `pizza-rechner.html`, `pizza-rechner-mobile.html`, `js/main.js`,
+`js/storage.js`, `js/i18n.js`, `tests/test.html`. `?v=` auf `3.33.0` gezogen
+(Desktop + Mobil, Cache-Busting + `#appVersion`-Fußzeile separat
+aktualisiert). `pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.33.0 - Rezept-Duplizieren/` enthält den vollständigen
+Schnappschuss.
+
+## Bugfix: inkonsistente Dezimaltrennzeichen bei Regler-Wertanzeigen (v3.32.0)
 
 Bugfix, vom Nutzer selbst diagnostiziert: Auf Desktop zeigt jedes Regler-Feld
 (Salz, Öl, Zucker, Hefemenge) den aktuellen Wert **zweimal** — einmal als rote
@@ -3390,9 +3462,10 @@ Keine Code-Änderung durch den Audit nötig.
   **erledigt in v3.32.0** (kein Backlog-Punkt, direkter Nutzerauftrag; s.
   Abschnitt „Bugfix: inkonsistente Dezimaltrennzeichen bei
   Regler-Wertanzeigen (v3.32.0)" oben).
-- „Name für neues Rezept"-Feld (`#recipeName`/`#recipeSaveNew`) durch eine
-  Kopieren/Duplizieren-Funktion für das im Dropdown gewählte gespeicherte Rezept
-  ersetzen — vom Nutzer beauftragt, als eigener Zyklus in Bearbeitung/geplant.
+- ~~„Name für neues Rezept"-Feld durch Rezept-Duplizieren ersetzen~~ —
+  **erledigt in v3.33.0** (kein Backlog-Punkt, direkter Nutzerauftrag; s.
+  Abschnitt „"Name für neues Rezept"-Feld ersetzt durch Rezept-Duplizieren
+  (v3.33.0)" oben).
 - Sticky Zutatenliste im Pizza-Party-Bereich (Desktop, zweispaltiges Layout wie
   beim Teig-Rechner) — vom Nutzer beauftragt, als eigener Zyklus in
   Bearbeitung/geplant.
@@ -3418,7 +3491,7 @@ Keine Code-Änderung durch den Audit nötig.
   `data-goto="zeitplan"`), Desktop + Mobil, inkl. EN-Übersetzung — vom Nutzer
   beauftragt, als eigener Zyklus in Bearbeitung/geplant.
 
-**Stand v3.32.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.33.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben); die drei oben notierten Nebenbefunde
 (`#shareLiveMsg`/`#nrLiveMsg`-Live-Region-Fehlen, `<details>`-zugeklappt-Problematik
 bei Mobil-Live-Regionen) bleiben offen für einen künftigen Accessibility-Zyklus.

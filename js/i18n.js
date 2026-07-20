@@ -476,6 +476,7 @@
 
   // ---- js/main.js — Rezepte-Verwaltung (Prompt/Confirm/Live-Meldungen) ------------
   add('main.saved', '✓ Gespeichert', '✓ Saved');
+  add('main.duplicated', '✓ Kopiert', '✓ Duplicated');
   add('main.renamePrompt', 'Neuer Name für dieses Rezept:', 'New name for this recipe:');
   add('main.deleteConfirm', '„{name}“ wirklich löschen?', 'Really delete "{name}"?');
   add('main.recipeFallbackName', 'Rezept', 'Recipe');
@@ -641,9 +642,7 @@
   add('card.myRecipes.title', 'Meine Rezepte', 'My recipes');
   add('label.savedRecipe', 'Gespeichertes Rezept', 'Saved recipe');
   add('option.noneSavedYet', '— noch keins gespeichert —', '— none saved yet —');
-  add('label.newRecipeName', 'Name für neues Rezept', 'Name for new recipe');
-  add('placeholder.newRecipeName', 'Name für neues Rezept', 'Name for new recipe');
-  add('btn.new', 'Neu', 'New');
+  add('btn.duplicate', 'Kopieren', 'Duplicate');
   add('btn.rename', 'Umbenennen', 'Rename');
   add('btn.delete', 'Löschen', 'Delete');
   add('hint.myRecipes', 'Eigene Rezepte sind unabhängig von den Presets oben — hier landen deine per „Speichern" gesicherten Stände.',
@@ -756,6 +755,7 @@
   add('storage.importedRecipeFallbackName', 'Importiertes Rezept', 'Imported recipe');
   add('storage.importedSuffix', '{name} (importiert)', '{name} (imported)');
   add('storage.importedSuffixN', '{name} (importiert {n})', '{name} (imported {n})');
+  add('storage.duplicateName', 'Kopie von {name}', 'Copy of {name}');
 
   PZ._I18N_DICT = DICT; // für weitere Module (guide.js etc.) zum Ergänzen via PZ._i18nAdd()
   PZ._i18nAdd = add;

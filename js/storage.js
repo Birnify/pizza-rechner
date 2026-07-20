@@ -273,10 +273,42 @@
     return rec;
   }
 
+  // Legt eine 1:1-Kopie EINES bestehenden gespeicherten Rezepts an (per id) —
+  // im Unterschied zu saveAsNew() bezieht sich diese Funktion NIE auf PZ.state
+  // (den evtl. ungespeicherten Live-Stand des Hauptrechners), sondern
+  // ausschliesslich auf den bereits gespeicherten `state` des Quell-Rezepts.
+  // Ersetzt seit v3.33.0 das entfernte "Name für neues Rezept"-Feld
+  // (#recipeName/#recipeSaveNew) — dort ließ sich versehentlich der LIVE-Stand
+  // statt eines bestehenden Rezepts unter neuem Namen speichern, was oft mit
+  // dem separaten "Neues Rezept anlegen"-Formular verwechselt wurde. Name wird
+  // automatisch vergeben ("Kopie von <Name>"), bei Kollision mit
+  // fortlaufender Nummer ("Kopie von <Name> (2)", "(3)", …) — analog zu
+  // uniqueImportName() oben. activeId wird bewusst NICHT hier verändert
+  // (macht der Aufrufer in js/main.js über PZ.loadRecipe(), s. dort).
+  function duplicateRecipe(id) {
+    const data = readStore();
+    const src = data.recipes.find(r => r.id === id);
+    if (!src) return null;
+    const existingNames = new Set(data.recipes.map(r => r.name));
+    const base = t('storage.duplicateName', { name: src.name });
+    let name = base, n = 2;
+    while (existingNames.has(name)) { name = base + ' (' + n + ')'; n++; }
+    const rec = {
+      id: makeId(),
+      name: name,
+      state: JSON.parse(JSON.stringify(src.state)),
+      savedAt: Date.now()
+    };
+    data.recipes.push(rec);
+    writeRaw(data);
+    return rec;
+  }
+
   PZ.save = save;
   PZ.load = load;
   PZ.applyState = applyState;
   PZ.saveAsNew = saveAsNew;
+  PZ.duplicateRecipe = duplicateRecipe;
   PZ.addRecipeFromState = addRecipeFromState;
   PZ.renameActive = renameActive;
   PZ.deleteRecipe = deleteRecipe;
