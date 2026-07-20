@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-20 · Aktuelle Version: v3.39.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-20 · Aktuelle Version: v3.40.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,80 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## EXPERIMENTELL: Bring!-Deeplink-Testaufbau (v3.39.0) = aktueller Stand
+## Rückbau: Bring!-Deeplink-Testaufbau geprüft und verworfen (v3.40.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+**Kurzfassung für den schnellen Wiedereinstieg:** Der in v3.39.0 gebaute
+experimentelle Bring!-Deeplink-Testaufbau wurde vom Nutzer live auf einem
+iPhone mit der echten Bring!-App getestet. **Ergebnis: technische
+Sackgasse, Idee endgültig verworfen.** Der komplette Testcode
+(`bring-import.html`, `js/bring-test.js`, der Button „Test: Mit Bring!
+teilen" + zugehörige i18n-Keys/CSS) wurde in diesem Zyklus wieder
+vollständig entfernt. **Nichts davon existiert mehr im Code** — falls die
+Idee in Zukunft nochmal aufkommt, s. Fehlerursache unten, bevor erneut Zeit
+investiert wird.
+
+**Testergebnis:** Die Bring!-App öffnete sich beim Antippen des Deeplinks
+zwar korrekt, der Import selbst schlug aber fehl („Oops etwas ist
+schiefgelaufen").
+
+**Root Cause (laut Bring!s eigenem Entwickler-Guide):** Bring! braucht für
+den Import-Deeplink serverseitig statisch gerendertes HTML mit
+vollständigem Schema.org-`Recipe`-Markup, **inklusive Pflichtfeldern wie
+`author` und `image`**, die im ursprünglichen Testaufbau nicht mitgeliefert
+wurden. Unsere Zutatenliste ist außerdem grundsätzlich dynamisch — sie wird
+erst clientseitig aus dem URL-Parameter berechnet und das JSON-LD erst
+danach per JavaScript in den `<head>` eingefügt (das war ja genau die
+ursprünglich offene Testfrage). Ein für Bring! funktionierender Ansatz
+bräuchte **serverseitiges Rendering pro Anfrage** (mindestens die
+Pflichtfelder `author`/`image` müssten bereits im initial ausgelieferten
+HTML stehen) — das erfordert einen echten Anwendungsserver und verstößt
+damit gegen das Kernprinzip dieser App („kein Server, komplett
+offline/statisch nutzbar", GitHub Pages ist reines Static Hosting ohne
+serverseitige Logik). **Nicht ohne fundamentalen Architekturbruch lösbar —
+daher endgültig verworfen, keine Weiterverfolgung geplant.**
+
+**Rückbau (vollständig, verifiziert):**
+- `bring-import.html` gelöscht.
+- `js/bring-test.js` gelöscht.
+- Button „Test: Mit Bring! teilen (experimentell)" + Hinweistext aus der
+  Pizza-Party-Card „Zutatenliste für die Party" entfernt — Desktop UND
+  Mobil.
+- `<script src="js/bring-test.js">`-Einbindung aus beiden HTML-Dateien
+  entfernt.
+- i18n-Keys `btn.bringTest`/`hint.bringTest`/`bring.recipeName` aus
+  `js/i18n.js` entfernt.
+- `.btn-experimental`-CSS-Regel aus `css/styles.css` entfernt.
+- `tests/test.html` musste nicht bereinigt werden — für den experimentellen
+  Testaufbau wurden nie dauerhafte Unit-Tests angelegt (nur Ad-hoc-
+  Verifikation per Headless-Edge während des Bauens in v3.39.0).
+- Vollständige Codesuche nach `bringTest`/`bring-test`/`bring-import`/
+  `btn-experimental`/`bring.recipeName` bestätigt: keine Referenzen mehr in
+  irgendeiner aktiven Datei (nur noch in den unveränderlichen
+  `Versionen/v3.39.0 - …/`-Schnappschüssen, wie es sein soll).
+
+**Tests:** `tests/test.html` bleibt unverändert bei **577** Prüfungen,
+alle grün (Headless-Edge-Dump) — identischer Stand wie vor v3.39.0, da für
+den Testaufbau nie dauerhafte Tests existierten. Zusätzlich per gezieltem
+Headless-Edge-Skript verifiziert: Party-Ansicht rendert nach dem Rückbau
+fehlerfrei (keine JS-Fehler, `#bringTestBtn` nicht mehr vorhanden,
+`#partyResultList` weiterhin vorhanden/funktionsfähig).
+
+Kein `accessibility-expert`-Audit nötig (reine Entfernung, keine neue
+UI/Markup-Ergänzung).
+
+**Geändert:** `bring-import.html` (gelöscht), `js/bring-test.js` (gelöscht),
+`pizza-rechner.html`, `pizza-rechner-mobile.html`, `js/i18n.js`,
+`css/styles.css`. `?v=` auf `3.40.0` gezogen (Desktop + Mobil, Cache-Busting
++ `#appVersion`-Fußzeile separat aktualisiert).
+`pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.40.0 - Rueckbau Bring-Deeplink-Test/` enthält den
+vollständigen Schnappschuss (der vorherige `Versionen/v3.39.0 - …/`-
+Schnappschuss mit dem vollständigen experimentellen Code bleibt unverändert
+als historisches Nachschlagewerk erhalten, falls die technischen Details
+später nochmal gebraucht werden).
+
+## EXPERIMENTELL: Bring!-Deeplink-Testaufbau (v3.39.0)
 
 **Ausdrücklich kein reguläres Feature** — ein vom Nutzer beauftragter
 technischer Testaufbau, um live auf einem echten iPhone mit der echten
@@ -4058,24 +4131,23 @@ Keine Code-Änderung durch den Audit nötig.
   live reproduzierter und gemeldeter Bug; s. Abschnitt „Bugfix:
   activeId-Desync bei 'Neues Rezept anlegen'/Import in leere Bibliothek
   (v3.38.1)" oben).
-- EXPERIMENTELL, offener Ausgang (v3.39.0): Bring!-Deeplink-Testaufbau —
-  wartet auf Live-Test des Nutzers mit der echten Bring!-App auf einem
-  iPhone (s. Abschnitt „EXPERIMENTELL: Bring!-Deeplink-Testaufbau
-  (v3.39.0)" oben). Je nach Ergebnis entweder zu einem echten Feature
-  ausbauen (z. B. Fehlerbehandlung, Feature-Flag, Fallback für Nutzer ohne
-  Bring!-App) oder wieder vollständig entfernen (Datei-/Block-Liste steht
-  in den Code-Kommentaren, u. a. `js/bring-test.js`).
+- ~~EXPERIMENTELL: Bring!-Deeplink-Testaufbau~~ — **geprüft und wieder
+  vollständig entfernt in v3.40.0** (kein Backlog-Punkt, vom Nutzer
+  beauftragter Testaufbau; Ergebnis: technische Sackgasse, Bring! braucht
+  serverseitig gerendertes HTML mit Pflichtfeldern wie `author`/`image`,
+  diese App bleibt aber bewusst server-/build-frei; s. Abschnitt „Rückbau:
+  Bring!-Deeplink-Testaufbau geprüft und verworfen (v3.40.0)" oben —
+  **nicht erneut versuchen ohne fundamentalen Architekturbruch**).
 
-**Stand v3.39.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.40.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben); die drei oben notierten Live-Region-Nebenbefunde
 (`#shareLiveMsg`/`#nrLiveMsg`-Live-Region-Fehlen, `<details>`-zugeklappt-Problematik
-bei Mobil-Live-Regionen), der `.schedbar`-Kontrast-Nebenbefund sowie der offene
-Ausgang des Bring!-Testaufbaus (s. oben) bleiben offen für den/die nächsten
-Zyklen. Die vom Nutzer vorgegebene Warteschlange von zehn direkten Aufträgen ist
-**vollständig abgearbeitet** — für den nächsten regulären Zyklus braucht es wieder
-frisches Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/Layout-
-Überarbeitungen, Bugfixes, oder die oben notierten Nebenbefunde) statt
-eines vorgegebenen Auftrags.
+bei Mobil-Live-Regionen) sowie der `.schedbar`-Kontrast-Nebenbefund bleiben offen
+für einen künftigen Accessibility-Zyklus. Der Bring!-Deeplink-Testaufbau ist
+abschließend geklärt (verworfen, vollständig zurückgebaut, keine offene Frage
+mehr). Für den nächsten Zyklus braucht es wieder frisches Brainstorming in
+Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes, oder die
+oben notierten Nebenbefunde) statt eines vorgegebenen Auftrags.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

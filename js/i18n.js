@@ -875,15 +875,6 @@
   add('hint.partyResult', 'Ungefähre Richtmengen für den Einkauf — keine exakte Rezeptberechnung wie beim Teig.',
     'Approximate guideline amounts for shopping — not an exact recipe calculation like the dough.');
 
-  // -- EXPERIMENTELLER TESTAUFBAU (v3.39.0, js/bring-test.js, kein fertiges Feature) --------
-  // Prüft, ob die Bring!-App eine Zutatenliste per offiziellem Deeplink übernehmen kann.
-  // Falls sich die Idee nicht bestätigt: diese drei Keys zusammen mit js/bring-test.js,
-  // bring-import.html und dem zugehörigen HTML-Block wieder entfernen (s. Kommentar dort).
-  add('btn.bringTest', 'Test: Mit Bring! teilen (experimentell)', 'Test: Share with Bring! (experimental)');
-  add('hint.bringTest', 'Experimenteller technischer Test (kein fertiges Feature) — prüft, ob die Zutatenliste per Bring!-Deeplink übernommen werden kann. Funktioniert nur, wenn die Bring!-App installiert ist.',
-    'Experimental technical test (not a finished feature) — checks whether the ingredient list can be picked up via the Bring! deeplink. Only works if the Bring! app is installed.');
-  add('bring.recipeName', 'Pizza Party – Zutatenliste', 'Pizza Party – Ingredient List');
-
   // -- Quick-Bar (nur Mobil) -----------------------------------------------------------------
   add('quickbar.jumpToResult', 'Zum Ergebnis springen: ', 'Jump to result: ');
   add('quickbar.doughBalls', 'Teiglinge', 'dough balls');
