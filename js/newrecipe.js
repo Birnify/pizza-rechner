@@ -141,6 +141,9 @@
     $('nrBigaHydBlock').classList.toggle('show', m === 'biga');
     $('nrPrefStageBlock').classList.toggle('show', isPref);
     $('nrYeastPills').style.display = isPref ? 'none' : '';
+    // Sichtbare Kopplung (v3.31.0), analog zu applyMethod() in js/ui.js.
+    $('nrYeastField').classList.toggle('coupled', isPref);
+    $('nrYeastCoupledBadge').hidden = !isPref;
     if (isPref) {
       nrRenderPrefStages(m);
       const stages = (PZ.PREF_STAGES && PZ.PREF_STAGES[m]) || [];

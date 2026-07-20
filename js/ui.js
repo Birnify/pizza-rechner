@@ -147,6 +147,12 @@
     // Bei Vorteig steuert die Reife-Stufe die Hefe → generische Hefe-Pills ausblenden
     $('yeastPills').style.display = isPref ? 'none' : '';
     $('yeastHint').innerHTML = isPref ? t('hint.yeast.pref') : t('hint.yeast.normal');
+    // Sichtbare Kopplung (v3.31.0): Hefemenge-Regler wirkt bei aktiver Vorteig-Reife-
+    // Stufe optisch gesperrt (ausgegraut + Schloss-Badge), damit Nutzer ihn nicht für
+    // frei einstellbar halten — die Kopplung selbst (selectPrefStage setzt die Hefe)
+    // ist unverändert, der Regler bleibt technisch bedienbar.
+    $('yeastField').classList.toggle('coupled', isPref);
+    $('yeastCoupledBadge').hidden = !isPref;
     $('methodHint').innerHTML = t('hint.method.' + m);
     $('prefTitle').textContent = m === 'biga' ? t('label.prefTitle.biga') : t('label.prefTitle.poolish');
     $('prefHint').innerHTML = m === 'biga' ? t('hint.pref.biga') : t('hint.pref.poolish');

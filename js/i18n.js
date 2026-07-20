@@ -580,6 +580,7 @@
   add('pill.yeastLong', 'Lang (24h)', 'Long (24h)');
   add('pill.yeastMedium', 'Mittel (8h RT)', 'Medium (8h room temp)');
   add('pill.yeastFast', 'Schnell (4h)', 'Fast (4h)');
+  add('label.yeastCoupled', '🔒 An Reifestufe gekoppelt', '🔒 Locked to maturity stage');
   add('label.coldStage', 'Wie verbringt der Teig die Kühlschrank-Zeit?', 'How does the dough spend its fridge time?');
   add('seg.coldBalls', 'Als Teiglinge (praktisch)', 'As dough balls (convenient)');
   add('seg.coldBulk', 'Im Stück (klassisch)', 'In bulk (classic)');

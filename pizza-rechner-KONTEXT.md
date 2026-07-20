@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-20 · Aktuelle Version: v3.30.2 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-20 · Aktuelle Version: v3.31.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,76 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Textkorrektur Kaltgare-Segment-Titel (v3.30.2) = aktueller Stand
+## Sichtbare Kopplung Vorteig-Reife ↔ Hefemenge (v3.31.0) = aktueller Stand
+
+Feature, vom Nutzer beauftragt: Der Hefemenge-Regler wird bei aktiver Vorteig-Reife-
+Auswahl (Biga/Poolish) optisch als abhängig/gesperrt dargestellt, statt wie ein
+normaler frei einstellbarer Regler auszusehen. Hintergrund: `PZ.selectPrefStage()`
+(`js/ui.js`) setzt die Hefemenge automatisch passend zur gewählten Reifestufe
+(z. B. „24 h · 0,3 %") — das war der Optik nach bisher nicht klar erkennbar, Nutzer
+könnten fälschlich annehmen, der Regler sei unabhängig einstellbar.
+
+- **Neuer Feld-Wrapper mit ID:** `#yeastField` (Desktop + Mobil) sowie
+  `#nrYeastField` im unabhängigen „Neues Rezept anlegen"-Formular (dieselbe
+  Kopplung existiert dort ebenfalls, `js/newrecipe.js`), jeweils um den bereits
+  bestehenden `.field`-Container für die Hefemenge.
+- **Neues Schloss-Badge** `#yeastCoupledBadge` / `#nrYeastCoupledBadge`
+  (`🔒 An Reifestufe gekoppelt` / `🔒 Locked to maturity stage`, neuer i18n-Key
+  `label.yeastCoupled`) im Label, standardmäßig per `hidden`-Attribut unsichtbar.
+- **CSS:** `.field.coupled input[type=range]`/`input[type=number]` werden
+  ausgegraut (reduzierte Opazität, `--muted`-Farbe) — rein visuell, **kein**
+  `disabled`-Attribut und **kein** `aria-disabled` (der Regler bleibt technisch
+  voll bedienbar: `link()` ruft bei jeder Eingabe weiterhin `PZ.calc()` auf, ein
+  Feintuning per Hand ist laut bestehendem Hinweistext `hint.yeast.pref`
+  ausdrücklich möglich — `aria-disabled` hätte Screenreader-Nutzern fälschlich
+  signalisiert, der Regler nehme keine Eingaben an, s. u.).
+- **JS:** `applyMethod()` (`js/ui.js`) und `nrApplyMethod()` (`js/newrecipe.js`)
+  toggeln zusätzlich zum bereits bestehenden Verhalten (Hefe-Pills ausblenden,
+  Hint-Text wechseln) `classList.toggle('coupled', isPref)` auf dem Feld-Wrapper
+  und `hidden = !isPref` auf dem Badge.
+- **Keine Änderung an der Kopplungslogik selbst** — `selectPrefStage()` setzt
+  weiterhin automatisch die Hefemenge, exakt wie zuvor.
+
+**Härten (gezielter `accessibility-expert`-Audit, nur diese Änderung, nicht
+Vollaudit):** per Headless-Edge/CDP mit echtem Accessible-Name/-Description-
+Auslesen verifiziert.
+- Kopplungs-Info ist für Screenreader beim Fokussieren des Reglers bereits
+  korrekt erkennbar: das Badge liegt innerhalb des per `aria-labelledby`
+  referenzierten Labels, der berechnete Accessible Name wechselt automatisch
+  zwischen `"Hefemenge 0.30 %"` (Direkt) und `"Hefemenge 🔒 An Reifestufe
+  gekoppelt 0.30 %"` (Biga/Poolish).
+- **Fix:** `aria-describedby` auf `#yeast`/`#yeastN` ergänzt, damit der bereits
+  vorhandene, sich dynamisch ändernde Hint-Text (`#yeastHint`, wechselt zu
+  „Wird von der Vorteig-Reife oben gesetzt. Feintuning per Regler möglich." bei
+  aktiver Kopplung) auch programmatisch mit dem Regler verknüpft ist und beim
+  Fokussieren vorgelesen wird — wichtig, weil das 🔒-Badge für sich genommen als
+  „komplett gesperrt" missverstanden werden könnte. Desktop: `aria-describedby`
+  neu gesetzt. Mobil: zu vorhandenem `aria-describedby="yeastUnit"` ergänzt
+  (→ `"yeastUnit yeastHint"`).
+- Kontrast `.coupled-badge` (Text `--muted` #6e6359 auf `--bg` #faf6f0, 11px/600
+  = normaler Text): **~5,43:1**, über der WCAG-AA-Schwelle 4,5:1.
+- `hidden`-Attribut robust in allen 4 Kontexten (Desktop-Haupt, Desktop-„Neues
+  Rezept", Mobil-Haupt, Mobil-„Neues Rezept") per Methodenwechsel verifiziert.
+- Badges sind reine `<span>`s ohne `tabindex` — kein Einfluss auf Tab-Reihenfolge
+  oder Fokus-Ring.
+
+**Tests:** reine Markup-/CSS-/Attribut-Ergänzung ohne Auswirkung auf
+Rechenlogik — `tests/test.html` bleibt unverändert bei **558** Prüfungen, alle
+grün (Headless-Edge-Dump). Kein `test-generator`-Lauf nötig (keine
+Logikänderung in `js/calc.js`/`js/schedule.js`/`js/guide.js`). Zusätzlich per
+gezieltem Headless-Edge-Skript interaktiv verifiziert: Kopplungs-Klasse/Badge
+schalten beim Wechsel Direkt→Biga→Direkt→Poolish korrekt um, Badge-Text
+übersetzt sich bei Sprachwechsel korrekt (DE↔EN).
+
+**Geändert:** `pizza-rechner.html`, `pizza-rechner-mobile.html`, `js/ui.js`,
+`js/newrecipe.js`, `css/styles.css`, `js/i18n.js`. `?v=` auf `3.31.0` gezogen
+(Desktop + Mobil, Cache-Busting + `#appVersion`-Fußzeile separat aktualisiert).
+`pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.31.0 - Sichtbare Kopplung Vorteig-Reife-Hefemenge/` enthält den
+vollständigen Schnappschuss.
+
+## Textkorrektur Kaltgare-Segment-Titel (v3.30.2)
 
 Kleiner direkter Text-Fix, vom Nutzer beauftragt (keine Logik-/Strukturänderung).
 Der Titel über dem Kaltgare-Segment („Als Teiglinge (praktisch)" / „Im Stück
@@ -3249,9 +3318,9 @@ Keine Code-Änderung durch den Audit nötig.
 - ~~Textkorrektur Kaltgare-Segment-Titel~~ — **erledigt in v3.30.2** (kein
   Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt „Textkorrektur
   Kaltgare-Segment-Titel (v3.30.2)" oben).
-- Sichtbare Kopplung Vorteig-Reife ↔ Hefemenge (Hefemenge-Regler bei aktiver
-  Biga/Poolish-Reifestufe optisch als abhängig/gesperrt darstellen) — vom Nutzer
-  beauftragt, als eigener Zyklus in Bearbeitung/geplant.
+- ~~Sichtbare Kopplung Vorteig-Reife ↔ Hefemenge~~ — **erledigt in v3.31.0** (kein
+  Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt „Sichtbare Kopplung
+  Vorteig-Reife ↔ Hefemenge (v3.31.0)" oben).
 - Bugfix: inkonsistente Dezimaltrennzeichen zwischen der roten Regler-Wertanzeige
   (`js/ui.js`/`js/newrecipe.js`, `.toFixed()`, immer Punkt) und der nativen
   `<input type="number">`-Anzeige (Browser rendert je nach OS-Locale mit Komma) —
@@ -3269,12 +3338,18 @@ Keine Code-Änderung durch den Audit nötig.
   Rechner/Rezepte/Zeitplan und „Pizza Party" getrennt von „Einstellungen", nutzt
   `.nav-divider`) — vom Nutzer beauftragt, als eigener Zyklus in
   Bearbeitung/geplant.
+- Pizza-Glossar (neuer Menü-Bereich mit ~24 zweisprachigen Lexikon-Artikeln zu
+  Pizza-Hintergrundwissen, z. B. W-Wert, Pizzaofen vs. Backofen, echte
+  neapolitanische Pizza, San-Marzano-Tomaten) — vom Nutzer beauftragt, deutlich
+  größerer Zyklus als die übrigen, ggf. in Unterschritte (Struktur/Anzeige-
+  Mechanik zuerst, dann Content-Batches) aufzuteilen; als eigener Zyklus
+  geplant.
 
-**Stand v3.30.2: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.31.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben); die drei oben notierten Nebenbefunde
 (`#shareLiveMsg`/`#nrLiveMsg`-Live-Region-Fehlen, `<details>`-zugeklappt-Problematik
 bei Mobil-Live-Regionen) bleiben offen für einen künftigen Accessibility-Zyklus.
-Aktuell läuft eine vom Nutzer vorgegebene Warteschlange von acht direkten Aufträgen
+Aktuell läuft eine vom Nutzer vorgegebene Warteschlange von neun direkten Aufträgen
 (s. Punkte oben, jeweils „in Bearbeitung/geplant") — für diese Punkte entfällt das
 sonst übliche Phase-1-Brainstorming, da bereits vollständig definiert und vom Nutzer
 freigegeben.

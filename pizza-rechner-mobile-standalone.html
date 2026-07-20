@@ -166,6 +166,19 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .field label{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;column-gap:8px;font-size:14px;font-weight:600;margin-bottom:6px;}
 .field label .val{color:var(--tomato);font-variant-numeric:tabular-nums;font-size:15px;font-family:var(--font-head);flex-shrink:0;}
 .field .hint{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.35;overflow-wrap:break-word;}
+/* Sichtbare Kopplung Vorteig-Reife <-> Hefemenge (v3.31.0): wenn eine Biga/Poolish-
+   Reifestufe aktiv ist, legt die Stufe die Hefemenge automatisch fest. Der Regler
+   bleibt technisch bedienbar (rein visuelle Kennzeichnung, keine Interaktions-
+   sperre), wirkt aber ausgegraut/deaktiviert, damit Nutzer ihn nicht für frei
+   einstellbar halten (js/ui.js applyMethod(), js/newrecipe.js nrApplyMethod()). */
+.coupled-badge{
+  font-size:11px;font-weight:600;color:var(--muted);background:var(--bg);
+  border:1px solid var(--line);border-radius:var(--radius-chip);padding:2px 8px;
+}
+.field.coupled input[type=range]{opacity:.5;}
+.field.coupled input[type=range]::-webkit-slider-thumb{background:var(--muted);}
+.field.coupled input[type=range]::-moz-range-thumb{background:var(--muted);}
+.field.coupled input[type=number]{opacity:.6;background:var(--bg);color:var(--muted);}
 /* Feature-Flag "hints" (js/settings.js, v3.17.0): EIN globaler Schalter blendet alle
    erklärenden Kurztexte aus, statt jedes einzelne Element separat zu verdrahten. Die
    Elemente (inkl. IDs wie #shareHint, timersys-hint-<key>) bleiben im DOM — nur
@@ -751,11 +764,11 @@ footer{text-align:right;}
           </div>
         </div>
 
-        <div class="field">
-          <label id="yeastLabel" data-i18n="label.yeast">Hefemenge</label>
+        <div class="field" id="yeastField">
+          <label id="yeastLabel"><span data-i18n="label.yeast">Hefemenge</span> <span class="coupled-badge" id="yeastCoupledBadge" data-i18n="label.yeastCoupled" hidden>🔒 An Reifestufe gekoppelt</span></label>
           <div class="row">
-            <input type="range" id="yeast" min="0.05" max="3" step="0.05" value="0.30" aria-labelledby="yeastLabel" aria-describedby="yeastUnit">
-            <input type="number" id="yeastN" min="0.01" max="5" step="0.01" value="0.30" aria-labelledby="yeastLabel" aria-describedby="yeastUnit">
+            <input type="range" id="yeast" min="0.05" max="3" step="0.05" value="0.30" aria-labelledby="yeastLabel" aria-describedby="yeastUnit yeastHint">
+            <input type="number" id="yeastN" min="0.01" max="5" step="0.01" value="0.30" aria-labelledby="yeastLabel" aria-describedby="yeastUnit yeastHint">
             <span class="unit" id="yeastUnit">%</span>
           </div>
           <div class="hint" id="yeastHint" data-i18n="hint.yeast.normal">Prozent bezogen auf Frischhefe. Lange/warme Gare = weniger.</div>
@@ -1047,8 +1060,8 @@ footer{text-align:right;}
           </div>
         </div>
 
-        <div class="field" style="margin-bottom:0;">
-          <label id="nrYeastLabel" data-i18n="label.yeast">Hefemenge</label>
+        <div class="field" id="nrYeastField" style="margin-bottom:0;">
+          <label id="nrYeastLabel"><span data-i18n="label.yeast">Hefemenge</span> <span class="coupled-badge" id="nrYeastCoupledBadge" data-i18n="label.yeastCoupled" hidden>🔒 An Reifestufe gekoppelt</span></label>
           <div class="row">
             <input type="range" id="nrYeast" min="0.05" max="3" step="0.05" value="0.30" aria-labelledby="nrYeastLabel" aria-describedby="nrYeastUnit">
             <input type="number" id="nrYeastN" min="0.01" max="5" step="0.01" value="0.30" aria-labelledby="nrYeastLabel" aria-describedby="nrYeastUnit">
@@ -1297,7 +1310,7 @@ footer{text-align:right;}
 </div>
 
 <footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));">
-  <span id="appVersion" style="opacity:.7;">v3.30.2</span>
+  <span id="appVersion" style="opacity:.7;">v3.31.0</span>
 </footer>
 
 <div class="quickbar">
@@ -1922,6 +1935,7 @@ footer{text-align:right;}
   add('pill.yeastLong', 'Lang (24h)', 'Long (24h)');
   add('pill.yeastMedium', 'Mittel (8h RT)', 'Medium (8h room temp)');
   add('pill.yeastFast', 'Schnell (4h)', 'Fast (4h)');
+  add('label.yeastCoupled', '🔒 An Reifestufe gekoppelt', '🔒 Locked to maturity stage');
   add('label.coldStage', 'Wie verbringt der Teig die Kühlschrank-Zeit?', 'How does the dough spend its fridge time?');
   add('seg.coldBalls', 'Als Teiglinge (praktisch)', 'As dough balls (convenient)');
   add('seg.coldBulk', 'Im Stück (klassisch)', 'In bulk (classic)');
@@ -3468,6 +3482,12 @@ footer{text-align:right;}
     // Bei Vorteig steuert die Reife-Stufe die Hefe → generische Hefe-Pills ausblenden
     $('yeastPills').style.display = isPref ? 'none' : '';
     $('yeastHint').innerHTML = isPref ? t('hint.yeast.pref') : t('hint.yeast.normal');
+    // Sichtbare Kopplung (v3.31.0): Hefemenge-Regler wirkt bei aktiver Vorteig-Reife-
+    // Stufe optisch gesperrt (ausgegraut + Schloss-Badge), damit Nutzer ihn nicht für
+    // frei einstellbar halten — die Kopplung selbst (selectPrefStage setzt die Hefe)
+    // ist unverändert, der Regler bleibt technisch bedienbar.
+    $('yeastField').classList.toggle('coupled', isPref);
+    $('yeastCoupledBadge').hidden = !isPref;
     $('methodHint').innerHTML = t('hint.method.' + m);
     $('prefTitle').textContent = m === 'biga' ? t('label.prefTitle.biga') : t('label.prefTitle.poolish');
     $('prefHint').innerHTML = m === 'biga' ? t('hint.pref.biga') : t('hint.pref.poolish');
@@ -4521,6 +4541,9 @@ footer{text-align:right;}
     $('nrBigaHydBlock').classList.toggle('show', m === 'biga');
     $('nrPrefStageBlock').classList.toggle('show', isPref);
     $('nrYeastPills').style.display = isPref ? 'none' : '';
+    // Sichtbare Kopplung (v3.31.0), analog zu applyMethod() in js/ui.js.
+    $('nrYeastField').classList.toggle('coupled', isPref);
+    $('nrYeastCoupledBadge').hidden = !isPref;
     if (isPref) {
       nrRenderPrefStages(m);
       const stages = (PZ.PREF_STAGES && PZ.PREF_STAGES[m]) || [];
