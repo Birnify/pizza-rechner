@@ -90,9 +90,13 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .header-bar h1{grid-column:2;justify-self:center;text-align:center;}
 .nav-toggle{
   width:44px;height:44px;border:1px solid rgba(255,255,255,.8);border-radius:50%;
-  background:rgba(255,255,255,.16);color:#fff;font-size:20px;line-height:1;cursor:pointer;
+  background:rgba(255,255,255,.16);color:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
   backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
 }
+/* v3.45.0: SVG-Balken statt Unicode-Glyph "☰" -- Zentrierung/Größe waren fontabhängig,
+   jetzt per Flex + fixer SVG-Größe garantiert (analog .card-icon svg). */
+.nav-toggle svg{width:22px;height:22px;display:block;}
 .header-bar .nav-toggle{grid-column:3;justify-self:end;}
 .nav-toggle:hover,.nav-toggle:active{background:rgba(255,255,255,.3);}
 /* Eigener sichtbarer Fokus-Ring (v3.42.0, WCAG 2.4.7) für die seit v3.41.0 kreisrunden
@@ -245,7 +249,7 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
   background:var(--tomato);color:#fff;
   display:flex;align-items:center;justify-content:center;
 }
-.card-icon svg{width:18px;height:18px;display:block;}
+.card-icon svg{width:20px;height:20px;display:block;}
 .result .card-icon{background:var(--basil);color:#fff;}
 .selectbox{
   width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:var(--radius);

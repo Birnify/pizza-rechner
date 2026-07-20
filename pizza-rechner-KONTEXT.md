@@ -171,7 +171,96 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Echtes Header-Foto eingebunden (v3.44.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Icon-Zentrierung & -Größe Korrektur (v3.45.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Direkter Nutzerauftrag per `/define-feature` (kein Backlog-Punkt — Stand v3.44.0 war
+das Backlog leer). Auslöser: einige `.card-icon`-Badges wirkten optisch nicht exakt
+mittig, ebenso die Streifen im Hamburger-Menü-Icon; beides sollte gegenüber dem
+sonst aufgeräumten v3.41.0-Redesign nachgeschärft werden. **Reine Icon-/Markup-
+Korrektur, keine Änderung an Berechnungslogik, Badge-Farbe oder Badge-Gesamtgröße.**
+
+**Vorgehen (wichtig, da der mitgelieferte Diagnose-Hinweis explizit zur Verifikation
+aufforderte statt blind zu vertrauen):** Vor jedem Fix per Headless-Edge-Screenshot +
+Python/Pillow-Pixelmessung (Farbmasken für Kreis-Hintergrund vs. weiße Icon-Pixel,
+Bounding-Box-Mittelpunkt-Vergleich) objektiv nachgemessen, statt nur visuell zu
+schätzen — bestätigte, dass die `.card-icon`-Flex-Zentrierung selbst (`display:flex;
+align-items:center;justify-content:center`) bereits seit v3.41.0 korrekt arbeitet;
+das eigentliche Problem lag bei zwei der 13 handgezeichneten SVG-Icons, deren
+Pfad-Koordinaten innerhalb ihres eigenen `viewBox="0 0 24 24"` nicht symmetrisch zum
+Mittelpunkt (12,12) lagen (Bounding-Box des Pfads war nicht zentriert — analog einem
+Icon-Font-Rendering-Fehler, nur hier in den eigenen Pfaddaten). Alle anderen 11 Icons
+maßen sich als bereits sauber zentriert (Abweichung ≤0,5px bei 34px-Badge-Durchmesser,
+Rendering-Rauschen).
+
+**1. Zwei SVG-Pfade neu zentriert (per Pixelmessung verifiziert vorher/nachher):**
+- **Thermometer** (Karte „Teigtemperatur & Eiswasser"): Pfad lag 2 Einheiten zu weit
+  links im viewBox (gemessene Abweichung vorher: −1,5px bei 34px-Badge). Fix:
+  `M12 14.5V5a2 2 0 1 0-4 0v9.5a4 4 0 1 0 4 0Z` + `M10 8h1.5` →
+  `M14 14.5V5a2 2 0 1 0-4 0v9.5a4 4 0 1 0 4 0Z` + `M12 8h1.5` (Verschiebung +2 in x,
+  Pfadform unverändert, nur Position). Nachher: 0px Abweichung.
+- **Waage/Schloss-Symbol** (Ergebnis-Panel „Rezept"): Pfad lag 2,5 Einheiten zu weit
+  unten (gemessene Abweichung vorher: +1,9px). Fix: `rect x="4" y="14" width="16"
+  height="7" rx="2"` + `M8 14v-2a4 4 0 0 1 8 0v2` + `M10.5 17.5h3` → `rect x="4"
+  y="11.5" ...` + `M8 11.5v-2a4 4 0 0 1 8 0v2` + `M10.5 15h3` (Verschiebung −2,5 in y).
+  Nachher: 0px Abweichung.
+- In beiden Dateien (`pizza-rechner.html`, `pizza-rechner-mobile.html`) identisch
+  angewendet — beide hatten exakt denselben SVG-Markup-String (verifiziert vor dem
+  Edit), keine Divergenz zwischen Desktop/Mobil entstanden.
+
+**2. Icon-Größe innerhalb der Badges erhöht** (`css/styles.css`, `.card-icon
+svg{width:18px;height:18px}` → `width:20px;height:20px`) — Badge selbst bleibt bei
+34px (unverändert aus v3.41.0/v3.43.0), Innenabstand sinkt von 8px auf 7px pro Seite,
+per Zoom-Screenshot gegengeprüft: keine Überlappung mit dem Kreisrand. Gilt für alle
+13 Karten-Badges auf Desktop UND Mobil (gemeinsame `css/styles.css`, kein
+`mobile.css`-Override vorhanden). Inline-`width="18" height="18"`-Attribute an allen
+13 `<svg>`-Tags in beiden HTML-Dateien ebenfalls auf `20`/`20` nachgezogen (rein
+kosmetisch/korrektheitshalber — CSS überschreibt Präsentationsattribute ohnehin,
+per Grep bestätigt: nichts im Projekt hing vom alten `width="18"`-Wert ab).
+
+**3. Hamburger-Menü-Icon (`.nav-toggle`) von Unicode-Glyph auf Inline-SVG umgestellt
+— größte inhaltliche Änderung dieses Zyklus:** Bisher `<span aria-hidden="true">☰</span>`
+(Unicode-Zeichen U+2630), dessen Zentrierung/Größe von Systemschriftart-Metriken
+abhing (auf diesem System per Pixelmessung zwar aktuell zufällig exakt zentriert,
+aber fontabhängig fragil — kein belastbares Zentrierungsverhalten über
+Browser/OS-Kombinationen hinweg). Fix: explizites Drei-Balken-SVG, symmetrisch per
+Konstruktion (x 4–20 um Mittelachse x=12, y-Linien bei 6/12/18 um Mittelachse y=12):
+`<svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none"
+stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6"
+x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20"
+y2="18"/></svg>` ersetzt den `<span>` 1:1 in `#navToggle` (beide HTML-Dateien,
+`aria-expanded`/`aria-controls`/`aria-label`-Attribute des Buttons selbst
+unangetastet). CSS: `.nav-toggle` (eigene Basisregel in `css/styles.css` UND
+`css/mobile.css`, Desktop/Mobil je eigenständig) bekam `display:flex;
+align-items:center;justify-content:center;`, `font-size:20px;line-height:1;` entfernt
+(waren nur für die alte Text-Glyphe nötig), neue Regel `.nav-toggle svg{width:22px;
+height:22px;display:block;}`. Button-Box selbst unverändert 44×44px (Touch-Ziel),
+`.nav-toggle:focus-visible`-Fokusring aus v3.42.0 unangetastet und weiterhin korrekt
+wirksam (kein `overflow:hidden`, das den Ring clippen würde).
+
+**Härten (gezielter `accessibility-expert`-Audit, synchron):** Fünf Prüfpunkte
+gegengecheckt, keine Blocker/Major/Minor-Funde: Accessible Name von `#navToggle`
+unverändert (SVG `aria-hidden`, Name kommt weiterhin nur aus `aria-label`), Kontrast
+der SVG-Linien identisch zur alten Glyphe (`stroke="currentColor"` erbt `color:#fff`,
+~6,6:1 auf dem Header-Hintergrund, bereits in v3.17.1 gegengerechnet), Touch-Ziel
+44×44px unverändert, Fokus-Ring clippt nicht, `.card-icon`-Innenabstand nach der
+Größenerhöhung weiterhin ausreichend. Keine Fixes nötig, Desktop/Mobil blieben
+deckungsgleich.
+
+**Tests:** `tests/test.html` unverändert bei **577 Prüfungen**, alle grün
+(Headless-Edge-Dump, vor und nach den Fixes sowie nach dem Accessibility-Audit
+verifiziert) — reine CSS-/SVG-Pfad-/Markup-Änderung ohne Bezug zu per String-Matching
+geprüften Texten, `js/calc.js`/`js/schedule.js`/`js/guide.js` unangetastet, kein
+`test-generator`-Lauf nötig.
+
+**Geändert:** `css/styles.css`, `css/mobile.css`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`. `?v=` auf `3.45.0` gezogen (Desktop + Mobil, alle
+`<link>`/`<script>`-Tags + `#appVersion`-Fußzeile).
+`pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`).
+`Versionen/v3.45.0 - Icon-Zentrierung und -Groesse Korrektur/` enthält den
+vollständigen Schnappschuss.
+
+## Echtes Header-Foto eingebunden (v3.44.0)
 
 Kleiner, klar umrissener Auftrag (kein `/define-feature`, kein Brainstorming) —
 der in v3.41.0 vorbereitete `--header-photo`-Slot bekommt sein erstes echtes Bild.
@@ -4496,11 +4585,20 @@ Keine Code-Änderung durch den Audit nötig.
   `build-mobile-standalone.py`) — beide für künftige `url(...)`-Referenzen in
   `css/*.css` relevant, nicht nur für dieses eine Bild.
 
-**Stand v3.44.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
-oben), inklusive des vorherigen offenen Punkts „echtes Header-Foto". Der
-Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen, vollständig
-zurückgebaut, keine offene Frage mehr). Keine Warteschlange mehr offen — für den
-nächsten Zyklus braucht es wieder frisches Brainstorming in Phase 1 (neue
+- ~~Icon-Zentrierung & -Größe Korrektur (Card-Icons + Burgermenü)~~ — **erledigt
+  in v3.45.0** (kein Backlog-Punkt, direkter Nutzerauftrag per `/define-feature`;
+  s. Abschnitt „Icon-Zentrierung & -Größe Korrektur (v3.45.0)" oben). Nebenbefund
+  aus der Verifikation: von den 13 Karten-Icons waren 11 bereits exakt zentriert
+  (die `.card-icon`-Flex-Zentrierung selbst funktionierte seit v3.41.0 korrekt) —
+  nur 2 Icon-Pfade (Thermometer, Waage-Symbol) hatten eine echte, messbare
+  Asymmetrie im eigenen viewBox. Falls künftig neue Line-Icons ergänzt werden:
+  Pfad-Symmetrie zum viewBox-Mittelpunkt (12,12) direkt beim Entwurf prüfen, statt
+  erst nachträglich per Pixelmessung zu korrigieren.
+
+**Stand v3.45.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen,
+vollständig zurückgebaut, keine offene Frage mehr). Keine Warteschlange mehr offen —
+für den nächsten Zyklus braucht es wieder frisches Brainstorming in Phase 1 (neue
 Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes) statt eines vorgegebenen
 Auftrags.
 
