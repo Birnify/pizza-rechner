@@ -4,8 +4,6 @@
   const PZ = global.PZ || (global.PZ = {});
   const $ = PZ.$;
 
-  function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
-
   // minH = mind. Gärzeit (h), damit das starke Gluten relaxt; maxH = max. bevor die Struktur abbaut
   // durKey = Wörterbuch-Key für den Anzeige-Text im Dropdown (js/i18n.js, "flour.dur.*")
   // minH = Reifezeit, unter der DIESES (starke) Mehl springig/untergar bleibt (0 = keine).
@@ -37,28 +35,10 @@
     return PZ.FLOURS[PZ.state.flour] || PZ.FLOURS['caputo_pizzeria'];
   };
 
-  // Dropdown aus der Datenbank befüllen (eine Quelle, keine Duplikation im HTML)
-  function renderFlourOptions() {
-    const sel = $('flour');
-    if (!sel) return;
-    const prevValue = sel.value || PZ.state.flour;
-    sel.innerHTML = '';
-    const groups = {};
-    Object.keys(PZ.FLOURS).forEach(key => {
-      const f = PZ.FLOURS[key];
-      if (!groups[f.group]) {
-        const og = document.createElement('optgroup');
-        og.label = f.group;
-        sel.appendChild(og);
-        groups[f.group] = og;
-      }
-      const o = document.createElement('option');
-      o.value = key;
-      o.textContent = f.name + ' · W' + f.w + ' · ' + t(f.durKey);
-      groups[f.group].appendChild(o);
-    });
-    sel.value = prevValue;
-  }
+  // Dropdown aus der Datenbank befüllen (eine Quelle, keine Duplikation im HTML).
+  // Seit v3.56.0: gemeinsame Fabrik PZ.fillFlourSelect() (js/widgets.js) statt eigener
+  // Implementierung — js/newrecipe.js nutzt dieselbe Fabrik für sein eigenes #nrFlour.
+  const renderFlourOptions = PZ.fillFlourSelect({ selectId: 'flour', stateObj: PZ.state });
   renderFlourOptions();
   const sel = $('flour');
   if (sel) {

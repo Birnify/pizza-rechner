@@ -13,59 +13,11 @@
   // ändert keine Berechnungslogik. Ein Wörterbuch-KEY statt eines fertigen Strings,
   // damit ein späterer Sprachwechsel den bereits gesetzten aria-valuetext auf den
   // vorhandenen Slidern aktualisieren kann (s. refreshUnits() weiter unten).
+  // Seit v3.56.0: gemeinsame Fabrik PZ.makeLink() (js/widgets.js) statt eigener
+  // Implementierung — clamp:true behält das bestehende Zahlenfeld-Clamping (v3.51.0)
+  // bei, onSet:PZ.calc löst wie bisher die Neuberechnung nach jedem Setzen aus.
   const unitLinks = []; // { slider, unitKey } — für refreshUnits() bei Sprachwechsel
-  function link(slider, number, key, decimals, unitKey) {
-    const s = $(slider), n = $(number), v = $(key + 'V');
-    // Deutsches Komma statt Punkt (v3.32.0-Bugfix): das native <input type="number">
-    // darunter rendert je nach OS-Locale mit Komma (z. B. deutsches Windows), während
-    // `toFixed()` immer einen Punkt liefert — derselbe Wert sah dadurch wie zwei
-    // unterschiedliche Zahlen aus. Fix: die rote Wertanzeige wird unabhängig von der
-    // OS-Locale fest auf Komma normiert (passend zur durchgehend deutschsprachigen
-    // App, analog zum bereits bestehenden Komma-Format der Pizza-Party-Zutatenliste,
-    // s. fmtAmount() in js/party.js). `state[key]` bleibt intern immer ein normaler
-    // JS-Fließkommawert (Punkt) — nur die Anzeige wird umformatiert, nichts wird aus
-    // dem angezeigten Text zurückgeparst.
-    function fmt(val) { return decimals != null ? val.toFixed(decimals).replace('.', ',') : val; }
-    // Clamping (Fable-Review-Fund "B8"): HTML-`min`/`max`-Attribute verhindern nur das
-    // Ziehen des Sliders, nicht das Eintippen eines Werts im Zahlenfeld (z. B. `balls = 0`
-    // oder `hyd = 300`) — `n`/`s` unterschiedliche, bewusst gestaffelte Grenzen haben
-    // (Zahlenfeld typischerweise weiter gefasst als der Slider, s. HTML), daher wird hier
-    // gegen die Grenzen des jeweils AUSLÖSENDEN Elements geklemmt: Slider-Input klemmt
-    // gegen `s.min`/`s.max` (rein defensiv, der Browser klemmt Range-Inputs ohnehin schon
-    // selbst), Zahlenfeld-Input und programmatische Aufrufe (Presets/Laden/Teilen-Link)
-    // klemmen gegen `n.min`/`n.max` — die weiteren, für Eingaben vorgesehenen Grenzen.
-    function clampTo(el, val) {
-      if (!el) return val;
-      const lo = el.min !== '' ? parseFloat(el.min) : NaN;
-      const hi = el.max !== '' ? parseFloat(el.max) : NaN;
-      if (!isNaN(lo) && val < lo) val = lo;
-      if (!isNaN(hi) && val > hi) val = hi;
-      return val;
-    }
-    function set(val, from) {
-      val = parseFloat(val);
-      if (isNaN(val)) return;
-      const raw = val;
-      val = clampTo(from === 's' ? s : n, val);
-      const wasClamped = val !== raw;
-      state[key] = val;
-      // Normalerweise wird das AUSLÖSENDE Element nicht zurückgeschrieben (vermeidet
-      // Cursor-Sprünge/Störungen beim Tippen) — wurde der Wert aber geklemmt, muss auch
-      // das auslösende Element den tatsächlich übernommenen (geklemmten) Wert zeigen,
-      // sonst widerspricht die Anzeige dem internen Zustand (z. B. Zahlenfeld zeigt "500"
-      // weiter an, obwohl `state.balls` bereits auf 50 geklemmt wurde).
-      if (from !== 's' || wasClamped) s.value = val;
-      if (from !== 'n' || wasClamped) n.value = val;
-      const disp = fmt(val);
-      if (v) v.textContent = disp;
-      if (unitKey) s.setAttribute('aria-valuetext', disp + ' ' + t(unitKey));
-      PZ.calc();
-    }
-    if (unitKey) { s.setAttribute('aria-valuetext', fmt(parseFloat(s.value)) + ' ' + t(unitKey)); unitLinks.push({ slider: s, unitKey: unitKey, fmt: fmt }); }
-    s.addEventListener('input', () => set(s.value, 's'));
-    n.addEventListener('input', () => set(n.value, 'n'));
-    return set;
-  }
+  const link = PZ.makeLink({ stateObj: state, onSet: PZ.calc, clamp: true, unitLinks: unitLinks });
 
   // Setter-Sammlung (von presets.js und storage.js genutzt)
   PZ.set = {
@@ -110,56 +62,25 @@
       { key: 'p24', label: '24 h · 0,18 %', mature: 24, yeast: 0.18 }
     ]
   };
-  const PREF_DEFAULT = { biga: 'b24', poolish: 'p14' };
-
-  function renderPrefStages(m) {
-    const wrap = $('prefStage');
-    const stages = PZ.PREF_STAGES[m] || [];
-    wrap.innerHTML = '';
-    stages.forEach(s => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.dataset.ps = s.key;
-      b.setAttribute('aria-pressed', 'false');
-      b.textContent = s.label;
-      b.onclick = () => { const p = $('preset'); if (p) p.value = ''; selectPrefStage(m, s.key); };
-      wrap.appendChild(b);
-    });
-  }
-  function highlightPrefStage(key) {
-    const wrap = $('prefStage');
-    let matured = '';
-    wrap.querySelectorAll('button').forEach(b => {
-      const on = b.dataset.ps === key;
-      b.classList.toggle('active', on);
-      b.setAttribute('aria-pressed', String(on));
-      if (on) matured = b.textContent.split(' ·')[0];
-    });
-    if (matured) $('prefStageVal').textContent = matured;
-  }
-  function selectPrefStage(m, key) {
-    const stages = PZ.PREF_STAGES[m] || [];
-    const s = stages.find(x => x.key === key) || stages[0];
-    if (!s) return;
-    state.prefStage = s.key;
-    state.prefMature = s.mature;
-    highlightPrefStage(s.key);
-    PZ.set.yeast(s.yeast);   // setzt Hefe + löst calc() aus
-  }
+  // Seit v3.56.0: gemeinsame Fabrik PZ.makePrefStages() (js/widgets.js) statt eigener
+  // render/highlight/select-Implementierung. onSelectClick setzt bei Nutzer-Klick auf
+  // eine Pill #preset auf "Eigene" zurück (unverändert wie bisher) — der
+  // programmatische Aufruf aus applyMethod()/presets.js unten tut das NICHT.
+  const prefStages = PZ.makePrefStages({
+    stateObj: state,
+    wrapId: 'prefStage',
+    valId: 'prefStageVal',
+    setYeast: function (y) { PZ.set.yeast(y); }, // setzt Hefe + löst calc() aus
+    onSelectClick: function () { const p = $('preset'); if (p) p.value = ''; }
+  });
+  function renderPrefStages(m) { prefStages.render(m); }
+  function selectPrefStage(m, key) { prefStages.select(m, key); }
   PZ.selectPrefStage = selectPrefStage;
 
   // --- Segment-Buttons ---
-  function seg(containerId, attr, key, after) {
-    const c = $(containerId);
-    c.querySelectorAll('button').forEach(b => b.onclick = () => {
-      c.querySelectorAll('button').forEach(x => { x.classList.remove('active'); x.setAttribute('aria-pressed', 'false'); });
-      b.classList.add('active');
-      b.setAttribute('aria-pressed', 'true');
-      state[key] = b.dataset[attr];
-      if (after) after();
-      PZ.calc();
-    });
-  }
+  // Seit v3.56.0: gemeinsame Fabrik PZ.makeSeg() (js/widgets.js) statt eigener
+  // Implementierung — onSet:PZ.calc löst wie bisher die Neuberechnung aus.
+  const seg = PZ.makeSeg({ stateObj: state, onSet: PZ.calc });
   function selectSeg(cid, attr, val) {
     const c = $(cid);
     c.querySelectorAll('button').forEach(b => {
@@ -192,9 +113,7 @@
     // Reife-Stufen für die gewählte Methode rendern und eine gültige Stufe aktivieren
     if (isPref) {
       renderPrefStages(m);
-      const stages = PZ.PREF_STAGES[m];
-      const valid = stages.some(s => s.key === state.prefStage);
-      selectPrefStage(m, valid ? state.prefStage : PREF_DEFAULT[m]);
+      prefStages.selectValidOrDefault(m);
     }
   }
 

@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-21 · Aktuelle Version: v3.55.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-21 · Aktuelle Version: v3.56.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,83 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## i18n-Datei aufgeteilt (v3.55.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Gemeinsame Widget-Fabrik für ui.js/newrecipe.js (v3.56.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Per `/define-feature` bestätigt — zweites von fünf Struktur-Refactorings aus demselben
+Fable-Architektur-Review, in fester Reihenfolge: 1) i18n-Split (v3.55.0, erledigt),
+2) Widget-Fabrik (dieser Abschnitt), 3) Rechenkern/Renderer-Trennung calc.js, 4)
+`PZ.announce()`-Helfer, 5) `PZ.looksLikeState()` — noch offen, folgen als eigene
+Zyklen. Reines Wartbarkeits-Refactoring **ohne beabsichtigte Verhaltensänderung**.
+
+**Motivation:** `js/ui.js` (Hauptrechner) und `js/newrecipe.js` (Mini-Formular „Neues
+Rezept anlegen") hatten ~150 Zeilen fast identisch dupliziert: Slider<->Zahlenfeld
+(`link()`/`nrLink()`), Segment-Buttons (`seg()`/`nrSeg()`), Vorteig-Reife-Stufen
+(`renderPrefStages()`+Geschwister/`nrRenderPrefStages()`+Geschwister), Mehl-Dropdown
+(`js/flour.js` `renderFlourOptions()`/`newrecipe.js` `populateNrFlour()`), plus ein
+exakt dupliziertes `PREF_DEFAULT`-Objekt. Echtes Divergenzrisiko: der Komma-Format-Fix
+(v3.32.0) musste damals zweimal gemacht werden — und das Zahlenfeld-Clamping (v3.51.0,
+Fable-Review-Fund „B8") wurde seither nur in `js/ui.js` nachgezogen, `js/newrecipe.js`
+hatte es nie (s. „Bewusst NICHT vereinheitlicht" unten).
+
+**Neues Modul `js/widgets.js`** liefert vier Fabrik-Funktionen, die je eine Konfiguration
+entgegennehmen und eine fertige, aufrufbare Funktion zurückgeben:
+- `PZ.makeLink(cfg)` — ersetzt `link()`/`nrLink()`. `cfg.stateObj` (welches Objekt
+  beschrieben wird), `cfg.onSet` (optionaler Callback wie `PZ.calc`), `cfg.clamp`
+  (true/false — s. u.), `cfg.unitLinks` (Array für Sprachwechsel-Auffrischung).
+- `PZ.makeSeg(cfg)` — ersetzt `seg()`/`nrSeg()`. `cfg.stateObj`, `cfg.onSet`.
+- `PZ.makePrefStages(cfg)` — ersetzt `renderPrefStages()`/`highlightPrefStage()`/
+  `selectPrefStage()` (+ `nr*`-Geschwister). Gibt `{render, highlight, select,
+  selectValidOrDefault}` zurück — Letzteres bündelt das bisher in
+  `applyMethod()`/`nrApplyMethod()` duplizierte „aktuelle Stufe gültig? behalten :
+  auf `PREF_DEFAULT[m]` zurückfallen"-Muster. `PREF_DEFAULT` lebt jetzt nur noch
+  einmal, modul-intern in `js/widgets.js` (vorher exakt dupliziertes Objekt in
+  beiden Dateien).
+- `PZ.fillFlourSelect(cfg)` — ersetzt `renderFlourOptions()`/`populateNrFlour()`.
+  `cfg.selectId`, `cfg.stateObj` (nur für den Vorauswahl-Fallback — das eigentliche
+  Schreiben von `stateObj.flour` beim `change`-Event bleibt bewusst AUSSERHALB der
+  Fabrik, da nur `js/flour.js` danach `PZ.calc()` auslöst, `js/newrecipe.js` nicht).
+
+**`js/ui.js`, `js/flour.js`, `js/newrecipe.js`** rufen diese vier Fabriken jetzt nur
+noch als dünne Konfigurationsaufrufe auf (s. jeweilige Datei) — die eigentliche Logik
+steht genau einmal in `js/widgets.js`.
+
+**Bewusst NICHT vereinheitlicht (echte, bestehende Verhaltens-Asymmetrie erhalten, wie
+vom Auftrag verlangt: „keine Verhaltensänderung der Formulare selbst"):** `js/ui.js`
+ruft `PZ.makeLink({..., clamp: true})` auf (Zahlenfeld-Clamping seit v3.51.0),
+`js/newrecipe.js` ruft `PZ.makeLink({..., clamp: false})` auf (hatte das Clamping nie).
+Beide Verhaltensweisen bleiben nach der Konsolidierung exakt so bestehen wie vorher —
+kein stillschweigendes Nachziehen des Clampings in `js/newrecipe.js` in diesem Zug.
+**Neuer Nebenbefund fürs Backlog:** dieselbe Drift-Gefahr, die dieses Refactoring
+eigentlich beheben sollte, ist hier in der Zwischenzeit schon einmal aufgetreten
+(B8-Clamping-Fix nur einseitig nachgezogen) — ob `js/newrecipe.js`s Zahlenfelder
+künftig ebenfalls klemmen sollen, ist eine eigene Produktentscheidung (kein reines
+Refactoring mehr) und braucht eine explizite Bestätigung in einem künftigen Zyklus.
+
+**Härten:** keine neue UI/kein neues Markup (reine Verhaltens-identische
+Fabrik-Extraktion) — kein `accessibility-expert`-Durchlauf nötig.
+
+**Tests:** `tests/test.html` unverändert bei **614 Prüfungen**, alle grün (weder
+`js/ui.js`, `js/newrecipe.js` noch `js/widgets.js` selbst werden dort geladen/getestet
+— reine Regressionsanker-Funktion der bestehenden Suite, wie vom Auftrag gefordert).
+Zusätzlich mit einem isolierten, temporären Headless-Edge-Verhaltenstest verifiziert
+(13 Prüfungen je Seite, nie committet): `link()`-Clamping in `js/ui.js` weiterhin aktiv
+(getippt `balls=500` → geklemmt auf 50, Anzeige synchron), `js/newrecipe.js`s `nrLink()`
+weiterhin UNGEKLEMMT (bewusst, s. o.); Segment-Klick setzt `state.method` korrekt;
+Vorteig-Reife-Pill-Klick setzt `prefStage`+`yeast` korrekt und setzt `#preset` zurück
+(nur auf der Hauptseite); Mehl-Dropdown wird auf beiden Formularen korrekt mit 13
+Mehlen/3 Herstellergruppen befüllt. Alle 13/13 grün auf Desktop UND Mobil. Standalone-
+Build gegengeprüft: `makeLink`/`makeSeg`/`makePrefStages`/`fillFlourSelect` kommen im
+Ergebnis jeweils nur noch **einmal** vor (vorher implizit über mehrere Textkopien).
+
+**Geändert:** `js/widgets.js` (neu), `js/ui.js`, `js/flour.js`, `js/newrecipe.js`,
+`pizza-rechner.html`, `pizza-rechner-mobile.html`, `tests/test.html`,
+`pizza-rechner-KONTEXT.md`. `?v=` auf `3.56.0` gezogen (Desktop + Mobil, alle
+`<link>`/`<script>`-Tags inkl. der neuen `js/widgets.js`-Referenz), `appVersion`-Text
+in allen drei HTML-Dateien auf `v3.56.0`. `pizza-rechner-mobile-standalone.html` neu
+gebaut. `Versionen/v3.56.0 - Widget-Fabrik ui-newrecipe/` enthält den vollständigen
+Schnappschuss.
+
+## i18n-Datei aufgeteilt (v3.55.0)
 
 Per `/define-feature` bestätigt — erstes von fünf Struktur-Refactorings (S1–S6 minus S5
 Nav-Modul, bereits erledigt in v3.54.0) aus demselben Fable-Architektur-Review, **in
@@ -4591,7 +4667,7 @@ lokal per Doppelklick genutzt (kein Vorteil durch Pages dort).
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.55.0)
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.56.0)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
@@ -4611,7 +4687,11 @@ js/settings.js       PZ.FLAGS — Feature-Flags fürs Einstellungen-Menü (v3.16
                      localStorage-Key `pizzaRechnerFeatureFlags`, vorwärtskompatibler Merge mit DEFAULTS
 js/theme.js          Dunkelmodus (v3.47.0): folgt `prefers-color-scheme`, bis der manuelle
                      Umschalter im Einstellungen-Menü übersteuert (persistiert)
-js/flour.js          PZ.FLOURS (13 Mehle) + PZ.getFlour() + Dropdown-Befüllung
+js/widgets.js        Gemeinsame Widget-Fabriken (v3.56.0, vorher in js/ui.js + js/newrecipe.js +
+                     js/flour.js dupliziert): PZ.makeLink/makeSeg/makePrefStages/fillFlourSelect —
+                     js/flour.js, js/ui.js, js/newrecipe.js rufen sie als dünne Konfigurationsaufrufe
+js/flour.js          PZ.FLOURS (13 Mehle) + PZ.getFlour() + Dropdown-Befüllung (via
+                     PZ.fillFlourSelect(), s. js/widgets.js)
 js/calc.js           PZ.calc() Hauptberechnung (inkl. Öl/Zucker), schreibt PZ.R, ruft PZ.buildGuide()
 js/schedule.js       PZ.schedule() — Gärzeit-Fahrplan (berücksichtigt coldStage)
 js/guide.js          PZ.buildGuide() — Anleitung + Zeitberechnung + Mehl-Warnung + Timer-Platzhalter
@@ -4619,6 +4699,7 @@ js/timer.js          PZ.wireTimers() — Gärzeit-Timer/Wecker je Schritt (Notif
                      State in localStorage['pizzaRechnerTimers'], kein Server/Service-Worker); nutzt
                      Browser-APIs, die bewusst NICHT in tests/test.html geladen/unit-getestet werden
 js/ui.js             Slider/Segmente/Pills/Zeitplan; PZ.set, selectSeg, applyMethod, updateTimeLabel
+                     (Slider/Segmente/Reife-Stufen seit v3.56.0 über js/widgets.js-Fabriken)
 js/print.js          PZ.buildShoppingList() (Einkaufsliste aus PZ.R) + PZ.printShoppingList()/PZ.printGuide()
 js/pdf.js            PZ.downloadGuidePDF() — „Als PDF speichern" (v3.25.0), handgeschriebener
                      PDF-1.4-Generator ohne externe Bibliothek, teilt sich das Flag „shopping" mit print.js
@@ -4627,7 +4708,8 @@ js/storage.js        PZ.save()/PZ.load() + Mehrfach-Rezepte (saveAsNew/renameAct
                      loadRecipe/listRecipes) + Rezepte-Backup (exportRecipes/importRecipes, v3.21.0),
                      localStorage-Format {recipes[],activeId}, migriert alten Einzel-Slot-Stand automatisch
 js/newrecipe.js      eigenständiges Mini-Formular „Neues Rezept anlegen" (v3.22.0) — legt IMMER ein
-                     neues Rezept an, rührt PZ.state/den laufenden Rechner-Zustand nie an
+                     neues Rezept an, rührt PZ.state/den laufenden Rechner-Zustand nie an (Slider/
+                     Segmente/Reife-Stufen/Mehl-Dropdown seit v3.56.0 über js/widgets.js-Fabriken)
 js/share.js          Teilen-Link (v3.14.0): PZ.state als Base64-JSON in der URL, zum Kopieren/Laden
                      (über PZ.applyState() aus js/storage.js)
 js/party.js          Pizza-Party-Planer (v3.27.0) — eigenständiger Bereich, kein Zugriff auf
@@ -4637,21 +4719,23 @@ js/main.js           Start: Speichern-Button, Rezept-Auswahl/-Buttons, load(), a
 js/nav.js            Gemeinsames Burgermenü-Navigations-Modul (v3.54.0, vorher zwei/drei duplizierte
                      Inline-Scripts): openNav/closeNav/activateView/announceView/focusView/gotoView +
                      Tab-Trap; läuft bewusst als letztes Script (nach main.js)
-tests/test.html      614 Prüfungen in 24 Kategorien (Doppelklick, kein Server) — lädt 15 der 22
-                     js/*-Module direkt (dom/state/i18n-dict/i18n/settings/theme/flour/schedule/
-                     guide/calc/print/pdf/storage/share/party); ui.js, timer.js, presets.js,
-                     newrecipe.js, glossary.js, main.js, nav.js werden NICHT geladen (reines
-                     DOM-Wiring bzw. Browser-APIs) — einzelne Ausschnitte wie PZ.PRESETS werden bei
-                     Bedarf punktuell gestubbt
+tests/test.html      614 Prüfungen in 24 Kategorien (Doppelklick, kein Server) — lädt 16 der 23
+                     js/*-Module direkt (dom/state/i18n-dict/i18n/settings/theme/widgets/flour/
+                     schedule/guide/calc/print/pdf/storage/share/party); ui.js, timer.js,
+                     presets.js, newrecipe.js, glossary.js, main.js, nav.js werden NICHT geladen
+                     (reines DOM-Wiring bzw. Browser-APIs) — einzelne Ausschnitte wie PZ.PRESETS
+                     werden bei Bedarf punktuell gestubbt
 README.md            kurzer Einstieg
 ```
 
-**Ladereihenfolge** (Abhängigkeiten): dom → state → i18n-dict → i18n → settings → theme → flour →
-calc → schedule → guide → timer → ui → print → pdf → presets → storage → newrecipe → share →
-party → glossary → main → nav. Jedes Modul ist eine IIFE, kommuniziert nur über `window.PZ`.
-**`i18n-dict` MUSS vor `i18n` geladen werden** (Handoff über `PZ._I18N_DICT`).
+**Ladereihenfolge** (Abhängigkeiten): dom → state → i18n-dict → i18n → settings → theme → widgets →
+flour → calc → schedule → guide → timer → ui → print → pdf → presets → storage → newrecipe →
+share → party → glossary → main → nav. Jedes Modul ist eine IIFE, kommuniziert nur über `window.PZ`.
+**`i18n-dict` MUSS vor `i18n` geladen werden** (Handoff über `PZ._I18N_DICT`); **`widgets` MUSS vor
+`flour`/`ui`/`newrecipe` geladen werden** (liefert PZ.makeLink/makeSeg/makePrefStages/
+fillFlourSelect, die diese drei Module beim eigenen Laden direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.55.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.56.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
@@ -5451,12 +5535,24 @@ Keine Code-Änderung durch den Audit nötig.
   **Nächste vier Struktur-Refactorings aus demselben Fünferauftrag noch offen,
   in fester Reihenfolge:** 2) Widget-Fabrik ui.js/newrecipe.js, 3) Rechenkern/
   Renderer-Trennung calc.js, 4) `PZ.announce()`-Helfer, 5) `PZ.looksLikeState()`.
+- ~~Gemeinsame Widget-Fabrik für ui.js/newrecipe.js (Struktur-Refactoring 2 von 5,
+  S2)~~ — **erledigt in v3.56.0** (per `/define-feature` bestätigt; s. Abschnitt
+  „Gemeinsame Widget-Fabrik für ui.js/newrecipe.js (v3.56.0)" oben). Neues Modul
+  `js/widgets.js` (`makeLink`/`makeSeg`/`makePrefStages`/`fillFlourSelect`),
+  ~150 Zeilen Duplikat entfernt, keine Verhaltensänderung — inkl. bewusst
+  erhaltener Clamping-Asymmetrie (`js/ui.js` klemmt, `js/newrecipe.js` nicht).
+  **Neuer Nebenbefund:** ob `js/newrecipe.js`s Zahlenfelder künftig ebenfalls
+  klemmen sollen, ist eine eigene Produktentscheidung (kein reines Refactoring),
+  braucht explizite Bestätigung in einem künftigen Zyklus. **Noch offen, in
+  fester Reihenfolge:** 3) Rechenkern/Renderer-Trennung calc.js, 4)
+  `PZ.announce()`-Helfer, 5) `PZ.looksLikeState()`.
 
-**Stand v3.55.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
-oben, bis auf den `flourTemp`-Fallback-Nebenbefund aus v3.53.0). Der Bring!-Deeplink-
-Testaufbau ist abschließend geklärt (verworfen, vollständig zurückgebaut, keine offene
-Frage mehr). Vier weitere Struktur-Refactorings aus demselben Fünferauftrag wie
-i18n-Datei-Split sind direkt im Anschluss in fester Reihenfolge in Arbeit — s. ggf.
+**Stand v3.56.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+oben, bis auf den `flourTemp`-Fallback-Nebenbefund aus v3.53.0 und den
+newrecipe-Clamping-Nebenbefund aus v3.56.0). Der Bring!-Deeplink-Testaufbau ist
+abschließend geklärt (verworfen, vollständig zurückgebaut, keine offene Frage mehr).
+Drei weitere Struktur-Refactorings aus demselben Fünferauftrag wie i18n-Datei-Split/
+Widget-Fabrik sind direkt im Anschluss in fester Reihenfolge in Arbeit — s. ggf.
 neuere Versionen oben, falls bereits committet.
 
 ## Rahmen-Kontext (nicht App-bezogen)

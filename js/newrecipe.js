@@ -43,26 +43,12 @@
   // und OHNE Bezug auf PZ.state — schreibt ausschliesslich in nrState. `unitKey`
   // ist (wie in js/ui.js) ein Wörterbuch-Key, kein fertiger String, damit ein
   // späterer Sprachwechsel den aria-valuetext auffrischen kann (s. nrUnitLinks).
+  // Seit v3.56.0: gemeinsame Fabrik PZ.makeLink() (js/widgets.js) statt eigener
+  // Implementierung — clamp:false erhält bewusst das bisherige Verhalten (dieses
+  // Formular hatte NIE das Zahlenfeld-Clamping aus js/ui.js, s. Kommentar in
+  // js/widgets.js zur Asymmetrie), onSet bleibt weg (kein PZ.calc() hier).
   const nrUnitLinks = [];
-  function nrLink(sliderId, numberId, key, decimals, unitKey) {
-    const s = $(sliderId), n = $(numberId), v = $(sliderId + 'V');
-    // Deutsches Komma statt Punkt (v3.32.0-Bugfix), analog zu link() in js/ui.js.
-    function fmt(val) { return decimals != null ? val.toFixed(decimals).replace('.', ',') : val; }
-    function set(val, from) {
-      val = parseFloat(val);
-      if (isNaN(val)) return;
-      nrState[key] = val;
-      if (from !== 's') s.value = val;
-      if (from !== 'n') n.value = val;
-      const disp = fmt(val);
-      if (v) v.textContent = disp;
-      if (unitKey) s.setAttribute('aria-valuetext', disp + ' ' + t(unitKey));
-    }
-    if (unitKey) { s.setAttribute('aria-valuetext', fmt(parseFloat(s.value)) + ' ' + t(unitKey)); nrUnitLinks.push({ slider: s, unitKey: unitKey, fmt: fmt }); }
-    s.addEventListener('input', () => set(s.value, 's'));
-    n.addEventListener('input', () => set(n.value, 'n'));
-    return set;
-  }
+  const nrLink = PZ.makeLink({ stateObj: nrState, clamp: false, unitLinks: nrUnitLinks });
 
   const nrSet = {
     balls: nrLink('nrBalls', 'nrBallsN', 'balls', 0, 'unit.balls'),
@@ -83,57 +69,24 @@
   document.querySelectorAll('[data-nryeast]').forEach(b => b.onclick = () => nrSet.yeast(b.dataset.nryeast));
 
   // --- Segment-Buttons, analog zu seg()/selectSeg() in js/ui.js, aber schreibt
-  // nur in nrState (kein PZ.calc(), keine Rückwirkung auf #preset). ---
-  function nrSeg(containerId, attr, key, after) {
-    const c = $(containerId);
-    c.querySelectorAll('button').forEach(b => b.onclick = () => {
-      c.querySelectorAll('button').forEach(x => { x.classList.remove('active'); x.setAttribute('aria-pressed', 'false'); });
-      b.classList.add('active');
-      b.setAttribute('aria-pressed', 'true');
-      nrState[key] = b.dataset[attr];
-      if (after) after();
-    });
-  }
+  // nur in nrState (kein PZ.calc(), keine Rückwirkung auf #preset). Seit v3.56.0:
+  // gemeinsame Fabrik PZ.makeSeg() (js/widgets.js) statt eigener Implementierung. ---
+  const nrSeg = PZ.makeSeg({ stateObj: nrState });
 
   // --- Vorteig-Reife-Stufen (Biga/Poolish): nutzt dieselbe Datenquelle wie die
   // Hauptseite (PZ.PREF_STAGES, js/ui.js), koppelt Reifezeit + Hefemenge exakt
-  // wie dort — nur eben isoliert im Mini-Formular. ---
-  const PREF_DEFAULT = { biga: 'b24', poolish: 'p14' };
-
-  function nrRenderPrefStages(m) {
-    const wrap = $('nrPrefStage');
-    const stages = (PZ.PREF_STAGES && PZ.PREF_STAGES[m]) || [];
-    wrap.innerHTML = '';
-    stages.forEach(s => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.dataset.ps = s.key;
-      b.setAttribute('aria-pressed', 'false');
-      b.textContent = s.label;
-      b.onclick = () => nrSelectPrefStage(m, s.key);
-      wrap.appendChild(b);
-    });
-  }
-  function nrHighlightPrefStage(key) {
-    const wrap = $('nrPrefStage');
-    let matured = '';
-    wrap.querySelectorAll('button').forEach(b => {
-      const on = b.dataset.ps === key;
-      b.classList.toggle('active', on);
-      b.setAttribute('aria-pressed', String(on));
-      if (on) matured = b.textContent.split(' ·')[0];
-    });
-    if (matured) $('nrPrefStageVal').textContent = matured;
-  }
-  function nrSelectPrefStage(m, key) {
-    const stages = (PZ.PREF_STAGES && PZ.PREF_STAGES[m]) || [];
-    const s = stages.find(x => x.key === key) || stages[0];
-    if (!s) return;
-    nrState.prefStage = s.key;
-    nrState.prefMature = s.mature;
-    nrHighlightPrefStage(s.key);
-    nrSet.yeast(s.yeast);
-  }
+  // wie dort — nur eben isoliert im Mini-Formular. Seit v3.56.0: gemeinsame Fabrik
+  // PZ.makePrefStages() (js/widgets.js, auch PREF_DEFAULT lebt jetzt nur noch dort)
+  // statt eigener render/highlight/select-Implementierung; kein onSelectClick hier
+  // (dieses Formular hat kein #preset, das zurückgesetzt werden müsste). ---
+  const nrPrefStages = PZ.makePrefStages({
+    stateObj: nrState,
+    wrapId: 'nrPrefStage',
+    valId: 'nrPrefStageVal',
+    setYeast: function (y) { nrSet.yeast(y); }
+  });
+  function nrRenderPrefStages(m) { nrPrefStages.render(m); }
+  function nrSelectPrefStage(m, key) { nrPrefStages.select(m, key); }
 
   function nrApplyMethod() {
     const m = nrState.method;
@@ -147,9 +100,7 @@
     $('nrYeastCoupledBadge').hidden = !isPref;
     if (isPref) {
       nrRenderPrefStages(m);
-      const stages = (PZ.PREF_STAGES && PZ.PREF_STAGES[m]) || [];
-      const valid = stages.some(s => s.key === nrState.prefStage);
-      nrSelectPrefStage(m, valid ? nrState.prefStage : PREF_DEFAULT[m]);
+      nrPrefStages.selectValidOrDefault(m);
     }
   }
 
@@ -158,29 +109,9 @@
   nrSeg('nrKnead', 'k', 'knead');
   nrApplyMethod();
 
-  // --- Mehl-Dropdown, analog zur Befüllung von #flour in js/flour.js — eigene
-  // Kopie statt Wiederverwendung, da flour.js fest auf #flour/PZ.state verdrahtet ist. ---
-  function populateNrFlour() {
-    const sel = $('nrFlour');
-    if (!sel || !PZ.FLOURS) return;
-    const prevValue = sel.value || nrState.flour;
-    sel.innerHTML = '';
-    const groups = {};
-    Object.keys(PZ.FLOURS).forEach(key => {
-      const f = PZ.FLOURS[key];
-      if (!groups[f.group]) {
-        const og = document.createElement('optgroup');
-        og.label = f.group;
-        sel.appendChild(og);
-        groups[f.group] = og;
-      }
-      const o = document.createElement('option');
-      o.value = key;
-      o.textContent = f.name + ' · W' + f.w + ' · ' + t(f.durKey);
-      groups[f.group].appendChild(o);
-    });
-    sel.value = prevValue;
-  }
+  // --- Mehl-Dropdown, analog zur Befüllung von #flour in js/flour.js. Seit v3.56.0:
+  // gemeinsame Fabrik PZ.fillFlourSelect() (js/widgets.js) statt eigener Kopie. ---
+  const populateNrFlour = PZ.fillFlourSelect({ selectId: 'nrFlour', stateObj: nrState });
   populateNrFlour();
   const nrFlourSel = $('nrFlour');
   if (nrFlourSel) nrFlourSel.addEventListener('change', () => { nrState.flour = nrFlourSel.value; });
