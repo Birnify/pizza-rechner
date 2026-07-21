@@ -880,7 +880,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.50.0</span>
+    <span class="nav-version" id="appVersion">v3.51.0</span>
   </div>
 </nav>
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
@@ -3387,8 +3387,11 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
  * Zeiten, Mehlname …). Die Struktur/Logik (welcher Schritt wann erscheint, welche
  * Bedingungen greifen) ist unverändert — nur die Textbausteine kommen jetzt aus dem
  * Wörterbuch statt als String-Literal im Code zu stehen. `t` unten ist ein dünner
- * Wrapper: liefert bei fehlender js/i18n.js (sollte nicht vorkommen) den deutschen
- * Default zurück statt zu crashen.
+ * Wrapper: liefert bei fehlender js/i18n.js (sollte nicht vorkommen) den rohen Key
+ * zurück statt zu crashen (kein deutscher Fallback-Text wie in js/schedule.js — bei
+ * hunderten Aufrufstellen mit interpolierten {platzhaltern} wäre ein echter Text-
+ * Fallback je Key unverhältnismäßig; i18n.js ist in der Praxis immer geladen, s.
+ * `<script>`-Reihenfolge in pizza-rechner.html/-mobile.html).
  */
 (function (global) {
   'use strict';
@@ -4031,12 +4034,36 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     // JS-Fließkommawert (Punkt) — nur die Anzeige wird umformatiert, nichts wird aus
     // dem angezeigten Text zurückgeparst.
     function fmt(val) { return decimals != null ? val.toFixed(decimals).replace('.', ',') : val; }
+    // Clamping (Fable-Review-Fund "B8"): HTML-`min`/`max`-Attribute verhindern nur das
+    // Ziehen des Sliders, nicht das Eintippen eines Werts im Zahlenfeld (z. B. `balls = 0`
+    // oder `hyd = 300`) — `n`/`s` unterschiedliche, bewusst gestaffelte Grenzen haben
+    // (Zahlenfeld typischerweise weiter gefasst als der Slider, s. HTML), daher wird hier
+    // gegen die Grenzen des jeweils AUSLÖSENDEN Elements geklemmt: Slider-Input klemmt
+    // gegen `s.min`/`s.max` (rein defensiv, der Browser klemmt Range-Inputs ohnehin schon
+    // selbst), Zahlenfeld-Input und programmatische Aufrufe (Presets/Laden/Teilen-Link)
+    // klemmen gegen `n.min`/`n.max` — die weiteren, für Eingaben vorgesehenen Grenzen.
+    function clampTo(el, val) {
+      if (!el) return val;
+      const lo = el.min !== '' ? parseFloat(el.min) : NaN;
+      const hi = el.max !== '' ? parseFloat(el.max) : NaN;
+      if (!isNaN(lo) && val < lo) val = lo;
+      if (!isNaN(hi) && val > hi) val = hi;
+      return val;
+    }
     function set(val, from) {
       val = parseFloat(val);
       if (isNaN(val)) return;
+      const raw = val;
+      val = clampTo(from === 's' ? s : n, val);
+      const wasClamped = val !== raw;
       state[key] = val;
-      if (from !== 's') s.value = val;
-      if (from !== 'n') n.value = val;
+      // Normalerweise wird das AUSLÖSENDE Element nicht zurückgeschrieben (vermeidet
+      // Cursor-Sprünge/Störungen beim Tippen) — wurde der Wert aber geklemmt, muss auch
+      // das auslösende Element den tatsächlich übernommenen (geklemmten) Wert zeigen,
+      // sonst widerspricht die Anzeige dem internen Zustand (z. B. Zahlenfeld zeigt "500"
+      // weiter an, obwohl `state.balls` bereits auf 50 geklemmt wurde).
+      if (from !== 's' || wasClamped) s.value = val;
+      if (from !== 'n' || wasClamped) n.value = val;
       const disp = fmt(val);
       if (v) v.textContent = disp;
       if (unitKey) s.setAttribute('aria-valuetext', disp + ' ' + t(unitKey));
@@ -6179,7 +6206,6 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   // Presets + die Rahmen-UI-Texte wechseln.
   if (PZ.i18nOnChange) {
     PZ.i18nOnChange(function () {
-      PZ.PARTY_PRESET_PIZZAS = getPresetPizzas();
       renderPartyList();
       renderPartyResult();
     });

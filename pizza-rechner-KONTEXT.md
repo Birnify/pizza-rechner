@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-21 · Aktuelle Version: v3.50.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-21 · Aktuelle Version: v3.51.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,80 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Doku-Nachtrag Dateibaum & drei Kleinkorrekturen aus dem Fable-Review (v3.50.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## B8: letzter Kleinkram aus dem Fable-Review (toter Global, Docstring-Diskrepanz, Zahlenfeld-Clamping) (v3.51.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Direkter Nutzerauftrag (kein `/define-feature`), kein Backlog-Punkt: die drei letzten,
+unabhängigen Kleinfunde aus demselben separaten, rein lesenden Fable-Architektur-Review
+(„B8"). Die übrigen B8-Punkte aus dem Report (Timer nur bei offenem Tab, Zucker-/Öl-Fallback
+beim Laden alter Rezepte, duplizierte Nav-Inline-Scripts, theme-color-Meta,
+`.daybadge.d2`-Kontrast) waren explizit NICHT Teil dieses Auftrags — teils bereits als
+bewusste Design-Entscheidung dokumentiert, teils separat als eigener Auftrag nachgereicht
+(s. Abschnitte weiter oben mit höheren Versionsnummern).
+
+**1. Toter Global `PZ.PARTY_PRESET_PIZZAS` entfernt (`js/party.js`):** der Sprachwechsel-Hook
+(`PZ.i18nOnChange(...)`, ganz am Dateiende) setzte `PZ.PARTY_PRESET_PIZZAS = getPresetPizzas();`
+— das widersprach dem eigenen Kommentar direkt darüber im selben Modul („Bewusst KEIN
+Modul-globaler Snapshot mehr … Aufrufer nutzen ausschließlich PZ.partyGetAllPizzas()").
+Vor dem Entfernen geprüft: projektweite Suche (`js/*`, `*.html`, `pizza-rechner-KONTEXT.md`)
+findet **keine einzige Lese-Stelle** von `PZ.PARTY_PRESET_PIZZAS` — der Aufruf war reiner,
+funktional folgenloser Totcode (rief `getPresetPizzas()` nur für den Rückgabewert auf, der
+dann nirgends gelesen wurde). Die eigentliche Neu-Darstellung bei Sprachwechsel passiert
+bereits korrekt über `renderPartyList()`/`renderPartyResult()`, die `PZ.partyGetAllPizzas()`
+bei jedem Aufruf frisch auswerten — diese beiden Zeilen bleiben unverändert im Hook stehen.
+
+**2. `js/guide.js`-Docstring korrigiert (Diskrepanz zu `t()`):** der Datei-Kopfkommentar
+behauptete, `t()` liefere bei fehlender `js/i18n.js` einen „deutschen Default" zurück —
+tatsächlich gibt `function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }` in diesem
+Fall den rohen i18n-**Key** zurück, keinen deutschen Text (anders als `js/schedule.js`s
+`t(key, def)`, das echte, an jeder Aufrufstelle mitgegebene Fallback-Texte hat). Bewusst
+**nicht** ans schedule.js-Muster angeglichen (die vom Nutzer explizit angebotene Alternative):
+`guide.js` hat hunderte `t()`-Aufrufstellen mit interpolierten `{platzhaltern}` — ein echter
+Text-Fallback je Key wäre unverhältnismäßiger Aufwand für einen Pfad, der in der Praxis nie
+greift (i18n.js ist immer geladen, feste `<script>`-Reihenfolge in beiden HTML-Dateien).
+Stattdessen den Docstring ehrlich auf das tatsächliche Verhalten korrigiert. Reine
+Kommentar-Änderung, keine Logik.
+
+**3. Zahlenfelder klemmen jetzt auf ihre `min`/`max`-Attribute (`js/ui.js`, `link()`):**
+HTML-`min`/`max` verhindert nur das Ziehen des Sliders, nicht das Eintippen eines Werts im
+gekoppelten `<input type="number">` — z. B. `balls = 500` oder `hyd = 5` flossen bisher
+ungefiltert in `PZ.calc()` (kein Crash, aber unsinnige Ergebnisse ohne Warnung). Neue
+`clampTo(el, val)`-Hilfsfunktion in `link()`: klemmt gegen die Grenzen des jeweils
+**auslösenden** Elements — Slider-Input (`from === 's'`) gegen `s.min`/`s.max` (rein defensiv,
+der Browser klemmt Range-Inputs beim Ziehen ohnehin schon selbst), Zahlenfeld-Input sowie
+**programmatische** Aufrufe (Presets/Laden/Teilen-Link, `from` ist dort `undefined`) gegen
+`n.min`/`n.max` — bewusst die **weiteren** der beiden gestaffelten Grenzen (Zahlenfelder sind
+in fast allen Feldern absichtlich weiter gefasst als die Slider, z. B. `balls`: Slider 1–20,
+Zahlenfeld 1–50 — das bleibt unverändert so, nur echte Ausreißer wie `500` oder `0` werden
+abgefangen). **Nebenbefund beim Testen selbst gefunden und mitbehoben:** ohne Zusatzmaßnahme
+hätte das geklemmte Zahlenfeld weiterhin den ungeklemmten getippten Wert anzeigen können
+(bestehendes „Auslösendes Element nicht zurückschreiben"-Muster, das Cursor-Sprünge beim
+Tippen vermeidet) — `state.balls` wäre z. B. korrekt auf 50 geklemmt gewesen, während das
+Zahlenfeld weiter „500" gezeigt hätte. Fix: das auslösende Element wird jetzt IMMER
+zurückgeschrieben, wenn der Wert tatsächlich geklemmt wurde (`wasClamped`-Flag), sonst bleibt
+das bisherige Verhalten (kein Echo ins gerade getippte Feld) unverändert erhalten.
+
+**Härten:** keine neue UI/kein neues Markup in diesem Zyklus (Clamping ist reine
+Verhaltens-Härtung bestehender Felder) — kein `accessibility-expert`-, `mobile-optimizer`-
+oder `performance-profiler`-Durchlauf nötig.
+
+**Tests:** `js/ui.js` wird in `tests/test.html` bewusst nicht geladen (reines DOM-Wiring ohne
+eigene Test-Sektion, s. Abschnitt „Dateistruktur" oben) — daher **keine** neue automatisierte
+Prüfung dort (unverändert 608 Prüfungen, alle grün). Stattdessen mit einem isolierten,
+temporären Verifikations-Aufbau geprüft (Kopie der 12 Slider/Zahlenfeld-Paare + `js/dom.js` +
+`js/state.js` + `js/ui.js`, `PZ.calc` gestubbt, `PZ.i18n`/`PZ.t` bewusst fehlend): getippte
+Werte weit über/unter den Zahlenfeld-Grenzen (`balls=500`→50, `hyd=5`→40, `balls=0`→1,
+`room=-15`→0) klemmen korrekt, sowohl `state.<key>` als auch die Zahlenfeld-Anzeige stimmen
+danach überein; Werte innerhalb der Grenzen (`hyd=65`) bleiben unverändert; ein Slider-Wert am
+gemeinsamen Maximum (`ballw=400`, Slider- UND Zahlenfeld-Grenze) bleibt ebenfalls korrekt
+synchron. Verifikations-Datei nach Gebrauch wieder gelöscht (war nie Teil des Repos).
+
+**Geändert:** `js/party.js`, `js/guide.js`, `js/ui.js`, `pizza-rechner-KONTEXT.md`. `?v=` auf
+`3.51.0` gezogen (Desktop + Mobil, alle `<link>`/`<script>`-Tags), `appVersion`-Text in allen
+drei HTML-Dateien auf `v3.51.0`. `pizza-rechner-mobile-standalone.html` neu gebaut (die
+geänderten `js/*`-Module werden dort inline mitgebaut). `Versionen/v3.51.0 - B8
+Kleinkram-Aufraeumung/` enthält den vollständigen Schnappschuss.
+
+## Doku-Nachtrag Dateibaum & drei Kleinkorrekturen aus dem Fable-Review (v3.50.0)
 
 Direkter Nutzerauftrag (kein `/define-feature`), kein Backlog-Punkt: ein Doku-Nebenbefund aus
 dem letzten Zyklus (v3.49.0) plus drei weitere diagnostische Funde aus demselben separaten,
@@ -5088,8 +5161,16 @@ Keine Code-Änderung durch den Audit nötig.
   v3.50.0** (kein Backlog-Punkt, direkter Nutzerauftrag aus demselben separaten
   Fable-Review wie v3.48.0/v3.49.0; s. Abschnitt „Doku-Nachtrag Dateibaum & drei
   Kleinkorrekturen aus dem Fable-Review (v3.50.0)" oben).
+- ~~B8 (letzter Kleinkram aus dem Fable-Review): toter Global
+  `PZ.PARTY_PRESET_PIZZAS`; `js/guide.js`-Docstring-Diskrepanz zu `t()`;
+  Zahlenfelder ohne Clamping auf `min`/`max`~~ — **erledigt in v3.51.0** (kein
+  Backlog-Punkt, direkter Nutzerauftrag aus demselben separaten Fable-Review; s.
+  Abschnitt „B8: letzter Kleinkram aus dem Fable-Review (v3.51.0)" oben). Die
+  übrigen B8-Punkte (Timer nur bei offenem Tab, Zucker-/Öl-Fallback, duplizierte
+  Nav-Inline-Scripts, theme-color-Meta, `.daybadge.d2`-Kontrast) waren bewusst
+  NICHT Teil dieses Auftrags.
 
-**Stand v3.50.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.51.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen,
 vollständig zurückgebaut, keine offene Frage mehr). Keine Warteschlange mehr offen —
 für den nächsten Zyklus braucht es wieder frisches Brainstorming in Phase 1 (neue

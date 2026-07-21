@@ -591,7 +591,6 @@
   // Presets + die Rahmen-UI-Texte wechseln.
   if (PZ.i18nOnChange) {
     PZ.i18nOnChange(function () {
-      PZ.PARTY_PRESET_PIZZAS = getPresetPizzas();
       renderPartyList();
       renderPartyResult();
     });

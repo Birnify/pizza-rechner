@@ -26,12 +26,36 @@
     // JS-Fließkommawert (Punkt) — nur die Anzeige wird umformatiert, nichts wird aus
     // dem angezeigten Text zurückgeparst.
     function fmt(val) { return decimals != null ? val.toFixed(decimals).replace('.', ',') : val; }
+    // Clamping (Fable-Review-Fund "B8"): HTML-`min`/`max`-Attribute verhindern nur das
+    // Ziehen des Sliders, nicht das Eintippen eines Werts im Zahlenfeld (z. B. `balls = 0`
+    // oder `hyd = 300`) — `n`/`s` unterschiedliche, bewusst gestaffelte Grenzen haben
+    // (Zahlenfeld typischerweise weiter gefasst als der Slider, s. HTML), daher wird hier
+    // gegen die Grenzen des jeweils AUSLÖSENDEN Elements geklemmt: Slider-Input klemmt
+    // gegen `s.min`/`s.max` (rein defensiv, der Browser klemmt Range-Inputs ohnehin schon
+    // selbst), Zahlenfeld-Input und programmatische Aufrufe (Presets/Laden/Teilen-Link)
+    // klemmen gegen `n.min`/`n.max` — die weiteren, für Eingaben vorgesehenen Grenzen.
+    function clampTo(el, val) {
+      if (!el) return val;
+      const lo = el.min !== '' ? parseFloat(el.min) : NaN;
+      const hi = el.max !== '' ? parseFloat(el.max) : NaN;
+      if (!isNaN(lo) && val < lo) val = lo;
+      if (!isNaN(hi) && val > hi) val = hi;
+      return val;
+    }
     function set(val, from) {
       val = parseFloat(val);
       if (isNaN(val)) return;
+      const raw = val;
+      val = clampTo(from === 's' ? s : n, val);
+      const wasClamped = val !== raw;
       state[key] = val;
-      if (from !== 's') s.value = val;
-      if (from !== 'n') n.value = val;
+      // Normalerweise wird das AUSLÖSENDE Element nicht zurückgeschrieben (vermeidet
+      // Cursor-Sprünge/Störungen beim Tippen) — wurde der Wert aber geklemmt, muss auch
+      // das auslösende Element den tatsächlich übernommenen (geklemmten) Wert zeigen,
+      // sonst widerspricht die Anzeige dem internen Zustand (z. B. Zahlenfeld zeigt "500"
+      // weiter an, obwohl `state.balls` bereits auf 50 geklemmt wurde).
+      if (from !== 's' || wasClamped) s.value = val;
+      if (from !== 'n' || wasClamped) n.value = val;
       const disp = fmt(val);
       if (v) v.textContent = disp;
       if (unitKey) s.setAttribute('aria-valuetext', disp + ' ' + t(unitKey));

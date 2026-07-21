@@ -5,8 +5,11 @@
  * Zeiten, Mehlname …). Die Struktur/Logik (welcher Schritt wann erscheint, welche
  * Bedingungen greifen) ist unverändert — nur die Textbausteine kommen jetzt aus dem
  * Wörterbuch statt als String-Literal im Code zu stehen. `t` unten ist ein dünner
- * Wrapper: liefert bei fehlender js/i18n.js (sollte nicht vorkommen) den deutschen
- * Default zurück statt zu crashen.
+ * Wrapper: liefert bei fehlender js/i18n.js (sollte nicht vorkommen) den rohen Key
+ * zurück statt zu crashen (kein deutscher Fallback-Text wie in js/schedule.js — bei
+ * hunderten Aufrufstellen mit interpolierten {platzhaltern} wäre ein echter Text-
+ * Fallback je Key unverhältnismäßig; i18n.js ist in der Praxis immer geladen, s.
+ * `<script>`-Reihenfolge in pizza-rechner.html/-mobile.html).
  */
 (function (global) {
   'use strict';
