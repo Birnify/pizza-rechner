@@ -1243,11 +1243,14 @@
       ]);
     });
 
-    // --- Altes Rezept ganz ohne flourTemp-Feld (gespeichert vor v3.20.0) — darf nicht
-    // crashen; PZ.state.flourTemp bleibt beim zuvor im UI stehenden Wert stehen (einziges
-    // verbliebenes Legacy-Fallback-Muster dieser Art in applyState(), js/storage.js — die
-    // früheren oil/sugar-Pendants wurden in v3.53.0 entfernt, s. Test direkt darunter),
-    // statt mit undefined überschrieben zu werden. ---
+    // --- Altes Rezept ganz ohne flourTemp-Feld (gespeichert vor v3.20.0) — der dafür
+    // spezifisch gedachte Fallback wurde in v3.60.0 entfernt (Nutzerauftrag, analog zum
+    // oil/sugar-Fallback, v3.53.0: keine real existierenden alten Rezepte mehr, die ihn je
+    // gebraucht hätten). Dieser Test sichert ab, dass so ein (jetzt nur noch theoretisches)
+    // Objekt weiterhin keinen Crash auslöst — set.flourTemp() wird jetzt unconditional
+    // aufgerufen, mit state.flourTemp, das nach Object.assign() bei einem fehlenden Feld
+    // einfach den vorherigen UI-Wert unverändert behält (Object.assign kopiert nur
+    // vorhandene Keys), statt mit undefined überschrieben zu werden. ---
     withCleanStorage(() => {
       const legacyNoFlourTemp = Object.assign({}, BASE, { balls: 5, hyd: 63 });
       delete legacyNoFlourTemp.flourTemp;
@@ -1256,7 +1259,7 @@
       let loadThrew = false, calcThrew = false;
       try { PZ.load(); } catch (e) { loadThrew = true; }
       try { PZ.calc(); } catch (e) { calcThrew = true; }
-      renderBox('Altes Rezept ohne flourTemp-Feld (vor v3.20.0) — kein Crash, Sentinel-Wert bleibt erhalten', [
+      renderBox('Altes Rezept ohne flourTemp-Feld (vor v3.20.0) — kein Crash nach Fallback-Entfernung (v3.60.0)', [
         { label: 'PZ.load() wirft keinen Fehler', ok: !loadThrew, actual: loadThrew, expected: false, tol: null },
         { label: 'Andere Felder wurden trotzdem übernommen (balls)', ok: PZ.state.balls === 5, actual: PZ.state.balls, expected: 5, tol: null },
         { label: 'Andere Felder wurden trotzdem übernommen (hyd)', ok: PZ.state.hyd === 63, actual: PZ.state.hyd, expected: 63, tol: null },

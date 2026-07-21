@@ -890,7 +890,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.59.0</span>
+    <span class="nav-version" id="appVersion">v3.60.0</span>
   </div>
 </nav>
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
@@ -5292,9 +5292,11 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     set.pref(state.pref); set.bhyd(state.bhyd); set.yeast(state.yeast);
     // prefMature/prefStage werden von applyMethod() unten aus state.prefStage gesetzt
     set.ddt(state.ddt); set.room(state.room);
-    // Ältere gespeicherte Rezepte (vor v3.20.0) kennen flourTemp noch nicht — dann bleibt
-    // der aktuell im UI stehende Wert unangetastet, analog zum bestehenden oil-Fallback oben.
-    if (state.flourTemp != null) set.flourTemp(state.flourTemp);
+    // Legacy-Fallback für Rezepte ohne flourTemp-Feld (vor v3.20.0) entfernt (v3.60.0,
+    // Nutzerauftrag, analog zum oil/sugar-Fallback oben, v3.53.0): keine real existierenden
+    // alten Rezepte mehr, die diesen Fall je gebraucht hätten — jedes künftig gespeicherte
+    // Rezept enthält das Feld automatisch (s. js/state.js PZ.state Defaults).
+    set.flourTemp(state.flourTemp);
     // Segmente
     PZ.selectSeg('method', 'm', state.method);
     PZ.selectSeg('yeastType', 'y', state.yeastType);

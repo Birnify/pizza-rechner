@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-21 · Aktuelle Version: v3.59.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-21 · Aktuelle Version: v3.60.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,59 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Gemeinsame State-Plausibilisierung PZ.looksLikeState() (v3.59.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## flourTemp-Legacy-Fallback entfernt (v3.60.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Direkter Nutzerauftrag (kein `/define-feature`), kein Backlog-Punkt: „Punkt 1" eines
+zweiteiligen Folgeauftrags (Punkt 2 — Zahlenfeld-Clamping in `js/newrecipe.js` — folgt
+als eigener Zyklus direkt im Anschluss). Hintergrund: `applyState()` (`js/storage.js`)
+enthielt seit Einführung des eigenständigen Mehltemperatur-Reglers (v3.20.0) eine
+Legacy-Fallback-Bedingung — `if (state.flourTemp != null) set.flourTemp(state.flourTemp);`
+—, die Rezepte abfing, die VOR dieser Version gespeichert wurden und das Feld noch nicht
+kannten. Strukturell identisch zum bereits in v3.53.0 entfernten Zucker-/Öl-Fallback, dort
+aber explizit ausgeklammert (kein bestätigter Auftrag). Der Nutzer hat jetzt bestätigt:
+dieselbe Begründung trifft zu — die App wird bisher ausschließlich von ihm selbst genutzt,
+aktuell ist kein einziges Rezept in `localStorage` gespeichert, es gibt also keine real
+existierenden alten Rezepte, die diesen Fallback je gebraucht hätten, und jedes künftig
+gespeicherte Rezept enthält das Feld ohnehin automatisch (`js/state.js` `PZ.state`-Defaults,
+`flourTemp: 21`).
+
+**Entfernt:** der `if (state.flourTemp != null)`-Guard in `applyState()` —
+`set.flourTemp(state.flourTemp)` wird jetzt unconditional aufgerufen, genau wie
+`set.oil(state.oil)`/`set.sugar(state.sugar)` direkt daneben seit v3.53.0.
+
+**Bewusst NICHT angefasst (Unterscheidung von normalem defensivem Programmieren, analog
+zur v3.53.0-Abgrenzung):**
+- Die Robustheit gegen kaputte/unvollständige EXTERNE Importe (Teilen-Link, Rezepte-Backup)
+  bleibt vollständig erhalten — sie hängt nicht an diesem Guard, sondern an `set()` selbst
+  (`js/ui.js`/`js/widgets.js` `makeLink`): `val = parseFloat(val); if (isNaN(val)) return;`
+  fängt `null`/`undefined`/kaputte Werte unabhängig davon ab, ob `applyState()` den Aufruf
+  bedingt oder unconditional macht.
+- Der breitere Format-Migrationscode (`isLegacyState()`/`readStore()`, alter Einzel-Slot-
+  Stand vor v3.10.0 → `{recipes:[...],activeId}`) — eine andere Migrationskategorie,
+  unangetastet.
+
+**Härten:** keine UI-/Markup-Änderung (reine Logik-Vereinfachung in `js/storage.js`) — kein
+`accessibility-expert`-Durchlauf nötig.
+
+**Tests:** `tests/test.html` unverändert bei **614 Prüfungen**, alle grün (kein separater
+`test-generator`-Lauf — Fix eng umrissen, bestehender Regressionstest deckt den Fall
+bereits ab). Der schon seit v3.20.0 existierende Test in Sektion „16 · Speichern & Laden"
+(„Altes Rezept ohne flourTemp-Feld … kein Crash, Sentinel-Wert bleibt erhalten") prüft
+weiterhin exakt dasselbe Verhalten (Object.assign kopiert nur vorhandene Keys, ein
+fehlendes `flourTemp`-Feld überschreibt den vorherigen UI-Wert nicht mit `undefined`) —
+Titel/Kommentar nur aktualisiert (verwies vorher auf den jetzt entfernten Guard als
+Erklärung, jetzt auf die unconditional-Variante, analog zum oil/sugar-Test direkt
+darunter). Verifiziert per Headless-Edge-Dump (`msedge --headless --disable-gpu
+--virtual-time-budget=8000 --dump-dom` gegen die `file://`-URL): „✓ Alle 614 Prüfungen
+bestanden".
+
+**Geändert:** `js/storage.js`, `tests/test.html`, `pizza-rechner-KONTEXT.md`. `?v=` auf
+`3.60.0` gezogen (Desktop + Mobil, alle `<link>`/`<script>`-Tags), `appVersion`-Text in
+allen drei HTML-Dateien auf `v3.60.0`. `pizza-rechner-mobile-standalone.html` neu gebaut.
+`Versionen/v3.60.0 - flourTemp-Legacy-Fallback entfernt/` enthält den vollständigen
+Schnappschuss.
+
+## Gemeinsame State-Plausibilisierung PZ.looksLikeState() (v3.59.0)
 
 Per `/define-feature` bestätigt — **fünftes und letztes** von fünf Struktur-
 Refactorings aus demselben Fable-Architektur-Review (S1–S6, S5 Nav-Modul bereits in
@@ -5787,17 +5839,19 @@ Keine Code-Änderung durch den Audit nötig.
   Fünferauftrag „Struktur-Refactorings aus dem Fable-Architektur-Review"
   abgeschlossen** (S1–S6, S5 Nav-Modul separat in v3.54.0 erledigt).
 
-**Stand v3.59.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+- ~~`flourTemp`-Legacy-Fallback in `js/storage.js` `applyState()` (Nebenbefund aus dem
+  Struktur-Refactoring-Fünferauftrag, strukturell identisch zum bereits in v3.53.0
+  entfernten Zucker-/Öl-Fallback)~~ — **erledigt in v3.60.0** (direkter Nutzerauftrag,
+  „Punkt 1" eines zweiteiligen Folgeauftrags; s. Abschnitt „flourTemp-Legacy-Fallback
+  entfernt (v3.60.0)" oben).
+
+**Stand v3.60.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen,
-vollständig zurückgebaut, keine offene Frage mehr). Zwei kleine Nebenbefunde aus dem
-Struktur-Refactoring-Fünferauftrag bleiben als offene, unbestätigte Kandidaten für
-einen künftigen Zyklus: (1) `flourTemp`-Legacy-Fallback in `js/storage.js`
-`applyState()` (v3.53.0, strukturell identisch zum bereits entfernten Zucker-/
-Öl-Fallback, aber nicht explizit bestätigt), (2) ob `js/newrecipe.js`s Zahlenfelder
-künftig ebenfalls das Zahlenfeld-Clamping wie `js/ui.js` bekommen sollen (v3.56.0,
-eigene Produktentscheidung). Keine Warteschlange mehr offen — für den nächsten Zyklus
-braucht es wieder frisches Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/
-Layout-Überarbeitungen, Bugfixes) statt eines vorgegebenen Auftrags.
+vollständig zurückgebaut, keine offene Frage mehr). Ein kleiner Nebenbefund aus dem
+Struktur-Refactoring-Fünferauftrag bleibt als offener, unbestätigter Kandidat: ob
+`js/newrecipe.js`s Zahlenfelder künftig ebenfalls das Zahlenfeld-Clamping wie `js/ui.js`
+bekommen sollen (v3.56.0, eigene Produktentscheidung) — **„Punkt 2" desselben
+zweiteiligen Nutzerauftrags, folgt direkt im Anschluss als eigener Zyklus.**
 
 ## Rahmen-Kontext (nicht App-bezogen)
 
