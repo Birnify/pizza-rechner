@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-21 · Aktuelle Version: v3.52.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-21 · Aktuelle Version: v3.53.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,59 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Dynamisches theme-color-Meta & `.daybadge.d2`-Kontrastfix (v3.52.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Zucker-/Öl-Legacy-Fallback entfernt (v3.53.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Direkter Nutzerauftrag (kein `/define-feature`), kein Backlog-Punkt: „Auftrag A" aus einem
+zweiteiligen Folgeauftrag (Auftrag B — gemeinsames Nav-Modul — folgt als eigener Zyklus direkt
+im Anschluss, s. Abschnitt weiter oben sobald dort committet). Hintergrund: `applyState()`
+(`js/storage.js`) enthielt seit Einführung von Öl (v3.3.0) bzw. Zucker (v3.19.2) je eine
+Legacy-Fallback-Bedingung — `if (state.oil != null) set.oil(state.oil);` bzw. das Sugar-Pendant
+—, die Rezepte abfing, die VOR diesen Versionen gespeichert wurden und die entsprechenden Felder
+noch nicht kannten. Der Nutzer hat bestätigt: die App wird bisher ausschließlich von ihm selbst
+genutzt, aktuell ist **kein einziges Rezept in `localStorage` gespeichert** — es gibt also keine
+real existierenden alten Rezepte, die diesen Fallback je gebraucht hätten, und jedes künftig
+gespeicherte Rezept enthält beide Felder ohnehin automatisch (`js/state.js` `PZ.state`-Defaults).
+
+**Entfernt:** die beiden `if (state.oil != null)`/`if (state.sugar != null)`-Guards in
+`applyState()` — `set.oil(state.oil)`/`set.sugar(state.sugar)` werden jetzt unconditional
+aufgerufen, genau wie die übrigen Standardfelder (`balls`/`ballw`/`hyd`/`salt`) direkt daneben.
+
+**Bewusst NICHT entfernt (Unterscheidung von normalem defensivem Programmieren, wie vom Nutzer
+explizit verlangt):**
+- Die **Robustheit gegen kaputte/unvollständige EXTERNE Importe** (Teilen-Link, Rezepte-Backup)
+  bleibt vollständig erhalten — sie hängt gar nicht an den jetzt entfernten Guards, sondern an
+  `set()` selbst (`js/ui.js` `link()`): `val = parseFloat(val); if (isNaN(val)) return;` fängt
+  `null`/`undefined`/kaputte Werte unabhängig davon ab, ob `applyState()` den Aufruf bedingt
+  oder unconditional macht. Verifiziert: `parseFloat(null)`/`parseFloat(undefined)` sind beide
+  `NaN` → `set()` no-opt bereits dort, bevor überhaupt `state[key]` überschrieben würde.
+- Das **strukturell identische Fallback-Muster für `state.flourTemp`** (vor v3.20.0, direkt
+  darunter in derselben Funktion) — war explizit NICHT Teil dieses Auftrags (nur „Zucker-/
+  Öl-Fallback" war benannt), bleibt unverändert bestehen. Nebenbefund für einen künftigen
+  Zyklus: dieselbe Begründung (keine real existierenden alten Rezepte) träfe wahrscheinlich
+  auch hier zu, aber ohne explizite Bestätigung nicht in diesem Zyklus mit entfernt.
+- Der breitere Format-Migrationscode (`isLegacyState()`/`readStore()`, alter Einzel-Slot-Stand
+  vor v3.10.0 → `{recipes:[...],activeId}`) — eine andere, umfassendere Migrationskategorie,
+  ebenfalls nicht Teil dieses Auftrags.
+
+**Härten:** keine UI-/Markup-Änderung (reine Logik-Vereinfachung in `js/storage.js`) — kein
+`accessibility-expert`-Durchlauf nötig.
+
+**Tests:** `tests/test.html` von **608 auf 614 Prüfungen** erweitert (kein separater
+`test-generator`-Lauf — Fix eng umrissen, Testfall beim Umbau direkt bekannt). Neuer Test in
+Sektion „16 · Speichern & Laden" (direkt neben dem bestehenden, unverändert bleibenden
+flourTemp-Test): ein simuliertes Legacy-Rezept ohne `oil`/`sugar`-Felder lädt weiterhin ohne
+Crash, beide Felder behalten korrekt ihren vorherigen UI-Wert (Object.assign kopiert nur
+vorhandene Keys, überschreibt nicht mit `undefined`), `PZ.calc()` läuft anschließend fehlerfrei
+mit gültigem `R.total`. Bestehender flourTemp-Test-Kommentar aktualisiert (verwies auf das jetzt
+entfernte oil-Fallback als Vergleichsmuster — korrigiert, da sonst irreführend).
+
+**Geändert:** `js/storage.js`, `tests/test.html`, `pizza-rechner-KONTEXT.md`. `?v=` auf `3.53.0`
+gezogen (Desktop + Mobil, alle `<link>`/`<script>`-Tags), `appVersion`-Text in allen drei
+HTML-Dateien auf `v3.53.0`. `pizza-rechner-mobile-standalone.html` neu gebaut.
+`Versionen/v3.53.0 - Zucker-Oel-Legacy-Fallback entfernt/` enthält den vollständigen
+Schnappschuss.
+
+## Dynamisches theme-color-Meta & `.daybadge.d2`-Kontrastfix (v3.52.0)
 
 Direkter Nutzerauftrag (kein `/define-feature`), kein Backlog-Punkt: die zwei Nebenbefunde aus
 dem v3.47.0-Dunkelmodus-Accessibility-Audit, die dort bewusst außerhalb des damaligen Scopes
@@ -5227,13 +5279,19 @@ Keine Code-Änderung durch den Audit nötig.
   übrigen, noch offenen B8-Punkte (Timer nur bei offenem Tab, Zucker-/Öl-Fallback
   beim Laden alter Rezepte, duplizierte Nav-Inline-Scripts) bleiben weiterhin
   offen/als bewusste Design-Entscheidung dokumentiert.
+- ~~Zucker-/Öl-Fallback beim Laden alter Rezepte (letzter offener B8-Punkt, Teil 1
+  von 2)~~ — **erledigt in v3.53.0** (kein Backlog-Punkt, direkter Nutzerauftrag;
+  s. Abschnitt „Zucker-/Öl-Legacy-Fallback entfernt (v3.53.0)" oben). Das
+  strukturell identische `flourTemp`-Fallback-Muster (vor v3.20.0) war explizit
+  nicht Teil dieses Auftrags und bleibt unverändert bestehen — Kandidat für einen
+  künftigen Zyklus, falls dieselbe Begründung (keine real existierenden alten
+  Rezepte) dort ebenfalls bestätigt wird.
 
-**Stand v3.52.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
-oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen,
-vollständig zurückgebaut, keine offene Frage mehr). Keine Warteschlange mehr offen —
-für den nächsten Zyklus braucht es wieder frisches Brainstorming in Phase 1 (neue
-Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes) statt eines vorgegebenen
-Auftrags.
+**Stand v3.53.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+oben, bis auf den o. g. `flourTemp`-Nebenbefund). Der Bring!-Deeplink-Testaufbau ist
+abschließend geklärt (verworfen, vollständig zurückgebaut, keine offene Frage mehr).
+Ein weiterer B8-Punkt („Auftrag B — gemeinsames Nav-Modul") ist direkt im Anschluss
+als eigener Zyklus in Arbeit — s. ggf. neuere Version oben, falls bereits committet.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

@@ -1242,9 +1242,10 @@
     });
 
     // --- Altes Rezept ganz ohne flourTemp-Feld (gespeichert vor v3.20.0) — darf nicht
-    // crashen; PZ.state.flourTemp bleibt beim zuvor im UI stehenden Wert stehen (Fallback-
-    // Muster analog zu oil in applyState(), js/storage.js), statt mit undefined überschrieben
-    // zu werden. ---
+    // crashen; PZ.state.flourTemp bleibt beim zuvor im UI stehenden Wert stehen (einziges
+    // verbliebenes Legacy-Fallback-Muster dieser Art in applyState(), js/storage.js — die
+    // früheren oil/sugar-Pendants wurden in v3.53.0 entfernt, s. Test direkt darunter),
+    // statt mit undefined überschrieben zu werden. ---
     withCleanStorage(() => {
       const legacyNoFlourTemp = Object.assign({}, BASE, { balls: 5, hyd: 63 });
       delete legacyNoFlourTemp.flourTemp;
@@ -1260,6 +1261,32 @@
         { label: 'flourTemp bleibt beim vorherigen UI-Wert (kein Überschreiben mit undefined)', ok: PZ.state.flourTemp === 17, actual: PZ.state.flourTemp, expected: 17, tol: null },
         { label: 'PZ.calc() läuft anschließend ohne Fehler', ok: !calcThrew, actual: calcThrew, expected: false, tol: null },
         { label: 'wT ist danach eine gültige Zahl (kein NaN)', ok: typeof PZ.R.wT === 'number' && !isNaN(PZ.R.wT), actual: PZ.R.wT, expected: 'Zahl', tol: null }
+      ]);
+    });
+
+    // --- Altes Rezept ohne oil/sugar-Feld (gespeichert vor v3.3.0 bzw. v3.19.2) — der
+    // dafür spezifisch gedachte Fallback wurde in v3.53.0 entfernt (Nutzerauftrag: keine
+    // real existierenden alten Rezepte mehr, die ihn je gebraucht hätten). Dieser Test
+    // sichert ab, dass so ein (jetzt nur noch theoretisches) Objekt weiterhin keinen Crash
+    // auslöst — set.oil()/set.sugar() werden jetzt unconditional aufgerufen, mit
+    // state.oil/state.sugar, die nach Object.assign() bei einem fehlenden Feld einfach den
+    // vorherigen UI-Wert unverändert behalten (Object.assign kopiert nur vorhandene Keys). ---
+    withCleanStorage(() => {
+      const legacyNoOilSugar = Object.assign({}, BASE, { balls: 6, hyd: 64 });
+      delete legacyNoOilSugar.oil;
+      delete legacyNoOilSugar.sugar;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(legacyNoOilSugar));
+      Object.assign(PZ.state, BASE, { oil: 3.5, sugar: 1.5 }); // Sentinel: simuliert vorherigen UI-Stand
+      let loadThrew = false, calcThrew = false;
+      try { PZ.load(); } catch (e) { loadThrew = true; }
+      try { PZ.calc(); } catch (e) { calcThrew = true; }
+      renderBox('Altes Rezept ohne oil/sugar-Feld (vor v3.3.0/v3.19.2) — kein Crash nach Fallback-Entfernung (v3.53.0)', [
+        { label: 'PZ.load() wirft keinen Fehler', ok: !loadThrew, actual: loadThrew, expected: false, tol: null },
+        { label: 'Andere Felder wurden trotzdem übernommen (balls)', ok: PZ.state.balls === 6, actual: PZ.state.balls, expected: 6, tol: null },
+        { label: 'oil bleibt beim vorherigen UI-Wert (kein Überschreiben mit undefined)', ok: PZ.state.oil === 3.5, actual: PZ.state.oil, expected: 3.5, tol: null },
+        { label: 'sugar bleibt beim vorherigen UI-Wert (kein Überschreiben mit undefined)', ok: PZ.state.sugar === 1.5, actual: PZ.state.sugar, expected: 1.5, tol: null },
+        { label: 'PZ.calc() läuft anschließend ohne Fehler', ok: !calcThrew, actual: calcThrew, expected: false, tol: null },
+        { label: 'R.total ist danach eine gültige Zahl (kein NaN)', ok: typeof PZ.R.total === 'number' && !isNaN(PZ.R.total), actual: PZ.R.total, expected: 'Zahl', tol: null }
       ]);
     });
 

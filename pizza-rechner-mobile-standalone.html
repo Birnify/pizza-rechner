@@ -890,7 +890,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.52.0</span>
+    <span class="nav-version" id="appVersion">v3.53.0</span>
   </div>
 </nav>
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
@@ -5020,10 +5020,14 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     // guide.js weiterhin fälschlich "Hand" anzeigen (String-Vergleich schlägt fehl).
     if (state.knead != null) state.knead = String(state.knead);
     set.balls(state.balls); set.ballw(state.ballw); set.hyd(state.hyd); set.salt(state.salt);
-    if (state.oil != null) set.oil(state.oil);
-    // Ältere gespeicherte Rezepte (vor v3.19.2) kennen sugar noch nicht — dann bleibt
-    // der aktuell im UI stehende Wert unangetastet, analog zum oil-Fallback direkt oben.
-    if (state.sugar != null) set.sugar(state.sugar);
+    // Legacy-Fallback für Rezepte ohne oil/sugar-Feld (vor v3.3.0 bzw. v3.19.2) entfernt
+    // (v3.53.0, Nutzerauftrag): keine real existierenden alten Rezepte mehr, die diesen
+    // Fall je gebraucht hätten — jedes künftig gespeicherte Rezept enthält beide Felder
+    // automatisch (s. js/state.js PZ.state Defaults). Normale Robustheit gegen kaputte/
+    // unvollständige EXTERNE Importe (Teilen-Link, Rezepte-Backup) bleibt unangetastet
+    // und unabhängig davon bestehen: set() in js/ui.js parsed per parseFloat() und
+    // no-opt bereits bei NaN/null/undefined, ganz unabhängig von dieser Stelle hier.
+    set.oil(state.oil); set.sugar(state.sugar);
     set.pref(state.pref); set.bhyd(state.bhyd); set.yeast(state.yeast);
     // prefMature/prefStage werden von applyMethod() unten aus state.prefStage gesetzt
     set.ddt(state.ddt); set.room(state.room);
