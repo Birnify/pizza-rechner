@@ -890,7 +890,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.53.0</span>
+    <span class="nav-version" id="appVersion">v3.54.0</span>
   </div>
 </nav>
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
@@ -1638,7 +1638,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
      Bewusst OHNE Speichern-Button (Party-Daten persistieren automatisch bei
      jeder Mengenänderung, kein manueller Speicherschritt wie beim Rechner).
      Nutzt dieselbe [data-view]-Sichtbarkeitslogik wie die übrigen Bereiche
-     (activateView() weiter unten) -- nur in der Party-Ansicht sichtbar. -->
+     (activateView() in js/nav.js) -- nur in der Party-Ansicht sichtbar. -->
 <div class="quickbar" id="partyQuickbar" data-view="party" hidden>
   <a class="qb-jump" href="#partyResultSummary"><span class="visually-hidden" data-i18n="quickbar.jumpToPartyResult">Zur Zutatenliste springen: </span><span id="qbPartyCount">–</span></a>
 </div>
@@ -1993,7 +1993,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   // seitdem im eigenen Menüpunkt "Zeitplan", nicht mehr im selben Bereich wie
   // die Anleitung. Der {zeitplan}-Platzhalter wird in js/guide.js mit einem
   // klickbaren <button data-goto="zeitplan">-Snippet befüllt (springt direkt
-  // zum Menüpunkt, s. PZ.gotoView() in beiden HTML-Dateien).
+  // zum Menüpunkt, s. PZ.gotoView() in js/nav.js).
   add('guide.schedbar.noTime', '⏱️ Gesamtdauer ca. <b>{dur}</b> — lege im Bereich {zeitplan} eine <b>Start-</b> oder <b>Zielzeit</b> fest, dann bekommt jeder Schritt eine Uhrzeit.',
     '⏱️ Total time approx. <b>{dur}</b> — set a <b>start</b> or <b>target time</b> in the {zeitplan} section, then every step gets a clock time.');
   add('guide.summary.noTime', '{label} · Gesamt ~{dur}', '{label} · Total ~{dur}');
@@ -3715,9 +3715,10 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   // gehen. Stattdessen EIN einziger, dauerhaft delegierter Listener auf dem stabilen
   // #guideSteps-Container selbst, der auf Klicks auf .schedbar-goto-zeitplan reagiert
   // (Event-Bubbling), egal wie oft der Inhalt neu gerendert wird. PZ.gotoView() wird
-  // von den Burgermenü-Inline-Scripts beider Seiten bereitgestellt (Desktop + Mobil,
-  // identisches Muster) — falls aus irgendeinem Grund nicht vorhanden (z. B. isolierte
-  // Testumgebung ohne Menü-Markup), passiert einfach nichts (kein Crash).
+  // vom gemeinsamen Nav-Modul bereitgestellt (js/nav.js, seit v3.54.0 — vorher zwei
+  // identische Burgermenü-Inline-Scripts auf Desktop + Mobil) — falls aus irgendeinem
+  // Grund nicht vorhanden (z. B. isolierte Testumgebung ohne Menü-Markup/js/nav.js),
+  // passiert einfach nichts (kein Crash).
   const guideStepsEl = $('guideSteps');
   if (guideStepsEl) {
     guideStepsEl.addEventListener('click', function (e) {
@@ -5870,7 +5871,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   // Fokus-Ziel nach dem Entfernen eines Elements aus dem DOM (z.B. nach dem
   // Löschen einer eigenen Pizza, wo die gesamte Liste per renderPartyList()
   // neu aufgebaut wird und der geklickte Button dabei verschwindet). Identisches
-  // Muster wie focusView() im Burger-Menü-Inline-Script beider Seiten.
+  // Muster wie focusView() im gemeinsamen Nav-Modul (js/nav.js).
   function focusPartyHeading() {
     const card = pizzaListEl.closest('.card');
     const h = card && card.querySelector('h2');
@@ -6002,7 +6003,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
           // Der geklickte Button existiert nach dem Re-Render nicht mehr im DOM —
           // ohne explizite Fokus-Umlenkung würde der Fokus auf <body> zurückfallen
           // (Tastatur-/Screenreader-Nutzer verlieren ihren Ort auf der Seite).
-          // Analog zu focusView() im Burger-Menü-Script: Fokus auf die Bereichs-
+          // Analog zu focusView() im gemeinsamen Nav-Modul (js/nav.js): Fokus auf die Bereichs-
           // überschrift, zusätzlich Löschung per Live-Region ansagen (WCAG 4.1.3).
           focusPartyHeading();
           // NICHT announcePartyCreate()/#partyCreateLiveMsg (das liegt in der
@@ -6540,8 +6541,173 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
 })(window);
 
 </script>
+<!-- Burger-Menü-Navigation (bis v3.17.x/v3.18.0 hier als Inline-Script gewachsen) --
+     seit v3.54.0 gemeinsames Modul mit der Desktop-Seite, s. js/nav.js (Mobil-
+     Implementierung war die massgebliche Referenz beim Auslagern). -->
 <script>
-  // Mobil-only UI-Glue (kein Eingriff in die PZ-Rechenmodule)
+/* nav.js — gemeinsames Burgermenü-Navigations-Modul (Desktop + Mobil, v3.54.0)
+ *
+ * Bis v3.53.0 als zwei eigenständige, praktisch identische Inline-<script>-Kopien in
+ * pizza-rechner.html und pizza-rechner-mobile.html gepflegt — bewusste Entscheidung
+ * beim ersten Bau der Desktop-Navigation (v3.26.0), um die bereits bewährte Mobil-
+ * Implementierung nicht anzufassen (s. pizza-rechner-KONTEXT.md, Abschnitt
+ * „Burgermenü-Navigation auch auf Desktop"). Jede künftige Menü-Erweiterung (z. B. die
+ * gruppierte Navigation, v3.36.0) musste dadurch doppelt/dreifach gepflegt werden
+ * (Desktop-Inline-Script, Mobil-Inline-Script, dessen Kopie im Standalone-Build).
+ *
+ * Ab v3.54.0 hierher ausgelagert — Mobil-Implementierung war die maßgebliche Referenz,
+ * funktional 1:1 übernommen (KEINE Verhaltensänderung, reine Konsolidierung). Da dies
+ * jetzt ein echtes js/*-Modul ist, zieht der Standalone-Build (build-mobile-standalone.py)
+ * es automatisch inline mit — kein separates drittes Duplikat mehr nötig.
+ *
+ * Einzige tatsächliche Abweichung zwischen den beiden früheren Kopien: der jeweils
+ * letzte fokussierbare Eintrag im Panel war ein plattform-spezifischer Cross-Link zur
+ * jeweils anderen Ansicht (`#navMobileLink` auf dem Desktop, `#navDesktopLink` auf
+ * Mobil) — hier per Feature-Erkennung vereinheitlicht (`crossLink` unten), weil auf
+ * jeder Seite ohnehin nur einer der beiden Links im Markup existiert.
+ *
+ * Läuft bewusst als letztes Modul in der Ladereihenfolge (nach main.js, wie die
+ * vorherigen Inline-Scripts es taten) — reine UI-Verdrahtung für bereits vorhandenes
+ * Markup, rührt keine PZ-Rechenmodule an und wird von keinem anderen Modul beim Laden
+ * gebraucht (nur `js/guide.js`s "Zeitplan"-Sprung ruft zur Klickzeit `PZ.gotoView()`
+ * auf, s. dort — das liegt weit nach dem initialen Laden, Reihenfolge ist unkritisch).
+ */
+(function (global) {
+  'use strict';
+  const PZ = global.PZ || (global.PZ = {});
+  const $ = PZ.$;
+
+  const navToggle = $('navToggle');
+  const navOverlay = $('navMenu');
+  const navClose = $('navClose');
+  const navItems = navOverlay ? Array.prototype.slice.call(navOverlay.querySelectorAll('.nav-item')) : [];
+  // Plattform-übergreifender Cross-Link: nur einer der beiden existiert je nach Seite
+  // (#navMobileLink auf pizza-rechner.html, #navDesktopLink auf pizza-rechner-mobile.html
+  // bzw. dessen Standalone-Build).
+  const crossLink = $('navMobileLink') || $('navDesktopLink');
+  const viewEls = Array.prototype.slice.call(document.querySelectorAll('[data-view]')).filter(function (el) {
+    return el.closest && !el.closest('.nav-overlay');
+  });
+  let lastFocused = null;
+
+  // Reihenfolge entspricht der DOM-/visuellen Reihenfolge im Panel: Schließen-Button,
+  // die vier Bereichs-Buttons, zuletzt der Cross-Link (eigenes <a>, kein .nav-item —
+  // navigiert weg statt eine Ansicht umzuschalten, s. activateView-Klick-Handler unten).
+  function focusablesInPanel() {
+    return [navClose].concat(navItems).concat(crossLink ? [crossLink] : []);
+  }
+
+  function onNavKeydown(e) {
+    if (e.key === 'Escape') { e.preventDefault(); closeNav(); return; }
+    if (e.key === 'Tab') {
+      const f = focusablesInPanel();
+      const idx = f.indexOf(document.activeElement);
+      if (e.shiftKey) {
+        if (idx <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
+      } else {
+        if (idx === -1 || idx === f.length - 1) { e.preventDefault(); f[0].focus(); }
+      }
+    }
+  }
+
+  function openNav() {
+    if (!navOverlay) return;
+    lastFocused = document.activeElement;
+    navOverlay.hidden = false;
+    navToggle.setAttribute('aria-expanded', 'true');
+    const current = navItems.filter(function (b) { return b.classList.contains('active'); })[0] || navItems[0];
+    if (current) current.focus(); else if (navClose) navClose.focus();
+    document.addEventListener('keydown', onNavKeydown);
+  }
+
+  // restoreFocus=false wird nur beim Bereichswechsel per Klick auf ein .nav-item
+  // genutzt — dort soll der Fokus NICHT auf den Hamburger-Button zurückspringen,
+  // sondern (per focusView, s. u.) in den neu sichtbaren Bereich wandern.
+  function closeNav(restoreFocus) {
+    if (!navOverlay) return;
+    navOverlay.hidden = true;
+    navToggle.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('keydown', onNavKeydown);
+    if (restoreFocus !== false) (lastFocused || navToggle).focus();
+  }
+
+  function activateView(view) {
+    viewEls.forEach(function (el) {
+      if (el.getAttribute('data-view') === view) el.removeAttribute('hidden');
+      else el.setAttribute('hidden', '');
+    });
+    navItems.forEach(function (b) {
+      const isActive = b.getAttribute('data-goto') === view;
+      b.classList.toggle('active', isActive);
+      if (isActive) b.setAttribute('aria-current', 'page');
+      else b.removeAttribute('aria-current');
+    });
+    window.scrollTo(0, 0);
+  }
+
+  // Nach einem Bereichswechsel bekommen Screenreader-Nutzer sonst keinerlei
+  // Rückmeldung, dass sich der sichtbare Inhalt komplett ausgetauscht hat
+  // (WCAG 4.1.3 Status Messages) — Live-Region-Ansage + Fokus auf die erste
+  // Überschrift des neuen Bereichs (analog zum SPA-Routenwechsel-Muster).
+  // Erst leeren, dann im nächsten Tick setzen (analog zum js/pdf.js-Fix v3.25.0):
+  // ein wortgleicher Text bei zwei Wechseln in dieselbe Ansicht hintereinander
+  // (z. B. Menü öffnen, "Rechner" anklicken, obwohl "Rechner" schon aktiv ist)
+  // würde sonst von manchen Screenreadern als "keine echte Änderung" ignoriert.
+  function announceView(label) {
+    const el = $('viewAnnounce');
+    if (!el) return;
+    el.textContent = '';
+    global.setTimeout(function () {
+      el.textContent = PZ.t ? PZ.t('nav.viewAnnounce', { label: label }) : ('Ansicht: ' + label);
+    }, 50);
+  }
+
+  function focusView(view) {
+    const h = document.querySelector('[data-view="' + view + '"] h2');
+    if (h) {
+      if (!h.hasAttribute('tabindex')) h.setAttribute('tabindex', '-1');
+      h.focus({ preventScroll: true });
+    }
+  }
+
+  // Wechselt die Ansicht identisch zum Klick auf einen Menüpunkt, aber OHNE über
+  // das Bereiche-Menü zu gehen — genutzt vom klickbaren "Zeitplan"-Sprung im
+  // Anleitungs-Banner ohne Zeitangabe (v3.38.0-Fix, s. js/guide.js). closeNav(false)
+  // ist hier defensiv/für den unwahrscheinlichen Fall, dass das Menü doch offen ist.
+  function gotoView(view) {
+    const item = navItems.filter(function (b) { return b.getAttribute('data-goto') === view; })[0];
+    activateView(view);
+    announceView(item ? item.textContent : view);
+    closeNav(false);
+    focusView(view);
+  }
+  PZ.gotoView = gotoView;
+
+  if (navToggle && navOverlay) {
+    navToggle.addEventListener('click', function () {
+      if (navOverlay.hidden) openNav(); else closeNav();
+    });
+    navClose.addEventListener('click', function () { closeNav(); });
+    navOverlay.addEventListener('click', function (e) {
+      if (e.target === navOverlay) closeNav();
+    });
+    navItems.forEach(function (b) {
+      b.addEventListener('click', function () {
+        const view = b.getAttribute('data-goto');
+        activateView(view);
+        announceView(b.textContent);
+        closeNav(false);
+        focusView(view);
+      });
+    });
+  }
+})(window);
+
+</script>
+<script>
+  // Mobil-only UI-Glue (kein Eingriff in die PZ-Rechenmodule) -- Quick-Bar-Sync,
+  // Party-Quick-Bar, Quick-Save, Akkordeon-Auto-Scroll. Die frühere Sektion "4)
+  // Hamburger-Navigation" ist seit v3.54.0 ausgelagert, s. js/nav.js oben.
   (function(){
     // 1) Quick-Bar spiegelt live das Gesamtgewicht aus #totalW und die Teiglingszahl aus #ballsOut
     var src = document.getElementById('totalW');
@@ -6616,127 +6782,6 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
         }
       });
     });
-
-    // 4) Hamburger-Navigation: Bereichs-Umschaltung (Rechner/Rezepte/Zeitplan/Einstellungen)
-    //    statt durchgehendem One-Pager. Rein UI-seitig, rührt keine PZ-Logik an.
-    var navToggle = document.getElementById('navToggle');
-    var navOverlay = document.getElementById('navMenu');
-    var navClose = document.getElementById('navClose');
-    var navItems = navOverlay ? Array.prototype.slice.call(navOverlay.querySelectorAll('.nav-item')) : [];
-    var navDesktopLink = document.getElementById('navDesktopLink');
-    var viewEls = Array.prototype.slice.call(document.querySelectorAll('[data-view]')).filter(function(el){
-      return el.closest && !el.closest('.nav-overlay');
-    });
-    var lastFocused = null;
-
-    // Reihenfolge entspricht der DOM-/visuellen Reihenfolge im Panel: Schließen-Button,
-    // die vier Bereichs-Buttons, zuletzt der Desktop-Link (eigenes <a>, kein .nav-item —
-    // navigiert weg statt eine Ansicht umzuschalten, s. activateView-Klick-Handler unten).
-    function focusablesInPanel(){
-      return [navClose].concat(navItems).concat(navDesktopLink ? [navDesktopLink] : []);
-    }
-
-    function onNavKeydown(e){
-      if (e.key === 'Escape') { e.preventDefault(); closeNav(); return; }
-      if (e.key === 'Tab') {
-        var f = focusablesInPanel();
-        var idx = f.indexOf(document.activeElement);
-        if (e.shiftKey) {
-          if (idx <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
-        } else {
-          if (idx === -1 || idx === f.length - 1) { e.preventDefault(); f[0].focus(); }
-        }
-      }
-    }
-
-    function openNav(){
-      if (!navOverlay) return;
-      lastFocused = document.activeElement;
-      navOverlay.hidden = false;
-      navToggle.setAttribute('aria-expanded', 'true');
-      var current = navItems.filter(function(b){ return b.classList.contains('active'); })[0] || navItems[0];
-      if (current) current.focus(); else if (navClose) navClose.focus();
-      document.addEventListener('keydown', onNavKeydown);
-    }
-
-    // restoreFocus=false wird nur beim Bereichswechsel per Klick auf ein .nav-item
-    // genutzt — dort soll der Fokus NICHT auf den Hamburger-Button zurückspringen,
-    // sondern (per focusView, s. u.) in den neu sichtbaren Bereich wandern.
-    function closeNav(restoreFocus){
-      if (!navOverlay) return;
-      navOverlay.hidden = true;
-      navToggle.setAttribute('aria-expanded', 'false');
-      document.removeEventListener('keydown', onNavKeydown);
-      if (restoreFocus !== false) (lastFocused || navToggle).focus();
-    }
-
-    function activateView(view){
-      viewEls.forEach(function(el){
-        if (el.getAttribute('data-view') === view) el.removeAttribute('hidden');
-        else el.setAttribute('hidden', '');
-      });
-      navItems.forEach(function(b){
-        var isActive = b.getAttribute('data-goto') === view;
-        b.classList.toggle('active', isActive);
-        if (isActive) b.setAttribute('aria-current', 'page');
-        else b.removeAttribute('aria-current');
-      });
-      window.scrollTo(0, 0);
-    }
-
-    // Nach einem Bereichswechsel bekommen Screenreader-Nutzer sonst keinerlei
-    // Rückmeldung, dass sich der sichtbare Inhalt komplett ausgetauscht hat
-    // (WCAG 4.1.3 Status Messages) — Live-Region-Ansage + Fokus auf die erste
-    // Überschrift des neuen Bereichs (analog zum SPA-Routenwechsel-Muster).
-    function announceView(label){
-      var el = document.getElementById('viewAnnounce');
-      if (!el) return;
-      // Erst leeren, Text erst im nächsten Tick setzen — sonst bekommen Screenreader
-      // bei zwei Bereichswechseln mit identischem Label hintereinander keine zweite
-      // Ansage (WCAG 4.1.3). Analog zum selben Fix auf der Desktop-Seite (v3.26.0,
-      // s. pizza-rechner-KONTEXT.md) und zum etablierten #pdfGuideLiveMsg-Muster.
-      el.textContent = '';
-      window.setTimeout(function(){ el.textContent = (window.PZ && PZ.t) ? PZ.t('nav.viewAnnounce', { label: label }) : ('Ansicht: ' + label); }, 50);
-    }
-    function focusView(view){
-      var h = document.querySelector('[data-view="' + view + '"] h2');
-      if (h) {
-        if (!h.hasAttribute('tabindex')) h.setAttribute('tabindex', '-1');
-        h.focus({ preventScroll: true });
-      }
-    }
-
-    // Wechselt die Ansicht identisch zum Klick auf einen Menüpunkt, aber OHNE über
-    // das Bereiche-Menü zu gehen — genutzt vom klickbaren "Zeitplan"-Sprung im
-    // Anleitungs-Banner ohne Zeitangabe (v3.38.0-Fix, s. js/guide.js). closeNav(false)
-    // ist hier defensiv/für den unwahrscheinlichen Fall, dass das Menü doch offen ist.
-    function gotoView(view){
-      var item = navItems.filter(function(b){ return b.getAttribute('data-goto') === view; })[0];
-      activateView(view);
-      announceView(item ? item.textContent : view);
-      closeNav(false);
-      focusView(view);
-    }
-    PZ.gotoView = gotoView;
-
-    if (navToggle && navOverlay) {
-      navToggle.addEventListener('click', function(){
-        if (navOverlay.hidden) openNav(); else closeNav();
-      });
-      navClose.addEventListener('click', function(){ closeNav(); });
-      navOverlay.addEventListener('click', function(e){
-        if (e.target === navOverlay) closeNav();
-      });
-      navItems.forEach(function(b){
-        b.addEventListener('click', function(){
-          var view = b.getAttribute('data-goto');
-          activateView(view);
-          announceView(b.textContent);
-          closeNav(false);
-          focusView(view);
-        });
-      });
-    }
   })();
 </script>
 </body>

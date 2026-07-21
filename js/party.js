@@ -225,7 +225,7 @@
   // Fokus-Ziel nach dem Entfernen eines Elements aus dem DOM (z.B. nach dem
   // Löschen einer eigenen Pizza, wo die gesamte Liste per renderPartyList()
   // neu aufgebaut wird und der geklickte Button dabei verschwindet). Identisches
-  // Muster wie focusView() im Burger-Menü-Inline-Script beider Seiten.
+  // Muster wie focusView() im gemeinsamen Nav-Modul (js/nav.js).
   function focusPartyHeading() {
     const card = pizzaListEl.closest('.card');
     const h = card && card.querySelector('h2');
@@ -357,7 +357,7 @@
           // Der geklickte Button existiert nach dem Re-Render nicht mehr im DOM —
           // ohne explizite Fokus-Umlenkung würde der Fokus auf <body> zurückfallen
           // (Tastatur-/Screenreader-Nutzer verlieren ihren Ort auf der Seite).
-          // Analog zu focusView() im Burger-Menü-Script: Fokus auf die Bereichs-
+          // Analog zu focusView() im gemeinsamen Nav-Modul (js/nav.js): Fokus auf die Bereichs-
           // überschrift, zusätzlich Löschung per Live-Region ansagen (WCAG 4.1.3).
           focusPartyHeading();
           // NICHT announcePartyCreate()/#partyCreateLiveMsg (das liegt in der

@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-21 · Aktuelle Version: v3.53.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-21 · Aktuelle Version: v3.54.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,86 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Zucker-/Öl-Legacy-Fallback entfernt (v3.53.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Gemeinsames Nav-Modul (v3.54.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Per `/define-feature` bestätigt, direkt im Anschluss an „Auftrag A" (Zucker-/Öl-Fallback,
+v3.53.0) aus demselben zweiteiligen Nutzerauftrag. Hintergrund: seit v3.26.0 gab es die
+Burgermenü-Navigation (`openNav`/`closeNav`/`activateView`/`announceView`/`focusView` +
+Tab-Trap) als zwei praktisch identische, unabhängig gepflegte Inline-`<script>`-Kopien in
+`pizza-rechner.html` und `pizza-rechner-mobile.html` (plus eine dritte, mechanisch aus
+Mobil abgeleitete Kopie im Standalone-Build) — damals bewusst dupliziert statt
+ausgelagert, um die bewährte Mobil-Implementierung nicht anzufassen (s. Abschnitt
+„Burgermenü-Navigation auch auf Desktop (v3.26.0)" oben). Diese Vorgabe gilt seit diesem
+Zyklus nicht mehr: jede künftige Menü-Erweiterung musste bisher doppelt/dreifach gepflegt
+werden — reines Wartbarkeitsrisiko ohne funktionalen Nutzen der Duplizierung.
+
+**Neues Modul `js/nav.js`:** enthält jetzt `openNav()`/`closeNav()`/`activateView()`/
+`announceView()`/`focusView()`/`gotoView()` + die komplette Tab-Trap-Logik
+(`onNavKeydown`/`focusablesInPanel()`) + die Event-Verdrahtung (Toggle-Klick, Close-Klick,
+Overlay-Klick-außerhalb, Escape, `.nav-item`-Klicks). **Mobil-Implementierung war die
+maßgebliche Referenz** (wie beauftragt) — der Code ist funktional 1:1 aus dem bisherigen
+Mobil-Inline-Script übernommen, **keine Verhaltensänderung**.
+
+**Einzige tatsächliche Abweichung zwischen den beiden früheren Kopien — jetzt per
+Feature-Erkennung vereinheitlicht:** der jeweils letzte fokussierbare Eintrag im Panel war
+ein plattform-spezifischer Cross-Link zur anderen Ansicht (`#navMobileLink` auf Desktop,
+`#navDesktopLink` auf Mobil). `js/nav.js` ermittelt ihn jetzt mit
+`const crossLink = $('navMobileLink') || $('navDesktopLink');` — funktioniert auf beiden
+Seiten korrekt, da ohnehin nur je einer der beiden Links im jeweiligen Markup existiert.
+
+**Geänderte HTML-Dateien:** in `pizza-rechner.html` wurde das komplette Desktop-Inline-
+Script (openNav…Event-Verdrahtung) durch `<script src="js/nav.js?v=3.54.0"></script>`
+ersetzt (letztes Script vor `</body>`, wie zuvor). In `pizza-rechner-mobile.html` wurde
+NUR die Sektion „4) Hamburger-Navigation" aus dem umschließenden „Mobil-only UI-Glue"-
+Inline-Script entfernt (die Sektionen 1/1b/2/3 — Quick-Bar-Sync, Party-Quick-Bar,
+Quick-Save, Akkordeon-Auto-Scroll — bleiben unverändert dort, sind Mobil-exklusiv und
+nicht Teil der Nav-Logik); `<script src="js/nav.js?v=3.54.0">` wurde direkt nach
+`main.js` und vor dem verbleibenden Mobil-Glue-Script eingefügt. Der Standalone-Build
+zieht `js/nav.js` automatisch inline mit (bestehender `build-mobile-standalone.py`-
+Mechanismus für alle `<script src="js/…">`-Referenzen) — kein separates drittes Duplikat
+mehr nötig, verifiziert per Duplikat-Zählung (`function openNav` kommt im Standalone-
+Ergebnis nur noch **einmal** vor, vorher implizit über zwei unabhängige Textkopien).
+
+**Nachgezogene Cross-Referenzen** (Kommentare in anderen Modulen, die auf die alten
+Inline-Scripts verwiesen): `js/guide.js` (Zeitplan-Sprung-Kommentar), `js/i18n.js`
+(`guide.schedbar.noTime`-Kommentar), `js/party.js` (zwei `focusView()`-Analogie-
+Kommentare), sowie ein `activateView()`-Verweis im `pizza-rechner-mobile.html`-Markup-
+Kommentar über der Party-Quick-Bar — alle jetzt auf „`js/nav.js`" statt „Burgermenü-
+Inline-Script(s)" korrigiert.
+
+**Härten (gezielt, wie vom Nutzer explizit gefordert — echtes Refactoring mit
+Verhaltensrisiko):**
+- **Automatisierte Verhaltens-Verifikation** (eigener Headless-Edge-Testaufbau, temporär,
+  nie ins Repo committet): 13 Prüfungen je Seite — Panel öffnet bei Toggle-Klick
+  (`aria-expanded` synchron), initialer Fokus auf dem aktiven `.nav-item`, Tab-Trap
+  vorwärts (letztes → erstes Element) UND rückwärts (Shift+Tab, erstes → letztes),
+  Bereichswechsel-Klick (Ziel-View sichtbar, andere Views `hidden`, `aria-current`
+  gesetzt, Panel schließt, Fokus auf die neue `<h2>`), Escape schließt das Panel und
+  stellt den vorherigen Fokus wieder her, `PZ.gotoView` ist verfügbar. **Alle 13/13 grün
+  auf Desktop, Mobil UND dem Standalone-Build.**
+- **Gezielter `accessibility-expert`-Durchlauf** (nur auf die Nav-Stelle, kein Vollaudit,
+  explizit vom Nutzer gefordert): Tab-Trap-DOM-Reihenfolge in beiden HTML-Dateien
+  gegengeprüft (identisch: `navClose` → 6× `.nav-item` → `crossLink`), Escape erzeugt
+  keinen Keyboard-Trap (WCAG 2.1.2), `aria-expanded`/Live-Region-Clear-then-delayed-set-
+  Muster (WCAG 4.1.3) bestätigt korrekt, `crossLink`-IDs kollisionsfrei (je nur einmal im
+  Markup), keine verwaisten Inline-Nav-Reste, alle 6 `[data-view]`-Bereiche haben ein
+  `<h2>` für `focusView()`. **Keine Korrekturen nötig** — einzige Randnotiz: ein bereits
+  vor v3.36.0 bestehender, rein kosmetischer Kommentar-Zahlendreher („die vier
+  Bereichs-Buttons", tatsächlich inzwischen 6) wurde 1:1 wie im Original übernommen,
+  bewusst nicht angefasst (außerhalb des angefragten Prüfbereichs, keine Regression durch
+  diesen Zyklus).
+
+**Tests:** `tests/test.html` unverändert (weder `js/nav.js` noch `js/ui.js` werden dort
+geladen — reines DOM-Wiring, s. Abschnitt „Dateistruktur") — 614 Prüfungen weiterhin grün.
+
+**Geändert:** `js/nav.js` (neu), `js/guide.js`, `js/i18n.js`, `js/party.js`,
+`pizza-rechner.html`, `pizza-rechner-mobile.html`, `pizza-rechner-KONTEXT.md`. `?v=` auf
+`3.54.0` gezogen (Desktop + Mobil, alle `<link>`/`<script>`-Tags inkl. der neuen
+`js/nav.js`-Referenz), `appVersion`-Text in allen drei HTML-Dateien auf `v3.54.0`.
+`pizza-rechner-mobile-standalone.html` neu gebaut. `Versionen/v3.54.0 - Gemeinsames
+Nav-Modul/` enthält den vollständigen Schnappschuss.
+
+## Zucker-/Öl-Legacy-Fallback entfernt (v3.53.0)
 
 Direkter Nutzerauftrag (kein `/define-feature`), kein Backlog-Punkt: „Auftrag A" aus einem
 zweiteiligen Folgeauftrag (Auftrag B — gemeinsames Nav-Modul — folgt als eigener Zyklus direkt
@@ -2641,6 +2720,13 @@ das Panel und stellt den vorherigen Fokus wieder her, das `multiRecipes`-Flag bl
 sowohl `#recipesCard` als auch den passenden `.nav-item` korrekt aus, keine
 JavaScript-Konsolenfehler während des gesamten Durchlaufs.
 
+**Überholt seit v3.54.0:** die hier begründete bewusste Duplizierung („bewährte
+Mobil-Umsetzung bleibt unangetastet") wurde im Zyklus „Gemeinsames Nav-Modul (v3.54.0)"
+(s. Abschnitt weiter oben) aufgehoben — die damalige Vorgabe galt nicht mehr, beide
+Inline-Scripts wurden zu `js/nav.js` zusammengeführt (Mobil-Implementierung blieb dabei
+die maßgebliche Referenz). Dieser Abschnitt bleibt als historische Begründung stehen,
+warum ursprünglich dupliziert statt gemeinsam ausgelagert wurde.
+
 **Geändert:** `pizza-rechner.html`, `pizza-rechner-mobile.html` (nur `?v=`),
 `css/styles.css`, `js/settings.js` (nur Kommentar). `?v=` auf `3.26.0` gezogen
 (Desktop + Mobil, Cache-Busting + Footer-Version). `pizza-rechner-mobile-
@@ -4453,7 +4539,7 @@ lokal per Doppelklick genutzt (kein Vorteil durch Pages dort).
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.49.0)
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.54.0)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
@@ -4491,19 +4577,23 @@ js/party.js          Pizza-Party-Planer (v3.27.0) — eigenständiger Bereich, k
                      PZ.state/PZ.calc()
 js/glossary.js       Pizza-Glossar (v3.37.0) — eigenständiger Menü-Bereich, reine Anzeige-Funktion
 js/main.js           Start: Speichern-Button, Rezept-Auswahl/-Buttons, load(), applyMethod(), calc()
-tests/test.html      605 Prüfungen in 24 Kategorien (Doppelklick, kein Server) — lädt 14 der 20
+js/nav.js            Gemeinsames Burgermenü-Navigations-Modul (v3.54.0, vorher zwei/drei duplizierte
+                     Inline-Scripts): openNav/closeNav/activateView/announceView/focusView/gotoView +
+                     Tab-Trap; läuft bewusst als letztes Script (nach main.js)
+tests/test.html      614 Prüfungen in 24 Kategorien (Doppelklick, kein Server) — lädt 14 der 21
                      js/*-Module direkt (dom/state/i18n/settings/theme/flour/schedule/guide/calc/
                      print/pdf/storage/share/party); ui.js, timer.js, presets.js, newrecipe.js,
-                     glossary.js, main.js werden NICHT geladen (reines DOM-Wiring bzw. Browser-APIs) —
-                     einzelne Ausschnitte wie PZ.PRESETS werden bei Bedarf punktuell gestubbt
+                     glossary.js, main.js, nav.js werden NICHT geladen (reines DOM-Wiring bzw.
+                     Browser-APIs) — einzelne Ausschnitte wie PZ.PRESETS werden bei Bedarf punktuell
+                     gestubbt
 README.md            kurzer Einstieg
 ```
 
 **Ladereihenfolge** (Abhängigkeiten): dom → state → i18n → settings → theme → flour → calc →
 schedule → guide → timer → ui → print → pdf → presets → storage → newrecipe → share → party →
-glossary → main. Jedes Modul ist eine IIFE, kommuniziert nur über `window.PZ`.
+glossary → main → nav. Jedes Modul ist eine IIFE, kommuniziert nur über `window.PZ`.
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.49.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.54.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
@@ -4540,7 +4630,7 @@ nach dem Rebuild, gegenprüfen), sonst zeigt die Live-App die falsche Version an
 - **Versionen-Workflow (Pflicht bei jeder Änderung):** kompletten lauffähigen Stand nach
   `Versionen/vX.Y.Z - [Beschreibung]/` kopieren (html, index, css/, js/, README; tests/ optional).
   SemVer: Patch=Fix, Minor=Feature, Major=Umbau. `?v=` in der HTML mitziehen.
-- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 605 Prüfungen in
+- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 614 Prüfungen in
   24 Kategorien** (s. Dateistruktur oben). Die folgende Beschreibung dokumentiert den Aufbau der
   ursprünglichen 16 Kategorien bis v3.12.0 (293 Prüfungen); die seither hinzugekommenen Kategorien
   17–24 (Teilen-Link, Feature-Flags/Einstellungen, Zucker/New-York-Style, Rezepte-Backup,
@@ -5287,11 +5377,22 @@ Keine Code-Änderung durch den Audit nötig.
   künftigen Zyklus, falls dieselbe Begründung (keine real existierenden alten
   Rezepte) dort ebenfalls bestätigt wird.
 
-**Stand v3.53.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
-oben, bis auf den o. g. `flourTemp`-Nebenbefund). Der Bring!-Deeplink-Testaufbau ist
-abschließend geklärt (verworfen, vollständig zurückgebaut, keine offene Frage mehr).
-Ein weiterer B8-Punkt („Auftrag B — gemeinsames Nav-Modul") ist direkt im Anschluss
-als eigener Zyklus in Arbeit — s. ggf. neuere Version oben, falls bereits committet.
+- ~~Gemeinsames Nav-Modul (letzter offener B8-Punkt: duplizierte Nav-Inline-Scripts;
+  „Auftrag B" desselben zweiteiligen Nutzerauftrags wie v3.53.0)~~ — **erledigt in
+  v3.54.0** (per `/define-feature` bestätigt; s. Abschnitt „Gemeinsames Nav-Modul
+  (v3.54.0)" oben). Die zwei früheren Inline-Script-Kopien (Desktop + Mobil) sind
+  jetzt `js/nav.js`, Mobil-Implementierung war die maßgebliche Referenz, keine
+  Verhaltensänderung (per Headless-Verhaltenstest + gezieltem
+  `accessibility-expert`-Durchlauf verifiziert).
+
+**Stand v3.54.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+oben, bis auf den `flourTemp`-Fallback-Nebenbefund aus v3.53.0). Der Bring!-Deeplink-
+Testaufbau ist abschließend geklärt (verworfen, vollständig zurückgebaut, keine offene
+Frage mehr). Der gesamte B8-Fund-Katalog aus dem Fable-Architektur-Review ist damit
+abgearbeitet (Timer nur bei offenem Tab bleibt weiterhin bewusste Design-Entscheidung,
+s. entsprechender Abschnitt). Keine Warteschlange mehr offen — für den nächsten Zyklus
+braucht es wieder frisches Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/
+Layout-Überarbeitungen, Bugfixes) statt eines vorgegebenen Auftrags.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

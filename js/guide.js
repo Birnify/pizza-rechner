@@ -307,9 +307,10 @@
   // gehen. Stattdessen EIN einziger, dauerhaft delegierter Listener auf dem stabilen
   // #guideSteps-Container selbst, der auf Klicks auf .schedbar-goto-zeitplan reagiert
   // (Event-Bubbling), egal wie oft der Inhalt neu gerendert wird. PZ.gotoView() wird
-  // von den Burgermenü-Inline-Scripts beider Seiten bereitgestellt (Desktop + Mobil,
-  // identisches Muster) — falls aus irgendeinem Grund nicht vorhanden (z. B. isolierte
-  // Testumgebung ohne Menü-Markup), passiert einfach nichts (kein Crash).
+  // vom gemeinsamen Nav-Modul bereitgestellt (js/nav.js, seit v3.54.0 — vorher zwei
+  // identische Burgermenü-Inline-Scripts auf Desktop + Mobil) — falls aus irgendeinem
+  // Grund nicht vorhanden (z. B. isolierte Testumgebung ohne Menü-Markup/js/nav.js),
+  // passiert einfach nichts (kein Crash).
   const guideStepsEl = $('guideSteps');
   if (guideStepsEl) {
     guideStepsEl.addEventListener('click', function (e) {

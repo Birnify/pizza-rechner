@@ -313,7 +313,7 @@
   // seitdem im eigenen Menüpunkt "Zeitplan", nicht mehr im selben Bereich wie
   // die Anleitung. Der {zeitplan}-Platzhalter wird in js/guide.js mit einem
   // klickbaren <button data-goto="zeitplan">-Snippet befüllt (springt direkt
-  // zum Menüpunkt, s. PZ.gotoView() in beiden HTML-Dateien).
+  // zum Menüpunkt, s. PZ.gotoView() in js/nav.js).
   add('guide.schedbar.noTime', '⏱️ Gesamtdauer ca. <b>{dur}</b> — lege im Bereich {zeitplan} eine <b>Start-</b> oder <b>Zielzeit</b> fest, dann bekommt jeder Schritt eine Uhrzeit.',
     '⏱️ Total time approx. <b>{dur}</b> — set a <b>start</b> or <b>target time</b> in the {zeitplan} section, then every step gets a clock time.');
   add('guide.summary.noTime', '{label} · Gesamt ~{dur}', '{label} · Total ~{dur}');
