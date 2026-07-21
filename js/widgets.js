@@ -9,8 +9,8 @@
  * dupliziertes PREF_DEFAULT-Objekt. Echtes Divergenzrisiko: der Komma-Format-Fix
  * (v3.32.0) musste seinerzeit zweimal gemacht werden, weil beide Kopien unabhängig
  * existierten — und das Zahlenfeld-Clamping (v3.51.0, Fable-Review-Fund „B8") wurde
- * seither nur in js/ui.js nachgezogen, nicht in js/newrecipe.js (s. Nebenbefund am
- * Ende dieser Datei).
+ * bei Einführung von PZ.makeLink() zunächst nur in js/ui.js nachgezogen, nicht in
+ * js/newrecipe.js (seit v3.61.0 behoben, s. u.).
  *
  * Diese Datei liefert vier Fabrik-Funktionen, die je eine KONFIGURATION entgegennehmen
  * (welches State-Objekt beschrieben wird, ob/welche Nebeneffekte beim Setzen laufen
@@ -23,13 +23,16 @@
  *                              selectPrefStage() (+ die nr*-Geschwister)
  *   - PZ.fillFlourSelect(cfg) — ersetzt renderFlourOptions()/populateNrFlour()
  *
- * WICHTIG — keine Verhaltensänderung (Auftrag: reines Wartbarkeits-Refactoring):
- * js/ui.js hat seit v3.51.0 Zahlenfeld-Clamping in link(), js/newrecipe.js hatte es
- * NIE. PZ.makeLink() bekommt deshalb ein `clamp:true|false`-Flag, das genau diese
- * bestehende Asymmetrie 1:1 erhält (ui.js ruft mit clamp:true auf, newrecipe.js mit
- * clamp:false) — KEIN stillschweigendes Nachziehen des Clamping in newrecipe.js in
- * diesem Zug (das wäre eine Verhaltensänderung, nicht Teil dieses Auftrags). Als
- * Nebenbefund fürs Backlog dokumentiert, s. pizza-rechner-KONTEXT.md.
+ * WICHTIG (v3.56.0) — keine Verhaltensänderung (Auftrag: reines
+ * Wartbarkeits-Refactoring): js/ui.js hatte seit v3.51.0 Zahlenfeld-Clamping in
+ * link(), js/newrecipe.js hatte es NIE. PZ.makeLink() bekam deshalb ein
+ * `clamp:true|false`-Flag, das diese bestehende Asymmetrie zunächst 1:1 erhielt
+ * (ui.js clamp:true, newrecipe.js clamp:false) — bewusst kein stillschweigendes
+ * Nachziehen in diesem Refactoring-Zug, als Nebenbefund fürs Backlog dokumentiert.
+ * Seit v3.61.0 (direkter Nutzerauftrag, Konsistenz-Entscheidung): js/newrecipe.js
+ * ruft PZ.makeLink() jetzt ebenfalls mit clamp:true auf — beide Formulare klemmen
+ * jetzt identisch, das `clamp`-Flag selbst bleibt (kein toter Parameter, s.
+ * pizza-rechner-KONTEXT.md).
  *
  * Lädt früh (nach dom.js/state.js, vor flour.js/ui.js/newrecipe.js) — braucht nur
  * PZ.$ zur Aufrufzeit der zurückgegebenen Funktionen, keine Abhängigkeit zu

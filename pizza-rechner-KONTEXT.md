@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-21 · Aktuelle Version: v3.60.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-21 · Aktuelle Version: v3.61.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,60 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## flourTemp-Legacy-Fallback entfernt (v3.60.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Zahlenfeld-Clamping auch in js/newrecipe.js (v3.61.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Direkter Nutzerauftrag (kein `/define-feature`), kein Backlog-Punkt: „Punkt 2" desselben
+zweiteiligen Auftrags wie v3.60.0. Hintergrund: bei der Einführung der gemeinsamen
+Widget-Fabrik `PZ.makeLink()` (`js/widgets.js`, v3.56.0) wurde die bestehende Asymmetrie
+bewusst 1:1 erhalten — `js/ui.js` ruft mit `clamp:true` auf (Zahlenfeld-Clamping seit
+v3.51.0), `js/newrecipe.js` mit `clamp:false` (hatte das Clamping nie). Das war damals
+explizit KEIN Refactoring-Scope, sondern als Nebenbefund fürs Backlog dokumentiert. Der
+Nutzer hat jetzt bestätigt: für Konsistenz sollen beide Formulare (Rezept bearbeiten via
+`js/ui.js`, neues Rezept anlegen via `js/newrecipe.js`) gleich klemmen.
+
+**Geändert:** da `PZ.makeLink()` das `clamp`-Flag bereits vollständig unterstützt (reine
+Konfiguration, keine neue Logik nötig), genügt eine einzige Zeile in `js/newrecipe.js`:
+`PZ.makeLink({ stateObj: nrState, clamp: false, ... })` → `clamp: true`. Alle 12 Zahlenfelder
+des Formulars (`nrBalls`, `nrBallw`, `nrHyd`, `nrSalt`, `nrOil`, `nrSugar`, `nrPref`,
+`nrBhyd`, `nrYeast`, `nrDdt`, `nrRoom`, `nrFlourTemp`) klemmen jetzt identisch zu ihren
+`js/ui.js`-Pendants: getippte Werte außerhalb der `min`/`max`-Attribute des jeweils
+auslösenden Elements werden auf die Grenze geklemmt, das auslösende Element wird bei
+tatsächlicher Klemmung zurückgeschrieben (kein Diskrepanz-Risiko zwischen Anzeige und
+State) — exakt dieselbe, bereits in v3.51.0 gehärtete `clampTo()`-Logik, nur jetzt auch
+hier aktiv. Kommentare in `js/newrecipe.js` (Aufrufstelle) und `js/widgets.js`
+(Datei-Kopfkommentar zur früheren Asymmetrie) aktualisiert, damit sie den neuen Stand
+korrekt beschreiben.
+
+**Bewusst NICHT angefasst:** die gestaffelten `min`/`max`-Grenzen selbst (Zahlenfeld meist
+weiter gefasst als der zugehörige Slider, z. B. `nrBalls` Slider 1–20 / Zahlenfeld 1–50) —
+unverändert wie im `js/ui.js`-Vorbild; ein `<input type="range">` kann von sich aus nie
+über sein eigenes `max`-Attribut hinaus angezeigt werden (Browser-natives Verhalten), auch
+wenn `state`/Zahlenfeld korrekt auf den weiteren Zahlenfeld-Grenzwert geklemmt sind — kein
+neuer Effekt, identisch zum bereits bestehenden `js/ui.js`-Verhalten.
+
+**Härten:** keine neue UI/kein neues Markup (reine Verhaltens-Härtung bestehender Felder,
+identisch zur bereits produktiv laufenden `js/ui.js`-Logik) — analog zur Begründung bei der
+Einführung des Clampings selbst (v3.51.0) kein `accessibility-expert`-Durchlauf nötig.
+
+**Tests:** `js/newrecipe.js` wird in `tests/test.html` bewusst nicht geladen (reines
+DOM-Wiring ohne eigene Test-Sektion, wie `js/ui.js`) — daher unverändert **614 Prüfungen**,
+alle grün. Stattdessen mit einem isolierten, temporären Headless-Edge-Verifikations-Aufbau
+geprüft (Kopie der `#newRecipeCard`-Formularfelder + `js/dom.js`/`js/state.js`/
+`js/i18n-dict.js`/`js/i18n.js`/`js/settings.js`/`js/theme.js`/`js/widgets.js`/`js/flour.js`/
+`js/newrecipe.js`, echte `input`-Events simuliert): `nrBallsN=500` klemmt korrekt auf 50
+(Zahlenfeld-Grenze), `nrHydN=5` klemmt auf 40, `nrHydN=65` (innerhalb der Grenzen) bleibt
+unverändert, `nrRoomN=-15` klemmt auf 0, `nrBallwN=400` (gemeinsames Slider-/Zahlenfeld-
+Maximum) bleibt korrekt synchron — 5/5 Kernprüfungen wie erwartet. Verifikations-Datei
+nach Gebrauch wieder gelöscht (war nie Teil des Repos, analog zu v3.51.0).
+
+**Geändert:** `js/newrecipe.js`, `js/widgets.js`, `pizza-rechner-KONTEXT.md`. `?v=` auf
+`3.61.0` gezogen (Desktop + Mobil, alle `<link>`/`<script>`-Tags), `appVersion`-Text in
+allen drei HTML-Dateien auf `v3.61.0`. `pizza-rechner-mobile-standalone.html` neu gebaut.
+`Versionen/v3.61.0 - Zahlenfeld-Clamping newrecipe/` enthält den vollständigen Schnappschuss.
+
+**Damit ist der zweiteilige Nutzerauftrag (v3.60.0 + v3.61.0) komplett abgeschlossen.**
+
+## flourTemp-Legacy-Fallback entfernt (v3.60.0)
 
 Direkter Nutzerauftrag (kein `/define-feature`), kein Backlog-Punkt: „Punkt 1" eines
 zweiteiligen Folgeauftrags (Punkt 2 — Zahlenfeld-Clamping in `js/newrecipe.js` — folgt
@@ -5844,14 +5897,17 @@ Keine Code-Änderung durch den Audit nötig.
   entfernten Zucker-/Öl-Fallback)~~ — **erledigt in v3.60.0** (direkter Nutzerauftrag,
   „Punkt 1" eines zweiteiligen Folgeauftrags; s. Abschnitt „flourTemp-Legacy-Fallback
   entfernt (v3.60.0)" oben).
+- ~~Zahlenfeld-Clamping auch in `js/newrecipe.js` (Nebenbefund aus v3.56.0, eigene
+  Produktentscheidung)~~ — **erledigt in v3.61.0** (direkter Nutzerauftrag, „Punkt 2"
+  desselben zweiteiligen Auftrags; s. Abschnitt „Zahlenfeld-Clamping auch in
+  js/newrecipe.js (v3.61.0)" oben).
 
-**Stand v3.60.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
-oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen,
-vollständig zurückgebaut, keine offene Frage mehr). Ein kleiner Nebenbefund aus dem
-Struktur-Refactoring-Fünferauftrag bleibt als offener, unbestätigter Kandidat: ob
-`js/newrecipe.js`s Zahlenfelder künftig ebenfalls das Zahlenfeld-Clamping wie `js/ui.js`
-bekommen sollen (v3.56.0, eigene Produktentscheidung) — **„Punkt 2" desselben
-zweiteiligen Nutzerauftrags, folgt direkt im Anschluss als eigener Zyklus.**
+**Stand v3.61.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen, vollständig
+zurückgebaut, keine offene Frage mehr). Keine offenen Nebenbefunde/Kandidaten mehr aus
+früheren Zyklen — für den nächsten Zyklus braucht es wieder frisches Brainstorming in
+Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes) statt eines
+vorgegebenen Auftrags.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

@@ -44,11 +44,12 @@
   // ist (wie in js/ui.js) ein Wörterbuch-Key, kein fertiger String, damit ein
   // späterer Sprachwechsel den aria-valuetext auffrischen kann (s. nrUnitLinks).
   // Seit v3.56.0: gemeinsame Fabrik PZ.makeLink() (js/widgets.js) statt eigener
-  // Implementierung — clamp:false erhält bewusst das bisherige Verhalten (dieses
-  // Formular hatte NIE das Zahlenfeld-Clamping aus js/ui.js, s. Kommentar in
-  // js/widgets.js zur Asymmetrie), onSet bleibt weg (kein PZ.calc() hier).
+  // Implementierung, onSet bleibt weg (kein PZ.calc() hier). Seit v3.61.0:
+  // clamp:true (Nutzerauftrag „Punkt 2" — Konsistenz mit js/ui.js) — vorher
+  // clamp:false (dieses Formular hatte das Zahlenfeld-Clamping aus v3.51.0 nie
+  // nachgezogen, s. Nebenbefund/Asymmetrie-Kommentar in js/widgets.js).
   const nrUnitLinks = [];
-  const nrLink = PZ.makeLink({ stateObj: nrState, clamp: false, unitLinks: nrUnitLinks });
+  const nrLink = PZ.makeLink({ stateObj: nrState, clamp: true, unitLinks: nrUnitLinks });
 
   const nrSet = {
     balls: nrLink('nrBalls', 'nrBallsN', 'balls', 0, 'unit.balls'),
