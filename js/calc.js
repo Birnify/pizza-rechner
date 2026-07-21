@@ -1,4 +1,21 @@
-/* calc.js — Hauptberechnung (Bäckerprozente, Wassertemperatur, Eismenge) */
+/* calc.js — Hauptberechnung (Bäckerprozente, Wassertemperatur, Eismenge)
+ *
+ * Seit v3.57.0 in zwei Teile getrennt (vorher ~30 DOM-Schreibzugriffe direkt in der
+ * Rechenlogik vermischt — Kernberechnungen waren dadurch nur über DOM-Stubs testbar,
+ * echte Logikfehler wie der Eis-Bug (v3.48.0) schwerer isoliert zu finden/testen):
+ *   - PZ.calcCore(state) — reine Rechenfunktion OHNE jeden DOM-Zugriff, liefert das
+ *     komplette Ergebnis-Objekt R (inkl. ein paar reinen Render-Hilfsfeldern wie
+ *     hasPref/hasMixingWater/note, damit renderResult() unten NUR R als Parameter
+ *     braucht). Ruft PZ.t() für Text (yWord/note) — reine, DOM-freie Wörterbuch-
+ *     Abfrage, zählt nicht als DOM-Zugriff.
+ *   - PZ.renderResult(R) — schreibt das bereits berechnete R ins DOM. Keine
+ *     Berechnung mehr hier, nur Anzeige.
+ *   - PZ.calc() bleibt als Fassade (ruft beides + PZ.buildGuide() auf) — keine
+ *     Änderung an bestehenden Aufrufern nötig (js/ui.js, js/presets.js,
+ *     js/storage.js usw. rufen weiterhin einfach PZ.calc()).
+ * Reines Wartbarkeits-Refactoring — keine Änderung an der Berechnungslogik selbst.
+ * js/guide.js/js/schedule.js bewusst NICHT angefasst (separates Vorhaben).
+ */
 (function (global) {
   'use strict';
   const PZ = global.PZ || (global.PZ = {});
@@ -9,8 +26,10 @@
   // letzte Ergebnisse (für die Anleitung)
   PZ.R = {};
 
-  function calc() {
-    const state = PZ.state;
+  // ======================================================================
+  // calcCore(state) — reine Rechenfunktion, kein DOM-Zugriff
+  // ======================================================================
+  function calcCore(state) {
     const N = state.balls, W = state.ballw;
     const total = N * W;
     const h = state.hyd / 100, s = state.salt / 100, y = state.yeast / 100;
@@ -28,27 +47,11 @@
     if (state.yeastType === 'dry') yeast *= PZ.FRESH_TO_DRY;
     const yWord = state.yeastType === 'dry' ? t('yeast.dry') : t('yeast.fresh');
 
-    // Vorteig-Werte (unten ggf. gefüllt)
-    let pf = 0, pw = 0, pYeast = 0, mYeast = yeast, mFlour = flour, mWater = water;
-
-    $('totalW').textContent = Math.round(total);
-    $('ballsOut').textContent = N;
-    $('ballwOut').textContent = W;
-    $('gFlour').textContent = Math.round(flour);
-    $('gWater').textContent = Math.round(water);
-    $('gSalt').textContent  = salt.toFixed(1);
-    $('gYeast').textContent = yeast < 10 ? yeast.toFixed(2) : Math.round(yeast);
-    $('yLabel').textContent = yWord;
-    if ($('gOil')) $('gOil').textContent = oil.toFixed(1);
-    // Öl-Zeile ganz ausblenden, wenn kein Öl im Rezept
-    if ($('gOilRow')) $('gOilRow').style.display = oil >= 0.05 ? 'flex' : 'none';
-    if ($('gSugar')) $('gSugar').textContent = sugar.toFixed(1);
-    // Zucker-Zeile ganz ausblenden, wenn kein Zucker im Rezept (Standard: New-York-Style-Feld ist 0)
-    if ($('gSugarRow')) $('gSugarRow').style.display = sugar >= 0.05 ? 'flex' : 'none';
-
     // --- Vorteig-Aufteilung ---
+    let pf = 0, pw = 0, pYeast = 0, mYeast = yeast, mFlour = flour, mWater = water;
+    const hasPref = state.method !== 'direct';
     let prefEff = state.pref, prefClamped = false;
-    if (state.method !== 'direct') {
+    if (hasPref) {
       const pHyd = state.method === 'poolish' ? 1 : state.bhyd / 100;
       // Das Vorteig-Wasser (pf × pHyd) darf das Gesamtwasser (flour × h) nie übersteigen —
       // sonst wird das Hauptteig-Restwasser negativ. Max-Anteil: hyd / pHyd.
@@ -61,23 +64,6 @@
       mYeast = 0;
       mFlour = flour - pf;
       mWater = water - pw;
-      $('pFlour').textContent = Math.round(pf);
-      $('pWater').textContent = Math.round(pw);
-      $('pYeast').textContent = pYeast < 10 ? pYeast.toFixed(2) : Math.round(pYeast);
-      $('pyLabel').textContent = yWord;
-      // Hauptteig = Rest
-      $('mFlour').textContent = Math.round(flour - pf);
-      $('mWater').textContent = Math.round(water - pw);
-      $('mSalt').textContent = salt.toFixed(1);
-      $('mYeast').textContent = mYeast < 10 ? mYeast.toFixed(2) : Math.round(mYeast);
-      // bei sehr langer Führung oft keine zusätzliche Hefe
-      $('mYeastRow').style.display = mYeast < 0.05 ? 'none' : 'flex';
-      // Öl kommt komplett in den Hauptteig (nie in Biga/Poolish)
-      if ($('mOil')) $('mOil').textContent = oil.toFixed(1);
-      if ($('mOilRow')) $('mOilRow').style.display = oil >= 0.05 ? 'flex' : 'none';
-      // Zucker kommt komplett in den Hauptteig (nie in Biga/Poolish, analog zu Öl)
-      if ($('mSugar')) $('mSugar').textContent = sugar.toFixed(1);
-      if ($('mSugarRow')) $('mSugarRow').style.display = sugar >= 0.05 ? 'flex' : 'none';
     }
 
     // --- Wassertemperatur (DDT-Methode) ---
@@ -85,7 +71,6 @@
     const friction = parseFloat(state.knead); // Hand 3, Maschine 6
     let wT = state.ddt * 3 - state.room - state.flourTemp - friction;
     wT = Math.round(wT * 10) / 10;
-    $('waterTemp').textContent = wT;
 
     // --- Eismenge, um Schüttwasser auf wT zu bringen (aus Leitungswasser ~ room) ---
     // Bei Vorteig (Biga/Poolish) wird NICHT das Gesamtwasser gekühlt, sondern nur das
@@ -115,13 +100,74 @@
       note = t('calc.tapOkNote', { tapTemp: Ttap });
     }
     if (hasMixingWater && wT < 1) note += t('calc.veryColdWarn');
-    $('iceAmt').textContent = ice;
-    $('iceNote').innerHTML = note;
+
+    return {
+      N, W, total, flour, water, salt, oil, sugar, yeast, yWord,
+      pf, pw, pYeast, mYeast, mFlour, mWater,
+      wT, ice, Ttap, prefEff, prefClamped,
+      hasPref, hasMixingWater, note
+    };
+  }
+  PZ.calcCore = calcCore;
+
+  // ======================================================================
+  // renderResult(R) — schreibt das bereits berechnete Ergebnis ins DOM
+  // ======================================================================
+  function renderResult(R) {
+    $('totalW').textContent = Math.round(R.total);
+    $('ballsOut').textContent = R.N;
+    $('ballwOut').textContent = R.W;
+    $('gFlour').textContent = Math.round(R.flour);
+    $('gWater').textContent = Math.round(R.water);
+    $('gSalt').textContent  = R.salt.toFixed(1);
+    $('gYeast').textContent = R.yeast < 10 ? R.yeast.toFixed(2) : Math.round(R.yeast);
+    $('yLabel').textContent = R.yWord;
+    if ($('gOil')) $('gOil').textContent = R.oil.toFixed(1);
+    // Öl-Zeile ganz ausblenden, wenn kein Öl im Rezept
+    if ($('gOilRow')) $('gOilRow').style.display = R.oil >= 0.05 ? 'flex' : 'none';
+    if ($('gSugar')) $('gSugar').textContent = R.sugar.toFixed(1);
+    // Zucker-Zeile ganz ausblenden, wenn kein Zucker im Rezept (Standard: New-York-Style-Feld ist 0)
+    if ($('gSugarRow')) $('gSugarRow').style.display = R.sugar >= 0.05 ? 'flex' : 'none';
+
+    if (R.hasPref) {
+      $('pFlour').textContent = Math.round(R.pf);
+      $('pWater').textContent = Math.round(R.pw);
+      $('pYeast').textContent = R.pYeast < 10 ? R.pYeast.toFixed(2) : Math.round(R.pYeast);
+      $('pyLabel').textContent = R.yWord;
+      // Hauptteig = Rest
+      $('mFlour').textContent = Math.round(R.mFlour);
+      $('mWater').textContent = Math.round(R.mWater);
+      $('mSalt').textContent = R.salt.toFixed(1);
+      $('mYeast').textContent = R.mYeast < 10 ? R.mYeast.toFixed(2) : Math.round(R.mYeast);
+      // bei sehr langer Führung oft keine zusätzliche Hefe
+      $('mYeastRow').style.display = R.mYeast < 0.05 ? 'none' : 'flex';
+      // Öl kommt komplett in den Hauptteig (nie in Biga/Poolish)
+      if ($('mOil')) $('mOil').textContent = R.oil.toFixed(1);
+      if ($('mOilRow')) $('mOilRow').style.display = R.oil >= 0.05 ? 'flex' : 'none';
+      // Zucker kommt komplett in den Hauptteig (nie in Biga/Poolish, analog zu Öl)
+      if ($('mSugar')) $('mSugar').textContent = R.sugar.toFixed(1);
+      if ($('mSugarRow')) $('mSugarRow').style.display = R.sugar >= 0.05 ? 'flex' : 'none';
+    }
+
+    $('waterTemp').textContent = R.wT;
+    $('iceAmt').textContent = R.ice;
+    $('iceNote').innerHTML = R.note;
     // Ganzen Wassertemperatur-Block ausblenden, wenn es kein Schüttwasser mehr gibt
     // (analog zum bestehenden Öl-/Zucker-Zeilen-Muster, s. gOilRow/gSugarRow oben).
-    if ($('tempStage')) $('tempStage').style.display = hasMixingWater ? '' : 'none';
+    if ($('tempStage')) $('tempStage').style.display = R.hasMixingWater ? '' : 'none';
+  }
+  PZ.renderResult = renderResult;
 
-    PZ.R = { N, W, total, flour, water, salt, oil, sugar, yeast, yWord, pf, pw, pYeast, mYeast, mFlour, mWater, wT, ice, Ttap, prefEff, prefClamped };
+  // ======================================================================
+  // calc() — Fassade: rechnet, publiziert PZ.R, rendert, löst die Anleitung aus.
+  // Bestehende Aufrufer (js/ui.js, js/presets.js, js/storage.js, js/share.js, ...)
+  // rufen weiterhin unverändert PZ.calc() auf.
+  // ======================================================================
+  function calc() {
+    const state = PZ.state;
+    const R = calcCore(state);
+    PZ.R = R;
+    renderResult(R);
     PZ.buildGuide();
   }
 

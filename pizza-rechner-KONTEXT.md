@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-21 · Aktuelle Version: v3.56.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-21 · Aktuelle Version: v3.57.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,69 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Gemeinsame Widget-Fabrik für ui.js/newrecipe.js (v3.56.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Rechenkern von Renderer getrennt (calc.js) (v3.57.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Per `/define-feature` bestätigt — drittes von fünf Struktur-Refactorings aus demselben
+Fable-Architektur-Review, in fester Reihenfolge: 1) i18n-Split (v3.55.0), 2)
+Widget-Fabrik (v3.56.0), 3) Rechenkern/Renderer-Trennung calc.js (dieser Abschnitt),
+4) `PZ.announce()`-Helfer, 5) `PZ.looksLikeState()` — noch offen, folgen als eigene
+Zyklen. Reines Wartbarkeits-Refactoring **ohne beabsichtigte Verhaltensänderung**.
+
+**Motivation:** `js/calc.js` vermischte bis v3.56.0 Mathematik mit ~30 direkten
+DOM-Schreibzugriffen (`$('totalW').textContent = ...` usw. quer über die ganze
+Funktion verteilt) — Kernberechnungen waren dadurch nur über vollständige DOM-Stubs
+testbar, echte Logikfehler (wie der Eis-Bug, v3.48.0) schwerer isoliert zu
+finden/testen.
+
+**Umsetzung — Scope exakt wie beauftragt:**
+- **`PZ.calcCore(state)`** — neue, reine Rechenfunktion **ohne jeden DOM-Zugriff**:
+  nimmt ein `state`-Objekt entgegen (muss nicht `PZ.state` sein — jedes Objekt mit
+  den passenden Feldern funktioniert, s. Verifikation unten), liefert das komplette
+  Ergebnis-Objekt `R` zurück. Ruft `PZ.t()` für Text (`yWord`/`note`) — reine,
+  DOM-freie Wörterbuch-Abfrage, zählt nicht als DOM-Zugriff. Drei neue, rein interne
+  Render-Hilfsfelder in `R` ergänzt (`hasPref`, `hasMixingWater`, `note`), damit
+  `renderResult()` unten wirklich NUR `R` als Parameter braucht, kein zusätzliches
+  `state` — rein additiv, keine bestehenden `R`-Felder verändert/entfernt (geprüft:
+  kein Aufrufer iteriert `Object.keys(PZ.R)`, alle lesen benannte Felder).
+- **`PZ.renderResult(R)`** — neue Funktion, schreibt ein bereits berechnetes `R` ins
+  DOM. Keine Berechnung mehr hier, nur Anzeige — 1:1 dieselben ~30 DOM-Schreibzugriffe
+  wie vorher, nur aus `R.*` statt aus lokalen Variablen gespeist.
+  Der bedingte Vorteig-Block (`pFlour`/`mFlour`/... — nur bei Biga/Poolish
+  geschrieben) hängt nach der Trennung an `R.hasPref` statt am direkten
+  `state.method !== 'direct'`-Check.
+- **`PZ.calc()`** bleibt als Fassade bestehen: `calcCore(state) → PZ.R → renderResult(R)
+  → PZ.buildGuide()`. **Keine Änderung an bestehenden Aufrufern nötig** — `js/ui.js`,
+  `js/presets.js`, `js/storage.js`, `js/share.js` usw. rufen weiterhin unverändert
+  `PZ.calc()` auf.
+- **Bewusst NICHT angefasst** (wie beauftragt): `js/guide.js`/`js/schedule.js` bleiben
+  strukturell unverändert, obwohl sie ähnliche DOM-Vermischung haben könnten —
+  separates, hier nicht beauftragtes Vorhaben.
+
+**Härten:** keine neue UI/kein neues Markup (reine, verhaltensidentische Funktions-
+Aufteilung) — kein `accessibility-expert`-Durchlauf nötig.
+
+**Tests:** `tests/test.html` unverändert bei **614 Prüfungen**, alle grün — die
+Testsuite ruft weiterhin `PZ.calc()` auf (nicht `calcCore()` direkt), dient hier
+als Regressionsanker wie vom Auftrag gefordert. Zusätzlich gezielt verifiziert (per
+temporärem Headless-Edge-Aufbau, nie committet): `PZ.calcCore()` direkt mit einem
+**komplett eigenen, PZ.state-unabhängigen** Test-state-Objekt aufgerufen — liefert
+korrekte Werte (`R.total`, `R.flour`, `R.hasPref`, `R.wT`) OHNE dass währenddessen
+irgendein DOM-Element existieren oder berührt werden muss (beweist den eigentlichen
+Zweck des Refactorings: isolierte Testbarkeit der Rechenlogik). Der v3.48.0-Grenzfall
+(Poolish an der Klemmgrenze, `mWater` exakt 0) über `calcCore()` erneut gegengeprüft:
+`hasMixingWater:false`, `ice:0`, korrekte Hinweis-Notiz — Regression durch die
+Trennung ausgeschlossen. Danach die normale `PZ.calc()`-Fassade mit echtem `PZ.state`
+geprüft: DOM (`#totalW`/`#gFlour`/`#waterTemp`) zeigt exakt dieselben Werte wie
+`calcCore()` pur zurückgab. Mobil-Seite zusätzlich per Headless-Dump gegengeprüft
+(`#totalW` korrekt gerendert).
+
+**Geändert:** `js/calc.js`, `pizza-rechner-KONTEXT.md`. `?v=` auf `3.57.0` gezogen
+(Desktop + Mobil, alle `<link>`/`<script>`-Tags), `appVersion`-Text in allen drei
+HTML-Dateien auf `v3.57.0`. `pizza-rechner-mobile-standalone.html` neu gebaut.
+`Versionen/v3.57.0 - Rechenkern-Renderer-Trennung calc/` enthält den vollständigen
+Schnappschuss.
+
+## Gemeinsame Widget-Fabrik für ui.js/newrecipe.js (v3.56.0)
 
 Per `/define-feature` bestätigt — zweites von fünf Struktur-Refactorings aus demselben
 Fable-Architektur-Review, in fester Reihenfolge: 1) i18n-Split (v3.55.0, erledigt),
@@ -4667,7 +4729,7 @@ lokal per Doppelklick genutzt (kein Vorteil durch Pages dort).
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.56.0)
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.57.0)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
@@ -4692,7 +4754,8 @@ js/widgets.js        Gemeinsame Widget-Fabriken (v3.56.0, vorher in js/ui.js + j
                      js/flour.js, js/ui.js, js/newrecipe.js rufen sie als dünne Konfigurationsaufrufe
 js/flour.js          PZ.FLOURS (13 Mehle) + PZ.getFlour() + Dropdown-Befüllung (via
                      PZ.fillFlourSelect(), s. js/widgets.js)
-js/calc.js           PZ.calc() Hauptberechnung (inkl. Öl/Zucker), schreibt PZ.R, ruft PZ.buildGuide()
+js/calc.js           PZ.calcCore(state)→R reine Rechenfunktion (kein DOM) + PZ.renderResult(R) fürs
+                     DOM (seit v3.57.0 getrennt) + PZ.calc()-Fassade (ruft beides + PZ.buildGuide())
 js/schedule.js       PZ.schedule() — Gärzeit-Fahrplan (berücksichtigt coldStage)
 js/guide.js          PZ.buildGuide() — Anleitung + Zeitberechnung + Mehl-Warnung + Timer-Platzhalter
 js/timer.js          PZ.wireTimers() — Gärzeit-Timer/Wecker je Schritt (Notification + Web-Audio-Beep,
@@ -4735,7 +4798,7 @@ share → party → glossary → main → nav. Jedes Modul ist eine IIFE, kommun
 `flour`/`ui`/`newrecipe` geladen werden** (liefert PZ.makeLink/makeSeg/makePrefStages/
 fillFlourSelect, die diese drei Module beim eigenen Laden direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.56.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.57.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
@@ -5546,14 +5609,22 @@ Keine Code-Änderung durch den Audit nötig.
   braucht explizite Bestätigung in einem künftigen Zyklus. **Noch offen, in
   fester Reihenfolge:** 3) Rechenkern/Renderer-Trennung calc.js, 4)
   `PZ.announce()`-Helfer, 5) `PZ.looksLikeState()`.
+- ~~Rechenkern von Renderer trennen (calc.js) (Struktur-Refactoring 3 von 5,
+  S3)~~ — **erledigt in v3.57.0** (per `/define-feature` bestätigt; s. Abschnitt
+  „Rechenkern von Renderer getrennt (calc.js) (v3.57.0)" oben). Neue
+  `PZ.calcCore(state)`→R (kein DOM) + `PZ.renderResult(R)` (nur DOM), `PZ.calc()`
+  bleibt als Fassade — keine Verhaltensänderung, keine Änderung an bestehenden
+  Aufrufern. `js/guide.js`/`js/schedule.js` bewusst nicht angefasst. **Noch
+  offen, in fester Reihenfolge:** 4) `PZ.announce()`-Helfer, 5)
+  `PZ.looksLikeState()`.
 
-**Stand v3.56.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.57.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben, bis auf den `flourTemp`-Fallback-Nebenbefund aus v3.53.0 und den
 newrecipe-Clamping-Nebenbefund aus v3.56.0). Der Bring!-Deeplink-Testaufbau ist
 abschließend geklärt (verworfen, vollständig zurückgebaut, keine offene Frage mehr).
-Drei weitere Struktur-Refactorings aus demselben Fünferauftrag wie i18n-Datei-Split/
-Widget-Fabrik sind direkt im Anschluss in fester Reihenfolge in Arbeit — s. ggf.
-neuere Versionen oben, falls bereits committet.
+Zwei weitere Struktur-Refactorings aus demselben Fünferauftrag sind direkt im
+Anschluss in fester Reihenfolge in Arbeit — s. ggf. neuere Versionen oben, falls
+bereits committet.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 
