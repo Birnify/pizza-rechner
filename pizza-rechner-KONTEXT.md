@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-21 · Aktuelle Version: v3.49.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-21 · Aktuelle Version: v3.50.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,96 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Kleinkorrekturen: Versionsnummer im Menü nachgezogen & KONTEXT.md-Schnellreferenz aktualisiert (v3.49.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Doku-Nachtrag Dateibaum & drei Kleinkorrekturen aus dem Fable-Review (v3.50.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Direkter Nutzerauftrag (kein `/define-feature`), kein Backlog-Punkt: ein Doku-Nebenbefund aus
+dem letzten Zyklus (v3.49.0) plus drei weitere diagnostische Funde aus demselben separaten,
+rein lesenden Fable-Architektur-Review.
+
+**Doku-Nachtrag — Dateibaum & Ladereihenfolge vollständig auf Ist-Stand gebracht:** der
+Abschnitt „Dateistruktur" nannte 8 längst existierende Module nicht (`i18n.js`, `settings.js`,
+`theme.js`, `newrecipe.js`, `share.js`, `party.js`, `glossary.js`, `pdf.js`). Dateibaum jetzt
+vollständig mit allen 20 `js/*`-Modulen in der tatsächlichen `<script src>`-Reihenfolge (Referenz:
+`pizza-rechner.html`/`pizza-rechner-mobile.html`, beide identisch), inkl. Kurzbeschreibung je
+Modul. „Ladereihenfolge"-Zeile ebenfalls vervollständigt: `dom → state → i18n → settings → theme
+→ flour → calc → schedule → guide → timer → ui → print → pdf → presets → storage → newrecipe →
+share → party → glossary → main`. Zusätzlich dabei zwei weitere veraltete Werte in derselben
+Nachbarschaft korrigiert (beim Lesen aufgefallen, nicht separat gemeldet): `tests/test.html`-Zeile
+ergänzt um die 6 dort NICHT geladenen Module (`ui.js`, `timer.js`, `presets.js`, `newrecipe.js`,
+`glossary.js`, `main.js`) statt nur der Kategorien-/Prüfungs-Anzahl; „**Cache-Busting:** … `?v=3.13.0`"
+war ein weiteres veraltetes Beispiel (jetzt `?v=3.50.0`, wie der Rest der Datei).
+
+**B5 (Prio 3) — veraltete Code-Kommentare korrigiert:** mehrere Kommentare behaupteten, `PZ.FLAGS`
+fehle in `tests/test.html` bewusst, weil das Modul dort nicht geladen werde. Stimmt nicht mehr
+(seit `js/settings.js` selbst dort geladen wird, s. `test.html:66` + die „alles an"-Baseline
+`Object.assign(PZ.FLAGS, {...})` um `test.html:135`) — korrigiert in `js/guide.js` (zwei Stellen:
+`timerBox()`-Kommentar, Freeze-Hint-Tipp-Kommentar), `js/print.js` (`printShoppingList()`),
+`js/pdf.js` (`downloadGuidePDF()`). Bei `js/timer.js` war der Kern der Aussage weiterhin korrekt
+(`js/timer.js` selbst wird in `tests/test.html` tatsächlich nicht geladen, Browser-APIs), nur die
+Begründung („PZ.FLAGS fehlt") war irreführend — auf „js/timer.js wird nicht geladen, PZ.FLAGS
+selbst aber schon" präzisiert. Zusätzlich `js/settings.js:29–31` korrigiert: die Behauptung, das
+„New York Style"-Preset schalte das Flag „automatisch (persistiert)" an, wurde bereits in
+v3.19.3/v3.20.1 bewusst entfernt (Regler blendet nur ein, solange das Preset aktiv gewählt ist,
+unabhängig vom Flag-Zustand) — `js/presets.js:94–103` beschrieb das schon korrekt, jetzt auch der
+Kommentar in `js/settings.js`. Zusätzlich den Datei-Kopfkommentar in `js/settings.js` (Zeile 8–12)
+mitkorrigiert (identische veraltete Behauptung, nicht separat in der Fund-Liste, aber direkt
+danebenstehend und offensichtlich derselbe Fehler). Reine Kommentar-Änderung, keine Logik.
+
+**B6 (Prio 3) — `state.knead`: Typ-Inkonsistenz Number vs. String behoben:** `js/state.js` setzte
+den Default `knead: 3` als **Number**, während `js/ui.js` (Segment-Klick, `dataset`-Werte sind
+immer Strings), `js/presets.js` (`String(p.knead)`) und `js/newrecipe.js` (`knead: '3'`) durchweg
+**String** liefern. `js/guide.js` vergleicht an mehreren Stellen strikt mit `state.knead === '6'`
+— im Normalbetrieb harmlos (der einzige Number-Fall war der ungenutzte Default), aber ein per
+Teilen-Link oder Rezepte-Backup-Import eingeschleustes `{ knead: 6 }` (Number, da `share.js`/
+`importRecipes()` Typen nicht validieren) hätte in `js/calc.js` (typtolerantes `parseFloat`)
+korrekt als „Maschine" (6 °C Reibungswärme) gerechnet, in `js/guide.js` aber weiterhin fälschlich
+„Hand"-Anleitungstext gezeigt. **Fix:** `state.knead` konsequent als String geführt — Default in
+`js/state.js` auf `'3'` geändert, und in `storage.js`s zentraler `applyState(o)`-Funktion (einziger
+Ort, über den sowohl `js/storage.js` selbst als auch `js/share.js` — via `PZ.applyState(state)` —
+jedes von außen kommende state-Objekt anwenden) direkt nach `Object.assign(state, o)` eine
+defensive Normalisierung ergänzt: `if (state.knead != null) state.knead = String(state.knead);`.
+Ein einziger Normalisierungspunkt deckt damit alle Importwege ab (Laden, Rezept wechseln,
+Teilen-Link, Backup-Import), ohne jede Quelle einzeln anzufassen.
+
+**B7 (Prio 3) — `setPdfMsg()` ohne Generation-Zähler behoben:** als einzige Live-Region-Meldung im
+Projekt nutzte `js/pdf.js`s `setPdfMsg()` noch nicht das sonst etablierte Clear-then-delayed-set-
+mit-Generation-Zähler-Muster (`share.js:copyShareLink()`, `main.js`, `party.js`, `newrecipe.js`,
+`theme.js`). Bei einem schnellen Doppelklick auf „Als PDF speichern" (z. B. erst „nicht
+berechnet"-Hinweis, dann sofort die Erfolgsmeldung) konnte der ältere, verzögerte `setTimeout`
+die neuere Meldung nachträglich wieder überschreiben. **Fix:** modul-weiter `pdfMsgGen`-Zähler,
+bei jedem Aufruf erhöht; der verzögerte `el.textContent = msg`-Schreibvorgang greift nur noch,
+wenn `gen === pdfMsgGen` weiterhin gilt (kein neuerer Aufruf dazwischen war). Identisches Muster
+wie die übrigen Live-Region-Fixes im Projekt, keine Verhaltensänderung im Normalfall (einzelner
+Klick).
+
+**Härten:** keine UI-/Markup-Änderung in diesem Zyklus (nur `js/*`-Logik + Kommentare + Doku) —
+kein `accessibility-expert`- oder `mobile-optimizer`-Durchlauf nötig, kein gemeldeter Ruckler
+also auch kein `performance-profiler`-Anlass.
+
+**Tests:** `tests/test.html` von **605 auf 608 Prüfungen** erweitert (kein separater
+`test-generator`-Lauf — B6 ist eng umrissen und synchron testbar, kein Timing-Verhalten wie B7).
+Neue Sektion in „16 · Speichern & Laden": Regressionsanker für B6 — ein über `localStorage`
+simuliertes, von außen eingeschleustes Rezept mit `knead: 6` (Number statt String) wird nach
+`PZ.load()` korrekt zu `PZ.state.knead === '6'` (String) normalisiert, `PZ.R.wT` bleibt eine
+gültige Zahl. B7 (Timing-/Live-Region-Verhalten) bekam bewusst **keinen** neuen automatisierten
+Test, analog zu den bisherigen Live-Region-Fixes im Projekt (`share.js`/`party.js`/`newrecipe.js`
+haben ebenfalls keine test.html-Abdeckung für ihr Generation-Zähler-Timing) — Verifikation per
+Codelesung (identisches, bereits etabliertes Muster 1:1 übertragen).
+
+**Verifikation:** Headless-Edge-Dump von `pizza-rechner.html` nach dem `state.js`-Default-Wechsel
+(`knead: '3'`) bestätigt: Segment „Hand" bleibt korrekt als `class="active"`/`aria-pressed="true"`
+vorausgewählt (`data-k="3"`), `#waterTemp` zeigt weiterhin korrekt `27` (Default-DDT-Werte,
+unverändert) — keine Regression durch den Typ-Wechsel.
+
+**Geändert:** `js/state.js`, `js/storage.js`, `js/guide.js`, `js/print.js`, `js/pdf.js`,
+`js/timer.js`, `js/settings.js`, `tests/test.html`, `pizza-rechner-KONTEXT.md`. `?v=` auf
+`3.50.0` gezogen (Desktop + Mobil, alle `<link>`/`<script>`-Tags), `appVersion`-Text in allen
+drei HTML-Dateien auf `v3.50.0`. `pizza-rechner-mobile-standalone.html` neu gebaut (die
+geänderten `js/*`-Module werden dort inline mitgebaut, obwohl `pizza-rechner-mobile.html` selbst
+in diesem Zyklus nicht angefasst wurde). `Versionen/v3.50.0 - Dateibaum-Nachtrag und
+Fable-Review-Kleinkorrekturen/` enthält den vollständigen Schnappschuss.
+
+## Kleinkorrekturen: Versionsnummer im Menü nachgezogen & KONTEXT.md-Schnellreferenz aktualisiert (v3.49.0)
 
 Zwei weitere Funde aus demselben separaten, rein lesenden Architektur-/Bug-Review (Fable-Modell),
 das bereits die v3.48.0-Bugfixes lieferte. Beide klein/eindeutig, kein `/define-feature` nötig,
@@ -4196,28 +4285,49 @@ index.html           Weiterleitung auf pizza-rechner.html
 css/styles.css       komplettes Stylesheet (inkl. .selectbox / .selectbox-lg / .viewlink)
 css/mobile.css       Ergänzungen NUR für pizza-rechner-mobile.html (Akkordeon, Touch-Ziele, Quick-Bar)
 js/dom.js            $-Helfer, legt globalen Namespace window.PZ an
-js/state.js          PZ.state (inkl. flour, oil, coldStage, prefMature) + PZ.FRESH_TO_DRY (1/3)
+js/state.js          PZ.state (inkl. flour, oil, coldStage, prefMature, knead) + PZ.FRESH_TO_DRY (1/3)
+js/i18n.js           PZ.t()/PZ.setLang() — Deutsch/Englisch-Sprachversion (v3.28.0), deckt statische
+                     HTML-Texte + dynamisch generierte JS-Texte ab (Anleitung, Einkaufsliste, ...)
+js/settings.js       PZ.FLAGS — Feature-Flags fürs Einstellungen-Menü (v3.16.0), eigener
+                     localStorage-Key `pizzaRechnerFeatureFlags`, vorwärtskompatibler Merge mit DEFAULTS
+js/theme.js          Dunkelmodus (v3.47.0): folgt `prefers-color-scheme`, bis der manuelle
+                     Umschalter im Einstellungen-Menü übersteuert (persistiert)
 js/flour.js          PZ.FLOURS (13 Mehle) + PZ.getFlour() + Dropdown-Befüllung
-js/calc.js           PZ.calc() Hauptberechnung (inkl. Öl), schreibt PZ.R, ruft PZ.buildGuide()
+js/calc.js           PZ.calc() Hauptberechnung (inkl. Öl/Zucker), schreibt PZ.R, ruft PZ.buildGuide()
 js/schedule.js       PZ.schedule() — Gärzeit-Fahrplan (berücksichtigt coldStage)
 js/guide.js          PZ.buildGuide() — Anleitung + Zeitberechnung + Mehl-Warnung + Timer-Platzhalter
 js/timer.js          PZ.wireTimers() — Gärzeit-Timer/Wecker je Schritt (Notification + Web-Audio-Beep,
-                     State in localStorage['pizzaRechnerTimers'], kein Server/Service-Worker)
+                     State in localStorage['pizzaRechnerTimers'], kein Server/Service-Worker); nutzt
+                     Browser-APIs, die bewusst NICHT in tests/test.html geladen/unit-getestet werden
 js/ui.js             Slider/Segmente/Pills/Zeitplan; PZ.set, selectSeg, applyMethod, updateTimeLabel
 js/print.js          PZ.buildShoppingList() (Einkaufsliste aus PZ.R) + PZ.printShoppingList()/PZ.printGuide()
+js/pdf.js            PZ.downloadGuidePDF() — „Als PDF speichern" (v3.25.0), handgeschriebener
+                     PDF-1.4-Generator ohne externe Bibliothek, teilt sich das Flag „shopping" mit print.js
 js/presets.js        PZ.PRESETS (inkl. flour je Preset) + PZ.applyPreset()
 js/storage.js        PZ.save()/PZ.load() + Mehrfach-Rezepte (saveAsNew/renameActive/deleteRecipe/
-                     loadRecipe/listRecipes), localStorage-Format {recipes[],activeId}, migriert
-                     alten Einzel-Slot-Stand automatisch
+                     loadRecipe/listRecipes) + Rezepte-Backup (exportRecipes/importRecipes, v3.21.0),
+                     localStorage-Format {recipes[],activeId}, migriert alten Einzel-Slot-Stand automatisch
+js/newrecipe.js      eigenständiges Mini-Formular „Neues Rezept anlegen" (v3.22.0) — legt IMMER ein
+                     neues Rezept an, rührt PZ.state/den laufenden Rechner-Zustand nie an
+js/share.js          Teilen-Link (v3.14.0): PZ.state als Base64-JSON in der URL, zum Kopieren/Laden
+                     (über PZ.applyState() aus js/storage.js)
+js/party.js          Pizza-Party-Planer (v3.27.0) — eigenständiger Bereich, kein Zugriff auf
+                     PZ.state/PZ.calc()
+js/glossary.js       Pizza-Glossar (v3.37.0) — eigenständiger Menü-Bereich, reine Anzeige-Funktion
 js/main.js           Start: Speichern-Button, Rezept-Auswahl/-Buttons, load(), applyMethod(), calc()
-tests/test.html      605 Prüfungen in 24 Kategorien (Doppelklick, kein Server)
+tests/test.html      605 Prüfungen in 24 Kategorien (Doppelklick, kein Server) — lädt 14 der 20
+                     js/*-Module direkt (dom/state/i18n/settings/theme/flour/schedule/guide/calc/
+                     print/pdf/storage/share/party); ui.js, timer.js, presets.js, newrecipe.js,
+                     glossary.js, main.js werden NICHT geladen (reines DOM-Wiring bzw. Browser-APIs) —
+                     einzelne Ausschnitte wie PZ.PRESETS werden bei Bedarf punktuell gestubbt
 README.md            kurzer Einstieg
 ```
 
-**Ladereihenfolge** (Abhängigkeiten): dom → state → flour → calc → schedule → guide →
-timer → ui → print → presets → storage → main. Jedes Modul ist eine IIFE, kommuniziert nur über `window.PZ`.
+**Ladereihenfolge** (Abhängigkeiten): dom → state → i18n → settings → theme → flour → calc →
+schedule → guide → timer → ui → print → pdf → presets → storage → newrecipe → share → party →
+glossary → main. Jedes Modul ist eine IIFE, kommuniziert nur über `window.PZ`.
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.13.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.49.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
@@ -4972,12 +5082,17 @@ Keine Code-Änderung durch den Audit nötig.
   Module nicht (`i18n.js`, `settings.js`, `theme.js`, `newrecipe.js`, `share.js`,
   `party.js`, `glossary.js`, `pdf.js`) — Kandidat für einen künftigen reinen
   Doku-Pflege-Zyklus (größerer Umfang als die reinen B3/B4-Korrekturen).
+- ~~Doku-Nachtrag Dateibaum (Nebenbefund aus v3.49.0); B5: veraltete Code-Kommentare
+  zu `PZ.FLAGS`/„New York Style"-Auto-Flag; B6: `state.knead` Typ-Inkonsistenz
+  Number vs. String; B7: `setPdfMsg()` ohne Generation-Zähler~~ — **erledigt in
+  v3.50.0** (kein Backlog-Punkt, direkter Nutzerauftrag aus demselben separaten
+  Fable-Review wie v3.48.0/v3.49.0; s. Abschnitt „Doku-Nachtrag Dateibaum & drei
+  Kleinkorrekturen aus dem Fable-Review (v3.50.0)" oben).
 
-**Stand v3.49.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.50.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen,
-vollständig zurückgebaut, keine offene Frage mehr). Keine Warteschlange mehr offen außer
-dem oben genannten Doku-Nebenbefund (veralteter Dateibaum) — für den nächsten
-inhaltlichen Zyklus braucht es wieder frisches Brainstorming in Phase 1 (neue
+vollständig zurückgebaut, keine offene Frage mehr). Keine Warteschlange mehr offen —
+für den nächsten Zyklus braucht es wieder frisches Brainstorming in Phase 1 (neue
 Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes) statt eines vorgegebenen
 Auftrags.
 

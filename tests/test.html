@@ -1263,6 +1263,25 @@
       ]);
     });
 
+    // --- applyState() normalisiert state.knead immer zu String (Fix, Fable-Review-Fund
+    // "B6"): js/state.js's Default war Number (3), js/ui.js/js/presets.js liefern beim
+    // normalen Bedienen bereits String, aber ein von außen eingeschleustes state-Objekt
+    // (z. B. simuliert hier über direkt in localStorage geschriebenes JSON, analog zu einem
+    // Teilen-Link/Rezepte-Backup-Import) validiert Typen nicht. js/guide.js vergleicht an
+    // mehreren Stellen strikt mit `state.knead === '6'` — ein eingeschleustes `knead: 6`
+    // (Number) hätte dort trotz korrekt als "Maschine" berechneter Reibungswärme (js/calc.js
+    // nutzt parseFloat, typtolerant) fälschlich weiterhin "Hand"-Anleitungstext gezeigt. ---
+    withCleanStorage(() => {
+      const legacyNumericKnead = Object.assign({}, BASE, { knead: 6 }); // Number statt String!
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(legacyNumericKnead));
+      PZ.load();
+      renderBox('state.knead wird beim Laden immer zu String normalisiert (Typ-Fix)', [
+        { label: 'PZ.state.knead ist ein String', ok: typeof PZ.state.knead === 'string', actual: typeof PZ.state.knead, expected: 'string', tol: null },
+        { label: 'PZ.state.knead hat den korrekten Wert ("6")', ok: PZ.state.knead === '6', actual: PZ.state.knead, expected: '6', tol: null },
+        { label: 'DDT-Berechnung nutzt weiterhin Maschine-Reibung (6 °C, nicht NaN)', ok: !isNaN(PZ.R.wT), actual: PZ.R.wT, expected: 'Zahl', tol: null }
+      ]);
+    });
+
     // --- applyState() synchronisiert den Zucker-Regler beim Laden (Fix, Nebenbefund aus
     // v3.22.0): applyState() rief set.sugar(state.sugar) bisher nie auf — PZ.state.sugar
     // wurde zwar korrekt per Object.assign übernommen (Berechnung war nie falsch), der

@@ -880,7 +880,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.49.0</span>
+    <span class="nav-version" id="appVersion">v3.50.0</span>
   </div>
 </nav>
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
@@ -1659,7 +1659,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     balls: 4, ballw: 250, hyd: 62, salt: 2.8, oil: 2, sugar: 0,
     method: 'direct', pref: 70, bhyd: 45, prefMature: 24, prefStage: 'b24',
     yeastType: 'fresh', yeast: 0.30,
-    ddt: 24, room: 21, flourTemp: 21, knead: 3,
+    ddt: 24, room: 21, flourTemp: 21, knead: '3',
     timeMode: 'start', timeISO: '',
     flour: 'caputo_pizzeria',
     coldStage: 'balls'   // Kühlschrank-Phase: 'balls' = als Teiglinge (praktisch), 'bulk' = im Stück (klassisch)
@@ -2737,9 +2737,12 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
  *
  * WICHTIG für Rechenlogik/Tests: PZ.FLAGS wird bewusst NUR hier gesetzt. js/guide.js,
  * js/timer.js und js/print.js prüfen `PZ.FLAGS && PZ.FLAGS.<key> === false` (nicht
- * `PZ.FLAGS.<key>`) — ist dieses Modul gar nicht geladen (z. B. in tests/test.html, das
- * bewusst nur die reinen Rechen-/Render-Module lädt), bleibt das alte Verhalten (Feature an)
- * erhalten. So bricht kein bestehender Test durch die bloße Existenz dieses Moduls.
+ * `PZ.FLAGS.<key>`) — der `PZ.FLAGS &&`-Guard ist trotzdem sinnvoll, falls dieses Modul in
+ * einem künftigen, bewusst reduzierten Testaufbau mal nicht geladen wird: dann bliebe das
+ * alte Verhalten (Feature an) erhalten statt eines Fehlers. `tests/test.html` selbst lädt
+ * dieses Modul seit v3.16.0 mit (s. `<script src="../js/settings.js">`) und setzt `PZ.FLAGS`
+ * dort explizit auf eine "alles an"-Baseline (s. test.html) — js/timer.js ist die einzige
+ * bestehende Ausnahme, die dort weiterhin NICHT geladen wird (Browser-APIs, s. Kommentar dort).
  */
 (function (global) {
   'use strict';
@@ -2757,8 +2760,12 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     freezeHint: false,    // Einfrier-Hinweis in der Anleitung
     multiRecipes: true,   // Mehrere gespeicherte Rezepte (sonst: Einzel-Slot-Verhalten)
     newYorkStyle: false,  // Zucker-Regler (Bäckerprozent, wie Öl) — sonst ausgeblendet.
-                           // Wird vom Preset „New York Style" beim Anwenden automatisch
-                           // angeschaltet (persistiert), sonst Default AUS.
+                           // Wirkt seit v3.20.1 NUR noch bei „Eigene Einstellung" (kein
+                           // konkretes Preset aktiv). Das Preset „New York Style" selbst
+                           // schaltet dieses Flag NICHT mehr automatisch/dauerhaft an — es
+                           // blendet den Regler nur, solange es selbst aktiv gewählt ist,
+                           // unabhängig vom Flag-Zustand (s. js/presets.js applyPreset(),
+                           // Fix in v3.19.3/v3.20.1, s. pizza-rechner-KONTEXT.md).
     hints: true           // Tooltip-/Hinweistexte (erklärende .hint-Kurztexte). Default AN:
                            // reine Erklärhilfen sind für neue Nutzer wertvoll, erfahrene
                            // Nutzer können bewusst abschalten (anders als die übrigen, im
@@ -3419,8 +3426,9 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   // Feature-Flag "timer" (js/settings.js): ist das Feature deaktiviert, wird gar kein
   // Platzhalter gerendert — js/timer.js findet dann nichts zu verdrahten, und das damit
   // verknüpfte Teil-Feature "timerSystem" (System-Wecker/Kalender-Links) wird automatisch
-  // mit ausgeblendet. `PZ.FLAGS` fehlt in tests/test.html bewusst (dort nicht geladen) —
-  // dann bleibt das alte Verhalten (Timer an) erhalten, kein Test bricht dadurch.
+  // mit ausgeblendet. `tests/test.html` lädt `js/settings.js` mit und setzt `PZ.FLAGS` dort
+  // explizit auf eine "alles an"-Baseline (s. test.html) — der `PZ.FLAGS &&`-Guard bleibt
+  // trotzdem als defensive Absicherung stehen, falls `PZ.FLAGS` einmal fehlt.
   function timerBox(key, min) {
     if (PZ.FLAGS && PZ.FLAGS.timer === false) return '';
     return `<div class="timerbox" data-timer-key="${key}" data-timer-min="${Math.round(min)}"></div>`;
@@ -3593,7 +3601,8 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
       t('guide.step.formBalls.body', { N: R.N, W: R.W, boxTxt: ballsCold ? t('guide.box.cold') : t('guide.box.normal') }),
       tip(t('guide.step.formBalls.tip'))
       // Feature-Flag "freezeHint" (js/settings.js): Default AUS, optionaler Zusatz-Tipp.
-      // `PZ.FLAGS` fehlt in Tests bewusst -> dort weiterhin sichtbar (altes Verhalten).
+      // `tests/test.html` setzt `PZ.FLAGS.freezeHint` explizit auf `true` (Baseline "alles
+      // an", s. test.html) — der bestehende Einfrier-Hinweis-Test bleibt dadurch stabil.
       + (PZ.FLAGS && PZ.FLAGS.freezeHint === false ? '' : tip(t('guide.freezeTip'))), 10);
     st(t('guide.step.finalProof.title'), ballsCold ? t('guide.step.finalProof.chipCold') : t('guide.step.finalProof.chipDefault'),
       t('guide.step.finalProof.body', { proof: f.proof }),
@@ -3917,8 +3926,11 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   function systemTimerHtml(defaultMin, label, key) {
     // Feature-Flag "timerSystem" (js/settings.js, Default AUS): Teil-Feature von "timer" —
     // hängt bereits durch guide.js/timerBox() vom übergeordneten "timer"-Flag ab (ohne Timer
-    // kein Platzhalter, also auch keine System-Links). `PZ.FLAGS` fehlt in Tests bewusst,
-    // js/timer.js wird dort ohnehin nicht geladen (s. Kommentar oben in der Datei).
+    // kein Platzhalter, also auch keine System-Links). `PZ.FLAGS` selbst fehlt in Tests NICHT
+    // (js/settings.js wird dort geladen) — dieser Codepfad läuft in `tests/test.html` aber
+    // trotzdem nie, weil js/timer.js dort bewusst gar nicht geladen wird: es nutzt
+    // Notification/setInterval/Web Audio API, die bewusst nicht unit-getestet werden
+    // (s. pizza-rechner-KONTEXT.md, Abschnitt „Gärzeit-Timer / Wecker (v3.11.0)").
     if (PZ.FLAGS && PZ.FLAGS.timerSystem === false) return '';
     // aria-describedby verknüpft den erklärenden Hint-Text programmatisch mit beiden
     // Links (analog zum #shareHint-Fix v3.14.0) — sonst ist der Zusammenhang für
@@ -4260,8 +4272,9 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   // Einkaufsliste/Druck-Funktion ab (js/print.js). Der zugehörige Button ist bei
   // deaktiviertem Flag bereits per CSS aus dem Rendering genommen (applyFlags() in
   // settings.js) — dieser Guard ist nur eine defensive zweite Absicherung, falls die
-  // Funktion doch aufgerufen wird. `PZ.FLAGS` fehlt in tests/test.html bewusst (dort
-  // nicht geladen) -> dort weiterhin uneingeschränkt aufrufbar (altes Verhalten).
+  // Funktion doch aufgerufen wird. `tests/test.html` setzt `PZ.FLAGS.shopping` explizit
+  // auf `true` (Baseline "alles an", s. test.html), daher dort weiterhin uneingeschränkt
+  // aufrufbar.
   function printShoppingList() {
     if (PZ.FLAGS && PZ.FLAGS.shopping === false) return;
     buildShoppingList();
@@ -4581,11 +4594,20 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   // Fix: Region erst leeren, dann den eigentlichen Text im nächsten Tick setzen — so
   // gibt es bei jedem Aufruf garantiert eine echte Inhaltsänderung, unabhängig vom
   // vorherigen Text.
+  // Generation-Zähler (identisches Muster wie copyShareLink() in js/share.js bzw.
+  // showRecipeIOMsg() in js/main.js, s. dortige Kommentare): ohne ihn könnte bei einem
+  // schnellen Doppelklick (z. B. erst "nicht berechnet"-Hinweis, dann sofort die
+  // Erfolgsmeldung) der ÄLTERE, verzögerte `setTimeout` die NEUERE Meldung wieder
+  // überschreiben. Mit dem Zähler gewinnt immer der zuletzt gestartete Aufruf.
+  let pdfMsgGen = 0;
   function setPdfMsg(msg) {
     const el = document.getElementById('pdfGuideLiveMsg');
     if (!el) return;
+    const gen = ++pdfMsgGen;
     el.textContent = '';
-    window.setTimeout(function () { el.textContent = msg; }, 50);
+    window.setTimeout(function () {
+      if (gen === pdfMsgGen) el.textContent = msg;
+    }, 50);
   }
 
   // Feature-Flag "shopping" (js/settings.js): "Als PDF speichern" ist inhaltlich eine
@@ -4593,7 +4615,8 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   // deshalb bewusst dasselbe Flag (s. Kommentar in js/settings.js). Der Button ist bei
   // deaktiviertem Flag bereits per CSS aus dem Rendering genommen — dieser Guard ist nur
   // eine defensive zweite Absicherung, analog zu printShoppingList()/printGuide() oben in
-  // js/print.js. `PZ.FLAGS` fehlt in tests/test.html bewusst -> dort weiterhin uneingeschränkt aufrufbar.
+  // js/print.js. `tests/test.html` setzt `PZ.FLAGS.shopping` explizit auf `true` (Baseline
+  // "alles an", s. test.html), daher dort weiterhin uneingeschränkt aufrufbar.
   function downloadGuidePDF() {
     if (PZ.FLAGS && PZ.FLAGS.shopping === false) return;
     const R = PZ.R;
@@ -4935,6 +4958,14 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   function applyState(o) {
     const state = PZ.state, set = PZ.set;
     Object.assign(state, o);
+    // Defensive Typ-Normalisierung: state.knead MUSS ein String sein (js/guide.js
+    // vergleicht an mehreren Stellen strikt mit '6'). Reguläre Quellen (js/ui.js
+    // Segment-Klick, js/presets.js) liefern bereits String, aber ein von außen
+    // eingeschleustes state-Objekt (Teilen-Link, Rezepte-Backup-Import) validiert
+    // Typen nicht und könnte z. B. { knead: 6 } als Number enthalten — das würde
+    // sonst calc.js (parseFloat, typtolerant) korrekt als Maschine erkennen, aber
+    // guide.js weiterhin fälschlich "Hand" anzeigen (String-Vergleich schlägt fehl).
+    if (state.knead != null) state.knead = String(state.knead);
     set.balls(state.balls); set.ballw(state.ballw); set.hyd(state.hyd); set.salt(state.salt);
     if (state.oil != null) set.oil(state.oil);
     // Ältere gespeicherte Rezepte (vor v3.19.2) kennen sugar noch nicht — dann bleibt

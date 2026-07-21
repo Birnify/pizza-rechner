@@ -44,8 +44,9 @@
   // Feature-Flag "timer" (js/settings.js): ist das Feature deaktiviert, wird gar kein
   // Platzhalter gerendert — js/timer.js findet dann nichts zu verdrahten, und das damit
   // verknüpfte Teil-Feature "timerSystem" (System-Wecker/Kalender-Links) wird automatisch
-  // mit ausgeblendet. `PZ.FLAGS` fehlt in tests/test.html bewusst (dort nicht geladen) —
-  // dann bleibt das alte Verhalten (Timer an) erhalten, kein Test bricht dadurch.
+  // mit ausgeblendet. `tests/test.html` lädt `js/settings.js` mit und setzt `PZ.FLAGS` dort
+  // explizit auf eine "alles an"-Baseline (s. test.html) — der `PZ.FLAGS &&`-Guard bleibt
+  // trotzdem als defensive Absicherung stehen, falls `PZ.FLAGS` einmal fehlt.
   function timerBox(key, min) {
     if (PZ.FLAGS && PZ.FLAGS.timer === false) return '';
     return `<div class="timerbox" data-timer-key="${key}" data-timer-min="${Math.round(min)}"></div>`;
@@ -218,7 +219,8 @@
       t('guide.step.formBalls.body', { N: R.N, W: R.W, boxTxt: ballsCold ? t('guide.box.cold') : t('guide.box.normal') }),
       tip(t('guide.step.formBalls.tip'))
       // Feature-Flag "freezeHint" (js/settings.js): Default AUS, optionaler Zusatz-Tipp.
-      // `PZ.FLAGS` fehlt in Tests bewusst -> dort weiterhin sichtbar (altes Verhalten).
+      // `tests/test.html` setzt `PZ.FLAGS.freezeHint` explizit auf `true` (Baseline "alles
+      // an", s. test.html) — der bestehende Einfrier-Hinweis-Test bleibt dadurch stabil.
       + (PZ.FLAGS && PZ.FLAGS.freezeHint === false ? '' : tip(t('guide.freezeTip'))), 10);
     st(t('guide.step.finalProof.title'), ballsCold ? t('guide.step.finalProof.chipCold') : t('guide.step.finalProof.chipDefault'),
       t('guide.step.finalProof.body', { proof: f.proof }),

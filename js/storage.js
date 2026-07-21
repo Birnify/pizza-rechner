@@ -155,6 +155,14 @@
   function applyState(o) {
     const state = PZ.state, set = PZ.set;
     Object.assign(state, o);
+    // Defensive Typ-Normalisierung: state.knead MUSS ein String sein (js/guide.js
+    // vergleicht an mehreren Stellen strikt mit '6'). Reguläre Quellen (js/ui.js
+    // Segment-Klick, js/presets.js) liefern bereits String, aber ein von außen
+    // eingeschleustes state-Objekt (Teilen-Link, Rezepte-Backup-Import) validiert
+    // Typen nicht und könnte z. B. { knead: 6 } als Number enthalten — das würde
+    // sonst calc.js (parseFloat, typtolerant) korrekt als Maschine erkennen, aber
+    // guide.js weiterhin fälschlich "Hand" anzeigen (String-Vergleich schlägt fehl).
+    if (state.knead != null) state.knead = String(state.knead);
     set.balls(state.balls); set.ballw(state.ballw); set.hyd(state.hyd); set.salt(state.salt);
     if (state.oil != null) set.oil(state.oil);
     // Ältere gespeicherte Rezepte (vor v3.19.2) kennen sugar noch nicht — dann bleibt

@@ -223,8 +223,11 @@
   function systemTimerHtml(defaultMin, label, key) {
     // Feature-Flag "timerSystem" (js/settings.js, Default AUS): Teil-Feature von "timer" —
     // hängt bereits durch guide.js/timerBox() vom übergeordneten "timer"-Flag ab (ohne Timer
-    // kein Platzhalter, also auch keine System-Links). `PZ.FLAGS` fehlt in Tests bewusst,
-    // js/timer.js wird dort ohnehin nicht geladen (s. Kommentar oben in der Datei).
+    // kein Platzhalter, also auch keine System-Links). `PZ.FLAGS` selbst fehlt in Tests NICHT
+    // (js/settings.js wird dort geladen) — dieser Codepfad läuft in `tests/test.html` aber
+    // trotzdem nie, weil js/timer.js dort bewusst gar nicht geladen wird: es nutzt
+    // Notification/setInterval/Web Audio API, die bewusst nicht unit-getestet werden
+    // (s. pizza-rechner-KONTEXT.md, Abschnitt „Gärzeit-Timer / Wecker (v3.11.0)").
     if (PZ.FLAGS && PZ.FLAGS.timerSystem === false) return '';
     // aria-describedby verknüpft den erklärenden Hint-Text programmatisch mit beiden
     // Links (analog zum #shareHint-Fix v3.14.0) — sonst ist der Zusammenhang für

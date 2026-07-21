@@ -52,8 +52,9 @@
   // Einkaufsliste/Druck-Funktion ab (js/print.js). Der zugehörige Button ist bei
   // deaktiviertem Flag bereits per CSS aus dem Rendering genommen (applyFlags() in
   // settings.js) — dieser Guard ist nur eine defensive zweite Absicherung, falls die
-  // Funktion doch aufgerufen wird. `PZ.FLAGS` fehlt in tests/test.html bewusst (dort
-  // nicht geladen) -> dort weiterhin uneingeschränkt aufrufbar (altes Verhalten).
+  // Funktion doch aufgerufen wird. `tests/test.html` setzt `PZ.FLAGS.shopping` explizit
+  // auf `true` (Baseline "alles an", s. test.html), daher dort weiterhin uneingeschränkt
+  // aufrufbar.
   function printShoppingList() {
     if (PZ.FLAGS && PZ.FLAGS.shopping === false) return;
     buildShoppingList();

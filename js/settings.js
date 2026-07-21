@@ -7,9 +7,12 @@
  *
  * WICHTIG für Rechenlogik/Tests: PZ.FLAGS wird bewusst NUR hier gesetzt. js/guide.js,
  * js/timer.js und js/print.js prüfen `PZ.FLAGS && PZ.FLAGS.<key> === false` (nicht
- * `PZ.FLAGS.<key>`) — ist dieses Modul gar nicht geladen (z. B. in tests/test.html, das
- * bewusst nur die reinen Rechen-/Render-Module lädt), bleibt das alte Verhalten (Feature an)
- * erhalten. So bricht kein bestehender Test durch die bloße Existenz dieses Moduls.
+ * `PZ.FLAGS.<key>`) — der `PZ.FLAGS &&`-Guard ist trotzdem sinnvoll, falls dieses Modul in
+ * einem künftigen, bewusst reduzierten Testaufbau mal nicht geladen wird: dann bliebe das
+ * alte Verhalten (Feature an) erhalten statt eines Fehlers. `tests/test.html` selbst lädt
+ * dieses Modul seit v3.16.0 mit (s. `<script src="../js/settings.js">`) und setzt `PZ.FLAGS`
+ * dort explizit auf eine "alles an"-Baseline (s. test.html) — js/timer.js ist die einzige
+ * bestehende Ausnahme, die dort weiterhin NICHT geladen wird (Browser-APIs, s. Kommentar dort).
  */
 (function (global) {
   'use strict';
@@ -27,8 +30,12 @@
     freezeHint: false,    // Einfrier-Hinweis in der Anleitung
     multiRecipes: true,   // Mehrere gespeicherte Rezepte (sonst: Einzel-Slot-Verhalten)
     newYorkStyle: false,  // Zucker-Regler (Bäckerprozent, wie Öl) — sonst ausgeblendet.
-                           // Wird vom Preset „New York Style" beim Anwenden automatisch
-                           // angeschaltet (persistiert), sonst Default AUS.
+                           // Wirkt seit v3.20.1 NUR noch bei „Eigene Einstellung" (kein
+                           // konkretes Preset aktiv). Das Preset „New York Style" selbst
+                           // schaltet dieses Flag NICHT mehr automatisch/dauerhaft an — es
+                           // blendet den Regler nur, solange es selbst aktiv gewählt ist,
+                           // unabhängig vom Flag-Zustand (s. js/presets.js applyPreset(),
+                           // Fix in v3.19.3/v3.20.1, s. pizza-rechner-KONTEXT.md).
     hints: true           // Tooltip-/Hinweistexte (erklärende .hint-Kurztexte). Default AN:
                            // reine Erklärhilfen sind für neue Nutzer wertvoll, erfahrene
                            // Nutzer können bewusst abschalten (anders als die übrigen, im

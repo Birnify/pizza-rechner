@@ -292,11 +292,20 @@
   // Fix: Region erst leeren, dann den eigentlichen Text im nächsten Tick setzen — so
   // gibt es bei jedem Aufruf garantiert eine echte Inhaltsänderung, unabhängig vom
   // vorherigen Text.
+  // Generation-Zähler (identisches Muster wie copyShareLink() in js/share.js bzw.
+  // showRecipeIOMsg() in js/main.js, s. dortige Kommentare): ohne ihn könnte bei einem
+  // schnellen Doppelklick (z. B. erst "nicht berechnet"-Hinweis, dann sofort die
+  // Erfolgsmeldung) der ÄLTERE, verzögerte `setTimeout` die NEUERE Meldung wieder
+  // überschreiben. Mit dem Zähler gewinnt immer der zuletzt gestartete Aufruf.
+  let pdfMsgGen = 0;
   function setPdfMsg(msg) {
     const el = document.getElementById('pdfGuideLiveMsg');
     if (!el) return;
+    const gen = ++pdfMsgGen;
     el.textContent = '';
-    window.setTimeout(function () { el.textContent = msg; }, 50);
+    window.setTimeout(function () {
+      if (gen === pdfMsgGen) el.textContent = msg;
+    }, 50);
   }
 
   // Feature-Flag "shopping" (js/settings.js): "Als PDF speichern" ist inhaltlich eine
@@ -304,7 +313,8 @@
   // deshalb bewusst dasselbe Flag (s. Kommentar in js/settings.js). Der Button ist bei
   // deaktiviertem Flag bereits per CSS aus dem Rendering genommen — dieser Guard ist nur
   // eine defensive zweite Absicherung, analog zu printShoppingList()/printGuide() oben in
-  // js/print.js. `PZ.FLAGS` fehlt in tests/test.html bewusst -> dort weiterhin uneingeschränkt aufrufbar.
+  // js/print.js. `tests/test.html` setzt `PZ.FLAGS.shopping` explizit auf `true` (Baseline
+  // "alles an", s. test.html), daher dort weiterhin uneingeschränkt aufrufbar.
   function downloadGuidePDF() {
     if (PZ.FLAGS && PZ.FLAGS.shopping === false) return;
     const R = PZ.R;
