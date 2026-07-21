@@ -52,12 +52,18 @@
   <div id="sugarBlock"></div><input type="checkbox" id="flagNewYorkStyle">
   <div class="hint" id="testHintStub">Erklärender Beispiel-Hinweistext</div>
   <button type="button" id="testDescribedBtn" aria-describedby="testHintStub">Beispiel-Button</button>
+  <div class="seg" id="themeSwitch">
+    <button type="button" data-theme-choice="light">Hell</button>
+    <button type="button" data-theme-choice="dark">Dunkel</button>
+  </div>
+  <div id="themeAnnounce" role="status" aria-live="polite"></div>
 </div>
 
 <script src="../js/dom.js"></script>
 <script src="../js/state.js"></script>
 <script src="../js/i18n.js"></script>
 <script src="../js/settings.js"></script>
+<script src="../js/theme.js"></script>
 <script src="../js/flour.js"></script>
 <script src="../js/schedule.js"></script>
 <script src="../js/guide.js"></script>
@@ -2537,6 +2543,93 @@
     // zurücksetzen — Baseline für alle vorangegangenen Testsektionen in dieser Datei.
     if (backup !== null) { localStorage.setItem(LANG_KEY, backup); PZ.setLang(backup); }
     else { localStorage.removeItem(LANG_KEY); PZ.setLang('de'); }
+  })();
+
+  // ─────────────────────────────────────────────────────────────
+  heading('24 · Dunkelmodus (js/theme.js)');
+
+  // Analog zu Sektion 23 (i18n): reine Entscheidungs-/Persistenzfunktionen getestet
+  // (PZ._resolveInitialTheme/getTheme/setTheme), plus ein DOM-Effekt-Test für den
+  // Umschalter (#themeSwitch-Stub oben) und die Live-Region-Ansage (#themeAnnounce).
+  // Die eigentlichen Dunkelmodus-FARBWERTE (css/styles.css, :root[data-theme="dark"])
+  // sind hier NICHT geprüft — test.html lädt bewusst kein echtes App-Stylesheet (reine
+  // Rechenlogik-/Verhaltens-Tests), Kontrastwerte sind rechnerisch in
+  // pizza-rechner-KONTEXT.md dokumentiert und per Screenshot-Verifikation geprüft.
+  (function () {
+    const THEME_KEY = 'pizzaTheme';
+    const backup = localStorage.getItem(THEME_KEY);
+    const attrBackup = document.documentElement.getAttribute('data-theme');
+
+    // --- resolveInitialTheme(): reine Entscheidungsfunktion, kein DOM/localStorage ---
+    renderBox('PZ._resolveInitialTheme() — gespeicherte manuelle Wahl schlägt immer die Systemeinstellung', [
+      { label: 'stored="dark", System hell -> "dark" (manuelle Wahl gewinnt)', ok: PZ._resolveInitialTheme('dark', false) === 'dark', actual: PZ._resolveInitialTheme('dark', false), expected: 'dark', tol: null },
+      { label: 'stored="light", System dunkel -> "light" (manuelle Wahl gewinnt)', ok: PZ._resolveInitialTheme('light', true) === 'light', actual: PZ._resolveInitialTheme('light', true), expected: 'light', tol: null },
+      { label: 'stored=null, System dunkel -> "dark" (Systemerkennung greift)', ok: PZ._resolveInitialTheme(null, true) === 'dark', actual: PZ._resolveInitialTheme(null, true), expected: 'dark', tol: null },
+      { label: 'stored=null, System hell -> "light" (Systemerkennung greift)', ok: PZ._resolveInitialTheme(null, false) === 'light', actual: PZ._resolveInitialTheme(null, false), expected: 'light', tol: null },
+      { label: 'stored="quatsch" (unbekannter Wert) -> Systemerkennung statt Crash', ok: PZ._resolveInitialTheme('quatsch', true) === 'dark', actual: PZ._resolveInitialTheme('quatsch', true), expected: 'dark', tol: null }
+    ]);
+
+    // --- setTheme()/getTheme(): setzt data-theme, persistiert in localStorage ---
+    (function () {
+      localStorage.removeItem(THEME_KEY);
+      PZ.setTheme('dark');
+      const afterDark = PZ.getTheme();
+      const attrDark = document.documentElement.getAttribute('data-theme');
+      const storedDark = localStorage.getItem(THEME_KEY);
+      PZ.setTheme('light');
+      const afterLight = PZ.getTheme();
+      const attrLight = document.documentElement.getAttribute('data-theme');
+      const storedLight = localStorage.getItem(THEME_KEY);
+      renderBox('setTheme()/getTheme() schalten das Theme um, setzen data-theme und persistieren', [
+        { label: 'setTheme("dark") -> getTheme() liefert "dark"', ok: afterDark === 'dark', actual: afterDark, expected: 'dark', tol: null },
+        { label: 'setTheme("dark") setzt data-theme="dark" auf <html>', ok: attrDark === 'dark', actual: attrDark, expected: 'dark', tol: null },
+        { label: 'setTheme("dark") persistiert "dark" in localStorage', ok: storedDark === 'dark', actual: storedDark, expected: 'dark', tol: null },
+        { label: 'setTheme("light") -> getTheme() liefert "light"', ok: afterLight === 'light', actual: afterLight, expected: 'light', tol: null },
+        { label: 'setTheme("light") setzt data-theme="light" auf <html>', ok: attrLight === 'light', actual: attrLight, expected: 'light', tol: null },
+        { label: 'setTheme("light") persistiert "light" in localStorage', ok: storedLight === 'light', actual: storedLight, expected: 'light', tol: null }
+      ]);
+    })();
+
+    // --- setTheme(): ungültiger Wert wird ignoriert (kein Crash, keine Änderung) ---
+    (function () {
+      PZ.setTheme('dark');
+      PZ.setTheme('blau'); // nicht unterstützt (nur light/dark laut Feature-Auftrag)
+      renderBox('setTheme() ignoriert nicht unterstützte Werte', [
+        { label: 'Theme bleibt bei "dark"', ok: PZ.getTheme() === 'dark', actual: PZ.getTheme(), expected: 'dark', tol: null }
+      ]);
+    })();
+
+    // --- DOM-Effekt: setTheme() spiegelt den Zustand im #themeSwitch-Stub (aria-pressed/
+    // .active), da reflectSwitch() direkt aus setTheme() heraus aufgerufen wird -- unabhängig
+    // davon, ob die Klick-Verdrahtung (wireThemeSwitch(), an DOMContentLoaded gebunden) bereits
+    // aktiv ist. Bewusst über PZ.setTheme() statt simuliertem button.click() getestet: Letzteres
+    // würde voraussetzen, dass DOMContentLoaded schon gefeuert hat, was innerhalb des synchron
+    // während des HTML-Parsings laufenden Test-Inline-Scripts dieser Datei NICHT der Fall ist
+    // (identischer Timing-Grund, weshalb die Sprachumschalter-UI in Sektion 23 laut dortigem
+    // Kommentar ebenfalls nicht per simuliertem Klick getestet wird — nur die zugrunde liegende
+    // API). Click-Verdrahtung + Live-Region-Ansage (#themeAnnounce) bleiben entsprechend
+    // ungetestet, analog zu #langSwitch/#langAnnounce.
+    (function () {
+      const lightBtn = document.querySelector('#themeSwitch button[data-theme-choice="light"]');
+      const darkBtn = document.querySelector('#themeSwitch button[data-theme-choice="dark"]');
+      PZ.setTheme('dark');
+      const darkActive = darkBtn.classList.contains('active') && darkBtn.getAttribute('aria-pressed') === 'true';
+      const lightInactive = !lightBtn.classList.contains('active') && lightBtn.getAttribute('aria-pressed') === 'false';
+      PZ.setTheme('light');
+      const lightActive = lightBtn.classList.contains('active') && lightBtn.getAttribute('aria-pressed') === 'true';
+      const darkInactive = !darkBtn.classList.contains('active') && darkBtn.getAttribute('aria-pressed') === 'false';
+      renderBox('setTheme() spiegelt den Zustand im #themeSwitch-Stub (aria-pressed/.active)', [
+        { label: 'setTheme("dark") -> "Dunkel"-Button aktiv (aria-pressed=true)', ok: darkActive, actual: darkActive, expected: true, tol: null },
+        { label: 'setTheme("dark") -> "Hell"-Button wird inaktiv', ok: lightInactive, actual: lightInactive, expected: true, tol: null },
+        { label: 'setTheme("light") -> "Hell"-Button aktiv (aria-pressed=true)', ok: lightActive, actual: lightActive, expected: true, tol: null },
+        { label: 'setTheme("light") -> "Dunkel"-Button wird wieder inaktiv', ok: darkInactive, actual: darkInactive, expected: true, tol: null }
+      ]);
+    })();
+
+    // Ursprünglichen Theme-Stand (falls vorhanden) wiederherstellen, sonst Key entfernen —
+    // Baseline für alle vorangegangenen Testsektionen in dieser Datei.
+    if (backup !== null) { localStorage.setItem(THEME_KEY, backup); } else { localStorage.removeItem(THEME_KEY); }
+    if (attrBackup !== null) { document.documentElement.setAttribute('data-theme', attrBackup); } else { document.documentElement.removeAttribute('data-theme'); }
   })();
 
   // ─────────────────────────────────────────────────────────────

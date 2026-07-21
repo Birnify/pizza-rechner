@@ -8,6 +8,23 @@
 <meta name="apple-mobile-web-app-title" content="Teigmeister">
 <meta name="theme-color" content="#c8442e">
 <title>Teigmeister · Mobil</title>
+<!-- Dunkelmodus (v3.47.0): früheste mögliche Anwendung von data-theme, VOR den CSS-Links,
+     verhindert einen kurzen Hell/Dunkel-Flash beim Laden (js/theme.js unten am Body-Ende
+     übernimmt später denselben, hier bereits gesetzten Wert als Ausgangspunkt statt die
+     Erkennung ein zweites Mal/potenziell abweichend zu wiederholen). Bewusst inline statt
+     als externe Datei -- muss synchron VOR dem ersten Bildaufbau laufen. Identisch zum
+     Kopf-Script in pizza-rechner.html. -->
+<script>
+(function(){
+  try{
+    var t = localStorage.getItem('pizzaTheme');
+    if (t !== 'light' && t !== 'dark') {
+      t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  } catch(e) {}
+})();
+</script>
 <style>
 :root{
   --tomato:#c8442e;
@@ -39,6 +56,77 @@
      beim Inlinen automatisch für pizza-rechner-mobile-standalone.html, die im
      Projekt-Root selbst liegt). */
   --header-photo:url('assets/header-pizza.jpg');
+  /* Dunkelmodus (v3.47.0): zusätzliche semantische Tokens für Fälle, in denen dieselbe
+     Farbe zwei UNTERSCHIEDLICHE Rollen hat, die sich unter Dunkelmodus entgegengesetzt
+     verhalten müssten (z. B. var(--tomato) als gesättigte Button-/Badge-Füllfläche MIT
+     weißer Schrift bleibt unverändert dunkelmodus-tauglich, aber dieselbe Farbe direkt
+     als TEXT auf der Karten-/Seitenfläche braucht im Dunkelmodus einen helleren Ton, sonst
+     fällt der Kontrast unter 4,5:1, WCAG 1.4.3). Light-Defaults hier entsprechen exakt den
+     bisherigen Werten (keine optische Änderung im hellen Modus), nur der
+     :root[data-theme="dark"]-Block unten überschreibt sie mit im Dunkelmodus geprüften
+     Tönen (rechnerisch verifiziert, s. Kommentare dort). */
+  --tomato-text:var(--tomato-dark);
+  --basil-text:var(--basil);
+  /* Feste, THEMENUNABHÄNGIGE dunkle Fläche für die zwei Fälle, in denen var(--ink) bisher
+     zweckentfremdet als "immer dunkler Badge-Hintergrund mit weißer Schrift" diente
+     (.step .num, .step .body .timechip) — würde sonst im Dunkelmodus hell (var(--ink) ist
+     dort ja die Textfarbe) und die weiße Schrift verschwände. */
+  --ink-strong:#2b2420;
+  --note-bg:#fff8ec;
+  --note-text:#7a5d20;
+  --note-text-strong:#5e4715;
+  --chip-bg:#fff3e8;
+  --chip-text:#b5651a;
+  --warn-bg:#fdf0ec;
+  --warn-text:#9a3a1c;
+  --tip-bg:#f1f7f1;
+  --temp-highlight-bg:#fdf1ec;
+  --step-text:#5a514a;
+  --biga-text:#b5851a;
+  color-scheme:light;
+}
+/* Dunkelmodus (v3.47.0): automatisch per prefers-color-scheme voreingestellt (Inline-Script
+   im <head> beider HTML-Dateien setzt data-theme früh genug, um einen Hell/Dunkel-Flash beim
+   Laden zu vermeiden), manuell übersteuerbar per Umschalter in den Einstellungen (js/theme.js,
+   analog zum bestehenden Sprachumschalter-Muster in js/i18n.js). Bewusst NUR unter
+   "@media screen" definiert: beim Drucken (@media print weiter unten erzwingt ohnehin
+   body{background:#fff}) soll IMMER die helle Variante gelten, unabhängig vom Bildschirm-
+   Theme — Druck-Layouts dieser App waren nie auf Dunkelmodus ausgelegt.
+   Farbwerte rechnerisch gegen WCAG 2.1 AA geprüft (4,5:1 für Fließtext, 3:1 für Fokusringe/
+   UI-Komponentengrenzen) — s. Abschnitt "Dunkelmodus (v3.47.0)" in pizza-rechner-KONTEXT.md
+   für die vollständige Kontrast-Tabelle. Gesättigte Marken-/Akzentfarben (--tomato, --basil,
+   --tomato-dark, --crust) bleiben bewusst UNVERÄNDERT: sie dienen im Code größtenteils als
+   Flächenfarbe MIT weißer Schrift (Buttons, Badges) und funktionieren in dieser Rolle in
+   beiden Themes gleich gut — nur die oben neu eingeführten *-text/-bg-Tokens (für die
+   umgekehrte Rolle "Text auf Karten-/Seitenfläche" bzw. "gefärbte Hinweis-Box") bekommen
+   unten eigene, dunkelmoduserprobte Werte. */
+@media screen{
+  :root[data-theme="dark"]{
+    --bg:#1c1815;
+    --card:#241f19;
+    --ink:#f0e9e0;
+    --muted:#b3a89c;
+    --line:#4a4038;
+    --shadow:0 2px 14px rgba(0,0,0,.4);
+    /* Helleres Terrakotta/Basil für Text- und Fokusring-Rollen (vorher var(--tomato-dark)/
+       var(--basil) direkt) — gegen die neue dunkle Karten-/Seitenfläche gerechnet:
+       #ef7a5c auf #241f19 ~5,92:1 / auf #1c1815 ~6,39:1; #6fbb6f auf #1c2e1f (Tipp-Box)
+       ~6,17:1, auf #241f19 ~7,01:1 — jeweils deutlich über der 4,5:1- bzw. 3:1-Schwelle. */
+    --tomato-text:#ef7a5c;
+    --basil-text:#6fbb6f;
+    --note-bg:#3a2f18;
+    --note-text:#e0b563;
+    --note-text-strong:#f0c878;
+    --chip-bg:#3d2a18;
+    --chip-text:#e8935a;
+    --warn-bg:#3d1f18;
+    --warn-text:#e8735a;
+    --tip-bg:#1c2e1f;
+    --temp-highlight-bg:#3a2620;
+    --step-text:#c9beb2;
+    --biga-text:#d9ab3f;
+    color-scheme:dark;
+  }
 }
 *{box-sizing:border-box;}
 .visually-hidden{
@@ -130,15 +218,19 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .nav-panel-title{font-family:var(--font-head);font-size:18px;font-weight:700;}
 .nav-close{
   width:40px;height:40px;border:1px solid var(--line);border-radius:50%;
-  background:#fff;font-size:16px;cursor:pointer;
+  background:var(--card);font-size:16px;cursor:pointer;
 }
-.nav-close:hover{border-color:var(--tomato);color:var(--tomato);}
+.nav-close:hover{border-color:var(--tomato);color:var(--tomato-text);}
 /* Eigener sichtbarer Fokus-Ring (v3.42.0, WCAG 2.4.7) für die seit v3.41.0 kreisrunden
-   Icon-Buttons auf hellem Grund -- identisches Muster wie .info-btn:focus-visible. */
+   Icon-Buttons auf hellem Grund -- identisches Muster wie .info-btn:focus-visible.
+   var(--tomato-text) statt fest var(--tomato-dark) (v3.47.0 Dunkelmodus): im Dunkelmodus
+   bekommt dieser Token einen helleren Ton, damit der Ring gegen die dunkle Fläche weiterhin
+   die 3:1-Mindestschwelle (WCAG 1.4.11) erreicht -- im hellen Modus unverändert identisch
+   zum bisherigen var(--tomato-dark). */
 .nav-close:focus-visible,
 .party-qty-btn:focus-visible,
 .party-delete-btn:focus-visible,
-.party-ing-remove:focus-visible{outline:2px solid var(--tomato-dark);outline-offset:2px;}
+.party-ing-remove:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
 .nav-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;}
 .nav-item{
   display:block;width:100%;text-align:left;padding:13px 14px;min-height:44px;
@@ -146,7 +238,7 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
   color:var(--ink);font-size:15px;font-weight:600;cursor:pointer;
 }
 .nav-item:hover,.nav-item:active{background:var(--bg);}
-.nav-item.active{background:var(--bg);border-left:3px solid var(--tomato);color:var(--tomato-dark);}
+.nav-item.active{background:var(--bg);border-left:3px solid var(--tomato);color:var(--tomato-text);}
 .nav-divider{height:1px;background:var(--line);margin:6px 0;border:none;}
 /* Gruppierte Menü-Navigation (v3.36.0): kurze Zwischenüberschrift je Cluster
    ("Teig-Rechner" vs. "Pizza Party"), damit Erstnutzer den Zusammenhang der
@@ -199,25 +291,25 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .party-qty-stepper{display:flex;align-items:center;gap:6px;flex-shrink:0;}
 .party-qty-btn{
   width:40px;height:40px;border:1px solid var(--line);border-radius:50%;
-  background:#fff;font-size:17px;font-weight:700;cursor:pointer;color:var(--ink);
+  background:var(--card);font-size:17px;font-weight:700;cursor:pointer;color:var(--ink);
   display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;
 }
-.party-qty-btn:hover{border-color:var(--tomato);color:var(--tomato);}
+.party-qty-btn:hover{border-color:var(--tomato);color:var(--tomato-text);}
 .party-qty-input{width:52px;text-align:center;padding:9px 4px;}
 .party-delete-btn{
   width:40px;height:40px;border:1px solid var(--line);border-radius:50%;
-  background:#fff;cursor:pointer;font-size:15px;flex-shrink:0;
+  background:var(--card);cursor:pointer;font-size:15px;flex-shrink:0;
 }
-.party-delete-btn:hover{border-color:var(--tomato);color:var(--tomato);}
+.party-delete-btn:hover{border-color:var(--tomato);color:var(--tomato-text);}
 .party-ing-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
 .party-ing-row .party-ing-name{flex:2 1 140px;min-width:0;}
 .party-ing-row .party-ing-amount{flex:1 1 70px;min-width:0;width:auto;text-align:left;}
 .party-ing-row .party-ing-unit{flex:1 1 60px;min-width:0;width:auto;}
 .party-ing-remove{
   width:36px;height:36px;border:1px solid var(--line);border-radius:50%;
-  background:#fff;cursor:pointer;flex-shrink:0;
+  background:var(--card);cursor:pointer;flex-shrink:0;
 }
-.party-ing-remove:hover{border-color:var(--tomato);color:var(--tomato);}
+.party-ing-remove:hover{border-color:var(--tomato);color:var(--tomato-text);}
 
 /* Pizza-Glossar (v3.37.0, js/glossary.js) — Liste kurzer Lexikon-Artikel als
    verschachtelte <details>-Einträge innerhalb einer Karte (gemeinsames
@@ -245,7 +337,7 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
   font-size:14px;transition:transform .15s;
 }
 .glossary-item[open] summary::after{transform:rotate(180deg);}
-.glossary-item summary:hover{color:var(--tomato-dark);}
+.glossary-item summary:hover{color:var(--tomato-text);}
 .glossary-body{margin:0 0 14px;font-size:13.5px;line-height:1.6;color:var(--ink);}
 .glossary-body p{margin:0 0 8px;}
 .glossary-body p:last-child{margin-bottom:0;}
@@ -273,7 +365,7 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .result .card-icon{background:var(--basil);color:#fff;}
 .selectbox{
   width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:var(--radius);
-  font-size:14px;color:var(--ink);background:#fff;cursor:pointer;
+  font-size:14px;color:var(--ink);background:var(--card);cursor:pointer;
 }
 .selectbox:focus{outline:2px solid var(--tomato);outline-offset:1px;}
 .selectbox-lg{padding:11px 12px;border-radius:var(--radius);font-size:14.5px;font-weight:600;}
@@ -284,7 +376,7 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .field{margin-bottom:18px;}
 .field:last-child{margin-bottom:0;}
 .field label{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;column-gap:8px;font-size:14px;font-weight:600;margin-bottom:6px;}
-.field label .val{color:var(--tomato);font-variant-numeric:tabular-nums;font-size:15px;font-family:var(--font-head);flex-shrink:0;}
+.field label .val{color:var(--tomato-text);font-variant-numeric:tabular-nums;font-size:15px;font-family:var(--font-head);flex-shrink:0;}
 .field .hint{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.35;overflow-wrap:break-word;}
 /* Sichtbare Kopplung Vorteig-Reife <-> Hefemenge (v3.31.0): wenn eine Biga/Poolish-
    Reifestufe aktiv ist, legt die Stufe die Hefemenge automatisch fest. Der Regler
@@ -325,6 +417,9 @@ input[type=range]::-moz-range-thumb{
 input[type=number]{
   width:78px;padding:7px 8px;border:1px solid var(--line);border-radius:var(--radius);
   font-size:14px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);
+  /* Explizites background:var(--card) (v3.47.0) -- ohne das fiele das Feld im Dunkelmodus
+     auf die UA-Standardfarbe (meist Weiß) zurück statt der dunklen Kartenfläche zu folgen. */
+  background:var(--card);
 }
 input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .seg{display:flex;gap:6px;background:var(--bg);padding:4px;border-radius:var(--radius);}
@@ -335,10 +430,10 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .seg button.active{background:var(--tomato);color:#fff;}
 .pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;}
 .pills button{
-  border:1px solid var(--line);background:#fff;border-radius:var(--radius-chip);padding:5px 12px;
+  border:1px solid var(--line);background:var(--card);border-radius:var(--radius-chip);padding:5px 12px;
   font-size:12px;cursor:pointer;color:var(--ink);transition:all .12s;
 }
-.pills button:hover{border-color:var(--tomato);color:var(--tomato);}
+.pills button:hover{border-color:var(--tomato);color:var(--tomato-text);}
 .pills button.active{background:var(--tomato);border-color:var(--tomato);color:#fff;font-weight:600;}
 /* Einstellungen: Feature-Flag-Umschalter (v3.19.0 — kurzer Name + Info-Knopf +
    Toggle-Switch statt langer Fließtext-Checkbox-Zeile). Jeder Punkt ist ein .flag-item
@@ -357,12 +452,12 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
      Umrandungen), var(--muted) liegt bei ~5,85:1. Analoger Fund/Fix wie .nav-toggle in
      v3.17.1 (dort: rgba-Rahmen gegen Header-Hintergrund). */
   width:22px;height:22px;flex-shrink:0;border-radius:50%;border:1px solid var(--muted);
-  background:#fff;color:var(--muted);font-size:12px;font-weight:700;font-style:italic;
+  background:var(--card);color:var(--muted);font-size:12px;font-weight:700;font-style:italic;
   font-family:Georgia,'Times New Roman',serif;line-height:1;cursor:pointer;
   display:inline-flex;align-items:center;justify-content:center;padding:0;
 }
-.info-btn:hover{border-color:var(--tomato);color:var(--tomato);}
-.info-btn:focus-visible{outline:2px solid var(--tomato-dark);outline-offset:2px;}
+.info-btn:hover{border-color:var(--tomato);color:var(--tomato-text);}
+.info-btn:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
 .info-btn[aria-expanded="true"]{background:var(--tomato);border-color:var(--tomato);color:#fff;}
 .switch-info{font-size:11.5px;color:var(--muted);line-height:1.4;margin:0 0 10px;padding-right:54px;}
 /* Toggle-Switch: sichtbare Spur+Daumen per Pseudo-Elementen, das echte <input> deckt per
@@ -382,7 +477,7 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .switch input:checked+.switch-slider{background:var(--tomato);}
 .switch input:checked+.switch-slider::before{transform:translateX(16px);}
-.switch input:focus-visible+.switch-slider{outline:2px solid var(--tomato-dark);outline-offset:2px;}
+.switch input:focus-visible+.switch-slider{outline:2px solid var(--tomato-text);outline-offset:2px;}
 /* Results */
 .result{position:sticky;top:20px;}
 .result .total{
@@ -399,26 +494,26 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .ing .amt small{font-weight:500;color:var(--muted);font-size:11px;margin-left:3px;}
 .stage{margin-top:18px;}
 .stage h3{
-  font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--basil);
+  font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--basil-text);
   margin:0 0 6px;padding-top:14px;border-top:2px solid var(--line);
 }
-.stage.biga h3{color:#b5851a;}
+.stage.biga h3{color:var(--biga-text);}
 .note{
-  background:#fff8ec;border:1px solid var(--crust);border-radius:var(--radius);padding:11px 13px;
-  font-size:12.5px;margin-top:14px;color:#7a5d20;line-height:1.45;
+  background:var(--note-bg);border:1px solid var(--crust);border-radius:var(--radius);padding:11px 13px;
+  font-size:12.5px;margin-top:14px;color:var(--note-text);line-height:1.45;
 }
-.note b{color:#5e4715;}
+.note b{color:var(--note-text-strong);}
 .temp-out{display:flex;gap:10px;margin-top:6px;align-items:stretch;}
 .temp-box{flex:1;text-align:center;background:var(--bg);border-radius:var(--radius);padding:12px 8px;}
-.temp-box:first-child{flex:1.4;background:#fdf1ec;border:1px solid var(--crust);}
-.temp-box .v{font-size:22px;font-weight:800;color:var(--tomato);font-variant-numeric:tabular-nums;font-family:var(--font-head);}
+.temp-box:first-child{flex:1.4;background:var(--temp-highlight-bg);border:1px solid var(--crust);}
+.temp-box .v{font-size:22px;font-weight:800;color:var(--tomato-text);font-variant-numeric:tabular-nums;font-family:var(--font-head);}
 .temp-box .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
 .actions{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
 .actions button{
-  padding:11px;border-radius:var(--radius);border:1px solid var(--line);background:#fff;
+  padding:11px;border-radius:var(--radius);border:1px solid var(--line);background:var(--card);
   font-size:13px;font-weight:600;cursor:pointer;color:var(--ink);transition:all .12s;
 }
-.actions button:not(.primary):hover{border-color:var(--tomato);color:var(--tomato);}
+.actions button:not(.primary):hover{border-color:var(--tomato);color:var(--tomato-text);}
 /* Primäre Aktion ("Speichern") in Terrakotta statt Grün (v3.41.0, Angleichung an den
    Referenz-Stil) — Pill-Form hebt sie zusätzlich von den rechteckig-abgerundeten
    sekundären Buttons ab (einheitliche Sprache: Pill = primäre CTA). */
@@ -447,19 +542,22 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   padding:16px 18px;margin-bottom:10px;
 }
 .step .num{
-  flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;
+  /* var(--ink-strong) statt var(--ink) (v3.47.0 Dunkelmodus): var(--ink) ist die
+     THEMENABHÄNGIGE Textfarbe (wird im Dunkelmodus hell) -- als Badge-Füllfläche mit
+     weißer Schrift braucht dieser Kreis aber eine fest dunkle Fläche in beiden Themes. */
+  flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--ink-strong);color:#fff;
   display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;font-family:var(--font-head);
 }
 .step .body{flex:1;min-width:0;}
 .step .body h4{margin:2px 0 5px;font-size:15.5px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-weight:700;}
 .step .body .chip{
-  font-size:11px;font-weight:700;background:#fff3e8;color:#b5651a;border:1px solid var(--crust);
+  font-size:11px;font-weight:700;background:var(--chip-bg);color:var(--chip-text);border:1px solid var(--crust);
   padding:2px 9px;border-radius:var(--radius-chip);letter-spacing:.3px;text-transform:none;
 }
-.step .body p{margin:0;font-size:13.5px;color:#5a514a;line-height:1.5;}
+.step .body p{margin:0;font-size:13.5px;color:var(--step-text);line-height:1.5;}
 .step .body p b{color:var(--ink);}
 .step .body .timechip{
-  font-size:12px;font-weight:800;background:var(--ink);color:#fff;
+  font-size:12px;font-weight:800;background:var(--ink-strong);color:#fff;
   padding:3px 11px;border-radius:var(--radius-chip);letter-spacing:.3px;margin-left:auto;
 }
 .schedbar{
@@ -483,11 +581,11 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .schedbar-goto-zeitplan:hover{opacity:.85;}
 .schedbar-goto-zeitplan:focus-visible{outline:2px solid #fff;outline-offset:2px;border-radius:1px;}
 .step .body .tip{
-  margin-top:7px;font-size:12.5px;color:var(--basil);background:#f1f7f1;border-radius:2px;
-  padding:7px 10px;border-left:3px solid var(--basil);
+  margin-top:7px;font-size:12.5px;color:var(--basil-text);background:var(--tip-bg);border-radius:2px;
+  padding:7px 10px;border-left:3px solid var(--basil-text);
 }
 .step .body .warn{
-  margin-top:7px;font-size:12.5px;color:#9a3a1c;background:#fdf0ec;border-radius:2px;
+  margin-top:7px;font-size:12.5px;color:var(--warn-text);background:var(--warn-bg);border-radius:2px;
   padding:7px 10px;border-left:3px solid var(--tomato);
 }
 /* Gärzeit-Timer/Wecker je Schritt (js/timer.js) */
@@ -496,12 +594,12 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .timerbtn{
   font-size:12.5px;font-weight:700;padding:7px 13px;border-radius:var(--radius-chip);cursor:pointer;
-  border:1px solid var(--line);background:#fff;color:var(--ink);
+  border:1px solid var(--line);background:var(--card);color:var(--ink);
 }
 .timerbtn-start{background:var(--tomato);color:#fff;border-color:var(--tomato);}
 .timerbtn:hover{filter:brightness(.96);}
 a.timerbtn{text-decoration:none;display:inline-block;}
-.timerbtn-alt{background:#fff;color:var(--ink);}
+.timerbtn-alt{background:var(--card);color:var(--ink);}
 .timersys{
   flex-basis:100%;display:flex;flex-direction:column;gap:6px;margin-top:2px;
   padding:8px 10px;border-left:3px solid var(--line);background:var(--bg);border-radius:2px;
@@ -509,8 +607,8 @@ a.timerbtn{text-decoration:none;display:inline-block;}
 .timersys-hint{font-size:11.5px;color:var(--muted);line-height:1.45;}
 .timersys-links{display:flex;flex-wrap:wrap;gap:8px;}
 .timerclock{
-  font-size:13px;font-weight:800;color:var(--tomato-dark);font-variant-numeric:tabular-nums;
-  background:#fff3e8;border:1px solid var(--crust);padding:5px 11px;border-radius:var(--radius-chip);
+  font-size:13px;font-weight:800;color:var(--tomato-text);font-variant-numeric:tabular-nums;
+  background:var(--chip-bg);border:1px solid var(--crust);padding:5px 11px;border-radius:var(--radius-chip);
 }
 .timerdone{
   font-size:13px;font-weight:800;color:#fff;background:var(--tomato);
@@ -719,7 +817,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
 .nav-panel-title{font-family:var(--font-head);font-size:18px;font-weight:700;}
 .nav-close{
   width:40px;height:40px;border:1px solid var(--line);border-radius:50%;
-  background:#fff;font-size:16px;cursor:pointer;
+  background:var(--card);font-size:16px;cursor:pointer;
 }
 .nav-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;}
 .nav-item{
@@ -728,7 +826,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   color:var(--ink);font-size:15px;font-weight:600;cursor:pointer;
 }
 .nav-item:active{background:var(--bg);}
-.nav-item.active{background:var(--bg);border-left:3px solid var(--tomato);color:var(--tomato-dark);}
+.nav-item.active{background:var(--bg);border-left:3px solid var(--tomato);color:var(--tomato-text);}
 
 /* Desktop-Link am Ende des Menüs: eigenes <a>, kein .nav-item (verlässt die Seite statt
    eine Ansicht umzuschalten) — optisch fast identisch, nur dezent abgesetzt durch den
@@ -1360,6 +1458,21 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
             </div>
             <p class="switch-info" id="flagLangInfo" hidden data-i18n="flag.lang.info">Deutsch oder Englisch für die komplette Oberfläche, Anleitung und Exporte. Automatisch anhand deiner Browser-Sprache vorausgewählt, hier jederzeit manuell umschaltbar — deine Wahl wird gespeichert.</p>
             <div id="langAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
+          </div>
+
+          <div class="flag-item">
+            <div class="switch-row">
+              <div class="switch-row-main">
+                <span class="switch-name" id="themeLabel" data-i18n="flag.theme.name">Darstellung</span>
+                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagThemeInfo" data-i18n-attr="aria-label:flag.theme.infoBtn">i</button>
+              </div>
+              <div class="seg" id="themeSwitch" role="group" aria-labelledby="themeLabel" style="width:auto;">
+                <button type="button" data-theme-choice="light" data-i18n="theme.light">Hell</button>
+                <button type="button" data-theme-choice="dark" data-i18n="theme.dark">Dunkel</button>
+              </div>
+            </div>
+            <p class="switch-info" id="flagThemeInfo" hidden data-i18n="flag.theme.info">Hell oder Dunkel für die komplette Oberfläche. Folgt automatisch der Systemeinstellung deines Geräts, hier jederzeit manuell umschaltbar — deine Wahl wird gespeichert und übersteuert danach die Systemeinstellung.</p>
+            <div id="themeAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
           </div>
 
           <div class="flag-item">
@@ -2415,6 +2528,15 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   // allein kein verlässlicher Beleg für eine derart große, seitenweite Änderung — analog
   // zum bestehenden #viewAnnounce-Muster beim Bereichswechsel (Burger-Nav, v3.26.0).
   add('lang.announce', 'Sprache: {lang}', 'Language: {lang}');
+  // Dunkelmodus (v3.47.0, js/theme.js) — identisches Umschalter-/Ansage-Muster wie die
+  // Sprachwahl direkt darüber.
+  add('flag.theme.name', 'Darstellung', 'Appearance');
+  add('flag.theme.infoBtn', 'Erklärung zu „Darstellung“ ein-/ausblenden', 'Show/hide explanation for "Appearance"');
+  add('flag.theme.info', 'Hell oder Dunkel für die komplette Oberfläche. Folgt automatisch der Systemeinstellung deines Geräts, hier jederzeit manuell umschaltbar — deine Wahl wird gespeichert und übersteuert danach die Systemeinstellung.',
+    'Light or dark for the entire interface. Automatically follows your device\'s system setting, switchable manually here anytime — your choice is saved and then overrides the system setting.');
+  add('theme.light', 'Hell', 'Light');
+  add('theme.dark', 'Dunkel', 'Dark');
+  add('theme.announce', 'Darstellung: {theme}', 'Appearance: {theme}');
 
   // -- Card: Pizza Party --------------------------------------------------------------------
   add('card.party.title', 'Pizza Party', 'Pizza Party');
@@ -2781,6 +2903,151 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   wireCheckboxes();
   wireInfoButtons();
   applyFlags();
+})(window);
+
+</script>
+<script>
+/* theme.js — Dunkelmodus (v3.47.0)
+ *
+ * Folgt standardmäßig der Systemeinstellung (prefers-color-scheme), bis der Nutzer den
+ * manuellen Umschalter in den Einstellungen betätigt — danach übersteuert die manuelle
+ * Wahl die Systemeinstellung dauerhaft (identisches Persistenz-Muster wie die Sprachwahl
+ * in js/i18n.js: eigener localStorage-Key "pizzaTheme", "noch nie manuell gewählt" ist von
+ * "explizit gewählt" unterscheidbar — nur wenn NICHTS gespeichert ist, greift die
+ * Systemerkennung).
+ *
+ * Die FRÜHE Anwendung (vor dem ersten Bildaufbau, damit kein Hell/Dunkel-Flash beim Laden
+ * auftritt) passiert NICHT hier, sondern über ein kleines Inline-Script ganz am Anfang des
+ * <head> in beiden HTML-Dateien (pizza-rechner.html, pizza-rechner-mobile.html) — dieses
+ * Modul hier läuft wie alle anderen Skripte erst am Ende von <body> und übernimmt den dort
+ * bereits gesetzten data-theme-Wert von <html> als Ausgangspunkt (keine zweite, potenziell
+ * abweichende Erkennungslogik). Zuständig für: (1) den manuellen Umschalter in den
+ * Einstellungen (#themeSwitch, identisches .seg-Muster wie #langSwitch), (2) Live-
+ * Mitverfolgen der Systemeinstellung, SOLANGE noch keine manuelle Wahl gespeichert ist
+ * (z. B. wenn der Nutzer während einer laufenden Session das System-Theme wechselt).
+ *
+ * Farbwerte selbst stehen NICHT hier, sondern in css/styles.css (:root[data-theme="dark"])
+ * — dieses Modul setzt nur das data-theme-Attribut auf <html>, CSS erledigt den Rest.
+ */
+(function (global) {
+  'use strict';
+  const PZ = global.PZ || (global.PZ = {});
+  const THEME_KEY = 'pizzaTheme';
+
+  function readStoredTheme() {
+    try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; }
+  }
+  function writeStoredTheme(theme) {
+    try { localStorage.setItem(THEME_KEY, theme); } catch (e) { /* ignore */ }
+  }
+
+  function systemPrefersDark() {
+    return !!(global.matchMedia && global.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+
+  // Reine Entscheidungsfunktion (kein DOM/localStorage-Zugriff) — für Tests exponiert,
+  // analog zu PZ._mergeFlags in js/settings.js: gespeicherte manuelle Wahl gewinnt immer,
+  // nur ein leerer/unbekannter Wert fällt auf die Systemerkennung zurück.
+  function resolveInitialTheme(stored, prefersDark) {
+    if (stored === 'light' || stored === 'dark') return stored;
+    return prefersDark ? 'dark' : 'light';
+  }
+  PZ._resolveInitialTheme = resolveInitialTheme;
+
+  // Übernimmt den bereits im <head>-Inline-Script gesetzten Wert als Startpunkt --
+  // vermeidet, dieselbe Erkennung zweimal (potenziell abweichend) zu implementieren. Läuft
+  // dieses Modul mal ohne das Inline-Script (z. B. testweise eingebunden), greift derselbe
+  // resolveInitialTheme()-Fallback wie im Kopf-Script.
+  const initialAttr = document.documentElement.getAttribute('data-theme');
+  let currentTheme = (initialAttr === 'light' || initialAttr === 'dark')
+    ? initialAttr
+    : resolveInitialTheme(readStoredTheme(), systemPrefersDark());
+  let manualOverride = readStoredTheme() === 'light' || readStoredTheme() === 'dark';
+
+  function applyTheme(theme) {
+    currentTheme = theme;
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+  // Erstanwendung nicht überspringen, falls das Inline-Script aus irgendeinem Grund fehlte.
+  applyTheme(currentTheme);
+
+  function getTheme() { return currentTheme; }
+  PZ.getTheme = getTheme;
+
+  // Manuelle Wahl: persistiert dauerhaft, übersteuert ab jetzt die Systemeinstellung.
+  function setTheme(theme) {
+    if (theme !== 'light' && theme !== 'dark') return;
+    manualOverride = true;
+    writeStoredTheme(theme);
+    applyTheme(theme);
+    reflectSwitch();
+  }
+  PZ.setTheme = setTheme;
+
+  // Solange noch keine manuelle Wahl getroffen wurde: live der Systemeinstellung folgen.
+  if (global.matchMedia) {
+    const mq = global.matchMedia('(prefers-color-scheme: dark)');
+    const onSystemChange = function (e) {
+      if (manualOverride) return;
+      applyTheme(e.matches ? 'dark' : 'light');
+      reflectSwitch();
+    };
+    if (mq.addEventListener) mq.addEventListener('change', onSystemChange);
+    else if (mq.addListener) mq.addListener(onSystemChange); // Safari < 14 Fallback
+  }
+
+  // ======================================================================
+  // Umschalter in den Einstellungen (#themeSwitch, .seg-Muster mit zwei Buttons
+  // "Hell"/"Dunkel", identisch zum bestehenden #langSwitch-Muster in js/i18n.js).
+  // ======================================================================
+  function reflectSwitch() {
+    const wrap = document.getElementById('themeSwitch');
+    if (!wrap) return;
+    const btns = Array.prototype.slice.call(wrap.querySelectorAll('button[data-theme-choice]'));
+    btns.forEach(function (b) {
+      const on = b.getAttribute('data-theme-choice') === currentTheme;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+  }
+
+  // Erst leeren, Text erst im nächsten Tick setzen (analog zu #langAnnounce in js/i18n.js) —
+  // sonst bekommen Screenreader bei zwei Klicks auf denselben Wert hintereinander keine
+  // zweite Ansage, da der Text wortgleich wäre (WCAG 4.1.3 Status Messages).
+  let themeMsgGen = 0;
+  function announceThemeChange(theme) {
+    const el = document.getElementById('themeAnnounce');
+    if (!el) return;
+    const t = PZ.t ? PZ.t : function (k) { return k; };
+    const themeName = t(theme === 'dark' ? 'theme.dark' : 'theme.light');
+    const gen = ++themeMsgGen;
+    el.textContent = '';
+    global.setTimeout(function () {
+      if (gen === themeMsgGen) el.textContent = t('theme.announce', { theme: themeName });
+    }, 50);
+  }
+
+  function wireThemeSwitch() {
+    const wrap = document.getElementById('themeSwitch');
+    if (!wrap) return;
+    const btns = Array.prototype.slice.call(wrap.querySelectorAll('button[data-theme-choice]'));
+    btns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        const theme = b.getAttribute('data-theme-choice');
+        setTheme(theme);
+        announceThemeChange(theme);
+      });
+    });
+    reflectSwitch();
+  }
+
+  // Läuft die Datei in einer Umgebung ohne das übrige Markup (z. B. tests/test.html),
+  // findet wireThemeSwitch() einfach keine Elemente — kein Fehler, no-op.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wireThemeSwitch);
+  } else {
+    wireThemeSwitch();
+  }
 })(window);
 
 </script>

@@ -4,7 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Teigmeister</title>
-<link rel="stylesheet" href="css/styles.css?v=3.46.0">
+<!-- Dunkelmodus (v3.47.0): früheste mögliche Anwendung von data-theme, VOR dem CSS-Link,
+     verhindert einen kurzen Hell/Dunkel-Flash beim Laden (js/theme.js unten am Body-Ende
+     übernimmt später denselben, hier bereits gesetzten Wert als Ausgangspunkt statt die
+     Erkennung ein zweites Mal/potenziell abweichend zu wiederholen). Bewusst inline statt
+     als externe Datei -- muss synchron VOR dem ersten Bildaufbau laufen. -->
+<script>
+(function(){
+  try{
+    var t = localStorage.getItem('pizzaTheme');
+    if (t !== 'light' && t !== 'dark') {
+      t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', t);
+  } catch(e) {}
+})();
+</script>
+<link rel="stylesheet" href="css/styles.css?v=3.47.0">
 </head>
 <body>
 <header>
@@ -584,6 +600,21 @@
         <div class="flag-item">
           <div class="switch-row">
             <div class="switch-row-main">
+              <span class="switch-name" id="themeLabel" data-i18n="flag.theme.name">Darstellung</span>
+              <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagThemeInfo" data-i18n-attr="aria-label:flag.theme.infoBtn">i</button>
+            </div>
+            <div class="seg" id="themeSwitch" role="group" aria-labelledby="themeLabel" style="width:auto;">
+              <button type="button" data-theme-choice="light" data-i18n="theme.light">Hell</button>
+              <button type="button" data-theme-choice="dark" data-i18n="theme.dark">Dunkel</button>
+            </div>
+          </div>
+          <p class="switch-info" id="flagThemeInfo" hidden data-i18n="flag.theme.info">Hell oder Dunkel für die komplette Oberfläche. Folgt automatisch der Systemeinstellung deines Geräts, hier jederzeit manuell umschaltbar — deine Wahl wird gespeichert und übersteuert danach die Systemeinstellung.</p>
+          <div id="themeAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
+        </div>
+
+        <div class="flag-item">
+          <div class="switch-row">
+            <div class="switch-row-main">
               <label class="switch-name" for="flagTimer" data-i18n="flag.timer.name">Gärzeit-Timer</label>
               <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagTimerInfo" data-i18n-attr="aria-label:flag.timer.infoBtn">i</button>
             </div>
@@ -721,25 +752,26 @@
 <footer aria-hidden="true"></footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.46.0"></script>
-<script src="js/state.js?v=3.46.0"></script>
-<script src="js/i18n.js?v=3.46.0"></script>
-<script src="js/settings.js?v=3.46.0"></script>
-<script src="js/flour.js?v=3.46.0"></script>
-<script src="js/calc.js?v=3.46.0"></script>
-<script src="js/schedule.js?v=3.46.0"></script>
-<script src="js/guide.js?v=3.46.0"></script>
-<script src="js/timer.js?v=3.46.0"></script>
-<script src="js/ui.js?v=3.46.0"></script>
-<script src="js/print.js?v=3.46.0"></script>
-<script src="js/pdf.js?v=3.46.0"></script>
-<script src="js/presets.js?v=3.46.0"></script>
-<script src="js/storage.js?v=3.46.0"></script>
-<script src="js/newrecipe.js?v=3.46.0"></script>
-<script src="js/share.js?v=3.46.0"></script>
-<script src="js/party.js?v=3.46.0"></script>
-<script src="js/glossary.js?v=3.46.0"></script>
-<script src="js/main.js?v=3.46.0"></script>
+<script src="js/dom.js?v=3.47.0"></script>
+<script src="js/state.js?v=3.47.0"></script>
+<script src="js/i18n.js?v=3.47.0"></script>
+<script src="js/settings.js?v=3.47.0"></script>
+<script src="js/theme.js?v=3.47.0"></script>
+<script src="js/flour.js?v=3.47.0"></script>
+<script src="js/calc.js?v=3.47.0"></script>
+<script src="js/schedule.js?v=3.47.0"></script>
+<script src="js/guide.js?v=3.47.0"></script>
+<script src="js/timer.js?v=3.47.0"></script>
+<script src="js/ui.js?v=3.47.0"></script>
+<script src="js/print.js?v=3.47.0"></script>
+<script src="js/pdf.js?v=3.47.0"></script>
+<script src="js/presets.js?v=3.47.0"></script>
+<script src="js/storage.js?v=3.47.0"></script>
+<script src="js/newrecipe.js?v=3.47.0"></script>
+<script src="js/share.js?v=3.47.0"></script>
+<script src="js/party.js?v=3.47.0"></script>
+<script src="js/glossary.js?v=3.47.0"></script>
+<script src="js/main.js?v=3.47.0"></script>
 <script>
   // Desktop-only UI-Glue (kein Eingriff in die PZ-Rechenmodule): Burger-Menü-Navigation,
   // 1:1 dieselbe Logik wie das etablierte Mobil-Muster (pizza-rechner-mobile.html, v3.17.x/

@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-21 · Aktuelle Version: v3.44.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-21 · Aktuelle Version: v3.47.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,132 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Versionsnummer nur im Menü statt im Footer (v3.46.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Dunkelmodus (v3.47.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Direkter Nutzerauftrag per `/define-feature` (kein Backlog-Punkt). Ein dunkles Farbschema
+für Desktop- und Mobil-Ansicht, das standardmäßig automatisch der Systemeinstellung
+(`prefers-color-scheme`) folgt, mit manuellem Umschalter in den Einstellungen zum
+Überschreiben. **Rein visuelle Erweiterung — keine Änderung an Layout/Struktur, nur
+Farbwerte; keine Änderung an Berechnungslogik** (`js/calc.js`, `js/schedule.js`
+unangetastet).
+
+**1. Technik — `data-theme`-Attribut auf `<html>`, kein Klassen-Toggle:** Ein kleines
+Inline-Script ganz am Anfang von `<head>` (VOR dem CSS-Link, identisch in
+`pizza-rechner.html` UND `pizza-rechner-mobile.html`) liest `localStorage.getItem
+('pizzaTheme')`; ist dort `"light"`/`"dark"` gespeichert, gewinnt das, sonst entscheidet
+`matchMedia('(prefers-color-scheme: dark)')`. Das Ergebnis wird sofort als
+`data-theme="light"/"dark"` auf `<html>` gesetzt — **vor dem ersten Bildaufbau**, verhindert
+einen kurzen Hell/Dunkel-Flash beim Laden (FOUC). `js/theme.js` (neu, am Ende von `<body>`
+wie alle anderen Module) übernimmt diesen bereits gesetzten Wert als Ausgangspunkt (keine
+zweite, potenziell abweichende Erkennung) und ist zuständig für: (a) den manuellen
+Umschalter in den Einstellungen, (b) Live-Mitverfolgen der Systemeinstellung per
+`matchMedia(...).addEventListener('change', ...)`, SOLANGE noch keine manuelle Wahl
+gespeichert ist (wechselt der Nutzer während einer offenen Session das System-Theme,
+zieht die App live mit).
+
+**2. Persistenz — identisches Muster wie die Sprachwahl (`js/i18n.js`, `LANG_KEY`):**
+eigener `localStorage`-Key `"pizzaTheme"`, komplett getrennt vom Rezept-Speicher
+(`pizzaRechner`) und den Feature-Flags (`pizzaRechnerFeatureFlags`). „Noch nie manuell
+gewählt" (kein Key vorhanden) ist von „explizit gewählt" unterscheidbar — nur im
+erstgenannten Fall greift die Systemerkennung überhaupt, danach übersteuert die manuelle
+Wahl dauerhaft. `PZ._resolveInitialTheme(stored, prefersDark)` ist die reine
+Entscheidungsfunktion (für Tests exponiert, analog `PZ._mergeFlags`), `PZ.setTheme()`/
+`PZ.getTheme()` die öffentliche API.
+
+**3. Neue CSS-Variablen (`css/styles.css`, `:root{}` + `:root[data-theme="dark"]` unter
+`@media screen`):** Bestehende Basis-Tokens (`--bg`, `--card`, `--ink`, `--muted`,
+`--line`, `--shadow`) werden im Dunkelmodus komplett neu belegt. Zusätzlich neue
+semantische Tokens für Fälle, in denen dieselbe Farbe zwei unterschiedliche Rollen hatte,
+die sich im Dunkelmodus GEGENSÄTZLICH verhalten müssen:
+- `--tomato-text`/`--basil-text`: vorher wurde `var(--tomato)`/`var(--tomato-dark)`/
+  `var(--basil)` direkt sowohl als gesättigte Button-/Badge-**Füllfläche mit weißer
+  Schrift** (bleibt im Dunkelmodus unverändert gut lesbar) ALS AUCH als reiner **Text auf
+  der Karten-/Seitenfläche** verwendet (`.field label .val`, `.temp-box .v`,
+  `.nav-item.active`, `.timerclock`, `.stage h3`, Fokusringe u. a.) — Letzteres fiel im
+  Dunkelmodus unter 4,5:1 (`--tomato-dark` `#a8341f` nur ~2,4–2,7:1 auf dunklem Grund).
+  Light-Default = alter Wert (keine optische Änderung im hellen Modus), Dark-Override
+  `#ef7a5c`/`#6fbb6f` (~5,9–7,0:1 gegen die neuen dunklen Flächen).
+- `--ink-strong` (theme-**unabhängig**, `#2b2420` in beiden Themes): `.step .num` und
+  `.step .body .timechip` nutzten `background:var(--ink)` als fest dunkle Badge-Fläche mit
+  weißer Schrift — da `var(--ink)` im Dunkelmodus aber die (dann HELLE) Textfarbe ist,
+  wäre die weiße Schrift auf hellem Grund verschwunden. Eigener, nie themenabhängiger
+  Token behebt das.
+- `--note-bg`/`--note-text`/`--note-text-strong`, `--chip-bg`/`--chip-text`,
+  `--warn-bg`/`--warn-text`, `--tip-bg`, `--temp-highlight-bg`, `--step-text`,
+  `--biga-text`: ersetzen zuvor hartkodierte Hex-Farben (`.note`, `.step .body .chip`,
+  `.step .body .warn`, `.step .body .tip`, `.temp-box:first-child`, `.step .body p`,
+  `.stage.biga h3`) — jeweils Light-Default = alter Hex-Wert, Dark-Override neu berechnet.
+- Gesättigte Marken-Flächen (`--tomato`, `--tomato-dark`, `--basil`, `--crust`) bleiben
+  bewusst **unverändert** zwischen den Themes — sie dienen weiterhin fast ausschließlich
+  als Flächenfarbe mit weißer Schrift (Buttons, Badges, Header-/Quickbar-Chrome) und
+  funktionieren darin themenunabhängig gleich gut.
+- Reine `#fff`-Hintergründe, die eigentlich „Karten-/Formular-Oberfläche" bedeuten
+  (`.nav-close`, `.party-qty-btn`, `.party-delete-btn`, `.party-ing-remove`, `.selectbox`,
+  `.pills button`, `.actions button`, `.timerbtn`/`.timerbtn-alt`, `.info-btn`,
+  `input[type=number]` — Letzteres hatte vorher gar kein explizites `background`) wurden
+  auf `var(--card)` umgestellt. Bewusst **unverändert weiß** blieben der Ring um den
+  Slider-Thumb (`border:3px solid #fff`) und der Toggle-Switch-Knopf
+  (`.switch-slider::before{background:#fff}`) — beides Bedienelement-Indikatoren, die in
+  beiden Themes als heller Punkt sichtbar bleiben sollen, kein Kartenflächen-Bezug.
+- `color-scheme:light`/`color-scheme:dark` gesetzt (steuert native Formularelemente/
+  Scrollbars passend zum Theme).
+- Der komplette Dark-Override-Block sitzt in `@media screen` — beim Drucken gelten
+  automatisch wieder die hellen `:root`-Defaultwerte, unabhängig vom `data-theme`-Attribut
+  (zusätzlich erzwingt `@media print{body{background:#fff}}` weiterhin Weiß).
+
+**4. `css/mobile.css`:** zwei kleine Anpassungen auf dieselben neuen Tokens
+(`.nav-close`-Hintergrund → `var(--card)`, `.nav-item.active`-Textfarbe →
+`var(--tomato-text)`) — der Rest (Quickbar, Foto-Header, Nav-Toggle) bleibt bewusst
+unverändert (feste, immer terrakottafarbene Chrome-Elemente, kein Kartenflächen-Bezug).
+
+**5. Neuer Umschalter „Darstellung" im Einstellungen-Menü:** `.seg`-Segmented-Control
+`#themeSwitch` mit zwei Buttons (`data-theme-choice="light"/"dark"`, Label „Hell"/„Dunkel"),
+strukturell 1:1 identisch zum etablierten Sprachumschalter `#langSwitch` (gleiche
+`role="group"`/`aria-labelledby`/`aria-pressed`/Info-Button/Live-Region-Struktur), direkt
+darunter platziert — in BEIDEN HTML-Dateien. Neue i18n-Keys (`js/i18n.js`):
+`flag.theme.name/infoBtn/info`, `theme.light`, `theme.dark`, `theme.announce`.
+Live-Region `#themeAnnounce` nutzt das etablierte Clear-then-delayed-set-Muster
+(Generation-Zähler, WCAG 4.1.3) wie `#langAnnounce`.
+
+**Härten (gezielter `accessibility-expert`-Audit, synchron):** keine Blocker/Major-Funde.
+ARIA/Semantik des neuen Umschalters bestätigt korrekt (identisch zu `#langSwitch`),
+Kontrastwerte stichprobenartig nachgerechnet und bestätigt (`--tomato-text`/`--basil-text`
+sowie alle neuen Callout-Tokens deutlich über 4,5:1, Fokusringe über 3:1), Print-Isolation
+bestätigt (kein Dunkelmodus-Leck in Druck/PDF-Export), `data-theme`-Technik aus
+Screenreader-Sicht unproblematisch (reines Presentation-Attribut). Zwei Minor-Funde nur
+dokumentiert, nicht gefixt (außerhalb des Feature-Scopes): `<meta name="theme-color">` auf
+Mobil bleibt statisch terrakottafarben (wechselt nicht mit dem Theme — rein kosmetisch,
+kein WCAG-Kriterium); `.daybadge.d2` (fest `#b5851a` mit weißer Schrift, ~3,32:1) ist ein
+vorbestehender, themenunabhängiger Kontrastfund, unabhängig von diesem Feature.
+
+**Verifikation:** Da das Preview-Tool in diesem Projekt unzuverlässig ist, per
+Headless-Edge-Screenshot geprüft (Desktop hell/dunkel inkl. Anleitung/Einstellungen-Ansicht,
+Mobil dunkel) — Kartenflächen, Ergebnis-Panel, Anleitungs-Steps (Chips/Tipp-/Warnboxen/
+Timer-Badges), Einstellungen-Umschalter (inkl. korrekt reflektiertem aktivem Zustand) alle
+mit gutem Kontrast bestätigt. Auto-Erkennung real per `matchMedia` verifiziert (Testmaschine
+hat System-Dunkelmodus aktiv, App folgte dem korrekt ohne gespeicherten Override).
+
+**Tests:** `tests/test.html` von **577 auf 593 Prüfungen** erweitert (neue Sektion
+„24 · Dunkelmodus (js/theme.js)": `PZ._resolveInitialTheme()`, `setTheme()`/`getTheme()`
+inkl. Persistenz, ungültige Werte werden ignoriert, `#themeSwitch`-Stub spiegelt den
+Zustand über `PZ.setTheme()` korrekt in `aria-pressed`/`.active`). **Wichtige Erkenntnis
+beim Testen:** ein ursprünglich per simuliertem `button.click()` geschriebener DOM-Test
+schlug fehl, weil `wireThemeSwitch()` an `DOMContentLoaded` hängt — das im synchron
+WÄHREND des HTML-Parsings laufenden Test-Inline-Script von `test.html` zum Testzeitpunkt
+noch nicht gefeuert hat (identischer, bereits in Sektion 23 dokumentierter Timing-Grund,
+weshalb `#langSwitch` dort ebenfalls nicht per simuliertem Klick, sondern nur über die
+zugrunde liegende `PZ.setLang()`-API getestet wird). Fix: Test treibt die Zustandsänderung
+über `PZ.setTheme()` statt `.click()` — reflectSwitch() läuft so garantiert synchron mit,
+unabhängig von der Klick-Verdrahtung. Click-Verdrahtung selbst bleibt entsprechend
+ungetestet, analog zu `#langSwitch`/`#langAnnounce`.
+
+**Geändert:** `css/styles.css`, `css/mobile.css`, `js/theme.js` (neu), `js/i18n.js`,
+`pizza-rechner.html`, `pizza-rechner-mobile.html`, `tests/test.html`. `?v=` auf `3.47.0`
+gezogen (Desktop + Mobil, alle `<link>`/`<script>`-Tags). `pizza-rechner-mobile-
+standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v3.47.0 - Dunkelmodus/` enthält den vollständigen Schnappschuss.
+
+## Versionsnummer nur im Menü statt im Footer (v3.46.0)
 
 Direkter Nutzerauftrag per `/define-feature` (kein Backlog-Punkt, direkt im Anschluss
 an den Icon-Zentrierung-Zyklus v3.45.0 nachgeschoben). Motivation: `#appVersion` stand
@@ -4676,7 +4801,20 @@ Keine Code-Änderung durch den Audit nötig.
   gedämpfter/leiser Text auf hellem Grund entsteht: `var(--muted)` alleine reicht
   (~5,84:1), `opacity` zusätzlich drückt es unter 4,5:1.
 
-**Stand v3.46.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+- ~~Dunkelmodus (Hell/Dunkel-Farbschema, automatisch per `prefers-color-scheme` +
+  manueller Umschalter)~~ — **erledigt in v3.47.0** (kein Backlog-Punkt, direkter
+  Nutzerauftrag per `/define-feature`; s. Abschnitt „Dunkelmodus (v3.47.0)" oben).
+- Nebenbefund aus dem v3.47.0-Accessibility-Audit (nicht behoben, außerhalb des
+  angefragten Scopes, beide Minor/kosmetisch): (1) `<meta name="theme-color"
+  content="#c8442e">` in `pizza-rechner-mobile.html` ist statisch und wechselt nicht
+  mit dem Dunkelmodus (native Status-/Adressleisten-Färbung auf Mobil bleibt immer
+  Terrakotta) — ließe sich per `js/theme.js` dynamisch mitziehen, falls gewünscht.
+  (2) `.daybadge.d2` (feste Farbe `#b5851a` mit weißer Schrift) liegt bei nur
+  ~3,32:1 Kontrast (unter der 4,5:1-Schwelle, WCAG 1.4.3) — vorbestehender,
+  themenunabhängiger Fund, unabhängig vom Dunkelmodus-Feature. Beim nächsten
+  Kontrast-/Accessibility-Zyklus mit aufgreifen.
+
+**Stand v3.47.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen,
 vollständig zurückgebaut, keine offene Frage mehr). Keine Warteschlange mehr offen —
 für den nächsten Zyklus braucht es wieder frisches Brainstorming in Phase 1 (neue

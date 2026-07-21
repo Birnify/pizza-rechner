@@ -858,6 +858,15 @@
   // allein kein verlässlicher Beleg für eine derart große, seitenweite Änderung — analog
   // zum bestehenden #viewAnnounce-Muster beim Bereichswechsel (Burger-Nav, v3.26.0).
   add('lang.announce', 'Sprache: {lang}', 'Language: {lang}');
+  // Dunkelmodus (v3.47.0, js/theme.js) — identisches Umschalter-/Ansage-Muster wie die
+  // Sprachwahl direkt darüber.
+  add('flag.theme.name', 'Darstellung', 'Appearance');
+  add('flag.theme.infoBtn', 'Erklärung zu „Darstellung“ ein-/ausblenden', 'Show/hide explanation for "Appearance"');
+  add('flag.theme.info', 'Hell oder Dunkel für die komplette Oberfläche. Folgt automatisch der Systemeinstellung deines Geräts, hier jederzeit manuell umschaltbar — deine Wahl wird gespeichert und übersteuert danach die Systemeinstellung.',
+    'Light or dark for the entire interface. Automatically follows your device\'s system setting, switchable manually here anytime — your choice is saved and then overrides the system setting.');
+  add('theme.light', 'Hell', 'Light');
+  add('theme.dark', 'Dunkel', 'Dark');
+  add('theme.announce', 'Darstellung: {theme}', 'Appearance: {theme}');
 
   // -- Card: Pizza Party --------------------------------------------------------------------
   add('card.party.title', 'Pizza Party', 'Pizza Party');
