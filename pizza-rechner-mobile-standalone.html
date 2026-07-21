@@ -890,7 +890,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.54.0</span>
+    <span class="nav-version" id="appVersion">v3.55.0</span>
   </div>
 </nav>
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
@@ -1678,41 +1678,30 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
 
 </script>
 <script>
-/* i18n.js — Deutsch/Englisch-Sprachversion (v3.28.0)
+/* i18n-dict.js — Wörterbuch-Inhalte für js/i18n.js (v3.55.0)
  *
- * Neues Feature, vom Nutzer per /define-feature strukturiert und bestätigt. Deckt die
- * KOMPLETTE Oberfläche ab: statische HTML-Texte (Labels, Buttons, Hinweise), die
- * generierte Schritt-für-Schritt-Anleitung (js/guide.js, js/schedule.js), den PDF-Export
- * (js/pdf.js), die Druckansicht/Einkaufsliste (js/print.js), den .ics-Kalendertext
- * (js/timer.js) sowie die Pizza-Party-Presets (js/party.js). Deutsch bleibt Standard/
- * Fallback, nur Deutsch/Englisch (kein weiteres Sprachenmenü).
+ * Reine Daten, keine Laufzeit-Logik: alle add(key, de, en)-Einträge, die bis v3.54.0
+ * direkt in js/i18n.js standen. Ausgelagert, weil js/i18n.js mit 569 Einträgen /
+ * ~108 KB das mit Abstand größte Modul war und bei jedem Feature weiter wuchs --
+ * Wartbarkeit litt (Laufzeit-Engine und Wörterbuch-Inhalt ließen sich nicht getrennt
+ * überblicken). js/i18n.js (Laufzeit-Logik: t(), setLang(), applyStaticI18n(),
+ * wireLangSwitch()) bleibt unverändert zuständig, DIESE Datei liefert nur den Inhalt.
  *
- * Architektur: ein zentrales Wörterbuch { de: {...}, en: {...} }, flach mit
- * punktnotierten Keys (z. B. "label.hyd"). PZ.t(key, vars) liefert den Text der
- * aktuell aktiven Sprache, interpoliert {platzhalter} in vars, fällt bei fehlendem
- * Key in der Zielsprache auf Deutsch zurück, und als allerletzten Rückfall auf den
- * Key selbst (kein Crash, kein leerer Text). Statische HTML-Texte werden per
- * data-i18n(-html|-attr)-Attribut deklarativ verdrahtet (applyStaticI18n()); alle
- * generierten/dynamischen Texte (guide.js, pdf.js, print.js, timer.js, party.js,
- * presets.js, ui.js, newrecipe.js, flour.js, main.js, share.js) rufen PZ.t() direkt auf.
+ * Muss VOR js/i18n.js geladen werden (s. <script>-Reihenfolge in pizza-rechner.html/
+ * pizza-rechner-mobile.html) -- baut hier ein eigenes, lokales DICT auf und übergibt es
+ * über PZ._I18N_DICT an js/i18n.js, das es beim eigenen Start übernimmt (statt ein
+ * neues leeres DICT anzulegen) und PZ._i18nAdd() als Hook für spätere, nach js/i18n.js
+ * ladende Module bereitstellt (bisher ungenutzt, bleibt für künftige Erweiterungen
+ * verfügbar -- z. B. falls ein Modul eigene Übersetzungen dynamisch nachreichen will,
+ * ohne diese Datei hier anzufassen).
  *
- * Sprachwahl (Feature-Auftrag): automatische Vorauswahl per navigator.language beim
- * ersten Aufruf (de/at/ch-Locales -> Deutsch, sonst Englisch), plus manueller Umschalter
- * in den Einstellungen, der die Automatik übersteuert und in localStorage persistiert
- * (eigener Key "pizzaLang", analog zu den bestehenden Feature-Flags in js/settings.js,
- * aber bewusst NICHT im selben Objekt/Key — Sprachwahl ist kein Ein/Aus-Flag und hat
- * eine eigene Persistenz-Semantik: "noch nie manuell gewählt" muss von "explizit auf
- * Deutsch gewählt" unterscheidbar bleiben, damit Auto-Erkennung nur beim ALLERERSTEN
- * Aufruf greift).
+ * Reine Inhaltsverschiebung (v3.55.0) -- keine inhaltliche Änderung an den
+ * Übersetzungstexten selbst, keine neue i18n-Funktionalität.
  */
 (function (global) {
   'use strict';
   const PZ = global.PZ || (global.PZ = {});
-  const LANG_KEY = 'pizzaLang';
 
-  // ======================================================================
-  // Wörterbuch
-  // ======================================================================
   const DICT = {
     de: {},
     en: {}
@@ -2590,6 +2579,65 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   add('storage.importedSuffix', '{name} (importiert)', '{name} (imported)');
   add('storage.importedSuffixN', '{name} (importiert {n})', '{name} (imported {n})');
   add('storage.duplicateName', 'Kopie von {name}', 'Copy of {name}');
+
+
+  PZ._I18N_DICT = DICT; // Übergabe an js/i18n.js (lädt danach, übernimmt dieses DICT)
+})(window);
+
+</script>
+<script>
+/* i18n.js — Deutsch/Englisch-Sprachversion (v3.28.0, Laufzeit-Engine seit v3.55.0
+ * von den Wörterbuch-Inhalten getrennt, s. js/i18n-dict.js)
+ *
+ * Deckt die KOMPLETTE Oberfläche ab: statische HTML-Texte (Labels, Buttons, Hinweise),
+ * die generierte Schritt-für-Schritt-Anleitung (js/guide.js, js/schedule.js), den
+ * PDF-Export (js/pdf.js), die Druckansicht/Einkaufsliste (js/print.js), den
+ * .ics-Kalendertext (js/timer.js) sowie die Pizza-Party-Presets (js/party.js). Deutsch
+ * bleibt Standard/Fallback, nur Deutsch/Englisch (kein weiteres Sprachenmenü).
+ *
+ * Architektur: ein zentrales Wörterbuch { de: {...}, en: {...} }, flach mit
+ * punktnotierten Keys (z. B. "label.hyd"). PZ.t(key, vars) liefert den Text der
+ * aktuell aktiven Sprache, interpoliert {platzhalter} in vars, fällt bei fehlendem
+ * Key in der Zielsprache auf Deutsch zurück, und als allerletzten Rückfall auf den
+ * Key selbst (kein Crash, kein leerer Text). Statische HTML-Texte werden per
+ * data-i18n(-html|-attr)-Attribut deklarativ verdrahtet (applyStaticI18n()); alle
+ * generierten/dynamischen Texte (guide.js, pdf.js, print.js, timer.js, party.js,
+ * presets.js, ui.js, newrecipe.js, flour.js, main.js, share.js) rufen PZ.t() direkt auf.
+ *
+ * Sprachwahl (Feature-Auftrag): automatische Vorauswahl per navigator.language beim
+ * ersten Aufruf (de/at/ch-Locales -> Deutsch, sonst Englisch), plus manueller Umschalter
+ * in den Einstellungen, der die Automatik übersteuert und in localStorage persistiert
+ * (eigener Key "pizzaLang", analog zu den bestehenden Feature-Flags in js/settings.js,
+ * aber bewusst NICHT im selben Objekt/Key — Sprachwahl ist kein Ein/Aus-Flag und hat
+ * eine eigene Persistenz-Semantik: "noch nie manuell gewählt" muss von "explizit auf
+ * Deutsch gewählt" unterscheidbar bleiben, damit Auto-Erkennung nur beim ALLERERSTEN
+ * Aufruf greift).
+ *
+ * WÖRTERBUCH-INHALT SEIT v3.55.0 AUSGELAGERT (js/i18n-dict.js, lädt VOR dieser Datei,
+ * s. <script>-Reihenfolge in pizza-rechner.html/pizza-rechner-mobile.html): diese Datei
+ * übernimmt das dort bereits befüllte DICT über PZ._I18N_DICT, statt selbst ein leeres
+ * anzulegen. `add()`/`PZ._i18nAdd` bleiben hier definiert und werden weiterhin exportiert
+ * — als Hook für Module, die NACH dieser Datei laden und eigene Einträge nachreichen
+ * wollen (bisher ungenutzt, bleibt für künftige Erweiterungen verfügbar).
+ */
+(function (global) {
+  'use strict';
+  const PZ = global.PZ || (global.PZ = {});
+  const LANG_KEY = 'pizzaLang';
+
+  // ======================================================================
+  // Wörterbuch — Inhalt kommt aus js/i18n-dict.js (muss vorher geladen sein), mit
+  // defensivem leerem Fallback, falls diese Datei mal isoliert läuft (z. B. künftiger
+  // Testaufbau ohne i18n-dict.js).
+  // ======================================================================
+  const DICT = PZ._I18N_DICT || { de: {}, en: {} };
+
+  // Kleiner Helfer fürs Befüllen: erspart bei jedem einzelnen Eintrag "DICT.de[...] =".
+  // Bleibt als PZ._i18nAdd-Hook exportiert (s. Datei-Kommentar oben).
+  function add(key, de, en) {
+    DICT.de[key] = de;
+    DICT.en[key] = en;
+  }
 
   PZ._I18N_DICT = DICT; // für weitere Module (guide.js etc.) zum Ergänzen via PZ._i18nAdd()
   PZ._i18nAdd = add;

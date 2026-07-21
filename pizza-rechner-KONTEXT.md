@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-21 · Aktuelle Version: v3.54.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-21 · Aktuelle Version: v3.55.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,59 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Gemeinsames Nav-Modul (v3.54.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## i18n-Datei aufgeteilt (v3.55.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Per `/define-feature` bestätigt — erstes von fünf Struktur-Refactorings (S1–S6 minus S5
+Nav-Modul, bereits erledigt in v3.54.0) aus demselben Fable-Architektur-Review, **in
+fester Reihenfolge nacheinander abzuarbeiten**: 1) i18n-Datei aufteilen (dieser
+Abschnitt), 2) Widget-Fabrik ui.js/newrecipe.js, 3) Rechenkern/Renderer-Trennung
+calc.js, 4) `PZ.announce()`-Helfer, 5) `PZ.looksLikeState()`. Alle fünf sind reine
+Wartbarkeits-Refactorings **ohne beabsichtigte Verhaltensänderung** — Testsuite dient
+jeweils als Regressionsanker.
+
+**Motivation:** `js/i18n.js` war mit 569 `add(key,de,en)`-Einträgen / ~108 KB das mit
+Abstand größte Modul und wuchs bei jedem neuen Feature weiter — Laufzeit-Engine und
+Wörterbuch-Inhalt ließen sich nicht getrennt überblicken.
+
+**Umsetzung:** neue Datei `js/i18n-dict.js` (~100 KB, 867 Zeilen) enthält jetzt
+ausschließlich die `add()`-Wörterbuch-Einträge (reine Daten, 1:1 unverändert aus
+`js/i18n.js` übernommen — keine inhaltliche Textänderung). `js/i18n.js` selbst (jetzt
+nur noch ~10 KB) bleibt die Laufzeit-Engine: `t()`, `setLang()`, `applyStaticI18n()`,
+`wireLangSwitch()`, Sprach-Erkennung/-Persistenz, Umschalter-Verdrahtung — unverändert.
+
+**Handoff-Mechanismus (nutzt den vorhandenen, bisher ungenutzten `PZ._i18nAdd`-Hook,
+wie beauftragt):** `js/i18n-dict.js` lädt **vor** `js/i18n.js` (neue `<script>`-Zeile in
+`pizza-rechner.html`/`pizza-rechner-mobile.html`/`tests/test.html`, direkt vor der
+bestehenden `i18n.js`-Zeile), baut sein eigenes lokales `DICT` auf und übergibt es am
+Dateiende über `PZ._I18N_DICT = DICT;`. `js/i18n.js` übernimmt dieses bereits befüllte
+DICT beim eigenen Start (`const DICT = PZ._I18N_DICT || { de: {}, en: {} };` — leerer
+Fallback bleibt defensiv erhalten, falls die Datei je isoliert läuft) statt ein neues
+leeres anzulegen, und exportiert `add()` weiterhin als `PZ._i18nAdd` — jetzt ein
+**echter, funktionierender** Hook für Module, die künftig NACH `js/i18n.js` laden und
+eigene Übersetzungen nachreichen wollen (vorher nur ein toter Kommentar-Verweis ohne
+tatsächlichen Konsumenten).
+
+**Härten:** keine UI-/Markup-Änderung (reine Modul-Aufteilung, keine neuen DOM-Elemente)
+— kein `accessibility-expert`-Durchlauf nötig.
+
+**Tests:** `tests/test.html` unverändert bei **614 Prüfungen**, alle grün — reine
+Infrastruktur-Änderung ohne Verhaltensänderung, die bestehende Testsuite ist hier der
+Regressionsanker (wie vom Auftrag gefordert: Zahlen ändern sich nur durch neue Tests,
+nicht durch verändertes Verhalten — hier: unverändert). Zusätzlich per Headless-Edge-Dump
+verifiziert: `data-i18n="label.balls"` rendert weiterhin korrekt „Anzahl Teiglinge" auf
+der echten Seite; `PZ.t('label.balls')` liefert nach `PZ.setLang('en')` korrekt „Number
+of dough balls" (DICT.de UND DICT.en beide korrekt über den Handoff übernommen).
+Standalone-Build gegengeprüft: `js/i18n-dict.js` wird vor `js/i18n.js` inline gebaut,
+beide `PZ._I18N_DICT = DICT`-Zuweisungen liegen in der richtigen Reihenfolge.
+
+**Geändert:** `js/i18n-dict.js` (neu), `js/i18n.js`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`, `tests/test.html`, `pizza-rechner-KONTEXT.md`. `?v=` auf
+`3.55.0` gezogen (Desktop + Mobil, alle `<link>`/`<script>`-Tags inkl. der neuen
+`js/i18n-dict.js`-Referenz), `appVersion`-Text in allen drei HTML-Dateien auf `v3.55.0`.
+`pizza-rechner-mobile-standalone.html` neu gebaut. `Versionen/v3.55.0 - i18n-Datei
+aufgeteilt/` enthält den vollständigen Schnappschuss.
+
+## Gemeinsames Nav-Modul (v3.54.0)
 
 Per `/define-feature` bestätigt, direkt im Anschluss an „Auftrag A" (Zucker-/Öl-Fallback,
 v3.53.0) aus demselben zweiteiligen Nutzerauftrag. Hintergrund: seit v3.26.0 gab es die
@@ -4539,7 +4591,7 @@ lokal per Doppelklick genutzt (kein Vorteil durch Pages dort).
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.54.0)
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.55.0)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
@@ -4548,8 +4600,13 @@ css/styles.css       komplettes Stylesheet (inkl. .selectbox / .selectbox-lg / .
 css/mobile.css       Ergänzungen NUR für pizza-rechner-mobile.html (Akkordeon, Touch-Ziele, Quick-Bar)
 js/dom.js            $-Helfer, legt globalen Namespace window.PZ an
 js/state.js          PZ.state (inkl. flour, oil, coldStage, prefMature, knead) + PZ.FRESH_TO_DRY (1/3)
+js/i18n-dict.js      Wörterbuch-INHALT (v3.55.0, aus js/i18n.js ausgelagert): ~569 add(key,de,en)-
+                     Einträge, reine Daten. Lädt VOR js/i18n.js, übergibt sein DICT per
+                     PZ._I18N_DICT-Handoff
 js/i18n.js           PZ.t()/PZ.setLang() — Deutsch/Englisch-Sprachversion (v3.28.0), deckt statische
-                     HTML-Texte + dynamisch generierte JS-Texte ab (Anleitung, Einkaufsliste, ...)
+                     HTML-Texte + dynamisch generierte JS-Texte ab (Anleitung, Einkaufsliste, ...).
+                     Seit v3.55.0 reine Laufzeit-Engine (übernimmt DICT von js/i18n-dict.js), PZ.
+                     _i18nAdd bleibt als Hook für spätere, nach dieser Datei ladende Ergänzungen
 js/settings.js       PZ.FLAGS — Feature-Flags fürs Einstellungen-Menü (v3.16.0), eigener
                      localStorage-Key `pizzaRechnerFeatureFlags`, vorwärtskompatibler Merge mit DEFAULTS
 js/theme.js          Dunkelmodus (v3.47.0): folgt `prefers-color-scheme`, bis der manuelle
@@ -4580,20 +4637,21 @@ js/main.js           Start: Speichern-Button, Rezept-Auswahl/-Buttons, load(), a
 js/nav.js            Gemeinsames Burgermenü-Navigations-Modul (v3.54.0, vorher zwei/drei duplizierte
                      Inline-Scripts): openNav/closeNav/activateView/announceView/focusView/gotoView +
                      Tab-Trap; läuft bewusst als letztes Script (nach main.js)
-tests/test.html      614 Prüfungen in 24 Kategorien (Doppelklick, kein Server) — lädt 14 der 21
-                     js/*-Module direkt (dom/state/i18n/settings/theme/flour/schedule/guide/calc/
-                     print/pdf/storage/share/party); ui.js, timer.js, presets.js, newrecipe.js,
-                     glossary.js, main.js, nav.js werden NICHT geladen (reines DOM-Wiring bzw.
-                     Browser-APIs) — einzelne Ausschnitte wie PZ.PRESETS werden bei Bedarf punktuell
-                     gestubbt
+tests/test.html      614 Prüfungen in 24 Kategorien (Doppelklick, kein Server) — lädt 15 der 22
+                     js/*-Module direkt (dom/state/i18n-dict/i18n/settings/theme/flour/schedule/
+                     guide/calc/print/pdf/storage/share/party); ui.js, timer.js, presets.js,
+                     newrecipe.js, glossary.js, main.js, nav.js werden NICHT geladen (reines
+                     DOM-Wiring bzw. Browser-APIs) — einzelne Ausschnitte wie PZ.PRESETS werden bei
+                     Bedarf punktuell gestubbt
 README.md            kurzer Einstieg
 ```
 
-**Ladereihenfolge** (Abhängigkeiten): dom → state → i18n → settings → theme → flour → calc →
-schedule → guide → timer → ui → print → pdf → presets → storage → newrecipe → share → party →
-glossary → main → nav. Jedes Modul ist eine IIFE, kommuniziert nur über `window.PZ`.
+**Ladereihenfolge** (Abhängigkeiten): dom → state → i18n-dict → i18n → settings → theme → flour →
+calc → schedule → guide → timer → ui → print → pdf → presets → storage → newrecipe → share →
+party → glossary → main → nav. Jedes Modul ist eine IIFE, kommuniziert nur über `window.PZ`.
+**`i18n-dict` MUSS vor `i18n` geladen werden** (Handoff über `PZ._I18N_DICT`).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.54.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.55.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
@@ -5385,14 +5443,21 @@ Keine Code-Änderung durch den Audit nötig.
   Verhaltensänderung (per Headless-Verhaltenstest + gezieltem
   `accessibility-expert`-Durchlauf verifiziert).
 
-**Stand v3.54.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+- ~~i18n-Datei aufteilen (Struktur-Refactoring 1 von 5, S1 aus dem
+  Fable-Architektur-Review)~~ — **erledigt in v3.55.0** (per `/define-feature`
+  bestätigt; s. Abschnitt „i18n-Datei aufgeteilt (v3.55.0)" oben). `js/i18n.js`
+  (569 Einträge / ~108 KB) in schlanke Laufzeit-Engine + neue reine
+  Wörterbuch-Datei `js/i18n-dict.js` aufgeteilt, keine inhaltliche Änderung.
+  **Nächste vier Struktur-Refactorings aus demselben Fünferauftrag noch offen,
+  in fester Reihenfolge:** 2) Widget-Fabrik ui.js/newrecipe.js, 3) Rechenkern/
+  Renderer-Trennung calc.js, 4) `PZ.announce()`-Helfer, 5) `PZ.looksLikeState()`.
+
+**Stand v3.55.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben, bis auf den `flourTemp`-Fallback-Nebenbefund aus v3.53.0). Der Bring!-Deeplink-
 Testaufbau ist abschließend geklärt (verworfen, vollständig zurückgebaut, keine offene
-Frage mehr). Der gesamte B8-Fund-Katalog aus dem Fable-Architektur-Review ist damit
-abgearbeitet (Timer nur bei offenem Tab bleibt weiterhin bewusste Design-Entscheidung,
-s. entsprechender Abschnitt). Keine Warteschlange mehr offen — für den nächsten Zyklus
-braucht es wieder frisches Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/
-Layout-Überarbeitungen, Bugfixes) statt eines vorgegebenen Auftrags.
+Frage mehr). Vier weitere Struktur-Refactorings aus demselben Fünferauftrag wie
+i18n-Datei-Split sind direkt im Anschluss in fester Reihenfolge in Arbeit — s. ggf.
+neuere Versionen oben, falls bereits committet.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 
