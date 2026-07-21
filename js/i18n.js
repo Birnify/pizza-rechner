@@ -374,6 +374,7 @@
   add('print.salt', 'Salz', 'Salt');
   add('print.yeast', 'Hefe', 'Yeast');
   add('print.oil', 'Olivenöl', 'Olive oil');
+  add('print.sugar', 'Zucker', 'Sugar');
   add('print.ice', 'Eis (für Schüttwasser)', 'Ice (for mixing water)');
   add('print.totalDough', 'Gesamtteig', 'Total dough');
 
@@ -896,6 +897,11 @@
   add('calc.warmNote', 'Schüttwasser leicht anwärmen auf ~{wT}° (z.B. handwarm).', 'Warm the mixing water slightly to ~{wT}° (e.g. lukewarm).');
   add('calc.tapOkNote', 'Leitungswasser bei ~{tapTemp}° passt direkt — kein Eis nötig.', 'Tap water at ~{tapTemp}° works directly — no ice needed.');
   add('calc.veryColdWarn', ' <b>Achtung:</b> sehr kalt — ggf. Mehl vorher kühlen.', ' <b>Note:</b> very cold — consider chilling the flour beforehand.');
+  // Grenzfall bei sehr hohem Vorteig-Anteil (z. B. Poolish an der Klemmgrenze): das
+  // gesamte Wasser steckt im Vorteig, es gibt kein Hauptteig-Schüttwasser mehr zu
+  // temperieren (Bugfix v3.48.0, s. pizza-rechner-KONTEXT.md).
+  add('calc.noMixingWaterNote', 'Kein Schüttwasser mehr zu temperieren — bei diesem hohen Vorteig-Anteil steckt das gesamte Wasser bereits im Vorteig.',
+    'No mixing water left to temper — at this high pre-ferment share, all the water is already in the pre-ferment.');
 
   // ---- js/storage.js — automatisch generierte Rezeptnamen -------------------------
   add('storage.migratedRecipeName', 'Mein Rezept', 'My recipe');

@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-21 · Aktuelle Version: v3.47.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-21 · Aktuelle Version: v3.48.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,85 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Dunkelmodus (v3.47.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Bugfixes: Eismenge bei Vorteig & fehlende Zucker-Zeile in der Einkaufsliste (v3.48.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Direkter Nutzerauftrag (kein `/define-feature`, kein Backlog-Punkt) — zwei klar diagnostizierte
+Bugfixes aus einem separaten, rein lesenden Architektur-/Bug-Review (Fable-Modell). Beide
+gegen diese Kontext-Datei abgeglichen: keine bewusste Design-Entscheidung, echte Fehler.
+
+**Bug 1 (Prio 1) — Eismenge ignorierte die Vorteig-Aufteilung (`js/calc.js`):** Die Eismenge
+wurde bisher immer gegen die GESAMTE Wassermenge (`M = water`) berechnet. Bei Biga/Poolish
+wird aber nur das Hauptteig-Restwasser (`mWater`) tatsächlich gekühlt — das Vorteig-Wasser ist
+laut eigener Anleitung (`guide.step.prefWeigh.tip`) bewusst zimmerwarm und Stunden vorher schon
+verbraucht. Folge: bei hohem Vorteig-Anteil konnte `ice` weit über `mWater` hinausgehen (Beispiel
+Biga pref 100 %/bhyd 45 %: `mWater` nur ~31 % der Gesamtwassermenge, Eis wurde aber gegen 100 %
+gerechnet — ~84 g statt korrekt ~26 g bei den im Bugfix-Auftrag genannten Testbedingungen).
+Extremfall Poolish-Preset „napoli_poolish" (pref 66 bei hyd 66): `mWater` ist **exakt 0** (das
+gesamte Wasser steckt im Poolish), der Wassertemperatur-Anleitungsschritt entfiel dort zwar
+bereits korrekt (`hasMW`-Guard in `js/guide.js`, unverändert), aber das Ergebnis-Panel zeigte
+trotzdem weiterhin „Nimm X g Leitungswasser + Y g Eis" — widersinnig ohne Hauptteig-Schüttwasser.
+- **Fix:** `const M = water` → `const M = mWater;` in der Eisberechnung. Da `mWater` bei
+  `method:'direct'` unverändert gleich `water` ist (Initialisierung `let ... mWater = water`
+  ganz oben in `calc()`, nur der Vorteig-Zweig überschreibt sie), war **kein** Sonderfall für
+  `direct` nötig — eine einzige Variable ersetzt, alle bestehenden Direkt-Tests bleiben unberührt.
+- **Neuer Grenzfall-Guard:** `hasMixingWater = mWater >= 1` (derselbe Schwellwert wie das
+  bestehende `hasMW` in `js/guide.js`, für Konsistenz zwischen Anleitung und Ergebnis-Panel).
+  Ist er `false`, zeigt `#iceNote` die neue Erklär-Notiz (`calc.noMixingWaterNote`, neuer
+  i18n-Key) statt einer widersinnigen Mengenangabe, und der komplette Wassertemperatur-Block
+  (`<div class="stage" id="tempStage">`, neue ID in beiden HTML-Dateien) wird per
+  `style.display='none'` ausgeblendet — analog zum bestehenden Öl-/Zucker-Zeilen-Muster
+  (`gOilRow`/`gSugarRow`). Bei jedem `calc()`-Lauf neu aus `hasMixingWater` abgeleitet, kein
+  dauerhafter Zustand.
+- **Bewusst NICHT geändert:** `js/guide.js` (der `hasMW`-Guard dort war schon korrekt, nutzte
+  bereits `mWater` für die Anleitungstext-Menge — nur die Eis-MENGE selbst kam fehlerhaft aus
+  `calc.js`/`R.ice`, was jetzt automatisch mit repariert ist, da `guide.js` `R.ice` unverändert
+  weiterverwendet). `js/schedule.js` unangetastet (Zeitplan-Logik unabhängig von Wassermengen).
+
+**Bug 2 (Prio 2) — Einkaufsliste vergaß den Zucker (`js/print.js`):** `buildShoppingList()`
+listete Mehl, Wasser, Salz, Hefe, Öl, Eis — aber keinen Zucker. Beim „New York Style"-Preset
+(2 % Zucker) fehlte eine echte Rezeptzutat auf der Einkaufsliste, obwohl sie im Ergebnis-Panel
+(`#gSugarRow`) korrekt erschien. **Fix:** neue Zucker-Zeile analog zur bestehenden Öl-Zeile
+(`R.sugar >= 0.05`-Schwellwert, 1 Nachkommastelle, direkt nach Öl — dieselbe Reihenfolge wie im
+Ergebnis-Panel), neuer i18n-Key `print.sugar`.
+
+**Härten:** Kein dedizierter `accessibility-expert`-Durchlauf — bewusst als nicht nötig
+eingeschätzt (gezielt statt routinemäßig, s. Zyklus-Regeln): die einzige Markup-Änderung ist
+die neue `id="tempStage"` auf einem bereits bestehenden `<div class="stage">`, versteckt per
+`display:none` nach demselben, bereits etablierten und unauffälligen Muster wie
+`gOilRow`/`gSugarRow`/`mOilRow`/`mSugarRow` (keine neuen interaktiven Elemente, kein Fokus-Ziel
+im versteckten Bereich, keine neue ARIA-/Kontrast-Fläche). `#iceNote` war schon vor diesem Fix
+eine reine, bei jedem `calc()`-Lauf aktualisierte Text-Div ohne Live-Region (bewusst, wie die
+übrigen kontinuierlich Slider-getriebenen Ergebnis-Panel-Werte) — der neue Notiz-Text ändert
+daran nichts. Beide neuen i18n-Keys (`calc.noMixingWaterNote`, `print.sugar`) vollständig
+DE+EN gepflegt.
+
+**Tests:** `tests/test.html` von **593 auf 605 Prüfungen** erweitert (kein separater
+`test-generator`-Lauf — Tests direkt selbst ergänzt, da der Fix eng umrissen und die nötigen
+Testfälle beim Debugging bereits exakt bekannt waren):
+- Sektion „2 · Wassertemperatur & Eismenge": Regressionsanker Biga pref 100 %/bhyd 45 % (Eis
+  jetzt ~26 g statt der alten ~84 g, plus explizite „< 50 g"-Kontrollgrenze gegen den alten
+  Bug-Wert), Extremfall Poolish-Preset (mWater exakt 0, neue Notiz statt Mengenangabe,
+  `#tempStage` ausgeblendet), Gegenprobe dass `#tempStage` bei normalem Rezept wieder erscheint.
+- Sektion „15 · Einkaufsliste": Zucker-Zeile erscheint bei 2 % (New-York-Style-artig) mit
+  1 Nachkommastelle, fehlt korrekt bei 0 %.
+Alle bestehenden Tests (inkl. Masseerhaltung, Direkt/Biga/Poolish-Kombinationen) unverändert
+grün — die Bäckerprozent-Mengen (`R.flour`/`R.water`/`R.salt`/`R.yeast`/`R.total`) sind von
+diesem Fix nicht betroffen, nur `R.ice` und der Anzeige-Text.
+
+**Verifikation:** Zusätzlich per Headless-Edge-Screenshot gegen die echte App geprüft (nicht
+nur die Testsuite) — Poolish-Extremfall-Preset zeigt „+ Wasser 0 g" im Hauptteig UND der
+komplette Wassertemperatur-Block verschwindet vollständig aus dem Ergebnis-Panel; Biga-Fall
+mit erzwungenen kalten Bedingungen zeigt exakt „26 g Eis" (vorher wären es ~84 g gewesen);
+New-York-Style-Preset zeigt „Zucker 14,1 g" korrekt im Ergebnis-Panel (Kontrollcheck für
+`R.sugar`, das `js/print.js` unverändert übernimmt).
+
+**Geändert:** `js/calc.js`, `js/print.js`, `js/i18n.js`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`, `tests/test.html`. `?v=` auf `3.48.0` gezogen (Desktop + Mobil,
+alle `<link>`/`<script>`-Tags). `pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`). `Versionen/v3.48.0 - Bugfixes Eis-Vorteig und
+Einkaufsliste-Zucker/` enthält den vollständigen Schnappschuss.
+
+## Dunkelmodus (v3.47.0)
 
 Direkter Nutzerauftrag per `/define-feature` (kein Backlog-Punkt). Ein dunkles Farbschema
 für Desktop- und Mobil-Ansicht, das standardmäßig automatisch der Systemeinstellung
@@ -4813,8 +4891,12 @@ Keine Code-Änderung durch den Audit nötig.
   ~3,32:1 Kontrast (unter der 4,5:1-Schwelle, WCAG 1.4.3) — vorbestehender,
   themenunabhängiger Fund, unabhängig vom Dunkelmodus-Feature. Beim nächsten
   Kontrast-/Accessibility-Zyklus mit aufgreifen.
+- ~~Bugfix: Eismenge bei Vorteig ignorierte die Vorteig-Aufteilung; Bugfix: Zucker
+  fehlte in der Einkaufsliste~~ — **erledigt in v3.48.0** (kein Backlog-Punkt, direkter
+  Nutzerauftrag aus einem separaten Bug-Review; s. Abschnitt „Bugfixes: Eismenge bei
+  Vorteig & fehlende Zucker-Zeile in der Einkaufsliste (v3.48.0)" oben).
 
-**Stand v3.47.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.48.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen,
 vollständig zurückgebaut, keine offene Frage mehr). Keine Warteschlange mehr offen —
 für den nächsten Zyklus braucht es wieder frisches Brainstorming in Phase 1 (neue

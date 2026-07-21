@@ -88,11 +88,23 @@
     $('waterTemp').textContent = wT;
 
     // --- Eismenge, um Schüttwasser auf wT zu bringen (aus Leitungswasser ~ room) ---
+    // Bei Vorteig (Biga/Poolish) wird NICHT das Gesamtwasser gekühlt, sondern nur das
+    // Hauptteig-Restwasser (mWater) — das Vorteig-Wasser ist laut Anleitung
+    // (guide.step.prefWeigh.tip) bewusst zimmerwarm und Stunden vorher schon verbraucht.
+    // Bei method:'direct' ist mWater === water (unverändert seit der Initialisierung oben),
+    // daher hier einheitlich mit mWater statt water rechnen — kein Sonderfall für 'direct' nötig.
     let ice = 0, note = '';
     const Ttap = state.room;
-    if (wT < Ttap - 0.5) {
+    // Grenzfall (v3.48.0-Fix): bei sehr hohem Vorteig-Anteil kann das gesamte Wasser im
+    // Vorteig stecken (z. B. Poolish-Preset an der Klemmgrenze) — dann gibt es kein
+    // Schüttwasser mehr zu temperieren. Derselbe Schwellwert wie js/guide.js (hasMW),
+    // damit Anleitungsschritt und Ergebnis-Panel konsistent verschwinden.
+    const hasMixingWater = mWater >= 1;
+    if (!hasMixingWater) {
+      note = t('calc.noMixingWaterNote');
+    } else if (wT < Ttap - 0.5) {
       // Energiebilanz mit Schmelzwärme: x*(334+4.18*wT)=(M-x)*4.18*(Ttap-wT)
-      const M = water; // gesamte Wassermenge im Teig
+      const M = mWater; // nur das tatsächlich zu kühlende Hauptteig-Restwasser
       const c = 4.18, Lf = 334;
       const x = M * c * (Ttap - wT) / (Lf + c * wT + c * (Ttap - wT));
       ice = Math.max(0, Math.round(x));
@@ -102,9 +114,12 @@
     } else {
       note = t('calc.tapOkNote', { tapTemp: Ttap });
     }
-    if (wT < 1) note += t('calc.veryColdWarn');
+    if (hasMixingWater && wT < 1) note += t('calc.veryColdWarn');
     $('iceAmt').textContent = ice;
     $('iceNote').innerHTML = note;
+    // Ganzen Wassertemperatur-Block ausblenden, wenn es kein Schüttwasser mehr gibt
+    // (analog zum bestehenden Öl-/Zucker-Zeilen-Muster, s. gOilRow/gSugarRow oben).
+    if ($('tempStage')) $('tempStage').style.display = hasMixingWater ? '' : 'none';
 
     PZ.R = { N, W, total, flour, water, salt, oil, sugar, yeast, yWord, pf, pw, pYeast, mYeast, mFlour, mWater, wT, ice, Ttap, prefEff, prefClamped };
     PZ.buildGuide();

@@ -25,6 +25,10 @@
     if (R.salt > 0) rows.push({ name: t('print.salt'), amt: `${R.salt.toFixed(1)} g` });
     if (R.yeast > 0) rows.push({ name: `${t('print.yeast')} ${R.yWord || ''}`.trim(), amt: `${fmtYeast(R.yeast)} g` });
     if (R.oil >= 0.05) rows.push({ name: t('print.oil'), amt: `${R.oil.toFixed(1)} g` });
+    // Zucker fehlte hier bisher komplett (Bugfix v3.48.0) — bei „New York Style" (2 % Zucker)
+    // stand er zwar korrekt im Ergebnis-Panel (#gSugarRow), aber nicht auf der Einkaufsliste.
+    // Gleicher Schwellwert/Formatierung wie die Öl-Zeile direkt darüber.
+    if (R.sugar >= 0.05) rows.push({ name: t('print.sugar'), amt: `${R.sugar.toFixed(1)} g` });
     if (R.ice > 0) rows.push({ name: t('print.ice'), amt: `${Math.round(R.ice)} g` });
 
     const list = $('shoppingList');

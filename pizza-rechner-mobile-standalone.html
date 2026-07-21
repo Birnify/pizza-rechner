@@ -1152,7 +1152,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
       </div>
 
       <!-- Temperatur -->
-      <div class="stage">
+      <div class="stage" id="tempStage">
         <h3 style="color:var(--tomato);" data-i18n="result.waterTemp">Wassertemperatur</h3>
         <div class="temp-out">
           <div class="temp-box"><div class="v"><span id="waterTemp">19</span>°</div><div class="l" data-i18n="result.mixingWater">Schüttwasser</div></div>
@@ -2044,6 +2044,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   add('print.salt', 'Salz', 'Salt');
   add('print.yeast', 'Hefe', 'Yeast');
   add('print.oil', 'Olivenöl', 'Olive oil');
+  add('print.sugar', 'Zucker', 'Sugar');
   add('print.ice', 'Eis (für Schüttwasser)', 'Ice (for mixing water)');
   add('print.totalDough', 'Gesamtteig', 'Total dough');
 
@@ -2566,6 +2567,11 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   add('calc.warmNote', 'Schüttwasser leicht anwärmen auf ~{wT}° (z.B. handwarm).', 'Warm the mixing water slightly to ~{wT}° (e.g. lukewarm).');
   add('calc.tapOkNote', 'Leitungswasser bei ~{tapTemp}° passt direkt — kein Eis nötig.', 'Tap water at ~{tapTemp}° works directly — no ice needed.');
   add('calc.veryColdWarn', ' <b>Achtung:</b> sehr kalt — ggf. Mehl vorher kühlen.', ' <b>Note:</b> very cold — consider chilling the flour beforehand.');
+  // Grenzfall bei sehr hohem Vorteig-Anteil (z. B. Poolish an der Klemmgrenze): das
+  // gesamte Wasser steckt im Vorteig, es gibt kein Hauptteig-Schüttwasser mehr zu
+  // temperieren (Bugfix v3.48.0, s. pizza-rechner-KONTEXT.md).
+  add('calc.noMixingWaterNote', 'Kein Schüttwasser mehr zu temperieren — bei diesem hohen Vorteig-Anteil steckt das gesamte Wasser bereits im Vorteig.',
+    'No mixing water left to temper — at this high pre-ferment share, all the water is already in the pre-ferment.');
 
   // ---- js/storage.js — automatisch generierte Rezeptnamen -------------------------
   add('storage.migratedRecipeName', 'Mein Rezept', 'My recipe');
@@ -3218,11 +3224,23 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     $('waterTemp').textContent = wT;
 
     // --- Eismenge, um Schüttwasser auf wT zu bringen (aus Leitungswasser ~ room) ---
+    // Bei Vorteig (Biga/Poolish) wird NICHT das Gesamtwasser gekühlt, sondern nur das
+    // Hauptteig-Restwasser (mWater) — das Vorteig-Wasser ist laut Anleitung
+    // (guide.step.prefWeigh.tip) bewusst zimmerwarm und Stunden vorher schon verbraucht.
+    // Bei method:'direct' ist mWater === water (unverändert seit der Initialisierung oben),
+    // daher hier einheitlich mit mWater statt water rechnen — kein Sonderfall für 'direct' nötig.
     let ice = 0, note = '';
     const Ttap = state.room;
-    if (wT < Ttap - 0.5) {
+    // Grenzfall (v3.48.0-Fix): bei sehr hohem Vorteig-Anteil kann das gesamte Wasser im
+    // Vorteig stecken (z. B. Poolish-Preset an der Klemmgrenze) — dann gibt es kein
+    // Schüttwasser mehr zu temperieren. Derselbe Schwellwert wie js/guide.js (hasMW),
+    // damit Anleitungsschritt und Ergebnis-Panel konsistent verschwinden.
+    const hasMixingWater = mWater >= 1;
+    if (!hasMixingWater) {
+      note = t('calc.noMixingWaterNote');
+    } else if (wT < Ttap - 0.5) {
       // Energiebilanz mit Schmelzwärme: x*(334+4.18*wT)=(M-x)*4.18*(Ttap-wT)
-      const M = water; // gesamte Wassermenge im Teig
+      const M = mWater; // nur das tatsächlich zu kühlende Hauptteig-Restwasser
       const c = 4.18, Lf = 334;
       const x = M * c * (Ttap - wT) / (Lf + c * wT + c * (Ttap - wT));
       ice = Math.max(0, Math.round(x));
@@ -3232,9 +3250,12 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     } else {
       note = t('calc.tapOkNote', { tapTemp: Ttap });
     }
-    if (wT < 1) note += t('calc.veryColdWarn');
+    if (hasMixingWater && wT < 1) note += t('calc.veryColdWarn');
     $('iceAmt').textContent = ice;
     $('iceNote').innerHTML = note;
+    // Ganzen Wassertemperatur-Block ausblenden, wenn es kein Schüttwasser mehr gibt
+    // (analog zum bestehenden Öl-/Zucker-Zeilen-Muster, s. gOilRow/gSugarRow oben).
+    if ($('tempStage')) $('tempStage').style.display = hasMixingWater ? '' : 'none';
 
     PZ.R = { N, W, total, flour, water, salt, oil, sugar, yeast, yWord, pf, pw, pYeast, mYeast, mFlour, mWater, wT, ice, Ttap, prefEff, prefClamped };
     PZ.buildGuide();
@@ -4212,6 +4233,10 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     if (R.salt > 0) rows.push({ name: t('print.salt'), amt: `${R.salt.toFixed(1)} g` });
     if (R.yeast > 0) rows.push({ name: `${t('print.yeast')} ${R.yWord || ''}`.trim(), amt: `${fmtYeast(R.yeast)} g` });
     if (R.oil >= 0.05) rows.push({ name: t('print.oil'), amt: `${R.oil.toFixed(1)} g` });
+    // Zucker fehlte hier bisher komplett (Bugfix v3.48.0) — bei „New York Style" (2 % Zucker)
+    // stand er zwar korrekt im Ergebnis-Panel (#gSugarRow), aber nicht auf der Einkaufsliste.
+    // Gleicher Schwellwert/Formatierung wie die Öl-Zeile direkt darüber.
+    if (R.sugar >= 0.05) rows.push({ name: t('print.sugar'), amt: `${R.sugar.toFixed(1)} g` });
     if (R.ice > 0) rows.push({ name: t('print.ice'), amt: `${Math.round(R.ice)} g` });
 
     const list = $('shoppingList');

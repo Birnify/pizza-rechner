@@ -20,7 +20,7 @@
   } catch(e) {}
 })();
 </script>
-<link rel="stylesheet" href="css/styles.css?v=3.47.0">
+<link rel="stylesheet" href="css/styles.css?v=3.48.0">
 </head>
 <body>
 <header>
@@ -309,7 +309,7 @@
       </div>
 
       <!-- Temperatur -->
-      <div class="stage">
+      <div class="stage" id="tempStage">
         <h3 style="color:var(--tomato);" data-i18n="result.waterTemp">Wassertemperatur</h3>
         <div class="temp-out">
           <div class="temp-box"><div class="v"><span id="waterTemp">19</span>°</div><div class="l" data-i18n="result.mixingWater">Schüttwasser</div></div>
@@ -752,26 +752,26 @@
 <footer aria-hidden="true"></footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.47.0"></script>
-<script src="js/state.js?v=3.47.0"></script>
-<script src="js/i18n.js?v=3.47.0"></script>
-<script src="js/settings.js?v=3.47.0"></script>
-<script src="js/theme.js?v=3.47.0"></script>
-<script src="js/flour.js?v=3.47.0"></script>
-<script src="js/calc.js?v=3.47.0"></script>
-<script src="js/schedule.js?v=3.47.0"></script>
-<script src="js/guide.js?v=3.47.0"></script>
-<script src="js/timer.js?v=3.47.0"></script>
-<script src="js/ui.js?v=3.47.0"></script>
-<script src="js/print.js?v=3.47.0"></script>
-<script src="js/pdf.js?v=3.47.0"></script>
-<script src="js/presets.js?v=3.47.0"></script>
-<script src="js/storage.js?v=3.47.0"></script>
-<script src="js/newrecipe.js?v=3.47.0"></script>
-<script src="js/share.js?v=3.47.0"></script>
-<script src="js/party.js?v=3.47.0"></script>
-<script src="js/glossary.js?v=3.47.0"></script>
-<script src="js/main.js?v=3.47.0"></script>
+<script src="js/dom.js?v=3.48.0"></script>
+<script src="js/state.js?v=3.48.0"></script>
+<script src="js/i18n.js?v=3.48.0"></script>
+<script src="js/settings.js?v=3.48.0"></script>
+<script src="js/theme.js?v=3.48.0"></script>
+<script src="js/flour.js?v=3.48.0"></script>
+<script src="js/calc.js?v=3.48.0"></script>
+<script src="js/schedule.js?v=3.48.0"></script>
+<script src="js/guide.js?v=3.48.0"></script>
+<script src="js/timer.js?v=3.48.0"></script>
+<script src="js/ui.js?v=3.48.0"></script>
+<script src="js/print.js?v=3.48.0"></script>
+<script src="js/pdf.js?v=3.48.0"></script>
+<script src="js/presets.js?v=3.48.0"></script>
+<script src="js/storage.js?v=3.48.0"></script>
+<script src="js/newrecipe.js?v=3.48.0"></script>
+<script src="js/share.js?v=3.48.0"></script>
+<script src="js/party.js?v=3.48.0"></script>
+<script src="js/glossary.js?v=3.48.0"></script>
+<script src="js/main.js?v=3.48.0"></script>
 <script>
   // Desktop-only UI-Glue (kein Eingriff in die PZ-Rechenmodule): Burger-Menü-Navigation,
   // 1:1 dieselbe Logik wie das etablierte Mobil-Muster (pizza-rechner-mobile.html, v3.17.x/

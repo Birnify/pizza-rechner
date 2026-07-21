@@ -42,6 +42,7 @@
   <span id="mSugar"></span><div id="mSugarRow"></div>
   <div id="mYeastRow"></div>
   <span id="waterTemp"></span><span id="iceAmt"></span><div id="iceNote"></div>
+  <div id="tempStage"></div>
   <div id="guideSummary"></div><div id="guideSteps"></div>
   <div id="flourWarn"></div>
   <div id="shoppingList"></div>
@@ -329,6 +330,59 @@
       { label: 'yeast identisch', ok: R1.yeast === R2.yeast, actual: R2.yeast, expected: R1.yeast, tol: null },
       { label: 'total identisch', ok: R1.total === R2.total, actual: R2.total, expected: R1.total, tol: null },
       { label: 'Kontrolle: wT unterscheidet sich tatsächlich (Test misst wirklich etwas)', ok: R1.wT !== R2.wT, actual: R2.wT, expected: '≠ ' + R1.wT, tol: null }
+    ]);
+  })();
+
+  // --- Bugfix v3.48.0: Eismenge bei Vorteig (Biga/Poolish) rechnet gegen mWater
+  // (Hauptteig-Restwasser), NICHT gegen die gesamte Wassermenge — das Vorteig-Wasser ist
+  // laut eigener Anleitung (guide.step.prefWeigh.tip) bewusst zimmerwarm und Stunden vorher
+  // schon verbraucht, braucht also kein Eis. Vorher: bei hohem Vorteig-Anteil (hier Biga
+  // pref 100 %, bhyd 45 % → mWater nur ~31 % der Gesamtwassermenge) wurde die Eismenge
+  // fälschlich gegen die vollen ~387 g Gesamtwasser statt der tatsächlich zu kühlenden
+  // ~119 g Hauptteig-Restwasser berechnet — Ergebnis-Panel empfahl viel zu viel Eis. ---
+  testCase('Bugfix v3.48.0 · Biga pref 100 %/bhyd 45 % · Eis rechnet gegen mWater statt water', {
+    method: 'biga', pref: 100, bhyd: 45, hyd: 65, room: 30, flourTemp: 30, ddt: 24, knead: '6'
+  }, R => {
+    // wT = 24*3-30-30-6 = 6; mWater ≈ 118,98 g (nicht water ≈ 386,67 g)
+    // ice(mWater) ≈ 26 g — mit dem alten Bug (M=water) wären es ≈ 84 g gewesen.
+    return [
+      ['wT', R.wT, 6, 0],
+      ['mWater (Kontrolle: deutlich kleiner als water)', R.mWater, 118.98, 1],
+      ['ice (gegen mWater gerechnet, nicht mehr gegen water)', R.ice, 26, 2],
+      ['Kontrolle: ice liegt klar unter dem alten Bug-Wert (~84 g gegen die volle Wassermenge)', R.ice < 50, true, null]
+    ];
+  });
+
+  // --- Bugfix v3.48.0, Extremfall: Poolish-Preset "napoli_poolish" (pref 66 bei hyd 66) —
+  // das gesamte Wasser steckt bereits im Poolish, mWater ist exakt 0. Vorher zeigte das
+  // Ergebnis-Panel trotzdem weiterhin "Nimm X g Leitungswasser + Y g Eis", obwohl es gar
+  // kein Hauptteig-Schüttwasser mehr zu temperieren gibt. Jetzt: eigene Erklär-Notiz statt
+  // widersinniger Mengenangabe, ganzer Wassertemperatur-Block (#tempStage) ausgeblendet. ---
+  (function () {
+    Object.assign(PZ.state, BASE, {
+      method: 'poolish', pref: 66, hyd: 66, room: 30, flourTemp: 30, ddt: 24, knead: '6'
+    });
+    PZ.calc();
+    const R = PZ.R;
+    const noteHtml = (document.getElementById('iceNote') || {}).innerHTML || '';
+    const tempStageEl = document.getElementById('tempStage');
+    const tempStageHidden = !!tempStageEl && tempStageEl.style.display === 'none';
+    const expectedNote = PZ.t('calc.noMixingWaterNote');
+    renderBox('Bugfix v3.48.0 · Poolish-Extremfall (pref 66/hyd 66): mWater = 0 wird sauber abgefangen', [
+      { label: 'mWater ist exakt 0 (das gesamte Wasser steckt im Poolish)', ok: R.mWater === 0, actual: R.mWater, expected: 0, tol: null },
+      { label: 'ice bleibt 0 (keine widersinnige Eismenge gegen 0 g Wasser)', ok: R.ice === 0, actual: R.ice, expected: 0, tol: null },
+      { label: '#iceNote zeigt die neue Erklär-Notiz statt "Nimm 0 g Leitungswasser + 0 g Eis"', ok: noteHtml === expectedNote, actual: noteHtml, expected: expectedNote, tol: null },
+      { label: '#tempStage (ganzer Wassertemperatur-Block) wird ausgeblendet', ok: tempStageHidden, actual: tempStageHidden, expected: true, tol: null }
+    ]);
+
+    // Gegenprobe: zurück zu Direkt (mWater > 0) macht #tempStage wieder sichtbar —
+    // stellt sicher, dass display:none kein dauerhafter Zustand ist, sondern bei jedem
+    // calc()-Lauf neu aus hasMixingWater abgeleitet wird.
+    Object.assign(PZ.state, BASE);
+    PZ.calc();
+    const tempStageShownAgain = tempStageEl.style.display !== 'none';
+    renderBox('#tempStage wird bei normalem Rezept (mWater > 0) wieder eingeblendet', [
+      { label: 'Nach Rückkehr zu Direkt/Standard ist #tempStage wieder sichtbar', ok: tempStageShownAgain, actual: tempStageShownAgain, expected: true, tol: null }
     ]);
   })();
 
@@ -985,6 +1039,30 @@
     return [
       ['Öl-Zeile vorhanden', html.includes('Olivenöl'), true],
       ['Öl-Wert wie im Ergebnis-Panel formatiert', html.includes(R.oil.toFixed(1)), true],
+    ];
+  });
+
+  // Bugfix v3.48.0: Zucker fehlte bisher komplett in der Einkaufsliste (New-York-Style-
+  // Preset, 2 % Zucker) — stand zwar korrekt im Ergebnis-Panel (#gSugarRow), aber nicht
+  // hier. Analog zur Öl-Zeile: eigene Zeile ab 0,05 %, sonst ausgeblendet.
+  testCase('Mit Zucker (New-York-Style, 2 %) — Zucker-Zeile erscheint mit 1 Nachkommastelle', {
+    oil: 3, sugar: 2, hyd: 62
+  }, R => {
+    PZ.buildShoppingList();
+    const html = document.getElementById('shoppingList').innerHTML;
+    return [
+      ['Zucker-Zeile vorhanden', html.includes('Zucker'), true],
+      ['Zucker-Wert wie im Ergebnis-Panel formatiert', html.includes(R.sugar.toFixed(1)), true],
+    ];
+  });
+
+  testCase('Ohne Zucker (0 %, Standard) — keine Zucker-Zeile', {
+    sugar: 0
+  }, R => {
+    PZ.buildShoppingList();
+    const html = document.getElementById('shoppingList').innerHTML;
+    return [
+      ['Keine Zucker-Zeile bei 0 %', !html.includes('Zucker'), true],
     ];
   });
 
