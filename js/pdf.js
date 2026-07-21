@@ -283,29 +283,12 @@
     return bytes;
   }
 
-  // Anders als #shareLiveMsg/#recipeIOLiveMsg ist die Erfolgsmeldung hier bei jedem
-  // Klick WORTGLEICH identisch ("Anleitung als PDF gespeichert.") — kein variabler Teil
-  // wie eine Rezeptanzahl. Ein reines `el.textContent = msg` würde bei zwei Klicks in
-  // Folge (z. B. versehentlicher Doppelklick) beim zweiten Mal keine DOM-Änderung
-  // auslösen, wodurch viele Screenreader (NVDA/JAWS/VoiceOver) die zweite, identische
-  // Ansage stillschweigend unterdrücken (unzuverlässige Status-Ankündigung, WCAG 4.1.3).
-  // Fix: Region erst leeren, dann den eigentlichen Text im nächsten Tick setzen — so
-  // gibt es bei jedem Aufruf garantiert eine echte Inhaltsänderung, unabhängig vom
-  // vorherigen Text.
-  // Generation-Zähler (identisches Muster wie copyShareLink() in js/share.js bzw.
-  // showRecipeIOMsg() in js/main.js, s. dortige Kommentare): ohne ihn könnte bei einem
-  // schnellen Doppelklick (z. B. erst "nicht berechnet"-Hinweis, dann sofort die
-  // Erfolgsmeldung) der ÄLTERE, verzögerte `setTimeout` die NEUERE Meldung wieder
-  // überschreiben. Mit dem Zähler gewinnt immer der zuletzt gestartete Aufruf.
-  let pdfMsgGen = 0;
+  // Live-Region-Ansage seit v3.58.0 über den gemeinsamen Helfer PZ.announce()
+  // (js/dom.js, Clear-then-delayed-set-mit-Generation-Zähler-Muster, s. dort) —
+  // vorher eigene Kopie, ergänzt in v3.50.0 (bis dahin als einzige Live-Region im
+  // Projekt ohne Generation-Zähler, s. pizza-rechner-KONTEXT.md).
   function setPdfMsg(msg) {
-    const el = document.getElementById('pdfGuideLiveMsg');
-    if (!el) return;
-    const gen = ++pdfMsgGen;
-    el.textContent = '';
-    window.setTimeout(function () {
-      if (gen === pdfMsgGen) el.textContent = msg;
-    }, 50);
+    PZ.announce('pdfGuideLiveMsg', msg);
   }
 
   // Feature-Flag "shopping" (js/settings.js): "Als PDF speichern" ist inhaltlich eine

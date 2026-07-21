@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-21 · Aktuelle Version: v3.57.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-21 · Aktuelle Version: v3.58.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,84 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Rechenkern von Renderer getrennt (calc.js) (v3.57.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Gemeinsamer Live-Region-Helfer PZ.announce() (v3.58.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Per `/define-feature` bestätigt — viertes von fünf Struktur-Refactorings aus demselben
+Fable-Architektur-Review, in fester Reihenfolge: 1) i18n-Split (v3.55.0), 2)
+Widget-Fabrik (v3.56.0), 3) Rechenkern/Renderer-Trennung calc.js (v3.57.0), 4)
+`PZ.announce()`-Helfer (dieser Abschnitt), 5) `PZ.looksLikeState()` — noch offen,
+folgt als eigener, letzter Zyklus dieses Fünferauftrags. Reines
+Wartbarkeits-Refactoring **ohne beabsichtigte Änderung des Ansage-Verhaltens/-Timings
+selbst, keine neuen Live-Regions** (exakt wie beauftragt).
+
+**Motivation:** dasselbe „erst leeren, dann im nächsten Tick setzen, dabei ein
+Generation-Zähler gegen Races" Live-Region-Muster (WCAG 4.1.3 Status Messages)
+existierte als 7+ handgeschriebene, unabhängig gepflegte Kopien über das ganze
+Projekt verteilt. Genau diese Drift hatte schon einmal zu einem echten Bug geführt:
+`js/pdf.js` war bis v3.50.0 die einzige Stelle OHNE Generation-Zähler und konnte
+deshalb bei schnellem Doppelklick eine neuere Live-Region-Meldung mit einer älteren
+überschreiben — isoliert gefixt statt strukturell behoben.
+
+**Neuer gemeinsamer Helfer `PZ.announce(elementId, text)`** in `js/dom.js` (Clear
+sofort, Text nach 50 ms setzen, Generation-Zähler PRO Element-ID in einem internen
+`announceGens`-Objekt — mehrere unabhängige Live-Regions stören sich nicht
+gegenseitig).
+
+**Alle sieben bestehenden Aufrufer darauf umgestellt** (Funktionsnamen/Signaturen an
+den Aufrufstellen bewusst unverändert gelassen, nur der Funktionskörper delegiert
+jetzt an `PZ.announce()` — kein Risiko durch Call-Site-Änderungen):
+`js/share.js` `copyShareLink()`→`#shareLiveMsg`, `js/main.js` `showRecipeIOMsg()`→
+`#recipeIOLiveMsg`, `js/party.js` `announcePartyCreate()`→`#partyCreateLiveMsg` +
+`announcePartyStatus()`→`#partyStatusLiveMsg`, `js/newrecipe.js` `showNrMsg()`→
+`#nrLiveMsg`, `js/theme.js` `announceThemeChange()`→`#themeAnnounce`, `js/pdf.js`
+`setPdfMsg()`→`#pdfGuideLiveMsg`.
+
+**Zwei echte, vorher unentdeckte Bugs beim Konsolidieren gefunden und automatisch
+mitbehoben** (keine Sonderbehandlung nötig — sie hatten schlicht dasselbe Muster
+OHNE den Generation-Zähler, was der ganze Sinn dieses Refactorings ist zu verhindern):
+- `js/i18n.js` `announceLangChange()`→`#langAnnounce` hatte **keinen**
+  Generation-Zähler — zwei schnelle Sprachwechsel hintereinander hätten die neuere
+  Ansage mit der älteren überschreiben können.
+- `js/nav.js` `announceView()`→`#viewAnnounce` hatte ebenfalls **keinen**
+  Generation-Zähler — dieselbe Race-Gefahr bei zwei schnellen Bereichswechseln.
+Beide sind nach der Migration jetzt identisch robust wie die übrigen sieben Stellen.
+
+**Bewusst NICHT angefasst:** die separate `liveMsg.textContent = '';`-Zeile in
+`js/share.js`s `copyShareLink()` innerhalb eines eigenen `setTimeout(..., 1800)`
+(Cleanup nach dem Verblassen des Button-Feedbacks) — kein Bezug zum
+Generation-Zähler-Muster, reines Zurücksetzen der Live-Region auf leer, unverändert.
+
+**Härten:** da dieses Refactoring ALLE Live-Region-Ansagen im gesamten Projekt anfasst
+(wie vom Auftrag explizit hervorgehoben), zusätzlich zur normalen Testsuite ein
+**gezielter `accessibility-expert`-Durchlauf** (synchron, nur auf die Live-Region-
+Stellen fokussiert, kein Vollaudit): bestätigt `PZ.announce()`s Logik korrekt, alle
+sieben Aufrufer übergeben die richtige Element-ID + fertig zusammengesetzten Text
+(keine vertauschten Keys), die beiden Nachzügler (i18n.js/nav.js) korrekt migriert
+und weiterhin korrekt von ihren jeweiligen Klick-Handlern aufgerufen, alle neun
+Ziel-Elemente haben `role="status" aria-live="polite"` direkt am statischen Container
+(kein dynamisch ersetztes Kind-Element) — korrektes Live-Region-Pattern. Der
+share.js-Sonderfall (1800ms-Cleanup) bestätigt unproblematisch: läuft bei
+Einzelklick weit nach dem 50ms-Announce-Timeout; bei sehr schnellem Doppelklick
+(< 1800 ms) ein bereits VOR diesem Refactoring bestehendes, unverändertes
+Randverhalten (kein neuer Bug). Keine Korrekturen nötig.
+
+**Tests:** `tests/test.html` unverändert bei **614 Prüfungen** (Live-Region-Timing
+wird dort projektweit bewusst nicht unit-getestet, s. bestehende Kommentare bei
+`#themeAnnounce`/`#langAnnounce` — Regressionsanker wie vom Auftrag gefordert).
+Zusätzlich mit einem isolierten, temporären Headless-Edge-Verhaltenstest verifiziert
+(nie committet): `PZ.announce()` leert sofort, setzt nach 50 ms korrekt, ein Race
+zwischen zwei schnellen Aufrufen auf dieselbe Element-ID lässt zuverlässig den
+NEUEREN Aufruf gewinnen, zwei verschiedene Element-IDs beeinflussen sich nicht
+gegenseitig — alle Prüfungen grün.
+
+**Geändert:** `js/dom.js`, `js/share.js`, `js/main.js`, `js/party.js`,
+`js/newrecipe.js`, `js/theme.js`, `js/pdf.js`, `js/i18n.js`, `js/nav.js`,
+`pizza-rechner-KONTEXT.md`. `?v=` auf `3.58.0` gezogen (Desktop + Mobil, alle
+`<link>`/`<script>`-Tags), `appVersion`-Text in allen drei HTML-Dateien auf `v3.58.0`.
+`pizza-rechner-mobile-standalone.html` neu gebaut. `Versionen/v3.58.0 -
+PZ-announce Live-Region-Helfer/` enthält den vollständigen Schnappschuss.
+
+## Rechenkern von Renderer getrennt (calc.js) (v3.57.0)
 
 Per `/define-feature` bestätigt — drittes von fünf Struktur-Refactorings aus demselben
 Fable-Architektur-Review, in fester Reihenfolge: 1) i18n-Split (v3.55.0), 2)
@@ -4729,14 +4806,16 @@ lokal per Doppelklick genutzt (kein Vorteil durch Pages dort).
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.57.0)
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.58.0)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
 index.html           Weiterleitung auf pizza-rechner.html
 css/styles.css       komplettes Stylesheet (inkl. .selectbox / .selectbox-lg / .viewlink)
 css/mobile.css       Ergänzungen NUR für pizza-rechner-mobile.html (Akkordeon, Touch-Ziele, Quick-Bar)
-js/dom.js            $-Helfer, legt globalen Namespace window.PZ an
+js/dom.js            $-Helfer, legt globalen Namespace window.PZ an + PZ.announce(elementId, text)
+                     (v3.58.0, gemeinsamer Live-Region-Helfer — Clear-then-delayed-set mit
+                     Generation-Zähler je Element-ID, ersetzt 7+ frühere Einzelkopien)
 js/state.js          PZ.state (inkl. flour, oil, coldStage, prefMature, knead) + PZ.FRESH_TO_DRY (1/3)
 js/i18n-dict.js      Wörterbuch-INHALT (v3.55.0, aus js/i18n.js ausgelagert): ~569 add(key,de,en)-
                      Einträge, reine Daten. Lädt VOR js/i18n.js, übergibt sein DICT per
@@ -4798,7 +4877,7 @@ share → party → glossary → main → nav. Jedes Modul ist eine IIFE, kommun
 `flour`/`ui`/`newrecipe` geladen werden** (liefert PZ.makeLink/makeSeg/makePrefStages/
 fillFlourSelect, die diese drei Module beim eigenen Laden direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.57.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.58.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
@@ -5617,14 +5696,24 @@ Keine Code-Änderung durch den Audit nötig.
   Aufrufern. `js/guide.js`/`js/schedule.js` bewusst nicht angefasst. **Noch
   offen, in fester Reihenfolge:** 4) `PZ.announce()`-Helfer, 5)
   `PZ.looksLikeState()`.
+- ~~Gemeinsamer Live-Region-Helfer PZ.announce() (Struktur-Refactoring 4 von 5,
+  S4)~~ — **erledigt in v3.58.0** (per `/define-feature` bestätigt; s. Abschnitt
+  „Gemeinsamer Live-Region-Helfer PZ.announce() (v3.58.0)" oben). Neues
+  `PZ.announce(elementId, text)` in `js/dom.js`, alle 7 bestehenden Kopien
+  (share/main/party×2/newrecipe/theme/pdf) darauf umgestellt. **Zwei echte,
+  vorher unentdeckte Bugs beim Konsolidieren gefunden und mitbehoben:**
+  `js/i18n.js` `announceLangChange()` und `js/nav.js` `announceView()` hatten
+  KEINEN Generation-Zähler (Race-Risiko bei schnellen Doppelklicks) — jetzt
+  identisch robust wie die übrigen Stellen. Gezielter `accessibility-expert`-
+  Durchlauf (wie beauftragt) bestätigt alles korrekt. **Noch offen, letzter
+  Punkt des Fünferauftrags:** 5) `PZ.looksLikeState()`.
 
-**Stand v3.57.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.58.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben, bis auf den `flourTemp`-Fallback-Nebenbefund aus v3.53.0 und den
 newrecipe-Clamping-Nebenbefund aus v3.56.0). Der Bring!-Deeplink-Testaufbau ist
 abschließend geklärt (verworfen, vollständig zurückgebaut, keine offene Frage mehr).
-Zwei weitere Struktur-Refactorings aus demselben Fünferauftrag sind direkt im
-Anschluss in fester Reihenfolge in Arbeit — s. ggf. neuere Versionen oben, falls
-bereits committet.
+Der letzte Punkt desselben Fünferauftrags (`PZ.looksLikeState()`) ist direkt im
+Anschluss in Arbeit — s. ggf. neuere Version oben, falls bereits committet.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

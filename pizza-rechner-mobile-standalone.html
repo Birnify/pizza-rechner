@@ -890,7 +890,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.57.0</span>
+    <span class="nav-version" id="appVersion">v3.58.0</span>
   </div>
 </nav>
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
@@ -1652,6 +1652,36 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
 
   // $('id') -> document.getElementById('id')
   PZ.$ = id => document.getElementById(id);
+
+  // PZ.announce(elementId, text) — gemeinsamer Live-Region-Helfer (v3.58.0, vorher
+  // 7+ fast identische handgeschriebene Kopien desselben Musters über das Projekt
+  // verteilt: js/share.js, js/main.js, js/party.js (×2), js/newrecipe.js,
+  // js/theme.js, js/pdf.js, plus js/i18n.js/js/nav.js, die das Muster OHNE
+  // Generation-Zähler hatten — genau diese Drift führte schon einmal zu einem
+  // echten Bug: js/pdf.js hatte als einzige Stelle keinen Generation-Zähler und
+  // konnte deshalb bei schnellem Doppelklick eine neuere Meldung mit einer älteren
+  // überschreiben (behoben in v3.50.0, isoliert statt strukturell).
+  //
+  // Zweck (WCAG 4.1.3 Status Messages): eine Live-Region (`aria-live`) muss ihren
+  // Text ändern, damit Screenreader sie erneut vorlesen — bei zwei wortgleichen
+  // Meldungen hintereinander (z. B. zweimal "Link kopiert") erkennen viele
+  // Screenreader sonst keine echte DOM-Mutation und unterdrücken die zweite Ansage.
+  // Fix: Text wird erst geleert, dann im nächsten Tick (50 ms) gesetzt — garantiert
+  // bei jedem Aufruf eine echte Änderung. Ein Generation-Zähler JE ELEMENT-ID
+  // verhindert dabei ein Race: löst derselbe (oder ein anderer, an dieselbe
+  // Live-Region gebundener) Aufruf sehr schnell hintereinander zwei unterschiedliche
+  // Meldungen aus, gewinnt immer die zuletzt angeforderte — ältere, noch
+  // ausstehende Timeouts werden zu No-ops.
+  const announceGens = {}; // elementId -> Zähler, unabhängig je Live-Region
+  PZ.announce = function (elementId, text) {
+    const el = PZ.$(elementId);
+    if (!el) return;
+    const gen = (announceGens[elementId] = (announceGens[elementId] || 0) + 1);
+    el.textContent = '';
+    global.setTimeout(function () {
+      if (gen === announceGens[elementId]) el.textContent = text;
+    }, 50);
+  };
 })(window);
 
 </script>
@@ -2750,17 +2780,16 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
         b.setAttribute('aria-pressed', String(on));
       });
     }
-    // Erst leeren, Text erst im nächsten Tick setzen (analog zum #viewAnnounce-/
-    // #pdfGuideLiveMsg-Muster) — sonst bekommen Screenreader bei zwei Klicks auf
-    // dieselbe Sprache hintereinander keine zweite Ansage, da der Text wortgleich wäre.
+    // Live-Region-Ansage seit v3.58.0 über den gemeinsamen Helfer PZ.announce()
+    // (js/dom.js, Clear-then-delayed-set-mit-Generation-Zähler-Muster, s. dort).
+    // Nebenbefund beim Konsolidieren gefunden: diese Stelle hatte VORHER keinen
+    // Generation-Zähler (anders als die meisten übrigen Live-Region-Stellen) — bei
+    // zwei schnellen Sprachwechseln hintereinander hätte der ältere, verzögerte
+    // setTimeout die neuere Ansage überschreiben können. Die Migration auf
+    // PZ.announce() behebt das automatisch mit, da der Helfer den Zähler immer hat.
     function announceLangChange(lang) {
-      const el = document.getElementById('langAnnounce');
-      if (!el) return;
       const langName = t(lang === 'de' ? 'lang.german' : 'lang.english');
-      el.textContent = '';
-      global.setTimeout(function () {
-        el.textContent = t('lang.announce', { lang: langName });
-      }, 50);
+      PZ.announce('langAnnounce', t('lang.announce', { lang: langName }));
     }
     btns.forEach(function (b) {
       b.addEventListener('click', function () {
@@ -3098,20 +3127,12 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     });
   }
 
-  // Erst leeren, Text erst im nächsten Tick setzen (analog zu #langAnnounce in js/i18n.js) —
-  // sonst bekommen Screenreader bei zwei Klicks auf denselben Wert hintereinander keine
-  // zweite Ansage, da der Text wortgleich wäre (WCAG 4.1.3 Status Messages).
-  let themeMsgGen = 0;
+  // Live-Region-Ansage seit v3.58.0 über den gemeinsamen Helfer PZ.announce()
+  // (js/dom.js, Clear-then-delayed-set-mit-Generation-Zähler-Muster, s. dort).
   function announceThemeChange(theme) {
-    const el = document.getElementById('themeAnnounce');
-    if (!el) return;
     const t = PZ.t ? PZ.t : function (k) { return k; };
     const themeName = t(theme === 'dark' ? 'theme.dark' : 'theme.light');
-    const gen = ++themeMsgGen;
-    el.textContent = '';
-    global.setTimeout(function () {
-      if (gen === themeMsgGen) el.textContent = t('theme.announce', { theme: themeName });
-    }, 50);
+    PZ.announce('themeAnnounce', t('theme.announce', { theme: themeName }));
   }
 
   function wireThemeSwitch() {
@@ -4874,29 +4895,12 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     return bytes;
   }
 
-  // Anders als #shareLiveMsg/#recipeIOLiveMsg ist die Erfolgsmeldung hier bei jedem
-  // Klick WORTGLEICH identisch ("Anleitung als PDF gespeichert.") — kein variabler Teil
-  // wie eine Rezeptanzahl. Ein reines `el.textContent = msg` würde bei zwei Klicks in
-  // Folge (z. B. versehentlicher Doppelklick) beim zweiten Mal keine DOM-Änderung
-  // auslösen, wodurch viele Screenreader (NVDA/JAWS/VoiceOver) die zweite, identische
-  // Ansage stillschweigend unterdrücken (unzuverlässige Status-Ankündigung, WCAG 4.1.3).
-  // Fix: Region erst leeren, dann den eigentlichen Text im nächsten Tick setzen — so
-  // gibt es bei jedem Aufruf garantiert eine echte Inhaltsänderung, unabhängig vom
-  // vorherigen Text.
-  // Generation-Zähler (identisches Muster wie copyShareLink() in js/share.js bzw.
-  // showRecipeIOMsg() in js/main.js, s. dortige Kommentare): ohne ihn könnte bei einem
-  // schnellen Doppelklick (z. B. erst "nicht berechnet"-Hinweis, dann sofort die
-  // Erfolgsmeldung) der ÄLTERE, verzögerte `setTimeout` die NEUERE Meldung wieder
-  // überschreiben. Mit dem Zähler gewinnt immer der zuletzt gestartete Aufruf.
-  let pdfMsgGen = 0;
+  // Live-Region-Ansage seit v3.58.0 über den gemeinsamen Helfer PZ.announce()
+  // (js/dom.js, Clear-then-delayed-set-mit-Generation-Zähler-Muster, s. dort) —
+  // vorher eigene Kopie, ergänzt in v3.50.0 (bis dahin als einzige Live-Region im
+  // Projekt ohne Generation-Zähler, s. pizza-rechner-KONTEXT.md).
   function setPdfMsg(msg) {
-    const el = document.getElementById('pdfGuideLiveMsg');
-    if (!el) return;
-    const gen = ++pdfMsgGen;
-    el.textContent = '';
-    window.setTimeout(function () {
-      if (gen === pdfMsgGen) el.textContent = msg;
-    }, 50);
+    PZ.announce('pdfGuideLiveMsg', msg);
   }
 
   // Feature-Flag "shopping" (js/settings.js): "Als PDF speichern" ist inhaltlich eine
@@ -5571,21 +5575,10 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   if (nrFlourSel) nrFlourSel.addEventListener('change', () => { nrState.flour = nrFlourSel.value; });
 
   // --- Anlegen ---
-  // Generation-Zähler (identisches Muster wie announcePartyCreate() in js/party.js
-  // bzw. showRecipeIOMsg() in js/main.js): Text wird erst geleert und im nächsten
-  // Tick gesetzt, sonst erkennen viele Screenreader bei zwei wortgleichen Meldungen
-  // hintereinander keine echte DOM-Mutation und unterdrücken die zweite Ansage
-  // (WCAG 4.1.3 Status Messages). Behoben im gebündelten Accessibility-Zyklus
-  // v3.42.0 (vorher wurde direkt gesetzt).
-  let nrMsgGen = 0;
+  // Live-Region-Ansage seit v3.58.0 über den gemeinsamen Helfer PZ.announce()
+  // (js/dom.js, Clear-then-delayed-set-mit-Generation-Zähler-Muster, s. dort).
   function showNrMsg(msg) {
-    const el = $('nrLiveMsg');
-    if (!el) return;
-    const gen = ++nrMsgGen;
-    el.textContent = '';
-    window.setTimeout(function () {
-      if (gen === nrMsgGen) el.textContent = msg;
-    }, 50);
+    PZ.announce('nrLiveMsg', msg);
   }
 
   const nrCreateBtn = $('nrCreateBtn');
@@ -5744,27 +5737,17 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   // Effekt), daher reicht der reine btn.textContent-Wechsel für Screenreader-Nutzer nicht.
   // Bewusst NICHT role="status" direkt auf den Button selbst (würde dessen Button-Rolle
   // überschreiben) — stattdessen eine separate, visuell versteckte Live-Region.
-  // Generation-Zähler (identisches Muster wie announcePartyCreate() in js/party.js
-  // bzw. showRecipeIOMsg() in js/main.js, s. dortige Kommentare): der Live-Region-
-  // Text wird erst geleert und im nächsten Tick gesetzt, sonst erkennen viele
-  // Screenreader bei zwei wortgleichen Meldungen hintereinander (z. B. zweimal
-  // "Link kopiert" bei schnell aufeinanderfolgenden Klicks) keine echte DOM-Mutation
-  // und unterdrücken die zweite Ansage (WCAG 4.1.3 Status Messages). Behoben im
-  // gebündelten Accessibility-Zyklus v3.42.0 (vorher wurde direkt gesetzt).
-  let shareMsgGen = 0;
+  // Live-Region-Ansage seit v3.58.0 über den gemeinsamen Helfer PZ.announce()
+  // (js/dom.js, Clear-then-delayed-set-mit-Generation-Zähler-Muster, s. dort) —
+  // vorher eigene Kopie, behoben im gebündelten Accessibility-Zyklus v3.42.0
+  // (davor wurde direkt gesetzt, ohne Clear-Reset).
   function copyShareLink(btn) {
     const link = buildShareLink();
     const liveMsg = document.getElementById('shareLiveMsg');
     const t = PZ.t ? PZ.t : function (k) { return k; };
     const showFeedback = (ok) => {
       const msg = ok ? t('share.linkCopied') : t('share.copyFailed');
-      if (liveMsg) {
-        const gen = ++shareMsgGen;
-        liveMsg.textContent = '';
-        window.setTimeout(function () {
-          if (gen === shareMsgGen) liveMsg.textContent = msg;
-        }, 50);
-      }
+      PZ.announce('shareLiveMsg', msg);
       if (!btn) return;
       const original = btn.dataset.origLabel || btn.textContent;
       btn.dataset.origLabel = original;
@@ -6228,7 +6211,6 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   const addIngBtn = $('partyAddIngRow');
   const createBtn = $('partyCreateBtn');
   const nameInput = $('partyNewName');
-  const liveMsg = $('partyCreateLiveMsg');
   const START_ROWS = 3;
 
   // Nummeriert die "Zutatenzeile entfernen"-Buttons durch (1, 2, 3, …), statt sie
@@ -6303,23 +6285,10 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
 
   if (addIngBtn) addIngBtn.addEventListener('click', function () { addIngRow(); });
 
-  // Live-Region-Text wird (wie an anderen Stellen der App, z.B. #pdfGuideLiveMsg,
-  // #viewAnnounce) erst geleert und im nächsten Tick gesetzt, damit Screenreader auch
-  // bei zwei wortgleichen Meldungen hintereinander eine echte DOM-Mutation erkennen
-  // (WCAG 4.1.3). Ein Generation-Zähler verhindert dabei ein Race: klickt der Nutzer
-  // z.B. erst erfolgreich "Pizza anlegen" und direkt danach (innerhalb von 50ms) noch
-  // einmal mit leerem Namen, würde ohne den Zähler die verzögerte Erfolgsmeldung die
-  // eigentlich aktuellere Fehlermeldung überschreiben — die jeweils NEUESTE
-  // announcePartyCreate()-Anfrage gewinnt immer, ältere, noch ausstehende Timeouts
-  // werden zu No-ops.
-  let liveMsgGen = 0;
+  // Live-Region-Ansage seit v3.58.0 über den gemeinsamen Helfer PZ.announce()
+  // (js/dom.js, Clear-then-delayed-set-mit-Generation-Zähler-Muster, s. dort).
   function announcePartyCreate(text) {
-    if (!liveMsg) return;
-    const gen = ++liveMsgGen;
-    liveMsg.textContent = '';
-    window.setTimeout(function () {
-      if (gen === liveMsgGen) liveMsg.textContent = text;
-    }, 50);
+    PZ.announce('partyCreateLiveMsg', text);
   }
 
   if (createBtn) {
@@ -6374,15 +6343,10 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   // Cross-Card-Fund, s. Kommentar oben bei announcePartyStatus()-Aufruf im
   // Lösch-Handler).
   const resetBtn = $('partyResetBtn');
-  const statusLiveMsg = $('partyStatusLiveMsg');
-  let statusLiveMsgGen = 0;
+  // Live-Region-Ansage seit v3.58.0 über den gemeinsamen Helfer PZ.announce()
+  // (js/dom.js, Clear-then-delayed-set-mit-Generation-Zähler-Muster, s. dort).
   function announcePartyStatus(text) {
-    if (!statusLiveMsg) return;
-    const gen = ++statusLiveMsgGen;
-    statusLiveMsg.textContent = '';
-    window.setTimeout(function () {
-      if (gen === statusLiveMsgGen) statusLiveMsg.textContent = text;
-    }, 50);
+    PZ.announce('partyStatusLiveMsg', text);
   }
   if (resetBtn) {
     resetBtn.addEventListener('click', function () {
@@ -6608,24 +6572,10 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   }
 
   // --- Rezepte-Backup: Export/Import als Datei (js/storage.js) ----------
-  // Live-Region wird (wie an anderen Stellen der App, z. B. #pdfGuideLiveMsg seit
-  // v3.25.0, #partyCreateLiveMsg seit v3.27.0) erst geleert und der eigentliche Text
-  // erst im nächsten Tick gesetzt — sonst erkennen viele Screenreader bei zwei
-  // wortgleichen Meldungen hintereinander (z. B. zweimal "Import fehlgeschlagen: ...")
-  // keine echte DOM-Mutation und unterdrücken die zweite Ansage (WCAG 4.1.3). Ein
-  // Generation-Zähler (analog zu announcePartyCreate() in js/party.js) verhindert
-  // dabei ein Race: löst ein Klick sehr schnell hintereinander zwei unterschiedliche
-  // Meldungen aus, gewinnt immer die zuletzt angeforderte — ältere, noch ausstehende
-  // Timeouts werden zu No-ops.
-  let recipeIOMsgGen = 0;
+  // Live-Region-Ansage seit v3.58.0 über den gemeinsamen Helfer PZ.announce()
+  // (js/dom.js, Clear-then-delayed-set-mit-Generation-Zähler-Muster, s. dort).
   function showRecipeIOMsg(msg) {
-    const el = $('recipeIOLiveMsg');
-    if (!el) return;
-    const gen = ++recipeIOMsgGen;
-    el.textContent = '';
-    window.setTimeout(function () {
-      if (gen === recipeIOMsgGen) el.textContent = msg;
-    }, 50);
+    PZ.announce('recipeIOLiveMsg', msg);
   }
 
   const recipeExportBtn = $('recipeExportBtn');
@@ -6815,17 +6765,15 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   // Rückmeldung, dass sich der sichtbare Inhalt komplett ausgetauscht hat
   // (WCAG 4.1.3 Status Messages) — Live-Region-Ansage + Fokus auf die erste
   // Überschrift des neuen Bereichs (analog zum SPA-Routenwechsel-Muster).
-  // Erst leeren, dann im nächsten Tick setzen (analog zum js/pdf.js-Fix v3.25.0):
-  // ein wortgleicher Text bei zwei Wechseln in dieselbe Ansicht hintereinander
-  // (z. B. Menü öffnen, "Rechner" anklicken, obwohl "Rechner" schon aktiv ist)
-  // würde sonst von manchen Screenreadern als "keine echte Änderung" ignoriert.
+  // Seit v3.58.0 über den gemeinsamen Helfer PZ.announce() (js/dom.js,
+  // Clear-then-delayed-set-mit-Generation-Zähler-Muster, s. dort). Nebenbefund beim
+  // Konsolidieren gefunden: diese Stelle hatte VORHER keinen Generation-Zähler — bei
+  // zwei schnellen Bereichswechseln hintereinander (z. B. Menü öffnen, "Rechner"
+  // anklicken, obwohl "Rechner" schon aktiv ist) hätte der ältere, verzögerte
+  // setTimeout die neuere Ansage überschreiben können. Die Migration auf
+  // PZ.announce() behebt das automatisch mit, da der Helfer den Zähler immer hat.
   function announceView(label) {
-    const el = $('viewAnnounce');
-    if (!el) return;
-    el.textContent = '';
-    global.setTimeout(function () {
-      el.textContent = PZ.t ? PZ.t('nav.viewAnnounce', { label: label }) : ('Ansicht: ' + label);
-    }, 50);
+    PZ.announce('viewAnnounce', PZ.t ? PZ.t('nav.viewAnnounce', { label: label }) : ('Ansicht: ' + label));
   }
 
   function focusView(view) {

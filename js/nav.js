@@ -102,17 +102,15 @@
   // Rückmeldung, dass sich der sichtbare Inhalt komplett ausgetauscht hat
   // (WCAG 4.1.3 Status Messages) — Live-Region-Ansage + Fokus auf die erste
   // Überschrift des neuen Bereichs (analog zum SPA-Routenwechsel-Muster).
-  // Erst leeren, dann im nächsten Tick setzen (analog zum js/pdf.js-Fix v3.25.0):
-  // ein wortgleicher Text bei zwei Wechseln in dieselbe Ansicht hintereinander
-  // (z. B. Menü öffnen, "Rechner" anklicken, obwohl "Rechner" schon aktiv ist)
-  // würde sonst von manchen Screenreadern als "keine echte Änderung" ignoriert.
+  // Seit v3.58.0 über den gemeinsamen Helfer PZ.announce() (js/dom.js,
+  // Clear-then-delayed-set-mit-Generation-Zähler-Muster, s. dort). Nebenbefund beim
+  // Konsolidieren gefunden: diese Stelle hatte VORHER keinen Generation-Zähler — bei
+  // zwei schnellen Bereichswechseln hintereinander (z. B. Menü öffnen, "Rechner"
+  // anklicken, obwohl "Rechner" schon aktiv ist) hätte der ältere, verzögerte
+  // setTimeout die neuere Ansage überschreiben können. Die Migration auf
+  // PZ.announce() behebt das automatisch mit, da der Helfer den Zähler immer hat.
   function announceView(label) {
-    const el = $('viewAnnounce');
-    if (!el) return;
-    el.textContent = '';
-    global.setTimeout(function () {
-      el.textContent = PZ.t ? PZ.t('nav.viewAnnounce', { label: label }) : ('Ansicht: ' + label);
-    }, 50);
+    PZ.announce('viewAnnounce', PZ.t ? PZ.t('nav.viewAnnounce', { label: label }) : ('Ansicht: ' + label));
   }
 
   function focusView(view) {

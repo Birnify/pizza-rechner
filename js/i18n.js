@@ -162,17 +162,16 @@
         b.setAttribute('aria-pressed', String(on));
       });
     }
-    // Erst leeren, Text erst im nächsten Tick setzen (analog zum #viewAnnounce-/
-    // #pdfGuideLiveMsg-Muster) — sonst bekommen Screenreader bei zwei Klicks auf
-    // dieselbe Sprache hintereinander keine zweite Ansage, da der Text wortgleich wäre.
+    // Live-Region-Ansage seit v3.58.0 über den gemeinsamen Helfer PZ.announce()
+    // (js/dom.js, Clear-then-delayed-set-mit-Generation-Zähler-Muster, s. dort).
+    // Nebenbefund beim Konsolidieren gefunden: diese Stelle hatte VORHER keinen
+    // Generation-Zähler (anders als die meisten übrigen Live-Region-Stellen) — bei
+    // zwei schnellen Sprachwechseln hintereinander hätte der ältere, verzögerte
+    // setTimeout die neuere Ansage überschreiben können. Die Migration auf
+    // PZ.announce() behebt das automatisch mit, da der Helfer den Zähler immer hat.
     function announceLangChange(lang) {
-      const el = document.getElementById('langAnnounce');
-      if (!el) return;
       const langName = t(lang === 'de' ? 'lang.german' : 'lang.english');
-      el.textContent = '';
-      global.setTimeout(function () {
-        el.textContent = t('lang.announce', { lang: langName });
-      }, 50);
+      PZ.announce('langAnnounce', t('lang.announce', { lang: langName }));
     }
     btns.forEach(function (b) {
       b.addEventListener('click', function () {

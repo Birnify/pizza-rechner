@@ -118,20 +118,12 @@
     });
   }
 
-  // Erst leeren, Text erst im nächsten Tick setzen (analog zu #langAnnounce in js/i18n.js) —
-  // sonst bekommen Screenreader bei zwei Klicks auf denselben Wert hintereinander keine
-  // zweite Ansage, da der Text wortgleich wäre (WCAG 4.1.3 Status Messages).
-  let themeMsgGen = 0;
+  // Live-Region-Ansage seit v3.58.0 über den gemeinsamen Helfer PZ.announce()
+  // (js/dom.js, Clear-then-delayed-set-mit-Generation-Zähler-Muster, s. dort).
   function announceThemeChange(theme) {
-    const el = document.getElementById('themeAnnounce');
-    if (!el) return;
     const t = PZ.t ? PZ.t : function (k) { return k; };
     const themeName = t(theme === 'dark' ? 'theme.dark' : 'theme.light');
-    const gen = ++themeMsgGen;
-    el.textContent = '';
-    global.setTimeout(function () {
-      if (gen === themeMsgGen) el.textContent = t('theme.announce', { theme: themeName });
-    }, 50);
+    PZ.announce('themeAnnounce', t('theme.announce', { theme: themeName }));
   }
 
   function wireThemeSwitch() {

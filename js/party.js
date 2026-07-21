@@ -416,7 +416,6 @@
   const addIngBtn = $('partyAddIngRow');
   const createBtn = $('partyCreateBtn');
   const nameInput = $('partyNewName');
-  const liveMsg = $('partyCreateLiveMsg');
   const START_ROWS = 3;
 
   // Nummeriert die "Zutatenzeile entfernen"-Buttons durch (1, 2, 3, …), statt sie
@@ -491,23 +490,10 @@
 
   if (addIngBtn) addIngBtn.addEventListener('click', function () { addIngRow(); });
 
-  // Live-Region-Text wird (wie an anderen Stellen der App, z.B. #pdfGuideLiveMsg,
-  // #viewAnnounce) erst geleert und im nächsten Tick gesetzt, damit Screenreader auch
-  // bei zwei wortgleichen Meldungen hintereinander eine echte DOM-Mutation erkennen
-  // (WCAG 4.1.3). Ein Generation-Zähler verhindert dabei ein Race: klickt der Nutzer
-  // z.B. erst erfolgreich "Pizza anlegen" und direkt danach (innerhalb von 50ms) noch
-  // einmal mit leerem Namen, würde ohne den Zähler die verzögerte Erfolgsmeldung die
-  // eigentlich aktuellere Fehlermeldung überschreiben — die jeweils NEUESTE
-  // announcePartyCreate()-Anfrage gewinnt immer, ältere, noch ausstehende Timeouts
-  // werden zu No-ops.
-  let liveMsgGen = 0;
+  // Live-Region-Ansage seit v3.58.0 über den gemeinsamen Helfer PZ.announce()
+  // (js/dom.js, Clear-then-delayed-set-mit-Generation-Zähler-Muster, s. dort).
   function announcePartyCreate(text) {
-    if (!liveMsg) return;
-    const gen = ++liveMsgGen;
-    liveMsg.textContent = '';
-    window.setTimeout(function () {
-      if (gen === liveMsgGen) liveMsg.textContent = text;
-    }, 50);
+    PZ.announce('partyCreateLiveMsg', text);
   }
 
   if (createBtn) {
@@ -562,15 +548,10 @@
   // Cross-Card-Fund, s. Kommentar oben bei announcePartyStatus()-Aufruf im
   // Lösch-Handler).
   const resetBtn = $('partyResetBtn');
-  const statusLiveMsg = $('partyStatusLiveMsg');
-  let statusLiveMsgGen = 0;
+  // Live-Region-Ansage seit v3.58.0 über den gemeinsamen Helfer PZ.announce()
+  // (js/dom.js, Clear-then-delayed-set-mit-Generation-Zähler-Muster, s. dort).
   function announcePartyStatus(text) {
-    if (!statusLiveMsg) return;
-    const gen = ++statusLiveMsgGen;
-    statusLiveMsg.textContent = '';
-    window.setTimeout(function () {
-      if (gen === statusLiveMsgGen) statusLiveMsg.textContent = text;
-    }, 50);
+    PZ.announce('partyStatusLiveMsg', text);
   }
   if (resetBtn) {
     resetBtn.addEventListener('click', function () {
