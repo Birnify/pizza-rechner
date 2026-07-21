@@ -13,7 +13,10 @@
      übernimmt später denselben, hier bereits gesetzten Wert als Ausgangspunkt statt die
      Erkennung ein zweites Mal/potenziell abweichend zu wiederholen). Bewusst inline statt
      als externe Datei -- muss synchron VOR dem ersten Bildaufbau laufen. Identisch zum
-     Kopf-Script in pizza-rechner.html. -->
+     Kopf-Script in pizza-rechner.html, PLUS das theme-color-Meta (das pizza-rechner.html
+     nicht hat) hier zusaetzlich synchron mitgesetzt -- js/theme.js's applyThemeColorMeta()
+     uebernimmt danach dieselbe Logik fuer spaetere Theme-Wechsel (v3.52.0-Fix, vorher
+     blieb das Meta bei jedem Theme statisch terrakotta). -->
 <script>
 (function(){
   try{
@@ -22,6 +25,8 @@
       t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
     }
     document.documentElement.setAttribute('data-theme', t);
+    var tcm = document.querySelector('meta[name="theme-color"]');
+    if (tcm) tcm.setAttribute('content', t === 'dark' ? '#1c1815' : '#c8442e');
   } catch(e) {}
 })();
 </script>
@@ -535,7 +540,12 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   display:inline-block;background:var(--basil);color:#fff;font-size:11px;font-weight:700;
   letter-spacing:.5px;text-transform:uppercase;padding:4px 11px;border-radius:var(--radius-chip);margin:18px 0 10px;
 }
-.daybadge.d2{background:#b5851a;}
+/* v3.52.0-Kontrastfix (Nebenbefund aus dem v3.47.0-Dunkelmodus-Audit): #b5851a lag mit
+   weißer Schrift bei nur ~3,32:1 (unter der 4,5:1-Schwelle, WCAG 1.4.3). #8d6814 (dieselbe
+   Farbe abgedunkelt) liegt bei ~5,09:1. Theme-unabhängig (weder --basil noch dieser Wert
+   werden im Dunkelmodus-Block überschrieben), Fix gilt daher für Hell- UND Dunkelmodus
+   gleichermaßen -- rechnerisch gegengeprüft. */
+.daybadge.d2{background:#8d6814;}
 .step{
   display:flex;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
   border-left:3px solid var(--line);
@@ -880,7 +890,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.51.0</span>
+    <span class="nav-version" id="appVersion">v3.52.0</span>
   </div>
 </nav>
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
@@ -2977,9 +2987,25 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     : resolveInitialTheme(readStoredTheme(), systemPrefersDark());
   let manualOverride = readStoredTheme() === 'light' || readStoredTheme() === 'dark';
 
+  // theme-color-Meta-Tag (nur pizza-rechner-mobile.html hat dieses <meta>, der Desktop-
+  // Seite fehlt es bewusst — s. pizza-rechner.html <head>): steuert bei mobilen Browsern
+  // (v. a. Android Chrome/Edge) die Färbung von Status-/Adressleiste. War bisher statisch
+  // auf die helle Marken-Terrakotta-Farbe gesetzt und blieb das auch im Dunkelmodus, obwohl
+  // der restliche Bildschirm dann überwiegend sehr dunkel ist (Nebenbefund aus dem
+  // v3.47.0-Accessibility-Audit). Werte hier bewusst identisch zu --tomato (hell) bzw.
+  // --bg im Dunkelmodus (s. css/styles.css :root[data-theme="dark"]) — MUSS bei einer
+  // künftigen Änderung dieser beiden CSS-Werte von Hand mitgezogen werden, da der Browser
+  // nur das Meta-Attribut liest, keine berechneten Styles.
+  const THEME_COLOR = { light: '#c8442e', dark: '#1c1815' };
+  function applyThemeColorMeta(theme) {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', THEME_COLOR[theme] || THEME_COLOR.light);
+  }
+
   function applyTheme(theme) {
     currentTheme = theme;
     document.documentElement.setAttribute('data-theme', theme);
+    applyThemeColorMeta(theme);
   }
   // Erstanwendung nicht überspringen, falls das Inline-Script aus irgendeinem Grund fehlte.
   applyTheme(currentTheme);

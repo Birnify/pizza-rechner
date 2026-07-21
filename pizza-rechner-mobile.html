@@ -13,7 +13,10 @@
      übernimmt später denselben, hier bereits gesetzten Wert als Ausgangspunkt statt die
      Erkennung ein zweites Mal/potenziell abweichend zu wiederholen). Bewusst inline statt
      als externe Datei -- muss synchron VOR dem ersten Bildaufbau laufen. Identisch zum
-     Kopf-Script in pizza-rechner.html. -->
+     Kopf-Script in pizza-rechner.html, PLUS das theme-color-Meta (das pizza-rechner.html
+     nicht hat) hier zusaetzlich synchron mitgesetzt -- js/theme.js's applyThemeColorMeta()
+     uebernimmt danach dieselbe Logik fuer spaetere Theme-Wechsel (v3.52.0-Fix, vorher
+     blieb das Meta bei jedem Theme statisch terrakotta). -->
 <script>
 (function(){
   try{
@@ -22,11 +25,13 @@
       t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
     }
     document.documentElement.setAttribute('data-theme', t);
+    var tcm = document.querySelector('meta[name="theme-color"]');
+    if (tcm) tcm.setAttribute('content', t === 'dark' ? '#1c1815' : '#c8442e');
   } catch(e) {}
 })();
 </script>
-<link rel="stylesheet" href="css/styles.css?v=3.51.0">
-<link rel="stylesheet" href="css/mobile.css?v=3.51.0">
+<link rel="stylesheet" href="css/styles.css?v=3.52.0">
+<link rel="stylesheet" href="css/mobile.css?v=3.52.0">
 </head>
 <body>
 <header>
@@ -60,7 +65,7 @@
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.51.0</span>
+    <span class="nav-version" id="appVersion">v3.52.0</span>
   </div>
 </nav>
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
@@ -814,26 +819,26 @@
 </div>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.51.0"></script>
-<script src="js/state.js?v=3.51.0"></script>
-<script src="js/i18n.js?v=3.51.0"></script>
-<script src="js/settings.js?v=3.51.0"></script>
-<script src="js/theme.js?v=3.51.0"></script>
-<script src="js/flour.js?v=3.51.0"></script>
-<script src="js/calc.js?v=3.51.0"></script>
-<script src="js/schedule.js?v=3.51.0"></script>
-<script src="js/guide.js?v=3.51.0"></script>
-<script src="js/timer.js?v=3.51.0"></script>
-<script src="js/ui.js?v=3.51.0"></script>
-<script src="js/print.js?v=3.51.0"></script>
-<script src="js/pdf.js?v=3.51.0"></script>
-<script src="js/presets.js?v=3.51.0"></script>
-<script src="js/storage.js?v=3.51.0"></script>
-<script src="js/newrecipe.js?v=3.51.0"></script>
-<script src="js/share.js?v=3.51.0"></script>
-<script src="js/party.js?v=3.51.0"></script>
-<script src="js/glossary.js?v=3.51.0"></script>
-<script src="js/main.js?v=3.51.0"></script>
+<script src="js/dom.js?v=3.52.0"></script>
+<script src="js/state.js?v=3.52.0"></script>
+<script src="js/i18n.js?v=3.52.0"></script>
+<script src="js/settings.js?v=3.52.0"></script>
+<script src="js/theme.js?v=3.52.0"></script>
+<script src="js/flour.js?v=3.52.0"></script>
+<script src="js/calc.js?v=3.52.0"></script>
+<script src="js/schedule.js?v=3.52.0"></script>
+<script src="js/guide.js?v=3.52.0"></script>
+<script src="js/timer.js?v=3.52.0"></script>
+<script src="js/ui.js?v=3.52.0"></script>
+<script src="js/print.js?v=3.52.0"></script>
+<script src="js/pdf.js?v=3.52.0"></script>
+<script src="js/presets.js?v=3.52.0"></script>
+<script src="js/storage.js?v=3.52.0"></script>
+<script src="js/newrecipe.js?v=3.52.0"></script>
+<script src="js/share.js?v=3.52.0"></script>
+<script src="js/party.js?v=3.52.0"></script>
+<script src="js/glossary.js?v=3.52.0"></script>
+<script src="js/main.js?v=3.52.0"></script>
 <script>
   // Mobil-only UI-Glue (kein Eingriff in die PZ-Rechenmodule)
   (function(){

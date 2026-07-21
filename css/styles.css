@@ -507,7 +507,12 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   display:inline-block;background:var(--basil);color:#fff;font-size:11px;font-weight:700;
   letter-spacing:.5px;text-transform:uppercase;padding:4px 11px;border-radius:var(--radius-chip);margin:18px 0 10px;
 }
-.daybadge.d2{background:#b5851a;}
+/* v3.52.0-Kontrastfix (Nebenbefund aus dem v3.47.0-Dunkelmodus-Audit): #b5851a lag mit
+   weißer Schrift bei nur ~3,32:1 (unter der 4,5:1-Schwelle, WCAG 1.4.3). #8d6814 (dieselbe
+   Farbe abgedunkelt) liegt bei ~5,09:1. Theme-unabhängig (weder --basil noch dieser Wert
+   werden im Dunkelmodus-Block überschrieben), Fix gilt daher für Hell- UND Dunkelmodus
+   gleichermaßen -- rechnerisch gegengeprüft. */
+.daybadge.d2{background:#8d6814;}
 .step{
   display:flex;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
   border-left:3px solid var(--line);

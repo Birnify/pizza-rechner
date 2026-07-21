@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-21 · Aktuelle Version: v3.51.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-21 · Aktuelle Version: v3.52.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,58 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## B8: letzter Kleinkram aus dem Fable-Review (toter Global, Docstring-Diskrepanz, Zahlenfeld-Clamping) (v3.51.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Dynamisches theme-color-Meta & `.daybadge.d2`-Kontrastfix (v3.52.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Direkter Nutzerauftrag (kein `/define-feature`), kein Backlog-Punkt: die zwei Nebenbefunde aus
+dem v3.47.0-Dunkelmodus-Accessibility-Audit, die dort bewusst außerhalb des damaligen Scopes
+belassen wurden (s. Abschnitt „Dunkelmodus (v3.47.0)" oben, dortiger Nebenbefund-Absatz).
+
+**1. `theme-color`-Meta-Tag folgt jetzt dem aktiven Theme (`js/theme.js`,
+`pizza-rechner-mobile.html`):** nur `pizza-rechner-mobile.html` hat dieses `<meta>` (Desktop
+bewusst ohne, s. `pizza-rechner.html` `<head>`) — es steuerte bisher statisch die helle
+Marken-Terrakotta-Farbe (`#c8442e`), blieb das auch im Dunkelmodus, obwohl der restliche
+Bildschirm dann überwiegend sehr dunkel ist. **Fix:** neue Funktion `applyThemeColorMeta(theme)`
+in `js/theme.js`, aufgerufen aus dem bereits zentralen `applyTheme(theme)` (läuft bei jedem
+Theme-Wechsel — manueller Umschalter UND Live-Mitverfolgen der Systemeinstellung). Werte:
+hell `#c8442e` (unverändert, matcht `--tomato`/Header-Branding), dunkel `#1c1815` (matcht
+`--bg` im Dunkelmodus, s. `css/styles.css` `:root[data-theme="dark"]`). Zusätzlich im
+`<head>`-Inline-Flash-Schutz-Script von `pizza-rechner-mobile.html` (läuft synchron VOR dem
+ersten Bildaufbau, noch vor `js/theme.js` am Body-Ende) dieselbe Logik dupliziert, damit der
+allererste Seitenaufbau (Cold Load im Dunkelmodus) korrekt startet, statt kurz falsch zu
+blitzen und erst später von `js/theme.js` nachgezogen zu werden.
+
+**2. `.daybadge.d2`-Kontrast behoben (`css/styles.css`):** die „Tag 2"-Badge (Mehrtage-Zeitplan
+bei langer Kaltgare) hatte `background:#b5851a` mit weißer Schrift — rechnerisch nach der
+WCAG-Relativluminanz-Formel nur **~3,32:1** (unter der 4,5:1-Schwelle für Fließtext, WCAG
+1.4.3), exakt wie im Audit-Fund vermutet. **Fix:** `#8d6814` (dieselbe Farbe abgedunkelt),
+rechnerisch **~5,09:1**. Theme-unabhängig: weder `--basil` (Grundfarbe von `.daybadge`) noch
+dieser Wert werden im Dunkelmodus-Block überschrieben (bewusst, s. „Gesättigte
+Marken-/Akzentfarben bleiben bewusst UNVERÄNDERT" in `css/styles.css`) — der Fix gilt daher
+identisch für Hell- UND Dunkelmodus, keine zweite Anpassung nötig.
+
+**Härten:** gezielter `accessibility-expert`-Durchlauf NUR auf diese beiden Stellen (nicht
+Vollaudit) bestätigt beide Kontrastrechnungen unabhängig nach (3,32:1 alt / 5,09:1 neu für
+`.daybadge.d2`) und prüfte zusätzlich die bisher nicht explizit betrachtete
+UI-Komponentengrenze (WCAG 1.4.11, 3:1) der neuen Badge-Farbe gegen die Kartenfläche im
+Dunkelmodus (`--card:#241f19`): **~3,21:1** — knapp, aber zuverlässig über der 3:1-Schwelle.
+Für das `theme-color`-Meta bestätigt: reine Attribut-Manipulation ohne neues interaktives/
+fokussierbares Markup, keine Screenreader-/Tastatur-Relevanz. Keine Korrekturen nötig, beide
+Stellen waren bereits korrekt.
+
+**Tests:** `tests/test.html` unverändert (weder `js/theme.js` noch `css/styles.css` werden dort
+unit-getestet, s. Abschnitt „Dateistruktur" — CSS-Kontraste sind ohnehin kein
+`tests/test.html`-Fall) — 608 Prüfungen weiterhin grün, keine Regression durch diesen rein
+visuellen/Meta-Tag-Fix.
+
+**Geändert:** `js/theme.js`, `css/styles.css`, `pizza-rechner-mobile.html`,
+`pizza-rechner-KONTEXT.md`. `?v=` auf `3.52.0` gezogen (Desktop + Mobil, alle
+`<link>`/`<script>`-Tags), `appVersion`-Text in allen drei HTML-Dateien auf `v3.52.0`.
+`pizza-rechner-mobile-standalone.html` neu gebaut (theme-color-Meta + Inline-Script-Änderung
+werden dort mit inline gebaut) — gegengeprüft, dass Meta-Tag UND Inline-Script-Fix im
+Standalone-Ergebnis korrekt ankommen. `Versionen/v3.52.0 - theme-color dynamisch und
+daybadge-Kontrastfix/` enthält den vollständigen Schnappschuss.
+
+## B8: letzter Kleinkram aus dem Fable-Review (toter Global, Docstring-Diskrepanz, Zahlenfeld-Clamping) (v3.51.0)
 
 Direkter Nutzerauftrag (kein `/define-feature`), kein Backlog-Punkt: die drei letzten,
 unabhängigen Kleinfunde aus demselben separaten, rein lesenden Fable-Architektur-Review
@@ -5169,8 +5220,15 @@ Keine Code-Änderung durch den Audit nötig.
   übrigen B8-Punkte (Timer nur bei offenem Tab, Zucker-/Öl-Fallback, duplizierte
   Nav-Inline-Scripts, theme-color-Meta, `.daybadge.d2`-Kontrast) waren bewusst
   NICHT Teil dieses Auftrags.
+- ~~Nebenbefund aus dem v3.47.0-Dunkelmodus-Audit: `theme-color`-Meta-Tag
+  statisch (folgt nicht dem Dunkelmodus); `.daybadge.d2`-Kontrast nur ~3,32:1~~ —
+  **erledigt in v3.52.0** (kein Backlog-Punkt, direkter Nutzerauftrag; s. Abschnitt
+  „Dynamisches theme-color-Meta & `.daybadge.d2`-Kontrastfix (v3.52.0)" oben). Die
+  übrigen, noch offenen B8-Punkte (Timer nur bei offenem Tab, Zucker-/Öl-Fallback
+  beim Laden alter Rezepte, duplizierte Nav-Inline-Scripts) bleiben weiterhin
+  offen/als bewusste Design-Entscheidung dokumentiert.
 
-**Stand v3.51.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.52.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen,
 vollständig zurückgebaut, keine offene Frage mehr). Keine Warteschlange mehr offen —
 für den nächsten Zyklus braucht es wieder frisches Brainstorming in Phase 1 (neue

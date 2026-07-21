@@ -55,9 +55,25 @@
     : resolveInitialTheme(readStoredTheme(), systemPrefersDark());
   let manualOverride = readStoredTheme() === 'light' || readStoredTheme() === 'dark';
 
+  // theme-color-Meta-Tag (nur pizza-rechner-mobile.html hat dieses <meta>, der Desktop-
+  // Seite fehlt es bewusst — s. pizza-rechner.html <head>): steuert bei mobilen Browsern
+  // (v. a. Android Chrome/Edge) die Färbung von Status-/Adressleiste. War bisher statisch
+  // auf die helle Marken-Terrakotta-Farbe gesetzt und blieb das auch im Dunkelmodus, obwohl
+  // der restliche Bildschirm dann überwiegend sehr dunkel ist (Nebenbefund aus dem
+  // v3.47.0-Accessibility-Audit). Werte hier bewusst identisch zu --tomato (hell) bzw.
+  // --bg im Dunkelmodus (s. css/styles.css :root[data-theme="dark"]) — MUSS bei einer
+  // künftigen Änderung dieser beiden CSS-Werte von Hand mitgezogen werden, da der Browser
+  // nur das Meta-Attribut liest, keine berechneten Styles.
+  const THEME_COLOR = { light: '#c8442e', dark: '#1c1815' };
+  function applyThemeColorMeta(theme) {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', THEME_COLOR[theme] || THEME_COLOR.light);
+  }
+
   function applyTheme(theme) {
     currentTheme = theme;
     document.documentElement.setAttribute('data-theme', theme);
+    applyThemeColorMeta(theme);
   }
   // Erstanwendung nicht überspringen, falls das Inline-Script aus irgendeinem Grund fehlte.
   applyTheme(currentTheme);
