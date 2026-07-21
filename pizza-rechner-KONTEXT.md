@@ -4545,27 +4545,40 @@ Keine Code-Änderung durch den Audit nötig.
 - ~~Sprachversion Deutsch/Englisch~~ — **erledigt in v3.28.0** (kein Backlog-Punkt,
   direkter Nutzerauftrag per `/define-feature`; s. Abschnitt „Sprachversion
   Deutsch/Englisch (v3.28.0)" oben).
-- Nebenbefund aus dem v3.28.1-Fix (nicht behoben, außerhalb des angefragten Scopes):
-  `#shareLiveMsg` (`js/share.js`, `copyShareLink()`) und `#nrLiveMsg`
-  (`js/newrecipe.js`, `showNrMsg()`) setzen ihren Live-Region-Text ebenfalls noch
-  direkt ohne vorheriges Leeren (dasselbe WCAG-4.1.3-Muster wie der jetzt gefixte
-  `#recipeIOLiveMsg`-Fall) — niedrigere Priorität, da `#shareLiveMsg` nach 1,8 s
-  automatisch wieder geleert wird und `#nrLiveMsg` meist einen variablen
-  Rezeptnamen enthält (beides mindert das Risiko unterdrückter Ansagen). Beim
-  nächsten Storage-/Formular-bezogenen Zyklus mit aufgreifen.
+- ~~Nebenbefund aus dem v3.28.1-Fix: `#shareLiveMsg` (`js/share.js`,
+  `copyShareLink()`) und `#nrLiveMsg` (`js/newrecipe.js`, `showNrMsg()`) setzen
+  ihren Live-Region-Text ohne vorheriges Leeren (WCAG 4.1.3)~~ — **bereits
+  erledigt in v3.42.0** (Clear-then-delayed-set-Fix mit Generation-Zähler, s.
+  Abschnitt „Gebündelter Accessibility-Zyklus (v3.42.0)", Punkt 1, oben). Dieser
+  Backlog-Eintrag war seither versehentlich nicht als erledigt markiert —
+  bei einem gezielten Verifikations-Durchlauf (2026-07-21, Auftrag „gebündelter
+  Nebenbefund-Zyklus") nachträglich korrigiert (Code seit v3.42.0 unverändert,
+  per Codelesung + Git-History bestätigt: `git log -- js/share.js js/newrecipe.js`
+  zeigt keinen Commit nach v3.42.0). Reine Dokumentationskorrektur, kein
+  App-Versionssprung nötig (kein Code/Asset geändert).
 - ~~Zutaten-Info je Pizza im Pizza-Party-Bereich~~ — **erledigt in v3.29.0** (kein
   Backlog-Punkt, direkter Nutzerauftrag per `/define-feature`; s. Abschnitt
   „Zutaten-Info je Pizza im Pizza-Party-Bereich (v3.29.0)" oben).
 - ~~Pizza-Party zurücksetzen~~ — **erledigt in v3.30.0** (kein Backlog-Punkt,
   direkter Nutzerauftrag per `/define-feature`; s. Abschnitt „Pizza-Party
   zurücksetzen (v3.30.0)" oben).
-- Nebenbefund aus dem v3.30.0-Accessibility-Audit (nicht behoben, außerhalb des
-  angefragten Scopes): dieselbe `<details>`-zugeklappt-Problematik (eine
-  Live-Region in einer standardmäßig eingeklappten Mobil-Akkordeon-Karte wird dort
-  nicht vom Screenreader vorgelesen) betrifft vermutlich auch das bestehende
-  `#partyCreateLiveMsg` (Karte „Eigene Pizza anlegen") sowie `#nrLiveMsg`
-  (Formular „Neues Rezept anlegen") — beim nächsten Accessibility-Durchlauf über
-  die Mobil-Formulare mit prüfen.
+- ~~Nebenbefund aus dem v3.30.0-Accessibility-Audit: dieselbe
+  `<details>`-zugeklappt-Problematik betrifft vermutlich auch `#partyCreateLiveMsg`
+  (Karte „Eigene Pizza anlegen") sowie `#nrLiveMsg` (Formular „Neues Rezept
+  anlegen")~~ — **bereits geprüft in v3.42.0** (s. Abschnitt „Gebündelter
+  Accessibility-Zyklus (v3.42.0)", Punkt 2, oben): für beide genannten IDs
+  Fehlalarm — ihr jeweils einziger Trigger-Button liegt in derselben
+  `<details>`-Karte wie die Live-Region selbst (Karte muss beim Klicken
+  zwangsläufig offen sein, kein Cross-Card-Fall). Der einzige damals gefundene
+  echte Cross-Card-Bug betraf einen anderen Fall (Pizza-Löschen meldete über die
+  falsche, ggf. zugeklappte Karte) und wurde behoben. Dieser Backlog-Eintrag war
+  seither versehentlich nicht als erledigt markiert — beim selben Verifikations-
+  Durchlauf (2026-07-21) nachträglich korrigiert (HTML-Struktur in
+  `pizza-rechner-mobile.html` seit v3.42.0 unverändert, per Codelesung
+  bestätigt: `#nrLiveMsg` liegt zwischen `#nrCreateBtn` und dem schließenden
+  `</details>` derselben Karte, `#partyCreateLiveMsg` analog bei
+  `#partyCreateBtn`). Reine Dokumentationskorrektur, kein App-Versionssprung
+  nötig.
 - ~~Desktop-Untertitel entfernen (Header-Tagline + Footer-Beschreibungszeilen, Angleichung an Mobil)~~
   — **erledigt in v3.30.1** (kein Backlog-Punkt, direkter Nutzerauftrag; s.
   Abschnitt „Desktop-Untertitel entfernt (v3.30.1)" oben).
