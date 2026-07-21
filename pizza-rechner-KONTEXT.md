@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-21 · Aktuelle Version: v3.48.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-21 · Aktuelle Version: v3.49.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,65 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Bugfixes: Eismenge bei Vorteig & fehlende Zucker-Zeile in der Einkaufsliste (v3.48.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Kleinkorrekturen: Versionsnummer im Menü nachgezogen & KONTEXT.md-Schnellreferenz aktualisiert (v3.49.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Zwei weitere Funde aus demselben separaten, rein lesenden Architektur-/Bug-Review (Fable-Modell),
+das bereits die v3.48.0-Bugfixes lieferte. Beide klein/eindeutig, kein `/define-feature` nötig,
+direkt umgesetzt.
+
+**B3 (Prio 2) — Sichtbare Versionsnummer im Menü nicht mitgezogen:** `pizza-rechner.html`,
+`pizza-rechner-mobile.html` und `pizza-rechner-mobile-standalone.html` zeigten trotz zwei
+Releases seither (v3.47.0 Dunkelmodus, v3.48.0 Bugfixes) noch `v3.46.0` im
+`<span class="nav-version" id="appVersion">` — der Text war beim Versionssprung schlicht
+vergessen worden. **Fix:** Text in allen drei Dateien auf `v3.49.0` gezogen (Desktop + Mobil
+händisch, Standalone automatisch über `python build-mobile-standalone.py`, da sie aus
+`pizza-rechner-mobile.html` gebaut wird). Gegengeprüft: `grep` auf `id="appVersion"` in allen
+drei Dateien liefert übereinstimmend `v3.49.0`. `?v=` in beiden Quell-HTML-Dateien ebenfalls auf
+`3.49.0` gezogen (war zuvor schon korrekt bei `3.48.0`, folgt jetzt derselben Version).
+
+**B4 (Prio 3) — KONTEXT.md-Schnellreferenz „Wichtige Berechnungs-Details" veraltet:** reine
+Doku-Korrektur, kein Code betroffen. Vier Stellen in den Abschnitten „Dateistruktur", „Wichtige
+Berechnungs-Details" und „Entwicklungsweise / Mitarbeit" korrigiert:
+- DDT-Formel stand noch als `wT = ddt×3 − room − room − friction` (Mehltemp = Raumtemp
+  angenommen) — das war seit **v3.20.0** überholt, seither ist Mehltemperatur ein eigener Regler
+  (`flourTemp`). Jetzt: `wT = ddt×3 − room − flourTemp − friction`. Der ausführliche
+  v3.20.0-Abschnitt weiter oben in derselben Datei beschrieb es bereits korrekt — nur diese
+  Kompakt-Referenz widersprach dem Code.
+- „293 Prüfungen in 16 Kategorien" (Dateistruktur-Dateibaum) → **605 Prüfungen in 24
+  Kategorien** (per Headless-Edge-Dump von `tests/test.html` verifizierter Ist-Stand vor diesem
+  Zyklus). Dieselbe veraltete Zahl in der „Entwicklungsweise"-Sektion „Tests:" bekam einen
+  klarstellenden Zusatz statt einer stillschweigenden Umschreibung: die ausführliche Prosa dort
+  beschreibt weiterhin explizit den historischen Aufbau bis v3.12.0 (293 Prüfungen), mit einem
+  Verweis, dass die späteren Kategorien 17–24 in der Versions-Historie dokumentiert sind statt
+  hier erneut ausformuliert zu werden — verhindert, dass „605 Prüfungen in 24 Kategorien" gefolgt
+  von einer Beschreibung mit nur 16 Kategorien widersprüchlich wirkt.
+- Dateibaum zeigte `pizza-rechner.html ... (?v=3.5.0)` als veralteten Beispielwert im Kommentar
+  → auf `?v=3.49.0` gezogen.
+- „Sichtbare Versionsnummer (seit v3.7.1): Im `<footer>`" → korrigiert auf „seit v3.46.0 im Menü
+  (`.nav-panel`)" statt Footer, inkl. Hinweis, bei jedem Versionssprung alle drei HTML-Dateien
+  gegenzuprüfen (nicht nur die beiden Quelldateien).
+
+**Nebenbefund (nicht behoben, außerhalb des angefragten Scopes):** die „Ladereihenfolge"-Zeile
+direkt unter dem Dateistruktur-Dateibaum (`dom → state → flour → calc → schedule → guide → timer
+→ ui → print → presets → storage → main`) und der Dateibaum selbst nennen weder `i18n.js`,
+`settings.js`, `theme.js`, `newrecipe.js`, `share.js`, `party.js`, `glossary.js` noch `pdf.js` —
+alle acht existieren längst (s. `<script>`-Tags in `pizza-rechner.html`), wurden aber nie in
+diese Übersicht nachgetragen. Größerer Umfang als B3/B4 (vollständige Dateibaum-Überarbeitung),
+daher hier nur dokumentiert statt im selben Zyklus mitgezogen — Kandidat für einen künftigen
+reinen Doku-Pflege-Zyklus.
+
+**Härten:** keine Logik-/Markup-Änderung (nur Text-/Doku-Korrektur), daher kein
+`accessibility-expert`- oder `test-generator`-Durchlauf nötig. `tests/test.html` unverändert
+grün geprüft (605 Prüfungen), da B3/B4 keine der getesteten Dateien (`js/calc.js`,
+`js/schedule.js`, `js/guide.js`, `js/print.js`, `js/storage.js` usw.) berühren.
+
+**Geändert:** `pizza-rechner.html`, `pizza-rechner-mobile.html`, `pizza-rechner-KONTEXT.md`.
+`?v=` auf `3.49.0` gezogen (Desktop + Mobil, alle `<link>`/`<script>`-Tags), `appVersion`-Text in
+allen drei HTML-Dateien auf `v3.49.0`. `pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`). `Versionen/v3.49.0 - Versionsnummer im Menue nachgezogen
+und KONTEXT-Schnellreferenz aktualisiert/` enthält den vollständigen Schnappschuss.
+
+## Bugfixes: Eismenge bei Vorteig & fehlende Zucker-Zeile in der Einkaufsliste (v3.48.0)
 
 Direkter Nutzerauftrag (kein `/define-feature`, kein Backlog-Punkt) — zwei klar diagnostizierte
 Bugfixes aus einem separaten, rein lesenden Architektur-/Bug-Review (Fable-Modell). Beide
@@ -4130,7 +4188,7 @@ lokal per Doppelklick genutzt (kein Vorteil durch Pages dort).
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.5.0)
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.49.0)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
@@ -4152,7 +4210,7 @@ js/storage.js        PZ.save()/PZ.load() + Mehrfach-Rezepte (saveAsNew/renameAct
                      loadRecipe/listRecipes), localStorage-Format {recipes[],activeId}, migriert
                      alten Einzel-Slot-Stand automatisch
 js/main.js           Start: Speichern-Button, Rezept-Auswahl/-Buttons, load(), applyMethod(), calc()
-tests/test.html      293 Prüfungen in 16 Kategorien (Doppelklick, kein Server)
+tests/test.html      605 Prüfungen in 24 Kategorien (Doppelklick, kein Server)
 README.md            kurzer Einstieg
 ```
 
@@ -4161,16 +4219,19 @@ timer → ui → print → presets → storage → main. Jedes Modul ist eine II
 
 **Cache-Busting:** CSS/JS werden mit `?v=3.13.0` geladen. **Bei jeder neuen Version mitziehen.**
 
-**Sichtbare Versionsnummer (seit v3.7.1):** Im `<footer>` beider HTML-Dateien (Desktop +
-Mobil, identisch) steht `<span id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine
+**Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
+Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
+`<span class="nav-version" id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine
 JS-Logik dahinter. **Bei jedem Versionssprung von Hand mitziehen** (zusammen mit `?v=` und der
-Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
+Kontext-Datei — bei allen drei HTML-Dateien, also auch `pizza-rechner-mobile-standalone.html`
+nach dem Rebuild, gegenprüfen), sonst zeigt die Live-App die falsche Version an.
 
 ## Wichtige Berechnungs-Details
 
 - `calc()`: Mehl = total/(1+h+s+y+o); Öl = Mehl×o; Trockenhefe = Frischhefe × 1/3
 - Vorteig: `pYeast = yeast` (100 % in den Vorteig), `mYeast = 0`, **Öl → Hauptteig**; Poolish-Wasser immer 1:1
-- DDT: `wT = ddt×3 − room − room − friction` (Hand 3 °C, Maschine 6 °C; Mehltemp = Raumtemp angenommen)
+- DDT: `wT = ddt×3 − room − flourTemp − friction` (Hand 3 °C, Maschine 6 °C; Mehltemp seit
+  v3.20.0 ein eigener Regler, Default = Raumtemp, danach unabhängig änderbar)
 - Eis: Energiebilanz `x = M·c·(Ttap−wT) / (Lf + c·wT + c·(Ttap−wT))`, c=4,18, Lf=334
 - Schedule-Schwellen (yeast %): ≥1,2 Schnell · ≥0,5 Mittel · ≥0,18 ~24 h · ≥0,08 ~48 h · sonst 72 h+
 - Zeitplan: `totalMin` = Summe Step-Dauern; Ziel-Modus rechnet rückwärts; `back:50` beim Vorheizen
@@ -4193,7 +4254,12 @@ Kontext-Datei), sonst zeigt die Live-App die falsche Version an.
 - **Versionen-Workflow (Pflicht bei jeder Änderung):** kompletten lauffähigen Stand nach
   `Versionen/vX.Y.Z - [Beschreibung]/` kopieren (html, index, css/, js/, README; tests/ optional).
   SemVer: Patch=Fix, Minor=Feature, Major=Umbau. `?v=` in der HTML mitziehen.
-- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **293 Prüfungen** in 16 Kategorien:
+- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 605 Prüfungen in
+  24 Kategorien** (s. Dateistruktur oben). Die folgende Beschreibung dokumentiert den Aufbau der
+  ursprünglichen 16 Kategorien bis v3.12.0 (293 Prüfungen); die seither hinzugekommenen Kategorien
+  17–24 (Teilen-Link, Feature-Flags/Einstellungen, Zucker/New-York-Style, Rezepte-Backup,
+  PDF-Export, Pizza-Party-Planer, Sprachversion DE/EN, Dunkelmodus) sind jeweils im zugehörigen
+  Abschnitt der Versions-Historie unten beschrieben, nicht hier nochmal ausbuchstabiert:
   Bäckerprozente, DDT/Eis, Vorteig-Aufteilung (inkl. Klemm-Grenzfälle exakt an/über der Grenze,
   auch für Biga wenn `bhyd > hyd`), Trockenhefe, Schedule-Schwellen (beide coldStage-Varianten),
   Mehl-Warnung (inkl. Vorteig-Reifezeit + exakte hydMin/hydMax-Grenzwerte), Backzeit-Skalierung,
@@ -4895,11 +4961,23 @@ Keine Code-Änderung durch den Audit nötig.
   fehlte in der Einkaufsliste~~ — **erledigt in v3.48.0** (kein Backlog-Punkt, direkter
   Nutzerauftrag aus einem separaten Bug-Review; s. Abschnitt „Bugfixes: Eismenge bei
   Vorteig & fehlende Zucker-Zeile in der Einkaufsliste (v3.48.0)" oben).
+- ~~B3: sichtbare Versionsnummer im Menü nicht mitgezogen (blieb bei v3.46.0 trotz
+  zweier weiterer Releases); B4: KONTEXT.md-Schnellreferenz „Wichtige
+  Berechnungs-Details" veraltet (DDT-Formel, Prüfungs-Anzahl, Beispiel-`?v=`,
+  Footer- statt Menü-Hinweis)~~ — **erledigt in v3.49.0** (kein Backlog-Punkt, direkter
+  Nutzerauftrag aus demselben separaten Bug-Review wie v3.48.0; s. Abschnitt
+  „Kleinkorrekturen: Versionsnummer im Menü nachgezogen & KONTEXT.md-Schnellreferenz
+  aktualisiert (v3.49.0)" oben). **Neuer Nebenbefund dabei:** der Dateibaum + die
+  „Ladereihenfolge"-Zeile im Abschnitt „Dateistruktur" nennen 8 längst existierende
+  Module nicht (`i18n.js`, `settings.js`, `theme.js`, `newrecipe.js`, `share.js`,
+  `party.js`, `glossary.js`, `pdf.js`) — Kandidat für einen künftigen reinen
+  Doku-Pflege-Zyklus (größerer Umfang als die reinen B3/B4-Korrekturen).
 
-**Stand v3.48.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.49.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen,
-vollständig zurückgebaut, keine offene Frage mehr). Keine Warteschlange mehr offen —
-für den nächsten Zyklus braucht es wieder frisches Brainstorming in Phase 1 (neue
+vollständig zurückgebaut, keine offene Frage mehr). Keine Warteschlange mehr offen außer
+dem oben genannten Doku-Nebenbefund (veralteter Dateibaum) — für den nächsten
+inhaltlichen Zyklus braucht es wieder frisches Brainstorming in Phase 1 (neue
 Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes) statt eines vorgegebenen
 Auftrags.
 
