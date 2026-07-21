@@ -22,10 +22,13 @@
     localStorage.setItem(KEY, JSON.stringify(data));
   }
 
-  // Erkennt das alte Format (nackter state: hat z.B. "balls"/"hyd", aber kein "recipes")
+  // Erkennt das alte Format (nackter state: hat z.B. "balls"/"hyd", aber kein "recipes").
+  // Seit v3.59.0: "sieht aus wie ein state" kommt aus der gemeinsamen PZ.looksLikeState()
+  // (js/state.js), nur die legacy-spezifische Zusatzbedingung (kein "recipes"-Array)
+  // bleibt hier — vorher komplett eigene Kopie, identisch zu looksLikeState() in
+  // js/share.js bzw. isValidRecipeEntry() weiter unten in dieser Datei.
   function isLegacyState(o) {
-    return o && typeof o === 'object' && !Array.isArray(o.recipes) &&
-      (o.balls != null || o.hyd != null);
+    return PZ.looksLikeState(o) && !Array.isArray(o.recipes);
   }
 
   function makeId() {
@@ -230,14 +233,13 @@
   }
 
   // Ein Eintrag zählt nur als importierbar, wenn er wie ein echtes Rezept
-  // aussieht (state-Objekt mit mind. einem der Kern-Felder) — analog zu
-  // looksLikeState() in js/share.js. Verhindert, dass eine fremde/kaputte
-  // Datei stille Datenmüll-Rezepte anlegt, die applyState() später crashen
-  // lassen könnten.
+  // aussieht (state-Objekt mit mind. einem der Kern-Felder) — verhindert, dass
+  // eine fremde/kaputte Datei stille Datenmüll-Rezepte anlegt, die applyState()
+  // später crashen lassen könnten. Seit v3.59.0 gemeinsame Prüfung
+  // PZ.looksLikeState() (js/state.js) für den state-Teil, vorher eigene Kopie
+  // hier (identisch zu looksLikeState() in js/share.js bzw. isLegacyState() oben).
   function isValidRecipeEntry(r) {
-    const s = r && r.state;
-    return !!r && typeof r === 'object' && !!s && typeof s === 'object' &&
-      !Array.isArray(s) && (s.balls != null || s.hyd != null);
+    return !!r && typeof r === 'object' && PZ.looksLikeState(r.state);
   }
 
   // Findet einen noch nicht vergebenen Namen für einen importierten Eintrag,

@@ -890,7 +890,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.58.0</span>
+    <span class="nav-version" id="appVersion">v3.59.0</span>
   </div>
 </nav>
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
@@ -1703,6 +1703,24 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     timeMode: 'start', timeISO: '',
     flour: 'caputo_pizzeria',
     coldStage: 'balls'   // Kühlschrank-Phase: 'balls' = als Teiglinge (praktisch), 'bulk' = im Stück (klassisch)
+  };
+
+  // PZ.looksLikeState(o) — gemeinsame State-Plausibilisierung (v3.59.0, vorher
+  // dreifach fast identisch dupliziert: looksLikeState() in js/share.js,
+  // isLegacyState()/isValidRecipeEntry() in js/storage.js — alle drei prüften
+  // dasselbe Kriterium unabhängig voneinander). Prüft, ob ein beliebiges Objekt
+  // "wie ein PZ.state aussieht" (kein Array, mind. eines der beiden Kernfelder
+  // balls/hyd vorhanden) — verhindert, dass ein fremdes/zufälliges/leeres JSON aus
+  // einem Teilen-Link oder einer Backup-Datei unbemerkt als gültiger Rezept-State
+  // übernommen wird bzw. still Datenmüll-Rezepte anlegt, die applyState() später
+  // crashen lassen könnten. Bewusst EIN zentraler Ort für dieses Kriterium — auch
+  // als natürlicher Ansatzpunkt für künftige Typ-Normalisierung/Schema-Migrations-
+  // fragen bei Teilen-Link + Import (analog zum kürzlich behobenen
+  // knead-Typinkonsistenz-Fall, s. pizza-rechner-KONTEXT.md v3.50.0) — hier NICHT
+  // umgesetzt, reine Konsolidierung ohne neue Schema-Migration.
+  PZ.looksLikeState = function (o) {
+    return !!o && typeof o === 'object' && !Array.isArray(o) &&
+      (o.balls != null || o.hyd != null);
   };
 })(window);
 
@@ -5118,10 +5136,13 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     localStorage.setItem(KEY, JSON.stringify(data));
   }
 
-  // Erkennt das alte Format (nackter state: hat z.B. "balls"/"hyd", aber kein "recipes")
+  // Erkennt das alte Format (nackter state: hat z.B. "balls"/"hyd", aber kein "recipes").
+  // Seit v3.59.0: "sieht aus wie ein state" kommt aus der gemeinsamen PZ.looksLikeState()
+  // (js/state.js), nur die legacy-spezifische Zusatzbedingung (kein "recipes"-Array)
+  // bleibt hier — vorher komplett eigene Kopie, identisch zu looksLikeState() in
+  // js/share.js bzw. isValidRecipeEntry() weiter unten in dieser Datei.
   function isLegacyState(o) {
-    return o && typeof o === 'object' && !Array.isArray(o.recipes) &&
-      (o.balls != null || o.hyd != null);
+    return PZ.looksLikeState(o) && !Array.isArray(o.recipes);
   }
 
   function makeId() {
@@ -5326,14 +5347,13 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   }
 
   // Ein Eintrag zählt nur als importierbar, wenn er wie ein echtes Rezept
-  // aussieht (state-Objekt mit mind. einem der Kern-Felder) — analog zu
-  // looksLikeState() in js/share.js. Verhindert, dass eine fremde/kaputte
-  // Datei stille Datenmüll-Rezepte anlegt, die applyState() später crashen
-  // lassen könnten.
+  // aussieht (state-Objekt mit mind. einem der Kern-Felder) — verhindert, dass
+  // eine fremde/kaputte Datei stille Datenmüll-Rezepte anlegt, die applyState()
+  // später crashen lassen könnten. Seit v3.59.0 gemeinsame Prüfung
+  // PZ.looksLikeState() (js/state.js) für den state-Teil, vorher eigene Kopie
+  // hier (identisch zu looksLikeState() in js/share.js bzw. isLegacyState() oben).
   function isValidRecipeEntry(r) {
-    const s = r && r.state;
-    return !!r && typeof r === 'object' && !!s && typeof s === 'object' &&
-      !Array.isArray(s) && (s.balls != null || s.hyd != null);
+    return !!r && typeof r === 'object' && PZ.looksLikeState(r.state);
   }
 
   // Findet einen noch nicht vergebenen Namen für einen importierten Eintrag,
@@ -5686,13 +5706,6 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   PZ.encodeShareState = encodeState;
   PZ.decodeShareState = decodeState;
 
-  // Nur Objekte, die auch wirklich wie ein PZ.state aussehen, gelten als plausibel —
-  // verhindert, dass ein fremdes/zufälliges/leeres JSON unbemerkt übernommen wird.
-  function looksLikeState(o) {
-    return !!o && typeof o === 'object' && !Array.isArray(o) &&
-      (o.balls != null || o.hyd != null);
-  }
-
   // Baut den vollständigen, teilbaren Link (aktuelle Seite + kodierter State).
   function buildShareLink() {
     const url = new URL(location.href);
@@ -5713,7 +5726,12 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
       const raw = params.get(PARAM);
       if (!raw) return false;
       const state = decodeState(raw);
-      if (!looksLikeState(state)) return false;
+      // Nur Objekte, die auch wirklich wie ein PZ.state aussehen, gelten als plausibel —
+      // verhindert, dass ein fremdes/zufälliges/leeres JSON unbemerkt übernommen wird.
+      // Seit v3.59.0 gemeinsame Prüfung PZ.looksLikeState() (js/state.js), vorher
+      // eigene Kopie hier (identisch zu isLegacyState()/isValidRecipeEntry() in
+      // js/storage.js).
+      if (!PZ.looksLikeState(state)) return false;
       PZ.applyState(state);
       // Parameter aus der Adressleiste entfernen (ohne neuen History-Eintrag) —
       // ein späterer Reload/eigenes Speichern soll nicht ungewollt wieder auf den

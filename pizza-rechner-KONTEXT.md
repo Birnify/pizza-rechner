@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-21 · Aktuelle Version: v3.58.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-21 · Aktuelle Version: v3.59.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -171,7 +171,76 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Gemeinsamer Live-Region-Helfer PZ.announce() (v3.58.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Gemeinsame State-Plausibilisierung PZ.looksLikeState() (v3.59.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+
+Per `/define-feature` bestätigt — **fünftes und letztes** von fünf Struktur-
+Refactorings aus demselben Fable-Architektur-Review (S1–S6, S5 Nav-Modul bereits in
+v3.54.0 erledigt): 1) i18n-Split (v3.55.0), 2) Widget-Fabrik (v3.56.0), 3) Rechenkern/
+Renderer-Trennung calc.js (v3.57.0), 4) `PZ.announce()`-Helfer (v3.58.0), 5)
+`PZ.looksLikeState()` (dieser Abschnitt). **Mit diesem Zyklus ist der komplette
+Fünferauftrag abgeschlossen** — reines Wartbarkeits-Refactoring **ohne Änderung des
+Validierungsverhaltens selbst, keine neue Schema-Migration** (exakt wie beauftragt).
+
+**Motivation:** dieselbe Prüfung „sieht dieses Objekt wie ein gültiger `PZ.state`
+aus" (kein Array, mindestens eines der Kernfelder `balls`/`hyd` vorhanden) existierte
+dreifach unabhängig: `looksLikeState()` in `js/share.js` (Teilen-Link), `isLegacyState()`
+in `js/storage.js` (alte Einzel-Slot-Migration), `isValidRecipeEntry()` in
+`js/storage.js` (Rezepte-Backup-Import) — kein bisher fehlender zentraler Ort für
+künftige Typ-Normalisierung/Schema-Migrationsfragen bei Teilen-Link + Import (analog
+zum kürzlich behobenen `knead`-Typinkonsistenz-Fall, v3.50.0).
+
+**Neue gemeinsame Funktion `PZ.looksLikeState(o)`** in `js/state.js` (natürlicher
+Ort — state.js definiert bereits die Form von `PZ.state` selbst): identisches
+Kriterium wie vorher (`!!o && typeof o === 'object' && !Array.isArray(o) &&
+(o.balls != null || o.hyd != null)`), 1:1 aus `js/share.js`s bisheriger Version
+übernommen.
+
+**Alle drei Aufrufer darauf umgestellt:**
+- `js/share.js` — die lokale `looksLikeState()`-Funktion komplett entfernt (reiner
+  Passthrough ohne eigene Zusatzlogik, kein Wrapper nötig), Aufrufstelle direkt auf
+  `PZ.looksLikeState(state)` umgestellt.
+- `js/storage.js` `isLegacyState(o)` — behält seine legacy-spezifische
+  Zusatzbedingung (`!Array.isArray(o.recipes)`, unterscheidet altes Einzel-Slot- vom
+  neuen `{recipes:[...],activeId}`-Format), nutzt aber `PZ.looksLikeState(o)` für den
+  „sieht wie state aus"-Teil: `PZ.looksLikeState(o) && !Array.isArray(o.recipes)`.
+- `js/storage.js` `isValidRecipeEntry(r)` — vereinfacht auf `!!r && typeof r ===
+  'object' && PZ.looksLikeState(r.state)`.
+- Geprüfte Äquivalenz: `PZ.looksLikeState` prüft zusätzlich `!Array.isArray(o)`
+  selbst (die alten `isLegacyState`/`isValidRecipeEntry`-Versionen taten das nicht
+  explizit für ihr jeweiliges Objekt) — ändert das Ergebnis für keinen realistischen
+  Input (ein Array ohne `.balls`/`.hyd`-Eigenschaften scheitert ohnehin am
+  Kernfeld-Check; `typeof [] === 'object'` in JS, Arrays wurden vorher also implizit
+  mitgeprüft, nur nicht explizit ausgeschlossen).
+
+**Härten:** keine neue UI/kein neues Markup (reine Funktions-Konsolidierung) — kein
+`accessibility-expert`-Durchlauf nötig.
+
+**Tests:** `tests/test.html` unverändert bei **614 Prüfungen**, alle grün — Sektion
+„16 · Speichern & Laden" (Legacy-Migration, korruptes JSON, Rezepte-Backup-Import) und
+„17 · Teilen-Link" (Rundreise, defensive Fehlerbehandlung) decken die konsolidierte
+Logik bereits ab und dienen hier als Regressionsanker wie vom Auftrag gefordert.
+Zusätzlich mit einem isolierten, temporären Headless-Edge-Test verifiziert (nie
+committet): `PZ.looksLikeState()` direkt mit acht Grenzfällen geprüft (`null`,
+`undefined`, Array, leeres Objekt, Objekt mit `balls`, Objekt mit `hyd`, String,
+Number) — alle 8/8 liefern das rechnerisch erwartete Ergebnis.
+
+**Geändert:** `js/state.js`, `js/share.js`, `js/storage.js`, `pizza-rechner-KONTEXT.md`.
+`?v=` auf `3.59.0` gezogen (Desktop + Mobil, alle `<link>`/`<script>`-Tags),
+`appVersion`-Text in allen drei HTML-Dateien auf `v3.59.0`.
+`pizza-rechner-mobile-standalone.html` neu gebaut. `Versionen/v3.59.0 -
+PZ-looksLikeState State-Plausibilisierung/` enthält den vollständigen Schnappschuss.
+
+**Fünferauftrag „Struktur-Refactorings aus dem Fable-Architektur-Review" komplett
+abgeschlossen** (S1–S6, S5 Nav-Modul separat in v3.54.0): i18n-Split (v3.55.0),
+Widget-Fabrik (v3.56.0), calc.js-Trennung (v3.57.0), `PZ.announce()` (v3.58.0),
+`PZ.looksLikeState()` (v3.59.0). Zwei dabei entdeckte, unabhängige Nebenbefunde bleiben
+offen fürs Backlog: (1) ob `js/newrecipe.js`s Zahlenfelder künftig ebenfalls das
+Zahlenfeld-Clamping wie `js/ui.js` bekommen sollen (eigene Produktentscheidung,
+v3.56.0), (2) der `flourTemp`-Legacy-Fallback in `js/storage.js` `applyState()` (v3.53.0,
+strukturell identisch zum bereits entfernten Zucker-/Öl-Fallback, aber nicht explizit
+bestätigt).
+
+## Gemeinsamer Live-Region-Helfer PZ.announce() (v3.58.0)
 
 Per `/define-feature` bestätigt — viertes von fünf Struktur-Refactorings aus demselben
 Fable-Architektur-Review, in fester Reihenfolge: 1) i18n-Split (v3.55.0), 2)
@@ -4806,7 +4875,7 @@ lokal per Doppelklick genutzt (kein Vorteil durch Pages dort).
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.58.0)
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.59.0)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
@@ -4817,6 +4886,8 @@ js/dom.js            $-Helfer, legt globalen Namespace window.PZ an + PZ.announc
                      (v3.58.0, gemeinsamer Live-Region-Helfer — Clear-then-delayed-set mit
                      Generation-Zähler je Element-ID, ersetzt 7+ frühere Einzelkopien)
 js/state.js          PZ.state (inkl. flour, oil, coldStage, prefMature, knead) + PZ.FRESH_TO_DRY (1/3)
+                     + PZ.looksLikeState(o) (v3.59.0, gemeinsame State-Plausibilisierung — ersetzt
+                     looksLikeState()/isLegacyState()/isValidRecipeEntry() aus share.js/storage.js)
 js/i18n-dict.js      Wörterbuch-INHALT (v3.55.0, aus js/i18n.js ausgelagert): ~569 add(key,de,en)-
                      Einträge, reine Daten. Lädt VOR js/i18n.js, übergibt sein DICT per
                      PZ._I18N_DICT-Handoff
@@ -4877,7 +4948,7 @@ share → party → glossary → main → nav. Jedes Modul ist eine IIFE, kommun
 `flour`/`ui`/`newrecipe` geladen werden** (liefert PZ.makeLink/makeSeg/makePrefStages/
 fillFlourSelect, die diese drei Module beim eigenen Laden direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.58.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.59.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
@@ -5707,13 +5778,26 @@ Keine Code-Änderung durch den Audit nötig.
   identisch robust wie die übrigen Stellen. Gezielter `accessibility-expert`-
   Durchlauf (wie beauftragt) bestätigt alles korrekt. **Noch offen, letzter
   Punkt des Fünferauftrags:** 5) `PZ.looksLikeState()`.
+- ~~Gemeinsame State-Plausibilisierung PZ.looksLikeState() (Struktur-Refactoring
+  5 von 5, S6)~~ — **erledigt in v3.59.0** (per `/define-feature` bestätigt; s.
+  Abschnitt „Gemeinsame State-Plausibilisierung PZ.looksLikeState() (v3.59.0)"
+  oben). Neues `PZ.looksLikeState(o)` in `js/state.js`, ersetzt drei unabhängige
+  Kopien (`looksLikeState()` in `js/share.js`, `isLegacyState()`/
+  `isValidRecipeEntry()` in `js/storage.js`). **Damit ist der komplette
+  Fünferauftrag „Struktur-Refactorings aus dem Fable-Architektur-Review"
+  abgeschlossen** (S1–S6, S5 Nav-Modul separat in v3.54.0 erledigt).
 
-**Stand v3.58.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
-oben, bis auf den `flourTemp`-Fallback-Nebenbefund aus v3.53.0 und den
-newrecipe-Clamping-Nebenbefund aus v3.56.0). Der Bring!-Deeplink-Testaufbau ist
-abschließend geklärt (verworfen, vollständig zurückgebaut, keine offene Frage mehr).
-Der letzte Punkt desselben Fünferauftrags (`PZ.looksLikeState()`) ist direkt im
-Anschluss in Arbeit — s. ggf. neuere Version oben, falls bereits committet.
+**Stand v3.59.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen,
+vollständig zurückgebaut, keine offene Frage mehr). Zwei kleine Nebenbefunde aus dem
+Struktur-Refactoring-Fünferauftrag bleiben als offene, unbestätigte Kandidaten für
+einen künftigen Zyklus: (1) `flourTemp`-Legacy-Fallback in `js/storage.js`
+`applyState()` (v3.53.0, strukturell identisch zum bereits entfernten Zucker-/
+Öl-Fallback, aber nicht explizit bestätigt), (2) ob `js/newrecipe.js`s Zahlenfelder
+künftig ebenfalls das Zahlenfeld-Clamping wie `js/ui.js` bekommen sollen (v3.56.0,
+eigene Produktentscheidung). Keine Warteschlange mehr offen — für den nächsten Zyklus
+braucht es wieder frisches Brainstorming in Phase 1 (neue Nutzer-Ideen, Design-/
+Layout-Überarbeitungen, Bugfixes) statt eines vorgegebenen Auftrags.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

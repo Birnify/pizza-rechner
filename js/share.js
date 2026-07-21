@@ -36,13 +36,6 @@
   PZ.encodeShareState = encodeState;
   PZ.decodeShareState = decodeState;
 
-  // Nur Objekte, die auch wirklich wie ein PZ.state aussehen, gelten als plausibel —
-  // verhindert, dass ein fremdes/zufälliges/leeres JSON unbemerkt übernommen wird.
-  function looksLikeState(o) {
-    return !!o && typeof o === 'object' && !Array.isArray(o) &&
-      (o.balls != null || o.hyd != null);
-  }
-
   // Baut den vollständigen, teilbaren Link (aktuelle Seite + kodierter State).
   function buildShareLink() {
     const url = new URL(location.href);
@@ -63,7 +56,12 @@
       const raw = params.get(PARAM);
       if (!raw) return false;
       const state = decodeState(raw);
-      if (!looksLikeState(state)) return false;
+      // Nur Objekte, die auch wirklich wie ein PZ.state aussehen, gelten als plausibel —
+      // verhindert, dass ein fremdes/zufälliges/leeres JSON unbemerkt übernommen wird.
+      // Seit v3.59.0 gemeinsame Prüfung PZ.looksLikeState() (js/state.js), vorher
+      // eigene Kopie hier (identisch zu isLegacyState()/isValidRecipeEntry() in
+      // js/storage.js).
+      if (!PZ.looksLikeState(state)) return false;
       PZ.applyState(state);
       // Parameter aus der Adressleiste entfernen (ohne neuen History-Eintrag) —
       // ein späterer Reload/eigenes Speichern soll nicht ungewollt wieder auf den
