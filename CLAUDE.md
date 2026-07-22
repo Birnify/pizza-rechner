@@ -68,6 +68,23 @@ bekommen. Etablierter Ablauf:
    Warteschlange starten (wie in Punkt 2 beschrieben).
 8. Wenn der Orchestrator meldet "Warteschlange leer, neuer Zyklus?": auf die nächste
    Nutzeranweisung warten, nicht selbst neue Arbeit erfinden.
+9. **Spezialisten-Anforderungen des Orchestrators bedienen (Sub-Agenten-Relay):** Der
+   Orchestrator läuft als Hintergrund-Subagent und kann selbst **keine** weiteren
+   Sub-Agenten spawnen (verschachteltes Spawnen ist in dieser Umgebung gesperrt, ein
+   Subagent hat kein nutzbares `Agent`-Tool). Damit die echten Spezialisten
+   (`test-generator`, `accessibility-expert`, `mobile-optimizer`, `performance-profiler`)
+   trotzdem laufen und nicht nur simuliert werden, fordert er sie über den Hauptagenten an:
+   Schickt er dir eine Nachricht, die mit `SUBAGENT-ANFRAGE:` beginnt, dann spawne den
+   genannten Spezialisten selbst per `Agent`-Tool (`run_in_background: false`, mit dem im
+   Auftrag genannten Fokus und den Dateipfaden), warte sein Ergebnis ab und schicke es per
+   `SendMessage` an den Orchestrator zurück, wobei dein Nachrichtentext mit
+   `SUBAGENT-ERGEBNIS:` beginnt und die vollständige Befundliste enthält. Das ist eine
+   interne Steuernachricht, **keine** Nutzer-Rückfrage: bediene sie autonom, ohne den
+   Nutzer zu fragen (auch während er weg ist), und leite den Befund dem Nutzer anschließend
+   nur informativ weiter. Ist ein Spezialist nicht verfügbar oder schlägt fehl, melde das
+   ehrlich per `SUBAGENT-ERGEBNIS:` zurück, statt ihn zu erfinden. Da der Hauptagent (nicht
+   verschachtelt) sehr wohl spawnen kann, laufen so die echten Spezialisten, ohne dass der
+   asynchrone Hintergrundbetrieb des Orchestrators verloren geht.
 
 ## Wann inline statt über den Orchestrator
 
