@@ -531,6 +531,20 @@
   add('option.teglia', 'Teglia / Blech · hohe Hydration 75 %', 'Teglia / Pan · high hydration 75%');
   add('option.newyorkStyle', 'New York Style · Zucker &amp; Öl, ~26 h', 'New York Style · sugar &amp; oil, ~26 h');
 
+  // -- Card: Einfacher Modus (v3.62.0) -------------------------------------------------
+  // Reduzierte Karte, die im Einfachen Modus die 3 Kernfelder Anzahl-Teiglinge/
+  // Hefe-Art/Knetart aufnimmt (js/simplemode.js verschiebt die bestehenden Feld-
+  // Elemente per DOM-Reparenting hierher). Eigene Labels/Hints der 3 Felder selbst
+  // sind bereits unter card.basics/card.method/card.temp abgedeckt (s. u.) --
+  // hier nur Karten-Titel, Erklärtext und die beiden Umschalt-Buttons.
+  add('card.simple.title', 'Deine Einstellungen', 'Your settings');
+  add('hint.simpleMode', 'Für alle Details (Hydration, Salz, Vorteig-Verfahren, Temperaturen &amp; mehr) in den erweiterten Modus wechseln.',
+    'Switch to advanced mode for all the details (hydration, salt, pre-ferment method, temperatures &amp; more).');
+  add('btn.openAdvancedMode', 'Erweiterten Modus öffnen', 'Open advanced mode');
+  add('btn.openSimpleMode', 'Einfachen Modus aktivieren', 'Switch to simple mode');
+  add('simpleMode.announceSimple', 'Einfacher Modus aktiv.', 'Simple mode active.');
+  add('simpleMode.announceAdvanced', 'Erweiterter Modus aktiv.', 'Advanced mode active.');
+
   // -- Card: Grundeinstellungen ------------------------------------------------------
   add('card.basics.title', 'Grundeinstellungen', 'Basic settings');
   add('label.flour', 'Mehl', 'Flour');

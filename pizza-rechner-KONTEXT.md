@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-21 · Aktuelle Version: v3.61.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-22 · Aktuelle Version: v3.62.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -179,16 +179,18 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Zahlenfeld-Clamping auch in js/newrecipe.js (v3.61.0) = aktueller Stand — WICHTIG FÜR NÄCHSTE SESSION
+## Einfacher Modus für Presets (v3.62.0) = aktueller Stand
 
-Direkter Nutzerauftrag, „Punkt 2" eines zweiteiligen Auftrags (mit v3.60.0). `js/newrecipe.js`
-klemmt Zahlenfelder jetzt identisch zu `js/ui.js` (dieselbe `clampTo()`-Logik aus v3.51.0, per
-`PZ.makeLink({clamp:true})` in `js/widgets.js`) — vorher bewusst als Asymmetrie belassener
-Nebenbefund aus v3.56.0. Geändert: `js/newrecipe.js` (1 Zeile), `js/widgets.js` (Kommentar).
-Tests unverändert 614/614 (`newrecipe.js` hat keine eigene Testsektion, per isoliertem
-Headless-Aufbau verifiziert: 5/5 Klemm-Fälle korrekt). Damit ist der zweiteilige Auftrag
-(v3.60.0 + v3.61.0) abgeschlossen. **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`,
-Abschnitt „Zahlenfeld-Clamping auch in js/newrecipe.js (v3.61.0)".
+Direkter Nutzerauftrag (kein Backlog-Punkt): Rechner-Seite (Desktop + Mobil) zeigt
+standardmäßig nur 3 Kernparameter (Anzahl Teiglinge, Hefe-Art, Knetart) in einer neuen
+Karte „Deine Einstellungen"; Button „Erweiterten Modus öffnen" schaltet auf die volle
+klassische Ansicht (3 Karten) um, ein Gegenknopf zurück. Reiner Sicht-Schalter,
+unabhängig vom Preset-Status, persistiert per eigenem localStorage-Key `pizzaSimpleMode`
+(Default AN). Neues Modul `js/simplemode.js`: verschiebt die 3 bestehenden Feld-Elemente
+per DOM-Reparenting statt sie zu duplizieren — keine eigene State-Synchronisierung nötig.
+Tests unverändert 614/614 (Modul lädt bewusst nicht in `tests/test.html`, reines
+DOM-Wiring, per isoliertem Headless-Klicktest verifiziert). **Volle Details:**
+`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Einfacher Modus für Presets (v3.62.0)".
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -353,7 +355,7 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.59.0)
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.62.0)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
@@ -391,6 +393,9 @@ js/timer.js          PZ.wireTimers() — Gärzeit-Timer/Wecker je Schritt (Notif
                      Browser-APIs, die bewusst NICHT in tests/test.html geladen/unit-getestet werden
 js/ui.js             Slider/Segmente/Pills/Zeitplan; PZ.set, selectSeg, applyMethod, updateTimeLabel
                      (Slider/Segmente/Reife-Stufen seit v3.56.0 über js/widgets.js-Fabriken)
+js/simplemode.js     Einfacher Modus für Presets (v3.62.0): #controlsCol.mode-simple/.mode-advanced
+                     + DOM-Reparenting der 3 Kernfelder zwischen ihrer Original-Karte und der neuen
+                     Karte "Deine Einstellungen", Persistenz via localStorage-Key pizzaSimpleMode
 js/print.js          PZ.buildShoppingList() (Einkaufsliste aus PZ.R) + PZ.printShoppingList()/PZ.printGuide()
 js/pdf.js            PZ.downloadGuidePDF() — „Als PDF speichern" (v3.25.0), handgeschriebener
                      PDF-1.4-Generator ohne externe Bibliothek, teilt sich das Flag „shopping" mit print.js
@@ -410,23 +415,23 @@ js/main.js           Start: Speichern-Button, Rezept-Auswahl/-Buttons, load(), a
 js/nav.js            Gemeinsames Burgermenü-Navigations-Modul (v3.54.0, vorher zwei/drei duplizierte
                      Inline-Scripts): openNav/closeNav/activateView/announceView/focusView/gotoView +
                      Tab-Trap; läuft bewusst als letztes Script (nach main.js)
-tests/test.html      614 Prüfungen in 24 Kategorien (Doppelklick, kein Server) — lädt 16 der 23
+tests/test.html      614 Prüfungen in 24 Kategorien (Doppelklick, kein Server) — lädt 16 der 24
                      js/*-Module direkt (dom/state/i18n-dict/i18n/settings/theme/widgets/flour/
                      schedule/guide/calc/print/pdf/storage/share/party); ui.js, timer.js,
-                     presets.js, newrecipe.js, glossary.js, main.js, nav.js werden NICHT geladen
-                     (reines DOM-Wiring bzw. Browser-APIs) — einzelne Ausschnitte wie PZ.PRESETS
-                     werden bei Bedarf punktuell gestubbt
+                     presets.js, newrecipe.js, glossary.js, main.js, nav.js, simplemode.js werden
+                     NICHT geladen (reines DOM-Wiring bzw. Browser-APIs) — einzelne Ausschnitte wie
+                     PZ.PRESETS werden bei Bedarf punktuell gestubbt
 README.md            kurzer Einstieg
 ```
 
 **Ladereihenfolge** (Abhängigkeiten): dom → state → i18n-dict → i18n → settings → theme → widgets →
-flour → calc → schedule → guide → timer → ui → print → pdf → presets → storage → newrecipe →
-share → party → glossary → main → nav. Jedes Modul ist eine IIFE, kommuniziert nur über `window.PZ`.
+flour → calc → schedule → guide → timer → ui → simplemode → print → pdf → presets → storage →
+newrecipe → share → party → glossary → main → nav. Jedes Modul ist eine IIFE, kommuniziert nur über `window.PZ`.
 **`i18n-dict` MUSS vor `i18n` geladen werden** (Handoff über `PZ._I18N_DICT`); **`widgets` MUSS vor
 `flour`/`ui`/`newrecipe` geladen werden** (liefert PZ.makeLink/makeSeg/makePrefStages/
 fillFlourSelect, die diese drei Module beim eigenen Laden direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.59.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.62.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
@@ -999,7 +1004,12 @@ Keine Code-Änderung durch den Audit nötig.
   desselben zweiteiligen Auftrags; s. Abschnitt „Zahlenfeld-Clamping auch in
   js/newrecipe.js (v3.61.0)" oben).
 
-**Stand v3.61.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+- ~~Einfacher Modus für Presets (Rechner-Seite zeigt standardmäßig nur 3 Kernparameter
+  statt aller Felder)~~ — **erledigt in v3.62.0** (kein Backlog-Punkt, direkter
+  Nutzerauftrag mit Rückfrage-Runde; s. Abschnitt „Einfacher Modus für Presets
+  (v3.62.0)" oben).
+
+**Stand v3.62.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen, vollständig
 zurückgebaut, keine offene Frage mehr). Keine offenen Nebenbefunde/Kandidaten mehr aus
 früheren Zyklen — für den nächsten Zyklus braucht es wieder frisches Brainstorming in

@@ -8,6 +8,119 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Einfacher Modus für Presets (v3.62.0)
+
+Direkter Nutzerauftrag (kein Backlog-Punkt), Brainstorming-Phase mit Rückfrage-Runde:
+die Rechner-Seite (Desktop `pizza-rechner.html` + Mobil `pizza-rechner-mobile.html`)
+zeigte bei Preset-Nutzung immer alle Einstellungen auf einmal (3 Karten „Grundeinstellungen"
+/ „Methode & Hefe" / „Teigtemperatur & Eiswasser"), obwohl für reine Preset-Nutzung
+meist nur 3 Parameter tatsächlich angepasst werden: Anzahl Teiglinge, Hefe-Art, Knetart.
+
+**Vier Design-Entscheidungen per Rückfrage geklärt, bevor die Umsetzung begann:**
+1. Der Einfache Modus ist ein **reiner Sicht-Schalter**, unabhängig davon, ob im
+   Preset-Dropdown gerade ein Preset oder „Eigene Einstellung" aktiv ist (nicht an den
+   Preset-Status gekoppelt).
+2. **Layout:** eine einzelne neue Karte mit den 3 Feldern + Button „Erweiterten Modus
+   öffnen" ersetzt im Einfachen Modus optisch die 3 klassischen Karten; im Erweiterten
+   Modus erscheinen die 3 klassischen Karten vollständig, mit einem Gegenknopf
+   „Einfachen Modus aktivieren" oben, um zurückzuschalten. Die Preset-Auswahl-Karte
+   bleibt in beiden Modi immer sichtbar.
+3. Umsetzung auf **beiden Seiten** (Desktop + Mobil).
+4. „Hefe-Art" ist nur das Frisch/Trocken-Segment; die Hefemenge selbst bleibt im
+   Einfachen Modus versteckt und wird beim Umschalten der Hefeart automatisch per
+   bestehender `PZ.FRESH_TO_DRY`-Umrechnung mitgezogen — das ist bereits das
+   bestehende, unveränderte Verhalten des `yeastType`-Segments (`js/calc.js`
+   `calcCore()`: `if (state.yeastType === 'dry') yeast *= PZ.FRESH_TO_DRY`), keine
+   neue Logik nötig.
+
+**Technische Umsetzung — DOM-Reparenting statt Feld-Duplizierung:** Ein naheliegender,
+aber verworfener Ansatz wäre gewesen, die 3 Felder als eigene Kopie mit neuen IDs in der
+neuen Karte anzulegen und deren Wert mit dem Original zu synchronisieren (Klick auf die
+Kopie setzt den Original-State, und umgekehrt). Das hätte eine eigene Zwei-Wege-
+Synchronisierung gebraucht (Presets/Rezept-Laden kennen nur die Original-IDs, ein
+Preset-Wechsel hätte die Kopie nicht automatisch mitgezogen) — echtes Duplikat-/Drift-
+Risiko. Stattdessen verschiebt das neue Modul **`js/simplemode.js`** die 3
+**bestehenden** Feld-`<div>`s (`#ballsField`/`#yeastTypeField`/`#kneadField`, jeweils
+bereits vollständig über `js/ui.js`/`js/widgets.js` an `PZ.state` gebunden) per
+`appendChild()`/`insertBefore()` zwischen ihrer ursprünglichen Karte und der neuen Karte
+„Deine Einstellungen" hin und her — exakt EIN DOM-Knoten je Feld bleibt die einzige
+Quelle der Wahrheit, keine Synchronisierung nötig, Presets/Rezept-Laden funktionieren
+unverändert weiter (sie kennen nur die Original-IDs, die Position im DOM ist ihnen egal).
+Original-Elternknoten + folgendes Geschwister-Element werden beim ersten Verschieben
+einmalig gemerkt, damit „Erweiterten Modus öffnen" jedes Feld exakt an seine
+ursprüngliche Stelle zurückstellt statt nur ans Kartenende anzuhängen.
+
+**Sichtbarkeit ohne Extra-Wrapper:** `#controlsCol` (id neu ergänzt, nur auf der
+Rechner-Ansicht) trägt genau eine der Klassen `mode-simple`/`mode-advanced`. Die 3
+klassischen Karten + der „Einfachen Modus aktivieren"-Button bekommen die Klasse
+`advanced-only`, die neue Karte die Klasse `simple-only`. Neue CSS-Regeln
+(`css/styles.css`): `#controlsCol.mode-simple .advanced-only{display:none;}` /
+`#controlsCol.mode-advanced .simple-only{display:none;}`. Bewusst **kein** zusätzlicher
+Wrapper-`<div>` um die 3 klassischen Karten (hätte den bestehenden
+`display:grid;gap:20px`-Kartenabstand gebrochen, da `gap` nur zwischen direkten
+Grid-Kindern wirkt) — alle Karten/Buttons bleiben direkte Kinder von `#controlsCol`.
+Default-Zustand bereits im HTML (`class="controls-col mode-simple"`) statt erst per JS
+gesetzt, analog zum `.collapse{display:none}`-Muster aus v3.19.2 — verhindert einen
+Flacker-Moment vor dem ersten Skript-Durchlauf.
+
+**Persistenz:** eigener localStorage-Key `pizzaSimpleMode` (`'1'`/`'0'`), getrennt vom
+Rezept-Speicher `pizzaRechner` und vom Feature-Flag-Speicher `pizzaRechnerFeatureFlags`
+— analog zum Muster aus `js/theme.js` (`pizzaTheme`). Default bei fehlendem/leerem Wert:
+Einfacher Modus AN (neue Standardansicht laut Feature-Motivation). `PZ.setSimpleMode(v)`
++ `PZ.isSimpleMode()` als öffentliche API (aktuell nicht von anderen Modulen genutzt,
+für künftige Erweiterungen wie einen Menü-Schalter offengehalten).
+
+**Mobil-Besonderheit:** die neue Karte ist wie alle anderen Mobil-Karten ein
+`<details class="card simple-only" open>` (Akkordeon-Muster, kollabierbar wie jede
+andere Karte) statt eines starren Blocks — konsistente Optik/Bedienung.
+
+**Accessibility-Härtung (selbst durchgeführt nach dem Kriterienkatalog aus
+`.claude/agents/accessibility-expert.md`, da in dieser Session kein Task-Tool zum
+synchronen Subagenten-Aufruf zur Verfügung stand):** ein echtes Problem gefunden und
+behoben — beim Klick auf einen Umschalt-Button verschwand genau dieser (gerade
+fokussierte) Button selbst per `display:none`, der Tastatur-/Screenreader-Fokus wäre auf
+`<body>` zurückgefallen (WCAG 2.4.3 Fokus-Reihenfolge). Fix: `js/simplemode.js` setzt
+nach jedem Klick den Fokus explizit auf den jeweils neu sichtbaren Gegenpart-Button
+(„Erweiterten Modus öffnen" ↔ „Einfachen Modus aktivieren") — bleibt im etablierten
+Umschalt-Kontext, garantiert vorhanden und sichtbar. Per Headless-Klicksimulation
+verifiziert (`document.activeElement.id` nach beiden Klickrichtungen korrekt). Alle
+anderen Prüfpunkte (Live-Region-Muster `#simpleModeLiveMsg` analog `#themeAnnounce`,
+`aria-labelledby`-Referenzen der 3 verschobenen Felder bleiben beim Reparenting
+intra-Node und damit gültig, Button-Kontrast identisch zu den bereits geprüften
+`.actions button`-Design-Tokens, Karten-Icon `aria-hidden`) unauffällig, da 1:1
+bestehende, bereits geprüfte Muster wiederverwendet wurden.
+
+**Ein Bug beim ersten visuellen Check gefunden und behoben:** der Hinweistext in der
+neuen Karte zeigte zunächst buchstäblich „&amp;" statt „&" an — `data-i18n` (setzt
+`textContent`) statt `data-i18n-html` (setzt `innerHTML`) für einen Text mit
+HTML-Entity verwendet. Korrigiert auf `data-i18n-html`, per Screenshot-Vergleich
+bestätigt.
+
+**Neue i18n-Einträge** (`js/i18n-dict.js`, DE/EN): `card.simple.title`,
+`hint.simpleMode`, `btn.openAdvancedMode`, `btn.openSimpleMode`,
+`simpleMode.announceSimple`, `simpleMode.announceAdvanced`.
+
+**Verifikation (Headless-Edge, CDP/`--dump-dom` + iframe-Klicksimulation, kein
+Preview-Server nötig):** Default-Zustand (3 Felder liegen initial in
+`#simpleModeFields`, `#controlsCol` trägt `mode-simple`) auf Desktop UND Mobil per
+`--dump-dom` bestätigt. Voller Umschalt-Zyklus (Simple → Advanced → Simple) per
+simuliertem Klick in einem Iframe verifiziert: Felder wandern korrekt zwischen den
+Karten, landen exakt an ihrer Original-Position zurück, `localStorage` wird korrekt
+geschrieben (`0`/`1`). Persistenz bei simuliertem Neuladen (localStorage vor dem Laden
+auf `'0'` gesetzt) ergibt korrekt sofort den Erweiterten Modus. Screenshot-Vergleich
+Einfacher/Erweiterter Modus zeigt sauberes Layout ohne Bruch im Karten-Abstand.
+`tests/test.html` unverändert **614/614** grün (`js/simplemode.js` lädt dort bewusst
+nicht mit, analog zu `js/nav.js`/`js/newrecipe.js`/`js/theme.js` — reines DOM-Wiring auf
+echtem Markup, kein `test-generator`-Lauf nötig, da `js/calc.js`/`js/schedule.js`/
+`js/guide.js` nicht angefasst wurden).
+
+**Geändert:** `js/simplemode.js` (neu), `pizza-rechner.html`, `pizza-rechner-mobile.html`,
+`css/styles.css`, `js/i18n-dict.js`. `?v=` auf `3.62.0` gezogen (Desktop + Mobil,
+Cache-Busting + Footer-Version). `pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`). `Versionen/v3.62.0 - Einfacher Modus fuer
+Presets/` enthält den vollständigen Schnappschuss. Berechnungslogik (`js/calc.js`,
+`js/schedule.js`, `js/guide.js`) komplett unverändert — reine UI-/Struktur-Änderung.
+
 ## Zahlenfeld-Clamping auch in js/newrecipe.js (v3.61.0)
 
 Direkter Nutzerauftrag (kein `/define-feature`), kein Backlog-Punkt: „Punkt 2" desselben

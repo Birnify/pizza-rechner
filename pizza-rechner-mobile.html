@@ -30,8 +30,8 @@
   } catch(e) {}
 })();
 </script>
-<link rel="stylesheet" href="css/styles.css?v=3.61.0">
-<link rel="stylesheet" href="css/mobile.css?v=3.61.0">
+<link rel="stylesheet" href="css/styles.css?v=3.62.0">
+<link rel="stylesheet" href="css/mobile.css?v=3.62.0">
 </head>
 <body>
 <header>
@@ -65,14 +65,14 @@
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.61.0</span>
+    <span class="nav-version" id="appVersion">v3.62.0</span>
   </div>
 </nav>
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
 
 <div class="wrap view" data-view="rechner">
   <!-- LINKE SPALTE (auf Mobil: einzige Spalte): EINGABEN ALS AKKORDEON -->
-  <div class="controls-col" style="display:grid;gap:20px;">
+  <div class="controls-col mode-simple" id="controlsCol" style="display:grid;gap:20px;">
 
     <details class="card" open>
       <summary><h2 data-i18n-attr="aria-label:card.preset.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11c-2 0-3.2-1.6-2.6-3.4C3.9 6 5.3 5 7 5.3 7.4 3.4 9.1 2 11 2s3.6 1.4 4 3.3c1.7-.3 3.1.7 3.6 2.3.6 1.8-.6 3.4-2.6 3.4"/><path d="M6 11v6a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-6"/><path d="M5 20h13"/></svg></span><span data-i18n="card.preset.title">Fertiges Rezept wählen</span></h2></summary>
@@ -101,7 +101,25 @@
       </div>
     </details>
 
-    <details class="card" open>
+    <div id="simpleModeLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
+
+    <!-- Einfacher Modus (v3.62.0): zeigt nur die 3 Kernparameter in einer Karte statt
+         der 3 vollen Karten darunter. js/simplemode.js verschiebt die 3 zugehörigen
+         Feld-Elemente (#ballsField/#yeastTypeField/#kneadField) per DOM-Reparenting
+         hierher bzw. zurück an ihre ursprüngliche Stelle — keine Duplikate, keine
+         eigene State-Synchronisierung nötig. -->
+    <details class="card simple-only" id="simpleModeCard" open>
+      <summary><h2 data-i18n-attr="aria-label:card.simple.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M10 17h10"/><circle cx="15" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg></span><span data-i18n="card.simple.title">Deine Einstellungen</span></h2></summary>
+      <div class="acc-body">
+        <div id="simpleModeFields"><!-- Ziel für #ballsField/#yeastTypeField/#kneadField, s. js/simplemode.js --></div>
+        <div class="hint" style="margin-top:4px;" data-i18n-html="hint.simpleMode">Für alle Details (Hydration, Salz, Vorteig-Verfahren, Temperaturen &amp; mehr) in den erweiterten Modus wechseln.</div>
+        <button type="button" class="mode-switch-btn" id="openAdvancedBtn" style="margin-top:14px;" data-i18n="btn.openAdvancedMode">Erweiterten Modus öffnen</button>
+      </div>
+    </details>
+
+    <button type="button" class="mode-switch-btn advanced-only" id="openSimpleBtn" data-i18n="btn.openSimpleMode">Einfachen Modus aktivieren</button>
+
+    <details class="card advanced-only" open>
       <summary><h2 data-i18n-attr="aria-label:card.basics.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M12 6 9 8M12 6l3 2M12 10 9 12M12 10l3 2M12 14 9 16M12 14l3 2M12 18l-2.5 1.5M12 18l2.5 1.5"/></svg></span><span data-i18n="card.basics.title">Grundeinstellungen</span></h2></summary>
       <div class="acc-body">
 
@@ -111,7 +129,7 @@
           <div class="hint" data-i18n-html="hint.flour">W-Wert = Glutenstärke. Schwaches Mehl verträgt keine langen Gärzeiten — sehr starkes Mehl braucht sie. Wird per Preset mitgesetzt.</div>
         </div>
 
-        <div class="field">
+        <div class="field" id="ballsField">
           <label id="ballsLabel" data-i18n="label.balls">Anzahl Teiglinge</label>
           <div class="row">
             <input type="range" id="balls" min="1" max="20" step="1" value="4" aria-labelledby="ballsLabel">
@@ -180,7 +198,7 @@
       </div>
     </details>
 
-    <details class="card">
+    <details class="card advanced-only">
       <summary><h2 data-i18n-attr="aria-label:card.method.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8"/><path d="M9 3v4l-3.5 9A2 2 0 0 0 7.4 19h9.2a2 2 0 0 0 1.9-2.6L15 7V3"/><circle cx="10" cy="14" r=".6" fill="currentColor" stroke="none"/><circle cx="13" cy="16.5" r=".6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r=".6" fill="currentColor" stroke="none"/></svg></span><span data-i18n-html="card.method.title">Methode &amp; Hefe</span></h2></summary>
       <div class="acc-body">
 
@@ -220,7 +238,7 @@
           <div class="hint" id="prefStageHint" data-i18n="hint.prefStage">Reifezeit und Hefemenge hängen zusammen — die Stufe setzt beides passend. Längere Reife = weniger Hefe + kühler stellen (steht in der Anleitung).</div>
         </div>
 
-        <div class="field">
+        <div class="field" id="yeastTypeField">
           <label id="yeastTypeLabel" data-i18n="label.yeastType">Hefe-Art</label>
           <div class="seg" id="yeastType" role="group" aria-labelledby="yeastTypeLabel">
             <button data-y="fresh" class="active" aria-pressed="true" data-i18n="seg.freshYeast">Frischhefe</button>
@@ -256,7 +274,7 @@
       </div>
     </details>
 
-    <details class="card">
+    <details class="card advanced-only">
       <summary><h2 data-i18n-attr="aria-label:card.temp.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.5V5a2 2 0 1 0-4 0v9.5a4 4 0 1 0 4 0Z"/><path d="M12 8h1.5"/></svg></span><span data-i18n-html="card.temp.title">Teigtemperatur &amp; Eiswasser</span></h2></summary>
       <div class="acc-body">
         <div class="field">
@@ -285,7 +303,7 @@
           </div>
           <div class="hint" data-i18n="hint.flourTemp">Startet gleich der Raumtemperatur, aber unabhängig änderbar — z. B. kühler bei Mehl aus dem Keller oder Kühlschrank.</div>
         </div>
-        <div class="field">
+        <div class="field" id="kneadField">
           <label id="kneadLabel" data-i18n="label.knead">Knetart</label>
           <div class="seg" id="knead" role="group" aria-labelledby="kneadLabel">
             <button data-k="3" class="active" aria-pressed="true" data-i18n="seg.hand">Hand</button>
@@ -819,32 +837,33 @@
 </div>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.61.0"></script>
-<script src="js/state.js?v=3.61.0"></script>
-<script src="js/i18n-dict.js?v=3.61.0"></script>
-<script src="js/i18n.js?v=3.61.0"></script>
-<script src="js/settings.js?v=3.61.0"></script>
-<script src="js/theme.js?v=3.61.0"></script>
-<script src="js/widgets.js?v=3.61.0"></script>
-<script src="js/flour.js?v=3.61.0"></script>
-<script src="js/calc.js?v=3.61.0"></script>
-<script src="js/schedule.js?v=3.61.0"></script>
-<script src="js/guide.js?v=3.61.0"></script>
-<script src="js/timer.js?v=3.61.0"></script>
-<script src="js/ui.js?v=3.61.0"></script>
-<script src="js/print.js?v=3.61.0"></script>
-<script src="js/pdf.js?v=3.61.0"></script>
-<script src="js/presets.js?v=3.61.0"></script>
-<script src="js/storage.js?v=3.61.0"></script>
-<script src="js/newrecipe.js?v=3.61.0"></script>
-<script src="js/share.js?v=3.61.0"></script>
-<script src="js/party.js?v=3.61.0"></script>
-<script src="js/glossary.js?v=3.61.0"></script>
-<script src="js/main.js?v=3.61.0"></script>
+<script src="js/dom.js?v=3.62.0"></script>
+<script src="js/state.js?v=3.62.0"></script>
+<script src="js/i18n-dict.js?v=3.62.0"></script>
+<script src="js/i18n.js?v=3.62.0"></script>
+<script src="js/settings.js?v=3.62.0"></script>
+<script src="js/theme.js?v=3.62.0"></script>
+<script src="js/widgets.js?v=3.62.0"></script>
+<script src="js/flour.js?v=3.62.0"></script>
+<script src="js/calc.js?v=3.62.0"></script>
+<script src="js/schedule.js?v=3.62.0"></script>
+<script src="js/guide.js?v=3.62.0"></script>
+<script src="js/timer.js?v=3.62.0"></script>
+<script src="js/ui.js?v=3.62.0"></script>
+<script src="js/simplemode.js?v=3.62.0"></script>
+<script src="js/print.js?v=3.62.0"></script>
+<script src="js/pdf.js?v=3.62.0"></script>
+<script src="js/presets.js?v=3.62.0"></script>
+<script src="js/storage.js?v=3.62.0"></script>
+<script src="js/newrecipe.js?v=3.62.0"></script>
+<script src="js/share.js?v=3.62.0"></script>
+<script src="js/party.js?v=3.62.0"></script>
+<script src="js/glossary.js?v=3.62.0"></script>
+<script src="js/main.js?v=3.62.0"></script>
 <!-- Burger-Menü-Navigation (bis v3.17.x/v3.18.0 hier als Inline-Script gewachsen) --
      seit v3.54.0 gemeinsames Modul mit der Desktop-Seite, s. js/nav.js (Mobil-
      Implementierung war die massgebliche Referenz beim Auslagern). -->
-<script src="js/nav.js?v=3.61.0"></script>
+<script src="js/nav.js?v=3.62.0"></script>
 <script>
   // Mobil-only UI-Glue (kein Eingriff in die PZ-Rechenmodule) -- Quick-Bar-Sync,
   // Party-Quick-Bar, Quick-Save, Akkordeon-Auto-Scroll. Die frühere Sektion "4)

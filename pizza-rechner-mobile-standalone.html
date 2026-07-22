@@ -368,6 +368,22 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 }
 .card-icon svg{width:20px;height:20px;display:block;}
 .result .card-icon{background:var(--basil);color:#fff;}
+/* Einfacher Modus für Presets (v3.62.0): #controlsCol trägt genau eine der beiden
+   Klassen (js/simplemode.js) -- .advanced-only-Elemente (die 3 klassischen Karten +
+   "Einfachen Modus aktivieren"-Button) verschwinden im Einfachen Modus, .simple-only
+   (die neue reduzierte Karte) verschwindet im Erweiterten Modus. Alle betroffenen
+   Elemente bleiben direkte Kinder von #controlsCol (kein zusätzlicher Wrapper), damit
+   der bestehende display:grid;gap:20px-Kartenabstand unverändert für alle sichtbaren
+   Karten gilt. */
+#controlsCol.mode-simple .advanced-only{display:none;}
+#controlsCol.mode-advanced .simple-only{display:none;}
+.mode-switch-btn{
+  display:block;width:100%;padding:11px;border-radius:var(--radius);border:1px solid var(--line);
+  background:var(--card);font-size:13px;font-weight:600;cursor:pointer;color:var(--ink);
+  transition:all .12s;
+}
+.mode-switch-btn:hover{border-color:var(--tomato);color:var(--tomato-text);}
+.mode-switch-btn:focus-visible{outline:2px solid var(--tomato);outline-offset:2px;}
 .selectbox{
   width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:var(--radius);
   font-size:14px;color:var(--ink);background:var(--card);cursor:pointer;
@@ -890,14 +906,14 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.61.0</span>
+    <span class="nav-version" id="appVersion">v3.62.0</span>
   </div>
 </nav>
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
 
 <div class="wrap view" data-view="rechner">
   <!-- LINKE SPALTE (auf Mobil: einzige Spalte): EINGABEN ALS AKKORDEON -->
-  <div class="controls-col" style="display:grid;gap:20px;">
+  <div class="controls-col mode-simple" id="controlsCol" style="display:grid;gap:20px;">
 
     <details class="card" open>
       <summary><h2 data-i18n-attr="aria-label:card.preset.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11c-2 0-3.2-1.6-2.6-3.4C3.9 6 5.3 5 7 5.3 7.4 3.4 9.1 2 11 2s3.6 1.4 4 3.3c1.7-.3 3.1.7 3.6 2.3.6 1.8-.6 3.4-2.6 3.4"/><path d="M6 11v6a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-6"/><path d="M5 20h13"/></svg></span><span data-i18n="card.preset.title">Fertiges Rezept wählen</span></h2></summary>
@@ -926,7 +942,25 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
       </div>
     </details>
 
-    <details class="card" open>
+    <div id="simpleModeLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
+
+    <!-- Einfacher Modus (v3.62.0): zeigt nur die 3 Kernparameter in einer Karte statt
+         der 3 vollen Karten darunter. js/simplemode.js verschiebt die 3 zugehörigen
+         Feld-Elemente (#ballsField/#yeastTypeField/#kneadField) per DOM-Reparenting
+         hierher bzw. zurück an ihre ursprüngliche Stelle — keine Duplikate, keine
+         eigene State-Synchronisierung nötig. -->
+    <details class="card simple-only" id="simpleModeCard" open>
+      <summary><h2 data-i18n-attr="aria-label:card.simple.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M10 17h10"/><circle cx="15" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg></span><span data-i18n="card.simple.title">Deine Einstellungen</span></h2></summary>
+      <div class="acc-body">
+        <div id="simpleModeFields"><!-- Ziel für #ballsField/#yeastTypeField/#kneadField, s. js/simplemode.js --></div>
+        <div class="hint" style="margin-top:4px;" data-i18n-html="hint.simpleMode">Für alle Details (Hydration, Salz, Vorteig-Verfahren, Temperaturen &amp; mehr) in den erweiterten Modus wechseln.</div>
+        <button type="button" class="mode-switch-btn" id="openAdvancedBtn" style="margin-top:14px;" data-i18n="btn.openAdvancedMode">Erweiterten Modus öffnen</button>
+      </div>
+    </details>
+
+    <button type="button" class="mode-switch-btn advanced-only" id="openSimpleBtn" data-i18n="btn.openSimpleMode">Einfachen Modus aktivieren</button>
+
+    <details class="card advanced-only" open>
       <summary><h2 data-i18n-attr="aria-label:card.basics.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M12 6 9 8M12 6l3 2M12 10 9 12M12 10l3 2M12 14 9 16M12 14l3 2M12 18l-2.5 1.5M12 18l2.5 1.5"/></svg></span><span data-i18n="card.basics.title">Grundeinstellungen</span></h2></summary>
       <div class="acc-body">
 
@@ -936,7 +970,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
           <div class="hint" data-i18n-html="hint.flour">W-Wert = Glutenstärke. Schwaches Mehl verträgt keine langen Gärzeiten — sehr starkes Mehl braucht sie. Wird per Preset mitgesetzt.</div>
         </div>
 
-        <div class="field">
+        <div class="field" id="ballsField">
           <label id="ballsLabel" data-i18n="label.balls">Anzahl Teiglinge</label>
           <div class="row">
             <input type="range" id="balls" min="1" max="20" step="1" value="4" aria-labelledby="ballsLabel">
@@ -1005,7 +1039,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
       </div>
     </details>
 
-    <details class="card">
+    <details class="card advanced-only">
       <summary><h2 data-i18n-attr="aria-label:card.method.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8"/><path d="M9 3v4l-3.5 9A2 2 0 0 0 7.4 19h9.2a2 2 0 0 0 1.9-2.6L15 7V3"/><circle cx="10" cy="14" r=".6" fill="currentColor" stroke="none"/><circle cx="13" cy="16.5" r=".6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r=".6" fill="currentColor" stroke="none"/></svg></span><span data-i18n-html="card.method.title">Methode &amp; Hefe</span></h2></summary>
       <div class="acc-body">
 
@@ -1045,7 +1079,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
           <div class="hint" id="prefStageHint" data-i18n="hint.prefStage">Reifezeit und Hefemenge hängen zusammen — die Stufe setzt beides passend. Längere Reife = weniger Hefe + kühler stellen (steht in der Anleitung).</div>
         </div>
 
-        <div class="field">
+        <div class="field" id="yeastTypeField">
           <label id="yeastTypeLabel" data-i18n="label.yeastType">Hefe-Art</label>
           <div class="seg" id="yeastType" role="group" aria-labelledby="yeastTypeLabel">
             <button data-y="fresh" class="active" aria-pressed="true" data-i18n="seg.freshYeast">Frischhefe</button>
@@ -1081,7 +1115,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
       </div>
     </details>
 
-    <details class="card">
+    <details class="card advanced-only">
       <summary><h2 data-i18n-attr="aria-label:card.temp.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.5V5a2 2 0 1 0-4 0v9.5a4 4 0 1 0 4 0Z"/><path d="M12 8h1.5"/></svg></span><span data-i18n-html="card.temp.title">Teigtemperatur &amp; Eiswasser</span></h2></summary>
       <div class="acc-body">
         <div class="field">
@@ -1110,7 +1144,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
           </div>
           <div class="hint" data-i18n="hint.flourTemp">Startet gleich der Raumtemperatur, aber unabhängig änderbar — z. B. kühler bei Mehl aus dem Keller oder Kühlschrank.</div>
         </div>
-        <div class="field">
+        <div class="field" id="kneadField">
           <label id="kneadLabel" data-i18n="label.knead">Knetart</label>
           <div class="seg" id="knead" role="group" aria-labelledby="kneadLabel">
             <button data-k="3" class="active" aria-pressed="true" data-i18n="seg.hand">Hand</button>
@@ -2258,6 +2292,20 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   add('option.napoliPoolish', 'Napoli mit Poolish · 24–48 h', 'Napoli with Poolish · 24–48 h');
   add('option.teglia', 'Teglia / Blech · hohe Hydration 75 %', 'Teglia / Pan · high hydration 75%');
   add('option.newyorkStyle', 'New York Style · Zucker &amp; Öl, ~26 h', 'New York Style · sugar &amp; oil, ~26 h');
+
+  // -- Card: Einfacher Modus (v3.62.0) -------------------------------------------------
+  // Reduzierte Karte, die im Einfachen Modus die 3 Kernfelder Anzahl-Teiglinge/
+  // Hefe-Art/Knetart aufnimmt (js/simplemode.js verschiebt die bestehenden Feld-
+  // Elemente per DOM-Reparenting hierher). Eigene Labels/Hints der 3 Felder selbst
+  // sind bereits unter card.basics/card.method/card.temp abgedeckt (s. u.) --
+  // hier nur Karten-Titel, Erklärtext und die beiden Umschalt-Buttons.
+  add('card.simple.title', 'Deine Einstellungen', 'Your settings');
+  add('hint.simpleMode', 'Für alle Details (Hydration, Salz, Vorteig-Verfahren, Temperaturen &amp; mehr) in den erweiterten Modus wechseln.',
+    'Switch to advanced mode for all the details (hydration, salt, pre-ferment method, temperatures &amp; more).');
+  add('btn.openAdvancedMode', 'Erweiterten Modus öffnen', 'Open advanced mode');
+  add('btn.openSimpleMode', 'Einfachen Modus aktivieren', 'Switch to simple mode');
+  add('simpleMode.announceSimple', 'Einfacher Modus aktiv.', 'Simple mode active.');
+  add('simpleMode.announceAdvanced', 'Erweiterter Modus aktiv.', 'Advanced mode active.');
 
   // -- Card: Grundeinstellungen ------------------------------------------------------
   add('card.basics.title', 'Grundeinstellungen', 'Basic settings');
@@ -4544,6 +4592,133 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
       applyMethod();
       updateTimeLabel();
     });
+  }
+})(window);
+
+</script>
+<script>
+/* simplemode.js — Einfacher Modus für Presets (v3.62.0)
+ *
+ * Zeigt auf der Rechner-Seite standardmäßig nur die 3 wesentlichen Parameter (Anzahl
+ * Teiglinge, Hefe-Art, Knetart) in EINER Karte statt der 3 vollen Karten
+ * (Grundeinstellungen / Methode & Hefe / Teigtemperatur & Eiswasser). Ein Button
+ * schaltet auf den vollen "Erweiterten Modus" um; die Wahl wird persistiert
+ * (eigener localStorage-Key, unabhängig vom Rezept-Speicher, analog zu js/theme.js).
+ *
+ * Bewusst KEIN Duplizieren der 3 Feld-Elemente mit eigenen IDs + eigener State-
+ * Synchronisierung: stattdessen werden die 3 bestehenden Feld-<div>s
+ * (#ballsField/#yeastTypeField/#kneadField, jeweils bereits über js/ui.js an
+ * PZ.state gebunden) per DOM-Reparenting (appendChild/insertBefore) zwischen ihrer
+ * ursprünglichen Karte und der neuen Karte "#simpleModeFields" hin- und hergeschoben.
+ * Dadurch bleibt exakt EIN DOM-Knoten je Feld die einzige Quelle der Wahrheit -- keine
+ * zwei Slider/Segmente, die synchron gehalten werden müssten, kein Sonderfall beim
+ * Laden von Presets/Rezepten (die weiterhin nur die bestehenden Original-IDs kennen).
+ *
+ * Reiner Sicht-Schalter (Nutzerwunsch, per Rückfrage bestätigt): gilt unabhängig
+ * davon, ob im Preset-Dropdown gerade ein Preset oder "Eigene Einstellung" aktiv ist.
+ *
+ * Nur auf der Rechner-Ansicht relevant (#controlsCol dort) -- läuft harmlos als no-op,
+ * falls die erwarteten Elemente fehlen (z. B. in tests/test.html, wo dieses Modul
+ * bewusst NICHT geladen wird, analog zu js/nav.js/js/newrecipe.js -- reines
+ * DOM-Wiring auf echtem Markup).
+ */
+(function (global) {
+  'use strict';
+  const PZ = global.PZ || (global.PZ = {});
+  const SIMPLE_MODE_KEY = 'pizzaSimpleMode';
+
+  function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
+
+  function readStored() {
+    try { return localStorage.getItem(SIMPLE_MODE_KEY); } catch (e) { return null; }
+  }
+  function writeStored(isSimple) {
+    try { localStorage.setItem(SIMPLE_MODE_KEY, isSimple ? '1' : '0'); } catch (e) { /* ignore */ }
+  }
+
+  // Default: Einfacher Modus AN (neue Standardansicht) -- außer der Nutzer hat beim
+  // letzten Besuch bereits explizit den erweiterten Modus gewählt.
+  const stored = readStored();
+  let simple = stored === '0' ? false : true;
+
+  // Die 3 Kernfelder, die zwischen ihrer ursprünglichen Karte und der neuen
+  // "Deine Einstellungen"-Karte hin- und herwandern. Originaler Elternknoten +
+  // folgendes Geschwister-Element werden EINMALIG gemerkt (vor dem ersten Verschieben),
+  // damit "Erweiterten Modus öffnen" jedes Feld exakt an seine ursprüngliche Stelle
+  // innerhalb seiner Karte zurückstellt statt nur "irgendwo" anzuhängen.
+  const FIELD_IDS = ['ballsField', 'yeastTypeField', 'kneadField'];
+  let captured = null; // [{el, originalParent, originalNext}] -- null bis erstmalig erfasst
+
+  function captureOriginalPositions() {
+    captured = FIELD_IDS.map(function (id) {
+      const el = document.getElementById(id);
+      if (!el) return null;
+      return { el: el, originalParent: el.parentNode, originalNext: el.nextElementSibling };
+    }).filter(Boolean);
+  }
+
+  function moveFieldsToSimpleCard() {
+    const target = document.getElementById('simpleModeFields');
+    if (!target || !captured) return;
+    captured.forEach(function (m) { target.appendChild(m.el); });
+  }
+
+  function moveFieldsBackToAdvanced() {
+    if (!captured) return;
+    captured.forEach(function (m) { m.originalParent.insertBefore(m.el, m.originalNext); });
+  }
+
+  function applyMode() {
+    const col = document.getElementById('controlsCol');
+    if (!col) return; // andere Ansicht (z. B. Rezepte-Seite) -- betrifft nur die Rechner-Seite
+    col.classList.toggle('mode-simple', simple);
+    col.classList.toggle('mode-advanced', !simple);
+    if (simple) moveFieldsToSimpleCard(); else moveFieldsBackToAdvanced();
+  }
+
+  function announceMode(isSimple) {
+    PZ.announce('simpleModeLiveMsg', t(isSimple ? 'simpleMode.announceSimple' : 'simpleMode.announceAdvanced'));
+  }
+
+  function setSimpleMode(v, opts) {
+    const isSimple = !!v;
+    simple = isSimple;
+    writeStored(isSimple);
+    applyMode();
+    if (!opts || !opts.silent) announceMode(isSimple);
+  }
+  PZ.setSimpleMode = setSimpleMode;
+  PZ.isSimpleMode = function () { return simple; };
+
+  function wire() {
+    if (!document.getElementById('controlsCol')) return; // Rechner-Seite nicht vorhanden
+    captureOriginalPositions();
+    applyMode(); // stille Erstanwendung -- kein Live-Region-Geplapper beim Laden
+
+    // Fokus-Management (Accessibility-Härtung): der jeweils geklickte Umschalt-Button
+    // verschwindet selbst per display:none (sein Container wechselt die Sichtbarkeits-
+    // klasse) -- ohne aktives Umsetzen fiele der Tastatur-/Screenreader-Fokus auf
+    // <body> zurück (WCAG 2.4.3 Fokus-Reihenfolge). Stattdessen wandert der Fokus auf
+    // den jeweils GEGENTEILIGEN, jetzt neu sichtbaren Umschalt-Button -- bleibt im
+    // etablierten "Umschalten"-Kontext, ist garantiert vorhanden und sichtbar.
+    const openAdvancedBtn = document.getElementById('openAdvancedBtn');
+    if (openAdvancedBtn) openAdvancedBtn.addEventListener('click', function () {
+      setSimpleMode(false);
+      const target = document.getElementById('openSimpleBtn');
+      if (target) target.focus();
+    });
+    const openSimpleBtn = document.getElementById('openSimpleBtn');
+    if (openSimpleBtn) openSimpleBtn.addEventListener('click', function () {
+      setSimpleMode(true);
+      const target = document.getElementById('openAdvancedBtn');
+      if (target) target.focus();
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wire);
+  } else {
+    wire();
   }
 })(window);
 
