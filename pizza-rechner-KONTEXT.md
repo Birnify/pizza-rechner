@@ -714,12 +714,35 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
-- **Foto-Anleitung:** Schritt-für-Schritt-Anleitung um Fotos je Schritt ergänzen (z. B.
-  Autolyse, Kneten, Salz zugeben), analog einer Referenz-App, die der Nutzer per
-  Screenshot gezeigt hat. Noch nicht spezifiziert (Bildquelle offen: generische Stock-/
-  Illustrationsbilder pro Schritt-Typ vs. Aufwand, ob sie zu allen Methoden/Presets
-  passen). Braucht vor Umsetzung eine eigene `/define-feature`-Runde. (Als Backlog-Notiz
-  vom Nutzer nachgetragen, 2026-07-22 — noch kein eigener Zyklus dafür gestartet.)
+- **Foto-Anleitung (Fotos je Schritt):** Schritt-für-Schritt-Anleitung um Fotos je
+  Schritt ergänzen (z. B. Autolyse, Kneten, Salz zugeben), analog einer Referenz-App,
+  die der Nutzer per Screenshot gezeigt hat. Noch nicht spezifiziert (Bildquelle offen:
+  generische Stock-/Illustrationsbilder pro Schritt-Typ vs. Aufwand, ob sie zu allen
+  Methoden/Presets passen). Braucht vor Umsetzung eine eigene `/define-feature`-Runde.
+  (Als Backlog-Notiz vom Nutzer nachgetragen, 2026-07-22, noch kein eigener Zyklus dafür
+  gestartet.)
+- **Foto der fertigen Pizza am Ende der Anleitung:** Separate, konkretere Idee (Feedback
+  von Sörens Kollege Benjamin, 2026-07-22, wie schon beim Ofen-Heizarten-Punkt in
+  v3.68.0): ein Foto der fertigen Pizza als natürlicher Abschluss nach dem letzten
+  Backschritt, statt lose irgendwo platziert. Braucht 3 Fotos passend zur jeweiligen
+  Pizza-Form, damit es bei Teglia/New-York-Presets nicht unpassend wirkt:
+  1. Neapolitanisch (rund), Default/Fallback für die 6 neapolitanischen Presets + „Eigene
+     Einstellung"
+  2. Teglia (rechteckig, Blech), fürs Teglia-Preset
+  3. New York Style, fürs New-York-Preset (flag-gated)
+
+  Technische Eckpunkte (analog zum bestehenden Header-Foto `assets/header-pizza.jpg`,
+  s. Abschnitt „Echtes Header-Foto eingebunden (v3.44.0)" in der HISTORIE): JPG/WebP,
+  Querformat mind. 1200 px breit, ~150–300 KB komprimiert, rechtefrei (öffentliches
+  GitHub-Repo). Sören besorgt die Fotos (ggf. mit Benjamin), **noch nicht geliefert**
+  (Stand 2026-07-22, könnte in einer künftigen Session als Datei auftauchen). Offene
+  technische Frage vor der Umsetzung: `build-mobile-standalone.py` inlined aktuell nur
+  CSS/JS, keine Bilder (s. Skript-Kommentar). Für die Mobil-Standalone-Datei muss
+  geklärt werden, ob die Fotos als Base64 eingebettet werden (robuster fürs Handy, aber
+  Dateigröße wächst deutlich) oder ob `assets/` separat mitkopiert werden muss (wie beim
+  bestehenden Header-Foto, dort nicht abschließend verifiziert, ob es auf dem Handy per
+  `file://` überhaupt sichtbar ist). Braucht eine eigene `/define-feature`-Runde, sobald
+  die Fotos vorliegen.
 - ~~Mehl- und Raumtemperatur getrennt einstellbar (aktuell als gleich angenommen)~~ —
   **erledigt in v3.20.0**: eigener Mehltemperatur-Regler (`#flourTemp`), Default =
   Raumtemperatur, danach unabhängig änderbar; DDT-Formel nutzt beide Werte statt
@@ -1072,12 +1095,33 @@ Keine Code-Änderung durch den Audit nötig.
   Kollegen-Feedback zur Anleitung; s. Abschnitt „Glossar-Verweise in der Anleitung
   (v3.68.0)" oben).
 
-**Stand v3.68.0: alle bisherigen versionierten Backlog-Punkte sind abgearbeitet**
-(durchgestrichen oben), offen ist nur die neue, noch unspezifizierte Foto-Anleitung-Idee
-weiter oben in dieser Liste. Der Bring!-Deeplink-Testaufbau ist abschließend geklärt
-(verworfen, vollständig zurückgebaut, keine offene Frage mehr). Kein weiterer
-vorgegebener Auftrag mehr angekündigt — für einen neuen Zyklus wieder frisches
-Brainstorming in Phase 1.
+**Stand v3.68.2: alle bisherigen versionierten Backlog-Punkte sind abgearbeitet**
+(durchgestrichen oben), offen sind nur die beiden neuen, noch unspezifizierten Foto-Ideen
+weiter oben in dieser Liste (Fotos je Schritt, sowie das konkretere Foto der fertigen
+Pizza am Ende, für das Sören Fotos besorgt). Der Bring!-Deeplink-Testaufbau ist
+abschließend geklärt (verworfen, vollständig zurückgebaut, keine offene Frage mehr).
+Kein weiterer vorgegebener Auftrag mehr angekündigt, für einen neuen Zyklus wieder
+frisches Brainstorming in Phase 1.
+
+Nach v3.68.0 wurden zusätzlich drei kleine, direkt inline (ohne Orchestrator)
+umgesetzte Nutzeraufträge abgeschlossen und gepusht: v3.68.1 (Teilen-Link-Abstand +
+versteckter Flex-Bug in js/settings.js), v3.68.2 (Einführung-Modal: X-Button entfernt,
+Titel zu "Willkommen Teigmeister" geändert) und eine README.md-Aktualisierung (war noch
+auf dem Stand vor der Mobil-Version). Volle Details zu v3.68.1/v3.68.2 in der
+HISTORIE-Datei, s. o.
+
+Zusätzlich wurde das Projekt account-unabhängig portabel gemacht (Commit
+`36369da`, nicht versioniert/kein `?v=`-Bump, da reine Tooling-/Doku-Änderung ohne
+Auswirkung auf die App selbst): `.claude/` (Sub-Agenten-Definitionen + Preview-Server-
+Konfiguration) ist jetzt Teil des Git-Repos statt gitignored, und `CLAUDE.md` enthält
+jetzt den kompletten Orchestrator-Workflow, Bug-Untersuchungsstandard und
+Kommunikationsstil direkt, statt nur auf persönliche Claude-Erinnerungen zu verweisen.
+Eine neue Session kann daher auch unter einem anderen Account/einer anderen Maschine
+nahtlos weiterarbeiten, einfach diesen Ordner öffnen (bzw. von
+`https://github.com/Birnify/pizza-rechner` klonen). **Eine Grenze bleibt:** ein zuvor
+in einer Sitzung laufender Orchestrator-Agent ist nicht sitzungsübergreifend
+erreichbar, jede neue Sitzung startet einen frischen Orchestrator (s. CLAUDE.md,
+Abschnitt „Arbeitsablauf: Orchestrator statt direkter Implementierung").
 **Stil-Hinweis für alle künftigen Texte (Glossar, i18n-Strings, Onboarding, sonstige
 Beschreibungen):** keine Gedankenstriche (Em-Dash) verwenden, stattdessen Komma, Punkt,
 Doppelpunkt oder Klammern, je nach Kontext.
