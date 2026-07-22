@@ -8,6 +8,32 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Glossar-Links: Dedup pro `buildGuide()`-Aufruf (v3.69.1)
+
+**Bugfix:** Glossar-Verweise erschienen mehrfach in der Anleitung, wenn der Glossar-Begriff
+an mehreren Schritten (z. B. „Ofen-Heizarten" am Vorheizen- UND Back-Schritt) technisch
+verlinkt war. Mit dem Dedup-Fix rendert `js/guide.js` jeden Glossar-Begriff jetzt nur noch
+beim **ERSTEN Vorkommen** pro `buildGuide()`-Durchlauf.
+
+**Änderung in `js/guide.js`:** neuer privater Modul-State `_usedGlossaryIds` (Set), das bei
+jedem `buildGuide()`-Aufruf zurückgesetzt wird (Zeile 158); in `glossaryLinkHtml(id)` wird
+geprüft, ob `id` bereits im Set liegt — falls ja, wird ein leerer String zurückgegeben
+(Verweis unterdrückt), ansonsten wird die ID zum Set hinzugefügt und der HTML-Link gerendert
+(Zeile 108–114). Alle anderen Glossar-Logik (`buildGuide()` ruft einzelne `st(...)`-Aufrufe
+auf, die je eine `glossaryId` setzen) bleibt unverändert — nur die Rendering-Ebene filtert.
+
+**Tests (`tests/test.html`):** Sektion 27 angepasst (712 → 716 Prüfungen grün):
+1. Test „Ofen-Heizarten-Glossarverweis an Vorheiz- und Back-Schritt (genau 2×)" → geändert
+   zu „...an Vorheiz-Schritt nach Dedup (genau 1×)"; Kommentar korrigiert.
+2. Neuer Test „Dedup unterdrückt nicht alle glossaryIds, nur wiederholte": kombiniert
+   `autolyse` + `kalteGare` (beide einzeln vorhanden) und prüft, dass jede je 1× bleibt.
+3. Neuer Test „Dedup-Set wird bei neuem buildGuide()-Aufruf zurückgesetzt": zwei
+   aufeinanderfolgende `PZ.calc()`-Aufrufe, prüft dass der Ofen-Heizarten-Link bei jedem
+   Durchlauf wieder 1× vorhanden ist (keine kumulative Unterdrückung).
+
+**Dateien geändert:** `js/guide.js`, `tests/test.html`. Keine neuen HTML-IDs, kein CSS.
+Versionsnummer noch nicht gezogen (wird bei nächster Gelegenheit, ähnlich wie v3.68.0→v3.68.1).
+
 ## Foto der fertigen Pizza am Ende der Anleitung (v3.69.0)
 
 Über eine vollständige `/define-feature`-Runde abgestimmtes Feature (Feedback von Sörens

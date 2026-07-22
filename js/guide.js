@@ -98,8 +98,17 @@
   // PDF-Export (js/pdf.js, extrahiert nur `.tip`/`.warn` als "extras") oder Druck
   // (`@media print`, s. css/styles.css) übernommen -- ein Klick-Link ist auf Papier
   // nutzlos.
+  // Dedup (v3.69.1-Bugfix): derselbe Glossar-Begriff soll nur EINMAL pro Anleitung
+  // verlinkt werden -- am ersten Schritt, an dem er vorkommt (z. B. "ofenHeizarten" trat
+  // vorher sowohl am Vorheiz- als auch am Back-Schritt auf). `_usedGlossaryIds` wird bei
+  // jedem buildGuide()-Durchlauf zusammen mit `_items` zurückgesetzt (s. u.); spätere
+  // Vorkommen derselben `glossaryId` werden hier still unterdrückt (leerer String), die
+  // Zuordnung Schritt→glossaryId in den einzelnen st(...)-Aufrufen bleibt unverändert.
+  let _usedGlossaryIds = new Set();
   function glossaryLinkHtml(id) {
     if (!id) return '';
+    if (_usedGlossaryIds.has(id)) return '';
+    _usedGlossaryIds.add(id);
     const term = t('glossary.' + id + '.title');
     const label = t('guide.glossaryLink.label', { term: term });
     return `<div class="glossary-ref">📖 <button type="button" class="step-glossary-link" data-glossary-id="${id}">${label}</button></div>`;
@@ -146,6 +155,7 @@
     const iceTxt = R.ice > 0 ? t('guide.iceTxt', { ice: g(R.ice) }) : '';
     let matureMin = 0;                        // Vorteig-Reifezeit (nur bei Biga/Poolish)
     _items = [];
+    _usedGlossaryIds = new Set();              // Dedup-Reset je buildGuide()-Durchlauf
 
     // ===== VORTEIG (Biga / Poolish) =====
     if (pref) {

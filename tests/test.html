@@ -3176,11 +3176,41 @@
     ]);
 
     // Ofen-Heizarten-Glossarverweis (v3.68.0, Ergänzung nach Kollegen-Feedback zu
-    // Ober/Unterhitze vs. Umluft vs. Grill): unabhängig von Methode/Kaltgare immer genau
-    // an den zwei Back-Schritten (Vorheizen + Belegen & Backen).
-    testCase('Ofen-Heizarten-Glossarverweis an Vorheiz- und Back-Schritt (genau 2×)', {}, () => [
-      ['genau 2× data-glossary-id="ofenHeizarten"', glossaryLinkCount(document.getElementById('guideSteps').innerHTML, 'ofenHeizarten'), 2, 0],
+    // Ober/Unterhitze vs. Umluft vs. Grill): trat vorher an zwei Stellen auf
+    // (Vorheizen + Belegen & Backen), wird aber seit v3.69.1 durch Dedup-Logik nur noch
+    // am ersten dieser Stellen (Vorheizen-Schritt) gerendert.
+    testCase('Ofen-Heizarten-Glossarverweis an Vorheiz-Schritt nach Dedup (genau 1×)', {}, () => [
+      ['genau 1× data-glossary-id="ofenHeizarten"', glossaryLinkCount(document.getElementById('guideSteps').innerHTML, 'ofenHeizarten'), 1, 0],
     ]);
+
+    // Generischer Dedup-Test: sicherstellen dass andere glossaryIds (die jeweils nur an
+    // einer Stelle in der Anleitung vorkommen) durch die neue Dedup-Logik NICHT
+    // versehentlich unterdrückt werden. Kombinationstest mit mehreren einzeln-vorkommen-
+    // den IDs (autolyse + kalteGare), um zu prüfen, dass jede unabhängig ihre 1× behält.
+    testCase('Dedup unterdrückt nicht alle glossaryIds, nur wiederholte (autolyse + kalteGare)', { method: 'direct', yeast: 0.3, coldStage: 'balls' }, () => {
+      const html = document.getElementById('guideSteps').innerHTML;
+      return [
+        ['autolyse weiterhin genau 1×', glossaryLinkCount(html, 'autolyse'), 1, 0],
+        ['kalteGare weiterhin genau 1×', glossaryLinkCount(html, 'kalteGare'), 1, 0],
+      ];
+    });
+
+    // Dedup-Reset-Test: sicherstellen dass das _usedGlossaryIds-Set bei jedem neuen
+    // buildGuide()-Aufruf (über PZ.calc()) zurückgesetzt wird. Der Ofen-Heizarten-Link
+    // sollte nach einem Neuaufruf wieder am Vorheizen sichtbar sein, nicht kumulativ
+    // unterdrückt bleiben vom letzten Aufruf.
+    testCase('Dedup-Set wird bei neuem buildGuide()-Aufruf zurückgesetzt', {}, () => {
+      let html1 = document.getElementById('guideSteps').innerHTML;
+      let count1 = glossaryLinkCount(html1, 'ofenHeizarten');
+      // Zweiter Aufruf: state übernehmen und neu berechnen (triggert buildGuide())
+      PZ.calc();
+      let html2 = document.getElementById('guideSteps').innerHTML;
+      let count2 = glossaryLinkCount(html2, 'ofenHeizarten');
+      return [
+        ['1. Aufruf: ofenHeizarten genau 1×', count1, 1, 0],
+        ['2. Aufruf: ofenHeizarten wieder genau 1×', count2, 1, 0],
+      ];
+    });
   })();
 
   heading('28 · Foto der fertigen Pizza am Ende der Anleitung (js/guide.js, v3.69.0)');

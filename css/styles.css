@@ -622,8 +622,14 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
    Sprung-Link am Ende eines Anleitungsschritts (js/guide.js glossaryLinkHtml()) --
    bewusst KEINE farbige Box wie .tip/.warn (sonst zu viel visuelle Konkurrenz, da mehrere
    Schritte gleichzeitig einen Verweis haben können), nur ein unterstrichenes Wort im
-   Fließtext, analog zum bestehenden .schedbar-goto-zeitplan-Muster. */
-.step .body .glossary-ref{margin-top:7px;font-size:12.5px;color:var(--muted);}
+   Fließtext, analog zum bestehenden .schedbar-goto-zeitplan-Muster.
+   Flex-Layout (v3.69.1-Bugfix): vorher stand das 📖-Icon (Text-Knoten) auf einer eigenen
+   Zeile über dem <button>, weil der Button (Browser-Default `display:inline-block` +
+   `text-align:center`) die volle Containerbreite einnahm und seinen Text zentrierte --
+   besonders sichtbar auf Mobil, wo der Linktext oft umbricht. `display:flex` macht Icon
+   und Button zu zwei nebeneinanderliegenden Flex-Items, `align-items:flex-start` hält das
+   Icon oben am (ggf. mehrzeiligen) Linktext ausgerichtet statt vertikal zentriert. */
+.step .body .glossary-ref{margin-top:7px;font-size:12.5px;color:var(--muted);display:flex;align-items:flex-start;gap:6px;}
 /* Foto der fertigen Pizza (v3.69.0), abschließender Anleitungsschritt nach dem Backen --
    gemeinsame Regel für Desktop UND Mobil (beide laden css/styles.css), kein separates
    Mobil-Override nötig (.step .body ist bereits flex:1;min-width:0, das Bild skaliert mit
@@ -636,7 +642,7 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .step-glossary-link{
   background:none;border:none;padding:0;margin:0;color:var(--tomato-text);font:inherit;
-  font-weight:700;text-decoration:underline;cursor:pointer;
+  font-weight:700;text-decoration:underline;cursor:pointer;text-align:left;flex:1;min-width:0;
 }
 .step-glossary-link:hover{opacity:.85;}
 .step-glossary-link:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;border-radius:1px;}

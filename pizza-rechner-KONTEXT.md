@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-22 · Aktuelle Version: v3.69.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-22 · Aktuelle Version: v3.69.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -179,19 +179,15 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Foto der fertigen Pizza am Ende der Anleitung (v3.69.0) = aktueller Stand
+## Glossar-Links: Dedup pro `buildGuide()`-Aufruf (v3.69.1) = aktueller Stand
 
-Feedback von Sörens Kollegen Benjamin: die Schritt-für-Schritt-Anleitung endet jetzt mit
-einem eigenen, abschließenden Schritt „Fertig!" nach dem letzten Backschritt, mit einem
-Foto der fertigen Pizza passend zur Form. Zuordnung über den aktiven `#preset`-Dropdown-
-Wert (`js/guide.js`, es gibt kein `state.preset`): `teglia` → Teglia-Foto, `newyork_style`
-→ New-York-Foto, alle anderen Presets + „Eigene Einstellung" → neapolitanisches Foto
-(Fallback). Alt-Text je Foto, keine sichtbare Bildunterschrift. `assets/pizza-final-
-{neapolitanisch,teglia,newyork}.jpg` neu; `build-mobile-standalone.py` bettet diese drei
-Fotos jetzt zusätzlich als Base64 ein (Header-Foto bleibt unverändert CSS-Hintergrund).
-Tests 699 → **712** grün. `accessibility-expert`-Review ohne Befunde. **Volle Details:**
-`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Foto der fertigen Pizza am Ende der
-Anleitung (v3.69.0)".
+Bugfix: Glossar-Verweise wie „Ofen-Heizarten" kamen vorher mehrfach in der Anleitung vor
+(z. B. beim Vorheizen UND beim Back-Schritt), wenn sie an mehreren Schritten gesetzt waren.
+Jetzt rendert `js/guide.js` jeden Glossar-Begriff nur noch beim ERSTEN Vorkommen (`_usedGlossaryIds`
+Set, zurückgesetzt bei jedem neuen `buildGuide()`). Tests angepasst: Ofen-Heizarten von 2×
+auf 1× reduziert; zusätzliche Regression+Dedup-Reset-Tests hinzugefügt. 712 → **716** Prüfungen
+grün. **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-Links:
+Dedup pro `buildGuide()`-Aufruf (v3.69.1)".
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -434,7 +430,7 @@ js/onboarding.js     Willkommens-Screen / Einführung (v3.63.0): eigenständiges
                      eigenem Fokus-Trap, stellt 4 Kernfunktionen vor, automatisch beim Erststart
                      + jederzeit über Burgermenü-Punkt "Einführung" aufrufbar, Persistenz via
                      localStorage-Key pizzaOnboardingDontShow. Läuft als letztes Script (nach nav.js)
-tests/test.html      712 Prüfungen in 28 Kategorien (Doppelklick, kein Server) — lädt 17 der 27
+tests/test.html      716 Prüfungen in 28 Kategorien (Doppelklick, kein Server) — lädt 17 der 27
                      js/*-Module direkt (dom/state/i18n-dict/i18n/settings/theme/units/widgets/
                      flour/schedule/guide/calc/print/pdf/storage/share/party); ui.js, timer.js,
                      presets.js, newrecipe.js, glossary.js, main.js, nav.js, simplemode.js,
@@ -510,7 +506,7 @@ nach dem Rebuild, gegenprüfen), sonst zeigt die Live-App die falsche Version an
 - **Versionen-Workflow (Pflicht bei jeder Änderung):** kompletten lauffähigen Stand nach
   `Versionen/vX.Y.Z - [Beschreibung]/` kopieren (html, index, css/, js/, README; tests/ optional).
   SemVer: Patch=Fix, Minor=Feature, Major=Umbau. `?v=` in der HTML mitziehen.
-- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 712 Prüfungen in
+- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 716 Prüfungen in
   28 Kategorien** (s. Dateistruktur oben): Bäckerprozente, DDT/Eis, Vorteig-Aufteilung, Trockenhefe,
   Schedule-Schwellen, Mehl-Warnung, Backzeit-Skalierung, Olivenöl (Masseerhaltung), Anleitungs-
   Hinweise, Randfälle/Edge Cases, Kombinationen, Zeitplan-Rückwärtsrechnung, Einkaufsliste,
