@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "pizza",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8137"],
+      "port": 8137,
+      "autoPort": true
+    },
+    {
+      "name": "pizza-rechner",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server"],
+      "port": 8138,
+      "autoPort": true
+    }
+  ]
+}
