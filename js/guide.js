@@ -111,7 +111,11 @@
     _usedGlossaryIds.add(id);
     const term = t('glossary.' + id + '.title');
     const label = t('guide.glossaryLink.label', { term: term });
-    return `<div class="glossary-ref">📖 <button type="button" class="step-glossary-link" data-glossary-id="${id}">${label}</button></div>`;
+    // `aria-hidden="true"` aufs Icon (v3.69.1, accessibility-expert-Befund): verhindert,
+    // dass Screenreader das 📖-Emoji zusätzlich zum ohnehin vorgelesenen Button-Text
+    // ansagen (redundante Doppelansage). Eigenes <span> statt reinem Text-Knoten, damit
+    // es weiterhin als eigenes Flex-Item neben dem Button steht (s. .glossary-ref-CSS).
+    return `<div class="glossary-ref"><span aria-hidden="true">📖</span><button type="button" class="step-glossary-link" data-glossary-id="${id}">${label}</button></div>`;
   }
 
   function buildGuide() {

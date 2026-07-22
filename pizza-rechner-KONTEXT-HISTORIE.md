@@ -8,21 +8,50 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
-## Glossar-Links: Dedup pro `buildGuide()`-Aufruf (v3.69.1)
+## Glossar-Verweise: Dedup + Icon-Ausrichtung (v3.69.1)
 
-**Bugfix:** Glossar-Verweise erschienen mehrfach in der Anleitung, wenn der Glossar-Begriff
-an mehreren Schritten (z. B. „Ofen-Heizarten" am Vorheizen- UND Back-Schritt) technisch
-verlinkt war. Mit dem Dedup-Fix rendert `js/guide.js` jeden Glossar-Begriff jetzt nur noch
-beim **ERSTEN Vorkommen** pro `buildGuide()`-Durchlauf.
+Klar diagnostizierter Zwei-Punkte-Bugfix an den Glossar-Verweisen aus v3.68.0 (live
+reproduziert vor Auftragserteilung, direkt an den `feature-cycle-orchestrator` übergeben,
+kein `/define-feature` nötig).
 
-**Änderung in `js/guide.js`:** neuer privater Modul-State `_usedGlossaryIds` (Set), das bei
-jedem `buildGuide()`-Aufruf zurückgesetzt wird (Zeile 158); in `glossaryLinkHtml(id)` wird
-geprüft, ob `id` bereits im Set liegt — falls ja, wird ein leerer String zurückgegeben
-(Verweis unterdrückt), ansonsten wird die ID zum Set hinzugefügt und der HTML-Link gerendert
-(Zeile 108–114). Alle anderen Glossar-Logik (`buildGuide()` ruft einzelne `st(...)`-Aufrufe
-auf, die je eine `glossaryId` setzen) bleibt unverändert — nur die Rendering-Ebene filtert.
+**Bug 1 — Doppelter Verweis:** derselbe Glossar-Verweis (z. B. „Ofen-Heizarten") erschien
+zweimal in der gerenderten Anleitung, weil sowohl der Vorheiz-Schritt als auch der
+Back-Schritt dieselbe `glossaryId: 'ofenHeizarten'` setzten. **Fix in `js/guide.js`:**
+neuer privater Modul-State `_usedGlossaryIds` (Set), zurückgesetzt bei jedem
+`buildGuide()`-Aufruf zusammen mit `_items`. `glossaryLinkHtml(id)` prüft, ob `id` bereits
+im Set liegt — falls ja, wird ein leerer String zurückgegeben (Verweis unterdrückt), sonst
+wird die ID zum Set hinzugefügt und der Link gerendert. Allgemeine Regel (nicht nur der
+Ofen-Heizarten-Fall hart verdrahtet): jede `glossaryId` erscheint jetzt projektweit nur noch
+beim ERSTEN Schritt, an dem sie vorkommt. Die Zuordnung Schritt→glossaryId in den einzelnen
+`st(...)`-Aufrufen bleibt unverändert — nur die Rendering-Ebene filtert.
 
-**Tests (`tests/test.html`):** Sektion 27 angepasst (712 → 716 Prüfungen grün):
+**Bug 2 — Icon-Ausrichtung:** das 📖-Icon stand (v. a. auf Mobil, wo der Linktext oft
+umbricht) auf einer eigenen Zeile über dem `<button>`, weil der Button-Browser-Default
+(`display:inline-block` + `text-align:center`) die volle Containerbreite einnahm und
+seinen Text zentrierte. **Fix in `css/styles.css`:** `.step .body .glossary-ref` jetzt
+`display:flex;align-items:flex-start;gap:6px` (Icon und Button als zwei nebeneinander-
+liegende Flex-Items, Icon oben am ggf. mehrzeiligen Linktext ausgerichtet statt vertikal
+zentriert); `.step-glossary-link` zusätzlich `text-align:left;flex:1;min-width:0` (Linktext
+bleibt bei Zeilenumbruch linksbündig, kann innerhalb der verfügbaren Restbreite wrappen).
+Ein gemeinsamer Fix in `css/styles.css` reichte (gilt für Desktop UND Mobil, kein separates
+`css/mobile.css`-Override nötig).
+
+**Härtung (`accessibility-expert`-Review der CSS-Änderung):** ein Blocker gefunden und
+behoben — `.step-glossary-link` hatte `padding:0` + `font-size:12.5px`, ergab nur ~16–20px
+Klickhöhe, unter dem im Projekt etablierten 44px-Touch-Ziel-Richtwert (s. `.switch-row`,
+Zeile 209/230 in `css/styles.css`). Fix: `min-height:44px;display:flex;align-items:center`
+statt zusätzlichem vertikalem Padding, damit die Icon-Ausrichtung aus Bug 2 nicht
+verschoben wird (Icon und Button starten weiterhin an derselben Oberkante dank
+`align-items:flex-start` am Elternelement, der Button bekommt nur zusätzliche, unsichtbare
+Klickfläche nach unten). Zusätzlich ein Minor-Befund direkt mitgefixt: das Icon war ein
+nackter Text-Knoten, wurde vom Screenreader potenziell redundant zum Button-Text
+vorgelesen — jetzt `<span aria-hidden="true">📖</span>` in `js/guide.js`. Ein weiterer
+Minor-Befund (Kontrast von `.glossary-ref`-Text, `color:var(--muted)`, ~3,2:1, unter der
+WCAG-Schwelle 4,5:1) war bereits **vor** diesem Zyklus so und wurde bewusst NICHT
+mitgefixt (außerhalb des beauftragten Scopes) — s. Backlog in `pizza-rechner-KONTEXT.md`.
+
+**Tests (`tests/test.html`, `test-generator`-Agent):** Sektion 27 angepasst (712 → 716
+Prüfungen grün):
 1. Test „Ofen-Heizarten-Glossarverweis an Vorheiz- und Back-Schritt (genau 2×)" → geändert
    zu „...an Vorheiz-Schritt nach Dedup (genau 1×)"; Kommentar korrigiert.
 2. Neuer Test „Dedup unterdrückt nicht alle glossaryIds, nur wiederholte": kombiniert
@@ -30,9 +59,25 @@ auf, die je eine `glossaryId` setzen) bleibt unverändert — nur die Rendering-
 3. Neuer Test „Dedup-Set wird bei neuem buildGuide()-Aufruf zurückgesetzt": zwei
    aufeinanderfolgende `PZ.calc()`-Aufrufe, prüft dass der Ofen-Heizarten-Link bei jedem
    Durchlauf wieder 1× vorhanden ist (keine kumulative Unterdrückung).
+   Reine CSS-/Markup-Härtungsänderungen (Touch-Ziel, `aria-hidden`) ändern die geprüften
+   `data-glossary-id`-Attribute nicht — alle 716 Prüfungen blieben nach beiden
+   Nachbesserungen unverändert grün (Headless-Edge-Dump gegengeprüft).
 
-**Dateien geändert:** `js/guide.js`, `tests/test.html`. Keine neuen HTML-IDs, kein CSS.
-Versionsnummer noch nicht gezogen (wird bei nächster Gelegenheit, ähnlich wie v3.68.0→v3.68.1).
+**Ablauf-Hinweis (Delegation über den Hauptagenten):** der `test-generator`-Lauf hat in
+seinem eigenen Commit versehentlich zusätzlich zu den Testdatei-Änderungen auch die zu dem
+Zeitpunkt im Arbeitsbaum stehenden, noch uncommitteten Phase-2-Änderungen des Orchestrators
+(js/guide.js-Dedup-Logik, css/styles.css-Flex-Fix, Versionsbump auf 3.69.1 in
+`pizza-rechner.html`/`pizza-rechner-mobile.html`) mit committet — inhaltlich unverändert
+übernommen (per `git show` gegengeprüft), aber die dabei automatisch mitgeschriebenen
+Kontext-Dateien beschrieben nur den Dedup-Teil (Bug 1), nicht Bug 2/die Härtung, und
+enthielten die inzwischen überholte Aussage „kein CSS, Version noch nicht gezogen". Dieser
+Abschnitt hier sowie der „aktueller Stand"-Abschnitt in `pizza-rechner-KONTEXT.md` wurden
+im Rahmen des regulären Phase-5-Abschlusses korrigiert/vervollständigt.
+
+**Dateien geändert:** `js/guide.js`, `css/styles.css`, `tests/test.html`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`. `?v=` + Menü-Version auf `3.69.1` gezogen (Desktop + Mobil).
+`pizza-rechner-mobile-standalone.html` neu gebaut. `Versionen/v3.69.1 - Glossar-Verweise
+Dedup und Icon-Ausrichtung/` enthält den vollständigen Schnappschuss.
 
 ## Foto der fertigen Pizza am Ende der Anleitung (v3.69.0)
 

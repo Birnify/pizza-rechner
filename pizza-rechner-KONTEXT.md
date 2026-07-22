@@ -179,15 +179,22 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Glossar-Links: Dedup pro `buildGuide()`-Aufruf (v3.69.1) = aktueller Stand
+## Glossar-Verweise: Dedup + Icon-Ausrichtung (v3.69.1) = aktueller Stand
 
-Bugfix: Glossar-Verweise wie „Ofen-Heizarten" kamen vorher mehrfach in der Anleitung vor
-(z. B. beim Vorheizen UND beim Back-Schritt), wenn sie an mehreren Schritten gesetzt waren.
-Jetzt rendert `js/guide.js` jeden Glossar-Begriff nur noch beim ERSTEN Vorkommen (`_usedGlossaryIds`
-Set, zurückgesetzt bei jedem neuen `buildGuide()`). Tests angepasst: Ofen-Heizarten von 2×
-auf 1× reduziert; zusätzliche Regression+Dedup-Reset-Tests hinzugefügt. 712 → **716** Prüfungen
-grün. **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-Links:
-Dedup pro `buildGuide()`-Aufruf (v3.69.1)".
+Zwei-Punkte-Bugfix an den Glossar-Verweisen (v3.68.0). **Bug 1:** derselbe Verweis (z. B.
+„Ofen-Heizarten") erschien mehrfach in der Anleitung, wenn mehrere Schritte dieselbe
+`glossaryId` setzten (Vorheizen UND Backen) — `js/guide.js` (`glossaryLinkHtml()`) rendert
+jetzt jede `glossaryId` nur noch beim ERSTEN Vorkommen (`_usedGlossaryIds`-Set, Reset pro
+`buildGuide()`-Durchlauf). **Bug 2:** das 📖-Icon stand (v. a. Mobil, mehrzeiliger Linktext)
+auf einer eigenen Zeile über dem Link statt daneben — `css/styles.css` `.glossary-ref` jetzt
+`display:flex;align-items:flex-start;gap:6px`, `.step-glossary-link` `text-align:left`.
+**Härtung** (accessibility-expert-Review): Touch-Ziel von `.step-glossary-link` war mit
+`padding:0` zu klein (`min-height:44px;display:flex;align-items:center` ergänzt, Icon-
+Ausrichtung bleibt unverändert), Icon-Text ist jetzt `<span aria-hidden="true">` (verhindert
+doppelte Screenreader-Ansage). Kontrast von `.glossary-ref`-Text (`--muted`, ~3,2:1,
+vorbestehend, nicht Teil dieses Bugfix-Scopes) bewusst nicht mitgefixt, s. Backlog unten.
+712 → **716** Prüfungen grün. **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`,
+Abschnitt „Glossar-Verweise: Dedup + Icon-Ausrichtung (v3.69.1)".
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -352,7 +359,7 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.69.0)
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.69.1)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
@@ -449,7 +456,7 @@ makePrefStages/fillFlourSelect, die diese drei Module beim eigenen Laden direkt 
 `units` MUSS vor `calc`/`guide`/`print` geladen werden (liefert PZ.formatWeight/formatWeightAuto/
 formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.69.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.69.1` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
@@ -710,6 +717,22 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
+- ~~Bugfix: Glossar-Verweise doppelt + Icon-Ausrichtung versetzt~~ — **erledigt in
+  v3.69.1** (kein Backlog-Punkt, live reproduzierter Bugfix-Auftrag direkt an den
+  Orchestrator; s. Abschnitt „Glossar-Verweise: Dedup + Icon-Ausrichtung (v3.69.1)" oben).
+- **Nebenbefund aus dem v3.69.1-`accessibility-expert`-Review:** Kontrast von
+  `.step .body .glossary-ref`-Text (`color:var(--muted)`, ~3,2:1) liegt unter der
+  WCAG-1.4.3-Schwelle 4,5:1 für Fließtext — vorbestehend seit v3.68.0, nicht durch
+  v3.69.1 verursacht, bewusst außerhalb des Bugfix-Scopes gelassen. Kandidat für einen
+  kleinen, gezielten Folge-Fix (z. B. `var(--step-text)` statt `--muted`).
+- **Nebenbefund (Doku-Debt, kein Code):** in `pizza-rechner-KONTEXT.md` steht beim
+  Abschnitt „Feature-Flag „hints"…" (v3.17.0) noch ein zweites, veraltetes
+  „= aktueller Stand"-Tag neben dem tatsächlich aktuellen (v3.69.1) — beim nächsten
+  Kontext-Pflege-Durchgang entfernen (nur der irreführende Tag, der Abschnitt selbst
+  bleibt stehen). Zusätzlich verweist ein Satz im Zucker-Feld/New-York-Style-Abschnitt
+  („weiter oben (= aktueller Stand)") auf eine Zwischenüberschrift, die inzwischen schon
+  nach `pizza-rechner-KONTEXT-HISTORIE.md` ausgelagert wurde — die Referenz ist dadurch
+  nicht mehr auffindbar und sollte korrigiert/entfernt werden.
 - **Foto-Anleitung (Fotos je Schritt):** Schritt-für-Schritt-Anleitung um Fotos je
   Schritt ergänzen (z. B. Autolyse, Kneten, Salz zugeben), analog einer Referenz-App,
   die der Nutzer per Screenshot gezeigt hat. Noch nicht spezifiziert (Bildquelle offen:

@@ -655,8 +655,15 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
    Sprung-Link am Ende eines Anleitungsschritts (js/guide.js glossaryLinkHtml()) --
    bewusst KEINE farbige Box wie .tip/.warn (sonst zu viel visuelle Konkurrenz, da mehrere
    Schritte gleichzeitig einen Verweis haben können), nur ein unterstrichenes Wort im
-   Fließtext, analog zum bestehenden .schedbar-goto-zeitplan-Muster. */
-.step .body .glossary-ref{margin-top:7px;font-size:12.5px;color:var(--muted);}
+   Fließtext, analog zum bestehenden .schedbar-goto-zeitplan-Muster.
+   Flex-Layout (v3.69.1-Bugfix): vorher stand das 📖-Icon auf einer eigenen Zeile über dem
+   <button>, weil der Button (Browser-Default `display:inline-block` + `text-align:center`)
+   die volle Containerbreite einnahm und seinen Text zentrierte -- besonders sichtbar auf
+   Mobil, wo der Linktext oft umbricht. `display:flex` macht Icon-`<span>` und Button zu
+   zwei nebeneinanderliegenden Flex-Items, `align-items:flex-start` hält das Icon oben am
+   (ggf. mehrzeiligen) Linktext ausgerichtet statt vertikal zentriert. Icon-`<span>` trägt
+   `aria-hidden="true"` (js/guide.js), da der Button-Text bereits vorgelesen wird. */
+.step .body .glossary-ref{margin-top:7px;font-size:12.5px;color:var(--muted);display:flex;align-items:flex-start;gap:6px;}
 /* Foto der fertigen Pizza (v3.69.0), abschließender Anleitungsschritt nach dem Backen --
    gemeinsame Regel für Desktop UND Mobil (beide laden css/styles.css), kein separates
    Mobil-Override nötig (.step .body ist bereits flex:1;min-width:0, das Bild skaliert mit
@@ -669,7 +676,15 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .step-glossary-link{
   background:none;border:none;padding:0;margin:0;color:var(--tomato-text);font:inherit;
-  font-weight:700;text-decoration:underline;cursor:pointer;
+  font-weight:700;text-decoration:underline;cursor:pointer;text-align:left;flex:1;min-width:0;
+  /* Touch-Ziel-Fix (v3.69.1-Bugfix, accessibility-expert-Befund): padding:0 + 12.5px
+     Schriftgröße ergaben nur ~16-20px Klickhöhe, unter dem im Projekt etablierten
+     44px-Touch-Ziel-Richtwert (s. .switch-row/.viewlink-Muster). min-height statt
+     zusätzlichem vertikalem Padding, damit die Icon-Ausrichtung aus dem Fix direkt
+     darüber (align-items:flex-start am Elternelement) nicht verschoben wird -- Icon und
+     Button starten weiterhin an derselben Oberkante, der Button bekommt nur zusätzliche
+     (unsichtbare, da kein Rahmen/Hintergrund) Klickfläche nach unten. */
+  min-height:44px;display:flex;align-items:center;
 }
 .step-glossary-link:hover{opacity:.85;}
 .step-glossary-link:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;border-radius:1px;}
@@ -1826,7 +1841,7 @@ header{position:relative;text-align:center;}
           <div class="nav-divider" role="separator"></div>
           <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
           <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-          <span class="nav-version" id="appVersion">v3.69.0</span>
+          <span class="nav-version" id="appVersion">v3.69.1</span>
 
         </div>
       </div>
@@ -4651,11 +4666,24 @@ header{position:relative;text-align:center;}
   // PDF-Export (js/pdf.js, extrahiert nur `.tip`/`.warn` als "extras") oder Druck
   // (`@media print`, s. css/styles.css) übernommen -- ein Klick-Link ist auf Papier
   // nutzlos.
+  // Dedup (v3.69.1-Bugfix): derselbe Glossar-Begriff soll nur EINMAL pro Anleitung
+  // verlinkt werden -- am ersten Schritt, an dem er vorkommt (z. B. "ofenHeizarten" trat
+  // vorher sowohl am Vorheiz- als auch am Back-Schritt auf). `_usedGlossaryIds` wird bei
+  // jedem buildGuide()-Durchlauf zusammen mit `_items` zurückgesetzt (s. u.); spätere
+  // Vorkommen derselben `glossaryId` werden hier still unterdrückt (leerer String), die
+  // Zuordnung Schritt→glossaryId in den einzelnen st(...)-Aufrufen bleibt unverändert.
+  let _usedGlossaryIds = new Set();
   function glossaryLinkHtml(id) {
     if (!id) return '';
+    if (_usedGlossaryIds.has(id)) return '';
+    _usedGlossaryIds.add(id);
     const term = t('glossary.' + id + '.title');
     const label = t('guide.glossaryLink.label', { term: term });
-    return `<div class="glossary-ref">📖 <button type="button" class="step-glossary-link" data-glossary-id="${id}">${label}</button></div>`;
+    // `aria-hidden="true"` aufs Icon (v3.69.1, accessibility-expert-Befund): verhindert,
+    // dass Screenreader das 📖-Emoji zusätzlich zum ohnehin vorgelesenen Button-Text
+    // ansagen (redundante Doppelansage). Eigenes <span> statt reinem Text-Knoten, damit
+    // es weiterhin als eigenes Flex-Item neben dem Button steht (s. .glossary-ref-CSS).
+    return `<div class="glossary-ref"><span aria-hidden="true">📖</span><button type="button" class="step-glossary-link" data-glossary-id="${id}">${label}</button></div>`;
   }
 
   function buildGuide() {
@@ -4699,6 +4727,7 @@ header{position:relative;text-align:center;}
     const iceTxt = R.ice > 0 ? t('guide.iceTxt', { ice: g(R.ice) }) : '';
     let matureMin = 0;                        // Vorteig-Reifezeit (nur bei Biga/Poolish)
     _items = [];
+    _usedGlossaryIds = new Set();              // Dedup-Reset je buildGuide()-Durchlauf
 
     // ===== VORTEIG (Biga / Poolish) =====
     if (pref) {
