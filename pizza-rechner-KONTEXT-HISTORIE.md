@@ -8,6 +8,44 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Einführung-Dialog: X-Button entfernt + Titel geändert (v3.68.2)
+
+Sören leitete Feedback von seinem Kollegen Benjamin weiter, per Screenshot-Annotation:
+"Mach mal den Button vom Vorschaltdialog rot und nicht blau". Vermutlich war damit der
+"X"-Schließen-Button im Einführung-Modal gemeint (der einzige Button dort, der nicht
+bereits tomatenrot ist). Statt die Farbe zu ändern, entschied Sören: der Button kann
+komplett weg, der CTA-Button "Los geht's" unten reicht als Schließweg, ein zweiter
+Button oben stiftet eher Verwirrung als Nutzen. Zusätzlich wurde der Titel von
+"Willkommen bei Teigmeister" auf "Willkommen Teigmeister" geändert (Nutzerwunsch, ohne
+"bei" liest es sich schwungvoller/persönlicher, "spricht die App direkt an").
+
+**Umsetzung:**
+- `pizza-rechner.html` + `pizza-rechner-mobile.html`: `<button id="onboardingClose">`
+  komplett aus dem Markup entfernt, Titeltext im Fallback auf "Willkommen Teigmeister"
+  geändert.
+- `js/i18n-dict.js`: `onboarding.title` DE-Text geändert (EN-Text "Welcome to
+  Teigmeister" unverändert, das deutsche Wortspiel überträgt sich nicht 1:1), der jetzt
+  ungenutzte Key `onboarding.closeLabel` komplett entfernt.
+- `js/onboarding.js`: `closeBtn`-Variable und alle Referenzen entfernt (Klick-Listener,
+  Tab-Trap-Liste, Fokus-beim-Öffnen). Fokus beim Öffnen springt jetzt auf das erste
+  Element in `focusablesInPanel()` (die Checkbox) statt auf den entfernten X-Button.
+  Kopfkommentar aktualisiert: "vier Wegen" zu schließen wird zu "drei Wegen" (Escape,
+  Backdrop-Klick, CTA-Button). Der bestehende Rücksprung-Fokus-Mechanismus fürs
+  Schließen über den "Einführung"-Menüpunkt (explizites `navToggle`-Rücksprungziel,
+  s. v3.63.0-Härtung) bleibt unverändert korrekt, unabhängig davon, welches Element
+  innerhalb des Panels zuletzt fokussiert war.
+
+Per Headless-Edge auf Desktop UND Mobil verifiziert: kein `#onboardingClose` mehr im
+DOM, Titel korrekt "Willkommen Teigmeister", Fokus landet beim Öffnen auf der Checkbox,
+alle 3 verbleibenden Schließwege (Escape, Backdrop-Klick, CTA-Button-Klick) funktionieren
+weiterhin. Reine UI-Änderung, keine Berechnungslogik betroffen, `tests/test.html`
+unverändert **699/699** grün (das Modul lädt dort ohnehin nicht, reines DOM-Wiring).
+
+**Geändert:** `pizza-rechner.html`, `pizza-rechner-mobile.html`, `js/i18n-dict.js`,
+`js/onboarding.js`. `pizza-rechner-mobile-standalone.html` neu gebaut. `?v=` auf
+`3.68.2` gezogen (Desktop und Mobil, Cache-Busting + Footer-Version). `Versionen/v3.68.2
+- Einfuehrung X-Button entfernt + Titel/` enthält den vollständigen Schnappschuss.
+
 ## Teilen-Link-Abstand & versteckter Flex-Bug (v3.68.1)
 
 Kollegen-Feedback per Screenshot: der Hinweistext unter "Link kopieren" ("Kopiert einen

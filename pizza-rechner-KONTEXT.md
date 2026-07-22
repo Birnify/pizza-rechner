@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-22 · Aktuelle Version: v3.68.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-22 · Aktuelle Version: v3.68.2 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -179,16 +179,19 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Teilen-Link-Abstand & versteckter Flex-Bug (v3.68.1) = aktueller Stand
+## Einführung-Dialog: X-Button entfernt + Titel geändert (v3.68.2) = aktueller Stand
 
-Kollegen-Feedback (Screenshot-Annotation "Text tiefer, ein paar Pixel") deckte einen
-tieferliegenden Bug auf: `js/settings.js` (`applyFlags()`) löschte beim Einblenden von
-`#shareBlock`/`#pdfGuideBlock` per `style.display=''` deren inline `display:flex`,
-wodurch Button und Hinweistext ohne Flex-Gap zusammenrückten. Fix: explizit `'flex'`
-statt `''` setzen, plus `margin-top:-4px` → `0` auf beiden Hinweistexten (`#shareHint`/
-`#pdfGuideHint`). Reine Layout-Korrektur, keine Berechnungslogik betroffen. Tests
-unverändert **699/699** grün. **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`,
-Abschnitt „Teilen-Link-Abstand & versteckter Flex-Bug (v3.68.1)".
+Feedback von Sörens Kollegen Benjamin zum Einführung-Modal: Button-Farbe sollte von
+Blau auf Rot geändert werden, vermutlich zum "X"-Schließen-Button. Statt Farbe
+anzupassen, wurde der X-Button komplett entfernt (der CTA-Button "Los geht's" reicht
+als Schließweg). Zusätzlich Titel von "Willkommen bei Teigmeister" auf "Willkommen
+Teigmeister" verkürzt (Nutzerwunsch, wirkt schwungvoller). Schließen geht jetzt auf drei
+Wegen (Escape, Backdrop-Klick, CTA-Button) statt vier. `js/onboarding.js`: Fokus beim
+Öffnen springt jetzt auf die Checkbox (erstes Element im Tab-Trap) statt auf den
+entfernten X-Button. Reine UI-Änderung, keine Berechnungslogik betroffen. Tests
+unverändert **699/699** grün, alle 3 Schließwege + Fokusverhalten auf Desktop und Mobil
+per Headless-Edge verifiziert. **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`,
+Abschnitt „Einführung-Dialog: X-Button entfernt + Titel geändert (v3.68.2)".
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -450,7 +453,7 @@ makePrefStages/fillFlourSelect, die diese drei Module beim eigenen Laden direkt 
 `units` MUSS vor `calc`/`guide`/`print` geladen werden (liefert PZ.formatWeight/formatWeightAuto/
 formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.68.1` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.68.2` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht

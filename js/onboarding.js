@@ -9,10 +9,12 @@
  * Technisch ein eigenständiges Modal-Dialog-Overlay (role="dialog" aria-modal="true"),
  * analog zum bestehenden Burgermenü-Muster (js/nav.js) -- eigener Fokus-Trap statt
  * Wiederverwendung von dessen internem, an #navMenu gebundenem Trap. Schließen geht auf
- * vier Wegen (X-Button, Escape, Klick auf den Hintergrund, CTA-Button) -- die Checkbox
- * "Beim nächsten Start nicht mehr anzeigen" bestimmt dabei NUR, ob der Screen beim
- * NÄCHSTEN Start automatisch wieder erscheint, unabhängig davon, wie er diesmal
- * geschlossen wurde (Nutzer-Entscheidung, Rückfrage-Runde vor der Umsetzung).
+ * drei Wegen (Escape, Klick auf den Hintergrund, CTA-Button) -- kein eigener X-Button
+ * mehr (v3.68.2, Nutzer-Entscheidung: der CTA-Button unten reicht als Schließweg, ein
+ * zweiter Button oben stiftete eher Verwirrung). Die Checkbox "Beim nächsten Start
+ * nicht mehr anzeigen" bestimmt dabei NUR, ob der Screen beim NÄCHSTEN Start
+ * automatisch wieder erscheint, unabhängig davon, wie er diesmal geschlossen wurde
+ * (Nutzer-Entscheidung, Rückfrage-Runde vor der Umsetzung).
  *
  * Eigener localStorage-Key `pizzaOnboardingDontShow` ('1'/'0'), getrennt vom
  * Rezept-Speicher `pizzaRechner`, vom Feature-Flag-Speicher `pizzaRechnerFeatureFlags`
@@ -36,17 +38,16 @@
     const overlay = $('onboardingOverlay');
     if (!overlay) return; // Seite ohne Onboarding-Markup (z. B. tests/test.html) -- no-op
 
-    const closeBtn = $('onboardingClose');
     const ctaBtn = $('onboardingCta');
     const checkbox = $('onboardingDontShow');
     const menuItem = $('navOnboardingItem');
     let lastFocused = null;
 
-    // Tab-Trap-Reihenfolge entspricht der visuellen/DOM-Reihenfolge im Panel: X-Button,
-    // dann die Checkbox, dann der CTA-Button (die reinen Vorstellungstexte dazwischen
-    // sind nicht interaktiv, brauchen also keinen eigenen Trap-Eintrag).
+    // Tab-Trap-Reihenfolge entspricht der visuellen/DOM-Reihenfolge im Panel: die
+    // Checkbox, dann der CTA-Button (die reinen Vorstellungstexte dazwischen sind nicht
+    // interaktiv, brauchen also keinen eigenen Trap-Eintrag).
     function focusablesInPanel() {
-      return [closeBtn, checkbox, ctaBtn].filter(Boolean);
+      return [checkbox, ctaBtn].filter(Boolean);
     }
 
     function onKeydown(e) {
@@ -67,9 +68,10 @@
     // übergibt stattdessen explizit navToggle (s. u.): er schließt selbst vorher das
     // Burgermenü (PZ.closeNav), wodurch der Menüpunkt-Button beim Schließen des
     // Onboardings längst unsichtbar (nicht mehr fokussierbar) wäre -- ohne diese
-    // Übersteuerung bliebe der Fokus beim Schließen auf dem unsichtbaren X-Button hängen
-    // (Chromium blurt ein fokussiertes Element nicht zuverlässig synchron, nur weil ein
-    // Vorfahre display:none bekommt -- per Headless-Klicktest verifiziert).
+    // Übersteuerung bliebe der Fokus beim Schließen auf dem zuletzt fokussierten,
+    // inzwischen unsichtbaren Element im Panel hängen (Chromium blurt ein fokussiertes
+    // Element nicht zuverlässig synchron, nur weil ein Vorfahre display:none bekommt --
+    // per Headless-Klicktest verifiziert).
     function open(returnFocusEl) {
       lastFocused = returnFocusEl || document.activeElement;
       // Checkbox spiegelt beim Öffnen immer den aktuell gespeicherten Stand -- egal ob
@@ -77,7 +79,8 @@
       // nach einem früheren "nicht mehr anzeigen" (dann checked).
       if (checkbox) checkbox.checked = readDontShow();
       overlay.hidden = false;
-      if (closeBtn) closeBtn.focus();
+      const first = focusablesInPanel()[0];
+      if (first) first.focus();
       document.addEventListener('keydown', onKeydown);
     }
     PZ.openOnboarding = function () { open(); };
@@ -89,7 +92,6 @@
       if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
     }
 
-    if (closeBtn) closeBtn.addEventListener('click', close);
     if (ctaBtn) ctaBtn.addEventListener('click', close);
     overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
 

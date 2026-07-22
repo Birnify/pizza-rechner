@@ -521,8 +521,7 @@
   add('nav.viewAnnounce', 'Ansicht: {label}', 'View: {label}');
 
   // -- Willkommens-Screen / Einführung (v3.63.0, js/onboarding.js) --------------------
-  add('onboarding.title', 'Willkommen bei Teigmeister', 'Welcome to Teigmeister');
-  add('onboarding.closeLabel', 'Einführung schließen', 'Close introduction');
+  add('onboarding.title', 'Willkommen Teigmeister', 'Welcome to Teigmeister');
   add('onboarding.intro', 'So findest du dich schnell zurecht:', 'Here’s how to get started quickly:');
   add('onboarding.feature.presets.title', 'Fertige Rezepte', 'Ready-made recipes');
   add('onboarding.feature.presets.text',
