@@ -91,6 +91,13 @@ bekommen. Etablierter Ablauf:
 Der Orchestrator startet kalt und liest `pizza-rechner-KONTEXT.md` komplett neu
 (Kaltstart-Overhead). Das lohnt sich nur für größere Aufgaben.
 
+**Bei jedem neuen Umsetzungswunsch zuerst kurz rückfragen** (Nutzer-Vorgabe), ob es nur
+eine einzelne, abgeschlossene Sache ist (dann inline) oder mehrere Schritte/Zyklen braucht
+(dann Orchestrator), statt die Route still selbst zu wählen. Empfehlung mit kurzer
+Begründung dazugeben, aber die Wahl bestätigt der Nutzer. Nicht extra fragen, wenn der
+Nutzer die Arbeitsweise schon vorgegeben hat oder es reine Analyse/Verifizierung ohne
+Code-Umsetzung ist.
+
 - **Inline (im Hauptgespräch) erledigen:** winzige, klar umrissene Fixes (eine Zeile Code,
   ein Doku-Nachtrag, ein Textfehler), kurze Tests/Analysen, oder wenn der Kontext ohnehin
   schon geladen ist. Faustregel: Wäre das eine Minute Handarbeit? Dann inline.
