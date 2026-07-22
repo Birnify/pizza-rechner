@@ -691,6 +691,12 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
+- **Foto-Anleitung:** Schritt-für-Schritt-Anleitung um Fotos je Schritt ergänzen (z. B.
+  Autolyse, Kneten, Salz zugeben), analog einer Referenz-App, die der Nutzer per
+  Screenshot gezeigt hat. Noch nicht spezifiziert (Bildquelle offen: generische Stock-/
+  Illustrationsbilder pro Schritt-Typ vs. Aufwand, ob sie zu allen Methoden/Presets
+  passen). Braucht vor Umsetzung eine eigene `/define-feature`-Runde. (Als Backlog-Notiz
+  vom Nutzer nachgetragen, 2026-07-22 — noch kein eigener Zyklus dafür gestartet.)
 - ~~Mehl- und Raumtemperatur getrennt einstellbar (aktuell als gleich angenommen)~~ —
   **erledigt in v3.20.0**: eigener Mehltemperatur-Regler (`#flourTemp`), Default =
   Raumtemperatur, danach unabhängig änderbar; DDT-Formel nutzt beide Werte statt
@@ -1022,14 +1028,16 @@ Keine Code-Änderung durch den Audit nötig.
   (kein Backlog-Punkt, direkter Nutzerauftrag mit Rückfrage-Runde; s. Abschnitt
   „Willkommens-Screen / Einführung (v3.63.0)" oben).
 
-**Stand v3.63.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
-oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen, vollständig
-zurückgebaut, keine offene Frage mehr). Zwei direkte Nutzeraufträge bereits als
-Warteschlange für die nächsten Zyklen angekündigt (noch nicht umgesetzt): 1) Globale
-Hefemengen- und Verschwendungs-Anpassung (zwei neue %-Regler im Einstellungen-Menü),
-2) Einheitensystem-Umschaltung Metrisch/Imperial (automatische Spracherkennung +
-persistente manuelle Übersteuerung). Für einen sonst neuen Zyklus wieder frisches
-Brainstorming in Phase 1 statt eines vorgegebenen Auftrags.
+**Stand v3.63.0: alle bisherigen versionierten Backlog-Punkte sind abgearbeitet**
+(durchgestrichen oben) — offen ist nur die neue, noch unspezifizierte Foto-Anleitung-Idee
+ganz oben in dieser Liste. Der Bring!-Deeplink-Testaufbau ist abschließend geklärt
+(verworfen, vollständig zurückgebaut, keine offene Frage mehr). Drei direkte
+Nutzeraufträge bereits als Warteschlange für die nächsten Zyklen angekündigt (noch nicht
+umgesetzt, in dieser Reihenfolge): 1) Globale Hefemengen- und Verschwendungs-Anpassung
+(zwei neue %-Regler im Einstellungen-Menü), 2) Einheitensystem-Umschaltung
+Metrisch/Imperial (automatische Spracherkennung + persistente manuelle Übersteuerung).
+Für einen sonst neuen Zyklus wieder frisches Brainstorming in Phase 1 statt eines
+vorgegebenen Auftrags.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 
