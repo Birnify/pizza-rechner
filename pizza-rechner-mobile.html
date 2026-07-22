@@ -30,11 +30,11 @@
   } catch(e) {}
 })();
 </script>
-<link rel="stylesheet" href="css/styles.css?v=3.67.0">
-<link rel="stylesheet" href="css/mobile.css?v=3.67.0">
+<link rel="stylesheet" href="css/styles.css?v=3.68.0">
+<link rel="stylesheet" href="css/mobile.css?v=3.68.0">
 </head>
 <body>
-<!-- Bottom-Tab-Navigation (v3.67.0) ersetzt das bisherige Burgermenü vollständig auf
+<!-- Bottom-Tab-Navigation (v3.68.0) ersetzt das bisherige Burgermenü vollständig auf
      Mobil -- die Kopfzeile zeigt jetzt nur noch den Titel, kein Menü-Button mehr nötig.
      Desktop behält unverändert sein Burgermenü (s. pizza-rechner.html). -->
 <header>
@@ -107,7 +107,7 @@
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
 
 <div class="wrap view" data-view="rechner">
-  <!-- Sekundär-Navigation (v3.67.0): seit der Bottom-Tab-Navigation ersetzt dieses
+  <!-- Sekundär-Navigation (v3.68.0): seit der Bottom-Tab-Navigation ersetzt dieses
        Segmented-Control-Muster die frühere Burgermenü-Gruppe "Teig-Rechner"
        (Rechner/Rezepte/Zeitplan) -- identisch an dieser Stelle in allen drei
        Unterbereichen eingebettet (s. data-view="rezepte"/"zeitplan" weiter unten),
@@ -876,7 +876,7 @@
             <p class="switch-info" id="wasteAdjustInfo" hidden data-i18n="flag.wasteAdjust.info">Erhöht das errechnete Gesamtgewicht um einen Puffer für Kneteverluste (Schüssel, Hände, Maschine): damit am Ende trotzdem die gewünschte Anzahl Teiglinge im Zielgewicht rauskommt.</p>
           </div>
 
-          <!-- "Einführung" + Desktop-Link + Versionsnummer (v3.67.0): zogen mit der
+          <!-- "Einführung" + Desktop-Link + Versionsnummer (v3.68.0): zogen mit der
                Bottom-Tab-Navigation hierher um, da es dafür kein Burgermenü mehr gibt
                (s. pizza-rechner-KONTEXT.md, Abschnitt "Bottom-Tab-Navigation (Mobil)").
                Unverändert dieselben Elemente/IDs wie zuvor im Burgermenü -- js/onboarding.js
@@ -884,7 +884,7 @@
           <div class="nav-divider" role="separator"></div>
           <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
           <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-          <span class="nav-version" id="appVersion">v3.67.0</span>
+          <span class="nav-version" id="appVersion">v3.68.0</span>
 
         </div>
       </div>
@@ -956,7 +956,7 @@
   <a class="qb-jump" href="#partyResultSummary"><span class="visually-hidden" data-i18n="quickbar.jumpToPartyResult">Zur Zutatenliste springen: </span><span id="qbPartyCount">–</span></a>
 </div>
 
-<!-- Bottom-Tab-Navigation (v3.67.0): ersetzt das bisherige Burgermenü vollständig auf
+<!-- Bottom-Tab-Navigation (v3.68.0): ersetzt das bisherige Burgermenü vollständig auf
      Mobil -- persistente, einhändig erreichbare Leiste mit den 4 Hauptbereichen. Buttons
      nutzen dieselbe .nav-item-Klasse/data-goto-Logik wie zuvor die Burgermenü-Einträge
      (js/nav.js verdrahtet sie generisch, keine eigene Verdrahtung nötig) -- Sichtbarkeits-/
@@ -986,35 +986,35 @@
 </nav>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.67.0"></script>
-<script src="js/state.js?v=3.67.0"></script>
-<script src="js/i18n-dict.js?v=3.67.0"></script>
-<script src="js/i18n.js?v=3.67.0"></script>
-<script src="js/settings.js?v=3.67.0"></script>
-<script src="js/theme.js?v=3.67.0"></script>
-<script src="js/units.js?v=3.67.0"></script>
-<script src="js/widgets.js?v=3.67.0"></script>
-<script src="js/flour.js?v=3.67.0"></script>
-<script src="js/calc.js?v=3.67.0"></script>
-<script src="js/schedule.js?v=3.67.0"></script>
-<script src="js/guide.js?v=3.67.0"></script>
-<script src="js/timer.js?v=3.67.0"></script>
-<script src="js/ui.js?v=3.67.0"></script>
-<script src="js/simplemode.js?v=3.67.0"></script>
-<script src="js/print.js?v=3.67.0"></script>
-<script src="js/pdf.js?v=3.67.0"></script>
-<script src="js/presets.js?v=3.67.0"></script>
-<script src="js/storage.js?v=3.67.0"></script>
-<script src="js/newrecipe.js?v=3.67.0"></script>
-<script src="js/share.js?v=3.67.0"></script>
-<script src="js/party.js?v=3.67.0"></script>
-<script src="js/glossary.js?v=3.67.0"></script>
-<script src="js/main.js?v=3.67.0"></script>
+<script src="js/dom.js?v=3.68.0"></script>
+<script src="js/state.js?v=3.68.0"></script>
+<script src="js/i18n-dict.js?v=3.68.0"></script>
+<script src="js/i18n.js?v=3.68.0"></script>
+<script src="js/settings.js?v=3.68.0"></script>
+<script src="js/theme.js?v=3.68.0"></script>
+<script src="js/units.js?v=3.68.0"></script>
+<script src="js/widgets.js?v=3.68.0"></script>
+<script src="js/flour.js?v=3.68.0"></script>
+<script src="js/calc.js?v=3.68.0"></script>
+<script src="js/schedule.js?v=3.68.0"></script>
+<script src="js/guide.js?v=3.68.0"></script>
+<script src="js/timer.js?v=3.68.0"></script>
+<script src="js/ui.js?v=3.68.0"></script>
+<script src="js/simplemode.js?v=3.68.0"></script>
+<script src="js/print.js?v=3.68.0"></script>
+<script src="js/pdf.js?v=3.68.0"></script>
+<script src="js/presets.js?v=3.68.0"></script>
+<script src="js/storage.js?v=3.68.0"></script>
+<script src="js/newrecipe.js?v=3.68.0"></script>
+<script src="js/share.js?v=3.68.0"></script>
+<script src="js/party.js?v=3.68.0"></script>
+<script src="js/glossary.js?v=3.68.0"></script>
+<script src="js/main.js?v=3.68.0"></script>
 <!-- Burger-Menü-Navigation (bis v3.17.x/v3.18.0 hier als Inline-Script gewachsen) --
      seit v3.54.0 gemeinsames Modul mit der Desktop-Seite, s. js/nav.js (Mobil-
      Implementierung war die massgebliche Referenz beim Auslagern). -->
-<script src="js/nav.js?v=3.67.0"></script>
-<script src="js/onboarding.js?v=3.67.0"></script>
+<script src="js/nav.js?v=3.68.0"></script>
+<script src="js/onboarding.js?v=3.68.0"></script>
 <script>
   // Mobil-only UI-Glue (kein Eingriff in die PZ-Rechenmodule) -- Quick-Bar-Sync,
   // Party-Quick-Bar, Quick-Save, Akkordeon-Auto-Scroll. Die frühere Sektion "4)

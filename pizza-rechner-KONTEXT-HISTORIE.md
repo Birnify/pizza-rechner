@@ -8,6 +8,98 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Glossar-Verweise in der Anleitung (v3.68.0)
+
+Direkter Nutzerauftrag, ausgelöst durch Kollegen-Feedback zur Anleitung: der
+Autolyse-Schritt sagte nur "Weniger Knetarbeit, dehnbarerer Teig" ohne zu erklären
+warum, das fand ein Kollege verwirrend. Statt die kurzen Anleitungstexte aufzublähen,
+verlinkt die Anleitung jetzt auf die bereits vorhandenen, ausführlichen
+Glossar-Einträge. Während der Umsetzung kam ein zweites Kollegen-Feedback dazu: "Was
+ist, wenn ich keinen Grill im Ofen habe? Gibt es eine Option für Ober/Unterhitze und
+für Umluft?" — als Teil desselben Features ergänzt um einen neuen Glossar-Eintrag
+"Ofen-Heizarten für Pizza", verlinkt von den Vorheiz-/Back-Schritten.
+
+- **`js/glossary.js` — `PZ.gotoGlossaryEntry(id)`** (neue Funktion): ruft zuerst
+  `PZ.gotoView('glossar')` auf (Bereichswechsel selbst, funktioniert identisch auf
+  Desktop [Burgermenü] und Mobil [Bottom-Tab-Leiste seit v3.67.0], da beide denselben
+  view-generischen `[data-view]`-Mechanismus aus `js/nav.js` nutzen, unabhängig vom
+  jeweiligen Navigations-Widget), klappt danach den passenden `<details
+  class="glossary-item" data-id="...">`-Eintrag auf (`.open = true`), scrollt ihn per
+  `scrollIntoView({behavior:'smooth', block:'start'})` ins Bild und verschiebt den
+  Fokus auf dessen `<summary>` (nativ fokussierbar, kein zusätzliches
+  `tabindex`-Attribut nötig, anders als bei der generischen Überschrift-Fokussierung in
+  `focusView()`). Überschreibt damit bewusst den generischen Überschrift-Fokus, den
+  `gotoView()` selbst schon gesetzt hat: das eigentliche Ziel ist der einzelne Eintrag,
+  nicht nur die Bereichs-Überschrift "Pizza-Glossar". Unbekannte/fehlende ID → kein
+  Crash, einfach kein Sprung zum Eintrag (View-Wechsel selbst passiert trotzdem).
+- **`js/guide.js` — neue `st()`-Option `glossaryId`**: jeder Anleitungsschritt kann per
+  `{ glossaryId: 'autolyse' }` (6. Parameter von `st()`, bereits bestehender generischer
+  Options-Mechanismus, vorher nur für `{back: 50}` beim Vorheiz-Schritt genutzt) einen
+  Glossar-Verweis bekommen. Neuer Helfer `glossaryLinkHtml(id)` baut die Zeile
+  `<div class="glossary-ref">📖 <button class="step-glossary-link"
+  data-glossary-id="...">Mehr zu {term} im Glossar</button></div>` (Linktext-Vorlage
+  `guide.glossaryLink.label` in `js/i18n-dict.js`, `{term}` kommt aus dem jeweiligen
+  `glossary.<id>.title`, bleibt so immer synchron zum tatsächlichen Zieltitel). Zentral
+  im zuletzt gemeinsamen Render-Loop angehängt (nicht in den Titel selbst, um
+  Chip/Timechip nicht zu überladen). Klick-Verdrahtung: der bereits bestehende, einzige
+  delegierte Klick-Listener auf `#guideSteps` (bisher nur für den
+  `.schedbar-goto-zeitplan`-Sprung) bekommt einen zweiten Zweig für
+  `.step-glossary-link`, der `PZ.gotoGlossaryEntry(id)` aufruft — kein zweiter,
+  separater Listener nötig.
+- **Angewandte Begriffe** (jeweils an der inhaltlich passendsten Stelle, nicht
+  zwangsläufig beim ersten Auftauchen des Wortes): `autolyse` am Autolyse-Schritt
+  selbst; `biga`/`poolish` am jeweiligen "...reifen lassen"-Schritt (Titel enthält
+  bereits den Eigennamen); `stretchFold` am Stretch-&-Fold-Schritt (Hydration ≥ 70 %);
+  `windowpane` am klassischen Knet-Schritt (Hydration < 70 %, erwähnt den "Fenstertest");
+  `kalteGare` **exakt an der Stelle, die für das jeweilige Rezept tatsächlich die kalte
+  Phase ist** (`coldStage: 'balls'` → Stückgare/`finalProof`, da dort die Teiglinge in
+  den Kühlschrank wandern; `coldStage: 'bulk'` → Stockgare/`bulkRise`, da dort der ganze
+  Teig kalt gärt) — nie an beiden Stellen gleichzeitig, nie bei nicht-kalter
+  (schneller) Führung; `ofenHeizarten` (neu) an Vorheiz- **und** Back-Schritt.
+- **Neuer Glossar-Eintrag `ofenHeizarten`** ("Ofen-Heizarten für Pizza"): erklärt
+  Ober/Unterhitze vs. Umluft vs. Backofengrill, was der Hitzeverteilung eines
+  Steinofens am nächsten kommt (Ober/Unterhitze + Stein/Stahl weit oben), die
+  praktische Alternative ohne Grillfunktion (Ober/Unterhitze auf höchster Stufe, Stein/
+  Stahl so weit oben wie möglich) und die übliche Temperatur-Faustregel bei reiner
+  Umluft (ca. 15–20 °C weniger als die angegebene Ober/Unterhitze-Temperatur, etwas
+  mehr Backzeit, blassere Bräunung oben). Eingefügt in `PZ.GLOSSARY_TOPICS`
+  (`js/glossary.js`) direkt nach `ofenVsBackofen` (thematisch verwandt). Generisches
+  Fachwissen, DE+EN, identisches Muster wie alle bestehenden Glossar-Einträge.
+  **Nebenbefund dabei behoben:** die Gruppen-Kommentare "Werkzeuge & Ausrüstung"/
+  "Pizzabeläge" in `js/i18n-dict.js` waren fälschlich mit "(v3.65.0)" statt "(v3.66.0)"
+  beschriftet (Tippfehler aus dem vorherigen Zyklus) — korrigiert.
+- **`css/styles.css`:** neue `.glossary-ref`/`.step-glossary-link`-Regeln (unauffälliger
+  unterstrichener Text-Link, KEINE farbige Box wie `.tip`/`.warn`, da mehrere Verweise
+  pro Anleitung gleichzeitig auftreten können und das sonst zu viel visuelle Konkurrenz
+  erzeugen würde) — analog zum bestehenden `.schedbar-goto-zeitplan`-Muster. Kontraste
+  rechnerisch geprüft: `var(--tomato-text)` (Link) auf `var(--card)` ~6,61:1 hell/
+  ~5,93:1 dunkel, `var(--muted)` (Fließtext/Emoji) unverändert die bereits an anderer
+  Stelle geprüften ~5,84:1/~7,0:1. `.glossary-ref{display:none;}` in `@media print`
+  ergänzt (Klick-Link ist auf Papier nutzlos). `js/pdf.js` brauchte KEINE Änderung: die
+  bestehende Extraktion sammelt nur `.body > .tip, .body > .warn` als "Extras" ein,
+  `.glossary-ref` matcht diesen Selektor ohnehin nicht und wird automatisch nicht mit
+  exportiert.
+- **Kein Eingriff in die Berechnungslogik** (`js/calc.js`-`calcCore`, `js/schedule.js`):
+  reine Anzeige-/Navigations-Ergänzung, `PZ.R`/`PZ.schedule()` unverändert.
+
+**Tests** (`tests/test.html`, 688 → **699**, neue Sektion "27 · Glossar-Verweise in der
+Anleitung"): prüft je Bedingung, dass genau der erwartete `data-glossary-id`-Button im
+gerenderten `#guideSteps`-HTML auftaucht (Autolyse, Windowpane vs. Stretch-&-Fold
+exklusiv, Biga, Poolish, Kaltgare exakt einmal für beide `coldStage`-Varianten und gar
+nicht bei schneller Führung, Ofen-Heizarten exakt zweimal). `js/glossary.js`
+(`PZ.gotoGlossaryEntry`) ist wie üblich nicht Teil der Testsuite (reines DOM-Wiring) —
+der eigentliche Sprung/Fokus-Wechsel wurde stattdessen per Headless-Edge-
+Klicksimulation auf Desktop **und** Mobil verifiziert: Bereichswechsel, geöffneter
+Glossar-Eintrag, Fokus auf dessen `<summary>`, aktiver Zustand des jeweiligen
+Navigations-Widgets (Burgermenü-Aktiv-Markierung bzw. Bottom-Tab "Glossar"). Alle 699
+Prüfungen grün (Headless-Edge-Dump).
+
+**Geändert:** `js/glossary.js`, `js/guide.js`, `js/i18n-dict.js`, `css/styles.css`,
+`tests/test.html`. `?v=` auf `3.68.0` gezogen (Desktop + Mobil, Cache-Busting +
+Menü-/Einstellungen-Version). `pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`). `Versionen/v3.68.0 - Glossar-Verweise in der
+Anleitung/` enthält den vollständigen Schnappschuss.
+
 ## Bottom-Tab-Navigation (Mobil) (v3.67.0)
 
 Direkter Nutzerauftrag (Warteschlangen-Punkt 3 von 3, letzter Punkt der Warteschlange,

@@ -67,6 +67,24 @@
     return `<div class="timerbox" data-timer-key="${key}" data-timer-min="${Math.round(min)}"></div>`;
   }
 
+  // Glossar-Verweis (v3.68.0, "Glossar-Verweise in der Anleitung"): kleiner klickbarer
+  // Sprung-Link am Ende eines Anleitungsschritts zu einem passenden, bereits bestehenden
+  // Glossar-Eintrag (z. B. Autolyse, Poolish, Biga, Kaltgare, Ofen-Heizarten). Reiner
+  // Anzeige-/Navigations-Baustein, keine neue Berechnung. Wird als eigene, separate Zeile
+  // gerendert (nicht im Schritt-Titel selbst), damit Titel-Chip/Timechip nicht überladen
+  // werden. `data-glossary-id` wird vom einzigen delegierten Klick-Listener auf
+  // #guideSteps weiter unten ausgelesen (identisches Delegations-Muster wie der
+  // bestehende ".schedbar-goto-zeitplan"-Sprung). `.glossary-ref` wird bewusst NICHT in
+  // PDF-Export (js/pdf.js, extrahiert nur `.tip`/`.warn` als "extras") oder Druck
+  // (`@media print`, s. css/styles.css) übernommen -- ein Klick-Link ist auf Papier
+  // nutzlos.
+  function glossaryLinkHtml(id) {
+    if (!id) return '';
+    const term = t('glossary.' + id + '.title');
+    const label = t('guide.glossaryLink.label', { term: term });
+    return `<div class="glossary-ref">📖 <button type="button" class="step-glossary-link" data-glossary-id="${id}">${label}</button></div>`;
+  }
+
   function buildGuide() {
     const state = PZ.state;
     const R = PZ.R;
@@ -134,7 +152,8 @@
             : t('guide.biga.temp.cold');
         st(t('guide.step.bigaRest.title'), `${state.prefMature} ${t('guide.dur.h')}`,
           t('guide.step.bigaRest.body', { bigaTempTxt: bigaTempTxt }),
-          tip(t('guide.step.bigaRest.tip')) + timerBox('biga-reifen', matureMin), matureMin);
+          tip(t('guide.step.bigaRest.tip')) + timerBox('biga-reifen', matureMin), matureMin,
+          { glossaryId: 'biga' });
       } else {
         st(t('guide.step.poolishMix.title'), t('guide.step.poolishMix.chip'),
           t('guide.step.poolishMix.body'), '', 10);
@@ -143,7 +162,8 @@
           : t('guide.poolish.temp.cold');
         st(t('guide.step.poolishRest.title'), `${state.prefMature} ${t('guide.dur.h')}`,
           t('guide.step.poolishRest.body', { poolishTempTxt: poolishTempTxt }),
-          tip(t('guide.step.poolishRest.tip')) + timerBox('poolish-reifen', matureMin), matureMin);
+          tip(t('guide.step.poolishRest.tip')) + timerBox('poolish-reifen', matureMin), matureMin,
+          { glossaryId: 'poolish' });
       }
       sec(t('guide.sec.main'));
       const hasMW = R.mWater >= 1, hasMF = R.mFlour >= 1;
@@ -196,7 +216,8 @@
           : '';
         st(t('guide.step.autolyse.title'), t('guide.step.autolyse.chip'),
           t('guide.step.autolyse.body'),
-          warn(t('guide.step.autolyse.warn')) + reserveWaterTip + timerBox('autolyse', 30), 30);
+          warn(t('guide.step.autolyse.warn')) + reserveWaterTip + timerBox('autolyse', 30), 30,
+          { glossaryId: 'autolyse' });
         st(t('guide.step.addYeast.title'), t('guide.chip.2min'),
           tinyYeast
             ? t('guide.yeast.tinyBody', { yeast: g(R.yeast), yeastTypeName: state.yeastType === 'dry' ? t('guide.yeastType.dry') : t('guide.yeastType.fresh') })
@@ -218,18 +239,28 @@
     if (hi) {
       st(t('guide.step.stretchFold.title'), t('guide.step.stretchFold.chip'),
         t('guide.step.stretchFold.body', { hyd: state.hyd }),
-        tip(t('guide.step.stretchFold.tip')) + timerBox('stretch-fold', 120), 120);
+        tip(t('guide.step.stretchFold.tip')) + timerBox('stretch-fold', 120), 120,
+        { glossaryId: 'stretchFold' });
     } else {
       st(t('guide.step.knead.title'), state.knead === '6' ? t('guide.step.knead.chipMachine') : t('guide.step.knead.chipHand'),
-        `${state.knead === '6' ? t('guide.knead.machineBody') : t('guide.knead.handBody')}${t('guide.step.knead.bodySuffix')}`, '', state.knead === '6' ? 10 : 13);
+        `${state.knead === '6' ? t('guide.knead.machineBody') : t('guide.knead.handBody')}${t('guide.step.knead.bodySuffix')}`, '', state.knead === '6' ? 10 : 13,
+        { glossaryId: 'windowpane' });
     }
     st(t('guide.step.checkTemp.title'), t('guide.step.checkTemp.chip'),
       t('guide.step.checkTemp.body', { ddt: gt(state.ddt) }), '', 2);
 
     const ballsCold = f.cold && state.coldStage !== 'bulk';
+    // Kaltgare-Glossarverweis (v3.68.0): nur an der Stelle, die für DIESES Rezept
+    // tatsächlich die kalte Phase ist -- bei coldStage "im Stück" (klassisch) ist das die
+    // Stockgare (bulkRise), bei "als Teiglinge" (praktisch, Standard) die Stückgare
+    // (finalProof). Bei nicht-kalter Führung (f.cold===false) bekommt keiner der beiden
+    // Schritte den Verweis.
+    const bulkColdGlossary = f.cold && !ballsCold ? 'kalteGare' : undefined;
+    const finalProofColdGlossary = ballsCold ? 'kalteGare' : undefined;
     sec(t('guide.sec.rise'));
     st(t('guide.step.bulkRise.title'), f.cold && !ballsCold ? t('guide.step.bulkRise.chipColdBalls') : t('guide.step.bulkRise.chipDefault'),
-      t('guide.step.bulkRise.body', { bulk: f.bulk }), timerBox('stockgare', f.bulkMin), f.bulkMin);
+      t('guide.step.bulkRise.body', { bulk: f.bulk }), timerBox('stockgare', f.bulkMin), f.bulkMin,
+      { glossaryId: bulkColdGlossary });
     st(t('guide.step.formBalls.title'), `${R.N} × ${g(R.W)}`,
       t('guide.step.formBalls.body', { N: R.N, W: g(R.W), boxTxt: ballsCold ? t('guide.box.cold') : t('guide.box.normal') }),
       tip(t('guide.step.formBalls.tip'))
@@ -239,12 +270,14 @@
       + (PZ.FLAGS && PZ.FLAGS.freezeHint === false ? '' : tip(t('guide.freezeTip'))), 10);
     st(t('guide.step.finalProof.title'), ballsCold ? t('guide.step.finalProof.chipCold') : t('guide.step.finalProof.chipDefault'),
       t('guide.step.finalProof.body', { proof: f.proof }),
-      (f.cold ? tip(t('guide.step.finalProof.tip')) : '') + timerBox('stueckgare', f.proofMin), f.proofMin);
+      (f.cold ? tip(t('guide.step.finalProof.tip')) : '') + timerBox('stueckgare', f.proofMin), f.proofMin,
+      { glossaryId: finalProofColdGlossary });
 
     sec(t('guide.sec.bake'));
     st(t('guide.step.preheat.title'), t('guide.step.preheat.chip'),
       t('guide.step.preheat.body'),
-      tip(t('guide.step.preheat.tip')) + timerBox('ofen-vorheizen', 40), 0, { back: 50 });
+      tip(t('guide.step.preheat.tip')) + timerBox('ofen-vorheizen', 40), 0,
+      { back: 50, glossaryId: 'ofenHeizarten' });
     st(t('guide.step.shape.title'), t('guide.step.shape.chip'),
       t('guide.step.shape.body'),
       warn(t('guide.step.shape.warn')), 5);
@@ -252,7 +285,8 @@
     const bakeDur = Math.max(10, R.N * (state.ballw <= 260 ? 5 : 7));
     st(t('guide.step.bakeTopping.title'), '',
       t('guide.step.bakeTopping.body', { bakeTxt: bakeTxt }),
-      tip(t('guide.step.bakeTopping.tip')), bakeDur);
+      tip(t('guide.step.bakeTopping.tip')), bakeDur,
+      { glossaryId: 'ofenHeizarten' });
 
     // ===== Zeiten berechnen =====
     const steps = _items.filter(i => !i.sec);
@@ -301,7 +335,7 @@
       }
       html += `<div class="step"><div class="num">${n++}</div><div class="body">
         <h4>${i.title}${i.chip ? `<span class="chip">${i.chip}</span>` : ''}${timeChip}</h4>
-        <p>${i.body}</p>${i.extra}</div></div>`;
+        <p>${i.body}</p>${i.extra}${glossaryLinkHtml(i.glossaryId)}</div></div>`;
     });
     $('guideSteps').innerHTML = html;
     if (PZ.wireTimers) PZ.wireTimers();
@@ -326,9 +360,18 @@
   const guideStepsEl = $('guideSteps');
   if (guideStepsEl) {
     guideStepsEl.addEventListener('click', function (e) {
-      const btn = e.target.closest('.schedbar-goto-zeitplan');
-      if (!btn) return;
-      if (PZ.gotoView) PZ.gotoView('zeitplan');
+      const zeitplanBtn = e.target.closest('.schedbar-goto-zeitplan');
+      if (zeitplanBtn) { if (PZ.gotoView) PZ.gotoView('zeitplan'); return; }
+      // Glossar-Verweise (v3.68.0): identisches Delegations-Muster wie der
+      // Zeitplan-Sprung direkt darüber -- ein einziger Listener auf dem stabilen
+      // #guideSteps-Container statt Einzel-Listenern, die bei jedem buildGuide()-Neuaufbau
+      // verloren gingen. PZ.gotoGlossaryEntry() wird von js/glossary.js bereitgestellt --
+      // falls aus irgendeinem Grund nicht vorhanden (z. B. isolierte Testumgebung),
+      // passiert einfach nichts (kein Crash).
+      const glossaryBtn = e.target.closest('.step-glossary-link');
+      if (glossaryBtn && PZ.gotoGlossaryEntry) {
+        PZ.gotoGlossaryEntry(glossaryBtn.getAttribute('data-glossary-id'));
+      }
     });
   }
 })(window);

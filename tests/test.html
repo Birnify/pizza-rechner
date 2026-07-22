@@ -3119,6 +3119,71 @@
   })();
 
   // ─────────────────────────────────────────────────────────────
+  heading('27 · Glossar-Verweise in der Anleitung (js/guide.js, v3.68.0)');
+
+  // js/glossary.js (PZ.gotoGlossaryEntry) wird in dieser Testdatei bewusst NICHT geladen
+  // (reines DOM-Wiring, s. Dateistruktur-Dokumentation) -- hier wird deshalb nur geprüft,
+  // DASS js/guide.js für die passenden Schritte den korrekten `.step-glossary-link`-Button
+  // mit der richtigen `data-glossary-id` rendert (der eigentliche Sprung/Fokus-Wechsel
+  // wird stattdessen per Headless-Edge-Verhaltenstest auf Desktop + Mobil verifiziert,
+  // s. pizza-rechner-KONTEXT.md).
+  (function () {
+    function glossaryLinkCount(html, id) {
+      const re = new RegExp('data-glossary-id="' + id + '"', 'g');
+      return (html.match(re) || []).length;
+    }
+
+    testCase('Autolyse-Glossarverweis erscheint bei Direkt + Hefe < 1,2 %', { method: 'direct', yeast: 0.3 }, () => [
+      ['data-glossary-id="autolyse" im Autolyse-Schritt vorhanden', glossaryLinkCount(document.getElementById('guideSteps').innerHTML, 'autolyse'), 1, 0],
+    ]);
+
+    testCase('Windowpane-Glossarverweis bei normaler Hydration (< 70 %), kein Stretch-&-Fold-Verweis', { hyd: 62 }, () => {
+      const html = document.getElementById('guideSteps').innerHTML;
+      return [
+        ['data-glossary-id="windowpane" vorhanden', glossaryLinkCount(html, 'windowpane'), 1, 0],
+        ['kein data-glossary-id="stretchFold"', glossaryLinkCount(html, 'stretchFold'), 0, 0],
+      ];
+    });
+
+    testCase('Stretch-&-Fold-Glossarverweis bei hoher Hydration (>= 70 %), kein Windowpane-Verweis', { hyd: 75 }, () => {
+      const html = document.getElementById('guideSteps').innerHTML;
+      return [
+        ['data-glossary-id="stretchFold" vorhanden', glossaryLinkCount(html, 'stretchFold'), 1, 0],
+        ['kein data-glossary-id="windowpane"', glossaryLinkCount(html, 'windowpane'), 0, 0],
+      ];
+    });
+
+    testCase('Biga-Glossarverweis erscheint bei Vorteig-Methode Biga', { method: 'biga' }, () => [
+      ['data-glossary-id="biga" vorhanden', glossaryLinkCount(document.getElementById('guideSteps').innerHTML, 'biga'), 1, 0],
+    ]);
+
+    testCase('Poolish-Glossarverweis erscheint bei Vorteig-Methode Poolish', { method: 'poolish' }, () => [
+      ['data-glossary-id="poolish" vorhanden', glossaryLinkCount(document.getElementById('guideSteps').innerHTML, 'poolish'), 1, 0],
+    ]);
+
+    // Kaltgare-Glossarverweis: exakt EINMAL, an der Stelle, die für diese coldStage-Stufe
+    // tatsächlich die kalte Phase ist (s. Kommentar bei bulkColdGlossary/
+    // finalProofColdGlossary in js/guide.js) -- nie an beiden Stellen gleichzeitig, nie bei
+    // einer nicht-kalten (schnellen) Führung.
+    testCase('Kaltgare-Glossarverweis bei coldStage "balls" (praktisch, Standard) genau einmal', { coldStage: 'balls' }, () => [
+      ['genau 1× data-glossary-id="kalteGare"', glossaryLinkCount(document.getElementById('guideSteps').innerHTML, 'kalteGare'), 1, 0],
+    ]);
+    testCase('Kaltgare-Glossarverweis bei coldStage "bulk" (klassisch) genau einmal', { coldStage: 'bulk' }, () => [
+      ['genau 1× data-glossary-id="kalteGare"', glossaryLinkCount(document.getElementById('guideSteps').innerHTML, 'kalteGare'), 1, 0],
+    ]);
+    testCase('Kein Kaltgare-Glossarverweis bei schneller (nicht-kalter) Führung', { yeast: 1.5 }, () => [
+      ['0× data-glossary-id="kalteGare"', glossaryLinkCount(document.getElementById('guideSteps').innerHTML, 'kalteGare'), 0, 0],
+    ]);
+
+    // Ofen-Heizarten-Glossarverweis (v3.68.0, Ergänzung nach Kollegen-Feedback zu
+    // Ober/Unterhitze vs. Umluft vs. Grill): unabhängig von Methode/Kaltgare immer genau
+    // an den zwei Back-Schritten (Vorheizen + Belegen & Backen).
+    testCase('Ofen-Heizarten-Glossarverweis an Vorheiz- und Back-Schritt (genau 2×)', {}, () => [
+      ['genau 2× data-glossary-id="ofenHeizarten"', glossaryLinkCount(document.getElementById('guideSteps').innerHTML, 'ofenHeizarten'), 2, 0],
+    ]);
+  })();
+
+  // ─────────────────────────────────────────────────────────────
   const s = document.getElementById('summary');
   s.textContent = failed === 0
     ? '✓ Alle ' + passed + ' Prüfungen bestanden'

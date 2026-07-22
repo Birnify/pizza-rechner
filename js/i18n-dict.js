@@ -72,6 +72,11 @@
 
   // ---- js/guide.js: Schritt-für-Schritt-Anleitung (dynamisch, mit {platzhaltern}) ---
   add('guide.title', 'Schritt-für-Schritt-Anleitung', 'Step-by-step guide');
+  // Glossar-Verweis (v3.68.0, "Glossar-Verweise in der Anleitung"): klickbarer Sprung zu
+  // einem passenden Glossar-Eintrag, s. Kommentar bei buildGuide()/glossaryLinkHtml() in
+  // js/guide.js und PZ.gotoGlossaryEntry() in js/glossary.js. {term} kommt aus dem
+  // jeweiligen glossary.<id>.title-Eintrag, damit der Linktext immer zum Zieltitel passt.
+  add('guide.glossaryLink.label', 'Mehr zu {term} im Glossar', 'More on {term} in the glossary');
   add('guide.weekday.0', 'So', 'Sun'); add('guide.weekday.1', 'Mo', 'Mon');
   add('guide.weekday.2', 'Di', 'Tue'); add('guide.weekday.3', 'Mi', 'Wed');
   add('guide.weekday.4', 'Do', 'Thu'); add('guide.weekday.5', 'Fr', 'Fri');
@@ -792,7 +797,17 @@
     '<p>Ein dedizierter Pizzaofen (Holz, Gas oder Strom) erreicht 400–500 °C und backt eine neapolitanische Pizza in 60–90 Sekunden: dadurch bleibt der Teig innen saftig, während außen schnell Röstblasen (Leoparding) entstehen.</p><p>Ein normaler Haushaltsbackofen schafft meist nur 250–300 °C, wodurch das Backen 6–12 Minuten dauert und der Teig eher austrocknet, bevor die Kruste ausreichend gebräunt ist. Ein Pizzastahl oder -stein hilft, diesen Unterschied teilweise auszugleichen, indem er Hitze speichert und von unten intensiver an den Teig abgibt, als es ein Backblech könnte.</p>',
     '<p>A dedicated pizza oven (wood, gas or electric) reaches 400–500°C and bakes a Neapolitan pizza in 60–90 seconds: this keeps the inside of the dough moist while quickly forming charred blisters (leoparding) on the outside.</p><p>A regular home oven usually maxes out at 250–300°C, so baking takes 6–12 minutes and the dough tends to dry out before the crust browns enough. A baking steel or pizza stone helps partly compensate for this by storing heat and transferring it to the dough from below far more intensely than a baking sheet could.</p>');
 
-  // -- Werkzeuge & Ausrüstung (v3.65.0) --------------------------------------------------
+  // Neuer Eintrag (v3.68.0), ausgelöst durch Kollegen-Feedback zur Anleitung: "Was ist,
+  // wenn ich keinen Grill im Ofen habe? Gibt es eine Option für Ober/Unterhitze und für
+  // Umluft?" Ergänzt js/guide.js' Vorheiz-/Back-Schritte (bisher nur "+ Grill" empfohlen,
+  // ohne Alternative für Nutzer ohne Grillfunktion oder mit Umluft-Ofen), s. Abschnitt
+  // "Glossar-Verweise in der Anleitung" in pizza-rechner-KONTEXT.md.
+  add('glossary.ofenHeizarten.title', 'Ofen-Heizarten für Pizza', 'Oven heat modes for pizza');
+  add('glossary.ofenHeizarten.body',
+    '<p>Ober/Unterhitze strahlt gleichmäßig von oben UND unten, ganz ohne Gebläse: das kommt der Hitzeverteilung eines Steinofens am nächsten, besonders zusammen mit einem vorgeheizten Pizzastein/-stahl möglichst weit oben im Ofen. Umluft (Heißluft/Konvektion) verteilt die Hitze per Ventilator gleichmäßiger über mehrere Backgüter und trocknet die Oberfläche schneller, kühlt eine einzelne Pizza aber leicht ab und bräunt die Oberseite meist etwas weniger stark. Der Backofengrill strahlt nur von oben, ganz ohne Unterhitze: dient meist nur als kurzer Extra-Schub am Ende für mehr Farbe oben, nicht als alleinige Backmethode.</p><p>Ohne Grillfunktion: einfach Ober/Unterhitze auf höchster Stufe nutzen, den Stein/Stahl so weit oben wie möglich platzieren, das kommt der fehlenden Grillhitze am nächsten. Nur mit Umluft: die Temperatur meist um etwa 15–20 °C gegenüber der angegebenen Ober/Unterhitze-Temperatur senken (übliche Umluft-Faustregel) und mit etwas mehr Backzeit sowie blasserer Bräunung oben rechnen.</p>',
+    '<p>Conventional top/bottom heat radiates evenly from above AND below, with no fan at all: this comes closest to the heat distribution of a stone oven, especially together with a preheated pizza stone/steel placed as high up in the oven as possible. Convection (fan-assisted heat) circulates hot air more evenly across multiple items and dries the surface faster, but slightly cools a single pizza and usually browns the top a bit less. The oven grill/broiler radiates only from above, with no bottom heat at all: usually just a short extra boost at the end for more color on top, not a baking method on its own.</p><p>Without a grill function: simply use top/bottom heat on the highest setting and place the stone/steel as high up as possible, that comes closest to the missing grill heat. With convection only: usually lower the temperature by about 15 to 20°C compared to the stated top/bottom heat temperature (a common convection rule of thumb) and expect slightly longer baking time along with paler browning on top.</p>');
+
+  // -- Werkzeuge & Ausrüstung (v3.66.0) --------------------------------------------------
   add('glossary.pizzastein.title', 'Pizzastein & Pizzastahl', 'Pizza stone & pizza steel');
   add('glossary.pizzastein.body',
     '<p>Beide speichern Hitze und geben sie von unten intensiv an den Teig ab: damit schließen sie einen Teil der Lücke zwischen Haushaltsofen (meist nur 250–300 °C) und Pizzaofen. Pizzastahl (Metall) leitet Wärme besser und schneller als der klassische Keramik-/Cordierit-Stein, ergibt dadurch oft eine noch knusprigere Unterseite, ist dafür aber deutlich schwerer.</p><p>Pizzastein ist leichter, günstiger und gibt die Hitze etwas sanfter ab: für viele Einsteiger die praktischere Wahl. Beide brauchen eine lange Vorheizzeit (30–60 Minuten bei Ofen-Maximaltemperatur), damit sie wirklich durchgeglüht sind, bevor der erste Teigling hineinkommt.</p>',
@@ -848,7 +863,7 @@
     '<p>Frisches Basilikum wird bei klassischer Margherita traditionell ERST NACH dem Backen aufgelegt, nicht vorher: die Hitze des Ofens würde die zarten Blätter sonst innerhalb von Sekunden verbrennen und bitter machen.</p><p>Getrocknetes Basilikum verträgt die Backhitze zwar besser, hat aber ein deutlich anderes, weniger frisches Aroma und wird deshalb für die klassische Napoli-Pizza kaum verwendet. Ein paar frische Blätter kurz vor dem Servieren reichen meist aus.</p>',
     '<p>Fresh basil is traditionally added to a classic Margherita AFTER baking, not before: the oven\'s heat would otherwise scorch the delicate leaves within seconds and turn them bitter.</p><p>Dried basil holds up better to baking heat, but has a noticeably different, less fresh aroma, so it\'s rarely used for classic Neapolitan pizza. A few fresh leaves added just before serving are usually enough.</p>');
 
-  // -- Pizzabeläge (v3.65.0) --------------------------------------------------------------
+  // -- Pizzabeläge (v3.66.0) --------------------------------------------------------------
   add('glossary.belagMarinara.title', 'Pizza Marinara (ohne Käse)', 'Pizza Marinara (no cheese)');
   add('glossary.belagMarinara.body',
     '<p>Die Marinara ist historisch älter als die Margherita und kommt komplett ohne Käse aus: nur Tomate, Knoblauch, Oregano und Olivenöl, manchmal etwas frisches Basilikum. Der Name verweist nicht auf Meeresfrüchte, sondern wird meist damit erklärt, dass es ein einfaches, lange haltbares Gericht für Seeleute („marinai") war.</p><p>Ohne den zusätzlichen Wasseranteil des Käses backt die Marinara meist etwas schneller durch und bleibt in der Mitte weniger feucht als eine Margherita: eine gute Wahl, um die reine Tomatenqualität zu beurteilen.</p>',

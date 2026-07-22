@@ -618,6 +618,18 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   margin-top:7px;font-size:12.5px;color:var(--warn-text);background:var(--warn-bg);border-radius:2px;
   padding:7px 10px;border-left:3px solid var(--tomato);
 }
+/* Glossar-Verweis (v3.68.0, "Glossar-Verweise in der Anleitung"): kleiner, unauffälliger
+   Sprung-Link am Ende eines Anleitungsschritts (js/guide.js glossaryLinkHtml()) --
+   bewusst KEINE farbige Box wie .tip/.warn (sonst zu viel visuelle Konkurrenz, da mehrere
+   Schritte gleichzeitig einen Verweis haben können), nur ein unterstrichenes Wort im
+   Fließtext, analog zum bestehenden .schedbar-goto-zeitplan-Muster. */
+.step .body .glossary-ref{margin-top:7px;font-size:12.5px;color:var(--muted);}
+.step-glossary-link{
+  background:none;border:none;padding:0;margin:0;color:var(--tomato-text);font:inherit;
+  font-weight:700;text-decoration:underline;cursor:pointer;
+}
+.step-glossary-link:hover{opacity:.85;}
+.step-glossary-link:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;border-radius:1px;}
 /* Gärzeit-Timer/Wecker je Schritt (js/timer.js) */
 .timerwrap{
   margin-top:9px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
@@ -660,6 +672,7 @@ footer{text-align:center;font-size:11.5px;color:var(--muted);padding:0 20px 30px
   .result{position:static;}
   body{background:#fff;}
   .timerbox,.timerhint{display:none;}
+  .glossary-ref{display:none;}
   /* Anleitung drucken: nur die Schritt-für-Schritt-Anleitung bleibt sichtbar */
   body.print-guide .result{display:none;}
   /* Einkaufsliste drucken: alles außer der Einkaufsliste ausblenden (inkl. Anleitung + Ergebnis-Panel) */

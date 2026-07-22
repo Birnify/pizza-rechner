@@ -651,6 +651,18 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   margin-top:7px;font-size:12.5px;color:var(--warn-text);background:var(--warn-bg);border-radius:2px;
   padding:7px 10px;border-left:3px solid var(--tomato);
 }
+/* Glossar-Verweis (v3.68.0, "Glossar-Verweise in der Anleitung"): kleiner, unauffälliger
+   Sprung-Link am Ende eines Anleitungsschritts (js/guide.js glossaryLinkHtml()) --
+   bewusst KEINE farbige Box wie .tip/.warn (sonst zu viel visuelle Konkurrenz, da mehrere
+   Schritte gleichzeitig einen Verweis haben können), nur ein unterstrichenes Wort im
+   Fließtext, analog zum bestehenden .schedbar-goto-zeitplan-Muster. */
+.step .body .glossary-ref{margin-top:7px;font-size:12.5px;color:var(--muted);}
+.step-glossary-link{
+  background:none;border:none;padding:0;margin:0;color:var(--tomato-text);font:inherit;
+  font-weight:700;text-decoration:underline;cursor:pointer;
+}
+.step-glossary-link:hover{opacity:.85;}
+.step-glossary-link:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;border-radius:1px;}
 /* Gärzeit-Timer/Wecker je Schritt (js/timer.js) */
 .timerwrap{
   margin-top:9px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
@@ -693,6 +705,7 @@ footer{text-align:center;font-size:11.5px;color:var(--muted);padding:0 20px 30px
   .result{position:static;}
   body{background:#fff;}
   .timerbox,.timerhint{display:none;}
+  .glossary-ref{display:none;}
   /* Anleitung drucken: nur die Schritt-für-Schritt-Anleitung bleibt sichtbar */
   body.print-guide .result{display:none;}
   /* Einkaufsliste drucken: alles außer der Einkaufsliste ausblenden (inkl. Anleitung + Ergebnis-Panel) */
@@ -954,7 +967,7 @@ header{position:relative;text-align:center;}
 </style>
 </head>
 <body>
-<!-- Bottom-Tab-Navigation (v3.67.0) ersetzt das bisherige Burgermenü vollständig auf
+<!-- Bottom-Tab-Navigation (v3.68.0) ersetzt das bisherige Burgermenü vollständig auf
      Mobil -- die Kopfzeile zeigt jetzt nur noch den Titel, kein Menü-Button mehr nötig.
      Desktop behält unverändert sein Burgermenü (s. pizza-rechner.html). -->
 <header>
@@ -1027,7 +1040,7 @@ header{position:relative;text-align:center;}
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
 
 <div class="wrap view" data-view="rechner">
-  <!-- Sekundär-Navigation (v3.67.0): seit der Bottom-Tab-Navigation ersetzt dieses
+  <!-- Sekundär-Navigation (v3.68.0): seit der Bottom-Tab-Navigation ersetzt dieses
        Segmented-Control-Muster die frühere Burgermenü-Gruppe "Teig-Rechner"
        (Rechner/Rezepte/Zeitplan) -- identisch an dieser Stelle in allen drei
        Unterbereichen eingebettet (s. data-view="rezepte"/"zeitplan" weiter unten),
@@ -1796,7 +1809,7 @@ header{position:relative;text-align:center;}
             <p class="switch-info" id="wasteAdjustInfo" hidden data-i18n="flag.wasteAdjust.info">Erhöht das errechnete Gesamtgewicht um einen Puffer für Kneteverluste (Schüssel, Hände, Maschine): damit am Ende trotzdem die gewünschte Anzahl Teiglinge im Zielgewicht rauskommt.</p>
           </div>
 
-          <!-- "Einführung" + Desktop-Link + Versionsnummer (v3.67.0): zogen mit der
+          <!-- "Einführung" + Desktop-Link + Versionsnummer (v3.68.0): zogen mit der
                Bottom-Tab-Navigation hierher um, da es dafür kein Burgermenü mehr gibt
                (s. pizza-rechner-KONTEXT.md, Abschnitt "Bottom-Tab-Navigation (Mobil)").
                Unverändert dieselben Elemente/IDs wie zuvor im Burgermenü -- js/onboarding.js
@@ -1804,7 +1817,7 @@ header{position:relative;text-align:center;}
           <div class="nav-divider" role="separator"></div>
           <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
           <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-          <span class="nav-version" id="appVersion">v3.67.0</span>
+          <span class="nav-version" id="appVersion">v3.68.0</span>
 
         </div>
       </div>
@@ -1876,7 +1889,7 @@ header{position:relative;text-align:center;}
   <a class="qb-jump" href="#partyResultSummary"><span class="visually-hidden" data-i18n="quickbar.jumpToPartyResult">Zur Zutatenliste springen: </span><span id="qbPartyCount">–</span></a>
 </div>
 
-<!-- Bottom-Tab-Navigation (v3.67.0): ersetzt das bisherige Burgermenü vollständig auf
+<!-- Bottom-Tab-Navigation (v3.68.0): ersetzt das bisherige Burgermenü vollständig auf
      Mobil -- persistente, einhändig erreichbare Leiste mit den 4 Hauptbereichen. Buttons
      nutzen dieselbe .nav-item-Klasse/data-goto-Logik wie zuvor die Burgermenü-Einträge
      (js/nav.js verdrahtet sie generisch, keine eigene Verdrahtung nötig) -- Sichtbarkeits-/
@@ -2062,6 +2075,11 @@ header{position:relative;text-align:center;}
 
   // ---- js/guide.js: Schritt-für-Schritt-Anleitung (dynamisch, mit {platzhaltern}) ---
   add('guide.title', 'Schritt-für-Schritt-Anleitung', 'Step-by-step guide');
+  // Glossar-Verweis (v3.68.0, "Glossar-Verweise in der Anleitung"): klickbarer Sprung zu
+  // einem passenden Glossar-Eintrag, s. Kommentar bei buildGuide()/glossaryLinkHtml() in
+  // js/guide.js und PZ.gotoGlossaryEntry() in js/glossary.js. {term} kommt aus dem
+  // jeweiligen glossary.<id>.title-Eintrag, damit der Linktext immer zum Zieltitel passt.
+  add('guide.glossaryLink.label', 'Mehr zu {term} im Glossar', 'More on {term} in the glossary');
   add('guide.weekday.0', 'So', 'Sun'); add('guide.weekday.1', 'Mo', 'Mon');
   add('guide.weekday.2', 'Di', 'Tue'); add('guide.weekday.3', 'Mi', 'Wed');
   add('guide.weekday.4', 'Do', 'Thu'); add('guide.weekday.5', 'Fr', 'Fri');
@@ -2782,7 +2800,17 @@ header{position:relative;text-align:center;}
     '<p>Ein dedizierter Pizzaofen (Holz, Gas oder Strom) erreicht 400–500 °C und backt eine neapolitanische Pizza in 60–90 Sekunden: dadurch bleibt der Teig innen saftig, während außen schnell Röstblasen (Leoparding) entstehen.</p><p>Ein normaler Haushaltsbackofen schafft meist nur 250–300 °C, wodurch das Backen 6–12 Minuten dauert und der Teig eher austrocknet, bevor die Kruste ausreichend gebräunt ist. Ein Pizzastahl oder -stein hilft, diesen Unterschied teilweise auszugleichen, indem er Hitze speichert und von unten intensiver an den Teig abgibt, als es ein Backblech könnte.</p>',
     '<p>A dedicated pizza oven (wood, gas or electric) reaches 400–500°C and bakes a Neapolitan pizza in 60–90 seconds: this keeps the inside of the dough moist while quickly forming charred blisters (leoparding) on the outside.</p><p>A regular home oven usually maxes out at 250–300°C, so baking takes 6–12 minutes and the dough tends to dry out before the crust browns enough. A baking steel or pizza stone helps partly compensate for this by storing heat and transferring it to the dough from below far more intensely than a baking sheet could.</p>');
 
-  // -- Werkzeuge & Ausrüstung (v3.65.0) --------------------------------------------------
+  // Neuer Eintrag (v3.68.0), ausgelöst durch Kollegen-Feedback zur Anleitung: "Was ist,
+  // wenn ich keinen Grill im Ofen habe? Gibt es eine Option für Ober/Unterhitze und für
+  // Umluft?" Ergänzt js/guide.js' Vorheiz-/Back-Schritte (bisher nur "+ Grill" empfohlen,
+  // ohne Alternative für Nutzer ohne Grillfunktion oder mit Umluft-Ofen), s. Abschnitt
+  // "Glossar-Verweise in der Anleitung" in pizza-rechner-KONTEXT.md.
+  add('glossary.ofenHeizarten.title', 'Ofen-Heizarten für Pizza', 'Oven heat modes for pizza');
+  add('glossary.ofenHeizarten.body',
+    '<p>Ober/Unterhitze strahlt gleichmäßig von oben UND unten, ganz ohne Gebläse: das kommt der Hitzeverteilung eines Steinofens am nächsten, besonders zusammen mit einem vorgeheizten Pizzastein/-stahl möglichst weit oben im Ofen. Umluft (Heißluft/Konvektion) verteilt die Hitze per Ventilator gleichmäßiger über mehrere Backgüter und trocknet die Oberfläche schneller, kühlt eine einzelne Pizza aber leicht ab und bräunt die Oberseite meist etwas weniger stark. Der Backofengrill strahlt nur von oben, ganz ohne Unterhitze: dient meist nur als kurzer Extra-Schub am Ende für mehr Farbe oben, nicht als alleinige Backmethode.</p><p>Ohne Grillfunktion: einfach Ober/Unterhitze auf höchster Stufe nutzen, den Stein/Stahl so weit oben wie möglich platzieren, das kommt der fehlenden Grillhitze am nächsten. Nur mit Umluft: die Temperatur meist um etwa 15–20 °C gegenüber der angegebenen Ober/Unterhitze-Temperatur senken (übliche Umluft-Faustregel) und mit etwas mehr Backzeit sowie blasserer Bräunung oben rechnen.</p>',
+    '<p>Conventional top/bottom heat radiates evenly from above AND below, with no fan at all: this comes closest to the heat distribution of a stone oven, especially together with a preheated pizza stone/steel placed as high up in the oven as possible. Convection (fan-assisted heat) circulates hot air more evenly across multiple items and dries the surface faster, but slightly cools a single pizza and usually browns the top a bit less. The oven grill/broiler radiates only from above, with no bottom heat at all: usually just a short extra boost at the end for more color on top, not a baking method on its own.</p><p>Without a grill function: simply use top/bottom heat on the highest setting and place the stone/steel as high up as possible, that comes closest to the missing grill heat. With convection only: usually lower the temperature by about 15 to 20°C compared to the stated top/bottom heat temperature (a common convection rule of thumb) and expect slightly longer baking time along with paler browning on top.</p>');
+
+  // -- Werkzeuge & Ausrüstung (v3.66.0) --------------------------------------------------
   add('glossary.pizzastein.title', 'Pizzastein & Pizzastahl', 'Pizza stone & pizza steel');
   add('glossary.pizzastein.body',
     '<p>Beide speichern Hitze und geben sie von unten intensiv an den Teig ab: damit schließen sie einen Teil der Lücke zwischen Haushaltsofen (meist nur 250–300 °C) und Pizzaofen. Pizzastahl (Metall) leitet Wärme besser und schneller als der klassische Keramik-/Cordierit-Stein, ergibt dadurch oft eine noch knusprigere Unterseite, ist dafür aber deutlich schwerer.</p><p>Pizzastein ist leichter, günstiger und gibt die Hitze etwas sanfter ab: für viele Einsteiger die praktischere Wahl. Beide brauchen eine lange Vorheizzeit (30–60 Minuten bei Ofen-Maximaltemperatur), damit sie wirklich durchgeglüht sind, bevor der erste Teigling hineinkommt.</p>',
@@ -2838,7 +2866,7 @@ header{position:relative;text-align:center;}
     '<p>Frisches Basilikum wird bei klassischer Margherita traditionell ERST NACH dem Backen aufgelegt, nicht vorher: die Hitze des Ofens würde die zarten Blätter sonst innerhalb von Sekunden verbrennen und bitter machen.</p><p>Getrocknetes Basilikum verträgt die Backhitze zwar besser, hat aber ein deutlich anderes, weniger frisches Aroma und wird deshalb für die klassische Napoli-Pizza kaum verwendet. Ein paar frische Blätter kurz vor dem Servieren reichen meist aus.</p>',
     '<p>Fresh basil is traditionally added to a classic Margherita AFTER baking, not before: the oven\'s heat would otherwise scorch the delicate leaves within seconds and turn them bitter.</p><p>Dried basil holds up better to baking heat, but has a noticeably different, less fresh aroma, so it\'s rarely used for classic Neapolitan pizza. A few fresh leaves added just before serving are usually enough.</p>');
 
-  // -- Pizzabeläge (v3.65.0) --------------------------------------------------------------
+  // -- Pizzabeläge (v3.66.0) --------------------------------------------------------------
   add('glossary.belagMarinara.title', 'Pizza Marinara (ohne Käse)', 'Pizza Marinara (no cheese)');
   add('glossary.belagMarinara.body',
     '<p>Die Marinara ist historisch älter als die Margherita und kommt komplett ohne Käse aus: nur Tomate, Knoblauch, Oregano und Olivenöl, manchmal etwas frisches Basilikum. Der Name verweist nicht auf Meeresfrüchte, sondern wird meist damit erklärt, dass es ein einfaches, lange haltbares Gericht für Seeleute („marinai") war.</p><p>Ohne den zusätzlichen Wasseranteil des Käses backt die Marinara meist etwas schneller durch und bleibt in der Mitte weniger feucht als eine Margherita: eine gute Wahl, um die reine Tomatenqualität zu beurteilen.</p>',
@@ -4574,6 +4602,24 @@ header{position:relative;text-align:center;}
     return `<div class="timerbox" data-timer-key="${key}" data-timer-min="${Math.round(min)}"></div>`;
   }
 
+  // Glossar-Verweis (v3.68.0, "Glossar-Verweise in der Anleitung"): kleiner klickbarer
+  // Sprung-Link am Ende eines Anleitungsschritts zu einem passenden, bereits bestehenden
+  // Glossar-Eintrag (z. B. Autolyse, Poolish, Biga, Kaltgare, Ofen-Heizarten). Reiner
+  // Anzeige-/Navigations-Baustein, keine neue Berechnung. Wird als eigene, separate Zeile
+  // gerendert (nicht im Schritt-Titel selbst), damit Titel-Chip/Timechip nicht überladen
+  // werden. `data-glossary-id` wird vom einzigen delegierten Klick-Listener auf
+  // #guideSteps weiter unten ausgelesen (identisches Delegations-Muster wie der
+  // bestehende ".schedbar-goto-zeitplan"-Sprung). `.glossary-ref` wird bewusst NICHT in
+  // PDF-Export (js/pdf.js, extrahiert nur `.tip`/`.warn` als "extras") oder Druck
+  // (`@media print`, s. css/styles.css) übernommen -- ein Klick-Link ist auf Papier
+  // nutzlos.
+  function glossaryLinkHtml(id) {
+    if (!id) return '';
+    const term = t('glossary.' + id + '.title');
+    const label = t('guide.glossaryLink.label', { term: term });
+    return `<div class="glossary-ref">📖 <button type="button" class="step-glossary-link" data-glossary-id="${id}">${label}</button></div>`;
+  }
+
   function buildGuide() {
     const state = PZ.state;
     const R = PZ.R;
@@ -4641,7 +4687,8 @@ header{position:relative;text-align:center;}
             : t('guide.biga.temp.cold');
         st(t('guide.step.bigaRest.title'), `${state.prefMature} ${t('guide.dur.h')}`,
           t('guide.step.bigaRest.body', { bigaTempTxt: bigaTempTxt }),
-          tip(t('guide.step.bigaRest.tip')) + timerBox('biga-reifen', matureMin), matureMin);
+          tip(t('guide.step.bigaRest.tip')) + timerBox('biga-reifen', matureMin), matureMin,
+          { glossaryId: 'biga' });
       } else {
         st(t('guide.step.poolishMix.title'), t('guide.step.poolishMix.chip'),
           t('guide.step.poolishMix.body'), '', 10);
@@ -4650,7 +4697,8 @@ header{position:relative;text-align:center;}
           : t('guide.poolish.temp.cold');
         st(t('guide.step.poolishRest.title'), `${state.prefMature} ${t('guide.dur.h')}`,
           t('guide.step.poolishRest.body', { poolishTempTxt: poolishTempTxt }),
-          tip(t('guide.step.poolishRest.tip')) + timerBox('poolish-reifen', matureMin), matureMin);
+          tip(t('guide.step.poolishRest.tip')) + timerBox('poolish-reifen', matureMin), matureMin,
+          { glossaryId: 'poolish' });
       }
       sec(t('guide.sec.main'));
       const hasMW = R.mWater >= 1, hasMF = R.mFlour >= 1;
@@ -4703,7 +4751,8 @@ header{position:relative;text-align:center;}
           : '';
         st(t('guide.step.autolyse.title'), t('guide.step.autolyse.chip'),
           t('guide.step.autolyse.body'),
-          warn(t('guide.step.autolyse.warn')) + reserveWaterTip + timerBox('autolyse', 30), 30);
+          warn(t('guide.step.autolyse.warn')) + reserveWaterTip + timerBox('autolyse', 30), 30,
+          { glossaryId: 'autolyse' });
         st(t('guide.step.addYeast.title'), t('guide.chip.2min'),
           tinyYeast
             ? t('guide.yeast.tinyBody', { yeast: g(R.yeast), yeastTypeName: state.yeastType === 'dry' ? t('guide.yeastType.dry') : t('guide.yeastType.fresh') })
@@ -4725,18 +4774,28 @@ header{position:relative;text-align:center;}
     if (hi) {
       st(t('guide.step.stretchFold.title'), t('guide.step.stretchFold.chip'),
         t('guide.step.stretchFold.body', { hyd: state.hyd }),
-        tip(t('guide.step.stretchFold.tip')) + timerBox('stretch-fold', 120), 120);
+        tip(t('guide.step.stretchFold.tip')) + timerBox('stretch-fold', 120), 120,
+        { glossaryId: 'stretchFold' });
     } else {
       st(t('guide.step.knead.title'), state.knead === '6' ? t('guide.step.knead.chipMachine') : t('guide.step.knead.chipHand'),
-        `${state.knead === '6' ? t('guide.knead.machineBody') : t('guide.knead.handBody')}${t('guide.step.knead.bodySuffix')}`, '', state.knead === '6' ? 10 : 13);
+        `${state.knead === '6' ? t('guide.knead.machineBody') : t('guide.knead.handBody')}${t('guide.step.knead.bodySuffix')}`, '', state.knead === '6' ? 10 : 13,
+        { glossaryId: 'windowpane' });
     }
     st(t('guide.step.checkTemp.title'), t('guide.step.checkTemp.chip'),
       t('guide.step.checkTemp.body', { ddt: gt(state.ddt) }), '', 2);
 
     const ballsCold = f.cold && state.coldStage !== 'bulk';
+    // Kaltgare-Glossarverweis (v3.68.0): nur an der Stelle, die für DIESES Rezept
+    // tatsächlich die kalte Phase ist -- bei coldStage "im Stück" (klassisch) ist das die
+    // Stockgare (bulkRise), bei "als Teiglinge" (praktisch, Standard) die Stückgare
+    // (finalProof). Bei nicht-kalter Führung (f.cold===false) bekommt keiner der beiden
+    // Schritte den Verweis.
+    const bulkColdGlossary = f.cold && !ballsCold ? 'kalteGare' : undefined;
+    const finalProofColdGlossary = ballsCold ? 'kalteGare' : undefined;
     sec(t('guide.sec.rise'));
     st(t('guide.step.bulkRise.title'), f.cold && !ballsCold ? t('guide.step.bulkRise.chipColdBalls') : t('guide.step.bulkRise.chipDefault'),
-      t('guide.step.bulkRise.body', { bulk: f.bulk }), timerBox('stockgare', f.bulkMin), f.bulkMin);
+      t('guide.step.bulkRise.body', { bulk: f.bulk }), timerBox('stockgare', f.bulkMin), f.bulkMin,
+      { glossaryId: bulkColdGlossary });
     st(t('guide.step.formBalls.title'), `${R.N} × ${g(R.W)}`,
       t('guide.step.formBalls.body', { N: R.N, W: g(R.W), boxTxt: ballsCold ? t('guide.box.cold') : t('guide.box.normal') }),
       tip(t('guide.step.formBalls.tip'))
@@ -4746,12 +4805,14 @@ header{position:relative;text-align:center;}
       + (PZ.FLAGS && PZ.FLAGS.freezeHint === false ? '' : tip(t('guide.freezeTip'))), 10);
     st(t('guide.step.finalProof.title'), ballsCold ? t('guide.step.finalProof.chipCold') : t('guide.step.finalProof.chipDefault'),
       t('guide.step.finalProof.body', { proof: f.proof }),
-      (f.cold ? tip(t('guide.step.finalProof.tip')) : '') + timerBox('stueckgare', f.proofMin), f.proofMin);
+      (f.cold ? tip(t('guide.step.finalProof.tip')) : '') + timerBox('stueckgare', f.proofMin), f.proofMin,
+      { glossaryId: finalProofColdGlossary });
 
     sec(t('guide.sec.bake'));
     st(t('guide.step.preheat.title'), t('guide.step.preheat.chip'),
       t('guide.step.preheat.body'),
-      tip(t('guide.step.preheat.tip')) + timerBox('ofen-vorheizen', 40), 0, { back: 50 });
+      tip(t('guide.step.preheat.tip')) + timerBox('ofen-vorheizen', 40), 0,
+      { back: 50, glossaryId: 'ofenHeizarten' });
     st(t('guide.step.shape.title'), t('guide.step.shape.chip'),
       t('guide.step.shape.body'),
       warn(t('guide.step.shape.warn')), 5);
@@ -4759,7 +4820,8 @@ header{position:relative;text-align:center;}
     const bakeDur = Math.max(10, R.N * (state.ballw <= 260 ? 5 : 7));
     st(t('guide.step.bakeTopping.title'), '',
       t('guide.step.bakeTopping.body', { bakeTxt: bakeTxt }),
-      tip(t('guide.step.bakeTopping.tip')), bakeDur);
+      tip(t('guide.step.bakeTopping.tip')), bakeDur,
+      { glossaryId: 'ofenHeizarten' });
 
     // ===== Zeiten berechnen =====
     const steps = _items.filter(i => !i.sec);
@@ -4808,7 +4870,7 @@ header{position:relative;text-align:center;}
       }
       html += `<div class="step"><div class="num">${n++}</div><div class="body">
         <h4>${i.title}${i.chip ? `<span class="chip">${i.chip}</span>` : ''}${timeChip}</h4>
-        <p>${i.body}</p>${i.extra}</div></div>`;
+        <p>${i.body}</p>${i.extra}${glossaryLinkHtml(i.glossaryId)}</div></div>`;
     });
     $('guideSteps').innerHTML = html;
     if (PZ.wireTimers) PZ.wireTimers();
@@ -4833,9 +4895,18 @@ header{position:relative;text-align:center;}
   const guideStepsEl = $('guideSteps');
   if (guideStepsEl) {
     guideStepsEl.addEventListener('click', function (e) {
-      const btn = e.target.closest('.schedbar-goto-zeitplan');
-      if (!btn) return;
-      if (PZ.gotoView) PZ.gotoView('zeitplan');
+      const zeitplanBtn = e.target.closest('.schedbar-goto-zeitplan');
+      if (zeitplanBtn) { if (PZ.gotoView) PZ.gotoView('zeitplan'); return; }
+      // Glossar-Verweise (v3.68.0): identisches Delegations-Muster wie der
+      // Zeitplan-Sprung direkt darüber -- ein einziger Listener auf dem stabilen
+      // #guideSteps-Container statt Einzel-Listenern, die bei jedem buildGuide()-Neuaufbau
+      // verloren gingen. PZ.gotoGlossaryEntry() wird von js/glossary.js bereitgestellt --
+      // falls aus irgendeinem Grund nicht vorhanden (z. B. isolierte Testumgebung),
+      // passiert einfach nichts (kein Crash).
+      const glossaryBtn = e.target.closest('.step-glossary-link');
+      if (glossaryBtn && PZ.gotoGlossaryEntry) {
+        PZ.gotoGlossaryEntry(glossaryBtn.getAttribute('data-glossary-id'));
+      }
     });
   }
 })(window);
@@ -7326,6 +7397,7 @@ header{position:relative;text-align:center;}
     'kalteGare',
     'malzmehl',
     'ofenVsBackofen',
+    'ofenHeizarten',
     'pizzastein',
     'pizzaschieber',
     'ofenthermometer',
@@ -7387,6 +7459,30 @@ header{position:relative;text-align:center;}
   // Sprachwechsel: komplette Neu-Darstellung (Titel + Text in der neuen
   // Sprache), Aufklapp-Zustand bleibt erhalten (s. o.).
   if (PZ.i18nOnChange) PZ.i18nOnChange(renderGlossary);
+
+  // Glossar-Verweise in der Anleitung (v3.68.0, js/guide.js): springt aus einem
+  // Anleitungsschritt heraus direkt zu einem bestimmten Glossar-Eintrag. Nutzt zuerst
+  // PZ.gotoView('glossar') (js/nav.js) für den Bereichswechsel selbst -- das funktioniert
+  // identisch auf Desktop (Burgermenü) und Mobil (Bottom-Tab-Leiste seit v3.67.0), da
+  // beide denselben view-generischen [data-view]-Mechanismus nutzen, unabhängig davon,
+  // über welches Navigations-Widget die jeweilige Seite den Bereich wechselt. Klappt
+  // danach den passenden <details>-Eintrag auf, scrollt ihn ins Bild und verschiebt den
+  // Fokus dorthin -- überschreibt bewusst den generischen Überschrift-Fokus, den
+  // gotoView() selbst schon gesetzt hat: das eigentliche Ziel hier ist der einzelne
+  // Eintrag, nicht nur die Bereichs-Überschrift "Pizza-Glossar".
+  function gotoGlossaryEntry(id) {
+    if (PZ.gotoView) PZ.gotoView('glossar');
+    const details = listEl.querySelector('details.glossary-item[data-id="' + id + '"]');
+    if (!details) return; // unbekannte/falsche ID -> kein Crash, einfach kein Sprung
+    details.open = true;
+    details.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const summary = details.querySelector('summary');
+    // <summary> ist nativ fokussierbar (Teil des <details>-Disclosure-Widgets), braucht
+    // anders als z. B. eine <h2> KEIN zusätzliches tabindex-Attribut (vgl. focusView()
+    // in js/nav.js, das dafür extra tabindex="-1" auf die Überschrift setzt).
+    if (summary) summary.focus({ preventScroll: true });
+  }
+  PZ.gotoGlossaryEntry = gotoGlossaryEntry;
 })(window);
 
 </script>

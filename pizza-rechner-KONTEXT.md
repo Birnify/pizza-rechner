@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-22 · Aktuelle Version: v3.67.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-22 · Aktuelle Version: v3.68.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -179,24 +179,22 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Bottom-Tab-Navigation (Mobil) (v3.67.0) = aktueller Stand
+## Glossar-Verweise in der Anleitung (v3.68.0) = aktueller Stand
 
-Direkter Nutzerauftrag (Warteschlangen-Punkt 3 von 3, letzter Punkt der Warteschlange,
-kein Backlog-Punkt), bereits vollständig spezifiziert. Auf `pizza-rechner-mobile.html`
-ersetzt eine persistente Bottom-Tab-Leiste (`.bottom-tabs`, 4 Haupt-Tabs: Rechner/Pizza
-Party/Glossar/Einstellungen) das bisherige Burgermenü vollständig; der Rechner-Tab
-bekommt eine eingebettete Sekundär-Navigation (`.calc-subnav`, Segmented Control
-Rechner/Rezepte/Zeitplan). "Einführung" + Desktop-Link + Versionsnummer zogen mangels
-Burgermenü in die Einstellungen-Ansicht um. Desktop (`pizza-rechner.html`) unverändert,
-behält sein Burgermenü. `js/nav.js` generalisiert (Klick-Verdrahtung läuft jetzt
-site-weit statt nur im Overlay, neues `data-goto-group`-Attribut hält den Rechner-Tab
-aktiv, solange einer seiner drei Unterbereiche offen ist) — verhaltensneutral für
-Desktop. `js/settings.js`: Bugfix `querySelector`→`querySelectorAll` für die
-"Rezepte"-Sichtbarkeits-Logik (jetzt bis zu 3 Subnav-Kopien statt nur 1 Menüpunkt).
-Tests unverändert 688 grün (`js/nav.js` ist kein Teil der Testsuite, reines DOM-Wiring),
-Verhalten per Headless-Edge-Klicksimulation verifiziert, Accessibility-Review mit einem
-behobenen Befund (Touch-Ziel 40px→44px). **Volle Details:**
-`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Bottom-Tab-Navigation (Mobil) (v3.67.0)".
+Direkter Nutzerauftrag, ausgelöst durch Kollegen-Feedback zur Anleitung (kein
+Backlog-Punkt). Anleitungsschritte, die einen im Glossar bereits erklärten Fachbegriff
+enthalten, bekommen einen klickbaren Verweis ("📖 Mehr zu X im Glossar"), der die
+Ansicht wechselt (Desktop-Burgermenü/Mobil-Bottom-Tab, derselbe view-generische
+Mechanismus), den passenden Glossar-Eintrag aufklappt, dorthin scrollt und den Fokus
+verschiebt. Angewandt auf Autolyse, Poolish, Biga, Kaltgare, Stretch & Fold,
+Windowpane-Test. Dazu ein neuer Glossar-Eintrag "Ofen-Heizarten für Pizza"
+(Ober/Unterhitze vs. Umluft vs. Grill, zweites Kollegen-Feedback zur fehlenden
+Grill-Alternative), verlinkt von den Vorheiz-/Back-Schritten. `js/glossary.js`:
+`PZ.gotoGlossaryEntry(id)`. `js/guide.js`: neue `st()`-Option `glossaryId`, zentral
+gerenderte `.glossary-ref`-Zeile je Schritt. Tests 688→**699** grün, Verhalten auf
+Desktop UND Mobil per Headless-Edge-Klicksimulation verifiziert. **Volle Details:**
+`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-Verweise in der Anleitung
+(v3.68.0)".
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -439,7 +437,7 @@ js/onboarding.js     Willkommens-Screen / Einführung (v3.63.0): eigenständiges
                      eigenem Fokus-Trap, stellt 4 Kernfunktionen vor, automatisch beim Erststart
                      + jederzeit über Burgermenü-Punkt "Einführung" aufrufbar, Persistenz via
                      localStorage-Key pizzaOnboardingDontShow. Läuft als letztes Script (nach nav.js)
-tests/test.html      688 Prüfungen in 26 Kategorien (Doppelklick, kein Server) — lädt 17 der 26
+tests/test.html      699 Prüfungen in 27 Kategorien (Doppelklick, kein Server) — lädt 17 der 27
                      js/*-Module direkt (dom/state/i18n-dict/i18n/settings/theme/units/widgets/
                      flour/schedule/guide/calc/print/pdf/storage/share/party); ui.js, timer.js,
                      presets.js, newrecipe.js, glossary.js, main.js, nav.js, simplemode.js,
@@ -515,13 +513,14 @@ nach dem Rebuild, gegenprüfen), sonst zeigt die Live-App die falsche Version an
 - **Versionen-Workflow (Pflicht bei jeder Änderung):** kompletten lauffähigen Stand nach
   `Versionen/vX.Y.Z - [Beschreibung]/` kopieren (html, index, css/, js/, README; tests/ optional).
   SemVer: Patch=Fix, Minor=Feature, Major=Umbau. `?v=` in der HTML mitziehen.
-- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 688 Prüfungen in
-  26 Kategorien** (s. Dateistruktur oben): Bäckerprozente, DDT/Eis, Vorteig-Aufteilung, Trockenhefe,
+- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 699 Prüfungen in
+  27 Kategorien** (s. Dateistruktur oben): Bäckerprozente, DDT/Eis, Vorteig-Aufteilung, Trockenhefe,
   Schedule-Schwellen, Mehl-Warnung, Backzeit-Skalierung, Olivenöl (Masseerhaltung), Anleitungs-
   Hinweise, Randfälle/Edge Cases, Kombinationen, Zeitplan-Rückwärtsrechnung, Einkaufsliste,
   Speichern & Laden, Teilen-Link, Feature-Flags/Einstellungen, Zucker/New-York-Style,
   Rezepte-Backup, PDF-Export, Pizza-Party-Planer, Sprachversion DE/EN, Dunkelmodus,
-  Hefemengen-/Verschwendungs-Anpassung, Einheitensystem Metrisch/Imperial. Nach
+  Hefemengen-/Verschwendungs-Anpassung, Einheitensystem Metrisch/Imperial,
+  Glossar-Verweise in der Anleitung. Nach
   Logik-Änderungen laufen lassen. `js/timer.js` (Notification/setInterval/Web-Audio-API) und
   `js/newrecipe.js` (reines DOM-Wiring) werden bewusst **nicht** in `tests/test.html` geladen —
   beide stattdessen manuell bzw. per isoliertem Headless-Aufbau verifiziert. Die Wachstums-
@@ -1071,13 +1070,17 @@ Keine Code-Änderung durch den Audit nötig.
 - ~~Bottom-Tab-Navigation auf Mobil~~ — **erledigt in v3.67.0** (Warteschlangen-Punkt 3
   von 3, letzter Punkt der Warteschlange, kein Backlog-Punkt; s. Abschnitt
   „Bottom-Tab-Navigation (Mobil) (v3.67.0)" oben).
+- ~~Glossar-Verweise in der Anleitung (inkl. neuem Glossar-Eintrag "Ofen-Heizarten für
+  Pizza")~~ — **erledigt in v3.68.0** (kein Backlog-Punkt, ausgelöst durch
+  Kollegen-Feedback zur Anleitung; s. Abschnitt „Glossar-Verweise in der Anleitung
+  (v3.68.0)" oben).
 
-**Stand v3.67.0: alle bisherigen versionierten Backlog-Punkte UND die komplette
-Dreier-Warteschlange sind abgearbeitet** (durchgestrichen oben), offen ist nur die
-neue, noch unspezifizierte Foto-Anleitung-Idee weiter oben in dieser Liste. Der
-Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen, vollständig
-zurückgebaut, keine offene Frage mehr). Kein weiterer vorgegebener Auftrag mehr
-angekündigt — für einen neuen Zyklus wieder frisches Brainstorming in Phase 1.
+**Stand v3.68.0: alle bisherigen versionierten Backlog-Punkte sind abgearbeitet**
+(durchgestrichen oben), offen ist nur die neue, noch unspezifizierte Foto-Anleitung-Idee
+weiter oben in dieser Liste. Der Bring!-Deeplink-Testaufbau ist abschließend geklärt
+(verworfen, vollständig zurückgebaut, keine offene Frage mehr). Kein weiterer
+vorgegebener Auftrag mehr angekündigt — für einen neuen Zyklus wieder frisches
+Brainstorming in Phase 1.
 **Stil-Hinweis für alle künftigen Texte (Glossar, i18n-Strings, Onboarding, sonstige
 Beschreibungen):** keine Gedankenstriche (Em-Dash) verwenden, stattdessen Komma, Punkt,
 Doppelpunkt oder Klammern, je nach Kontext.

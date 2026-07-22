@@ -39,6 +39,7 @@
     'kalteGare',
     'malzmehl',
     'ofenVsBackofen',
+    'ofenHeizarten',
     'pizzastein',
     'pizzaschieber',
     'ofenthermometer',
@@ -100,4 +101,28 @@
   // Sprachwechsel: komplette Neu-Darstellung (Titel + Text in der neuen
   // Sprache), Aufklapp-Zustand bleibt erhalten (s. o.).
   if (PZ.i18nOnChange) PZ.i18nOnChange(renderGlossary);
+
+  // Glossar-Verweise in der Anleitung (v3.68.0, js/guide.js): springt aus einem
+  // Anleitungsschritt heraus direkt zu einem bestimmten Glossar-Eintrag. Nutzt zuerst
+  // PZ.gotoView('glossar') (js/nav.js) für den Bereichswechsel selbst -- das funktioniert
+  // identisch auf Desktop (Burgermenü) und Mobil (Bottom-Tab-Leiste seit v3.67.0), da
+  // beide denselben view-generischen [data-view]-Mechanismus nutzen, unabhängig davon,
+  // über welches Navigations-Widget die jeweilige Seite den Bereich wechselt. Klappt
+  // danach den passenden <details>-Eintrag auf, scrollt ihn ins Bild und verschiebt den
+  // Fokus dorthin -- überschreibt bewusst den generischen Überschrift-Fokus, den
+  // gotoView() selbst schon gesetzt hat: das eigentliche Ziel hier ist der einzelne
+  // Eintrag, nicht nur die Bereichs-Überschrift "Pizza-Glossar".
+  function gotoGlossaryEntry(id) {
+    if (PZ.gotoView) PZ.gotoView('glossar');
+    const details = listEl.querySelector('details.glossary-item[data-id="' + id + '"]');
+    if (!details) return; // unbekannte/falsche ID -> kein Crash, einfach kein Sprung
+    details.open = true;
+    details.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const summary = details.querySelector('summary');
+    // <summary> ist nativ fokussierbar (Teil des <details>-Disclosure-Widgets), braucht
+    // anders als z. B. eine <h2> KEIN zusätzliches tabindex-Attribut (vgl. focusView()
+    // in js/nav.js, das dafür extra tabindex="-1" auf die Überschrift setzt).
+    if (summary) summary.focus({ preventScroll: true });
+  }
+  PZ.gotoGlossaryEntry = gotoGlossaryEntry;
 })(window);
