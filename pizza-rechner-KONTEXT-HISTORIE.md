@@ -8,6 +8,43 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Teilen-Link-Abstand & versteckter Flex-Bug (v3.68.1)
+
+Kollegen-Feedback per Screenshot: der Hinweistext unter "Link kopieren" ("Kopiert einen
+Link, der dieses Rezept komplett enthält, zum Teilen, ohne Login oder Server.") saß
+optisch zu eng am Button, sichtbar durch handschriftliche Pfeil-Annotation "Text tiefer,
+ein paar Pixel".
+
+Root Cause war tiefer als die Optik vermuten ließ: `#shareBlock` (und identisch
+`#pdfGuideBlock`) nutzen `style="display:flex;flex-direction:column;gap:8px;"` als
+inline Markup, damit Button und Hinweistext im 8px-Standardabstand stehen. `js/settings.js`
+(`applyFlags()`) setzt aber beim Ein-/Ausblenden je nach Feature-Flag
+`shareBlock.style.display = f.share ? '' : 'none'` bzw. `pdfGuideBlock.style.display =
+f.shopping ? '' : 'none'`. Das Leeren auf `''` löscht nur die `display`-Eigenschaft aus
+dem Inline-Style (nicht `flex-direction`/`gap`), wodurch der Container ohne eigene
+CSS-Klasse auf den Browser-Standard `display:block` zurückfällt. `gap` wirkt nur bei
+Flex-/Grid-Containern, der Effekt: Button und Hinweistext stapeln sich ohne Abstand,
+zusätzlich verstärkt durch das bisherige `margin-top:-4px` auf dem Hinweistext.
+
+**Fix:**
+- `js/settings.js`: `f.share ? 'flex' : 'none'` bzw. `f.shopping ? 'flex' : 'none'` statt
+  `''`, stellt das Flex-Layout beim Einblenden explizit wieder her statt es zu löschen.
+- `pizza-rechner.html` + `pizza-rechner-mobile.html`: `margin-top:-4px` auf
+  `margin-top:0` geändert, auf `#shareHint` und `#pdfGuideHint`, damit der volle
+  8px-Flex-Gap zum Tragen kommt (vorher: 8px Flex-Gap minus 4px negativer Margin, nur
+  4px effektiver Abstand, jetzt mit dem Flex-Bugfix zusammen sauber 8px, wie bei den
+  übrigen Hinweistexten der App).
+
+Per Headless-Edge verifiziert (Vorher/Nachher-Messung via `getBoundingClientRect()`):
+Abstand Button zu Hinweistext vorher 0px (Flex-Bug aktiv, Block-Fallback ohne Gap), nach
+dem Fix korrekt 8px bei `display:flex`. Reine Layout-Änderung, keine Berechnungslogik
+betroffen, `tests/test.html` unverändert **699/699** grün.
+
+**Geändert:** `js/settings.js`, `pizza-rechner.html`, `pizza-rechner-mobile.html`.
+`pizza-rechner-mobile-standalone.html` neu gebaut. `?v=` auf `3.68.1` gezogen (Desktop
+und Mobil, Cache-Busting + Footer-Version). `Versionen/v3.68.1 - Teilen-Link Abstand
+Fix/` enthält den vollständigen Schnappschuss.
+
 ## Glossar-Verweise in der Anleitung (v3.68.0)
 
 Direkter Nutzerauftrag, ausgelöst durch Kollegen-Feedback zur Anleitung: der

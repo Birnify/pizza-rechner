@@ -1354,12 +1354,12 @@ header{position:relative;text-align:center;}
         </div>
         <div id="pdfGuideBlock" style="display:flex;flex-direction:column;gap:8px;">
           <button type="button" id="pdfGuideBtn" onclick="PZ.downloadGuidePDF()" aria-describedby="pdfGuideHint" data-i18n="btn.savePdf">Als PDF speichern</button>
-          <div class="hint" id="pdfGuideHint" style="margin-top:-4px;" data-i18n="hint.savePdf">Lädt die Schritt-für-Schritt-Anleitung direkt als PDF-Datei herunter: ganz ohne Druckdialog.</div>
+          <div class="hint" id="pdfGuideHint" style="margin-top:0;" data-i18n="hint.savePdf">Lädt die Schritt-für-Schritt-Anleitung direkt als PDF-Datei herunter: ganz ohne Druckdialog.</div>
           <div id="pdfGuideLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
         </div>
         <div id="shareBlock" style="display:flex;flex-direction:column;gap:8px;">
           <button type="button" id="shareLinkBtn" onclick="PZ.copyShareLink(this)" aria-describedby="shareHint" data-i18n="btn.copyShareLink">Link kopieren</button>
-          <div class="hint" id="shareHint" style="margin-top:-4px;" data-i18n="hint.copyShareLink">Kopiert einen Link, der dieses Rezept komplett enthält: zum Teilen, ohne Login oder Server.</div>
+          <div class="hint" id="shareHint" style="margin-top:0;" data-i18n="hint.copyShareLink">Kopiert einen Link, der dieses Rezept komplett enthält: zum Teilen, ohne Login oder Server.</div>
           <div id="shareLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
         </div>
       </div>
@@ -1817,7 +1817,7 @@ header{position:relative;text-align:center;}
           <div class="nav-divider" role="separator"></div>
           <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
           <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-          <span class="nav-version" id="appVersion">v3.68.0</span>
+          <span class="nav-version" id="appVersion">v3.68.1</span>
 
         </div>
       </div>
@@ -3349,7 +3349,7 @@ header{position:relative;text-align:center;}
     const recipesNavItems = document.querySelectorAll('.nav-item[data-goto="rezepte"]');
     recipesNavItems.forEach(function (item) { item.style.display = f.multiRecipes ? '' : 'none'; });
     const shareBlock = document.getElementById('shareBlock');
-    if (shareBlock) shareBlock.style.display = f.share ? '' : 'none';
+    if (shareBlock) shareBlock.style.display = f.share ? 'flex' : 'none';
     const shoppingRow = document.getElementById('shoppingRow');
     if (shoppingRow) shoppingRow.style.display = f.shopping ? '' : 'none';
     // "Als PDF speichern" (js/pdf.js) ist inhaltlich eine dritte Export-Variante der
@@ -3357,7 +3357,7 @@ header{position:relative;text-align:center;}
     // "shopping"-Flag statt ein eigenes Flag zu bekommen: schaltet der Nutzer die
     // Druck-/Export-Zusatzfunktionen ab, verschwindet der PDF-Button konsistent mit.
     const pdfGuideBlock = document.getElementById('pdfGuideBlock');
-    if (pdfGuideBlock) pdfGuideBlock.style.display = f.shopping ? '' : 'none';
+    if (pdfGuideBlock) pdfGuideBlock.style.display = f.shopping ? 'flex' : 'none';
     // Zucker-Regler (New-York-Style): nutzt das etablierte .collapse/.show-Muster
     // (wie prefBlock/bigaHydBlock) statt style.display — verhindert einen Flackerer
     // vorm ersten applyFlags()-Lauf, da .collapse per CSS schon vor JS-Ausführung greift.

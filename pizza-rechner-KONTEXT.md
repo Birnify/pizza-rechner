@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-22 · Aktuelle Version: v3.68.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-22 · Aktuelle Version: v3.68.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -179,22 +179,16 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Glossar-Verweise in der Anleitung (v3.68.0) = aktueller Stand
+## Teilen-Link-Abstand & versteckter Flex-Bug (v3.68.1) = aktueller Stand
 
-Direkter Nutzerauftrag, ausgelöst durch Kollegen-Feedback zur Anleitung (kein
-Backlog-Punkt). Anleitungsschritte, die einen im Glossar bereits erklärten Fachbegriff
-enthalten, bekommen einen klickbaren Verweis ("📖 Mehr zu X im Glossar"), der die
-Ansicht wechselt (Desktop-Burgermenü/Mobil-Bottom-Tab, derselbe view-generische
-Mechanismus), den passenden Glossar-Eintrag aufklappt, dorthin scrollt und den Fokus
-verschiebt. Angewandt auf Autolyse, Poolish, Biga, Kaltgare, Stretch & Fold,
-Windowpane-Test. Dazu ein neuer Glossar-Eintrag "Ofen-Heizarten für Pizza"
-(Ober/Unterhitze vs. Umluft vs. Grill, zweites Kollegen-Feedback zur fehlenden
-Grill-Alternative), verlinkt von den Vorheiz-/Back-Schritten. `js/glossary.js`:
-`PZ.gotoGlossaryEntry(id)`. `js/guide.js`: neue `st()`-Option `glossaryId`, zentral
-gerenderte `.glossary-ref`-Zeile je Schritt. Tests 688→**699** grün, Verhalten auf
-Desktop UND Mobil per Headless-Edge-Klicksimulation verifiziert. **Volle Details:**
-`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-Verweise in der Anleitung
-(v3.68.0)".
+Kollegen-Feedback (Screenshot-Annotation "Text tiefer, ein paar Pixel") deckte einen
+tieferliegenden Bug auf: `js/settings.js` (`applyFlags()`) löschte beim Einblenden von
+`#shareBlock`/`#pdfGuideBlock` per `style.display=''` deren inline `display:flex`,
+wodurch Button und Hinweistext ohne Flex-Gap zusammenrückten. Fix: explizit `'flex'`
+statt `''` setzen, plus `margin-top:-4px` → `0` auf beiden Hinweistexten (`#shareHint`/
+`#pdfGuideHint`). Reine Layout-Korrektur, keine Berechnungslogik betroffen. Tests
+unverändert **699/699** grün. **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`,
+Abschnitt „Teilen-Link-Abstand & versteckter Flex-Bug (v3.68.1)".
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -456,7 +450,7 @@ makePrefStages/fillFlourSelect, die diese drei Module beim eigenen Laden direkt 
 `units` MUSS vor `calc`/`guide`/`print` geladen werden (liefert PZ.formatWeight/formatWeightAuto/
 formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.67.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.68.1` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
