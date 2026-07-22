@@ -530,6 +530,14 @@ nach dem Rebuild, gegenprüfen), sonst zeigt die Live-App die falsche Version an
 - **Plattform:** Windows / PowerShell. Kein Node, keine Build-Tools.
 - **Preview-Hinweis:** Das Preview-Tool (localhost-Server) war in mehreren Sessions unzuverlässig
   (Browser lädt `chrome-error://`) — Tests einfach per Doppelklick im echten Browser öffnen lassen.
+- **Hängende Headless-Edge-Instanz beenden — NIEMALS systemweit killen:** Falls ein
+  `msedge --headless`-Verifikationsaufbau hängt, **niemals** `taskkill /F /IM msedge.exe`
+  (killt ALLE Edge-Prozesse systemweit, auch reguläre Fenster des Nutzers ungefragt).
+  Stattdessen den selbst gestarteten Prozess gezielt per PID beenden (PID beim Start merken,
+  z. B. `Start-Process msedge -PassThru` in PowerShell liefert sie; unter Bash z. B. `wmic
+  process where "name='msedge.exe' and commandline like '%--headless%'" get processid` zur
+  gezielten Identifikation, dann `taskkill /F /PID <nur diese ID>`). Im Zweifel lieber einzelne,
+  sich selbst beendende Kurzaufrufe statt eines dauerhaft laufenden Headless-Prozesses.
 
 ## Einstellungen-Menü für Feature-Flags (v3.16.0, `js/settings.js`)
 
