@@ -8,6 +8,95 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Foto der fertigen Pizza am Ende der Anleitung (v3.69.0)
+
+Über eine vollständige `/define-feature`-Runde abgestimmtes Feature (Feedback von Sörens
+Kollegen Benjamin, wie schon beim Ofen-Heizarten-Punkt in v3.68.0): die Schritt-für-
+Schritt-Anleitung wirkte ohne visuellen Abschluss nach dem letzten Backschritt. Sören
+lieferte drei vorbereitete Fotos (JPG, 1920×1079, 188–306 KB, analog zum bestehenden
+Header-Foto): `assets/pizza-final-neapolitanisch.jpg`, `assets/pizza-final-teglia.jpg`,
+`assets/pizza-final-newyork.jpg`.
+
+**Foto-Zuordnung (`js/guide.js`):** Wichtige technische Erkenntnis vor der Umsetzung: es
+gibt **kein** `state.preset` — der aktive Preset-Key lebt ausschließlich im `#preset`-
+Dropdown-DOM-Element selbst; `js/presets.js` trackt intern zusätzlich ein privates
+`lastAppliedPresetKey`, das aber bei manueller Reglerabweichung NICHT zurückgesetzt wird
+(anders als der `#preset`-Wert selbst, den die bestehenden Slider-Listener bei jeder
+manuellen Eingabe auf `''` setzen). Deshalb liest die neue Funktion `finalPhoto()` direkt
+`document.getElementById('preset').value`: `'teglia'` → Teglia-Foto, `'newyork_style'` →
+New-York-Foto, alles andere (leer = „Eigene Einstellung", jedes andere der 6
+neapolitanischen Presets, ein geladenes eigenes Rezept `recipe:<id>`) → neapolitanisches
+Foto als Fallback/Default. Eine kleine `FINAL_PHOTO`-Lookup-Map mit den zwei Sonderfällen,
+alles andere fällt durch den `||`-Fallback.
+
+**Platzierung:** ein normaler nummerierter Anleitungsschritt direkt nach „Belegen &
+Backen" im selben „Backen"-Abschnitt (kein neuer Tages-Trenner), Titel „Fertig!"/„Done!",
+kurzer Abschlusssatz als Body-Text, das `<img>` selbst im `extra`-Feld (nicht im `<p>`-
+Body) mit `alt`-Text passend zur Pizzaform, `loading="lazy"`, `width="1920" height="1079"`
+(reserviert den Platz vorab gegen Layoutsprung). Bewusst **keine** zusätzliche sichtbare
+Bildunterschrift — der Alt-Text trägt die Beschreibung für Screenreader, der kurze Body-
+Satz ist ein normaler Anleitungs-Abschlusssatz, keine Bildunterschrift im engeren Sinne.
+
+**CSS (`css/styles.css`):** neue Regel `.step .body .final-photo` (max-width 440px,
+abgerundete Ecken, dünner Rahmen `var(--line)`) — gilt automatisch für Desktop UND Mobil
+gemeinsam, da beide Seiten dasselbe Stylesheet und dieselbe `js/guide.js`-Logik laden;
+keine separate Mobil-Anpassung nötig (`.step .body` ist bereits `flex:1;min-width:0`, das
+Bild skaliert mit der Kartenbreite).
+
+**`js/i18n-dict.js`:** 5 neue Textkeys (DE+EN): `guide.step.finalPhoto.title`,
+`guide.step.finalPhoto.body`, sowie je ein Alt-Text-Key für die drei Fotovarianten
+(`.alt.napoli`/`.alt.teglia`/`.alt.newyork`).
+
+**`build-mobile-standalone.py`:** neuer `inline_images()`-Schritt nach dem bestehenden
+CSS-/JS-Inlining — ersetzt die drei bekannten `assets/pizza-final-*.jpg`-Pfadstrings
+(die als String-Literale im inline eingebetteten `js/guide.js`-Code landen) durch
+`data:image/jpeg;base64,...`. Bewusst nur diese drei Dateien, nicht generisch alle
+Bildpfade: das bestehende Header-Foto (`assets/header-pizza.jpg`, CSS-Hintergrund über
+`--header-photo`) bleibt unverändert bei seinem bisherigen (ungeklärten) Verhalten auf
+dem Standalone-Build — das war nicht Teil des Feature-Scopes. Base64 enthält keine
+Anführungszeichen/Backslashes, daher ist der reine String-Ersatz innerhalb des
+umgebenden JS-String-Literals unproblematisch. Nach dem Rebuild verifiziert: alle 3
+Fotos als `data:image/jpeg;base64,...`-URIs vorhanden, kein Rest-Pfad mehr im Standalone-
+HTML.
+
+**Tests (`tests/test.html`, +13 Prüfungen, 699 → 712):** neue Sektion „28 · Foto der
+fertigen Pizza am Ende der Anleitung" — da es kein `state.preset` gibt, manipulieren
+diese Tests direkt den Stub-`<select id="preset">` (dafür zusätzlich eine `teglia`-Option
+im Stub ergänzt) statt über `testCase()`-State-Overrides zu gehen. Geprüft: Fallback bei
+„Eigene Einstellung" (leerer Wert) UND bei einem anderen konkreten Preset (beide →
+neapolitanisches Foto), Teglia-Preset → Teglia-Foto, New-York-Preset → New-York-Foto,
+jeweils genau 1 `.final-photo`-Bild, Alt-Text nicht leer, Fotoschritt steht nachweislich
+nach „Belegen & Backen" (Text-Index-Vergleich im gerenderten HTML, inkl. `&amp;`-
+Entity-Fall), Foto erscheint auch bei Vorteig-Methoden (Biga). Alle 712 Prüfungen grün
+(Headless-Edge-Dump). Bestehende Tests unverändert grün — keine Prüfung erwartete eine
+exakte Schrittanzahl oder eine exakte `#guideSteps`-Gesamt-HTML-Gleichheit, daher kein
+Kollisionsrisiko mit dem neuen letzten Schritt.
+
+**Accessibility-Review (gezielt, gegen WCAG 2.1 AA):** keine Befunde. 1.1.1 (Alt-Text
+vorhanden und beschreibend je Fotovariante), 4.1.2 (Bild hat über `alt` einen korrekten
+Accessible Name, `role="img"` implizit), Lesereihenfolge (Titel → Body-Satz → Bild,
+analog zu den anderen Schritten), Sprachwechsel-Konsistenz (Alt-Text läuft über `PZ.t()`,
+wird bei jedem `buildGuide()`-Aufruf inkl. Sprachwechsel neu aufgelöst), Tastatur/Fokus
+(Bild ist nicht-interaktiv und zu Recht nicht im Tab-Fokus, kein unnötiges `tabindex`).
+`js/pdf.js`s `collectGuideContent()` liest nur `.body > p`/`.body > .tip/.warn` — das
+neue `<img>` (im `extra`-Feld, keine `.tip`/`.warn`-Klasse) taucht im PDF-Export
+automatisch NICHT auf, das ist unproblematisch (reiner Text-Export, kein Bild-Support
+vorgesehen). `js/print.js`s „Anleitung drucken" druckt weiterhin die komplette
+gerenderte Seite inkl. Bild, unverändertes Verhalten.
+
+**Nicht angefasst (Scope/Abgrenzung):** Berechnungslogik (`js/calc.js`, `js/schedule.js`)
+komplett unverändert. Keine weiteren Fotos/Varianten über die drei genannten hinaus,
+kein automatischer Fotowechsel nach anderen State-Werten (nur Preset-Key). Bestehendes
+Header-Foto (`assets/header-pizza.jpg`) unverändert.
+
+**Geändert:** `js/guide.js`, `js/i18n-dict.js`, `css/styles.css`, `build-mobile-
+standalone.py`, `tests/test.html`, `pizza-rechner.html`, `pizza-rechner-mobile.html`.
+Neu: `assets/pizza-final-neapolitanisch.jpg`, `assets/pizza-final-teglia.jpg`,
+`assets/pizza-final-newyork.jpg`. `?v=` + Menü-Versionsnummer auf `3.69.0` gezogen
+(Desktop + Mobil). `pizza-rechner-mobile-standalone.html` neu gebaut (`python
+build-mobile-standalone.py`, jetzt inkl. Base64-Fotos).
+`Versionen/v3.69.0 - Foto der fertigen Pizza/` enthält den vollständigen Schnappschuss.
+
 ## Einführung-Dialog: X-Button entfernt + Titel geändert (v3.68.2)
 
 Sören leitete Feedback von seinem Kollegen Benjamin weiter, per Screenshot-Annotation:

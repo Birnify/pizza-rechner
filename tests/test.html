@@ -49,7 +49,7 @@
   <select id="flour"><option value="caputo_pizzeria" selected></option></select>
   <input type="text" id="timeISO">
   <div id="recipesCard"></div><div id="shareBlock"></div><div id="shoppingRow"></div>
-  <select id="preset"><option value=""></option><option value="newyork_style"></option><option value="napoli_klassisch"></option></select>
+  <select id="preset"><option value=""></option><option value="newyork_style"></option><option value="napoli_klassisch"></option><option value="teglia"></option></select>
   <div id="sugarBlock"></div><input type="checkbox" id="flagNewYorkStyle">
   <div class="hint" id="testHintStub">Erklärender Beispiel-Hinweistext</div>
   <button type="button" id="testDescribedBtn" aria-describedby="testHintStub">Beispiel-Button</button>
@@ -3181,6 +3181,80 @@
     testCase('Ofen-Heizarten-Glossarverweis an Vorheiz- und Back-Schritt (genau 2×)', {}, () => [
       ['genau 2× data-glossary-id="ofenHeizarten"', glossaryLinkCount(document.getElementById('guideSteps').innerHTML, 'ofenHeizarten'), 2, 0],
     ]);
+  })();
+
+  heading('28 · Foto der fertigen Pizza am Ende der Anleitung (js/guide.js, v3.69.0)');
+
+  // Feedback von Sörens Kollegen Benjamin: abschließender Anleitungsschritt nach dem
+  // letzten Backschritt mit einem zur Pizzaform passenden Foto. Zuordnung ausschließlich
+  // über den #preset-DOM-Wert (js/guide.js liest KEIN state.preset -- das gibt es nicht,
+  // s. Kommentar in js/guide.js), deshalb wird hier direkt am Stub-<select> manipuliert
+  // statt über testCase()-Overrides (die betreffen nur PZ.state).
+  (function () {
+    function setActivePreset(value) {
+      document.getElementById('preset').value = value;
+    }
+    function guideHtml() { return document.getElementById('guideSteps').innerHTML; }
+    function finalPhotoImgCount(html) { return (html.match(/class="final-photo"/g) || []).length; }
+
+    testCase('"Eigene Einstellung" (#preset leer): neapolitanisches Foto als Fallback', {}, () => {
+      setActivePreset('');
+      PZ.buildGuide();
+      const html = guideHtml();
+      return [
+        ['genau 1× .final-photo-Bild', finalPhotoImgCount(html), 1, 0],
+        ['neapolitanisches Foto referenziert', html.includes('pizza-final-neapolitanisch.jpg'), true],
+        ['kein Teglia-Foto', html.includes('pizza-final-teglia.jpg'), false],
+        ['kein New-York-Foto', html.includes('pizza-final-newyork.jpg'), false],
+        ['Alt-Text nicht leer', /alt="[^"]+"/.test(html.match(/<img[^>]*class="final-photo"[^>]*>/)[0]), true],
+      ];
+    });
+
+    testCase('Anderes Preset (napoli_klassisch): ebenfalls neapolitanisches Foto (Fallback gilt für ALLE Nicht-Teglia/-New-York-Presets)', {}, () => {
+      setActivePreset('napoli_klassisch');
+      PZ.buildGuide();
+      const html = guideHtml();
+      return [
+        ['neapolitanisches Foto referenziert', html.includes('pizza-final-neapolitanisch.jpg'), true],
+      ];
+    });
+
+    testCase('Preset "teglia": Teglia-Foto statt Fallback', {}, () => {
+      setActivePreset('teglia');
+      PZ.buildGuide();
+      const html = guideHtml();
+      return [
+        ['Teglia-Foto referenziert', html.includes('pizza-final-teglia.jpg'), true],
+        ['kein neapolitanisches Foto', html.includes('pizza-final-neapolitanisch.jpg'), false],
+        ['genau 1× .final-photo-Bild', finalPhotoImgCount(html), 1, 0],
+      ];
+    });
+
+    testCase('Preset "newyork_style": New-York-Foto statt Fallback', {}, () => {
+      setActivePreset('newyork_style');
+      PZ.buildGuide();
+      const html = guideHtml();
+      return [
+        ['New-York-Foto referenziert', html.includes('pizza-final-newyork.jpg'), true],
+        ['kein neapolitanisches Foto', html.includes('pizza-final-neapolitanisch.jpg'), false],
+      ];
+    });
+
+    testCase('Fotoschritt steht nach dem letzten Backschritt ("Belegen & Backen"), kein state.preset nötig', { method: 'biga' }, () => {
+      setActivePreset('teglia');
+      PZ.buildGuide();
+      const html = guideHtml();
+      const bakeIdx = html.indexOf('Belegen &amp; Backen') >= 0 ? html.indexOf('Belegen &amp; Backen') : html.indexOf('Belegen & Backen');
+      const photoIdx = html.indexOf('final-photo');
+      return [
+        ['"Belegen & Backen" vor dem Fotoschritt', bakeIdx >= 0 && photoIdx > bakeIdx, true],
+        ['Foto erscheint auch bei Vorteig-Methoden (Biga)', finalPhotoImgCount(html), 1, 0],
+      ];
+    });
+
+    // Aufräumen: Stub-Select zurück auf leer, damit keine spätere (unwahrscheinliche)
+    // Testreihenfolge-Änderung durch einen stehengebliebenen Wert beeinflusst wird.
+    setActivePreset('');
   })();
 
   // ─────────────────────────────────────────────────────────────

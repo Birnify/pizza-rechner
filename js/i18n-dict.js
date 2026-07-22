@@ -299,6 +299,16 @@
   add('guide.step.bakeTopping.tip', 'Alles vorher bereitstellen – ab dem Ausziehen geht es schnell.',
     'Have everything ready beforehand: once you start stretching it goes fast.');
 
+  // ---- Foto der fertigen Pizza (v3.69.0), abschließender Schritt nach dem Backen --------
+  add('guide.step.finalPhoto.title', 'Fertig!', 'Done!');
+  add('guide.step.finalPhoto.body', 'Deine Pizza ist fertig gebacken.', 'Your pizza is done baking.');
+  add('guide.step.finalPhoto.alt.napoli', 'Fertig gebackene neapolitanische Pizza mit rundem, luftigem Rand',
+    'Finished Neapolitan pizza with a round, airy rim');
+  add('guide.step.finalPhoto.alt.teglia', 'Fertig gebackene rechteckige Teglia-Pizza vom Blech',
+    'Finished rectangular Teglia pizza from a baking sheet');
+  add('guide.step.finalPhoto.alt.newyork', 'Fertig gebackene New-York-Style-Pizza mit dünner, knuspriger Kruste',
+    'Finished New-York-style pizza with a thin, crispy crust');
+
   add('guide.schedbar.withTime', '⏱️ <b>Gesamtdauer ca. {dur}</b><br><span class="big">▶ Start {startClock}</span> &nbsp;→&nbsp; <span class="big">🍕 Fertig {endClock}</span>',
     '⏱️ <b>Total time approx. {dur}</b><br><span class="big">▶ Start {startClock}</span> &nbsp;→&nbsp; <span class="big">🍕 Ready {endClock}</span>');
   add('guide.summary.withTime', '{label} · {N} × {W} · {hyd}% Hydration', '{label} · {N} × {W} · {hyd}% hydration');

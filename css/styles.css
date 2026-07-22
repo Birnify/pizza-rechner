@@ -624,6 +624,16 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
    Schritte gleichzeitig einen Verweis haben können), nur ein unterstrichenes Wort im
    Fließtext, analog zum bestehenden .schedbar-goto-zeitplan-Muster. */
 .step .body .glossary-ref{margin-top:7px;font-size:12.5px;color:var(--muted);}
+/* Foto der fertigen Pizza (v3.69.0), abschließender Anleitungsschritt nach dem Backen --
+   gemeinsame Regel für Desktop UND Mobil (beide laden css/styles.css), kein separates
+   Mobil-Override nötig (.step .body ist bereits flex:1;min-width:0, das Bild skaliert mit
+   der Kartenbreite). width/height-Attribute am <img> selbst (js/guide.js) reservieren den
+   Platz vorab (verhindert Layoutsprung beim Nachladen), object-fit hier hält das Seiten-
+   verhältnis unabhängig von max-width. */
+.step .body .final-photo{
+  display:block;width:100%;max-width:440px;height:auto;margin-top:10px;
+  border-radius:var(--radius);border:1px solid var(--line);object-fit:cover;
+}
 .step-glossary-link{
   background:none;border:none;padding:0;margin:0;color:var(--tomato-text);font:inherit;
   font-weight:700;text-decoration:underline;cursor:pointer;

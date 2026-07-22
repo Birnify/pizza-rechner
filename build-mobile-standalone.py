@@ -13,6 +13,7 @@ Quelle bleibt pizza-rechner-mobile.html (die wird weiter normal bearbeitet) -
 dieses Skript nach jeder Aenderung daran einmal laufen lassen, dann die neu
 erzeugte *-standalone.html aufs iPhone kopieren.
 """
+import base64
 import re
 from pathlib import Path
 
@@ -21,6 +22,22 @@ SRC = ROOT / "pizza-rechner-mobile.html"
 OUT = ROOT / "pizza-rechner-mobile-standalone.html"
 
 html = SRC.read_text(encoding="utf-8")
+
+# Fotos der fertigen Pizza (v3.69.0, "Foto der fertigen Pizza am Ende der Anleitung"):
+# js/guide.js referenziert sie als normale relative Pfade ("assets/pizza-final-*.jpg"),
+# die als String-Literale im weiter unten inline eingebetteten JS landen. Anders als
+# CSS/JS werden Bilder hier NICHT generisch inlined -- bewusst nur diese drei bekannten
+# Dateien (Scope der Feature-Definition), nicht das bestehende Header-Foto
+# (assets/header-pizza.jpg, CSS-Hintergrund, dort bislang ungeklärt/unverändert gelassen).
+# Ersetzung als reiner String-Austausch NACH dem JS-Inlining unten (s. Aufruf von
+# inline_images()): base64 enthält keine Anführungszeichen/Backslashes, bleibt also
+# innerhalb des umgebenden JS-String-Literals unproblematisch.
+def inline_images(html_text):
+    for img_path in sorted((ROOT / "assets").glob("pizza-final-*.jpg")):
+        rel = "assets/" + img_path.name
+        b64 = base64.b64encode(img_path.read_bytes()).decode("ascii")
+        html_text = html_text.replace(rel, "data:image/jpeg;base64," + b64)
+    return html_text
 
 def inline_css(match):
     href = match.group(1).split("?")[0]
@@ -43,6 +60,7 @@ def inline_js(match):
 
 html = re.sub(r'<link rel="stylesheet" href="(css/[^"]+)">', inline_css, html)
 html = re.sub(r'<script src="(js/[^"]+)"></script>', inline_js, html)
+html = inline_images(html)
 
 OUT.write_text(html, encoding="utf-8")
 print(f"Geschrieben: {OUT} ({len(html):,} Zeichen)")

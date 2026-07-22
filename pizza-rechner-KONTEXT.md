@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-22 · Aktuelle Version: v3.68.2 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-22 · Aktuelle Version: v3.69.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -179,19 +179,19 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Einführung-Dialog: X-Button entfernt + Titel geändert (v3.68.2) = aktueller Stand
+## Foto der fertigen Pizza am Ende der Anleitung (v3.69.0) = aktueller Stand
 
-Feedback von Sörens Kollegen Benjamin zum Einführung-Modal: Button-Farbe sollte von
-Blau auf Rot geändert werden, vermutlich zum "X"-Schließen-Button. Statt Farbe
-anzupassen, wurde der X-Button komplett entfernt (der CTA-Button "Los geht's" reicht
-als Schließweg). Zusätzlich Titel von "Willkommen bei Teigmeister" auf "Willkommen
-Teigmeister" verkürzt (Nutzerwunsch, wirkt schwungvoller). Schließen geht jetzt auf drei
-Wegen (Escape, Backdrop-Klick, CTA-Button) statt vier. `js/onboarding.js`: Fokus beim
-Öffnen springt jetzt auf die Checkbox (erstes Element im Tab-Trap) statt auf den
-entfernten X-Button. Reine UI-Änderung, keine Berechnungslogik betroffen. Tests
-unverändert **699/699** grün, alle 3 Schließwege + Fokusverhalten auf Desktop und Mobil
-per Headless-Edge verifiziert. **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`,
-Abschnitt „Einführung-Dialog: X-Button entfernt + Titel geändert (v3.68.2)".
+Feedback von Sörens Kollegen Benjamin: die Schritt-für-Schritt-Anleitung endet jetzt mit
+einem eigenen, abschließenden Schritt „Fertig!" nach dem letzten Backschritt, mit einem
+Foto der fertigen Pizza passend zur Form. Zuordnung über den aktiven `#preset`-Dropdown-
+Wert (`js/guide.js`, es gibt kein `state.preset`): `teglia` → Teglia-Foto, `newyork_style`
+→ New-York-Foto, alle anderen Presets + „Eigene Einstellung" → neapolitanisches Foto
+(Fallback). Alt-Text je Foto, keine sichtbare Bildunterschrift. `assets/pizza-final-
+{neapolitanisch,teglia,newyork}.jpg` neu; `build-mobile-standalone.py` bettet diese drei
+Fotos jetzt zusätzlich als Base64 ein (Header-Foto bleibt unverändert CSS-Hintergrund).
+Tests 699 → **712** grün. `accessibility-expert`-Review ohne Befunde. **Volle Details:**
+`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Foto der fertigen Pizza am Ende der
+Anleitung (v3.69.0)".
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -356,7 +356,7 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.64.0)
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.69.0)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
@@ -434,7 +434,7 @@ js/onboarding.js     Willkommens-Screen / Einführung (v3.63.0): eigenständiges
                      eigenem Fokus-Trap, stellt 4 Kernfunktionen vor, automatisch beim Erststart
                      + jederzeit über Burgermenü-Punkt "Einführung" aufrufbar, Persistenz via
                      localStorage-Key pizzaOnboardingDontShow. Läuft als letztes Script (nach nav.js)
-tests/test.html      699 Prüfungen in 27 Kategorien (Doppelklick, kein Server) — lädt 17 der 27
+tests/test.html      712 Prüfungen in 28 Kategorien (Doppelklick, kein Server) — lädt 17 der 27
                      js/*-Module direkt (dom/state/i18n-dict/i18n/settings/theme/units/widgets/
                      flour/schedule/guide/calc/print/pdf/storage/share/party); ui.js, timer.js,
                      presets.js, newrecipe.js, glossary.js, main.js, nav.js, simplemode.js,
@@ -453,7 +453,7 @@ makePrefStages/fillFlourSelect, die diese drei Module beim eigenen Laden direkt 
 `units` MUSS vor `calc`/`guide`/`print` geladen werden (liefert PZ.formatWeight/formatWeightAuto/
 formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.68.2` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.69.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
@@ -510,14 +510,14 @@ nach dem Rebuild, gegenprüfen), sonst zeigt die Live-App die falsche Version an
 - **Versionen-Workflow (Pflicht bei jeder Änderung):** kompletten lauffähigen Stand nach
   `Versionen/vX.Y.Z - [Beschreibung]/` kopieren (html, index, css/, js/, README; tests/ optional).
   SemVer: Patch=Fix, Minor=Feature, Major=Umbau. `?v=` in der HTML mitziehen.
-- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 699 Prüfungen in
-  27 Kategorien** (s. Dateistruktur oben): Bäckerprozente, DDT/Eis, Vorteig-Aufteilung, Trockenhefe,
+- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 712 Prüfungen in
+  28 Kategorien** (s. Dateistruktur oben): Bäckerprozente, DDT/Eis, Vorteig-Aufteilung, Trockenhefe,
   Schedule-Schwellen, Mehl-Warnung, Backzeit-Skalierung, Olivenöl (Masseerhaltung), Anleitungs-
   Hinweise, Randfälle/Edge Cases, Kombinationen, Zeitplan-Rückwärtsrechnung, Einkaufsliste,
   Speichern & Laden, Teilen-Link, Feature-Flags/Einstellungen, Zucker/New-York-Style,
   Rezepte-Backup, PDF-Export, Pizza-Party-Planer, Sprachversion DE/EN, Dunkelmodus,
   Hefemengen-/Verschwendungs-Anpassung, Einheitensystem Metrisch/Imperial,
-  Glossar-Verweise in der Anleitung. Nach
+  Glossar-Verweise in der Anleitung, Foto der fertigen Pizza. Nach
   Logik-Änderungen laufen lassen. `js/timer.js` (Notification/setInterval/Web-Audio-API) und
   `js/newrecipe.js` (reines DOM-Wiring) werden bewusst **nicht** in `tests/test.html` geladen —
   beide stattdessen manuell bzw. per isoliertem Headless-Aufbau verifiziert. Die Wachstums-
@@ -721,28 +721,11 @@ Keine Code-Änderung durch den Audit nötig.
   Methoden/Presets passen). Braucht vor Umsetzung eine eigene `/define-feature`-Runde.
   (Als Backlog-Notiz vom Nutzer nachgetragen, 2026-07-22, noch kein eigener Zyklus dafür
   gestartet.)
-- **Foto der fertigen Pizza am Ende der Anleitung:** Separate, konkretere Idee (Feedback
-  von Sörens Kollege Benjamin, 2026-07-22, wie schon beim Ofen-Heizarten-Punkt in
-  v3.68.0): ein Foto der fertigen Pizza als natürlicher Abschluss nach dem letzten
-  Backschritt, statt lose irgendwo platziert. Braucht 3 Fotos passend zur jeweiligen
-  Pizza-Form, damit es bei Teglia/New-York-Presets nicht unpassend wirkt:
-  1. Neapolitanisch (rund), Default/Fallback für die 6 neapolitanischen Presets + „Eigene
-     Einstellung"
-  2. Teglia (rechteckig, Blech), fürs Teglia-Preset
-  3. New York Style, fürs New-York-Preset (flag-gated)
-
-  Technische Eckpunkte (analog zum bestehenden Header-Foto `assets/header-pizza.jpg`,
-  s. Abschnitt „Echtes Header-Foto eingebunden (v3.44.0)" in der HISTORIE): JPG/WebP,
-  Querformat mind. 1200 px breit, ~150–300 KB komprimiert, rechtefrei (öffentliches
-  GitHub-Repo). Sören besorgt die Fotos (ggf. mit Benjamin), **noch nicht geliefert**
-  (Stand 2026-07-22, könnte in einer künftigen Session als Datei auftauchen). Offene
-  technische Frage vor der Umsetzung: `build-mobile-standalone.py` inlined aktuell nur
-  CSS/JS, keine Bilder (s. Skript-Kommentar). Für die Mobil-Standalone-Datei muss
-  geklärt werden, ob die Fotos als Base64 eingebettet werden (robuster fürs Handy, aber
-  Dateigröße wächst deutlich) oder ob `assets/` separat mitkopiert werden muss (wie beim
-  bestehenden Header-Foto, dort nicht abschließend verifiziert, ob es auf dem Handy per
-  `file://` überhaupt sichtbar ist). Braucht eine eigene `/define-feature`-Runde, sobald
-  die Fotos vorliegen.
+- ~~Foto der fertigen Pizza am Ende der Anleitung~~ — **erledigt in v3.69.0** (kein
+  Backlog-Punkt im engeren Sinne mehr, über `/define-feature` abgestimmter
+  Nutzerauftrag; s. Abschnitt „Foto der fertigen Pizza am Ende der Anleitung (v3.69.0)"
+  oben). Abschließender Anleitungsschritt „Fertig!" mit Foto passend zur Pizzaform
+  (Zuordnung über `#preset`-Dropdown-Wert), Base64-Einbettung im Standalone-Build.
 - ~~Mehl- und Raumtemperatur getrennt einstellbar (aktuell als gleich angenommen)~~ —
   **erledigt in v3.20.0**: eigener Mehltemperatur-Regler (`#flourTemp`), Default =
   Raumtemperatur, danach unabhängig änderbar; DDT-Formel nutzt beide Werte statt
@@ -1095,13 +1078,13 @@ Keine Code-Änderung durch den Audit nötig.
   Kollegen-Feedback zur Anleitung; s. Abschnitt „Glossar-Verweise in der Anleitung
   (v3.68.0)" oben).
 
-**Stand v3.68.2: alle bisherigen versionierten Backlog-Punkte sind abgearbeitet**
-(durchgestrichen oben), offen sind nur die beiden neuen, noch unspezifizierten Foto-Ideen
-weiter oben in dieser Liste (Fotos je Schritt, sowie das konkretere Foto der fertigen
-Pizza am Ende, für das Sören Fotos besorgt). Der Bring!-Deeplink-Testaufbau ist
-abschließend geklärt (verworfen, vollständig zurückgebaut, keine offene Frage mehr).
-Kein weiterer vorgegebener Auftrag mehr angekündigt, für einen neuen Zyklus wieder
-frisches Brainstorming in Phase 1.
+**Stand v3.69.0: alle bisherigen versionierten Backlog-Punkte sind abgearbeitet**
+(durchgestrichen oben), offen ist nur noch die eine noch unspezifizierte Foto-Idee weiter
+oben in dieser Liste (Fotos je Schritt der Anleitung, z. B. Autolyse/Kneten/Salz
+zugeben — braucht vor Umsetzung eine eigene `/define-feature`-Runde, Bildquelle noch
+offen). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen, vollständig
+zurückgebaut, keine offene Frage mehr). Kein weiterer vorgegebener Auftrag mehr
+angekündigt, für einen neuen Zyklus wieder frisches Brainstorming in Phase 1.
 
 Nach v3.68.0 wurden zusätzlich drei kleine, direkt inline (ohne Orchestrator)
 umgesetzte Nutzeraufträge abgeschlossen und gepusht: v3.68.1 (Teilen-Link-Abstand +

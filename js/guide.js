@@ -67,6 +67,26 @@
     return `<div class="timerbox" data-timer-key="${key}" data-timer-min="${Math.round(min)}"></div>`;
   }
 
+  // Foto der fertigen Pizza (v3.69.0, "Foto der fertigen Pizza am Ende der Anleitung"):
+  // abschließender Anleitungsschritt nach dem letzten Backschritt, Foto passend zur
+  // gewählten Pizzaform (Feedback von Sörens Kollegen Benjamin). Zuordnung AUSSCHLIESSLICH
+  // nach dem aktiven Preset-Key -- es gibt bewusst kein `state.preset` (der Preset-Wert
+  // lebt nur im #preset-Dropdown selbst), deshalb wird dessen DOM-Wert direkt gelesen statt
+  // eines State-Felds. `lastAppliedPresetKey` in js/presets.js wäre hierfür ungeeignet: er
+  // wird bei manueller Reglerabweichung NICHT zurückgesetzt, das #preset-Element selbst aber
+  // schon (s. presets.js, Slider-Listener setzen `$('preset').value = ''`). Alles außer
+  // 'teglia'/'newyork_style' (leer = "Eigene Einstellung", jedes andere Preset, ein
+  // geladenes eigenes Rezept "recipe:<id>") fällt auf das neapolitanische Foto zurück.
+  const FINAL_PHOTO = {
+    teglia: { src: 'assets/pizza-final-teglia.jpg', altKey: 'guide.step.finalPhoto.alt.teglia' },
+    newyork_style: { src: 'assets/pizza-final-newyork.jpg', altKey: 'guide.step.finalPhoto.alt.newyork' }
+  };
+  function finalPhoto() {
+    const presetEl = $('preset');
+    const key = presetEl ? presetEl.value : '';
+    return FINAL_PHOTO[key] || { src: 'assets/pizza-final-neapolitanisch.jpg', altKey: 'guide.step.finalPhoto.alt.napoli' };
+  }
+
   // Glossar-Verweis (v3.68.0, "Glossar-Verweise in der Anleitung"): kleiner klickbarer
   // Sprung-Link am Ende eines Anleitungsschritts zu einem passenden, bereits bestehenden
   // Glossar-Eintrag (z. B. Autolyse, Poolish, Biga, Kaltgare, Ofen-Heizarten). Reiner
@@ -287,6 +307,12 @@
       t('guide.step.bakeTopping.body', { bakeTxt: bakeTxt }),
       tip(t('guide.step.bakeTopping.tip')), bakeDur,
       { glossaryId: 'ofenHeizarten' });
+
+    // Foto der fertigen Pizza (v3.69.0): eigener, abschließender Schritt nach dem letzten
+    // Backschritt, keine sichtbare Bildunterschrift zusätzlich zum Alt-Text (Accessibility).
+    const photo = finalPhoto();
+    st(t('guide.step.finalPhoto.title'), '', t('guide.step.finalPhoto.body'),
+      `<img src="${photo.src}" alt="${t(photo.altKey)}" class="final-photo" loading="lazy" width="1920" height="1079">`, 0);
 
     // ===== Zeiten berechnen =====
     const steps = _items.filter(i => !i.sec);
