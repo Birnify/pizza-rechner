@@ -8,6 +8,49 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Glossar-Erweiterung: Werkzeuge & Ausrüstung + Pizzabeläge (v3.66.0)
+
+Direkter Nutzerauftrag (Warteschlangen-Punkt 2 von 3, kein Backlog-Punkt), bereits
+vollständig spezifiziert (kein Brainstorming nötig). Zwei neue thematische Gruppen im
+bestehenden Pizza-Glossar (`js/glossary.js`, v3.37.0): "Werkzeuge & Ausrüstung" und
+"Pizzabeläge", je generische, sachlich-informative Texte (DE+EN), identisches Muster wie
+alle bestehenden Glossar-Einträge (`<details>`/`<summary>`, zwei `<p>`-Absätze im Body).
+
+- **"Werkzeuge & Ausrüstung" (6 neue Einträge)**, eingefügt nach `ofenVsBackofen` und vor
+  `sanMarzano` (zwischen Gärmethoden- und Zutaten-Gruppe): `pizzastein` (Pizzastein &
+  Pizzastahl: Wärmeleitung/-speicherung, Vorheizzeit), `pizzaschieber` (Holz zum
+  Einschießen vs. Metall zum Wenden/Herausnehmen), `ofenthermometer` (Infrarot-Thermometer
+  gegen ungenaue eingebaute Ofenanzeigen), `teigschaber` (Metall mit gerader Kante zum
+  Abteilen vs. flexibler Schüsselschaber), `kuechenwaage` (0,1-g-Feinwaage-Begründung
+  analog zum bestehenden Hefe-Präzisionshinweis in `js/guide.js`), `gaerbox` (luftdichter
+  Behälter für die "als Teiglinge"-Kaltgare-Variante).
+- **"Pizzabeläge" (5 neue Einträge)**, eingefügt nach `basilikum` und vor
+  `echteNeapolitanische` (zwischen Zutaten- und Pizza-Stile-Gruppe): `belagMarinara`
+  (käsefreier Klassiker, älter als Margherita), `belagCapricciosa` (mehrere Zutaten in
+  Sektoren, kein festes Rezept), `belagDiavola` (scharfe Salami/'Nduja), `belagQuattroFormaggi`
+  (vier Käsesorten, oft als Pizza Bianca ohne Tomatensauce), `belagNachDemBacken`
+  (Prosciutto Crudo/Rucola/Burrata/Olivenöl: Prinzip "brennt/welkt sonst", analog zum
+  bestehenden `basilikum`-Eintrag, aber als eigenständiges, verallgemeinertes Prinzip).
+- **`js/glossary.js`:** `PZ.GLOSSARY_TOPICS` um die 11 neuen IDs an den beiden genannten
+  Stellen erweitert, Kommentar zur thematischen Gruppierung entsprechend nachgezogen.
+  Keine Änderung an der Render-Logik selbst (`renderGlossary()`), da rein neue Daten in
+  der bestehenden Struktur.
+- **Kein neues Markup/keine neue CSS-Klasse:** alles läuft über das bestehende, bereits
+  geprüfte `.glossary-item`/`.glossary-body`-Muster — kein gezielter Accessibility-/
+  Mobile-Durchlauf nötig.
+
+**Tests:** reine Inhalts-/Datenergänzung, kein Eingriff in `js/calc.js`/`js/schedule.js`/
+`js/guide.js` — kein test-generator-Durchlauf nötig (`js/glossary.js` wird laut
+Dateistruktur-Dokumentation bewusst nicht in `tests/test.html` geladen). Bestehende 688
+Prüfungen bleiben unverändert grün. Per Headless-Edge auf der echten `pizza-rechner.html`
+zusätzlich verifiziert: alle 11 neuen Einträge rendern korrekt in DE und EN an der
+vorgesehenen Position in der Liste, keine Konsolenfehler.
+
+**Geändert:** `js/i18n-dict.js`, `js/glossary.js`. `?v=` auf `3.66.0` gezogen (Desktop +
+Mobil, Cache-Busting + Menü-Version). `pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`). `Versionen/v3.66.0 - Glossar-Erweiterung Werkzeuge
+und Belaege/` enthält den vollständigen Schnappschuss.
+
 ## Einheitensystem-Umschaltung Metrisch/Imperial (v3.65.0)
 
 Direkter Nutzerauftrag (Warteschlange, kein Backlog-Punkt), Rückfrage-Runde bereits von

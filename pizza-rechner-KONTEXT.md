@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-22 · Aktuelle Version: v3.65.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-22 · Aktuelle Version: v3.66.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -179,20 +179,18 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Einheitensystem-Umschaltung Metrisch/Imperial (v3.65.0) = aktueller Stand
+## Glossar-Erweiterung: Werkzeuge & Ausrüstung + Pizzabeläge (v3.66.0) = aktueller Stand
 
-Direkter Nutzerauftrag (Warteschlange, kein Backlog-Punkt). Neues Modul `js/units.js`
-(Muster identisch zu `js/theme.js`): Auto-Erkennung nur bei Browser-Region `en-US` →
-Imperial-Default, sonst Metrisch, persistente manuelle Übersteuerung im Einstellungen-
-Menü (`#unitSwitch`, eigener localStorage-Key `pizzaUnits`). Betrifft NUR Anzeige/Ausgabe
-(Ergebnis-Panel, Anleitung, Einkaufsliste, PDF-Export via `PZ.formatWeight`/
-`formatWeightAuto`/`formatTemp` in `js/calc.js`/`js/guide.js`/`js/print.js`) — Eingabe-
-Regler und Rechenkern (`js/calc.js`-`calcCore`, `js/schedule.js`) bleiben unverändert in
-Gramm/Celsius. Statische Referenztexte ohne Bezug zu einem Rechenergebnis (Ofentemperatur-
-Richtwerte, Kühlschrank-Lagerbereiche, Glossar) bleiben bewusst unkonvertiert. Tests
-657→**688** grün, Accessibility-Review ohne Befund. **Volle Details:**
-`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Einheitensystem-Umschaltung Metrisch/
-Imperial (v3.65.0)".
+Direkter Nutzerauftrag (Warteschlangen-Punkt 2 von 3, kein Backlog-Punkt), bereits
+vollständig spezifiziert. Zwei neue thematische Gruppen im Pizza-Glossar (`js/glossary.js`,
+v3.37.0): "Werkzeuge & Ausrüstung" (Pizzastein/-stahl, Pizzaschieber, Ofenthermometer,
+Teigschaber, Küchenwaage, Gärbox) und "Pizzabeläge" (Marinara, Capricciosa, Diavola,
+Quattro Formaggi, "Beläge nach dem Backen") — 11 neue Einträge (DE+EN), identisches
+Muster wie alle bestehenden Glossar-Einträge, reine Anzeige-Inhalte ohne neues
+Markup/neue CSS. `PZ.GLOSSARY_TOPICS` in `js/glossary.js` entsprechend erweitert. Tests
+unverändert 688 grün (reine Inhaltsergänzung, `js/glossary.js` ist nicht Teil der
+Testsuite). **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt
+„Glossar-Erweiterung: Werkzeuge & Ausrüstung + Pizzabeläge (v3.66.0)".
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -449,7 +447,7 @@ makePrefStages/fillFlourSelect, die diese drei Module beim eigenen Laden direkt 
 `units` MUSS vor `calc`/`guide`/`print` geladen werden (liefert PZ.formatWeight/formatWeightAuto/
 formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.65.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.66.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
@@ -1048,15 +1046,17 @@ Keine Code-Änderung durch den Audit nötig.
   persistente manuelle Übersteuerung)~~ — **erledigt in v3.65.0** (Warteschlangen-Punkt 1
   von 3, kein Backlog-Punkt; s. Abschnitt „Einheitensystem-Umschaltung Metrisch/Imperial
   (v3.65.0)" oben).
+- ~~Glossar-Erweiterung: Werkzeuge & Ausrüstung + Pizzabeläge~~ — **erledigt in v3.66.0**
+  (Warteschlangen-Punkt 2 von 3, kein Backlog-Punkt; s. Abschnitt „Glossar-Erweiterung:
+  Werkzeuge & Ausrüstung + Pizzabeläge (v3.66.0)" oben).
 
-**Stand v3.65.0: alle bisherigen versionierten Backlog-Punkte sind abgearbeitet**
+**Stand v3.66.0: alle bisherigen versionierten Backlog-Punkte sind abgearbeitet**
 (durchgestrichen oben), offen ist nur die neue, noch unspezifizierte Foto-Anleitung-Idee
 weiter oben in dieser Liste. Der Bring!-Deeplink-Testaufbau ist abschließend geklärt
-(verworfen, vollständig zurückgebaut, keine offene Frage mehr). Noch zwei direkte
-Nutzeraufträge als Warteschlange für die nächsten Zyklen angekündigt (noch nicht
-umgesetzt, in dieser Reihenfolge): 1) Glossar-Erweiterung um „Werkzeuge & Ausrüstung" +
-„Pizzabeläge" (zwei neue Abschnitte, generische Texte DE/EN), 2) Bottom-Tab-Navigation auf
-Mobil (ersetzt das Burgermenü, vier Haupt-Tabs + Sekundär-Navigation im Rechner-Tab).
+(verworfen, vollständig zurückgebaut, keine offene Frage mehr). Noch ein direkter
+Nutzerauftrag als Warteschlange für den nächsten Zyklus angekündigt (noch nicht
+umgesetzt): Bottom-Tab-Navigation auf Mobil (ersetzt das Burgermenü, vier Haupt-Tabs +
+Sekundär-Navigation im Rechner-Tab).
 **Stil-Hinweis für alle künftigen Texte (Glossar, i18n-Strings, Onboarding, sonstige
 Beschreibungen):** keine Gedankenstriche (Em-Dash) verwenden, stattdessen Komma, Punkt,
 Doppelpunkt oder Klammern, je nach Kontext.

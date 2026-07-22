@@ -22,7 +22,8 @@
   // einfache, unkategorisierte Liste (kein Suchfeld, keine Kategorien-
   // Gruppierung über diese Reihenfolge hinaus, s. Abgrenzung der
   // Feature-Definition) — grob thematisch sortiert (Mehl/Teig-Grundlagen →
-  // Vorteig-/Gärmethoden → Zutaten → Pizza-Stile), aber ohne sichtbare
+  // Techniken → Vorteig-/Gärmethoden → Werkzeuge & Ausrüstung [v3.65.0] →
+  // Zutaten → Pizzabeläge [v3.65.0] → Pizza-Stile), aber ohne sichtbare
   // Zwischenüberschriften.
   PZ.GLOSSARY_TOPICS = [
     'wwert',
@@ -38,11 +39,22 @@
     'kalteGare',
     'malzmehl',
     'ofenVsBackofen',
+    'pizzastein',
+    'pizzaschieber',
+    'ofenthermometer',
+    'teigschaber',
+    'kuechenwaage',
+    'gaerbox',
     'sanMarzano',
     'passata',
     'fiorDiLatte',
     'olivenoel',
     'basilikum',
+    'belagMarinara',
+    'belagCapricciosa',
+    'belagDiavola',
+    'belagQuattroFormaggi',
+    'belagNachDemBacken',
     'echteNeapolitanische',
     'margherita',
     'napoletanaVsRomana',
