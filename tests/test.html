@@ -58,6 +58,11 @@
     <button type="button" data-theme-choice="dark">Dunkel</button>
   </div>
   <div id="themeAnnounce" role="status" aria-live="polite"></div>
+  <div class="seg" id="unitSwitch">
+    <button type="button" data-units-choice="metric">Metrisch</button>
+    <button type="button" data-units-choice="imperial">Imperial</button>
+  </div>
+  <div id="unitsAnnounce" role="status" aria-live="polite"></div>
   <div id="wasteNote"></div>
 </div>
 
@@ -67,6 +72,7 @@
 <script src="../js/i18n.js"></script>
 <script src="../js/settings.js"></script>
 <script src="../js/theme.js"></script>
+<script src="../js/units.js"></script>
 <script src="../js/widgets.js"></script>
 <script src="../js/flour.js"></script>
 <script src="../js/schedule.js"></script>
@@ -94,6 +100,14 @@
   // hier VOR jedem Testlauf explizit auf Deutsch fixieren, unabhängig vom Browser/Profil.
   try { localStorage.removeItem('pizzaLang'); } catch (e) { /* ignore */ }
   if (PZ.setLang) PZ.setLang('de');
+
+  // --- Einheitensystem (js/units.js, v3.65.0): identischer Determinismus-Fix wie bei
+  // der Sprache direkt darüber -- ohne diesen Fix würde eine automatische Erkennung
+  // "en-US" (Test-Browser-Region) alle bestehenden, in Gramm/Celsius formulierten
+  // Zahlenvergleiche unten zum Flackern bringen (Ergebnis-Panel/Anleitung zeigen dann
+  // oz/lb/°F statt g/°C). Deshalb hier VOR jedem Testlauf explizit auf Metrisch fixieren.
+  try { localStorage.removeItem('pizzaUnits'); } catch (e) { /* ignore */ }
+  if (PZ.setUnitSystem) PZ.setUnitSystem('metric');
 
   // Basis-Zustand für alle Tests
   const BASE = {
@@ -2961,6 +2975,147 @@
     // Baseline für alle vorangegangenen Testsektionen in dieser Datei.
     if (backup !== null) { localStorage.setItem(ADJUST_KEY, backup); } else { localStorage.removeItem(ADJUST_KEY); }
     PZ.ADJUST = adjustBackup;
+  })();
+
+  // ─────────────────────────────────────────────────────────────
+  heading('26 · Einheitensystem-Umschaltung Metrisch/Imperial (js/units.js, v3.65.0)');
+
+  // Analog zu Sektion 24 (Dunkelmodus): reine Entscheidungs-/Formatierungsfunktionen
+  // geprüft (PZ._resolveInitialUnits/formatWeight/formatWeightAuto/formatTemp), plus ein
+  // DOM-Effekt-Test für den Umschalter (#unitSwitch-Stub oben) und ein Integrationstest,
+  // dass calc() im Imperial-Modus tatsächlich oz/lb/°F ins DOM schreibt. js/calc.js/
+  // js/schedule.js selbst wurden NICHT in ihrer Rechenlogik verändert (nur die
+  // Anzeige-Formatierung) -- deshalb hier bewusst KEINE Duplikate der bestehenden
+  // Bäckerprozente-/Masseerhaltungs-Prüfungen aus Sektion 1 ff., nur das neue Feature.
+  (function () {
+    const UNITS_KEY = 'pizzaUnits';
+    const backup = localStorage.getItem(UNITS_KEY);
+    const unitsBackup = PZ.getUnitSystem();
+
+    // --- resolveInitialUnits(): reine Entscheidungsfunktion, kein DOM/localStorage ---
+    renderBox('PZ._resolveInitialUnits(): gespeicherte manuelle Wahl schlägt immer die Regions-Erkennung', [
+      { label: 'stored="imperial", Region nicht-en-US -> "imperial" (manuelle Wahl gewinnt)', ok: PZ._resolveInitialUnits('imperial', false) === 'imperial', actual: PZ._resolveInitialUnits('imperial', false), expected: 'imperial', tol: null },
+      { label: 'stored="metric", Region en-US -> "metric" (manuelle Wahl gewinnt)', ok: PZ._resolveInitialUnits('metric', true) === 'metric', actual: PZ._resolveInitialUnits('metric', true), expected: 'metric', tol: null },
+      { label: 'stored=null, Region en-US -> "imperial" (Regions-Erkennung greift)', ok: PZ._resolveInitialUnits(null, true) === 'imperial', actual: PZ._resolveInitialUnits(null, true), expected: 'imperial', tol: null },
+      { label: 'stored=null, Region nicht-en-US -> "metric" (Regions-Erkennung greift)', ok: PZ._resolveInitialUnits(null, false) === 'metric', actual: PZ._resolveInitialUnits(null, false), expected: 'metric', tol: null },
+      { label: 'stored="quatsch" (unbekannter Wert) -> Regions-Erkennung statt Crash', ok: PZ._resolveInitialUnits('quatsch', true) === 'imperial', actual: PZ._resolveInitialUnits('quatsch', true), expected: 'imperial', tol: null }
+    ]);
+
+    // --- setUnitSystem()/getUnitSystem(): schaltet um, persistiert in localStorage ---
+    (function () {
+      localStorage.removeItem(UNITS_KEY);
+      PZ.setUnitSystem('imperial');
+      const afterImperial = PZ.getUnitSystem();
+      const storedImperial = localStorage.getItem(UNITS_KEY);
+      PZ.setUnitSystem('metric');
+      const afterMetric = PZ.getUnitSystem();
+      const storedMetric = localStorage.getItem(UNITS_KEY);
+      renderBox('setUnitSystem()/getUnitSystem() schalten um und persistieren in localStorage', [
+        { label: 'setUnitSystem("imperial") -> getUnitSystem() liefert "imperial"', ok: afterImperial === 'imperial', actual: afterImperial, expected: 'imperial', tol: null },
+        { label: 'setUnitSystem("imperial") persistiert "imperial" in localStorage', ok: storedImperial === 'imperial', actual: storedImperial, expected: 'imperial', tol: null },
+        { label: 'setUnitSystem("metric") -> getUnitSystem() liefert "metric"', ok: afterMetric === 'metric', actual: afterMetric, expected: 'metric', tol: null },
+        { label: 'setUnitSystem("metric") persistiert "metric" in localStorage', ok: storedMetric === 'metric', actual: storedMetric, expected: 'metric', tol: null }
+      ]);
+    })();
+
+    // --- setUnitSystem(): ungültiger Wert wird ignoriert (kein Crash, keine Änderung) ---
+    (function () {
+      PZ.setUnitSystem('metric');
+      PZ.setUnitSystem('unzen'); // nicht unterstützt (nur metric/imperial laut Feature-Auftrag)
+      renderBox('setUnitSystem() ignoriert nicht unterstützte Werte', [
+        { label: 'Einheitensystem bleibt bei "metric"', ok: PZ.getUnitSystem() === 'metric', actual: PZ.getUnitSystem(), expected: 'metric', tol: null }
+      ]);
+    })();
+
+    // --- formatWeight()/formatWeightAuto(): Metrisch reproduziert bestehende Rundung ---
+    (function () {
+      PZ.setUnitSystem('metric');
+      renderBox('formatWeight()/formatWeightAuto() im Metrisch-Modus: 1:1 die bisherigen Rundungskonventionen', [
+        { label: 'formatWeight(600) -> "600 g" (0 Nachkommastellen Default)', ok: PZ.formatWeight(600) === '600 g', actual: PZ.formatWeight(600), expected: '600 g', tol: null },
+        { label: 'formatWeight(16.8, 1) -> "16.8 g" (1 Nachkommastelle explizit)', ok: PZ.formatWeight(16.8, 1) === '16.8 g', actual: PZ.formatWeight(16.8, 1), expected: '16.8 g', tol: null },
+        { label: 'formatWeightAuto(1.8) -> "1.80 g" (< 10 g -> 2 Nachkommastellen)', ok: PZ.formatWeightAuto(1.8) === '1.80 g', actual: PZ.formatWeightAuto(1.8), expected: '1.80 g', tol: null },
+        { label: 'formatWeightAuto(16.8) -> "17 g" (>= 10 g -> ganzzahlig gerundet)', ok: PZ.formatWeightAuto(16.8) === '17 g', actual: PZ.formatWeightAuto(16.8), expected: '17 g', tol: null }
+      ]);
+    })();
+
+    // --- formatWeight(): Imperial-Modus, 0,1-oz-Rundung + "X lb Y oz"-Umbruch ab 16 oz ---
+    (function () {
+      PZ.setUnitSystem('imperial');
+      renderBox('formatWeight() im Imperial-Modus: 0,1-oz-Rundung, ab 16 oz "X lb Y oz"', [
+        { label: 'formatWeight(100) -> "3.5 oz" (< 16 oz bleibt reine Unze)', ok: PZ.formatWeight(100) === '3.5 oz', actual: PZ.formatWeight(100), expected: '3.5 oz', tol: null },
+        { label: 'formatWeight(600) -> "1 lb 5.2 oz" (>= 16 oz -> Pfund-Umbruch)', ok: PZ.formatWeight(600) === '1 lb 5.2 oz', actual: PZ.formatWeight(600), expected: '1 lb 5.2 oz', tol: null },
+        { label: 'formatWeight(453.592) -> "1 lb 0.0 oz" (Rundungs-Grenzfall exakt 1 lb, kein "0 lb 16.0 oz"-Bug)', ok: PZ.formatWeight(453.592) === '1 lb 0.0 oz', actual: PZ.formatWeight(453.592), expected: '1 lb 0.0 oz', tol: null },
+        { label: 'formatWeight(0) -> "0.0 oz" (kein NaN/negativer Wert)', ok: PZ.formatWeight(0) === '0.0 oz', actual: PZ.formatWeight(0), expected: '0.0 oz', tol: null },
+        { label: 'formatWeight(16.8, 1) ignoriert den metricDecimals-Parameter im Imperial-Modus', ok: PZ.formatWeight(16.8, 1) === '0.6 oz', actual: PZ.formatWeight(16.8, 1), expected: '0.6 oz', tol: null }
+      ]);
+      PZ.setUnitSystem('metric');
+    })();
+
+    // --- formatTemp(): Metrisch hängt nur die Einheit an, Imperial rundet auf ganze °F ---
+    (function () {
+      PZ.setUnitSystem('metric');
+      const metric195 = PZ.formatTemp(19.5);
+      PZ.setUnitSystem('imperial');
+      const imp195 = PZ.formatTemp(19.5);
+      const imp24 = PZ.formatTemp(24);
+      renderBox('formatTemp(): Metrisch nur Einheit anhängen, Imperial auf ganze °F runden', [
+        { label: 'Metrisch: formatTemp(19.5) -> "19.5°C" (keine erneute Rundung)', ok: metric195 === '19.5°C', actual: metric195, expected: '19.5°C', tol: null },
+        { label: 'Imperial: formatTemp(19.5) -> "67°F"', ok: imp195 === '67°F', actual: imp195, expected: '67°F', tol: null },
+        { label: 'Imperial: formatTemp(24) -> "75°F" (typischer DDT-Zielwert)', ok: imp24 === '75°F', actual: imp24, expected: '75°F', tol: null }
+      ]);
+      PZ.setUnitSystem('metric');
+    })();
+
+    // --- Integrationstest: PZ.calc() schreibt im Imperial-Modus oz/lb/°F ins DOM,
+    // der Rechenkern (PZ.R, weiterhin in Gramm/Celsius) bleibt dabei unverändert. ---
+    (function () {
+      Object.assign(PZ.state, BASE, { balls: 4, ballw: 250, oil: 0, sugar: 0 });
+      setFlour('caputo_pizzeria');
+      PZ.setUnitSystem('metric');
+      PZ.calc();
+      const flourMetric = PZ.R.flour;
+      const totalWMetricText = document.getElementById('totalW').textContent;
+      PZ.setUnitSystem('imperial');
+      PZ.calc();
+      const flourImperial = PZ.R.flour;
+      const totalWImperialText = document.getElementById('totalW').textContent;
+      const gFlourImperialText = document.getElementById('gFlour').textContent;
+      const waterTempImperialText = document.getElementById('waterTemp').textContent;
+      PZ.setUnitSystem('metric');
+      PZ.calc();
+      renderBox('PZ.calc() im Imperial-Modus: DOM zeigt oz/lb/°F, Rechenkern (PZ.R, Gramm/Celsius) unverändert', [
+        { label: 'Metrisch: #totalW enthält "g"', ok: totalWMetricText.indexOf(' g') !== -1, actual: totalWMetricText, expected: 'enthält " g"', tol: null },
+        { label: 'Imperial: #totalW enthält "oz" oder "lb" (nicht mehr " g")', ok: /oz|lb/.test(totalWImperialText) && totalWImperialText.indexOf(' g') === -1, actual: totalWImperialText, expected: 'enthält "oz"/"lb", kein " g"', tol: null },
+        { label: 'Imperial: #gFlour enthält "oz" oder "lb"', ok: /oz|lb/.test(gFlourImperialText), actual: gFlourImperialText, expected: 'enthält "oz"/"lb"', tol: null },
+        { label: 'Imperial: #waterTemp enthält "°F"', ok: waterTempImperialText.indexOf('°F') !== -1, actual: waterTempImperialText, expected: 'enthält "°F"', tol: null },
+        { label: 'Rechenkern unverändert: PZ.R.flour identisch in Metrisch und Imperial (nur Anzeige ändert sich)', ok: Math.abs(flourMetric - flourImperial) < 0.001, actual: flourImperial, expected: flourMetric, tol: 0.001 }
+      ]);
+    })();
+
+    // --- DOM-Effekt: setUnitSystem() spiegelt den Zustand im #unitSwitch-Stub (aria-pressed/
+    // .active), analog zum #themeSwitch-Test in Sektion 24 (identisches Timing-Argument:
+    // Click-Verdrahtung + Live-Region-Ansage #unitsAnnounce bleiben entsprechend ungetestet). ---
+    (function () {
+      const metricBtn = document.querySelector('#unitSwitch button[data-units-choice="metric"]');
+      const imperialBtn = document.querySelector('#unitSwitch button[data-units-choice="imperial"]');
+      PZ.setUnitSystem('imperial');
+      const imperialActive = imperialBtn.classList.contains('active') && imperialBtn.getAttribute('aria-pressed') === 'true';
+      const metricInactive = !metricBtn.classList.contains('active') && metricBtn.getAttribute('aria-pressed') === 'false';
+      PZ.setUnitSystem('metric');
+      const metricActive = metricBtn.classList.contains('active') && metricBtn.getAttribute('aria-pressed') === 'true';
+      const imperialInactive = !imperialBtn.classList.contains('active') && imperialBtn.getAttribute('aria-pressed') === 'false';
+      renderBox('setUnitSystem() spiegelt den Zustand im #unitSwitch-Stub (aria-pressed/.active)', [
+        { label: 'setUnitSystem("imperial") -> "Imperial"-Button aktiv (aria-pressed=true)', ok: imperialActive, actual: imperialActive, expected: true, tol: null },
+        { label: 'setUnitSystem("imperial") -> "Metrisch"-Button wird inaktiv', ok: metricInactive, actual: metricInactive, expected: true, tol: null },
+        { label: 'setUnitSystem("metric") -> "Metrisch"-Button aktiv (aria-pressed=true)', ok: metricActive, actual: metricActive, expected: true, tol: null },
+        { label: 'setUnitSystem("metric") -> "Imperial"-Button wird wieder inaktiv', ok: imperialInactive, actual: imperialInactive, expected: true, tol: null }
+      ]);
+    })();
+
+    // Ursprünglichen Einheiten-Stand (falls vorhanden) wiederherstellen, sonst Key entfernen:
+    // Baseline für alle vorangegangenen Testsektionen in dieser Datei.
+    if (backup !== null) { localStorage.setItem(UNITS_KEY, backup); } else { localStorage.removeItem(UNITS_KEY); }
+    PZ.setUnitSystem(unitsBackup);
   })();
 
   // ─────────────────────────────────────────────────────────────

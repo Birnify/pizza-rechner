@@ -8,6 +8,106 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Einheitensystem-Umschaltung Metrisch/Imperial (v3.65.0)
+
+Direkter Nutzerauftrag (Warteschlange, kein Backlog-Punkt), Rückfrage-Runde bereits von
+einem vorherigen (durch Sitzungslimit unterbrochenen) Orchestrator-Durchlauf beantwortet
+vorliegend: Umfang von "auch Bäckerprozente" auf "nur Anzeige/Ausgabe" reduziert. Die
+App erkennt automatisch anhand der Browser-Region (`navigator.language`), ob Imperial
+(oz/lb, °F) statt Metrisch (g, °C) sinnvoller ist, und bietet eine persistente manuelle
+Übersteuerung im Einstellungen-Menü an — identisches Muster wie der Dunkelmodus
+(`js/theme.js`).
+
+- **Neues Modul `js/units.js`:** eigener localStorage-Key `pizzaUnits` ('metric'/
+  'imperial'), `PZ._resolveInitialUnits(stored, prefersImperial)` als reine, testbare
+  Entscheidungsfunktion (gespeicherte manuelle Wahl gewinnt immer, sonst Regions-Fallback).
+  Auto-Erkennung bewusst NUR bei Browser-Region exakt `en-US` (`/^en-us$/i.test(navigator
+  .language)`) → Imperial-Default, alle anderen Sprachen/Regionen (inkl. `en-GB`) bleiben
+  Metrisch — unabhängig von der bestehenden DE/EN-Sprachauswahl der App (`js/i18n.js`),
+  das ist eine zweite, eigenständige Weiche auf Basis derselben Browser-Angabe.
+- **Formatierungsschicht (kein Eingriff in `PZ.state`/Rechenkern):** `PZ.formatWeight
+  (grams, metricDecimals)` (Metrisch: frei wählbare Nachkommastellen, Default 0 — deckt
+  die bisherigen, je Anzeigestelle unterschiedlichen Konventionen ab; Imperial: 0,1-oz-
+  Rundung, ab 16 oz Umbruch in "X lb Y oz", darunter reine "X oz"), `PZ.formatWeightAuto
+  (grams)` (das bisherige `js/guide.js`-interne Rundungsmuster < 10 g → 2 Nachkomma-
+  stellen, sonst ganzzahlig — im Imperial-Modus identisch zu `formatWeight`), `PZ.
+  formatTemp(celsius)` (Metrisch: hängt nur die Einheit an, keine erneute Rundung;
+  Imperial: rundet auf ganze °F). Alle drei liefern den KOMPLETTEN Anzeigetext inkl.
+  Einheit (z. B. `"600 g"`/`"21.2 oz"`) — aufrufende Module halten dafür keine eigenen
+  statischen Einheiten-Suffixe mehr vor.
+- **`js/calc.js` (`renderResult`):** alle Gewichts-/Temperatur-Textzuweisungen
+  (`#totalW`, `#gFlour`…`#gSugar`, `#pFlour`…`#pYeast`, `#mFlour`…`#mSugar`, `#waterTemp`,
+  `#iceAmt`, `#ballwOut`) nutzen jetzt `PZ.formatWeight`/`PZ.formatWeightAuto`/`PZ.
+  formatTemp` statt `Math.round`/`toFixed` + hartkodiertem HTML-Suffix. `calcCore()`s
+  Eiswasser-Hinweistexte (`calc.ice.note`/`calc.warmNote`/`calc.tapOkNote`) übergeben
+  ebenfalls bereits fertig formatierte Strings an `PZ.t()`. Neuer Re-Render-Hook `PZ.
+  unitsOnChange(fn)` (analog `PZ.i18nOnChange`): `js/calc.js` registriert sich, damit ein
+  Umschaltvorgang Ergebnis-Panel + Anleitung sofort neu rendert.
+- **`js/guide.js`:** der interne Rundungshelfer `g(x)` delegiert jetzt an `PZ.
+  formatWeightAuto` (liefert direkt den Text inkl. Einheit) statt selbst zu runden — alle
+  bestehenden Aufrufstellen (`g(R.pf)`, `g(R.salt)` usw.) bleiben dadurch unverändert.
+  Neuer Helfer `gt(x)` für Temperaturen (delegiert an `PZ.formatTemp`), ersetzt die vier
+  Stellen, an denen `R.wT`/`state.ddt` direkt (ohne `PZ.t()`) in Chip-Texten bzw. als
+  Template-Variable verwendet wurden. `js/i18n-dict.js`: ~20 Wörterbuch-Einträge (DE+EN),
+  die zuvor `{platzhalter} g`/`{platzhalter} °C` hartkodiert hatten, verloren dieses
+  hartkodierte Suffix (der übergebene Wert bringt die Einheit jetzt selbst mit) — Beispiel:
+  `'{salt} g Salz'` → `'{salt} Salz'`. In Summe für den Metrisch-Fall **byte-identischer**
+  gerenderter Anleitungstext wie vor der Umstellung (verifiziert), da `formatWeightAuto`/
+  `formatWeight` exakt dieselben Rundungsregeln reproduzieren wie die vorher inline im
+  jeweiligen Modul stehende Logik.
+- **`js/print.js` (Einkaufsliste):** `fmtYeast()`/neuer `fmtW()`-Helfer delegieren
+  ebenfalls an `PZ.formatWeightAuto`/`PZ.formatWeight`.
+- **`js/pdf.js` brauchte KEINE Änderung:** liest den PDF-Text direkt aus dem bereits
+  gerenderten DOM (`#guideSummary`/`#flourWarn`/`#guideSteps`), übernimmt die neue
+  Formatierung dadurch automatisch.
+- **Bewusste Abgrenzung (Scope-Entscheidung, nicht Teil der Vorgabe-Klärung):** statische
+  Referenztexte OHNE Bezug zu einem konkreten Rechenergebnis bleiben unkonvertiert — z. B.
+  Ofentemperatur-Richtwerte (`guide.step.preheat.body`, `guide.bake.small`), der generische
+  DDT-Zielbereich-Chip (`guide.step.checkTemp.chip`, "Ziel 23–25 °C"), Kühlschrank-
+  Lagerbereiche in den Gärzeit-Texten (`js/schedule.js`, alle `sched.*`-Einträge) und
+  Glossar-Inhalte. Nur Werte, die direkt aus `PZ.R` (Rechenergebnis) stammen oder
+  unmittelbar davon abgeleitete Anleitungs-/Ergebnis-Panel-Ausgaben sind, werden
+  umgerechnet — konvertierte Werte wären sonst Ranges/generische Richtwerte, keine
+  Berechnungsergebnisse, deren Umrechnung eine eigene, umfangreichere Recherche(Runde
+  bräuchte (Kandidat für einen künftigen, eigenen Zyklus, falls gewünscht).
+- **Eingabe-Regler unverändert:** Teigling-Gewicht (`#ballw`/`#ballwN`, inkl. `#ballwV`-
+  Live-Anzeige und der Formular-Duplikate in "Neues Rezept anlegen"), Raumtemperatur,
+  Mehltemperatur, Ziel-Teigtemperatur/DDT bleiben intern in Gramm/Celsius mit ihren
+  bestehenden Wertebereichen/Schrittweiten — `js/calc.js`s Rechenkern (`calcCore`), `js/
+  schedule.js`, `js/widgets.js`, Presets und Storage wurden NICHT angefasst.
+- **Neuer Menüpunkt "Einheiten"** im Einstellungen-Menü (`#unitSwitch`, Desktop + Mobil
+  identisch), direkt unter "Darstellung": zwei Buttons "Metrisch"/"Imperial", Live-Region
+  `#unitsAnnounce`, Info-Button `#flagUnitsInfo` (automatisch vom bestehenden generischen
+  `wireInfoButtons()`-Handler in `js/settings.js` erfasst, keine Zusatz-Verdrahtung nötig).
+  Gezielter Accessibility-Review (kein Vollaudit): keine Befunde, reine Struktur-
+  Wiederverwendung des etablierten `#themeSwitch`-Musters.
+- **`pizza-rechner.html`/`pizza-rechner-mobile.html`:** statische " g"/"°"-Text-Suffixe im
+  Ergebnis-Panel entfernt (Wert inkl. Einheit kommt jetzt komplett aus JS); Mobil-
+  Quick-Bar-Anker (`#qbTotal`) spiegelt weiterhin per `MutationObserver` einfach das
+  komplette `#totalW`-`textContent`, keine Änderung an der Spiegel-Logik nötig.
+
+**Tests** (`tests/test.html`, 657 → **688**, neue Sektion "26 · Einheitensystem-Umschaltung
+Metrisch/Imperial"): `PZ._resolveInitialUnits`, `formatWeight`/`formatWeightAuto` Metrisch
+(reproduziert bestehende Rundung) + Imperial (inkl. Rundungs-Grenzfall exakt 1 lb, kein
+"0 lb 16.0 oz"-Bug), `formatTemp` Metrisch/Imperial, Persistenz via `localStorage`
+("pizzaUnits"), `setUnitSystem()` ignoriert ungültige Werte, DOM-Spiegelung im
+`#unitSwitch`-Stub (`aria-pressed`/`.active`, analog zum bestehenden Theme-Test), sowie ein
+Integrationstest: `PZ.calc()` im Imperial-Modus schreibt oz/lb/°F ins DOM, während `PZ.R`
+(Rechenkern) unverändert in Gramm/Celsius bleibt (Anker gegen versehentliche Kopplung von
+Anzeige und Berechnung). `tests/test.html` selbst erzwingt vor jedem Lauf `PZ.setUnitSystem
+('metric')` (Determinismus-Fix analog zum bestehenden Sprach-Fix), damit die Host-Browser-
+Region die 657 bestehenden Prüfungen nicht verfälscht. Alle 688 Prüfungen grün (Headless-
+Edge-Dump). Zusätzlich per Headless-Edge mit `--lang=en-US` auf der echten `pizza-
+rechner.html` end-to-end verifiziert: Auto-Erkennung + komplette Umrechnungskette
+funktioniert korrekt über Ergebnis-Panel UND generierten Anleitungstext hinweg.
+
+**Geändert:** `js/units.js` (neu), `js/calc.js`, `js/guide.js`, `js/print.js`, `js/i18n-
+dict.js`, `pizza-rechner.html`, `pizza-rechner-mobile.html`, `tests/test.html`. `?v=` auf
+`3.65.0` gezogen (Desktop + Mobil, Cache-Busting + Menü-Version). `pizza-rechner-mobile-
+standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v3.65.0 - Einheitensystem-Umschaltung Metrisch-Imperial/` enthält den
+vollständigen Schnappschuss.
+
 ## Globale Hefemengen-/Verschwendungs-Anpassung & Aufräumarbeiten (v3.64.0)
 
 Direkter Nutzerauftrag (kein Backlog-Punkt), Brainstorming-Phase mit Rückfrage-Runde.

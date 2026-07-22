@@ -18,8 +18,20 @@
 
   function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
 
-  // Rundung für Mengenangaben
-  function g(x) { return x < 10 ? (Math.round(x * 100) / 100) : Math.round(x); }
+  // Rundung/Formatierung für Mengenangaben, INKL. Einheit (v3.65.0: über js/units.js,
+  // damit die Anleitung im Imperial-Modus oz/lb statt g zeigt). Alle Wörterbuch-
+  // Einträge, die {platzhalter} für Gewichte nutzen, haben deshalb KEIN hartkodiertes
+  // " g" mehr im Text selbst (s. js/i18n-dict.js) — g(x) liefert bereits den fertigen
+  // String inkl. Einheit. Fallback reproduziert 1:1 das bisherige Metrisch-Verhalten,
+  // falls js/units.js aus irgendeinem Grund nicht geladen ist.
+  function g(x) {
+    if (PZ.formatWeightAuto) return PZ.formatWeightAuto(x);
+    return (x < 10 ? (Math.round(x * 100) / 100) : Math.round(x)) + ' g';
+  }
+  // Temperatur, ebenfalls inkl. Einheit (°C/°F je nach Einheitensystem).
+  function gt(x) {
+    return PZ.formatTemp ? PZ.formatTemp(x) : x + '°C';
+  }
 
   function fmtClock(d) {
     const wd = [0, 1, 2, 3, 4, 5, 6].map(function (i) { return t('guide.weekday.' + i); })[d.getDay()];
@@ -93,7 +105,7 @@
     // unterstützt die Hefeaktivität, statt (wie Öl) das Glutennetz zu stören.
     const sugarPhrase = hasSugar ? t('guide.sugarPhrase', { sugar: g(R.sugar) }) : '';
     const sugarTip = hasSugar ? tip(t('guide.sugarTip')) : '';
-    const iceTxt = R.ice > 0 ? t('guide.iceTxt', { ice: R.ice }) : '';
+    const iceTxt = R.ice > 0 ? t('guide.iceTxt', { ice: g(R.ice) }) : '';
     let matureMin = 0;                        // Vorteig-Reifezeit (nur bei Biga/Poolish)
     _items = [];
 
@@ -136,8 +148,8 @@
       sec(t('guide.sec.main'));
       const hasMW = R.mWater >= 1, hasMF = R.mFlour >= 1;
       if (hasMW) {
-        st(t('guide.step.waterTemp.title'), `${R.wT} °C`,
-          t('guide.step.waterTemp.body', { mWater: g(R.mWater), wT: R.wT, iceTxt: iceTxt }),
+        st(t('guide.step.waterTemp.title'), gt(R.wT),
+          t('guide.step.waterTemp.body', { mWater: g(R.mWater), wT: gt(R.wT), iceTxt: iceTxt }),
           R.ice > 0 ? tip(t('guide.step.waterTemp.tip')) : '', 5);
       }
       const addParts = [];
@@ -173,8 +185,8 @@
           oilPart: hasOil ? t('guide.weighIngredients.oilPart', { oil: g(R.oil) }) : ''
         }),
         tip(t('guide.step.weighIngredients.tip')), 5);
-      st(t('guide.step.waterTemp.title'), `${R.wT} °C`,
-        t('guide.step.waterTempDirect.body', { water: g(R.water), wT: R.wT, iceTxt: iceTxt, ddt: state.ddt }),
+      st(t('guide.step.waterTemp.title'), gt(R.wT),
+        t('guide.step.waterTempDirect.body', { water: g(R.water), wT: gt(R.wT), iceTxt: iceTxt, ddt: gt(state.ddt) }),
         R.ice > 0 ? tip(t('guide.step.waterTempDirect.tip')) : '', 5);
       if (state.yeast < 1.2) {
         // Autolyse: Hefe kommt erst DANACH in den Teig — kein Widerspruch in der Reihenfolge
@@ -212,14 +224,14 @@
         `${state.knead === '6' ? t('guide.knead.machineBody') : t('guide.knead.handBody')}${t('guide.step.knead.bodySuffix')}`, '', state.knead === '6' ? 10 : 13);
     }
     st(t('guide.step.checkTemp.title'), t('guide.step.checkTemp.chip'),
-      t('guide.step.checkTemp.body', { ddt: state.ddt }), '', 2);
+      t('guide.step.checkTemp.body', { ddt: gt(state.ddt) }), '', 2);
 
     const ballsCold = f.cold && state.coldStage !== 'bulk';
     sec(t('guide.sec.rise'));
     st(t('guide.step.bulkRise.title'), f.cold && !ballsCold ? t('guide.step.bulkRise.chipColdBalls') : t('guide.step.bulkRise.chipDefault'),
       t('guide.step.bulkRise.body', { bulk: f.bulk }), timerBox('stockgare', f.bulkMin), f.bulkMin);
-    st(t('guide.step.formBalls.title'), `${R.N} × ${R.W} g`,
-      t('guide.step.formBalls.body', { N: R.N, W: R.W, boxTxt: ballsCold ? t('guide.box.cold') : t('guide.box.normal') }),
+    st(t('guide.step.formBalls.title'), `${R.N} × ${g(R.W)}`,
+      t('guide.step.formBalls.body', { N: R.N, W: g(R.W), boxTxt: ballsCold ? t('guide.box.cold') : t('guide.box.normal') }),
       tip(t('guide.step.formBalls.tip'))
       // Feature-Flag "freezeHint" (js/settings.js): Default AUS, optionaler Zusatz-Tipp.
       // `tests/test.html` setzt `PZ.FLAGS.freezeHint` explizit auf `true` (Baseline "alles
@@ -263,7 +275,7 @@
     if (valid) {
       const endT = new Date(base.getTime() + totalMin * 60000);
       html += `<div class="schedbar">${t('guide.schedbar.withTime', { dur: fmtDur(totalMin), startClock: fmtClock(base), endClock: fmtClock(endT) })}</div>`;
-      $('guideSummary').innerHTML = t('guide.summary.withTime', { label: f.label, N: R.N, W: R.W, hyd: state.hyd });
+      $('guideSummary').innerHTML = t('guide.summary.withTime', { label: f.label, N: R.N, W: g(R.W), hyd: state.hyd });
     } else {
       // {zeitplan}-Platzhalter: klickbarer Sprung zum Menüpunkt "Zeitplan" (v3.38.0-Fix,
       // s. Kommentar bei guide.schedbar.noTime in js/i18n.js). Label kommt bewusst aus

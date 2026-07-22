@@ -99,8 +99,8 @@
 
   add('guide.step.prefWeigh.title', 'Vorteig abwiegen', 'Weigh the pre-ferment');
   add('guide.chip.5min', '~5 min', '~5 min');
-  add('guide.step.prefWeigh.body', 'Für den {prefName}: <b>{pf} g Mehl</b>, <b>{pw} g Wasser</b> ({hydTxt}) und <b>{pYeast} g Hefe {yWord}</b>.',
-    'For the {prefName}: <b>{pf} g flour</b>, <b>{pw} g water</b> ({hydTxt}) and <b>{pYeast} g {yWord} yeast</b>.');
+  add('guide.step.prefWeigh.body', 'Für den {prefName}: <b>{pf} Mehl</b>, <b>{pw} Wasser</b> ({hydTxt}) und <b>{pYeast} Hefe {yWord}</b>.',
+    'For the {prefName}: <b>{pf} flour</b>, <b>{pw} water</b> ({hydTxt}) and <b>{pYeast} {yWord} yeast</b>.');
   add('guide.pref.poolishRatio', '100% (also 1:1)', '100% (i.e. 1:1)');
   add('guide.pref.clampNote', 'Der Vorteig-Anteil wurde automatisch auf <b>{prefEff} %</b> begrenzt: bei {hyd} % Hydration passt nicht mehr Wasser in den {prefType} als insgesamt im Teig ist.',
     'The pre-ferment share was automatically capped at <b>{prefEff} %</b>: at {hyd} % hydration, the {prefType} can\'t hold more water than the whole dough contains.');
@@ -140,16 +140,16 @@
     'Finger test: smells pleasantly of yeast/yogurt, not sharply of alcohol. It won\'t hold up much longer than ~24 h.');
 
   add('guide.step.waterTemp.title', 'Schüttwasser temperieren', 'Temper the mixing water');
-  add('guide.step.waterTemp.body', '<b>{mWater} g Wasser</b> auf <b>{wT} °C</b> bringen{iceTxt}. Das ist das Restwasser für den Hauptteig.',
-    'Bring <b>{mWater} g water</b> to <b>{wT} °C</b>{iceTxt}. This is the remaining water for the final dough.');
+  add('guide.step.waterTemp.body', '<b>{mWater} Wasser</b> auf <b>{wT}</b> bringen{iceTxt}. Das ist das Restwasser für den Hauptteig.',
+    'Bring <b>{mWater} water</b> to <b>{wT}</b>{iceTxt}. This is the remaining water for the final dough.');
   add('guide.step.waterTemp.tip', 'Eis vorher exakt abwiegen und auflösen, bis die Zieltemperatur steht.',
     'Weigh the ice precisely beforehand and let it melt in until the target temperature is reached.');
-  add('guide.iceTxt', ' (davon <b>{ice} g Eis</b>)', ' (of which <b>{ice} g is ice</b>)');
+  add('guide.iceTxt', ' (davon <b>{ice} Eis</b>)', ' (of which <b>{ice} is ice</b>)');
 
-  add('guide.pref.addWater', 'mit dem <b>{mWater} g Wasser</b> lösen', 'dissolve it with the <b>{mWater} g water</b>');
-  add('guide.pref.addFlour', '<b>{mFlour} g Mehl</b>{yeastPart}{sugarPart} zugeben', 'add <b>{mFlour} g flour</b>{yeastPart}{sugarPart}');
-  add('guide.pref.addFlour.yeastPart', ' und <b>{mYeast} g Hefe {yWord}</b>', ' and <b>{mYeast} g {yWord} yeast</b>');
-  add('guide.pref.addFlour.sugarPart', ' und <b>{sugar} g Zucker</b>', ' and <b>{sugar} g sugar</b>');
+  add('guide.pref.addWater', 'mit dem <b>{mWater} Wasser</b> lösen', 'dissolve it with the <b>{mWater} water</b>');
+  add('guide.pref.addFlour', '<b>{mFlour} Mehl</b>{yeastPart}{sugarPart} zugeben', 'add <b>{mFlour} flour</b>{yeastPart}{sugarPart}');
+  add('guide.pref.addFlour.yeastPart', ' und <b>{mYeast} Hefe {yWord}</b>', ' and <b>{mYeast} {yWord} yeast</b>');
+  add('guide.pref.addFlour.sugarPart', ' und <b>{sugar} Zucker</b>', ' and <b>{sugar} sugar</b>');
   add('guide.pref.noAddParts', 'in die Schüssel geben', 'pour it into the bowl');
   add('guide.pref.joinThen', ', dann ', ', then ');
   add('guide.titleSuffix.water', ' + Wasser', ' + water');
@@ -169,31 +169,31 @@
   add('guide.step.saltAdd.title', 'Salz zugeben', 'Add the salt');
   add('guide.suffix.oil', ' &amp; Öl', ' &amp; oil');
   add('guide.step.saltAdd.chip', 'nach 2–3 min', 'after 2–3 min');
-  add('guide.step.saltAdd.body', 'Erst wenn alles grob zusammenhängt, <b>{salt} g Salz</b> {saltPhrase}{oilStep}',
-    'Only once everything roughly holds together, {saltPhrase} the <b>{salt} g salt</b>{oilStep}');
+  add('guide.step.saltAdd.body', 'Erst wenn alles grob zusammenhängt, <b>{salt} Salz</b> {saltPhrase}{oilStep}',
+    'Only once everything roughly holds together, {saltPhrase} the <b>{salt} salt</b>{oilStep}');
   add('guide.salt.machine', 'zugeben und <b>weitere 2–3 min auf mittlerer Stufe einarbeiten</b>.',
     'add and <b>work in for another 2–3 min on medium speed</b>.');
   add('guide.salt.hand', 'einstreuen und <b>von Hand ca. 2–3 min einkneten</b>.',
     'sprinkle in and <b>knead in by hand for about 2–3 min</b>.');
   add('guide.step.saltAdd.warn', 'Salz nie direkt auf die Hefe – es bremst sie. Immer zeitversetzt zugeben.',
     'Never put salt directly on the yeast: it slows it down. Always add it with a delay.');
-  add('guide.oilStep', ' Zum Schluss <b>{oil} g Olivenöl</b> nach und nach einarbeiten, bis der Teig es vollständig aufgenommen hat und wieder glatt ist.',
-    ' Finally, work in <b>{oil} g olive oil</b> gradually, until the dough has fully absorbed it and is smooth again.');
+  add('guide.oilStep', ' Zum Schluss <b>{oil} Olivenöl</b> nach und nach einarbeiten, bis der Teig es vollständig aufgenommen hat und wieder glatt ist.',
+    ' Finally, work in <b>{oil} olive oil</b> gradually, until the dough has fully absorbed it and is smooth again.');
   add('guide.oilTip', 'Öl <b>erst nach dem Salz</b> zugeben: kommt es zu früh, umhüllt es das Mehl und stört die Glutenbildung. Langsam einarbeiten, dann wird der Teig geschmeidig.',
     'Add the oil <b>only after the salt</b>: added too early, it coats the flour and disrupts gluten development. Work it in slowly for a supple dough.');
-  add('guide.sugarPhrase', ' sowie <b>{sugar} g Zucker</b>', ' as well as <b>{sugar} g sugar</b>');
+  add('guide.sugarPhrase', ' sowie <b>{sugar} Zucker</b>', ' as well as <b>{sugar} sugar</b>');
   add('guide.sugarTip', 'Zucker <b>früh mit Mehl, Wasser &amp; Hefe</b> zugeben: er unterstützt die Hefeaktivität und sorgt beim Backen für die typische New-York-Style-Krustenbräunung.',
     'Add sugar <b>early, with the flour, water &amp; yeast</b>: it supports yeast activity and gives the typical New-York-style crust browning during baking.');
 
   add('guide.step.weighIngredients.title', 'Zutaten abwiegen', 'Weigh the ingredients');
-  add('guide.step.weighIngredients.body', '<b>{flour} g Mehl</b> · <b>{water} g Wasser</b> · <b>{salt} g Salz</b> · <b>{yeast} g Hefe {yWord}</b>{sugarPart}{oilPart}.',
-    '<b>{flour} g flour</b> · <b>{water} g water</b> · <b>{salt} g salt</b> · <b>{yeast} g {yWord} yeast</b>{sugarPart}{oilPart}.');
-  add('guide.weighIngredients.sugarPart', ' · <b>{sugar} g Zucker</b>', ' · <b>{sugar} g sugar</b>');
-  add('guide.weighIngredients.oilPart', ' · <b>{oil} g Olivenöl</b>', ' · <b>{oil} g olive oil</b>');
+  add('guide.step.weighIngredients.body', '<b>{flour} Mehl</b> · <b>{water} Wasser</b> · <b>{salt} Salz</b> · <b>{yeast} Hefe {yWord}</b>{sugarPart}{oilPart}.',
+    '<b>{flour} flour</b> · <b>{water} water</b> · <b>{salt} salt</b> · <b>{yeast} {yWord} yeast</b>{sugarPart}{oilPart}.');
+  add('guide.weighIngredients.sugarPart', ' · <b>{sugar} Zucker</b>', ' · <b>{sugar} sugar</b>');
+  add('guide.weighIngredients.oilPart', ' · <b>{oil} Olivenöl</b>', ' · <b>{oil} olive oil</b>');
   add('guide.step.weighIngredients.tip', 'Für Hefe & Salz eine <b>0,1-g-Feinwaage</b> nutzen – bei diesen kleinen Mengen entscheidend.',
     'Use a <b>precision scale (0.1 g)</b> for yeast &amp; salt: essential at these small amounts.');
-  add('guide.step.waterTempDirect.body', 'Das <b>{water} g Wasser</b> auf <b>{wT} °C</b> bringen{iceTxt}. So landet der Teig nach dem Kneten bei ~{ddt} °C.',
-    'Bring the <b>{water} g water</b> to <b>{wT} °C</b>{iceTxt}. That way the dough lands at ~{ddt} °C after kneading.');
+  add('guide.step.waterTempDirect.body', 'Das <b>{water} Wasser</b> auf <b>{wT}</b> bringen{iceTxt}. So landet der Teig nach dem Kneten bei ~{ddt}.',
+    'Bring the <b>{water} water</b> to <b>{wT}</b>{iceTxt}. That way the dough lands at ~{ddt} after kneading.');
   add('guide.step.waterTempDirect.tip', 'Eis abwiegen, im Wasser auflösen bis die Temperatur passt – dann erst loslegen.',
     'Weigh the ice, let it melt in the water until the temperature is right: only then start.');
   add('guide.reserveWaterTip', 'Behalte <b>2–3 EL vom Schüttwasser</b> zurück, um danach die Hefe darin aufzulösen.',
@@ -208,8 +208,8 @@
   add('guide.chip.2min', '~2 min', '~2 min');
   add('guide.yeastType.dry', 'Trockenhefe', 'dry yeast');
   add('guide.yeastType.fresh', 'Frischhefe', 'fresh yeast');
-  add('guide.yeast.tinyBody', 'Bei dieser sehr kleinen Menge (<b>{yeast} g</b>) die {yeastTypeName} im <b>zurückbehaltenen Wasser auflösen</b> und gleichmäßig über den Teig geben – trocken eingestreut verteilt sie sich bei so wenig Menge kaum gleichmäßig.',
-    'At this very small amount (<b>{yeast} g</b>), dissolve the {yeastTypeName} in the <b>reserved water</b> and pour it evenly over the dough: sprinkled in dry, it barely distributes evenly at such a small quantity.');
+  add('guide.yeast.tinyBody', 'Bei dieser sehr kleinen Menge (<b>{yeast}</b>) die {yeastTypeName} im <b>zurückbehaltenen Wasser auflösen</b> und gleichmäßig über den Teig geben – trocken eingestreut verteilt sie sich bei so wenig Menge kaum gleichmäßig.',
+    'At this very small amount (<b>{yeast}</b>), dissolve the {yeastTypeName} in the <b>reserved water</b> and pour it evenly over the dough: sprinkled in dry, it barely distributes evenly at such a small quantity.');
   add('guide.yeast.dryBody', 'Trockenhefe gleichmäßig <b>über den Autolyse-Teig streuen</b> und kurz einarbeiten.',
     'Sprinkle dry yeast evenly <b>over the autolyse dough</b> and briefly work it in.');
   add('guide.yeast.freshBody', 'Frischhefe im <b>zurückbehaltenen Wasser auflösen</b> und über den Teig geben.',
@@ -225,10 +225,10 @@
   add('guide.step.mixSalt.title', 'Mischen', 'Mix');
   add('guide.suffix.sugar', ' &amp; Zucker', ' &amp; sugar');
   add('guide.suffix.salt', ' &amp; Salz', ' &amp; salt');
-  add('guide.mixSalt.machine', 'Mehl, Wasser & Hefe{sugarPhrase} in die Maschine geben und <b>ca. 2–3 min auf niedriger Stufe vermengen</b>, dann <b>{salt} g Salz zugeben und weitere 2–3 min auf mittlerer Stufe einarbeiten</b>.',
-    'Put flour, water &amp; yeast{sugarPhrase} in the machine and <b>mix on low speed for about 2–3 min</b>, then <b>add the {salt} g salt and work in for another 2–3 min on medium speed</b>.');
-  add('guide.mixSalt.hand', 'Mehl, Wasser & Hefe{sugarPhrase} <b>von Hand ca. 3–5 min grob vermengen</b> (bis kein trockenes Mehl mehr bleibt), dann <b>{salt} g Salz einstreuen und weitere 2–3 min einkneten</b>.',
-    'Roughly <b>mix flour, water &amp; yeast{sugarPhrase} by hand for about 3–5 min</b> (until no dry flour remains), then <b>sprinkle in the {salt} g salt and knead for another 2–3 min</b>.');
+  add('guide.mixSalt.machine', 'Mehl, Wasser & Hefe{sugarPhrase} in die Maschine geben und <b>ca. 2–3 min auf niedriger Stufe vermengen</b>, dann <b>{salt} Salz zugeben und weitere 2–3 min auf mittlerer Stufe einarbeiten</b>.',
+    'Put flour, water &amp; yeast{sugarPhrase} in the machine and <b>mix on low speed for about 2–3 min</b>, then <b>add the {salt} salt and work in for another 2–3 min on medium speed</b>.');
+  add('guide.mixSalt.hand', 'Mehl, Wasser & Hefe{sugarPhrase} <b>von Hand ca. 3–5 min grob vermengen</b> (bis kein trockenes Mehl mehr bleibt), dann <b>{salt} Salz einstreuen und weitere 2–3 min einkneten</b>.',
+    'Roughly <b>mix flour, water &amp; yeast{sugarPhrase} by hand for about 3–5 min</b> (until no dry flour remains), then <b>sprinkle in the {salt} salt and knead for another 2–3 min</b>.');
   add('guide.step.mixSalt.warn', 'Salz zeitversetzt zur Hefe zugeben – nie direkt aufeinander.',
     'Add the salt with a delay after the yeast: never put them directly together.');
 
@@ -247,8 +247,8 @@
     ', until the dough is <b>smooth &amp; elastic</b>. Windowpane test: stretches thin without tearing.');
   add('guide.step.checkTemp.title', 'Teigtemperatur prüfen', 'Check the dough temperature');
   add('guide.step.checkTemp.chip', 'Ziel 23–25 °C', 'Target 23–25 °C');
-  add('guide.step.checkTemp.body', 'Thermometer in den Teig: <b>{ddt} °C</b> angepeilt. Wärmer → schnellere Gare, kälter → langsamer.',
-    'Thermometer into the dough: targeting <b>{ddt} °C</b>. Warmer → faster rise, colder → slower.');
+  add('guide.step.checkTemp.body', 'Thermometer in den Teig: <b>{ddt}</b> angepeilt. Wärmer → schnellere Gare, kälter → langsamer.',
+    'Thermometer into the dough: targeting <b>{ddt}</b>. Warmer → faster rise, colder → slower.');
 
   add('guide.step.bulkRise.title', 'Stockgare (im Stück)', 'Bulk rise (whole dough)');
   add('guide.step.bulkRise.chipColdBalls', 'Raumtemp + kühl', 'Room temp + cold');
@@ -256,8 +256,8 @@
   add('guide.step.bulkRise.body', 'Teig zur Kugel formen, in eine geölte/abgedeckte Schüssel. {bulk}.',
     'Shape the dough into a ball, place in an oiled/covered bowl. {bulk}.');
   add('guide.step.formBalls.title', 'Teiglinge formen', 'Shape the dough balls');
-  add('guide.step.formBalls.body', 'In <b>{N} Stücke à {W} g</b> teilen. Jedes zu einer <b>straffen Kugel</b> formen (Oberfläche spannen, Schluss nach unten). Mit Abstand in eine {boxTxt}.',
-    'Divide into <b>{N} pieces of {W} g each</b>. Shape each into a <b>tight ball</b> (tension on the surface, seam down). Place with space between them in a {boxTxt}.');
+  add('guide.step.formBalls.body', 'In <b>{N} Stücke à {W}</b> teilen. Jedes zu einer <b>straffen Kugel</b> formen (Oberfläche spannen, Schluss nach unten). Mit Abstand in eine {boxTxt}.',
+    'Divide into <b>{N} pieces of {W} each</b>. Shape each into a <b>tight ball</b> (tension on the surface, seam down). Place with space between them in a {boxTxt}.');
   add('guide.box.cold', 'kühlschranktaugliche, dicht schließende Box', 'fridge-safe, tightly sealing container');
   add('guide.box.normal', 'Box', 'container');
   add('guide.step.formBalls.tip', 'Straff geformte Kugeln = runde Pizzen mit gleichmäßigem Rand (Cornicione).',
@@ -296,7 +296,7 @@
 
   add('guide.schedbar.withTime', '⏱️ <b>Gesamtdauer ca. {dur}</b><br><span class="big">▶ Start {startClock}</span> &nbsp;→&nbsp; <span class="big">🍕 Fertig {endClock}</span>',
     '⏱️ <b>Total time approx. {dur}</b><br><span class="big">▶ Start {startClock}</span> &nbsp;→&nbsp; <span class="big">🍕 Ready {endClock}</span>');
-  add('guide.summary.withTime', '{label} · {N} × {W} g · {hyd}% Hydration', '{label} · {N} × {W} g · {hyd}% hydration');
+  add('guide.summary.withTime', '{label} · {N} × {W} · {hyd}% Hydration', '{label} · {N} × {W} · {hyd}% hydration');
   // Bugfix (v3.38.0): "gib oben eine Start-/Zielzeit an" stimmte seit der
   // Burgermenü-Navigation (v3.26.0) nicht mehr: Start-/Zielzeit-Felder liegen
   // seitdem im eigenen Menüpunkt "Zeitplan", nicht mehr im selben Bereich wie
@@ -918,6 +918,17 @@
   add('theme.light', 'Hell', 'Light');
   add('theme.dark', 'Dunkel', 'Dark');
   add('theme.announce', 'Darstellung: {theme}', 'Appearance: {theme}');
+  // Einheitensystem-Umschaltung (v3.65.0, js/units.js): identisches Umschalter-/
+  // Ansage-Muster wie Sprache/Darstellung direkt darüber. Betrifft NUR Anzeige/Ausgabe
+  // (Ergebnis-Panel, Einkaufsliste, Anleitung, PDF-Export) — die Eingabe-Regler bleiben
+  // unverändert in Gramm/Celsius, s. js/units.js.
+  add('flag.units.name', 'Einheiten', 'Units');
+  add('flag.units.infoBtn', 'Erklärung zu „Einheiten“ ein-/ausblenden', 'Show/hide explanation for "Units"');
+  add('flag.units.info', 'Metrisch (Gramm, Celsius) oder Imperial (Unzen/Pfund, Fahrenheit) für Ergebnis-Panel, Einkaufsliste, Anleitung und PDF-Export. Automatisch anhand deiner Browser-Region vorausgewählt, hier jederzeit manuell umschaltbar: deine Wahl wird gespeichert. Die Eingabe-Regler (z. B. Teigling-Gewicht, Raumtemperatur) bleiben davon unberührt.',
+    'Metric (grams, Celsius) or imperial (ounces/pounds, Fahrenheit) for the result panel, shopping list, guide and PDF export. Automatically pre-selected based on your browser region, switchable manually here anytime: your choice is saved. The input sliders (e.g. dough ball weight, room temperature) are not affected.');
+  add('units.metric', 'Metrisch', 'Metric');
+  add('units.imperial', 'Imperial', 'Imperial');
+  add('units.announce', 'Einheiten: {units}', 'Units: {units}');
 
   // -- Card: Pizza Party --------------------------------------------------------------------
   add('card.party.title', 'Pizza Party', 'Pizza Party');
@@ -942,10 +953,10 @@
   add('quickbar.partyNoneYet', 'Noch keine Pizza ausgewählt', 'No pizza selected yet');
 
   // ---- js/calc.js: Eiswasser-Hinweis (dynamisch berechneter Text) ----------------
-  add('calc.ice.note', 'Nimm <b>{tapWater} g Leitungswasser (~{tapTemp}°)</b> + <b>{ice} g Eis</b>, ergibt ~{wT}° Schüttwasser. Eis vorher abwiegen.',
-    'Use <b>{tapWater} g tap water (~{tapTemp}°)</b> + <b>{ice} g ice</b>, giving ~{wT}° mixing water. Weigh the ice beforehand.');
-  add('calc.warmNote', 'Schüttwasser leicht anwärmen auf ~{wT}° (z.B. handwarm).', 'Warm the mixing water slightly to ~{wT}° (e.g. lukewarm).');
-  add('calc.tapOkNote', 'Leitungswasser bei ~{tapTemp}° passt direkt: kein Eis nötig.', 'Tap water at ~{tapTemp}° works directly: no ice needed.');
+  add('calc.ice.note', 'Nimm <b>{tapWater} Leitungswasser (~{tapTemp})</b> + <b>{ice} Eis</b>, ergibt ~{wT} Schüttwasser. Eis vorher abwiegen.',
+    'Use <b>{tapWater} tap water (~{tapTemp})</b> + <b>{ice} ice</b>, giving ~{wT} mixing water. Weigh the ice beforehand.');
+  add('calc.warmNote', 'Schüttwasser leicht anwärmen auf ~{wT} (z.B. handwarm).', 'Warm the mixing water slightly to ~{wT} (e.g. lukewarm).');
+  add('calc.tapOkNote', 'Leitungswasser bei ~{tapTemp} passt direkt: kein Eis nötig.', 'Tap water at ~{tapTemp} works directly: no ice needed.');
   add('calc.veryColdWarn', ' <b>Achtung:</b> sehr kalt: ggf. Mehl vorher kühlen.', ' <b>Note:</b> very cold: consider chilling the flour beforehand.');
   // Grenzfall bei sehr hohem Vorteig-Anteil (z. B. Poolish an der Klemmgrenze): das
   // gesamte Wasser steckt im Vorteig, es gibt kein Hauptteig-Schüttwasser mehr zu

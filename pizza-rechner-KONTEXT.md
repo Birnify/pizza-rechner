@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-22 · Aktuelle Version: v3.64.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-22 · Aktuelle Version: v3.65.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -179,25 +179,20 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Globale Hefemengen-/Verschwendungs-Anpassung & Aufräumarbeiten (v3.64.0) = aktueller Stand
+## Einheitensystem-Umschaltung Metrisch/Imperial (v3.65.0) = aktueller Stand
 
-Direkter Nutzerauftrag (kein Backlog-Punkt), Rückfrage-Runde vorab: zwei neue globale
-Kalibrierungswerte im Einstellungen-Menü, `js/settings.js` (`PZ.ADJUST`, eigener
-localStorage-Key `pizzaRechnerAdjustments`) + Stepper-UI (`.adjust-*`, wiederverwendet
-`.party-qty-*`-CSS). „Hefemenge anpassen" (−50…+100 %, Default 0) fließt in `js/calc.js`
-als Faktor auf die Hefe-Bäckerprozentzahl in den Nenner ein (Masseerhaltung bleibt exakt
-erhalten). „Verschwendung anpassen" (0…15 %, Default 2 %) erhöht `total` VOR der
-Zutaten-Aufteilung; neuer Hinweistext `#wasteNote` im Ergebnis-Panel erklärt den Puffer.
-Dazu in derselben Session gebündelt: (1) Bugfix Mobil-Onboarding (v3.63.0 zeigte sich auf
-Mobil linksbündig/schmal statt zentriert, `css/mobile.css` überschrieb die Overrides aus
-`css/styles.css` wegen gleicher Selektor-Spezifität + späterer Ladereihenfolge — jetzt in
-`css/mobile.css` erneut hergestellt); (2) 5. Onboarding-Punkt „Pizza Party" ergänzt;
-(3) alle Gedankenstriche (—) aus `js/i18n-dict.js` und sämtlichen `.html`-Dateien
-(inkl. `tests/test.html`) entfernt und durch Doppelpunkt/Komma/Klammern ersetzt (reiner
-Stil-Wunsch, Code-Kommentare in anderen `js/*.js`-Dateien bewusst nicht angefasst — außerhalb
-des benannten Scopes). Tests 614→**657** grün. **Volle Details:**
-`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Globale Hefemengen-/Verschwendungs-Anpassung
-& Aufräumarbeiten (v3.64.0)".
+Direkter Nutzerauftrag (Warteschlange, kein Backlog-Punkt). Neues Modul `js/units.js`
+(Muster identisch zu `js/theme.js`): Auto-Erkennung nur bei Browser-Region `en-US` →
+Imperial-Default, sonst Metrisch, persistente manuelle Übersteuerung im Einstellungen-
+Menü (`#unitSwitch`, eigener localStorage-Key `pizzaUnits`). Betrifft NUR Anzeige/Ausgabe
+(Ergebnis-Panel, Anleitung, Einkaufsliste, PDF-Export via `PZ.formatWeight`/
+`formatWeightAuto`/`formatTemp` in `js/calc.js`/`js/guide.js`/`js/print.js`) — Eingabe-
+Regler und Rechenkern (`js/calc.js`-`calcCore`, `js/schedule.js`) bleiben unverändert in
+Gramm/Celsius. Statische Referenztexte ohne Bezug zu einem Rechenergebnis (Ofentemperatur-
+Richtwerte, Kühlschrank-Lagerbereiche, Glossar) bleiben bewusst unkonvertiert. Tests
+657→**688** grün, Accessibility-Review ohne Befund. **Volle Details:**
+`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Einheitensystem-Umschaltung Metrisch/
+Imperial (v3.65.0)".
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -388,6 +383,11 @@ js/settings.js       PZ.FLAGS — Feature-Flags fürs Einstellungen-Menü (v3.16
                      Key `pizzaRechnerAdjustments`, geklemmt per PZ._clampAdjust())
 js/theme.js          Dunkelmodus (v3.47.0): folgt `prefers-color-scheme`, bis der manuelle
                      Umschalter im Einstellungen-Menü übersteuert (persistiert)
+js/units.js          Einheitensystem-Umschaltung Metrisch/Imperial (v3.65.0): folgt
+                     `navigator.language` (nur "en-US" → Imperial), bis der manuelle Umschalter im
+                     Einstellungen-Menü übersteuert (persistiert, eigener Key `pizzaUnits`, Muster
+                     identisch zu js/theme.js). PZ.formatWeight/formatWeightAuto/formatTemp: reine
+                     Anzeige-Formatierungsschicht (g↔oz/lb, °C↔°F), rührt PZ.state nicht an
 js/widgets.js        Gemeinsame Widget-Fabriken (v3.56.0, vorher in js/ui.js + js/newrecipe.js +
                      js/flour.js dupliziert): PZ.makeLink/makeSeg/makePrefStages/fillFlourSelect —
                      js/flour.js, js/ui.js, js/newrecipe.js rufen sie als dünne Konfigurationsaufrufe
@@ -430,24 +430,26 @@ js/onboarding.js     Willkommens-Screen / Einführung (v3.63.0): eigenständiges
                      eigenem Fokus-Trap, stellt 4 Kernfunktionen vor, automatisch beim Erststart
                      + jederzeit über Burgermenü-Punkt "Einführung" aufrufbar, Persistenz via
                      localStorage-Key pizzaOnboardingDontShow. Läuft als letztes Script (nach nav.js)
-tests/test.html      657 Prüfungen in 25 Kategorien (Doppelklick, kein Server) — lädt 16 der 25
-                     js/*-Module direkt (dom/state/i18n-dict/i18n/settings/theme/widgets/flour/
-                     schedule/guide/calc/print/pdf/storage/share/party); ui.js, timer.js,
+tests/test.html      688 Prüfungen in 26 Kategorien (Doppelklick, kein Server) — lädt 17 der 26
+                     js/*-Module direkt (dom/state/i18n-dict/i18n/settings/theme/units/widgets/
+                     flour/schedule/guide/calc/print/pdf/storage/share/party); ui.js, timer.js,
                      presets.js, newrecipe.js, glossary.js, main.js, nav.js, simplemode.js,
                      onboarding.js werden NICHT geladen (reines DOM-Wiring bzw. Browser-APIs) —
                      einzelne Ausschnitte wie PZ.PRESETS werden bei Bedarf punktuell gestubbt
 README.md            kurzer Einstieg
 ```
 
-**Ladereihenfolge** (Abhängigkeiten): dom → state → i18n-dict → i18n → settings → theme → widgets →
-flour → calc → schedule → guide → timer → ui → simplemode → print → pdf → presets → storage →
-newrecipe → share → party → glossary → main → nav → onboarding. Jedes Modul ist eine IIFE,
-kommuniziert nur über `window.PZ`. `onboarding` MUSS nach `nav` geladen werden (braucht `PZ.closeNav`).
-**`i18n-dict` MUSS vor `i18n` geladen werden** (Handoff über `PZ._I18N_DICT`); **`widgets` MUSS vor
-`flour`/`ui`/`newrecipe` geladen werden** (liefert PZ.makeLink/makeSeg/makePrefStages/
-fillFlourSelect, die diese drei Module beim eigenen Laden direkt aufrufen).
+**Ladereihenfolge** (Abhängigkeiten): dom → state → i18n-dict → i18n → settings → theme → units →
+widgets → flour → calc → schedule → guide → timer → ui → simplemode → print → pdf → presets →
+storage → newrecipe → share → party → glossary → main → nav → onboarding. Jedes Modul ist eine
+IIFE, kommuniziert nur über `window.PZ`. `onboarding` MUSS nach `nav` geladen werden (braucht
+`PZ.closeNav`). **`i18n-dict` MUSS vor `i18n` geladen werden** (Handoff über `PZ._I18N_DICT`);
+**`widgets` MUSS vor `flour`/`ui`/`newrecipe` geladen werden** (liefert PZ.makeLink/makeSeg/
+makePrefStages/fillFlourSelect, die diese drei Module beim eigenen Laden direkt aufrufen).
+`units` MUSS vor `calc`/`guide`/`print` geladen werden (liefert PZ.formatWeight/formatWeightAuto/
+formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.64.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.65.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
@@ -504,13 +506,13 @@ nach dem Rebuild, gegenprüfen), sonst zeigt die Live-App die falsche Version an
 - **Versionen-Workflow (Pflicht bei jeder Änderung):** kompletten lauffähigen Stand nach
   `Versionen/vX.Y.Z - [Beschreibung]/` kopieren (html, index, css/, js/, README; tests/ optional).
   SemVer: Patch=Fix, Minor=Feature, Major=Umbau. `?v=` in der HTML mitziehen.
-- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 657 Prüfungen in
-  25 Kategorien** (s. Dateistruktur oben): Bäckerprozente, DDT/Eis, Vorteig-Aufteilung, Trockenhefe,
+- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 688 Prüfungen in
+  26 Kategorien** (s. Dateistruktur oben): Bäckerprozente, DDT/Eis, Vorteig-Aufteilung, Trockenhefe,
   Schedule-Schwellen, Mehl-Warnung, Backzeit-Skalierung, Olivenöl (Masseerhaltung), Anleitungs-
   Hinweise, Randfälle/Edge Cases, Kombinationen, Zeitplan-Rückwärtsrechnung, Einkaufsliste,
   Speichern & Laden, Teilen-Link, Feature-Flags/Einstellungen, Zucker/New-York-Style,
   Rezepte-Backup, PDF-Export, Pizza-Party-Planer, Sprachversion DE/EN, Dunkelmodus,
-  Hefemengen-/Verschwendungs-Anpassung. Nach
+  Hefemengen-/Verschwendungs-Anpassung, Einheitensystem Metrisch/Imperial. Nach
   Logik-Änderungen laufen lassen. `js/timer.js` (Notification/setInterval/Web-Audio-API) und
   `js/newrecipe.js` (reines DOM-Wiring) werden bewusst **nicht** in `tests/test.html` geladen —
   beide stattdessen manuell bzw. per isoliertem Headless-Aufbau verifiziert. Die Wachstums-
@@ -1042,17 +1044,22 @@ Keine Code-Änderung durch den Audit nötig.
   gebündelt: Mobil-Onboarding-Zentrierungs-Bugfix, 5. Onboarding-Punkt „Pizza Party",
   Gedankenstrich-Bereinigung in `js/i18n-dict.js`/allen `.html`-Dateien.
 
-**Stand v3.64.0: alle bisherigen versionierten Backlog-Punkte sind abgearbeitet**
+- ~~Einheitensystem-Umschaltung Metrisch/Imperial (automatische Regions-Erkennung +
+  persistente manuelle Übersteuerung)~~ — **erledigt in v3.65.0** (Warteschlangen-Punkt 1
+  von 3, kein Backlog-Punkt; s. Abschnitt „Einheitensystem-Umschaltung Metrisch/Imperial
+  (v3.65.0)" oben).
+
+**Stand v3.65.0: alle bisherigen versionierten Backlog-Punkte sind abgearbeitet**
 (durchgestrichen oben), offen ist nur die neue, noch unspezifizierte Foto-Anleitung-Idee
-ganz oben in dieser Liste. Der Bring!-Deeplink-Testaufbau ist abschließend geklärt
-(verworfen, vollständig zurückgebaut, keine offene Frage mehr). Drei direkte
-Nutzeraufträge bereits als Warteschlange für die nächsten Zyklen angekündigt (noch nicht
-umgesetzt, in dieser Reihenfolge): 1) Einheitensystem-Umschaltung Metrisch/Imperial
-(automatische Spracherkennung + persistente manuelle Übersteuerung), 2) Glossar-Erweiterung
-um „Werkzeuge & Ausrüstung" + „Pizzabeläge" (zwei neue Abschnitte, generische Texte DE/EN),
-3) Bottom-Tab-Navigation auf Mobil. **Stil-Hinweis für alle künftigen Texte (Glossar,
-i18n-Strings, Onboarding, sonstige Beschreibungen):** keine Gedankenstriche (Em-Dash)
-verwenden, stattdessen Komma, Punkt, Doppelpunkt oder Klammern, je nach Kontext.
+weiter oben in dieser Liste. Der Bring!-Deeplink-Testaufbau ist abschließend geklärt
+(verworfen, vollständig zurückgebaut, keine offene Frage mehr). Noch zwei direkte
+Nutzeraufträge als Warteschlange für die nächsten Zyklen angekündigt (noch nicht
+umgesetzt, in dieser Reihenfolge): 1) Glossar-Erweiterung um „Werkzeuge & Ausrüstung" +
+„Pizzabeläge" (zwei neue Abschnitte, generische Texte DE/EN), 2) Bottom-Tab-Navigation auf
+Mobil (ersetzt das Burgermenü, vier Haupt-Tabs + Sekundär-Navigation im Rechner-Tab).
+**Stil-Hinweis für alle künftigen Texte (Glossar, i18n-Strings, Onboarding, sonstige
+Beschreibungen):** keine Gedankenstriche (Em-Dash) verwenden, stattdessen Komma, Punkt,
+Doppelpunkt oder Klammern, je nach Kontext.
 Für einen sonst neuen Zyklus wieder frisches Brainstorming in Phase 1 statt eines
 vorgegebenen Auftrags.
 

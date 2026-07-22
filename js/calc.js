@@ -101,6 +101,12 @@
     // Schüttwasser mehr zu temperieren. Derselbe Schwellwert wie js/guide.js (hasMW),
     // damit Anleitungsschritt und Ergebnis-Panel konsistent verschwinden.
     const hasMixingWater = mWater >= 1;
+    // Einheitensystem-Umschaltung (v3.65.0): PZ.formatWeight()/PZ.formatTemp() liefern
+    // bereits den kompletten Text inkl. Einheit (g/oz bzw. °C/°F) -- die zugehörigen
+    // Wörterbuch-Einträge (calc.ice.note/calc.warmNote/calc.tapOkNote) haben deshalb
+    // keine hartkodierte Einheit mehr im Text selbst, s. js/i18n-dict.js.
+    const fmtW = PZ.formatWeight ? PZ.formatWeight : function (x) { return Math.round(x) + ' g'; };
+    const fmtT = PZ.formatTemp ? PZ.formatTemp : function (x) { return x + ' °C'; };
     if (!hasMixingWater) {
       note = t('calc.noMixingWaterNote');
     } else if (wT < Ttap - 0.5) {
@@ -109,11 +115,11 @@
       const c = 4.18, Lf = 334;
       const x = M * c * (Ttap - wT) / (Lf + c * wT + c * (Ttap - wT));
       ice = Math.max(0, Math.round(x));
-      note = t('calc.ice.note', { tapWater: Math.round(M - ice), tapTemp: Ttap, ice: ice, wT: wT });
+      note = t('calc.ice.note', { tapWater: fmtW(M - ice), tapTemp: fmtT(Ttap), ice: fmtW(ice), wT: fmtT(wT) });
     } else if (wT > Ttap + 1) {
-      note = t('calc.warmNote', { wT: wT });
+      note = t('calc.warmNote', { wT: fmtT(wT) });
     } else {
-      note = t('calc.tapOkNote', { tapTemp: Ttap });
+      note = t('calc.tapOkNote', { tapTemp: fmtT(Ttap) });
     }
     if (hasMixingWater && wT < 1) note += t('calc.veryColdWarn');
 
@@ -130,9 +136,19 @@
   // renderResult(R) — schreibt das bereits berechnete Ergebnis ins DOM
   // ======================================================================
   function renderResult(R) {
-    $('totalW').textContent = Math.round(R.total);
+    // Einheitensystem-Umschaltung (v3.65.0, js/units.js): PZ.formatWeight()/
+    // PZ.formatWeightAuto()/PZ.formatTemp() liefern den kompletten Anzeigetext INKL.
+    // Einheit (z. B. "600 g" bzw. "21.2 oz") -- das HTML hält dafür keine eigenen
+    // statischen Einheiten-Suffixe (" g"/"°") mehr vor, s. pizza-rechner.html/-mobile.html.
+    // Defensive Fallbacks (falls js/units.js aus irgendeinem Grund nicht geladen ist,
+    // z. B. isolierte Testumgebung) reproduzieren 1:1 das bisherige Metrisch-Verhalten.
+    const fmtW = PZ.formatWeight || function (x, d) { return (d > 0 ? x.toFixed(d) : String(Math.round(x))) + ' g'; };
+    const fmtWA = PZ.formatWeightAuto || function (x) { return (x < 10 ? x.toFixed(2) : String(Math.round(x))) + ' g'; };
+    const fmtT = PZ.formatTemp || function (x) { return x + '°C'; };
+
+    $('totalW').textContent = fmtW(R.total);
     $('ballsOut').textContent = R.N;
-    $('ballwOut').textContent = R.W;
+    $('ballwOut').textContent = fmtW(R.W);
     // Verschwendungsaufschlag (v3.64.0): "Gesamtteig" zeigt jetzt ggf. mehr als
     // N×Teiglingsgewicht (die Zahlen unter dem großen Gesamtgewicht) -- ohne Hinweis
     // sähe das wie ein Rechenfehler aus. Blendet sich bei 0 % Aufschlag komplett aus.
@@ -141,40 +157,40 @@
       $('wasteNote').style.display = showWaste ? '' : 'none';
       if (showWaste) $('wasteNote').textContent = t('result.wasteNote', { pct: Math.round(R.wasteAdj) });
     }
-    $('gFlour').textContent = Math.round(R.flour);
-    $('gWater').textContent = Math.round(R.water);
-    $('gSalt').textContent  = R.salt.toFixed(1);
-    $('gYeast').textContent = R.yeast < 10 ? R.yeast.toFixed(2) : Math.round(R.yeast);
+    $('gFlour').textContent = fmtW(R.flour);
+    $('gWater').textContent = fmtW(R.water);
+    $('gSalt').textContent  = fmtW(R.salt, 1);
+    $('gYeast').textContent = fmtWA(R.yeast);
     $('yLabel').textContent = R.yWord;
-    if ($('gOil')) $('gOil').textContent = R.oil.toFixed(1);
+    if ($('gOil')) $('gOil').textContent = fmtW(R.oil, 1);
     // Öl-Zeile ganz ausblenden, wenn kein Öl im Rezept
     if ($('gOilRow')) $('gOilRow').style.display = R.oil >= 0.05 ? 'flex' : 'none';
-    if ($('gSugar')) $('gSugar').textContent = R.sugar.toFixed(1);
+    if ($('gSugar')) $('gSugar').textContent = fmtW(R.sugar, 1);
     // Zucker-Zeile ganz ausblenden, wenn kein Zucker im Rezept (Standard: New-York-Style-Feld ist 0)
     if ($('gSugarRow')) $('gSugarRow').style.display = R.sugar >= 0.05 ? 'flex' : 'none';
 
     if (R.hasPref) {
-      $('pFlour').textContent = Math.round(R.pf);
-      $('pWater').textContent = Math.round(R.pw);
-      $('pYeast').textContent = R.pYeast < 10 ? R.pYeast.toFixed(2) : Math.round(R.pYeast);
+      $('pFlour').textContent = fmtW(R.pf);
+      $('pWater').textContent = fmtW(R.pw);
+      $('pYeast').textContent = fmtWA(R.pYeast);
       $('pyLabel').textContent = R.yWord;
       // Hauptteig = Rest
-      $('mFlour').textContent = Math.round(R.mFlour);
-      $('mWater').textContent = Math.round(R.mWater);
-      $('mSalt').textContent = R.salt.toFixed(1);
-      $('mYeast').textContent = R.mYeast < 10 ? R.mYeast.toFixed(2) : Math.round(R.mYeast);
+      $('mFlour').textContent = fmtW(R.mFlour);
+      $('mWater').textContent = fmtW(R.mWater);
+      $('mSalt').textContent = fmtW(R.salt, 1);
+      $('mYeast').textContent = fmtWA(R.mYeast);
       // bei sehr langer Führung oft keine zusätzliche Hefe
       $('mYeastRow').style.display = R.mYeast < 0.05 ? 'none' : 'flex';
       // Öl kommt komplett in den Hauptteig (nie in Biga/Poolish)
-      if ($('mOil')) $('mOil').textContent = R.oil.toFixed(1);
+      if ($('mOil')) $('mOil').textContent = fmtW(R.oil, 1);
       if ($('mOilRow')) $('mOilRow').style.display = R.oil >= 0.05 ? 'flex' : 'none';
       // Zucker kommt komplett in den Hauptteig (nie in Biga/Poolish, analog zu Öl)
-      if ($('mSugar')) $('mSugar').textContent = R.sugar.toFixed(1);
+      if ($('mSugar')) $('mSugar').textContent = fmtW(R.sugar, 1);
       if ($('mSugarRow')) $('mSugarRow').style.display = R.sugar >= 0.05 ? 'flex' : 'none';
     }
 
-    $('waterTemp').textContent = R.wT;
-    $('iceAmt').textContent = R.ice;
+    $('waterTemp').textContent = fmtT(R.wT);
+    $('iceAmt').textContent = fmtW(R.ice);
     $('iceNote').innerHTML = R.note;
     // Ganzen Wassertemperatur-Block ausblenden, wenn es kein Schüttwasser mehr gibt
     // (analog zum bestehenden Öl-/Zucker-Zeilen-Muster, s. gOilRow/gSugarRow oben).
@@ -199,4 +215,8 @@
   // Sprachwechsel: kompletter Neu-Durchlauf (yWord-Label, Eiswasser-Hinweis, und am
   // Ende automatisch auch buildGuide() über den bestehenden calc()-Aufruf).
   if (PZ.i18nOnChange) PZ.i18nOnChange(function () { if (PZ.state && PZ.state.flour) calc(); });
+  // Einheitensystem-Umschaltung (v3.65.0, js/units.js): identischer Neu-Durchlauf wie
+  // beim Sprachwechsel — Ergebnis-Panel und Anleitung zeigen danach die jeweils andere
+  // Einheit (Gramm/Celsius ↔ oz/lb/Fahrenheit).
+  if (PZ.unitsOnChange) PZ.unitsOnChange(function () { if (PZ.state && PZ.state.flour) calc(); });
 })(window);

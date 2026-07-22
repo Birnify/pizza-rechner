@@ -6,10 +6,16 @@
 
   function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
 
-  // Formatierung 1:1 wie im Ergebnis-Panel (calc.js): Hefe < 10 g → 2 Nachkommastellen,
-  // sonst gerundet; Mehl/Wasser/Eis gerundet; Salz/Öl 1 Nachkommastelle.
-  function fmtYeast(g) {
-    return g < 10 ? g.toFixed(2) : String(Math.round(g));
+  // Formatierung 1:1 wie im Ergebnis-Panel (calc.js), seit v3.65.0 über js/units.js:
+  // Hefe < 10 g → 2 Nachkommastellen, sonst gerundet (im Imperial-Modus einheitlich
+  // die 0,1-oz-Rundung, s. PZ.formatWeightAuto). Rückgabe enthält bereits die Einheit.
+  function fmtYeast(grams) {
+    return PZ.formatWeightAuto ? PZ.formatWeightAuto(grams)
+      : (grams < 10 ? grams.toFixed(2) : String(Math.round(grams))) + ' g';
+  }
+  function fmtW(grams, decimals) {
+    return PZ.formatWeight ? PZ.formatWeight(grams, decimals)
+      : (decimals > 0 ? grams.toFixed(decimals) : String(Math.round(grams))) + ' g';
   }
 
   // Baut die Zeilen der Einkaufsliste aus den bereits berechneten Gesamtmengen (PZ.R).
@@ -20,16 +26,16 @@
     if (!R || !R.total) return;
 
     const rows = [];
-    rows.push({ name: t('print.flour'), amt: `${Math.round(R.flour)} g` });
-    rows.push({ name: t('print.water'), amt: `${Math.round(R.water)} g` });
-    if (R.salt > 0) rows.push({ name: t('print.salt'), amt: `${R.salt.toFixed(1)} g` });
-    if (R.yeast > 0) rows.push({ name: `${t('print.yeast')} ${R.yWord || ''}`.trim(), amt: `${fmtYeast(R.yeast)} g` });
-    if (R.oil >= 0.05) rows.push({ name: t('print.oil'), amt: `${R.oil.toFixed(1)} g` });
+    rows.push({ name: t('print.flour'), amt: fmtW(R.flour) });
+    rows.push({ name: t('print.water'), amt: fmtW(R.water) });
+    if (R.salt > 0) rows.push({ name: t('print.salt'), amt: fmtW(R.salt, 1) });
+    if (R.yeast > 0) rows.push({ name: `${t('print.yeast')} ${R.yWord || ''}`.trim(), amt: fmtYeast(R.yeast) });
+    if (R.oil >= 0.05) rows.push({ name: t('print.oil'), amt: fmtW(R.oil, 1) });
     // Zucker fehlte hier bisher komplett (Bugfix v3.48.0) — bei „New York Style" (2 % Zucker)
     // stand er zwar korrekt im Ergebnis-Panel (#gSugarRow), aber nicht auf der Einkaufsliste.
     // Gleicher Schwellwert/Formatierung wie die Öl-Zeile direkt darüber.
-    if (R.sugar >= 0.05) rows.push({ name: t('print.sugar'), amt: `${R.sugar.toFixed(1)} g` });
-    if (R.ice > 0) rows.push({ name: t('print.ice'), amt: `${Math.round(R.ice)} g` });
+    if (R.sugar >= 0.05) rows.push({ name: t('print.sugar'), amt: fmtW(R.sugar, 1) });
+    if (R.ice > 0) rows.push({ name: t('print.ice'), amt: fmtW(R.ice) });
 
     const list = $('shoppingList');
     if (!list) return;
@@ -39,8 +45,8 @@
     list.innerHTML = `
       <h2 style="margin-top:0;">${t('print.title')}</h2>
       <div class="total" style="margin-bottom:10px;">
-        <div class="big">${Math.round(R.total)} g</div>
-        <div class="lbl">${t('print.totalDough')} · ${R.N} × ${R.W} g</div>
+        <div class="big">${fmtW(R.total)}</div>
+        <div class="lbl">${t('print.totalDough')} · ${R.N} × ${fmtW(R.W)}</div>
       </div>
       ${itemsHtml}
     `;
