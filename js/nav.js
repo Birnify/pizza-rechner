@@ -33,7 +33,20 @@
   const navToggle = $('navToggle');
   const navOverlay = $('navMenu');
   const navClose = $('navClose');
-  const navItems = navOverlay ? Array.prototype.slice.call(navOverlay.querySelectorAll('.nav-item')) : [];
+  // panelItems: NUR die .nav-item-Buttons innerhalb des Burgermenü-Overlays (falls
+  // vorhanden) -- ausschließlich für den Tab-Trap/die Anfangsfokussierung beim Öffnen
+  // des Overlays gebraucht (focusablesInPanel()/openNav()). Existiert kein Overlay
+  // (z. B. pizza-rechner-mobile.html seit v3.67.0, Bottom-Tab-Navigation ersetzt das
+  // Burgermenü vollständig), bleibt dies einfach eine leere Liste -- openNav()/
+  // onNavKeydown() werden dann ohnehin nie aufgerufen (kein Button, der sie auslöst).
+  const panelItems = navOverlay ? Array.prototype.slice.call(navOverlay.querySelectorAll('.nav-item')) : [];
+  // allNavItems: ALLE .nav-item-Buttons auf der Seite, unabhängig davon, ob sie in einem
+  // Overlay-Panel liegen oder (seit v3.67.0) in einer persistenten Bottom-Tab-Leiste bzw.
+  // einer eingebetteten Sekundär-Navigation (.calc-subnav) -- Grundlage für die
+  // Klick-Verdrahtung und die Aktiv-Markierung in activateView() unten. Auf
+  // pizza-rechner.html (Desktop, unverändertes Burgermenü) ist das identisch zu
+  // panelItems, da dort alle .nav-item-Elemente ohnehin nur im Overlay vorkommen.
+  const allNavItems = Array.prototype.slice.call(document.querySelectorAll('.nav-item'));
   // Plattform-übergreifender Cross-Link: nur einer der beiden existiert je nach Seite
   // (#navMobileLink auf pizza-rechner.html, #navDesktopLink auf pizza-rechner-mobile.html
   // bzw. dessen Standalone-Build).
@@ -47,7 +60,7 @@
   // die vier Bereichs-Buttons, zuletzt der Cross-Link (eigenes <a>, kein .nav-item —
   // navigiert weg statt eine Ansicht umzuschalten, s. activateView-Klick-Handler unten).
   function focusablesInPanel() {
-    return [navClose].concat(navItems).concat(crossLink ? [crossLink] : []);
+    return [navClose].concat(panelItems).concat(crossLink ? [crossLink] : []);
   }
 
   function onNavKeydown(e) {
@@ -68,7 +81,7 @@
     lastFocused = document.activeElement;
     navOverlay.hidden = false;
     navToggle.setAttribute('aria-expanded', 'true');
-    const current = navItems.filter(function (b) { return b.classList.contains('active'); })[0] || navItems[0];
+    const current = panelItems.filter(function (b) { return b.classList.contains('active'); })[0] || panelItems[0];
     if (current) current.focus(); else if (navClose) navClose.focus();
     document.addEventListener('keydown', onNavKeydown);
   }
@@ -89,8 +102,16 @@
       if (el.getAttribute('data-view') === view) el.removeAttribute('hidden');
       else el.setAttribute('hidden', '');
     });
-    navItems.forEach(function (b) {
-      const isActive = b.getAttribute('data-goto') === view;
+    allNavItems.forEach(function (b) {
+      // data-goto-group (v3.67.0, Bottom-Tab-Navigation): der Haupt-Tab "Rechner" auf
+      // pizza-rechner-mobile.html bleibt optisch aktiv, solange einer seiner drei
+      // Unterbereiche (Rechner/Rezepte/Zeitplan) sichtbar ist -- die eigentliche
+      // Umschaltung zwischen den dreien läuft über die separate .calc-subnav, deren
+      // eigene Buttons weiterhin exakt (nicht als Gruppe) auf data-goto matchen.
+      // Ohne data-goto-group-Attribut (Desktop, alle übrigen Mobil-Tabs) ist das
+      // Verhalten exakt wie zuvor: 1:1-Vergleich mit data-goto.
+      const group = b.getAttribute('data-goto-group');
+      const isActive = group ? group.split(',').indexOf(view) !== -1 : b.getAttribute('data-goto') === view;
       b.classList.toggle('active', isActive);
       if (isActive) b.setAttribute('aria-current', 'page');
       else b.removeAttribute('aria-current');
@@ -126,7 +147,7 @@
   // Anleitungs-Banner ohne Zeitangabe (v3.38.0-Fix, s. js/guide.js). closeNav(false)
   // ist hier defensiv/für den unwahrscheinlichen Fall, dass das Menü doch offen ist.
   function gotoView(view) {
-    const item = navItems.filter(function (b) { return b.getAttribute('data-goto') === view; })[0];
+    const item = allNavItems.filter(function (b) { return b.getAttribute('data-goto') === view; })[0];
     activateView(view);
     announceView(item ? item.textContent : view);
     closeNav(false);
@@ -137,9 +158,15 @@
   // Burgermenü, bevor er das Onboarding-Modal öffnet (zwei gleichzeitig offene
   // position:fixed;inset:0-Overlays wären verwirrend). restoreFocus=false, weil der
   // Fokus direkt danach ins neu geöffnete Onboarding-Modal wandert, nicht zurück auf
-  // den Hamburger-Button.
+  // den Hamburger-Button. Auf Mobil (seit v3.67.0 kein Burgermenü mehr) no-op, s.
+  // closeNav() oben ("if (!navOverlay) return;").
   PZ.closeNav = closeNav;
 
+  // Overlay-spezifische Verdrahtung (Öffnen/Schließen-Button, Klick auf den abgedunkelten
+  // Hintergrund): nur relevant, wenn es überhaupt ein Burgermenü-Overlay gibt (Desktop,
+  // s. pizza-rechner.html). Auf pizza-rechner-mobile.html existiert seit v3.67.0 weder
+  // #navToggle noch #navMenu (Bottom-Tab-Navigation ersetzt das Burgermenü vollständig) --
+  // dieser Block bleibt dort einfach ungenutzt.
   if (navToggle && navOverlay) {
     navToggle.addEventListener('click', function () {
       if (navOverlay.hidden) openNav(); else closeNav();
@@ -148,19 +175,24 @@
     navOverlay.addEventListener('click', function (e) {
       if (e.target === navOverlay) closeNav();
     });
-    navItems.forEach(function (b) {
-      b.addEventListener('click', function () {
-        const view = b.getAttribute('data-goto');
-        // Menüpunkte ohne eigenen data-goto (z. B. "Einführung", v3.63.0) sind keine
-        // Bereichs-Wechsel -- die werden von ihrem eigenen Modul separat verdrahtet
-        // (js/onboarding.js). Ohne diesen Guard würde activateView(undefined) ALLE
-        // [data-view]-Bereiche verstecken, da keiner das leere data-goto matcht.
-        if (!view) return;
-        activateView(view);
-        announceView(b.textContent);
-        closeNav(false);
-        focusView(view);
-      });
-    });
   }
+
+  // Klick-Verdrahtung für ALLE .nav-item-Buttons auf der Seite (Burgermenü-Einträge auf
+  // Desktop, Bottom-Tab-Leiste + Sekundär-Navigation .calc-subnav auf Mobil seit v3.67.0)
+  // -- läuft bewusst UNABHÄNGIG vom Overlay-Block oben, da die Bottom-Tab-Navigation ohne
+  // jedes Overlay auskommt (persistente Leiste statt Ein-/Ausklappen).
+  allNavItems.forEach(function (b) {
+    b.addEventListener('click', function () {
+      const view = b.getAttribute('data-goto');
+      // Menüpunkte ohne eigenen data-goto (z. B. "Einführung", v3.63.0) sind keine
+      // Bereichs-Wechsel -- die werden von ihrem eigenen Modul separat verdrahtet
+      // (js/onboarding.js). Ohne diesen Guard würde activateView(undefined) ALLE
+      // [data-view]-Bereiche verstecken, da keiner das leere data-goto matcht.
+      if (!view) return;
+      activateView(view);
+      announceView(b.textContent);
+      closeNav(false);
+      focusView(view);
+    });
+  });
 })(window);

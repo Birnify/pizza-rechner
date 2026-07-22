@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-22 · Aktuelle Version: v3.66.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-22 · Aktuelle Version: v3.67.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -179,18 +179,24 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Glossar-Erweiterung: Werkzeuge & Ausrüstung + Pizzabeläge (v3.66.0) = aktueller Stand
+## Bottom-Tab-Navigation (Mobil) (v3.67.0) = aktueller Stand
 
-Direkter Nutzerauftrag (Warteschlangen-Punkt 2 von 3, kein Backlog-Punkt), bereits
-vollständig spezifiziert. Zwei neue thematische Gruppen im Pizza-Glossar (`js/glossary.js`,
-v3.37.0): "Werkzeuge & Ausrüstung" (Pizzastein/-stahl, Pizzaschieber, Ofenthermometer,
-Teigschaber, Küchenwaage, Gärbox) und "Pizzabeläge" (Marinara, Capricciosa, Diavola,
-Quattro Formaggi, "Beläge nach dem Backen") — 11 neue Einträge (DE+EN), identisches
-Muster wie alle bestehenden Glossar-Einträge, reine Anzeige-Inhalte ohne neues
-Markup/neue CSS. `PZ.GLOSSARY_TOPICS` in `js/glossary.js` entsprechend erweitert. Tests
-unverändert 688 grün (reine Inhaltsergänzung, `js/glossary.js` ist nicht Teil der
-Testsuite). **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt
-„Glossar-Erweiterung: Werkzeuge & Ausrüstung + Pizzabeläge (v3.66.0)".
+Direkter Nutzerauftrag (Warteschlangen-Punkt 3 von 3, letzter Punkt der Warteschlange,
+kein Backlog-Punkt), bereits vollständig spezifiziert. Auf `pizza-rechner-mobile.html`
+ersetzt eine persistente Bottom-Tab-Leiste (`.bottom-tabs`, 4 Haupt-Tabs: Rechner/Pizza
+Party/Glossar/Einstellungen) das bisherige Burgermenü vollständig; der Rechner-Tab
+bekommt eine eingebettete Sekundär-Navigation (`.calc-subnav`, Segmented Control
+Rechner/Rezepte/Zeitplan). "Einführung" + Desktop-Link + Versionsnummer zogen mangels
+Burgermenü in die Einstellungen-Ansicht um. Desktop (`pizza-rechner.html`) unverändert,
+behält sein Burgermenü. `js/nav.js` generalisiert (Klick-Verdrahtung läuft jetzt
+site-weit statt nur im Overlay, neues `data-goto-group`-Attribut hält den Rechner-Tab
+aktiv, solange einer seiner drei Unterbereiche offen ist) — verhaltensneutral für
+Desktop. `js/settings.js`: Bugfix `querySelector`→`querySelectorAll` für die
+"Rezepte"-Sichtbarkeits-Logik (jetzt bis zu 3 Subnav-Kopien statt nur 1 Menüpunkt).
+Tests unverändert 688 grün (`js/nav.js` ist kein Teil der Testsuite, reines DOM-Wiring),
+Verhalten per Headless-Edge-Klicksimulation verifiziert, Accessibility-Review mit einem
+behobenen Befund (Touch-Ziel 40px→44px). **Volle Details:**
+`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Bottom-Tab-Navigation (Mobil) (v3.67.0)".
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -419,11 +425,16 @@ js/party.js          Pizza-Party-Planer (v3.27.0) — eigenständiger Bereich, k
                      PZ.state/PZ.calc()
 js/glossary.js       Pizza-Glossar (v3.37.0) — eigenständiger Menü-Bereich, reine Anzeige-Funktion
 js/main.js           Start: Speichern-Button, Rezept-Auswahl/-Buttons, load(), applyMethod(), calc()
-js/nav.js            Gemeinsames Burgermenü-Navigations-Modul (v3.54.0, vorher zwei/drei duplizierte
+js/nav.js            Gemeinsames Navigations-Modul (v3.54.0, vorher zwei/drei duplizierte
                      Inline-Scripts): openNav/closeNav/activateView/announceView/focusView/gotoView +
                      Tab-Trap; läuft bewusst als letztes Script (nach main.js). PZ.closeNav seit
                      v3.63.0 exportiert (für js/onboarding.js), Klick-Guard für Menüpunkte ohne
-                     eigenen data-goto (z. B. "Einführung")
+                     eigenen data-goto (z. B. "Einführung"). Seit v3.67.0 (Bottom-Tab-Navigation
+                     Mobil) verdrahtet activateView() ALLE .nav-item-Buttons site-weit (nicht nur
+                     die im Burgermenü-Overlay) + neues data-goto-group-Attribut (hält einen
+                     Haupt-Tab aktiv, solange einer seiner Unterbereiche offen ist) — Desktop
+                     unverändert (behält sein Burgermenü), nur Mobil nutzt die neue
+                     Bottom-Tab-Leiste + eingebettete Sekundär-Navigation (.calc-subnav)
 js/onboarding.js     Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay mit
                      eigenem Fokus-Trap, stellt 4 Kernfunktionen vor, automatisch beim Erststart
                      + jederzeit über Burgermenü-Punkt "Einführung" aufrufbar, Persistenz via
@@ -447,7 +458,7 @@ makePrefStages/fillFlourSelect, die diese drei Module beim eigenen Laden direkt 
 `units` MUSS vor `calc`/`guide`/`print` geladen werden (liefert PZ.formatWeight/formatWeightAuto/
 formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.66.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.67.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
@@ -1049,19 +1060,19 @@ Keine Code-Änderung durch den Audit nötig.
 - ~~Glossar-Erweiterung: Werkzeuge & Ausrüstung + Pizzabeläge~~ — **erledigt in v3.66.0**
   (Warteschlangen-Punkt 2 von 3, kein Backlog-Punkt; s. Abschnitt „Glossar-Erweiterung:
   Werkzeuge & Ausrüstung + Pizzabeläge (v3.66.0)" oben).
+- ~~Bottom-Tab-Navigation auf Mobil~~ — **erledigt in v3.67.0** (Warteschlangen-Punkt 3
+  von 3, letzter Punkt der Warteschlange, kein Backlog-Punkt; s. Abschnitt
+  „Bottom-Tab-Navigation (Mobil) (v3.67.0)" oben).
 
-**Stand v3.66.0: alle bisherigen versionierten Backlog-Punkte sind abgearbeitet**
-(durchgestrichen oben), offen ist nur die neue, noch unspezifizierte Foto-Anleitung-Idee
-weiter oben in dieser Liste. Der Bring!-Deeplink-Testaufbau ist abschließend geklärt
-(verworfen, vollständig zurückgebaut, keine offene Frage mehr). Noch ein direkter
-Nutzerauftrag als Warteschlange für den nächsten Zyklus angekündigt (noch nicht
-umgesetzt): Bottom-Tab-Navigation auf Mobil (ersetzt das Burgermenü, vier Haupt-Tabs +
-Sekundär-Navigation im Rechner-Tab).
+**Stand v3.67.0: alle bisherigen versionierten Backlog-Punkte UND die komplette
+Dreier-Warteschlange sind abgearbeitet** (durchgestrichen oben), offen ist nur die
+neue, noch unspezifizierte Foto-Anleitung-Idee weiter oben in dieser Liste. Der
+Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen, vollständig
+zurückgebaut, keine offene Frage mehr). Kein weiterer vorgegebener Auftrag mehr
+angekündigt — für einen neuen Zyklus wieder frisches Brainstorming in Phase 1.
 **Stil-Hinweis für alle künftigen Texte (Glossar, i18n-Strings, Onboarding, sonstige
 Beschreibungen):** keine Gedankenstriche (Em-Dash) verwenden, stattdessen Komma, Punkt,
 Doppelpunkt oder Klammern, je nach Kontext.
-Für einen sonst neuen Zyklus wieder frisches Brainstorming in Phase 1 statt eines
-vorgegebenen Auftrags.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

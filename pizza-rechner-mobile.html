@@ -30,45 +30,16 @@
   } catch(e) {}
 })();
 </script>
-<link rel="stylesheet" href="css/styles.css?v=3.66.0">
-<link rel="stylesheet" href="css/mobile.css?v=3.66.0">
+<link rel="stylesheet" href="css/styles.css?v=3.67.0">
+<link rel="stylesheet" href="css/mobile.css?v=3.67.0">
 </head>
 <body>
+<!-- Bottom-Tab-Navigation (v3.67.0) ersetzt das bisherige Burgermenü vollständig auf
+     Mobil -- die Kopfzeile zeigt jetzt nur noch den Titel, kein Menü-Button mehr nötig.
+     Desktop behält unverändert sein Burgermenü (s. pizza-rechner.html). -->
 <header>
-  <button type="button" id="navToggle" class="nav-toggle" aria-expanded="false" aria-controls="navMenu" data-i18n-attr="aria-label:nav.menuOpen">
-    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
-  </button>
   <h1>🍕 <span data-i18n="app.title">Teigmeister</span></h1>
 </header>
-
-<nav id="navMenu" class="nav-overlay" hidden>
-  <div class="nav-panel" role="dialog" aria-modal="true" data-i18n-attr="aria-label:nav.areasDialogLabel">
-    <div class="nav-panel-head">
-      <span class="nav-panel-title" data-i18n="nav.areasTitle">Bereiche</span>
-      <button type="button" id="navClose" class="nav-close" data-i18n-attr="aria-label:nav.menuClose">✕</button>
-    </div>
-    <div class="nav-group-title" id="navGroupDough" data-i18n="nav.group.dough">Teig-Rechner</div>
-    <ul class="nav-list" role="group" aria-labelledby="navGroupDough">
-      <li><button type="button" class="nav-item active" data-goto="rechner" aria-current="page" data-i18n="nav.rechner">Rechner</button></li>
-      <li><button type="button" class="nav-item" data-goto="rezepte" data-i18n="nav.rezepte">Rezepte</button></li>
-      <li><button type="button" class="nav-item" data-goto="zeitplan" data-i18n="nav.zeitplan">Zeitplan</button></li>
-    </ul>
-    <div class="nav-divider" role="separator"></div>
-    <div class="nav-group-title" id="navGroupParty" data-i18n="nav.group.party">Pizza Party</div>
-    <ul class="nav-list" role="group" aria-labelledby="navGroupParty">
-      <li><button type="button" class="nav-item" data-goto="party" data-i18n="nav.party">Pizza Party</button></li>
-    </ul>
-    <div class="nav-divider" role="separator"></div>
-    <ul class="nav-list">
-      <li><button type="button" class="nav-item" data-goto="glossar" data-i18n="nav.glossar">Glossar</button></li>
-      <li><button type="button" class="nav-item" data-goto="einstellungen" data-i18n="nav.einstellungen">Einstellungen</button></li>
-      <li><button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button></li>
-    </ul>
-    <div class="nav-divider" role="separator"></div>
-    <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.66.0</span>
-  </div>
-</nav>
 
 <!-- Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay analog zum
      Burgermenü-Muster (role="dialog" aria-modal="true", eigener Fokus-Trap in
@@ -136,6 +107,16 @@
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
 
 <div class="wrap view" data-view="rechner">
+  <!-- Sekundär-Navigation (v3.67.0): seit der Bottom-Tab-Navigation ersetzt dieses
+       Segmented-Control-Muster die frühere Burgermenü-Gruppe "Teig-Rechner"
+       (Rechner/Rezepte/Zeitplan) -- identisch an dieser Stelle in allen drei
+       Unterbereichen eingebettet (s. data-view="rezepte"/"zeitplan" weiter unten),
+       damit sie beim Wechseln zwischen den drei Unterbereichen sichtbar bleibt. -->
+  <div class="calc-subnav" role="navigation" data-i18n-attr="aria-label:nav.group.dough">
+    <button type="button" class="nav-item active" data-goto="rechner" aria-current="page" data-i18n="nav.rechner">Rechner</button>
+    <button type="button" class="nav-item" data-goto="rezepte" data-i18n="nav.rezepte">Rezepte</button>
+    <button type="button" class="nav-item" data-goto="zeitplan" data-i18n="nav.zeitplan">Zeitplan</button>
+  </div>
   <!-- LINKE SPALTE (auf Mobil: einzige Spalte): EINGABEN ALS AKKORDEON -->
   <div class="controls-col mode-simple" id="controlsCol" style="display:grid;gap:20px;">
 
@@ -463,6 +444,14 @@
 </section>
 
 <div class="wrap view" data-view="rezepte" hidden>
+  <!-- Sekundär-Navigation, identisch zur Kopie im "rechner"-Unterbereich (s. dort) --
+       muss in jedem der drei Unterbereiche eingebettet sein, damit sie beim Umschalten
+       zwischen ihnen sichtbar bleibt. -->
+  <div class="calc-subnav" role="navigation" data-i18n-attr="aria-label:nav.group.dough">
+    <button type="button" class="nav-item" data-goto="rechner" data-i18n="nav.rechner">Rechner</button>
+    <button type="button" class="nav-item active" data-goto="rezepte" aria-current="page" data-i18n="nav.rezepte">Rezepte</button>
+    <button type="button" class="nav-item" data-goto="zeitplan" data-i18n="nav.zeitplan">Zeitplan</button>
+  </div>
   <div class="controls-col" style="display:grid;gap:20px;">
     <details class="card" id="recipesCard" open>
       <summary><h2 data-i18n-attr="aria-label:card.myRecipes.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A1.5 1.5 0 0 1 5.5 5h4l1.8 2H18.5A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5Z"/></svg></span><span data-i18n="card.myRecipes.title">Meine Rezepte</span></h2></summary>
@@ -670,6 +659,14 @@
 </div>
 
 <div class="wrap view" data-view="zeitplan" hidden>
+  <!-- Sekundär-Navigation, identisch zur Kopie im "rechner"-Unterbereich (s. dort) --
+       muss in jedem der drei Unterbereiche eingebettet sein, damit sie beim Umschalten
+       zwischen ihnen sichtbar bleibt. -->
+  <div class="calc-subnav" role="navigation" data-i18n-attr="aria-label:nav.group.dough">
+    <button type="button" class="nav-item" data-goto="rechner" data-i18n="nav.rechner">Rechner</button>
+    <button type="button" class="nav-item" data-goto="rezepte" data-i18n="nav.rezepte">Rezepte</button>
+    <button type="button" class="nav-item active" data-goto="zeitplan" aria-current="page" data-i18n="nav.zeitplan">Zeitplan</button>
+  </div>
   <div class="controls-col" style="display:grid;gap:20px;">
     <details class="card" open>
       <summary><h2 data-i18n-attr="aria-label:card.schedule.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span><span data-i18n="card.schedule.title">Zeitplan</span></h2></summary>
@@ -879,6 +876,16 @@
             <p class="switch-info" id="wasteAdjustInfo" hidden data-i18n="flag.wasteAdjust.info">Erhöht das errechnete Gesamtgewicht um einen Puffer für Kneteverluste (Schüssel, Hände, Maschine): damit am Ende trotzdem die gewünschte Anzahl Teiglinge im Zielgewicht rauskommt.</p>
           </div>
 
+          <!-- "Einführung" + Desktop-Link + Versionsnummer (v3.67.0): zogen mit der
+               Bottom-Tab-Navigation hierher um, da es dafür kein Burgermenü mehr gibt
+               (s. pizza-rechner-KONTEXT.md, Abschnitt "Bottom-Tab-Navigation (Mobil)").
+               Unverändert dieselben Elemente/IDs wie zuvor im Burgermenü -- js/onboarding.js
+               verdrahtet #navOnboardingItem weiterhin per ID, keine JS-Änderung nötig. -->
+          <div class="nav-divider" role="separator"></div>
+          <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
+          <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
+          <span class="nav-version" id="appVersion">v3.67.0</span>
+
         </div>
       </div>
     </details>
@@ -932,7 +939,7 @@
      aria-hidden, damit die leere <footer>-Landmark (implizite contentinfo-Rolle als
      direktes body-Kind) Screenreader-Nutzern bei der Landmark-Navigation nicht als
      Sackgasse begegnet. -->
-<footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));" aria-hidden="true"></footer>
+<footer style="padding-bottom:calc(84px + 58px + env(safe-area-inset-bottom));" aria-hidden="true"></footer>
 
 <div class="quickbar" data-view="rechner">
   <a class="qb-jump" href="#result"><span class="visually-hidden" data-i18n="quickbar.jumpToResult">Zum Ergebnis springen: </span><span id="qbTotal">–</span><small>· <span id="qbBalls">–</span> <span data-i18n="quickbar.doughBalls">Teiglinge</span></small></a>
@@ -949,36 +956,65 @@
   <a class="qb-jump" href="#partyResultSummary"><span class="visually-hidden" data-i18n="quickbar.jumpToPartyResult">Zur Zutatenliste springen: </span><span id="qbPartyCount">–</span></a>
 </div>
 
+<!-- Bottom-Tab-Navigation (v3.67.0): ersetzt das bisherige Burgermenü vollständig auf
+     Mobil -- persistente, einhändig erreichbare Leiste mit den 4 Hauptbereichen. Buttons
+     nutzen dieselbe .nav-item-Klasse/data-goto-Logik wie zuvor die Burgermenü-Einträge
+     (js/nav.js verdrahtet sie generisch, keine eigene Verdrahtung nötig) -- Sichtbarkeits-/
+     Aktiv-Zustand läuft über dieselbe activateView()-Funktion. Der "Rechner"-Tab bekommt
+     zusätzlich data-goto-group="rechner,rezepte,zeitplan": er bleibt optisch aktiv, solange
+     einer der drei Rechner-Unterbereiche sichtbar ist (Umschaltung dort über die
+     Sekundär-Navigation .calc-subnav oben in der jeweiligen Ansicht, s. dort). Sitzt fix
+     unterhalb der Quick-Bar (s. css/mobile.css) -- Desktop behält sein Burgermenü
+     unverändert (s. pizza-rechner.html, js/nav.js). -->
+<nav class="bottom-tabs" data-i18n-attr="aria-label:nav.areasTitle">
+  <button type="button" class="nav-item active" data-goto="rechner" data-goto-group="rechner,rezepte,zeitplan" aria-current="page">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11.5" width="16" height="7" rx="2"/><path d="M8 11.5v-2a4 4 0 0 1 8 0v2"/><path d="M10.5 15h3"/></svg>
+    <span data-i18n="nav.rechner">Rechner</span>
+  </button>
+  <button type="button" class="nav-item" data-goto="party">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6 12 4l8 2-8 15Z"/><circle cx="11" cy="9" r=".6" fill="currentColor" stroke="none"/><circle cx="14" cy="12" r=".6" fill="currentColor" stroke="none"/><circle cx="10.5" cy="13.5" r=".6" fill="currentColor" stroke="none"/></svg>
+    <span data-i18n="nav.party">Pizza Party</span>
+  </button>
+  <button type="button" class="nav-item" data-goto="glossar">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-1.6-1.3-3.6-2-6.5-2v12c2.9 0 4.9.7 6.5 2 1.6-1.3 3.6-2 6.5-2v-12c-2.9 0-4.9.7-6.5 2Z"/><path d="M12 6.5v12"/></svg>
+    <span data-i18n="nav.glossar">Glossar</span>
+  </button>
+  <button type="button" class="nav-item" data-goto="einstellungen">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.8"/><path d="M12 3.5v2M12 18.5v2M20.5 12h-2M5.5 12h-2M18 6l-1.4 1.4M7.4 16.6 6 18M18 18l-1.4-1.4M7.4 7.4 6 6"/></svg>
+    <span data-i18n="nav.einstellungen">Einstellungen</span>
+  </button>
+</nav>
+
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.66.0"></script>
-<script src="js/state.js?v=3.66.0"></script>
-<script src="js/i18n-dict.js?v=3.66.0"></script>
-<script src="js/i18n.js?v=3.66.0"></script>
-<script src="js/settings.js?v=3.66.0"></script>
-<script src="js/theme.js?v=3.66.0"></script>
-<script src="js/units.js?v=3.66.0"></script>
-<script src="js/widgets.js?v=3.66.0"></script>
-<script src="js/flour.js?v=3.66.0"></script>
-<script src="js/calc.js?v=3.66.0"></script>
-<script src="js/schedule.js?v=3.66.0"></script>
-<script src="js/guide.js?v=3.66.0"></script>
-<script src="js/timer.js?v=3.66.0"></script>
-<script src="js/ui.js?v=3.66.0"></script>
-<script src="js/simplemode.js?v=3.66.0"></script>
-<script src="js/print.js?v=3.66.0"></script>
-<script src="js/pdf.js?v=3.66.0"></script>
-<script src="js/presets.js?v=3.66.0"></script>
-<script src="js/storage.js?v=3.66.0"></script>
-<script src="js/newrecipe.js?v=3.66.0"></script>
-<script src="js/share.js?v=3.66.0"></script>
-<script src="js/party.js?v=3.66.0"></script>
-<script src="js/glossary.js?v=3.66.0"></script>
-<script src="js/main.js?v=3.66.0"></script>
+<script src="js/dom.js?v=3.67.0"></script>
+<script src="js/state.js?v=3.67.0"></script>
+<script src="js/i18n-dict.js?v=3.67.0"></script>
+<script src="js/i18n.js?v=3.67.0"></script>
+<script src="js/settings.js?v=3.67.0"></script>
+<script src="js/theme.js?v=3.67.0"></script>
+<script src="js/units.js?v=3.67.0"></script>
+<script src="js/widgets.js?v=3.67.0"></script>
+<script src="js/flour.js?v=3.67.0"></script>
+<script src="js/calc.js?v=3.67.0"></script>
+<script src="js/schedule.js?v=3.67.0"></script>
+<script src="js/guide.js?v=3.67.0"></script>
+<script src="js/timer.js?v=3.67.0"></script>
+<script src="js/ui.js?v=3.67.0"></script>
+<script src="js/simplemode.js?v=3.67.0"></script>
+<script src="js/print.js?v=3.67.0"></script>
+<script src="js/pdf.js?v=3.67.0"></script>
+<script src="js/presets.js?v=3.67.0"></script>
+<script src="js/storage.js?v=3.67.0"></script>
+<script src="js/newrecipe.js?v=3.67.0"></script>
+<script src="js/share.js?v=3.67.0"></script>
+<script src="js/party.js?v=3.67.0"></script>
+<script src="js/glossary.js?v=3.67.0"></script>
+<script src="js/main.js?v=3.67.0"></script>
 <!-- Burger-Menü-Navigation (bis v3.17.x/v3.18.0 hier als Inline-Script gewachsen) --
      seit v3.54.0 gemeinsames Modul mit der Desktop-Seite, s. js/nav.js (Mobil-
      Implementierung war die massgebliche Referenz beim Auslagern). -->
-<script src="js/nav.js?v=3.66.0"></script>
-<script src="js/onboarding.js?v=3.66.0"></script>
+<script src="js/nav.js?v=3.67.0"></script>
+<script src="js/onboarding.js?v=3.67.0"></script>
 <script>
   // Mobil-only UI-Glue (kein Eingriff in die PZ-Rechenmodule) -- Quick-Bar-Sync,
   // Party-Quick-Bar, Quick-Save, Akkordeon-Auto-Scroll. Die frühere Sektion "4)

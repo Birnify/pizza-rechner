@@ -724,12 +724,16 @@ header{
   padding-right:calc(20px + env(safe-area-inset-right));
 }
 
-/* Immer einspaltig, egal wie breit der Screen ist */
+/* Immer einspaltig, egal wie breit der Screen ist. padding-bottom reserviert Platz für
+   BEIDE fixierten Leisten am unteren Rand: die (View-abhängige) Quick-Bar (84px, s.
+   .quickbar unten) UND darunter die persistente Bottom-Tab-Navigation (v3.67.0, 58px,
+   s. .bottom-tabs unten) -- beide Werte müssen zusammen mit den jeweiligen CSS-Regeln
+   dort synchron gehalten werden, falls sich deren Höhe künftig ändert. */
 .wrap{
   grid-template-columns:1fr!important;
   padding-left:calc(20px + env(safe-area-inset-left));
   padding-right:calc(20px + env(safe-area-inset-right));
-  padding-bottom:calc(84px + env(safe-area-inset-bottom));
+  padding-bottom:calc(84px + 58px + env(safe-area-inset-bottom));
 }
 .guidewrap{
   padding-left:calc(20px + env(safe-area-inset-left));
@@ -798,14 +802,19 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
    bekommt aber einen weißen Rahmen zur Abgrenzung von der jetzt ebenfalls
    terrakottafarbenen Bar (sonst würden beide Flächen ineinanderlaufen). */
 .quickbar{
-  position:fixed;left:0;right:0;bottom:0;z-index:20;
+  position:fixed;left:0;right:0;z-index:20;
+  /* Sitzt seit v3.67.0 direkt ÜBER der Bottom-Tab-Navigation statt ganz unten --
+     58px = deren reservierte Inhaltshöhe (s. .bottom-tabs unten, muss synchron bleiben). */
+  bottom:calc(58px + env(safe-area-inset-bottom));
   background:var(--tomato-dark)
     repeating-linear-gradient(-55deg,rgba(255,255,255,.06) 0 2px,transparent 2px 14px);
   color:#fff;
   display:flex;align-items:stretch;gap:10px;
-  padding:10px calc(14px + env(safe-area-inset-right))
-          calc(10px + env(safe-area-inset-bottom))
-          calc(14px + env(safe-area-inset-left));
+  /* Kein eigener safe-area-inset-bottom-Zuschlag mehr im Padding (anders als bis
+     v3.66.0): die Bar sitzt seit v3.67.0 nicht mehr ganz am physischen Rand -- die
+     Bottom-Tab-Navigation darunter übernimmt diese Rolle jetzt (s. deren bottom-Offset
+     oben und deren eigenes Padding weiter unten). */
+  padding:10px calc(14px + env(safe-area-inset-right)) 10px calc(14px + env(safe-area-inset-left));
   border-top:2px solid var(--crust);
   box-shadow:0 -6px 18px rgba(30,14,9,.3);
 }
@@ -836,29 +845,11 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 #result{scroll-margin-top:16px;}
 #partyResultSummary{scroll-margin-top:16px;}
 
-/* Hamburger-Navigation: Bereichs-Umschaltung statt durchgehendem One-Pager.
-   v3.19.0: Kopfzeile ist jetzt ein 3-Spalten-Grid (Button-Breite | Titel | Button)
-   statt zentriertem Titel + absolut positioniertem Button darüber — der Button bekommt
-   dadurch strukturell eine eigene Spalte und kann den Titel nie mehr überlagern/
-   "verschwimmen". Die leere linke Spalte hält den Titel trotzdem optisch zentriert.
-   Bricht der Titel auf sehr schmalen Screens zweizeilig um, bleibt der Button dank
-   align-items:center senkrecht zentriert neben ihm stehen. */
-header{
-  position:relative;display:grid;grid-template-columns:44px 1fr 44px;
-  align-items:center;column-gap:10px;
-}
-header h1{grid-column:2;justify-self:center;text-align:center;}
-.nav-toggle{
-  grid-column:3;justify-self:end;
-  width:44px;height:44px;border:1px solid rgba(255,255,255,.8);border-radius:50%;
-  background:rgba(255,255,255,.16);color:#fff;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
-}
-/* v3.45.0: SVG-Balken statt Unicode-Glyph "☰" -- Zentrierung/Größe waren fontabhängig,
-   jetzt per Flex + fixer SVG-Größe garantiert (analog .card-icon svg). */
-.nav-toggle svg{width:22px;height:22px;display:block;}
-.nav-toggle:active{background:rgba(255,255,255,.3);}
+/* Kopfzeile: bis v3.66.0 ein 3-Spalten-Grid (Button-Breite | Titel | Button), damit der
+   Hamburger-Button (rechte Spalte) den zentrierten Titel nie überlagert/"verschwimmen"
+   ließ. Seit v3.67.0 (Bottom-Tab-Navigation ersetzt das Burgermenü) gibt es keinen
+   Kopfzeilen-Button mehr -- einfache Zentrierung reicht. */
+header{position:relative;text-align:center;}
 
 /* Von hidden-Attribut abhängige Sichtbarkeit: eigene author-Regel mit höherer
    Spezifität als [class]{display:...}, damit sie zuverlässig greift (kein
@@ -915,51 +906,60 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
 }
 .nav-link:active{background:var(--bg);}
 
+/* Bottom-Tab-Navigation (v3.67.0): ersetzt das Burgermenü vollständig auf Mobil, s.
+   pizza-rechner-mobile.html. Buttons nutzen dieselbe .nav-item-Klasse wie zuvor die
+   Burgermenü-Einträge (js/nav.js-Verdrahtung unverändert) -- die Regeln hier überschreiben
+   deren generisches .nav-item/.nav-item.active-Aussehen (vertikale Liste, s. oben) gezielt
+   für diesen Kontext per höherer Selektor-Spezifität (2 bzw. 3 Klassen statt 1 bzw. 2).
+   58px Inhaltshöhe (exkl. safe-area) muss synchron zu .quickbar/.wrap/<footer> oben
+   bleiben, falls sich Padding/Icon-Größe hier je ändert. */
+.bottom-tabs{
+  position:fixed;left:0;right:0;bottom:0;z-index:30;
+  display:flex;background:var(--card);border-top:1px solid var(--line);
+  padding:6px calc(4px + env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) calc(4px + env(safe-area-inset-left));
+  box-shadow:0 -4px 12px rgba(0,0,0,.08);
+}
+.bottom-tabs .nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  width:auto;text-align:center;min-height:44px;padding:4px 2px;
+  border:none;border-radius:10px;background:none;color:var(--muted);
+  font-size:11px;font-weight:600;
+}
+.bottom-tabs .nav-item svg{width:22px;height:22px;flex-shrink:0;}
+.bottom-tabs .nav-item:active{background:var(--bg);}
+.bottom-tabs .nav-item.active{background:var(--bg);border-left:none;color:var(--tomato-text);}
+
+/* Sekundär-Navigation (Segmented Control) für die drei Rechner-Unterbereiche
+   (Rechner/Rezepte/Zeitplan), oben in jeder der drei Ansichten eingebettet -- ersetzt
+   die frühere Burgermenü-Gruppe "Teig-Rechner". */
+.calc-subnav{
+  display:flex;gap:6px;background:var(--bg);border:1px solid var(--line);
+  border-radius:var(--radius);padding:4px;margin-bottom:18px;
+}
+.calc-subnav .nav-item{
+  flex:1;width:auto;text-align:center;padding:9px 6px;min-height:44px;
+  border:none;border-radius:8px;background:none;color:var(--ink);
+  font-size:13px;font-weight:600;
+}
+.calc-subnav .nav-item:active{background:var(--card);}
+.calc-subnav .nav-item.active{background:var(--tomato);border-left:none;color:#fff;}
+
 /* Statische Einheit neben Slider+Zahlenfeld (ersetzt die frühere doppelte rote Zahl
    oberhalb im Label) — rein visueller Hinweis, Screenreader bekommen die Einheit über
    aria-describedby auf beiden Eingabefeldern. */
 .row .unit{font-size:13px;color:var(--muted);flex-shrink:0;}
 
-@media print{.quickbar{display:none;}.nav-toggle,.nav-overlay{display:none!important;}}
+@media print{.quickbar,.bottom-tabs{display:none!important;}.nav-overlay{display:none!important;}}
 
 </style>
 </head>
 <body>
+<!-- Bottom-Tab-Navigation (v3.67.0) ersetzt das bisherige Burgermenü vollständig auf
+     Mobil -- die Kopfzeile zeigt jetzt nur noch den Titel, kein Menü-Button mehr nötig.
+     Desktop behält unverändert sein Burgermenü (s. pizza-rechner.html). -->
 <header>
-  <button type="button" id="navToggle" class="nav-toggle" aria-expanded="false" aria-controls="navMenu" data-i18n-attr="aria-label:nav.menuOpen">
-    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
-  </button>
   <h1>🍕 <span data-i18n="app.title">Teigmeister</span></h1>
 </header>
-
-<nav id="navMenu" class="nav-overlay" hidden>
-  <div class="nav-panel" role="dialog" aria-modal="true" data-i18n-attr="aria-label:nav.areasDialogLabel">
-    <div class="nav-panel-head">
-      <span class="nav-panel-title" data-i18n="nav.areasTitle">Bereiche</span>
-      <button type="button" id="navClose" class="nav-close" data-i18n-attr="aria-label:nav.menuClose">✕</button>
-    </div>
-    <div class="nav-group-title" id="navGroupDough" data-i18n="nav.group.dough">Teig-Rechner</div>
-    <ul class="nav-list" role="group" aria-labelledby="navGroupDough">
-      <li><button type="button" class="nav-item active" data-goto="rechner" aria-current="page" data-i18n="nav.rechner">Rechner</button></li>
-      <li><button type="button" class="nav-item" data-goto="rezepte" data-i18n="nav.rezepte">Rezepte</button></li>
-      <li><button type="button" class="nav-item" data-goto="zeitplan" data-i18n="nav.zeitplan">Zeitplan</button></li>
-    </ul>
-    <div class="nav-divider" role="separator"></div>
-    <div class="nav-group-title" id="navGroupParty" data-i18n="nav.group.party">Pizza Party</div>
-    <ul class="nav-list" role="group" aria-labelledby="navGroupParty">
-      <li><button type="button" class="nav-item" data-goto="party" data-i18n="nav.party">Pizza Party</button></li>
-    </ul>
-    <div class="nav-divider" role="separator"></div>
-    <ul class="nav-list">
-      <li><button type="button" class="nav-item" data-goto="glossar" data-i18n="nav.glossar">Glossar</button></li>
-      <li><button type="button" class="nav-item" data-goto="einstellungen" data-i18n="nav.einstellungen">Einstellungen</button></li>
-      <li><button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button></li>
-    </ul>
-    <div class="nav-divider" role="separator"></div>
-    <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.66.0</span>
-  </div>
-</nav>
 
 <!-- Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay analog zum
      Burgermenü-Muster (role="dialog" aria-modal="true", eigener Fokus-Trap in
@@ -1027,6 +1027,16 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
 
 <div class="wrap view" data-view="rechner">
+  <!-- Sekundär-Navigation (v3.67.0): seit der Bottom-Tab-Navigation ersetzt dieses
+       Segmented-Control-Muster die frühere Burgermenü-Gruppe "Teig-Rechner"
+       (Rechner/Rezepte/Zeitplan) -- identisch an dieser Stelle in allen drei
+       Unterbereichen eingebettet (s. data-view="rezepte"/"zeitplan" weiter unten),
+       damit sie beim Wechseln zwischen den drei Unterbereichen sichtbar bleibt. -->
+  <div class="calc-subnav" role="navigation" data-i18n-attr="aria-label:nav.group.dough">
+    <button type="button" class="nav-item active" data-goto="rechner" aria-current="page" data-i18n="nav.rechner">Rechner</button>
+    <button type="button" class="nav-item" data-goto="rezepte" data-i18n="nav.rezepte">Rezepte</button>
+    <button type="button" class="nav-item" data-goto="zeitplan" data-i18n="nav.zeitplan">Zeitplan</button>
+  </div>
   <!-- LINKE SPALTE (auf Mobil: einzige Spalte): EINGABEN ALS AKKORDEON -->
   <div class="controls-col mode-simple" id="controlsCol" style="display:grid;gap:20px;">
 
@@ -1354,6 +1364,14 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
 </section>
 
 <div class="wrap view" data-view="rezepte" hidden>
+  <!-- Sekundär-Navigation, identisch zur Kopie im "rechner"-Unterbereich (s. dort) --
+       muss in jedem der drei Unterbereiche eingebettet sein, damit sie beim Umschalten
+       zwischen ihnen sichtbar bleibt. -->
+  <div class="calc-subnav" role="navigation" data-i18n-attr="aria-label:nav.group.dough">
+    <button type="button" class="nav-item" data-goto="rechner" data-i18n="nav.rechner">Rechner</button>
+    <button type="button" class="nav-item active" data-goto="rezepte" aria-current="page" data-i18n="nav.rezepte">Rezepte</button>
+    <button type="button" class="nav-item" data-goto="zeitplan" data-i18n="nav.zeitplan">Zeitplan</button>
+  </div>
   <div class="controls-col" style="display:grid;gap:20px;">
     <details class="card" id="recipesCard" open>
       <summary><h2 data-i18n-attr="aria-label:card.myRecipes.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A1.5 1.5 0 0 1 5.5 5h4l1.8 2H18.5A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5Z"/></svg></span><span data-i18n="card.myRecipes.title">Meine Rezepte</span></h2></summary>
@@ -1561,6 +1579,14 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
 </div>
 
 <div class="wrap view" data-view="zeitplan" hidden>
+  <!-- Sekundär-Navigation, identisch zur Kopie im "rechner"-Unterbereich (s. dort) --
+       muss in jedem der drei Unterbereiche eingebettet sein, damit sie beim Umschalten
+       zwischen ihnen sichtbar bleibt. -->
+  <div class="calc-subnav" role="navigation" data-i18n-attr="aria-label:nav.group.dough">
+    <button type="button" class="nav-item" data-goto="rechner" data-i18n="nav.rechner">Rechner</button>
+    <button type="button" class="nav-item" data-goto="rezepte" data-i18n="nav.rezepte">Rezepte</button>
+    <button type="button" class="nav-item active" data-goto="zeitplan" aria-current="page" data-i18n="nav.zeitplan">Zeitplan</button>
+  </div>
   <div class="controls-col" style="display:grid;gap:20px;">
     <details class="card" open>
       <summary><h2 data-i18n-attr="aria-label:card.schedule.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span><span data-i18n="card.schedule.title">Zeitplan</span></h2></summary>
@@ -1770,6 +1796,16 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
             <p class="switch-info" id="wasteAdjustInfo" hidden data-i18n="flag.wasteAdjust.info">Erhöht das errechnete Gesamtgewicht um einen Puffer für Kneteverluste (Schüssel, Hände, Maschine): damit am Ende trotzdem die gewünschte Anzahl Teiglinge im Zielgewicht rauskommt.</p>
           </div>
 
+          <!-- "Einführung" + Desktop-Link + Versionsnummer (v3.67.0): zogen mit der
+               Bottom-Tab-Navigation hierher um, da es dafür kein Burgermenü mehr gibt
+               (s. pizza-rechner-KONTEXT.md, Abschnitt "Bottom-Tab-Navigation (Mobil)").
+               Unverändert dieselben Elemente/IDs wie zuvor im Burgermenü -- js/onboarding.js
+               verdrahtet #navOnboardingItem weiterhin per ID, keine JS-Änderung nötig. -->
+          <div class="nav-divider" role="separator"></div>
+          <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
+          <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
+          <span class="nav-version" id="appVersion">v3.67.0</span>
+
         </div>
       </div>
     </details>
@@ -1823,7 +1859,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
      aria-hidden, damit die leere <footer>-Landmark (implizite contentinfo-Rolle als
      direktes body-Kind) Screenreader-Nutzern bei der Landmark-Navigation nicht als
      Sackgasse begegnet. -->
-<footer style="padding-bottom:calc(84px + env(safe-area-inset-bottom));" aria-hidden="true"></footer>
+<footer style="padding-bottom:calc(84px + 58px + env(safe-area-inset-bottom));" aria-hidden="true"></footer>
 
 <div class="quickbar" data-view="rechner">
   <a class="qb-jump" href="#result"><span class="visually-hidden" data-i18n="quickbar.jumpToResult">Zum Ergebnis springen: </span><span id="qbTotal">–</span><small>· <span id="qbBalls">–</span> <span data-i18n="quickbar.doughBalls">Teiglinge</span></small></a>
@@ -1839,6 +1875,35 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
 <div class="quickbar" id="partyQuickbar" data-view="party" hidden>
   <a class="qb-jump" href="#partyResultSummary"><span class="visually-hidden" data-i18n="quickbar.jumpToPartyResult">Zur Zutatenliste springen: </span><span id="qbPartyCount">–</span></a>
 </div>
+
+<!-- Bottom-Tab-Navigation (v3.67.0): ersetzt das bisherige Burgermenü vollständig auf
+     Mobil -- persistente, einhändig erreichbare Leiste mit den 4 Hauptbereichen. Buttons
+     nutzen dieselbe .nav-item-Klasse/data-goto-Logik wie zuvor die Burgermenü-Einträge
+     (js/nav.js verdrahtet sie generisch, keine eigene Verdrahtung nötig) -- Sichtbarkeits-/
+     Aktiv-Zustand läuft über dieselbe activateView()-Funktion. Der "Rechner"-Tab bekommt
+     zusätzlich data-goto-group="rechner,rezepte,zeitplan": er bleibt optisch aktiv, solange
+     einer der drei Rechner-Unterbereiche sichtbar ist (Umschaltung dort über die
+     Sekundär-Navigation .calc-subnav oben in der jeweiligen Ansicht, s. dort). Sitzt fix
+     unterhalb der Quick-Bar (s. css/mobile.css) -- Desktop behält sein Burgermenü
+     unverändert (s. pizza-rechner.html, js/nav.js). -->
+<nav class="bottom-tabs" data-i18n-attr="aria-label:nav.areasTitle">
+  <button type="button" class="nav-item active" data-goto="rechner" data-goto-group="rechner,rezepte,zeitplan" aria-current="page">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11.5" width="16" height="7" rx="2"/><path d="M8 11.5v-2a4 4 0 0 1 8 0v2"/><path d="M10.5 15h3"/></svg>
+    <span data-i18n="nav.rechner">Rechner</span>
+  </button>
+  <button type="button" class="nav-item" data-goto="party">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6 12 4l8 2-8 15Z"/><circle cx="11" cy="9" r=".6" fill="currentColor" stroke="none"/><circle cx="14" cy="12" r=".6" fill="currentColor" stroke="none"/><circle cx="10.5" cy="13.5" r=".6" fill="currentColor" stroke="none"/></svg>
+    <span data-i18n="nav.party">Pizza Party</span>
+  </button>
+  <button type="button" class="nav-item" data-goto="glossar">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-1.6-1.3-3.6-2-6.5-2v12c2.9 0 4.9.7 6.5 2 1.6-1.3 3.6-2 6.5-2v-12c-2.9 0-4.9.7-6.5 2Z"/><path d="M12 6.5v12"/></svg>
+    <span data-i18n="nav.glossar">Glossar</span>
+  </button>
+  <button type="button" class="nav-item" data-goto="einstellungen">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.8"/><path d="M12 3.5v2M12 18.5v2M20.5 12h-2M5.5 12h-2M18 6l-1.4 1.4M7.4 16.6 6 18M18 18l-1.4-1.4M7.4 7.4 6 6"/></svg>
+    <span data-i18n="nav.einstellungen">Einstellungen</span>
+  </button>
+</nav>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
 <script>
@@ -3245,12 +3310,16 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     const f = PZ.FLAGS;
     const recipesCard = document.getElementById('recipesCard');
     if (recipesCard) recipesCard.style.display = f.multiRecipes ? '' : 'none';
-    // Hamburger-Nav (Mobil UND seit v3.26.0 auch Desktop, s. pizza-rechner-mobile.html /
-    // pizza-rechner.html): Menüpunkt "Rezepte" führt bei abgeschaltetem Flag nur zu einer
-    // leeren Ansicht — Punkt in beiden Nav-Panels ausblenden (ein gemeinsamer Selektor
-    // trifft auf beiden Seiten, da beide dasselbe `.nav-item[data-goto]`-Markup nutzen).
-    const recipesNavItem = document.querySelector('.nav-item[data-goto="rezepte"]');
-    if (recipesNavItem) recipesNavItem.style.display = f.multiRecipes ? '' : 'none';
+    // Bereichs-Navigation (Desktop-Burgermenü UND seit v3.67.0 Mobil-Sekundärnavigation
+    // .calc-subnav, s. pizza-rechner.html / pizza-rechner-mobile.html): Menüpunkt
+    // "Rezepte" führt bei abgeschaltetem Flag nur zu einer leeren Ansicht — Punkt überall
+    // ausblenden. querySelectorAll statt querySelector (Bugfix v3.67.0): seit die
+    // Sekundär-Navigation auf Mobil identisch in allen drei Rechner-Unterbereichen
+    // eingebettet ist, gibt es dort bis zu drei `.nav-item[data-goto="rezepte"]`-Treffer
+    // statt nur einem — mit querySelector allein wären zwei davon fälschlich sichtbar
+    // geblieben, auch bei ausgeschaltetem Flag.
+    const recipesNavItems = document.querySelectorAll('.nav-item[data-goto="rezepte"]');
+    recipesNavItems.forEach(function (item) { item.style.display = f.multiRecipes ? '' : 'none'; });
     const shareBlock = document.getElementById('shareBlock');
     if (shareBlock) shareBlock.style.display = f.share ? '' : 'none';
     const shoppingRow = document.getElementById('shoppingRow');
@@ -7549,7 +7618,20 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   const navToggle = $('navToggle');
   const navOverlay = $('navMenu');
   const navClose = $('navClose');
-  const navItems = navOverlay ? Array.prototype.slice.call(navOverlay.querySelectorAll('.nav-item')) : [];
+  // panelItems: NUR die .nav-item-Buttons innerhalb des Burgermenü-Overlays (falls
+  // vorhanden) -- ausschließlich für den Tab-Trap/die Anfangsfokussierung beim Öffnen
+  // des Overlays gebraucht (focusablesInPanel()/openNav()). Existiert kein Overlay
+  // (z. B. pizza-rechner-mobile.html seit v3.67.0, Bottom-Tab-Navigation ersetzt das
+  // Burgermenü vollständig), bleibt dies einfach eine leere Liste -- openNav()/
+  // onNavKeydown() werden dann ohnehin nie aufgerufen (kein Button, der sie auslöst).
+  const panelItems = navOverlay ? Array.prototype.slice.call(navOverlay.querySelectorAll('.nav-item')) : [];
+  // allNavItems: ALLE .nav-item-Buttons auf der Seite, unabhängig davon, ob sie in einem
+  // Overlay-Panel liegen oder (seit v3.67.0) in einer persistenten Bottom-Tab-Leiste bzw.
+  // einer eingebetteten Sekundär-Navigation (.calc-subnav) -- Grundlage für die
+  // Klick-Verdrahtung und die Aktiv-Markierung in activateView() unten. Auf
+  // pizza-rechner.html (Desktop, unverändertes Burgermenü) ist das identisch zu
+  // panelItems, da dort alle .nav-item-Elemente ohnehin nur im Overlay vorkommen.
+  const allNavItems = Array.prototype.slice.call(document.querySelectorAll('.nav-item'));
   // Plattform-übergreifender Cross-Link: nur einer der beiden existiert je nach Seite
   // (#navMobileLink auf pizza-rechner.html, #navDesktopLink auf pizza-rechner-mobile.html
   // bzw. dessen Standalone-Build).
@@ -7563,7 +7645,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   // die vier Bereichs-Buttons, zuletzt der Cross-Link (eigenes <a>, kein .nav-item —
   // navigiert weg statt eine Ansicht umzuschalten, s. activateView-Klick-Handler unten).
   function focusablesInPanel() {
-    return [navClose].concat(navItems).concat(crossLink ? [crossLink] : []);
+    return [navClose].concat(panelItems).concat(crossLink ? [crossLink] : []);
   }
 
   function onNavKeydown(e) {
@@ -7584,7 +7666,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     lastFocused = document.activeElement;
     navOverlay.hidden = false;
     navToggle.setAttribute('aria-expanded', 'true');
-    const current = navItems.filter(function (b) { return b.classList.contains('active'); })[0] || navItems[0];
+    const current = panelItems.filter(function (b) { return b.classList.contains('active'); })[0] || panelItems[0];
     if (current) current.focus(); else if (navClose) navClose.focus();
     document.addEventListener('keydown', onNavKeydown);
   }
@@ -7605,8 +7687,16 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
       if (el.getAttribute('data-view') === view) el.removeAttribute('hidden');
       else el.setAttribute('hidden', '');
     });
-    navItems.forEach(function (b) {
-      const isActive = b.getAttribute('data-goto') === view;
+    allNavItems.forEach(function (b) {
+      // data-goto-group (v3.67.0, Bottom-Tab-Navigation): der Haupt-Tab "Rechner" auf
+      // pizza-rechner-mobile.html bleibt optisch aktiv, solange einer seiner drei
+      // Unterbereiche (Rechner/Rezepte/Zeitplan) sichtbar ist -- die eigentliche
+      // Umschaltung zwischen den dreien läuft über die separate .calc-subnav, deren
+      // eigene Buttons weiterhin exakt (nicht als Gruppe) auf data-goto matchen.
+      // Ohne data-goto-group-Attribut (Desktop, alle übrigen Mobil-Tabs) ist das
+      // Verhalten exakt wie zuvor: 1:1-Vergleich mit data-goto.
+      const group = b.getAttribute('data-goto-group');
+      const isActive = group ? group.split(',').indexOf(view) !== -1 : b.getAttribute('data-goto') === view;
       b.classList.toggle('active', isActive);
       if (isActive) b.setAttribute('aria-current', 'page');
       else b.removeAttribute('aria-current');
@@ -7642,7 +7732,7 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   // Anleitungs-Banner ohne Zeitangabe (v3.38.0-Fix, s. js/guide.js). closeNav(false)
   // ist hier defensiv/für den unwahrscheinlichen Fall, dass das Menü doch offen ist.
   function gotoView(view) {
-    const item = navItems.filter(function (b) { return b.getAttribute('data-goto') === view; })[0];
+    const item = allNavItems.filter(function (b) { return b.getAttribute('data-goto') === view; })[0];
     activateView(view);
     announceView(item ? item.textContent : view);
     closeNav(false);
@@ -7653,9 +7743,15 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   // Burgermenü, bevor er das Onboarding-Modal öffnet (zwei gleichzeitig offene
   // position:fixed;inset:0-Overlays wären verwirrend). restoreFocus=false, weil der
   // Fokus direkt danach ins neu geöffnete Onboarding-Modal wandert, nicht zurück auf
-  // den Hamburger-Button.
+  // den Hamburger-Button. Auf Mobil (seit v3.67.0 kein Burgermenü mehr) no-op, s.
+  // closeNav() oben ("if (!navOverlay) return;").
   PZ.closeNav = closeNav;
 
+  // Overlay-spezifische Verdrahtung (Öffnen/Schließen-Button, Klick auf den abgedunkelten
+  // Hintergrund): nur relevant, wenn es überhaupt ein Burgermenü-Overlay gibt (Desktop,
+  // s. pizza-rechner.html). Auf pizza-rechner-mobile.html existiert seit v3.67.0 weder
+  // #navToggle noch #navMenu (Bottom-Tab-Navigation ersetzt das Burgermenü vollständig) --
+  // dieser Block bleibt dort einfach ungenutzt.
   if (navToggle && navOverlay) {
     navToggle.addEventListener('click', function () {
       if (navOverlay.hidden) openNav(); else closeNav();
@@ -7664,21 +7760,26 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     navOverlay.addEventListener('click', function (e) {
       if (e.target === navOverlay) closeNav();
     });
-    navItems.forEach(function (b) {
-      b.addEventListener('click', function () {
-        const view = b.getAttribute('data-goto');
-        // Menüpunkte ohne eigenen data-goto (z. B. "Einführung", v3.63.0) sind keine
-        // Bereichs-Wechsel -- die werden von ihrem eigenen Modul separat verdrahtet
-        // (js/onboarding.js). Ohne diesen Guard würde activateView(undefined) ALLE
-        // [data-view]-Bereiche verstecken, da keiner das leere data-goto matcht.
-        if (!view) return;
-        activateView(view);
-        announceView(b.textContent);
-        closeNav(false);
-        focusView(view);
-      });
-    });
   }
+
+  // Klick-Verdrahtung für ALLE .nav-item-Buttons auf der Seite (Burgermenü-Einträge auf
+  // Desktop, Bottom-Tab-Leiste + Sekundär-Navigation .calc-subnav auf Mobil seit v3.67.0)
+  // -- läuft bewusst UNABHÄNGIG vom Overlay-Block oben, da die Bottom-Tab-Navigation ohne
+  // jedes Overlay auskommt (persistente Leiste statt Ein-/Ausklappen).
+  allNavItems.forEach(function (b) {
+    b.addEventListener('click', function () {
+      const view = b.getAttribute('data-goto');
+      // Menüpunkte ohne eigenen data-goto (z. B. "Einführung", v3.63.0) sind keine
+      // Bereichs-Wechsel -- die werden von ihrem eigenen Modul separat verdrahtet
+      // (js/onboarding.js). Ohne diesen Guard würde activateView(undefined) ALLE
+      // [data-view]-Bereiche verstecken, da keiner das leere data-goto matcht.
+      if (!view) return;
+      activateView(view);
+      announceView(b.textContent);
+      closeNav(false);
+      focusView(view);
+    });
+  });
 })(window);
 
 </script>

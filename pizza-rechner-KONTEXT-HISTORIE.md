@@ -8,6 +8,94 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Bottom-Tab-Navigation (Mobil) (v3.67.0)
+
+Direkter Nutzerauftrag (Warteschlangen-Punkt 3 von 3, letzter Punkt der Warteschlange,
+kein Backlog-Punkt), bereits vollständig spezifiziert inkl. Vorab-Klärungen (Tab-Leiste
+ersetzt Burgermenü komplett, Rechner-Untermenü als Segmented Control statt Scroll-Anker).
+Auf `pizza-rechner-mobile.html` ersetzt eine feste, persistente Tab-Leiste unten das
+bisherige Burgermenü vollständig — vier Haupt-Tabs (Teig-Rechner, Pizza Party, Glossar,
+Einstellungen), einhändig besser erreichbar als ein verstecktes Menü. Desktop
+(`pizza-rechner.html`) bleibt komplett unverändert, behält sein Burgermenü.
+
+- **Neue `<nav class="bottom-tabs">`** (persistente Leiste, sitzt fix über der
+  Quick-Bar): vier Buttons mit denselben Icons wie die entsprechenden Karten
+  (Ergebnis-Panel-Icon für "Rechner", Party-Icon, Glossar-Buch-Icon, Zahnrad-Icon für
+  "Einstellungen"). Der "Rechner"-Tab bekommt zusätzlich `data-goto-group=
+  "rechner,rezepte,zeitplan"` (neues, generisches Attribut, s. `js/nav.js` unten): er
+  bleibt optisch aktiv, solange einer seiner drei Unterbereiche sichtbar ist.
+- **Neue `.calc-subnav`** (Segmented Control Rechner/Rezepte/Zeitplan, ersetzt die
+  frühere Burgermenü-Gruppe "Teig-Rechner"): identisch eingebettet als erstes Element
+  in allen drei `[data-view="rechner"|"rezepte"|"zeitplan"]`-Containern, damit sie beim
+  Wechseln zwischen den dreien sichtbar bleibt (sonst würde ein Ansichtswechsel die
+  Subnav mitsamt ihrem Elternelement verstecken, ohne dass in der neuen Ansicht wieder
+  eine sichtbar wäre).
+- **"Einführung" + "Zur Desktop-Ansicht"-Link + Versionsnummer** (`#navOnboardingItem`/
+  `#navDesktopLink`/`#appVersion`) in die Einstellungen-Ansicht umgezogen (ans Ende der
+  bestehenden Einstellungen-Karte, per `.nav-divider` abgetrennt) — es gibt kein
+  Burgermenü mehr, das ihnen vorher als Zuhause diente. Unverändert dieselben
+  Elemente/IDs, `js/onboarding.js` verdrahtet `#navOnboardingItem` weiterhin per ID,
+  keine JS-Änderung dort nötig (der bestehende Fallback `returnFocusEl || document.
+  activeElement` in `open()` fängt das fehlende `$('navToggle')` auf Mobil bereits ab).
+- **`js/nav.js` generalisiert** (Kernänderung, betrifft beide Seiten, aber verhaltens-
+  neutral für Desktop): bisher scannte das Modul `.nav-item`-Buttons NUR innerhalb des
+  Burgermenü-Overlays (`navOverlay.querySelectorAll('.nav-item')`) und gatete die
+  gesamte Klick-Verdrahtung hinter `if (navToggle && navOverlay)` — auf Mobil (seit
+  v3.67.0 ohne Overlay) wäre dadurch GAR KEINE Klick-Verdrahtung mehr gelaufen. Jetzt
+  zwei getrennte Listen: `panelItems` (weiterhin overlay-scoped, nur für den Tab-Trap/
+  die Anfangsfokussierung beim Öffnen) und `allNavItems` (site-weit, Grundlage für
+  Klick-Verdrahtung + Aktiv-Markierung in `activateView()`). Die Klick-Verdrahtung
+  selbst läuft jetzt IMMER (nicht mehr an die Overlay-Existenz gekoppelt), die
+  Overlay-spezifische Verdrahtung (Toggle-Button, Backdrop-Klick) bleibt weiterhin
+  gegated. Neues `data-goto-group`-Attribut (kommagetrennte Liste): `activateView()`
+  markiert einen Button als aktiv, wenn entweder `data-goto` exakt matcht ODER (falls
+  vorhanden) die aktuelle Ansicht in seiner `data-goto-group`-Liste steht — ohne dieses
+  Attribut (Desktop, alle übrigen Mobil-Tabs) ist das Verhalten exakt wie zuvor.
+- **`js/settings.js`-Bugfix:** `applyFlags()`s Logik, die den "Rezepte"-Menüpunkt bei
+  ausgeschaltetem `multiRecipes`-Flag versteckt, nutzte bisher `document.querySelector
+  ('.nav-item[data-goto="rezepte"]')` (nur der ERSTE Treffer). Seit die Sekundär-
+  Navigation auf Mobil identisch in drei Unterbereichen eingebettet ist, gibt es dort
+  bis zu drei solcher Treffer — mit `querySelector` allein wären zwei davon fälschlich
+  sichtbar geblieben. Umgestellt auf `querySelectorAll` + `forEach`.
+- **`css/mobile.css`:** neue `.bottom-tabs`/`.calc-subnav`-Regeln (eigene, gezielt
+  scoped Overrides mit höherer Selektor-Spezifität als die generische `.nav-item`/
+  `.nav-item.active`-Basisregel, s. Kommentar dort). Kopfzeile vereinfacht (kein
+  3-Spalten-Grid/Hamburger-Button mehr nötig, einfache Zentrierung). Die Quick-Bar
+  sitzt jetzt nicht mehr ganz am unteren Rand, sondern direkt über der Bottom-Tab-
+  Navigation (eigener `bottom`-Offset, kein eigener `safe-area-inset-bottom`-Zuschlag
+  im Padding mehr, das übernimmt jetzt die Tab-Leiste darunter). `.wrap`s
+  `padding-bottom` und der `<footer>`-Scroll-Puffer entsprechend erweitert (84px
+  Quick-Bar + 58px Tab-Leiste + safe-area). `.nav-overlay`/`.nav-panel`/
+  `.nav-panel-head`/`.nav-close`/`.nav-list`/`.nav-divider`/`.nav-link`-Basisregeln
+  bewusst NICHT entfernt (weiterhin aktiv vom Onboarding-Modal bzw. den relozierten
+  Einstellungen-Links genutzt) — nur `.nav-toggle` (eindeutig tot) entfernt.
+- **Per Headless-Edge-Verhaltenstest verifiziert** (`js/nav.js` ist wie `js/timer.js`/
+  `js/newrecipe.js` bewusst nicht Teil von `tests/test.html`, reines DOM-Wiring):
+  Bottom-Tab-Klicks schalten die Ansicht korrekt um, der Rechner-Haupt-Tab bleibt über
+  `data-goto-group` aktiv markiert während Rezepte/Zeitplan offen sind, die jeweilige
+  Subnav-Kopie markiert korrekt den aktiven Unterbereich, "Einführung" öffnet
+  weiterhin das Onboarding-Modal, Desktop-Burgermenü verhält sich unverändert (Öffnen/
+  Schließen/Bereichswechsel gegengetestet). Per Pixel-Messung (`getBoundingClientRect`)
+  verifiziert: Quick-Bar sitzt exakt über der Tab-Leiste (1px Spalt, keine Über-
+  lappung) — dabei einen Rechenfehler in der reservierten Höhe gefunden und korrigiert
+  (54px → 58px, an vier Stellen synchron). Gezielter Accessibility-Review (kein
+  Vollaudit): Kontraste rechnerisch geprüft (Tab-Beschriftung ~5,84:1 hell/~7,0:1
+  dunkel, aktive Zustände wiederverwenden bereits geprüfte Farbkombinationen aus `.seg`/
+  `.pills`), ein echter Befund gefunden und behoben (`.calc-subnav`-Buttons hatten nur
+  40px statt der App-weiten 44px-Touch-Ziel-Konvention).
+
+**Tests:** `tests/test.html` bleibt unverändert bei 688 Prüfungen (kein Eingriff in
+`js/calc.js`/`js/schedule.js`/`js/guide.js`, `js/nav.js` ist kein Teil der Testsuite;
+`js/settings.js`s Änderung läuft dort weiterhin grün mit, da kein `.nav-item`-Stub in
+`tests/test.html` existiert, `querySelectorAll` liefert dort wie zuvor `querySelector`
+einfach eine leere Trefferliste).
+
+**Geändert:** `js/nav.js`, `js/settings.js`, `css/mobile.css`, `pizza-rechner-mobile.html`.
+`?v=` auf `3.67.0` gezogen (Desktop + Mobil, Cache-Busting + Menü-/Einstellungen-
+Version). `pizza-rechner-mobile-standalone.html` neu gebaut (`python
+build-mobile-standalone.py`). `Versionen/v3.67.0 - Bottom-Tab-Navigation Mobil/`
+enthält den vollständigen Schnappschuss.
+
 ## Glossar-Erweiterung: Werkzeuge & Ausrüstung + Pizzabeläge (v3.66.0)
 
 Direkter Nutzerauftrag (Warteschlangen-Punkt 2 von 3, kein Backlog-Punkt), bereits

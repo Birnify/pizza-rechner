@@ -84,12 +84,16 @@
     const f = PZ.FLAGS;
     const recipesCard = document.getElementById('recipesCard');
     if (recipesCard) recipesCard.style.display = f.multiRecipes ? '' : 'none';
-    // Hamburger-Nav (Mobil UND seit v3.26.0 auch Desktop, s. pizza-rechner-mobile.html /
-    // pizza-rechner.html): Menüpunkt "Rezepte" führt bei abgeschaltetem Flag nur zu einer
-    // leeren Ansicht — Punkt in beiden Nav-Panels ausblenden (ein gemeinsamer Selektor
-    // trifft auf beiden Seiten, da beide dasselbe `.nav-item[data-goto]`-Markup nutzen).
-    const recipesNavItem = document.querySelector('.nav-item[data-goto="rezepte"]');
-    if (recipesNavItem) recipesNavItem.style.display = f.multiRecipes ? '' : 'none';
+    // Bereichs-Navigation (Desktop-Burgermenü UND seit v3.67.0 Mobil-Sekundärnavigation
+    // .calc-subnav, s. pizza-rechner.html / pizza-rechner-mobile.html): Menüpunkt
+    // "Rezepte" führt bei abgeschaltetem Flag nur zu einer leeren Ansicht — Punkt überall
+    // ausblenden. querySelectorAll statt querySelector (Bugfix v3.67.0): seit die
+    // Sekundär-Navigation auf Mobil identisch in allen drei Rechner-Unterbereichen
+    // eingebettet ist, gibt es dort bis zu drei `.nav-item[data-goto="rezepte"]`-Treffer
+    // statt nur einem — mit querySelector allein wären zwei davon fälschlich sichtbar
+    // geblieben, auch bei ausgeschaltetem Flag.
+    const recipesNavItems = document.querySelectorAll('.nav-item[data-goto="rezepte"]');
+    recipesNavItems.forEach(function (item) { item.style.display = f.multiRecipes ? '' : 'none'; });
     const shareBlock = document.getElementById('shareBlock');
     if (shareBlock) shareBlock.style.display = f.share ? '' : 'none';
     const shoppingRow = document.getElementById('shoppingRow');

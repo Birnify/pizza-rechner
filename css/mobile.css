@@ -19,12 +19,16 @@ header{
   padding-right:calc(20px + env(safe-area-inset-right));
 }
 
-/* Immer einspaltig, egal wie breit der Screen ist */
+/* Immer einspaltig, egal wie breit der Screen ist. padding-bottom reserviert Platz für
+   BEIDE fixierten Leisten am unteren Rand: die (View-abhängige) Quick-Bar (84px, s.
+   .quickbar unten) UND darunter die persistente Bottom-Tab-Navigation (v3.67.0, 58px,
+   s. .bottom-tabs unten) -- beide Werte müssen zusammen mit den jeweiligen CSS-Regeln
+   dort synchron gehalten werden, falls sich deren Höhe künftig ändert. */
 .wrap{
   grid-template-columns:1fr!important;
   padding-left:calc(20px + env(safe-area-inset-left));
   padding-right:calc(20px + env(safe-area-inset-right));
-  padding-bottom:calc(84px + env(safe-area-inset-bottom));
+  padding-bottom:calc(84px + 58px + env(safe-area-inset-bottom));
 }
 .guidewrap{
   padding-left:calc(20px + env(safe-area-inset-left));
@@ -93,14 +97,19 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
    bekommt aber einen weißen Rahmen zur Abgrenzung von der jetzt ebenfalls
    terrakottafarbenen Bar (sonst würden beide Flächen ineinanderlaufen). */
 .quickbar{
-  position:fixed;left:0;right:0;bottom:0;z-index:20;
+  position:fixed;left:0;right:0;z-index:20;
+  /* Sitzt seit v3.67.0 direkt ÜBER der Bottom-Tab-Navigation statt ganz unten --
+     58px = deren reservierte Inhaltshöhe (s. .bottom-tabs unten, muss synchron bleiben). */
+  bottom:calc(58px + env(safe-area-inset-bottom));
   background:var(--tomato-dark)
     repeating-linear-gradient(-55deg,rgba(255,255,255,.06) 0 2px,transparent 2px 14px);
   color:#fff;
   display:flex;align-items:stretch;gap:10px;
-  padding:10px calc(14px + env(safe-area-inset-right))
-          calc(10px + env(safe-area-inset-bottom))
-          calc(14px + env(safe-area-inset-left));
+  /* Kein eigener safe-area-inset-bottom-Zuschlag mehr im Padding (anders als bis
+     v3.66.0): die Bar sitzt seit v3.67.0 nicht mehr ganz am physischen Rand -- die
+     Bottom-Tab-Navigation darunter übernimmt diese Rolle jetzt (s. deren bottom-Offset
+     oben und deren eigenes Padding weiter unten). */
+  padding:10px calc(14px + env(safe-area-inset-right)) 10px calc(14px + env(safe-area-inset-left));
   border-top:2px solid var(--crust);
   box-shadow:0 -6px 18px rgba(30,14,9,.3);
 }
@@ -131,29 +140,11 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
 #result{scroll-margin-top:16px;}
 #partyResultSummary{scroll-margin-top:16px;}
 
-/* Hamburger-Navigation: Bereichs-Umschaltung statt durchgehendem One-Pager.
-   v3.19.0: Kopfzeile ist jetzt ein 3-Spalten-Grid (Button-Breite | Titel | Button)
-   statt zentriertem Titel + absolut positioniertem Button darüber — der Button bekommt
-   dadurch strukturell eine eigene Spalte und kann den Titel nie mehr überlagern/
-   "verschwimmen". Die leere linke Spalte hält den Titel trotzdem optisch zentriert.
-   Bricht der Titel auf sehr schmalen Screens zweizeilig um, bleibt der Button dank
-   align-items:center senkrecht zentriert neben ihm stehen. */
-header{
-  position:relative;display:grid;grid-template-columns:44px 1fr 44px;
-  align-items:center;column-gap:10px;
-}
-header h1{grid-column:2;justify-self:center;text-align:center;}
-.nav-toggle{
-  grid-column:3;justify-self:end;
-  width:44px;height:44px;border:1px solid rgba(255,255,255,.8);border-radius:50%;
-  background:rgba(255,255,255,.16);color:#fff;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
-}
-/* v3.45.0: SVG-Balken statt Unicode-Glyph "☰" -- Zentrierung/Größe waren fontabhängig,
-   jetzt per Flex + fixer SVG-Größe garantiert (analog .card-icon svg). */
-.nav-toggle svg{width:22px;height:22px;display:block;}
-.nav-toggle:active{background:rgba(255,255,255,.3);}
+/* Kopfzeile: bis v3.66.0 ein 3-Spalten-Grid (Button-Breite | Titel | Button), damit der
+   Hamburger-Button (rechte Spalte) den zentrierten Titel nie überlagert/"verschwimmen"
+   ließ. Seit v3.67.0 (Bottom-Tab-Navigation ersetzt das Burgermenü) gibt es keinen
+   Kopfzeilen-Button mehr -- einfache Zentrierung reicht. */
+header{position:relative;text-align:center;}
 
 /* Von hidden-Attribut abhängige Sichtbarkeit: eigene author-Regel mit höherer
    Spezifität als [class]{display:...}, damit sie zuverlässig greift (kein
@@ -210,9 +201,47 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
 }
 .nav-link:active{background:var(--bg);}
 
+/* Bottom-Tab-Navigation (v3.67.0): ersetzt das Burgermenü vollständig auf Mobil, s.
+   pizza-rechner-mobile.html. Buttons nutzen dieselbe .nav-item-Klasse wie zuvor die
+   Burgermenü-Einträge (js/nav.js-Verdrahtung unverändert) -- die Regeln hier überschreiben
+   deren generisches .nav-item/.nav-item.active-Aussehen (vertikale Liste, s. oben) gezielt
+   für diesen Kontext per höherer Selektor-Spezifität (2 bzw. 3 Klassen statt 1 bzw. 2).
+   58px Inhaltshöhe (exkl. safe-area) muss synchron zu .quickbar/.wrap/<footer> oben
+   bleiben, falls sich Padding/Icon-Größe hier je ändert. */
+.bottom-tabs{
+  position:fixed;left:0;right:0;bottom:0;z-index:30;
+  display:flex;background:var(--card);border-top:1px solid var(--line);
+  padding:6px calc(4px + env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) calc(4px + env(safe-area-inset-left));
+  box-shadow:0 -4px 12px rgba(0,0,0,.08);
+}
+.bottom-tabs .nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  width:auto;text-align:center;min-height:44px;padding:4px 2px;
+  border:none;border-radius:10px;background:none;color:var(--muted);
+  font-size:11px;font-weight:600;
+}
+.bottom-tabs .nav-item svg{width:22px;height:22px;flex-shrink:0;}
+.bottom-tabs .nav-item:active{background:var(--bg);}
+.bottom-tabs .nav-item.active{background:var(--bg);border-left:none;color:var(--tomato-text);}
+
+/* Sekundär-Navigation (Segmented Control) für die drei Rechner-Unterbereiche
+   (Rechner/Rezepte/Zeitplan), oben in jeder der drei Ansichten eingebettet -- ersetzt
+   die frühere Burgermenü-Gruppe "Teig-Rechner". */
+.calc-subnav{
+  display:flex;gap:6px;background:var(--bg);border:1px solid var(--line);
+  border-radius:var(--radius);padding:4px;margin-bottom:18px;
+}
+.calc-subnav .nav-item{
+  flex:1;width:auto;text-align:center;padding:9px 6px;min-height:44px;
+  border:none;border-radius:8px;background:none;color:var(--ink);
+  font-size:13px;font-weight:600;
+}
+.calc-subnav .nav-item:active{background:var(--card);}
+.calc-subnav .nav-item.active{background:var(--tomato);border-left:none;color:#fff;}
+
 /* Statische Einheit neben Slider+Zahlenfeld (ersetzt die frühere doppelte rote Zahl
    oberhalb im Label) — rein visueller Hinweis, Screenreader bekommen die Einheit über
    aria-describedby auf beiden Eingabefeldern. */
 .row .unit{font-size:13px;color:var(--muted);flex-shrink:0;}
 
-@media print{.quickbar{display:none;}.nav-toggle,.nav-overlay{display:none!important;}}
+@media print{.quickbar,.bottom-tabs{display:none!important;}.nav-overlay{display:none!important;}}
