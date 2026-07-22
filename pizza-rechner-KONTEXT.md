@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-22 · Aktuelle Version: v3.63.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-22 · Aktuelle Version: v3.64.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -179,20 +179,25 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Willkommens-Screen / Einführung (v3.63.0) = aktueller Stand
+## Globale Hefemengen-/Verschwendungs-Anpassung & Aufräumarbeiten (v3.64.0) = aktueller Stand
 
-Direkter Nutzerauftrag (kein Backlog-Punkt): neues Modal-Overlay `js/onboarding.js`
-stellt die 4 Kernfunktionen (Presets, Erweiterter Modus, Zeitplan, Anleitung & Timer)
-plus einen kombinierten Hinweis auf Einstellungen-Menü/Erweiterten Modus vor. Erscheint
-automatisch beim allerersten Start (kein `pizzaOnboardingDontShow`-Flag in localStorage),
-jederzeit erneut über den neuen Burgermenü-Punkt „Einführung". Checkbox „Beim nächsten
-Start nicht mehr anzeigen" steuert NUR das automatische Wiedererscheinen — schließbar
-auf 4 Wegen (X, Escape, Backdrop-Klick, CTA-Button), alle persistieren den
-Checkbox-Stand gleichermaßen. Eigener Fokus-Trap analog zum Burgermenü-Muster, `js/nav.js`
-um `PZ.closeNav`-Export + Guard für Menüpunkte ohne `data-goto` ergänzt. Tests unverändert
-614/614 (Modul lädt bewusst nicht in `tests/test.html`, reines DOM-Wiring, per Headless-
-Klicktests inkl. Tab-Trap verifiziert). **Volle Details:**
-`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Willkommens-Screen / Einführung (v3.63.0)".
+Direkter Nutzerauftrag (kein Backlog-Punkt), Rückfrage-Runde vorab: zwei neue globale
+Kalibrierungswerte im Einstellungen-Menü, `js/settings.js` (`PZ.ADJUST`, eigener
+localStorage-Key `pizzaRechnerAdjustments`) + Stepper-UI (`.adjust-*`, wiederverwendet
+`.party-qty-*`-CSS). „Hefemenge anpassen" (−50…+100 %, Default 0) fließt in `js/calc.js`
+als Faktor auf die Hefe-Bäckerprozentzahl in den Nenner ein (Masseerhaltung bleibt exakt
+erhalten). „Verschwendung anpassen" (0…15 %, Default 2 %) erhöht `total` VOR der
+Zutaten-Aufteilung; neuer Hinweistext `#wasteNote` im Ergebnis-Panel erklärt den Puffer.
+Dazu in derselben Session gebündelt: (1) Bugfix Mobil-Onboarding (v3.63.0 zeigte sich auf
+Mobil linksbündig/schmal statt zentriert, `css/mobile.css` überschrieb die Overrides aus
+`css/styles.css` wegen gleicher Selektor-Spezifität + späterer Ladereihenfolge — jetzt in
+`css/mobile.css` erneut hergestellt); (2) 5. Onboarding-Punkt „Pizza Party" ergänzt;
+(3) alle Gedankenstriche (—) aus `js/i18n-dict.js` und sämtlichen `.html`-Dateien
+(inkl. `tests/test.html`) entfernt und durch Doppelpunkt/Komma/Klammern ersetzt (reiner
+Stil-Wunsch, Code-Kommentare in anderen `js/*.js`-Dateien bewusst nicht angefasst — außerhalb
+des benannten Scopes). Tests 614→**657** grün. **Volle Details:**
+`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Globale Hefemengen-/Verschwendungs-Anpassung
+& Aufräumarbeiten (v3.64.0)".
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -357,7 +362,7 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.63.0)
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.64.0)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
@@ -378,7 +383,9 @@ js/i18n.js           PZ.t()/PZ.setLang() — Deutsch/Englisch-Sprachversion (v3.
                      Seit v3.55.0 reine Laufzeit-Engine (übernimmt DICT von js/i18n-dict.js), PZ.
                      _i18nAdd bleibt als Hook für spätere, nach dieser Datei ladende Ergänzungen
 js/settings.js       PZ.FLAGS — Feature-Flags fürs Einstellungen-Menü (v3.16.0), eigener
-                     localStorage-Key `pizzaRechnerFeatureFlags`, vorwärtskompatibler Merge mit DEFAULTS
+                     localStorage-Key `pizzaRechnerFeatureFlags`, vorwärtskompatibler Merge mit DEFAULTS.
+                     Seit v3.64.0 zusätzlich PZ.ADJUST (Hefemengen-/Verschwendungs-Anpassung, eigener
+                     Key `pizzaRechnerAdjustments`, geklemmt per PZ._clampAdjust())
 js/theme.js          Dunkelmodus (v3.47.0): folgt `prefers-color-scheme`, bis der manuelle
                      Umschalter im Einstellungen-Menü übersteuert (persistiert)
 js/widgets.js        Gemeinsame Widget-Fabriken (v3.56.0, vorher in js/ui.js + js/newrecipe.js +
@@ -423,7 +430,7 @@ js/onboarding.js     Willkommens-Screen / Einführung (v3.63.0): eigenständiges
                      eigenem Fokus-Trap, stellt 4 Kernfunktionen vor, automatisch beim Erststart
                      + jederzeit über Burgermenü-Punkt "Einführung" aufrufbar, Persistenz via
                      localStorage-Key pizzaOnboardingDontShow. Läuft als letztes Script (nach nav.js)
-tests/test.html      614 Prüfungen in 24 Kategorien (Doppelklick, kein Server) — lädt 16 der 25
+tests/test.html      657 Prüfungen in 25 Kategorien (Doppelklick, kein Server) — lädt 16 der 25
                      js/*-Module direkt (dom/state/i18n-dict/i18n/settings/theme/widgets/flour/
                      schedule/guide/calc/print/pdf/storage/share/party); ui.js, timer.js,
                      presets.js, newrecipe.js, glossary.js, main.js, nav.js, simplemode.js,
@@ -440,7 +447,7 @@ kommuniziert nur über `window.PZ`. `onboarding` MUSS nach `nav` geladen werden 
 `flour`/`ui`/`newrecipe` geladen werden** (liefert PZ.makeLink/makeSeg/makePrefStages/
 fillFlourSelect, die diese drei Module beim eigenen Laden direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.63.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.64.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
@@ -497,12 +504,13 @@ nach dem Rebuild, gegenprüfen), sonst zeigt die Live-App die falsche Version an
 - **Versionen-Workflow (Pflicht bei jeder Änderung):** kompletten lauffähigen Stand nach
   `Versionen/vX.Y.Z - [Beschreibung]/` kopieren (html, index, css/, js/, README; tests/ optional).
   SemVer: Patch=Fix, Minor=Feature, Major=Umbau. `?v=` in der HTML mitziehen.
-- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 614 Prüfungen in
-  24 Kategorien** (s. Dateistruktur oben): Bäckerprozente, DDT/Eis, Vorteig-Aufteilung, Trockenhefe,
+- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 657 Prüfungen in
+  25 Kategorien** (s. Dateistruktur oben): Bäckerprozente, DDT/Eis, Vorteig-Aufteilung, Trockenhefe,
   Schedule-Schwellen, Mehl-Warnung, Backzeit-Skalierung, Olivenöl (Masseerhaltung), Anleitungs-
   Hinweise, Randfälle/Edge Cases, Kombinationen, Zeitplan-Rückwärtsrechnung, Einkaufsliste,
   Speichern & Laden, Teilen-Link, Feature-Flags/Einstellungen, Zucker/New-York-Style,
-  Rezepte-Backup, PDF-Export, Pizza-Party-Planer, Sprachversion DE/EN, Dunkelmodus. Nach
+  Rezepte-Backup, PDF-Export, Pizza-Party-Planer, Sprachversion DE/EN, Dunkelmodus,
+  Hefemengen-/Verschwendungs-Anpassung. Nach
   Logik-Änderungen laufen lassen. `js/timer.js` (Notification/setInterval/Web-Audio-API) und
   `js/newrecipe.js` (reines DOM-Wiring) werden bewusst **nicht** in `tests/test.html` geladen —
   beide stattdessen manuell bzw. per isoliertem Headless-Aufbau verifiziert. Die Wachstums-
@@ -1027,15 +1035,24 @@ Keine Code-Änderung durch den Audit nötig.
   automatisch beim Erststart + jederzeit über Burgermenü)~~ — **erledigt in v3.63.0**
   (kein Backlog-Punkt, direkter Nutzerauftrag mit Rückfrage-Runde; s. Abschnitt
   „Willkommens-Screen / Einführung (v3.63.0)" oben).
+- ~~Globale Hefemengen- und Verschwendungs-Anpassung (zwei neue %-Stepper im
+  Einstellungen-Menü)~~ — **erledigt in v3.64.0** (kein Backlog-Punkt, direkter
+  Nutzerauftrag mit Rückfrage-Runde; s. Abschnitt „Globale Hefemengen-/
+  Verschwendungs-Anpassung & Aufräumarbeiten (v3.64.0)" oben). Im selben Zyklus
+  gebündelt: Mobil-Onboarding-Zentrierungs-Bugfix, 5. Onboarding-Punkt „Pizza Party",
+  Gedankenstrich-Bereinigung in `js/i18n-dict.js`/allen `.html`-Dateien.
 
-**Stand v3.63.0: alle bisherigen versionierten Backlog-Punkte sind abgearbeitet**
-(durchgestrichen oben) — offen ist nur die neue, noch unspezifizierte Foto-Anleitung-Idee
+**Stand v3.64.0: alle bisherigen versionierten Backlog-Punkte sind abgearbeitet**
+(durchgestrichen oben), offen ist nur die neue, noch unspezifizierte Foto-Anleitung-Idee
 ganz oben in dieser Liste. Der Bring!-Deeplink-Testaufbau ist abschließend geklärt
 (verworfen, vollständig zurückgebaut, keine offene Frage mehr). Drei direkte
 Nutzeraufträge bereits als Warteschlange für die nächsten Zyklen angekündigt (noch nicht
-umgesetzt, in dieser Reihenfolge): 1) Globale Hefemengen- und Verschwendungs-Anpassung
-(zwei neue %-Regler im Einstellungen-Menü), 2) Einheitensystem-Umschaltung
-Metrisch/Imperial (automatische Spracherkennung + persistente manuelle Übersteuerung).
+umgesetzt, in dieser Reihenfolge): 1) Einheitensystem-Umschaltung Metrisch/Imperial
+(automatische Spracherkennung + persistente manuelle Übersteuerung), 2) Glossar-Erweiterung
+um „Werkzeuge & Ausrüstung" + „Pizzabeläge" (zwei neue Abschnitte, generische Texte DE/EN),
+3) Bottom-Tab-Navigation auf Mobil. **Stil-Hinweis für alle künftigen Texte (Glossar,
+i18n-Strings, Onboarding, sonstige Beschreibungen):** keine Gedankenstriche (Em-Dash)
+verwenden, stattdessen Komma, Punkt, Doppelpunkt oder Klammern, je nach Kontext.
 Für einen sonst neuen Zyklus wieder frisches Brainstorming in Phase 1 statt eines
 vorgegebenen Auftrags.
 

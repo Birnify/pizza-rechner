@@ -8,6 +8,113 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Globale Hefemengen-/Verschwendungs-Anpassung & Aufräumarbeiten (v3.64.0)
+
+Direkter Nutzerauftrag (kein Backlog-Punkt), Brainstorming-Phase mit Rückfrage-Runde.
+Motivation: manche Nutzer erleben regelmäßig stärkere/schwächere Hefe als von der App
+berechnet, und beim Kneten geht immer etwas Teig an Schüssel/Händen/Maschine verloren,
+sodass am Ende weniger Teiglinge im Zielgewicht rauskommen als geplant. Zwei neue,
+globale (rezeptunabhängige) Kalibrierungswerte im Einstellungen-Menü sollen das
+ausgleichen.
+
+**Vier Design-Entscheidungen per Rückfrage geklärt, bevor die Umsetzung begann:**
+1. **Formel-Wirkung Hefe-Aufschlag:** fließt in die effektive Hefe-Bäckerprozentzahl im
+   Nenner der Kernformel ein (analog zu Öl/Zucker) — Masseerhaltung
+   (Mehl+Wasser+Salz+Hefe+Öl+Zucker=Gesamtgewicht) bleibt dadurch exakt erhalten, statt
+   nachträglich auf die fertig berechnete Hefemenge aufzuschlagen (was das Gesamtgewicht
+   verändert hätte).
+2. **Formel-Wirkung Verschwendungsaufschlag:** erhöht das Gesamtgewicht
+   (`Teiglinge × Gewicht × (1 + Verschwendung%)`) VOR der Aufteilung auf die Zutaten,
+   plus ein kurzer Hinweistext im Ergebnis-Panel, damit die Diskrepanz zwischen der
+   großen Gesamtteig-Zahl und der kleineren „N × Gewicht"-Unterzeile nicht wie ein
+   Rechenfehler aussieht.
+3. **Default-Wert Verschwendung:** 2 % (typischer Kneteverlust an Händen/Maschine/Schüssel).
+4. **UI-Bedienelement:** Stepper mit +/− Buttons + editierbarem Zahlenfeld (wie der
+   bereits bestehende Pizza-Party-Stückzahl-Stepper), NICHT der sonst für Rezeptregler
+   übliche Slider+Zahlenfeld-Kombo. Wertebereiche: Hefemenge anpassen −50…+100 %
+   (Schritt 5 %), Verschwendung anpassen 0…15 % (Schritt 1 %).
+
+**Technische Umsetzung:** zwei neue Settings-Werte in `js/settings.js`
+(`PZ.ADJUST = {yeastAdjust, wasteAdjust}`), eigener localStorage-Key
+`pizzaRechnerAdjustments` (getrennt von `pizzaRechnerFeatureFlags`/`pizzaRechner`/
+`pizzaTheme`/`pizzaSimpleMode`/`pizzaOnboardingDontShow`), Default
+`{yeastAdjust:0, wasteAdjust:2}`. `PZ._clampAdjust(key, v)` klemmt auf Bereich UND
+rundet auf die Schrittweite (verhindert krumme Werte durch direkte Zahlenfeld-Eingabe),
+`PZ.setAdjust(key, value)` persistiert sofort und löst `PZ.calc()` neu aus.
+`PZ._mergeAdjust()` (Vorwärtskompatibilitäts-Merge, analog `PZ._mergeFlags()`) für
+Tests exponiert. Neue Stepper-UI (`.adjust-stepper`/`.adjust-btn`/`.adjust-input`,
+CSS teilt sich bewusst dieselben Regeln wie `.party-qty-*` statt eines zweiten
+Bedienmuster-Vokabulars) als zwei neue Zeilen am Ende der bestehenden
+„Einstellungen"-Card (Desktop + Mobil identisch).
+
+**`js/calc.js` (`calcCore`):** `totalBase = N*W` (reine Ziel-Menge, unverändert),
+`total = totalBase * (1 + wasteAdj/100)` NEU als das tatsächlich für die
+Zutaten-Aufteilung verwendete Gesamtgewicht. `y = (state.yeast/100) * (1 + yeastAdj/100)`
+NEU als effektive Hefe-Bäckerprozentzahl, direkt im Nenner der Mehl-Formel verwendet.
+`R` liefert zusätzlich `totalBase`/`wasteAdj` zurück (für die Hinweistext-Anzeige).
+`js/schedule.js`/`js/guide.js` unverändert (Vorteig-Aufteilung/Hefe-Reihenfolge/
+Mehl-Warnung greifen wie gehabt auf `PZ.R`/`PZ.state` zu, keine Anpassung nötig, da die
+beiden neuen Werte bereits vollständig in `PZ.R.yeast`/`PZ.R.total` eingerechnet sind).
+`renderResult()`: neues `#wasteNote`-Element (in `.total`, unter der „N × Gewicht"-Zeile)
+blendet sich bei `wasteAdj < 0,05` komplett aus, zeigt sonst „inkl. X % Verschwendungspuffer".
+
+**Kritischer Test-Isolations-Punkt:** da `wasteAdjust` einen Default von **2 %** (nicht 0)
+hat, hätte das reale Default allein ALLE bestehenden Masseerhaltungs-Tests
+(`total === N*W`) in `tests/test.html` gebrochen. Deshalb dieselbe Baseline-Technik wie
+bei `PZ.FLAGS` (v3.16.0): `PZ.ADJUST = {yeastAdjust:0, wasteAdjust:0}` direkt nach dem
+Laden explizit für die gesamte restliche Testsuite gesetzt, die eigentliche
+Adjust-Logik in einer eigenen Sektion 25 geprüft (Default-Werte, Wertebereiche,
+`_clampAdjust()`, `_mergeAdjust()`, `setAdjust()`-Persistenz, Rechenwirkung beider
+Aufschläge einzeln und kombiniert mit Vorteig, `#wasteNote`-Render-Effekt) — 43 neue
+Prüfungen, alle mit Backup/Restore des echten localStorage-Stands. **614 → 657**
+Prüfungen, alle grün (Headless-Edge-Dump).
+
+**Zusätzlich in derselben Session gebündelt (drei kleinere, klar umrissene
+Zwischenaufträge, kein eigener `/define-feature`-Zyklus nötig):**
+
+1. **Bugfix Mobil-Onboarding-Zentrierung** (Nebenbefund/Live-Bug aus v3.63.0, vom Nutzer
+   selbst reproduziert und mit Root Cause gemeldet): der Willkommens-Screen erschien auf
+   `pizza-rechner-mobile.html` linksbündig als schmaler ~300px-Seiten-Drawer statt
+   zentriert/breit wie auf Desktop. Ursache: `css/mobile.css` definiert `.nav-overlay`/
+   `.nav-panel` mobil-spezifisch neu (wegen `safe-area-inset`-Padding) und lädt NACH
+   `css/styles.css` — die dortigen `.onboarding-overlay`/`.onboarding-panel`-Overrides
+   (Zentrierung, `width:min(92vw,520px)`) haben dieselbe Selektor-Spezifität wie
+   `.nav-overlay`/`.nav-panel` und wurden durch die spätere Ladereihenfolge auf Mobil
+   wieder verworfen (Desktop lädt kein `mobile.css`, war daher nie betroffen). Fix:
+   analoge `.onboarding-overlay`/`.onboarding-panel`-Overrides auch in `css/mobile.css`
+   ergänzt (nach dem `.nav-panel`-Block dort), kombiniert mit denselben
+   `safe-area-inset`-Anpassungen wie `.nav-panel` (oben+unten statt oben+links, da der
+   Screen zentriert statt am linken Rand verankert ist). Per Headless-Screenshot
+   (375×812) verifiziert.
+2. **5. Onboarding-Feature-Punkt „Pizza Party"** ergänzt (kleine, klar umrissene
+   Ergänzung): Icon wiederverwendet (Pizza-Schnitte-Symbol der bestehenden
+   Pizza-Party-Karte), Text selbst formuliert (DE+EN), Desktop + Mobil identisch. Kein
+   Eingriff in `js/onboarding.js` nötig (der Tab-Trap besteht weiterhin nur aus
+   X-Button/Checkbox/CTA-Button, reine Vorstellungstexte sind nicht interaktiv).
+3. **Stil-Bereinigung: keine Gedankenstriche (—/Em-Dash) mehr** (expliziter,
+   rückwirkender Stil-Wunsch — spätere Präzisierung des Nutzers, dass Gedankenstriche
+   „super nach KI aussehen"): alle 189 Fundstellen in `js/i18n-dict.js`, 32 in
+   `pizza-rechner.html`, 35 in `pizza-rechner-mobile.html` sowie 179 in `tests/test.html`
+   durch Doppelpunkt (Standardfall, elaborierender Nebensatz), Komma+„und" (koordinierte
+   Nebensätze) oder Klammern (reine Einschübe/Kennzeichnungen wie das leere
+   Rezepte-Dropdown-Element) ersetzt. Bewusst NICHT angefasst: Halbgeviertstriche
+   (–, „1–2 min"-Zahlbereiche) sind ein anderes Zeichen mit anderer, unauffälliger
+   typografischer Funktion und nicht Teil der Beanstandung; Code-Kommentare in den
+   übrigen `js/*.js`-Dateien (calc.js, guide.js, party.js, storage.js usw.) waren nicht
+   Teil des benannten Scopes („js/i18n-dict.js und alle .html-Dateien") und bleiben
+   unverändert — `pizza-rechner-mobile-standalone.html` enthält dadurch nach dem
+   Neubau weiterhin einzelne Gedankenstriche aus inline-kopierten JS-Kommentaren
+   (keine sichtbaren Nutzertexte). Alle 657 Tests bleiben grün (keine Test-Assertion
+   prüfte den Gedankenstrich als Zeichen).
+
+**Geändert:** `js/settings.js`, `js/calc.js`, `js/i18n-dict.js`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`, `css/styles.css`, `css/mobile.css`, `tests/test.html`.
+`?v=` auf `3.64.0` gezogen (Desktop + Mobil, Cache-Busting + Footer-Version).
+`pizza-rechner-mobile-standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v3.64.0 - Hefe- und Verschwendungsanpassung/` enthält den vollständigen
+Schnappschuss. `js/schedule.js`/`js/guide.js` inhaltlich unverändert (lesen nur bereits
+korrekt vor-berechnete `PZ.R`-Werte).
+
 ## Willkommens-Screen / Einführung (v3.63.0)
 
 Direkter Nutzerauftrag (kein Backlog-Punkt), Brainstorming-Phase mit Rückfrage-Runde:

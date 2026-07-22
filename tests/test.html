@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Pizzateig-Rechner — Tests</title>
+<title>Pizzateig-Rechner: Tests</title>
 <style>
   body{font-family:-apple-system,"Segoe UI",Roboto,sans-serif;background:#faf6f0;color:#2b2420;margin:0;padding:24px;line-height:1.5;}
   h1{font-size:20px;}
@@ -17,7 +17,7 @@
   .assert.fail{color:#a8341f;font-weight:700;}
   .assert.fail::before{content:"✗ ";}
   #stubs{position:absolute;left:-9999px;top:-9999px;}
-  /* Duplikat der Feature-Flag-"hints"-Regel aus css/styles.css (v3.17.0) — test.html
+  /* Duplikat der Feature-Flag-"hints"-Regel aus css/styles.css (v3.17.0): test.html
      lädt bewusst kein echtes App-Stylesheet (reine Rechenlogik-Tests, eigenes minimales
      Test-Runner-CSS), daher hier 1:1 dieselbe Regel nur für den DOM-Effekt-Test unten. */
   body.hints-off .hint,
@@ -26,8 +26,8 @@
 </style>
 </head>
 <body>
-<h1>🍕 Pizzateig-Rechner — Rechenlogik-Tests</h1>
-<p>Per Doppelklick öffnen. Testet die echten Module gegen erwartete Werte — ohne Server, ohne Installation.</p>
+<h1>🍕 Pizzateig-Rechner: Rechenlogik-Tests</h1>
+<p>Per Doppelklick öffnen. Testet die echten Module gegen erwartete Werte: ohne Server, ohne Installation.</p>
 <div id="summary">läuft…</div>
 <div id="results"></div>
 
@@ -58,6 +58,7 @@
     <button type="button" data-theme-choice="dark">Dunkel</button>
   </div>
   <div id="themeAnnounce" role="status" aria-live="polite"></div>
+  <div id="wasteNote"></div>
 </div>
 
 <script src="../js/dom.js"></script>
@@ -86,7 +87,7 @@
   // --- Sprachversion (js/i18n.js, v3.28.0): Determinismus erzwingen -----------------
   // Die gesamte restliche Testsuite prüft deutsche Textausgaben 1:1 als String-Literale
   // (z. B. "Kneten", "Stockgare", "Rezept 1", "Tipp: "). PZ.t() liefert je nach aktiver
-  // Sprache unterschiedlichen Text — ohne diesen Fix würde die automatische
+  // Sprache unterschiedlichen Text: ohne diesen Fix würde die automatische
   // Spracherkennung (navigator.language des Test-Browsers) oder ein alter, im selben
   // Browser-Profil liegender "pizzaLang"-Wert aus einem echten Nutzungslauf hier
   // durchschlagen und praktisch alle Textvergleiche unten zum Flackern bringen. Deshalb
@@ -121,15 +122,15 @@
   // --- Stubs für js/storage.js: ui.js ist hier nicht geladen (kein DOM-Markup
   // für Slider/Segmente), storage.js ruft aber PZ.set/selectSeg/applyMethod/
   // updateTimeLabel auf. Diese Stubs übernehmen nur die state-Zuweisung, ohne
-  // echtes UI zu berühren — die Rechenlogik-Module bleiben unverändert getestet.
+  // echtes UI zu berühren: die Rechenlogik-Module bleiben unverändert getestet.
   PZ.set = new Proxy({}, { get: () => (val) => { /* no-op, state wird von storage.js direkt per Object.assign gesetzt */ } });
   PZ.selectSeg = function () {};
   PZ.applyMethod = function () {};
   PZ.updateTimeLabel = function () {};
 
-  // --- Feature-Flags (js/settings.js) — Baseline für die gesamte restliche Testsuite ---
+  // --- Feature-Flags (js/settings.js): Baseline für die gesamte restliche Testsuite ---
   // Alle bestehenden Tests unten sind so geschrieben, als wären sämtliche Zusatzfunktionen
-  // aktiv (Stand vor Einführung der Feature-Flags in dieser Version) — sonst würde z. B.
+  // aktiv (Stand vor Einführung der Feature-Flags in dieser Version): sonst würde z. B.
   // der Default "freezeHint: false" den bestehenden Einfrier-Hinweis-Test brechen. Deshalb
   // hier explizit auf "alles an" setzen; die eigentliche Flag-Logik (Defaults, Persistenz,
   // Render-Effekt der einzelnen Flags) wird weiter unten in einer eigenen Sektion geprüft,
@@ -137,6 +138,14 @@
   Object.assign(PZ.FLAGS, {
     timer: true, timerSystem: true, share: true, shopping: true, freezeHint: true, multiRecipes: true, hints: true
   });
+
+  // --- Globale Hefemengen-/Verschwendungs-Anpassung (js/settings.js, v3.64.0) ---
+  // Baseline für die gesamte restliche Testsuite: beide Werte auf 0 -- sonst würde
+  // allein der reale Default (wasteAdjust: 2) alle bestehenden Masseerhaltungs-Tests
+  // brechen (total wäre nicht mehr exakt N*W). Die eigentliche Adjust-Logik (Defaults,
+  // Klemmen, Persistenz, Rechenwirkung) wird in einer eigenen Sektion geprüft, die
+  // gezielt von dieser Baseline abweicht und sie danach wiederherstellt.
+  PZ.ADJUST = { yeastAdjust: 0, wasteAdjust: 0 };
 
   // --- Haupt-Testfall: setzt state, rechnet, prüft R-Werte ---
   function testCase(name, overrides, buildChecks) {
@@ -250,7 +259,7 @@
   ]);
 
   testCase('DDT · Hand, warmer Raum (room 25, ddt 24)', { room: 25, flourTemp: 25, ddt: 24, knead: '3' }, R => [
-    // wT = 24*3 - 25 - 25 - 3 = 19 — kälter als Ttap (25°), also wird Eis gebraucht (nicht 0!)
+    // wT = 24*3 - 25 - 25 - 3 = 19: kälter als Ttap (25°), also wird Eis gebraucht (nicht 0!)
     // x = 375.53*4.18*(25-19) / (334 + 4.18*19 + 4.18*6) ≈ 21 g
     ['wT', R.wT, 19, 0],
     ['ice', R.ice, 21, 2],
@@ -302,7 +311,7 @@
   testCase('DDT · Eiswasser-Extremfall: warmes Mehl allein treibt den Eisbedarf (Raum moderat)', {
     room: 22, flourTemp: 35, ddt: 24, knead: '6'
   }, R => [
-    // wT = 24*3 - 22 - 35 - 6 = 9 — obwohl der Raum mit 22° gar nicht extrem ist, macht allein
+    // wT = 24*3 - 22 - 35 - 6 = 9: obwohl der Raum mit 22° gar nicht extrem ist, macht allein
     // das warme Mehl (35°) einen spürbaren Eisbedarf nötig (Maschinenknetung, Reibung 6).
     ['wT', R.wT, 9, 0],
     ['ice', R.ice, 48, 3],
@@ -311,7 +320,7 @@
   testCase('DDT · Kaltes Mehl vermeidet Eisbedarf trotz warmem Raum', {
     room: 30, flourTemp: 5, ddt: 24, knead: '3'
   }, R => [
-    // wT = 24*3 - 30 - 5 - 3 = 34 > Ttap(30)+1 → "anwärmen"-Zweig, kein Eis nötig — das kalte
+    // wT = 24*3 - 30 - 5 - 3 = 34 > Ttap(30)+1 → "anwärmen"-Zweig, kein Eis nötig: das kalte
     // Mehl (5°, z.B. aus dem Kühlschrank) überkompensiert den warmen Raum vollständig.
     ['wT', R.wT, 34, 0],
     ['ice', R.ice, 0, 0],
@@ -336,17 +345,17 @@
   })();
 
   // --- Bugfix v3.48.0: Eismenge bei Vorteig (Biga/Poolish) rechnet gegen mWater
-  // (Hauptteig-Restwasser), NICHT gegen die gesamte Wassermenge — das Vorteig-Wasser ist
+  // (Hauptteig-Restwasser), NICHT gegen die gesamte Wassermenge: das Vorteig-Wasser ist
   // laut eigener Anleitung (guide.step.prefWeigh.tip) bewusst zimmerwarm und Stunden vorher
   // schon verbraucht, braucht also kein Eis. Vorher: bei hohem Vorteig-Anteil (hier Biga
   // pref 100 %, bhyd 45 % → mWater nur ~31 % der Gesamtwassermenge) wurde die Eismenge
   // fälschlich gegen die vollen ~387 g Gesamtwasser statt der tatsächlich zu kühlenden
-  // ~119 g Hauptteig-Restwasser berechnet — Ergebnis-Panel empfahl viel zu viel Eis. ---
+  // ~119 g Hauptteig-Restwasser berechnet: Ergebnis-Panel empfahl viel zu viel Eis. ---
   testCase('Bugfix v3.48.0 · Biga pref 100 %/bhyd 45 % · Eis rechnet gegen mWater statt water', {
     method: 'biga', pref: 100, bhyd: 45, hyd: 65, room: 30, flourTemp: 30, ddt: 24, knead: '6'
   }, R => {
     // wT = 24*3-30-30-6 = 6; mWater ≈ 118,98 g (nicht water ≈ 386,67 g)
-    // ice(mWater) ≈ 26 g — mit dem alten Bug (M=water) wären es ≈ 84 g gewesen.
+    // ice(mWater) ≈ 26 g: mit dem alten Bug (M=water) wären es ≈ 84 g gewesen.
     return [
       ['wT', R.wT, 6, 0],
       ['mWater (Kontrolle: deutlich kleiner als water)', R.mWater, 118.98, 1],
@@ -355,7 +364,7 @@
     ];
   });
 
-  // --- Bugfix v3.48.0, Extremfall: Poolish-Preset "napoli_poolish" (pref 66 bei hyd 66) —
+  // --- Bugfix v3.48.0, Extremfall: Poolish-Preset "napoli_poolish" (pref 66 bei hyd 66):
   // das gesamte Wasser steckt bereits im Poolish, mWater ist exakt 0. Vorher zeigte das
   // Ergebnis-Panel trotzdem weiterhin "Nimm X g Leitungswasser + Y g Eis", obwohl es gar
   // kein Hauptteig-Schüttwasser mehr zu temperieren gibt. Jetzt: eigene Erklär-Notiz statt
@@ -377,7 +386,7 @@
       { label: '#tempStage (ganzer Wassertemperatur-Block) wird ausgeblendet', ok: tempStageHidden, actual: tempStageHidden, expected: true, tol: null }
     ]);
 
-    // Gegenprobe: zurück zu Direkt (mWater > 0) macht #tempStage wieder sichtbar —
+    // Gegenprobe: zurück zu Direkt (mWater > 0) macht #tempStage wieder sichtbar:
     // stellt sicher, dass display:none kein dauerhafter Zustand ist, sondern bei jedem
     // calc()-Lauf neu aus hasMixingWater abgeleitet wird.
     Object.assign(PZ.state, BASE);
@@ -391,7 +400,7 @@
   // ─────────────────────────────────────────────────────────────
   heading('3 · Vorteig-Aufteilung');
 
-  testCase('Biga · pref 100 %, bhyd 45 %, hyd 65 % — 100 % Hefe in Vorteig', {
+  testCase('Biga · pref 100 %, bhyd 45 %, hyd 65 %: 100 % Hefe in Vorteig', {
     method: 'biga', pref: 100, bhyd: 45, hyd: 65
   }, R => {
     // flour = 1000/1.681 = 594.88; pf = flour; pw = pf*0.45 = 267.70
@@ -407,7 +416,7 @@
     ];
   });
 
-  testCase('Biga · pref 70 % — 100 % Hefe in Vorteig, 30 % Mehl im Hauptteig', {
+  testCase('Biga · pref 70 %: 100 % Hefe in Vorteig, 30 % Mehl im Hauptteig', {
     method: 'biga', pref: 70, bhyd: 45, hyd: 62
   }, R => [
     ['pf = flour × 0,7',          R.pf,     R.flour * 0.7,  0.05],
@@ -417,7 +426,7 @@
     ['mFlour = flour × 0,3',      R.mFlour, R.flour * 0.3,  0.05],
   ]);
 
-  testCase('Poolish · pref 50 %, hyd 66 % — Poolish-Wasser ist 1:1 (100 %)', {
+  testCase('Poolish · pref 50 %, hyd 66 %: Poolish-Wasser ist 1:1 (100 %)', {
     method: 'poolish', pref: 50, hyd: 66
   }, R => [
     ['pf = flour / 2',        R.pf,     R.flour * 0.5, 0.05],
@@ -429,7 +438,7 @@
 
   // Regression: Poolish pref 100 % bei hyd 65 % → Vorteig-Wasser würde Gesamtwasser
   // übersteigen (negatives Restwasser). Muss auf hyd-% begrenzt werden.
-  testCase('Poolish · pref 100 %, hyd 65 % — wird auf 65 % begrenzt, kein negatives Wasser', {
+  testCase('Poolish · pref 100 %, hyd 65 %: wird auf 65 % begrenzt, kein negatives Wasser', {
     method: 'poolish', pref: 100, hyd: 65
   }, R => [
     ['prefClamped',            R.prefClamped, true],
@@ -440,7 +449,7 @@
   ]);
 
   // Biga bleibt bei pref 100 % unbegrenzt, solange bhyd < hyd
-  testCase('Biga · pref 100 %, bhyd 45 %, hyd 62 % — keine Begrenzung nötig', {
+  testCase('Biga · pref 100 %, bhyd 45 %, hyd 62 %: keine Begrenzung nötig', {
     method: 'biga', pref: 100, bhyd: 45, hyd: 62
   }, R => [
     ['nicht begrenzt', R.prefClamped, false],
@@ -449,14 +458,14 @@
 
   // Poolish-Clamp exakt an der Grenze: maxPref = hyd/1 * 100 = 65 % bei hyd 65 %.
   // pref genau 65 % darf NICHT geklemmt werden, pref 66 % (1 % drüber) MUSS geklemmt werden.
-  testCase('Poolish · pref exakt an der Grenze (65 % bei hyd 65 %) — keine Klemmung', {
+  testCase('Poolish · pref exakt an der Grenze (65 % bei hyd 65 %): keine Klemmung', {
     method: 'poolish', pref: 65, hyd: 65
   }, R => [
     ['nicht begrenzt', R.prefClamped, false],
     ['prefEff = 65',   R.prefEff, 65, 0.001],
   ]);
 
-  testCase('Poolish · pref 1 % über der Grenze (66 % bei hyd 65 %) — wird geklemmt', {
+  testCase('Poolish · pref 1 % über der Grenze (66 % bei hyd 65 %): wird geklemmt', {
     method: 'poolish', pref: 66, hyd: 65
   }, R => [
     ['begrenzt',       R.prefClamped, true],
@@ -464,9 +473,9 @@
   ]);
 
   // Regression-Anker: Biga kann ebenfalls geklemmt werden, sobald bhyd > hyd
-  // (bisher nur der unbegrenzte Fall bhyd < hyd getestet — diese Lücke schließen).
+  // (bisher nur der unbegrenzte Fall bhyd < hyd getestet: diese Lücke schließen).
   // bhyd 80 %, hyd 62 % → maxPref = 62/80*100 = 77,5 % → floor = 77.
-  testCase('Biga · bhyd 80 % > hyd 62 % — pref 77 % (an der Grenze) NICHT geklemmt', {
+  testCase('Biga · bhyd 80 % > hyd 62 %: pref 77 % (an der Grenze) NICHT geklemmt', {
     method: 'biga', pref: 77, bhyd: 80, hyd: 62
   }, R => [
     ['nicht begrenzt', R.prefClamped, false],
@@ -474,7 +483,7 @@
     ['mWater ≥ 0',     Math.max(0, R.mWater), R.mWater, 0.001],
   ]);
 
-  testCase('Biga · bhyd 80 % > hyd 62 % — pref 78 % (1 % drüber) wird geklemmt', {
+  testCase('Biga · bhyd 80 % > hyd 62 %: pref 78 % (1 % drüber) wird geklemmt', {
     method: 'biga', pref: 78, bhyd: 80, hyd: 62
   }, R => [
     ['begrenzt',       R.prefClamped, true],
@@ -482,7 +491,7 @@
     ['mWater ≥ 0',     Math.max(0, R.mWater), R.mWater, 0.001],
   ]);
 
-  testCase('Biga · bhyd 80 % > hyd 62 % — pref 100 % ebenfalls auf 77 % geklemmt', {
+  testCase('Biga · bhyd 80 % > hyd 62 %: pref 100 % ebenfalls auf 77 % geklemmt', {
     method: 'biga', pref: 100, bhyd: 80, hyd: 62
   }, R => [
     ['begrenzt',       R.prefClamped, true],
@@ -497,7 +506,7 @@
     ['yWord', R.yWord, '(trocken)'],
   ]);
 
-  testCase('Trockenhefe in Biga — 100 % in Vorteig', {
+  testCase('Trockenhefe in Biga: 100 % in Vorteig', {
     yeastType: 'dry', yeast: 0.30, method: 'biga', pref: 70
   }, R => [
     ['pYeast = gesamte Trockenhefe', R.pYeast, R.yeast, 0.001],
@@ -595,7 +604,7 @@
   heading('6 · Mehl-Warnung');
 
   // Caputo Pizzeria: maxH 48. Extrem lang → totalH = (4320+330)/60 = 77.5 h > 48 → zu lang
-  testFlourWarn('Gärzeit zu lang — Caputo Pizzeria + Extrem lang (77 h > max 48 h)', {
+  testFlourWarn('Gärzeit zu lang: Caputo Pizzeria + Extrem lang (77 h > max 48 h)', {
     flour: 'caputo_pizzeria', yeast: 0.05, hyd: 63
   }, html => [
     ['"zu lang" in Warnung', html.includes('zu lang')],
@@ -604,7 +613,7 @@
 
   // Caputo Manitoba Oro (W380): minH 48. Mittlere → totalH = (120+300)/60 = 7 h < 48 → zu kurz
   // hyd 72 liegt im Fenster [70,85], damit nur die Gärzeit-Warnung anschlägt.
-  testFlourWarn('Gärzeit zu kurz — Manitoba Oro + Mittlere Gare (7 h < min 48 h)', {
+  testFlourWarn('Gärzeit zu kurz: Manitoba Oro + Mittlere Gare (7 h < min 48 h)', {
     flour: 'caputo_manitoba', yeast: 0.5, hyd: 72
   }, html => [
     ['"zu kurz" in Warnung', html.includes('zu kurz')],
@@ -612,42 +621,42 @@
   ]);
 
   // Vorteig-Reife zählt mit: Biga (+24 h) + Lange Hauptgare (8,5 h) = 32,5 h ≥ minH 16 → OK
-  testFlourWarn('Keine Warnung — Biga-Reife zählt zur Gärzeit (Cuoco + Biga)', {
+  testFlourWarn('Keine Warnung: Biga-Reife zählt zur Gärzeit (Cuoco + Biga)', {
     flour: 'caputo_cuoco', method: 'biga', yeast: 0.3, hyd: 65
   }, html => [
     ['kein Warn-HTML', html.trim() === ''],
   ]);
 
   // Caputo Cuoco: minH 72. Extrem lang → totalH = 77.5 h, passt. hyd 65 = hydMin → kein Warn
-  testFlourWarn('Keine Warnung — Caputo Cuoco + Extrem lang + hyd 65 %', {
+  testFlourWarn('Keine Warnung: Caputo Cuoco + Extrem lang + hyd 65 %', {
     flour: 'caputo_cuoco', yeast: 0.05, hyd: 65
   }, html => [
     ['kein Warn-HTML', html.trim() === ''],
   ]);
 
   // Caputo Pizzeria: hydMax 65. hyd 70 → zu hoch
-  testFlourWarn('Hydration zu hoch — Caputo Pizzeria + 70 %', {
+  testFlourWarn('Hydration zu hoch: Caputo Pizzeria + 70 %', {
     flour: 'caputo_pizzeria', hyd: 70, yeast: 0.3
   }, html => [
     ['"zu hoch" in Warnung', html.includes('zu hoch')],
   ]);
 
   // Dallagiovanna Sofia: hydMin 60. hyd 55 → zu niedrig
-  testFlourWarn('Hydration zu niedrig — Dallagiovanna Sofia + 55 %', {
+  testFlourWarn('Hydration zu niedrig: Dallagiovanna Sofia + 55 %', {
     flour: 'dallag_sofia', hyd: 55, yeast: 1.5
   }, html => [
     ['"niedrig" in Warnung', html.includes('niedrig')],
   ]);
 
   // Caputo Nuvola: maxH 48, minH 12, hyd 60–65. Lange Gare (~26 h) + hyd 63 → alles OK
-  testFlourWarn('Keine Warnung — Caputo Nuvola + Lange Gare + hyd 63 %', {
+  testFlourWarn('Keine Warnung: Caputo Nuvola + Lange Gare + hyd 63 %', {
     flour: 'caputo_nuvola', hyd: 63, yeast: 0.3
   }, html => [
     ['kein Warn-HTML', html.trim() === ''],
   ]);
 
   // Preset-Plausibilität: die effektiven Werte jedes Presets dürfen KEINE Mehl-Warnung auslösen.
-  // (Spiegelt js/presets.js wider — bei Preset-Änderungen hier mitziehen.)
+  // (Spiegelt js/presets.js wider: bei Preset-Änderungen hier mitziehen.)
   const PRESET_STATES = {
     'napoli_klassisch': { method: 'direct', hyd: 60, salt: 2.8, oil: 2, yeast: 0.2, flour: 'caputo_pizzeria' },
     'napoli_65':        { method: 'direct', hyd: 65, salt: 2.8, oil: 2, yeast: 0.3, flour: 'caputo_pizzeria' },
@@ -666,13 +675,13 @@
 
   // Randfall: Hydration exakt an der oberen Grenze (hydMax) darf NICHT warnen (Code prüft >, nicht ≥).
   // Caputo Nuvola Super: hydMax 85. yeast 0.3 + balls-Kaltgare → Gärzeit 26 h liegt im Fenster [24,168].
-  testFlourWarn('Hydration exakt an hydMax (85 % · Nuvola Super) — keine Warnung', {
+  testFlourWarn('Hydration exakt an hydMax (85 % · Nuvola Super): keine Warnung', {
     flour: 'caputo_nuvola_super', hyd: 85, yeast: 0.3, coldStage: 'balls'
   }, html => [
     ['kein Warn-HTML', html.trim() === ''],
   ]);
 
-  testFlourWarn('Hydration 0,01 über hydMax (85,01 % · Nuvola Super) — Warnung "zu hoch"', {
+  testFlourWarn('Hydration 0,01 über hydMax (85,01 % · Nuvola Super): Warnung "zu hoch"', {
     flour: 'caputo_nuvola_super', hyd: 85.01, yeast: 0.3, coldStage: 'balls'
   }, html => [
     ['"zu hoch" in Warnung', html.includes('zu hoch')],
@@ -680,13 +689,13 @@
 
   // Randfall: Hydration exakt an der unteren Grenze (hydMin) darf NICHT warnen (Code prüft <, nicht ≤).
   // Dallagiovanna Sofia: hydMin 60, minH 0, maxH 24. Schnellgare (yeast 1,5) hat ~4,25 h Gärzeit.
-  testFlourWarn('Hydration exakt an hydMin (60 % · Dallag Sofia) — keine Warnung', {
+  testFlourWarn('Hydration exakt an hydMin (60 % · Dallag Sofia): keine Warnung', {
     flour: 'dallag_sofia', hyd: 60, yeast: 1.5
   }, html => [
     ['kein Warn-HTML', html.trim() === ''],
   ]);
 
-  testFlourWarn('Hydration 0,01 unter hydMin (59,99 % · Dallag Sofia) — Warnung "niedrig"', {
+  testFlourWarn('Hydration 0,01 unter hydMin (59,99 % · Dallag Sofia): Warnung "niedrig"', {
     flour: 'dallag_sofia', hyd: 59.99, yeast: 1.5
   }, html => [
     ['"niedrig" in Warnung', html.includes('niedrig')],
@@ -758,7 +767,7 @@
 
   // Öl ist ein Bäckerprozent wie Salz/Hefe: flour = total/(1+h+s+y+o), oil = flour*o.
   // Wichtig: flour+water+salt+yeast(frisch)+oil MUSS exakt das Gesamtgewicht ergeben.
-  testCase('Direkt · 62 % Hyd, 2 % Öl — Mehl sinkt, Masse bleibt N×W', { oil: 2 }, R => {
+  testCase('Direkt · 62 % Hyd, 2 % Öl: Mehl sinkt, Masse bleibt N×W', { oil: 2 }, R => {
     const expFlour = 1000 / (1 + 0.62 + 0.028 + 0.003 + 0.02); // = 598.44
     return [
       ['total', R.total, 1000, 0],
@@ -768,12 +777,12 @@
     ];
   });
 
-  testCase('Direkt · 0 % Öl — oil = 0, Formel wie zuvor', { oil: 0 }, R => [
+  testCase('Direkt · 0 % Öl: oil = 0, Formel wie zuvor', { oil: 0 }, R => [
     ['oil', R.oil, 0, 0.001],
     ['flour = total/1,651', R.flour, 1000 / 1.651, 0.05],
   ]);
 
-  testCase('Teglia · 75 % Hyd, 4 % Öl — höhere Ölmenge', { hyd: 75, oil: 4, ballw: 320, balls: 4 }, R => {
+  testCase('Teglia · 75 % Hyd, 4 % Öl: höhere Ölmenge', { hyd: 75, oil: 4, ballw: 320, balls: 4 }, R => {
     const total = 1280;
     const expFlour = total / (1 + 0.75 + 0.028 + 0.003 + 0.04);
     return [
@@ -821,7 +830,7 @@
     ['0,01-g-Feinwaage-Hinweis in Anleitung', document.getElementById('guideSteps').innerHTML.includes('0,01-g-Feinwaage'), true],
   ]);
 
-  // Einfrier-Hinweis: optionaler Tipp im Schritt "Teiglinge formen" — gilt unabhängig von
+  // Einfrier-Hinweis: optionaler Tipp im Schritt "Teiglinge formen": gilt unabhängig von
   // Methode/Kaltgare-Stufe (reiner Text-Zusatz, beeinflusst R.totalMin/Zeitplan nicht)
   testCase('Einfrier-Hinweis erscheint bei Direkt (Standard)', { method: 'direct', yeast: 0.3 }, R => [
     ['Hinweis "Einfrieren möglich" in Anleitung', document.getElementById('guideSteps').innerHTML.includes('Einfrieren möglich'), true],
@@ -841,8 +850,8 @@
   // ─────────────────────────────────────────────────────────────
   heading('11 · Randfälle / Edge Cases');
 
-  // 1 Teigling — kleinste sinnvolle Stückzahl, Formel muss trotzdem sauber aufgehen
-  testCase('1 Teigling à 250 g — Bäckerprozente bleiben korrekt', { balls: 1, ballw: 250 }, R => [
+  // 1 Teigling: kleinste sinnvolle Stückzahl, Formel muss trotzdem sauber aufgehen
+  testCase('1 Teigling à 250 g: Bäckerprozente bleiben korrekt', { balls: 1, ballw: 250 }, R => [
     ['total', R.total, 250, 0],
     ['flour', R.flour, 151.42, 0.05],
     ['water', R.water, 93.88, 0.05],
@@ -850,21 +859,21 @@
     ['Summe = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil, 250, 0.01],
   ]);
 
-  // Sehr viele Teiglinge — Skalierung darf nicht driften
-  testCase('20 Teiglinge à 250 g — Skalierung bleibt exakt', { balls: 20, ballw: 250 }, R => [
+  // Sehr viele Teiglinge: Skalierung darf nicht driften
+  testCase('20 Teiglinge à 250 g: Skalierung bleibt exakt', { balls: 20, ballw: 250 }, R => [
     ['total', R.total, 5000, 0],
     ['flour', R.flour, 3028.47, 0.1],
     ['water', R.water, 1877.65, 0.1],
     ['Summe = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil, 5000, 0.01],
   ]);
 
-  // 0 % Öl — Öl-Zeile/-Wert muss sauber auf 0 bleiben (keine NaN/negative Reste)
-  testCase('0 % Öl — oil exakt 0, keine Nebenwirkung auf Mehl/Wasser', { oil: 0 }, R => [
+  // 0 % Öl: Öl-Zeile/-Wert muss sauber auf 0 bleiben (keine NaN/negative Reste)
+  testCase('0 % Öl: oil exakt 0, keine Nebenwirkung auf Mehl/Wasser', { oil: 0 }, R => [
     ['oil', R.oil, 0, 0.001],
     ['flour = total/1,651', R.flour, 1000 / 1.651, 0.05],
   ]);
 
-  // Sehr kleine Hefemenge (< 1 g absolut) — Grenzwert selbst prüfen (nicht nur weit darunter)
+  // Sehr kleine Hefemenge (< 1 g absolut): Grenzwert selbst prüfen (nicht nur weit darunter)
   testCase('Hefemenge knapp unter 1 g löst Feinwaage-Hinweis aus', { method: 'direct', yeast: 0.16 }, R => [
     ['yeast < 1 g', R.yeast < 1, true],
     ['0,01-g-Feinwaage-Hinweis', document.getElementById('guideSteps').innerHTML.includes('0,01-g-Feinwaage'), true],
@@ -878,9 +887,9 @@
   // ─────────────────────────────────────────────────────────────
   heading('12 · Kombinationen (Vorteig × Kaltgare-Stufe × Öl gleichzeitig)');
 
-  // Biga + Öl + coldStage 'bulk' (klassisch) gleichzeitig — bisher wurden diese Features
+  // Biga + Öl + coldStage 'bulk' (klassisch) gleichzeitig: bisher wurden diese Features
   // nur isoliert getestet (Öl nur mit Standard-coldStage, coldStage nur ohne Öl/Vorteig).
-  testCase('Biga · Öl 3 % · Kaltgare im Stück (bulk) — alles gleichzeitig korrekt', {
+  testCase('Biga · Öl 3 % · Kaltgare im Stück (bulk): alles gleichzeitig korrekt', {
     method: 'biga', pref: 70, bhyd: 45, hyd: 65, oil: 3, coldStage: 'bulk', yeast: 0.3
   }, R => [
     ['oil > 0 im Hauptteig', R.oil > 0, true],
@@ -890,7 +899,7 @@
     ['Summe = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil, 1000, 0.01],
   ]);
 
-  testScheduleCase('Biga · Kaltgare im Stück (bulk) — Gesamtdauer identisch zu balls-Variante', {
+  testScheduleCase('Biga · Kaltgare im Stück (bulk): Gesamtdauer identisch zu balls-Variante', {
     method: 'biga', pref: 70, bhyd: 45, hyd: 65, oil: 3, coldStage: 'bulk', yeast: 0.05
   }, f => [
     ['cold', f.cold, true],
@@ -898,7 +907,7 @@
   ]);
 
   // Poolish + Öl + coldStage 'bulk' gleichzeitig
-  testCase('Poolish · Öl 2 % · Kaltgare im Stück (bulk) — alles gleichzeitig korrekt', {
+  testCase('Poolish · Öl 2 % · Kaltgare im Stück (bulk): alles gleichzeitig korrekt', {
     method: 'poolish', pref: 50, hyd: 66, oil: 2, coldStage: 'bulk', yeast: 0.2, salt: 2.5
   }, R => {
     return [
@@ -912,7 +921,7 @@
   });
 
   // Poolish mit hoher Hydration nahe der Klemmgrenze + Öl + Trockenhefe gleichzeitig
-  testCase('Poolish · hyd nahe hydMax (66 %) · Öl · Trockenhefe — Kombination bleibt stabil', {
+  testCase('Poolish · hyd nahe hydMax (66 %) · Öl · Trockenhefe: Kombination bleibt stabil', {
     method: 'poolish', pref: 66, hyd: 66, oil: 2, yeastType: 'dry', yeast: 0.2, flour: 'dallag_monica'
   }, R => [
     ['nicht (fälschlich) begrenzt (66 % Anteil bei 66 % Hyd)', R.prefClamped, false],
@@ -923,7 +932,7 @@
   // ─────────────────────────────────────────────────────────────
   heading('13 · Masseerhaltung (alle Methoden, alle Presets)');
 
-  // Grundidentität flour+water+salt+yeast(frisch)+oil = total muss für JEDE Methode gelten —
+  // Grundidentität flour+water+salt+yeast(frisch)+oil = total muss für JEDE Methode gelten:
   // die Vorteig-Aufteilung verschiebt nur, wo Mehl/Wasser/Hefe liegen, nie die Summen.
   ['direct', 'biga', 'poolish'].forEach(method => {
     testCase('Masseerhaltung · Methode „' + method + '" bei 4 % Öl', {
@@ -933,7 +942,7 @@
     ]);
   });
 
-  // Dieselbe Grundidentität, jetzt zusätzlich mit Zucker (New-York-Style-Feld) — Öl UND
+  // Dieselbe Grundidentität, jetzt zusätzlich mit Zucker (New-York-Style-Feld): Öl UND
   // Zucker gleichzeitig, für jede der drei Methoden.
   ['direct', 'biga', 'poolish'].forEach(method => {
     testCase('Masseerhaltung · Methode „' + method + '" bei 4 % Öl + 2 % Zucker', {
@@ -947,7 +956,7 @@
     testCase('Masseerhaltung · Preset „' + key + '"', PRESET_STATES[key], R => {
       const checks = [
         ['total = N × W', R.total, R.N * R.W, 0],
-        // Schließt R.sugar mit ein (bei den meisten Presets 0, bei "newyork_style" > 0) —
+        // Schließt R.sugar mit ein (bei den meisten Presets 0, bei "newyork_style" > 0):
         // eine einzige Formel deckt beide Fälle ab, kein preset-spezifischer Sonderpfad nötig.
         ['flour+water+salt+yeast+oil+sugar = total', R.flour + R.water + R.salt + R.yeast + R.oil + R.sugar, R.total, 0.01],
       ];
@@ -962,7 +971,7 @@
   // ─────────────────────────────────────────────────────────────
   heading('14 · Zeitplan-Rückwärtsrechnung ("Fertig sein um…")');
 
-  // fmtClock-Nachbau (aus js/guide.js) — nur zum Prüfen des gerenderten Anleitungstexts,
+  // fmtClock-Nachbau (aus js/guide.js): nur zum Prüfen des gerenderten Anleitungstexts,
   // dupliziert keine Rechenlogik.
   function fmtClockTest(d) {
     const wd = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()];
@@ -973,7 +982,7 @@
   const FIXED_ISO = '2026-08-01T18:00';
   let sharedTotalMin = null;
 
-  testCase('Start-Modus ("Ich starte um…") — Start-Chip = eingegebene Zeit', {
+  testCase('Start-Modus ("Ich starte um…"): Start-Chip = eingegebene Zeit', {
     method: 'direct', yeast: 0.3, coldStage: 'balls', timeMode: 'start', timeISO: FIXED_ISO
   }, R => {
     sharedTotalMin = R.totalMin;
@@ -986,7 +995,7 @@
     ];
   });
 
-  testCase('Ziel-Modus ("Fertig sein um…") — Start wird korrekt zurückgerechnet', {
+  testCase('Ziel-Modus ("Fertig sein um…"): Start wird korrekt zurückgerechnet', {
     method: 'direct', yeast: 0.3, coldStage: 'balls', timeMode: 'target', timeISO: FIXED_ISO
   }, R => {
     const target = new Date(FIXED_ISO);
@@ -999,8 +1008,8 @@
     ];
   });
 
-  // Ziel-Modus bei Vorteig (Biga) — Reifezeit muss in der Rückwärtsrechnung mitzählen
-  testCase('Ziel-Modus bei Biga — Reifezeit fließt in die Rückwärtsrechnung ein', {
+  // Ziel-Modus bei Vorteig (Biga): Reifezeit muss in der Rückwärtsrechnung mitzählen
+  testCase('Ziel-Modus bei Biga: Reifezeit fließt in die Rückwärtsrechnung ein', {
     method: 'biga', pref: 70, bhyd: 45, hyd: 65, prefMature: 24, timeMode: 'target', timeISO: FIXED_ISO
   }, R => {
     const target = new Date(FIXED_ISO);
@@ -1015,10 +1024,10 @@
   // ─────────────────────────────────────────────────────────────
   heading('15 · Einkaufsliste (js/print.js)');
 
-  // buildShoppingList() ist eine reine Darstellungs-Funktion auf PZ.R — keine neue Berechnung.
+  // buildShoppingList() ist eine reine Darstellungs-Funktion auf PZ.R: keine neue Berechnung.
   // Prüft: Zeilenauswahl (nur > 0), Formatierung identisch zum Ergebnis-Panel, Gesamtmengen bei Vorteig.
 
-  testCase('Direkt · Standard — enthält Mehl/Wasser/Salz/Hefe, kein Öl (0 %), kein Eis', {
+  testCase('Direkt · Standard: enthält Mehl/Wasser/Salz/Hefe, kein Öl (0 %), kein Eis', {
     oil: 0
   }, R => {
     PZ.buildShoppingList();
@@ -1033,7 +1042,7 @@
     ];
   });
 
-  testCase('Mit Öl (Teglia-artig, 4 %) — Öl-Zeile erscheint mit 1 Nachkommastelle', {
+  testCase('Mit Öl (Teglia-artig, 4 %): Öl-Zeile erscheint mit 1 Nachkommastelle', {
     oil: 4, hyd: 75, ballw: 320
   }, R => {
     PZ.buildShoppingList();
@@ -1045,9 +1054,9 @@
   });
 
   // Bugfix v3.48.0: Zucker fehlte bisher komplett in der Einkaufsliste (New-York-Style-
-  // Preset, 2 % Zucker) — stand zwar korrekt im Ergebnis-Panel (#gSugarRow), aber nicht
+  // Preset, 2 % Zucker): stand zwar korrekt im Ergebnis-Panel (#gSugarRow), aber nicht
   // hier. Analog zur Öl-Zeile: eigene Zeile ab 0,05 %, sonst ausgeblendet.
-  testCase('Mit Zucker (New-York-Style, 2 %) — Zucker-Zeile erscheint mit 1 Nachkommastelle', {
+  testCase('Mit Zucker (New-York-Style, 2 %): Zucker-Zeile erscheint mit 1 Nachkommastelle', {
     oil: 3, sugar: 2, hyd: 62
   }, R => {
     PZ.buildShoppingList();
@@ -1058,7 +1067,7 @@
     ];
   });
 
-  testCase('Ohne Zucker (0 %, Standard) — keine Zucker-Zeile', {
+  testCase('Ohne Zucker (0 %, Standard): keine Zucker-Zeile', {
     sugar: 0
   }, R => {
     PZ.buildShoppingList();
@@ -1068,7 +1077,7 @@
     ];
   });
 
-  testCase('Biga (Vorteig) — Einkaufsliste zeigt Gesamtmengen, keine Vorteig/Hauptteig-Aufteilung', {
+  testCase('Biga (Vorteig): Einkaufsliste zeigt Gesamtmengen, keine Vorteig/Hauptteig-Aufteilung', {
     method: 'biga', pref: 70, bhyd: 45, hyd: 65, prefMature: 24
   }, R => {
     PZ.buildShoppingList();
@@ -1079,7 +1088,7 @@
     ];
   });
 
-  testCase('Kein Eis nötig (wT nah an Raumtemp) — keine Eis-Zeile', {
+  testCase('Kein Eis nötig (wT nah an Raumtemp): keine Eis-Zeile', {
     ddt: 25, room: 24, flourTemp: 24, knead: '3'
   }, R => {
     PZ.buildShoppingList();
@@ -1090,7 +1099,7 @@
     ];
   });
 
-  testCase('Mit Eisbedarf (kaltes Schüttwasser) — Eis-Zeile erscheint gerundet', {
+  testCase('Mit Eisbedarf (kaltes Schüttwasser): Eis-Zeile erscheint gerundet', {
     ddt: 22, room: 28, flourTemp: 28, knead: '6'
   }, R => {
     PZ.buildShoppingList();
@@ -1101,7 +1110,7 @@
     ];
   });
 
-  testCase('Poolish (Vorteig) — auch hier Gesamtmengen statt Aufteilung', {
+  testCase('Poolish (Vorteig): auch hier Gesamtmengen statt Aufteilung', {
     method: 'poolish', pref: 50, hyd: 66, prefMature: 14, prefStage: 'p14'
   }, R => {
     PZ.buildShoppingList();
@@ -1137,7 +1146,7 @@
 
   // Rundungsgrenze der Hefe-Formatierung: < 10 g → 2 Nachkommastellen, ≥ 10 g → gerundete Ganzzahl.
   // Kleine Charge (1 Teigling) hält die Hefe knapp unter 10 g, große Charge (20 Teiglinge) treibt sie darüber.
-  testCase('Hefe-Rundung knapp UNTER 10 g (kleine Charge) — 2 Nachkommastellen', {
+  testCase('Hefe-Rundung knapp UNTER 10 g (kleine Charge): 2 Nachkommastellen', {
     balls: 1, ballw: 250, yeast: 3.5
   }, R => {
     PZ.buildShoppingList();
@@ -1149,7 +1158,7 @@
     ];
   });
 
-  testCase('Hefe-Rundung ÜBER 10 g (extrem große Charge, 20 Teiglinge) — gerundete Ganzzahl', {
+  testCase('Hefe-Rundung ÜBER 10 g (extrem große Charge, 20 Teiglinge): gerundete Ganzzahl', {
     balls: 20, ballw: 300, yeast: 1.5, salt: 2.8
   }, R => {
     PZ.buildShoppingList();
@@ -1160,9 +1169,9 @@
     ];
   });
 
-  // Extremwerte: 1 Teigling (Mindestmenge) und 20 Teiglinge (Höchstmenge) —
+  // Extremwerte: 1 Teigling (Mindestmenge) und 20 Teiglinge (Höchstmenge):
   // Gesamtteig muss weiterhin exakt N × W ergeben (Masseerhaltung auch in der Liste).
-  testCase('Extremwert 1 Teigling — Einkaufsliste zeigt korrekten Gesamtteig', {
+  testCase('Extremwert 1 Teigling: Einkaufsliste zeigt korrekten Gesamtteig', {
     balls: 1, ballw: 250
   }, R => {
     PZ.buildShoppingList();
@@ -1174,7 +1183,7 @@
     ];
   });
 
-  testCase('Extremwert 20 Teiglinge — Einkaufsliste zeigt korrekten Gesamtteig', {
+  testCase('Extremwert 20 Teiglinge: Einkaufsliste zeigt korrekten Gesamtteig', {
     balls: 20, ballw: 280
   }, R => {
     PZ.buildShoppingList();
@@ -1187,7 +1196,7 @@
   });
 
   // 0 % Öl: Öl-Zeile darf nicht erscheinen (Schwelle oil >= 0.05, identisch zu #gOilRow)
-  testCase('0 % Öl — keine Öl-Zeile (Grenzfall exakt 0)', {
+  testCase('0 % Öl: keine Öl-Zeile (Grenzfall exakt 0)', {
     oil: 0
   }, R => {
     PZ.buildShoppingList();
@@ -1211,11 +1220,11 @@
   })();
 
   // ─────────────────────────────────────────────────────────────
-  heading('16 · Speichern & Laden (js/storage.js) — Migration & Mehrfach-Rezepte');
+  heading('16 · Speichern & Laden (js/storage.js): Migration & Mehrfach-Rezepte');
   (function () {
     const STORAGE_KEY = 'pizzaRechner';
     // Sichert einen eventuell vorhandenen echten Stand (falls test.html je dieselbe
-    // Origin/denselben localStorage wie die App teilt) und stellt ihn am Ende wieder her —
+    // Origin/denselben localStorage wie die App teilt) und stellt ihn am Ende wieder her:
     // die Tests dürfen echte Nutzerdaten niemals überschreiben.
     const backup = localStorage.getItem(STORAGE_KEY);
 
@@ -1243,11 +1252,11 @@
       ]);
     });
 
-    // --- Altes Rezept ganz ohne flourTemp-Feld (gespeichert vor v3.20.0) — der dafür
+    // --- Altes Rezept ganz ohne flourTemp-Feld (gespeichert vor v3.20.0): der dafür
     // spezifisch gedachte Fallback wurde in v3.60.0 entfernt (Nutzerauftrag, analog zum
     // oil/sugar-Fallback, v3.53.0: keine real existierenden alten Rezepte mehr, die ihn je
     // gebraucht hätten). Dieser Test sichert ab, dass so ein (jetzt nur noch theoretisches)
-    // Objekt weiterhin keinen Crash auslöst — set.flourTemp() wird jetzt unconditional
+    // Objekt weiterhin keinen Crash auslöst: set.flourTemp() wird jetzt unconditional
     // aufgerufen, mit state.flourTemp, das nach Object.assign() bei einem fehlenden Feld
     // einfach den vorherigen UI-Wert unverändert behält (Object.assign kopiert nur
     // vorhandene Keys), statt mit undefined überschrieben zu werden. ---
@@ -1259,7 +1268,7 @@
       let loadThrew = false, calcThrew = false;
       try { PZ.load(); } catch (e) { loadThrew = true; }
       try { PZ.calc(); } catch (e) { calcThrew = true; }
-      renderBox('Altes Rezept ohne flourTemp-Feld (vor v3.20.0) — kein Crash nach Fallback-Entfernung (v3.60.0)', [
+      renderBox('Altes Rezept ohne flourTemp-Feld (vor v3.20.0): kein Crash nach Fallback-Entfernung (v3.60.0)', [
         { label: 'PZ.load() wirft keinen Fehler', ok: !loadThrew, actual: loadThrew, expected: false, tol: null },
         { label: 'Andere Felder wurden trotzdem übernommen (balls)', ok: PZ.state.balls === 5, actual: PZ.state.balls, expected: 5, tol: null },
         { label: 'Andere Felder wurden trotzdem übernommen (hyd)', ok: PZ.state.hyd === 63, actual: PZ.state.hyd, expected: 63, tol: null },
@@ -1269,11 +1278,11 @@
       ]);
     });
 
-    // --- Altes Rezept ohne oil/sugar-Feld (gespeichert vor v3.3.0 bzw. v3.19.2) — der
+    // --- Altes Rezept ohne oil/sugar-Feld (gespeichert vor v3.3.0 bzw. v3.19.2): der
     // dafür spezifisch gedachte Fallback wurde in v3.53.0 entfernt (Nutzerauftrag: keine
     // real existierenden alten Rezepte mehr, die ihn je gebraucht hätten). Dieser Test
     // sichert ab, dass so ein (jetzt nur noch theoretisches) Objekt weiterhin keinen Crash
-    // auslöst — set.oil()/set.sugar() werden jetzt unconditional aufgerufen, mit
+    // auslöst: set.oil()/set.sugar() werden jetzt unconditional aufgerufen, mit
     // state.oil/state.sugar, die nach Object.assign() bei einem fehlenden Feld einfach den
     // vorherigen UI-Wert unverändert behalten (Object.assign kopiert nur vorhandene Keys). ---
     withCleanStorage(() => {
@@ -1285,7 +1294,7 @@
       let loadThrew = false, calcThrew = false;
       try { PZ.load(); } catch (e) { loadThrew = true; }
       try { PZ.calc(); } catch (e) { calcThrew = true; }
-      renderBox('Altes Rezept ohne oil/sugar-Feld (vor v3.3.0/v3.19.2) — kein Crash nach Fallback-Entfernung (v3.53.0)', [
+      renderBox('Altes Rezept ohne oil/sugar-Feld (vor v3.3.0/v3.19.2): kein Crash nach Fallback-Entfernung (v3.53.0)', [
         { label: 'PZ.load() wirft keinen Fehler', ok: !loadThrew, actual: loadThrew, expected: false, tol: null },
         { label: 'Andere Felder wurden trotzdem übernommen (balls)', ok: PZ.state.balls === 6, actual: PZ.state.balls, expected: 6, tol: null },
         { label: 'oil bleibt beim vorherigen UI-Wert (kein Überschreiben mit undefined)', ok: PZ.state.oil === 3.5, actual: PZ.state.oil, expected: 3.5, tol: null },
@@ -1300,7 +1309,7 @@
     // normalen Bedienen bereits String, aber ein von außen eingeschleustes state-Objekt
     // (z. B. simuliert hier über direkt in localStorage geschriebenes JSON, analog zu einem
     // Teilen-Link/Rezepte-Backup-Import) validiert Typen nicht. js/guide.js vergleicht an
-    // mehreren Stellen strikt mit `state.knead === '6'` — ein eingeschleustes `knead: 6`
+    // mehreren Stellen strikt mit `state.knead === '6'`: ein eingeschleustes `knead: 6`
     // (Number) hätte dort trotz korrekt als "Maschine" berechneter Reibungswärme (js/calc.js
     // nutzt parseFloat, typtolerant) fälschlich weiterhin "Hand"-Anleitungstext gezeigt. ---
     withCleanStorage(() => {
@@ -1315,7 +1324,7 @@
     });
 
     // --- applyState() synchronisiert den Zucker-Regler beim Laden (Fix, Nebenbefund aus
-    // v3.22.0): applyState() rief set.sugar(state.sugar) bisher nie auf — PZ.state.sugar
+    // v3.22.0): applyState() rief set.sugar(state.sugar) bisher nie auf: PZ.state.sugar
     // wurde zwar korrekt per Object.assign übernommen (Berechnung war nie falsch), der
     // Regler im UI konnte aber einen veralteten Wert zeigen. PZ.set ist in test.html ein
     // No-op-Stub (s. Kommentar weiter oben); dieser Test ersetzt ihn kurzzeitig durch einen
@@ -1385,11 +1394,11 @@
       const afterCount = PZ.listRecipes().length;
       const copyRec = PZ.listRecipes().find(r => r.id === copy.id);
 
-      // activeId bleibt unverändert (duplicateRecipe() rührt sie nicht an — das
+      // activeId bleibt unverändert (duplicateRecipe() rührt sie nicht an: das
       // macht erst js/main.js über PZ.loadRecipe() nach dem Klick)
       const activeStillOriginal = PZ.getActiveId() === rec1.id;
 
-      // Live-Stand nach dem Duplizieren verändern — die Kopie darf davon NICHT
+      // Live-Stand nach dem Duplizieren verändern: die Kopie darf davon NICHT
       // betroffen sein (dupliziert wird der gespeicherte Stand, nicht PZ.state)
       PZ.state.balls = 99;
       const copyUnaffectedByLiveState = PZ.listRecipes().find(r => r.id === copy.id).state.balls === 4;
@@ -1399,7 +1408,7 @@
       // Namenskollision: zweimal dasselbe Rezept duplizieren -> fortlaufende Nummer
       const copy2 = PZ.duplicateRecipe(rec1.id);
 
-      renderBox('duplicateRecipe() — Rezept-Kopieren-Funktion', [
+      renderBox('duplicateRecipe(): Rezept-Kopieren-Funktion', [
         { label: 'Kopie legt ein zusätzliches Rezept an', ok: afterCount === beforeCount + 1, actual: afterCount, expected: beforeCount + 1, tol: null },
         { label: 'Kopie hat eigene, neue id (nicht identisch zum Original)', ok: copy.id !== rec1.id, actual: copy.id, expected: '!= ' + rec1.id, tol: null },
         { label: 'Kopie-Name lautet "Kopie von Original"', ok: copy.name === 'Kopie von Original', actual: copy.name, expected: 'Kopie von Original', tol: null },
@@ -1414,7 +1423,7 @@
 
     // --- ensureActiveId() (v3.38.1-Bugfix): repariert activeId, wenn addRecipeFromState()
     // (oder importRecipes()) ein Rezept in eine vorher LEERE Bibliothek anlegt/importiert.
-    // Beide Funktionen setzen activeId bewusst NIE selbst (s. Kommentare dort) — vorher blieb
+    // Beide Funktionen setzen activeId bewusst NIE selbst (s. Kommentare dort): vorher blieb
     // activeId dadurch dauerhaft null, obwohl #recipeSelect das Rezept per Fallback in
     // refreshRecipeSelect() bereits als "ausgewählt" anzeigte. #recipeDuplicate/#recipeRename/
     // #recipeDelete lesen aber PZ.getActiveId() (nicht den Select-Wert) und brachen deshalb
@@ -1427,14 +1436,14 @@
       const healedId = PZ.ensureActiveId();
       const activeIdAfterEnsure = PZ.getActiveId();
 
-      // Darf PZ.state (den Live-Rechner-Zustand) NICHT anfassen — Kernidee von
+      // Darf PZ.state (den Live-Rechner-Zustand) NICHT anfassen: Kernidee von
       // addRecipeFromState() bleibt gewahrt, ensureActiveId() ist reines Storage-Housekeeping.
       const liveStateUntouched = PZ.state.balls !== 5;
 
       // Idempotent: erneuter Aufruf ändert nichts mehr, liefert dieselbe id
       const secondCall = PZ.ensureActiveId();
 
-      renderBox('ensureActiveId() — activeId-Desync-Bugfix (v3.38.1)', [
+      renderBox('ensureActiveId(): activeId-Desync-Bugfix (v3.38.1)', [
         { label: 'addRecipeFromState() in leere Bibliothek setzt activeId noch NICHT selbst', ok: activeIdBeforeEnsure === null, actual: activeIdBeforeEnsure, expected: null, tol: null },
         { label: 'ensureActiveId() repariert activeId auf das einzige vorhandene Rezept', ok: healedId === rec.id && activeIdAfterEnsure === rec.id, actual: activeIdAfterEnsure, expected: rec.id, tol: null },
         { label: 'ensureActiveId() rührt PZ.state (Hauptrechner-Live-Zustand) NICHT an', ok: liveStateUntouched, actual: PZ.state.balls, expected: '!= 5', tol: null },
@@ -1466,23 +1475,23 @@
       const rec1 = PZ.save();
       const before = PZ.getActiveId();
       const healed = PZ.ensureActiveId();
-      renderBox('ensureActiveId() bei bereits gültiger activeId — bleibt unverändert', [
+      renderBox('ensureActiveId() bei bereits gültiger activeId: bleibt unverändert', [
         { label: 'activeId war bereits gültig und bleibt es nach ensureActiveId()', ok: healed === before, actual: healed, expected: before, tol: null }
       ]);
       void rec1;
     });
 
     withCleanStorage(() => {
-      // Szenario D: leere Bibliothek ohne jedes Rezept — activeId bleibt null, kein Crash
+      // Szenario D: leere Bibliothek ohne jedes Rezept: activeId bleibt null, kein Crash
       let threw = false, result;
       try { result = PZ.ensureActiveId(); } catch (e) { threw = true; }
-      renderBox('ensureActiveId() bei komplett leerer Bibliothek — kein Crash, activeId bleibt null', [
+      renderBox('ensureActiveId() bei komplett leerer Bibliothek: kein Crash, activeId bleibt null', [
         { label: 'Kein Fehler', ok: !threw, actual: threw, expected: false, tol: null },
         { label: 'activeId bleibt null (keine Rezepte vorhanden)', ok: result === null, actual: result, expected: null, tol: null }
       ]);
     });
 
-    // --- Leerer localStorage (kein Key vorhanden) — darf nicht crashen ---
+    // --- Leerer localStorage (kein Key vorhanden): darf nicht crashen ---
     withCleanStorage(() => {
       let threw = false;
       let recipes, activeId;
@@ -1490,14 +1499,14 @@
         recipes = PZ.listRecipes();
         activeId = PZ.getActiveId();
       } catch (e) { threw = true; }
-      renderBox('Leerer localStorage (kein Key) — keine Fehler, leere Rezeptliste', [
+      renderBox('Leerer localStorage (kein Key): keine Fehler, leere Rezeptliste', [
         { label: 'Kein Fehler beim Lesen', ok: !threw, actual: threw, expected: false, tol: null },
         { label: 'listRecipes() ist ein leeres Array', ok: Array.isArray(recipes) && recipes.length === 0, actual: recipes && recipes.length, expected: 0, tol: null },
         { label: 'getActiveId() ist null', ok: activeId === null, actual: activeId, expected: null, tol: null }
       ]);
     });
 
-    // --- Korruptes JSON im localStorage — darf nicht crashen, wird wie "leer" behandelt ---
+    // --- Korruptes JSON im localStorage: darf nicht crashen, wird wie "leer" behandelt ---
     withCleanStorage(() => {
       localStorage.setItem(STORAGE_KEY, '{ das ist kein gültiges JSON');
       let threw = false;
@@ -1506,7 +1515,7 @@
         recipes = PZ.listRecipes();
         activeId = PZ.getActiveId();
       } catch (e) { threw = true; }
-      renderBox('Korruptes JSON im localStorage — keine Fehler, wird wie leer behandelt', [
+      renderBox('Korruptes JSON im localStorage: keine Fehler, wird wie leer behandelt', [
         { label: 'Kein Fehler beim Lesen', ok: !threw, actual: threw, expected: false, tol: null },
         { label: 'listRecipes() ist ein leeres Array', ok: Array.isArray(recipes) && recipes.length === 0, actual: recipes && recipes.length, expected: 0, tol: null },
         { label: 'getActiveId() ist null', ok: activeId === null, actual: activeId, expected: null, tol: null }
@@ -1520,14 +1529,14 @@
       const onlyId = PZ.getActiveId();
       const nextActive = PZ.deleteRecipe(onlyId);
       const afterDelete = PZ.listRecipes();
-      renderBox('Löschen des letzten verbleibenden Rezepts — leere Liste, kein aktives Rezept mehr', [
+      renderBox('Löschen des letzten verbleibenden Rezepts: leere Liste, kein aktives Rezept mehr', [
         { label: 'Rezeptliste danach leer', ok: afterDelete.length === 0, actual: afterDelete.length, expected: 0, tol: null },
         { label: 'activeId danach null', ok: nextActive === null, actual: nextActive, expected: null, tol: null },
         { label: 'PZ.getActiveId() bestätigt null', ok: PZ.getActiveId() === null, actual: PZ.getActiveId(), expected: null, tol: null }
       ]);
     });
 
-    // --- Löschen eines NICHT-aktiven Rezepts — activeId bleibt unverändert ---
+    // --- Löschen eines NICHT-aktiven Rezepts: activeId bleibt unverändert ---
     withCleanStorage(() => {
       Object.assign(PZ.state, BASE, { balls: 4, hyd: 60 });
       PZ.save();
@@ -1537,14 +1546,14 @@
       // rec2 ist jetzt aktiv; wir löschen das ERSTE (nicht-aktive) Rezept
       const nextActive = PZ.deleteRecipe(firstId);
       const afterDelete = PZ.listRecipes();
-      renderBox('Löschen eines nicht-aktiven Rezepts — activeId bleibt unverändert', [
+      renderBox('Löschen eines nicht-aktiven Rezepts: activeId bleibt unverändert', [
         { label: 'Rezeptliste hat noch genau 1 Eintrag', ok: afterDelete.length === 1, actual: afterDelete.length, expected: 1, tol: null },
         { label: 'activeId bleibt das zweite (weiterhin aktive) Rezept', ok: nextActive === rec2.id, actual: nextActive, expected: rec2.id, tol: null },
         { label: 'Verbleibendes Rezept ist das zweite', ok: afterDelete[0].id === rec2.id, actual: afterDelete[0].id, expected: rec2.id, tol: null }
       ]);
     });
 
-    // --- Umbenennen auf einen bereits vergebenen Namen (Duplikat) — keine Dedupe-Logik, beide behalten denselben Namen ---
+    // --- Umbenennen auf einen bereits vergebenen Namen (Duplikat): keine Dedupe-Logik, beide behalten denselben Namen ---
     withCleanStorage(() => {
       Object.assign(PZ.state, BASE, { balls: 4, hyd: 60 });
       PZ.save();
@@ -1555,13 +1564,13 @@
       PZ.renameActive('Zweites Rezept'); // Duplikat-Name, absichtlich erlaubt
       const recipes = PZ.listRecipes();
       const withThatName = recipes.filter(r => r.name === 'Zweites Rezept');
-      renderBox('Umbenennen auf einen bereits vergebenen Namen — Duplikat wird zugelassen', [
+      renderBox('Umbenennen auf einen bereits vergebenen Namen: Duplikat wird zugelassen', [
         { label: 'Beide Rezepte tragen jetzt denselben Namen', ok: withThatName.length === 2, actual: withThatName.length, expected: 2, tol: null },
         { label: 'Weiterhin 2 unabhängige Rezepte (kein Merge)', ok: recipes.length === 2, actual: recipes.length, expected: 2, tol: null }
       ]);
     });
 
-    // --- Umbenennen auf leeren/nur-Leerzeichen-String — kein Effekt (Name bleibt) ---
+    // --- Umbenennen auf leeren/nur-Leerzeichen-String: kein Effekt (Name bleibt) ---
     withCleanStorage(() => {
       Object.assign(PZ.state, BASE, { balls: 4, hyd: 60 });
       const rec = PZ.saveAsNew('Originalname');
@@ -1569,13 +1578,13 @@
       const afterEmptyRename = PZ.listRecipes()[0].name;
       PZ.renameActive('');
       const afterEmptyStringRename = PZ.listRecipes()[0].name;
-      renderBox('renameActive() mit leerem/Leerzeichen-Namen — Name bleibt unverändert', [
+      renderBox('renameActive() mit leerem/Leerzeichen-Namen: Name bleibt unverändert', [
         { label: 'Name bleibt nach Leerzeichen-Rename', ok: afterEmptyRename === 'Originalname', actual: afterEmptyRename, expected: 'Originalname', tol: null },
         { label: 'Name bleibt nach leerem-String-Rename', ok: afterEmptyStringRename === 'Originalname', actual: afterEmptyStringRename, expected: 'Originalname', tol: null }
       ]);
     });
 
-    // --- saveAsNew() ohne Namen — automatische Default-Namen "Rezept 1", "Rezept 2", … ---
+    // --- saveAsNew() ohne Namen: automatische Default-Namen "Rezept 1", "Rezept 2", … ---
     withCleanStorage(() => {
       Object.assign(PZ.state, BASE, { balls: 4 });
       const rec1 = PZ.saveAsNew();
@@ -1583,27 +1592,27 @@
       const rec2 = PZ.saveAsNew('');
       Object.assign(PZ.state, { balls: 6 });
       const rec3 = PZ.saveAsNew('   ');
-      renderBox('saveAsNew() ohne (gültigen) Namen — automatische "Rezept N"-Namen', [
+      renderBox('saveAsNew() ohne (gültigen) Namen: automatische "Rezept N"-Namen', [
         { label: 'Erstes Rezept ohne Namen heißt "Rezept 1"', ok: rec1.name === 'Rezept 1', actual: rec1.name, expected: 'Rezept 1', tol: null },
         { label: 'Zweites (leerer String) heißt "Rezept 2"', ok: rec2.name === 'Rezept 2', actual: rec2.name, expected: 'Rezept 2', tol: null },
         { label: 'Drittes (nur Leerzeichen) heißt "Rezept 3"', ok: rec3.name === 'Rezept 3', actual: rec3.name, expected: 'Rezept 3', tol: null }
       ]);
     });
 
-    // --- loadRecipe() mit unbekannter/nicht-existenter id — no-op, state/activeId bleiben unverändert ---
+    // --- loadRecipe() mit unbekannter/nicht-existenter id: no-op, state/activeId bleiben unverändert ---
     withCleanStorage(() => {
       Object.assign(PZ.state, BASE, { balls: 4, hyd: 60 });
       PZ.save();
       const activeBefore = PZ.getActiveId();
       Object.assign(PZ.state, { balls: 999 }); // Marker, um zu prüfen ob applyState() lief
       PZ.loadRecipe('nicht-existierende-id-xyz');
-      renderBox('loadRecipe() mit unbekannter id — kein Effekt (no-op)', [
+      renderBox('loadRecipe() mit unbekannter id: kein Effekt (no-op)', [
         { label: 'activeId unverändert', ok: PZ.getActiveId() === activeBefore, actual: PZ.getActiveId(), expected: activeBefore, tol: null },
         { label: 'PZ.state.balls unverändert (kein Overwrite durch nicht-existentes Rezept)', ok: PZ.state.balls === 999, actual: PZ.state.balls, expected: 999, tol: null }
       ]);
     });
 
-    // --- Mehrfaches PZ.save() auf demselben aktiven Rezept — überschreibt, keine neuen Einträge ---
+    // --- Mehrfaches PZ.save() auf demselben aktiven Rezept: überschreibt, keine neuen Einträge ---
     withCleanStorage(() => {
       Object.assign(PZ.state, BASE, { balls: 4, hyd: 60 });
       PZ.save();
@@ -1612,7 +1621,7 @@
       PZ.save();
       const idAfterSecondSave = PZ.getActiveId();
       const recipes = PZ.listRecipes();
-      renderBox('Mehrfaches PZ.save() auf demselben Rezept — überschreibt, kein Duplikat', [
+      renderBox('Mehrfaches PZ.save() auf demselben Rezept: überschreibt, kein Duplikat', [
         { label: 'Weiterhin nur 1 Rezept', ok: recipes.length === 1, actual: recipes.length, expected: 1, tol: null },
         { label: 'Gleiche id über beide Speicherungen hinweg', ok: idAfterFirstSave === idAfterSecondSave, actual: idAfterSecondSave, expected: idAfterFirstSave, tol: null },
         { label: 'Aktualisierter Wert (salt) wurde übernommen', ok: recipes[0].state.salt === 3.2, actual: recipes[0].state.salt, expected: 3.2, tol: null }
@@ -1621,7 +1630,7 @@
 
     // --- addRecipeFromState() (v3.22.0, "Neues Rezept anlegen"-Mini-Formular,
     // js/newrecipe.js): legt ein Rezept aus einem BELIEBIGEN state-Objekt an,
-    // OHNE PZ.state zu berühren und OHNE data.activeId zu verändern — Kernidee
+    // OHNE PZ.state zu berühren und OHNE data.activeId zu verändern: Kernidee
     // des Features: den aktuell laufenden Rechner-Zustand nicht zu beeinflussen. ---
     withCleanStorage(() => {
       Object.assign(PZ.state, BASE, { balls: 4, hyd: 60 }); // "aktuell laufender" Hauptzustand
@@ -1633,7 +1642,7 @@
       const rec = PZ.addRecipeFromState('Unabhängiges Rezept', independentState);
       const recipes = PZ.listRecipes();
 
-      renderBox('addRecipeFromState() — legt Rezept an, ohne PZ.state oder das aktive Rezept zu verändern', [
+      renderBox('addRecipeFromState(): legt Rezept an, ohne PZ.state oder das aktive Rezept zu verändern', [
         { label: 'Neues Rezept wurde der Bibliothek hinzugefügt', ok: recipes.length === 2, actual: recipes.length, expected: 2, tol: null },
         { label: 'Neues Rezept trägt den übergebenen Namen', ok: rec.name === 'Unabhängiges Rezept', actual: rec.name, expected: 'Unabhängiges Rezept', tol: null },
         { label: 'Neues Rezept übernimmt die übergebenen Werte (balls), nicht PZ.state', ok: rec.state.balls === 9, actual: rec.state.balls, expected: 9, tol: null },
@@ -1645,24 +1654,24 @@
       ]);
     });
 
-    // --- addRecipeFromState() ohne (gültigen) Namen — automatische "Rezept N"-Namen,
+    // --- addRecipeFromState() ohne (gültigen) Namen: automatische "Rezept N"-Namen,
     // identisches Verhalten wie saveAsNew() ohne Namen. ---
     withCleanStorage(() => {
       const rec1 = PZ.addRecipeFromState('', Object.assign({}, BASE, { balls: 3 }));
       const rec2 = PZ.addRecipeFromState('   ', Object.assign({}, BASE, { balls: 4 }));
       const rec3 = PZ.addRecipeFromState(undefined, Object.assign({}, BASE, { balls: 5 }));
-      renderBox('addRecipeFromState() ohne (gültigen) Namen — automatische "Rezept N"-Namen', [
+      renderBox('addRecipeFromState() ohne (gültigen) Namen: automatische "Rezept N"-Namen', [
         { label: 'Erstes Rezept ohne Namen heißt "Rezept 1"', ok: rec1.name === 'Rezept 1', actual: rec1.name, expected: 'Rezept 1', tol: null },
         { label: 'Zweites (nur Leerzeichen) heißt "Rezept 2"', ok: rec2.name === 'Rezept 2', actual: rec2.name, expected: 'Rezept 2', tol: null },
         { label: 'Drittes (undefined) heißt "Rezept 3"', ok: rec3.name === 'Rezept 3', actual: rec3.name, expected: 'Rezept 3', tol: null }
       ]);
     });
 
-    // --- addRecipeFromState() in eine leere Bibliothek (keine aktive Rezept vorher) —
+    // --- addRecipeFromState() in eine leere Bibliothek (keine aktive Rezept vorher):
     // activeId bleibt null, das neue Rezept wird trotzdem korrekt gespeichert. ---
     withCleanStorage(() => {
       const rec = PZ.addRecipeFromState('Erstes eigenständiges Rezept', Object.assign({}, BASE, { balls: 7 }));
-      renderBox('addRecipeFromState() in eine leere Bibliothek — activeId bleibt null', [
+      renderBox('addRecipeFromState() in eine leere Bibliothek: activeId bleibt null', [
         { label: 'Rezept wurde angelegt', ok: PZ.listRecipes().length === 1, actual: PZ.listRecipes().length, expected: 1, tol: null },
         { label: 'activeId bleibt null (kein Rezept war/ist aktiv)', ok: PZ.getActiveId() === null, actual: PZ.getActiveId(), expected: null, tol: null },
         { label: 'Rezept lässt sich anschließend normal laden', ok: (() => { PZ.loadRecipe(rec.id); return PZ.state.balls === 7; })(), actual: 'balls nach loadRecipe', expected: 7, tol: null }
@@ -1675,14 +1684,14 @@
   })();
 
   // ─────────────────────────────────────────────────────────────
-  heading('17 · Teilen-Link (js/share.js) — Kodieren, Rundreise, defensive Fehlerbehandlung');
+  heading('17 · Teilen-Link (js/share.js): Kodieren, Rundreise, defensive Fehlerbehandlung');
   (function () {
     // --- Reine Kodierung/Dekodierung: Base64-JSON-Rundreise liefert 1:1 dasselbe Objekt ---
     (function () {
       const original = Object.assign({}, BASE, { balls: 6, hyd: 68, salt: 3.1, flour: 'caputo_cuoco' });
       const encoded = PZ.encodeShareState(original);
       const decoded = PZ.decodeShareState(encoded);
-      renderBox('encodeShareState()/decodeShareState() — reine Rundreise ohne Datenverlust', [
+      renderBox('encodeShareState()/decodeShareState(): reine Rundreise ohne Datenverlust', [
         { label: 'Kodiertes Ergebnis ist ein nicht-leerer String', ok: typeof encoded === 'string' && encoded.length > 0, actual: typeof encoded, expected: 'string', tol: null },
         { label: 'balls nach Rundreise identisch', ok: decoded.balls === original.balls, actual: decoded.balls, expected: original.balls, tol: null },
         { label: 'hyd nach Rundreise identisch', ok: decoded.hyd === original.hyd, actual: decoded.hyd, expected: original.hyd, tol: null },
@@ -1696,7 +1705,7 @@
     (function () {
       Object.assign(PZ.state, BASE, { balls: 7, hyd: 71, salt: 2.6, oil: 3, flour: 'caputo_cuoco' });
       const link = PZ.buildShareLink();
-      // buildShareLink() nutzt location.href als Basis (Test läuft von tests/test.html) —
+      // buildShareLink() nutzt location.href als Basis (Test läuft von tests/test.html):
       // wir extrahieren nur den kodierten Parameter und simulieren damit exakt das, was
       // tryLoadFromShareLink() beim Öffnen eines solchen Links aus der echten URL läse.
       const encodedParam = new URL(link).searchParams.get('r');
@@ -1755,7 +1764,7 @@
       const validJsonButNotObject = withParam(btoa(JSON.stringify([1, 2, 3])));
       const validJsonButUnrelatedObject = withParam(btoa(JSON.stringify({ foo: 'bar' })));
 
-      renderBox('Defensive Fehlerbehandlung — kaputte/alte/fremde Links crashen nie', [
+      renderBox('Defensive Fehlerbehandlung: kaputte/alte/fremde Links crashen nie', [
         { label: 'Kein Parameter -> false, kein Fehler', ok: !noParam.threw && noParam.result === false, actual: noParam, expected: '{threw:false,result:false}', tol: null },
         { label: 'Ungültiges Base64 -> false, kein Fehler', ok: !notBase64.threw && notBase64.result === false, actual: notBase64, expected: '{threw:false,result:false}', tol: null },
         { label: 'Gültiges Base64, aber kein JSON -> false, kein Fehler', ok: !validBase64ButNotJson.threw && validBase64ButNotJson.result === false, actual: validBase64ButNotJson, expected: '{threw:false,result:false}', tol: null },
@@ -1771,7 +1780,7 @@
   (function () {
     const FLAG_KEY = 'pizzaRechnerFeatureFlags';
     // Wie bei Abschnitt 16/17: einen eventuell vorhandenen echten Stand sichern und am
-    // Ende wiederherstellen — Tests dürfen nie echte Nutzereinstellungen überschreiben.
+    // Ende wiederherstellen: Tests dürfen nie echte Nutzereinstellungen überschreiben.
     const backup = localStorage.getItem(FLAG_KEY);
     const flagsBackup = Object.assign({}, PZ.FLAGS);
 
@@ -1797,7 +1806,7 @@
       const emptyStored = PZ._mergeFlags({});
       const junkStored = PZ._mergeFlags(null);
       // Regression-Anker: ein Flag-Stand, der VOR Einführung von "newYorkStyle" gespeichert
-      // wurde (Key fehlt komplett, kein "newYorkStyle: false" o.ä. explizit vorhanden) —
+      // wurde (Key fehlt komplett, kein "newYorkStyle: false" o.ä. explizit vorhanden):
       // muss trotzdem sauber auf den neuen Default (false) fallen, ohne die alten Werte zu verlieren.
       const oldFlagsWithoutNewYorkStyle = { timer: true, timerSystem: false, share: true, shopping: false, freezeHint: false, multiRecipes: true, hints: true };
       const mergedOld = PZ._mergeFlags(oldFlagsWithoutNewYorkStyle);
@@ -1874,7 +1883,7 @@
     })();
 
     // --- Render-Effekt: "hints" blendet .hint-Texte global per Body-Klasse aus, OHNE
-    // die Elemente (und damit referenzierte IDs) aus dem DOM zu entfernen — keine
+    // die Elemente (und damit referenzierte IDs) aus dem DOM zu entfernen: keine
     // verwaiste aria-describedby-Referenz. ---
     (function () {
       const stub = document.getElementById('testHintStub');
@@ -1908,7 +1917,7 @@
     // gewählt ist, ODER "Eigene Einstellung" (kein/unbekanntes Preset) aktiv ist UND das
     // Flag manuell/dauerhaft an ist. Bei jedem ANDEREN konkreten Preset bleibt der Zucker-
     // Regler verborgen, auch wenn das Flag an ist (v3.19.3 verknüpfte hier fälschlich per
-    // ODER — das Flag schaltete den Regler bei JEDEM Preset frei, s. Kontext-Datei).
+    // ODER: das Flag schaltete den Regler bei JEDEM Preset frei, s. Kontext-Datei).
     // presets.js ist hier nicht geladen (reine Logik-/Render-Tests), daher wird PZ.PRESETS
     // minimal gestubbt (inkl. eines zweiten, "fremden" Presets für die Abgrenzung). Wichtig:
     // die Checkbox #flagNewYorkStyle (Einstellungen-Menü) darf NUR den echten persistenten
@@ -1988,12 +1997,12 @@
   })();
 
   // ─────────────────────────────────────────────────────────────
-  heading('19 · Zucker (New York Style, Bäckerprozent — Gegenstück zu Öl aus Sektion 9)');
+  heading('19 · Zucker (New York Style, Bäckerprozent: Gegenstück zu Öl aus Sektion 9)');
 
   // Zucker ist ein Bäckerprozent wie Öl: flour = total/(1+h+s+y+o+su), sugar = flour*su.
   // Wichtig: flour+water+salt+yeast(frisch)+oil+sugar MUSS exakt das Gesamtgewicht ergeben.
   // Werte hier entsprechen dem neuen "New York Style"-Preset (oil 3 %, sugar 2 %, ballw 300).
-  testCase('Direkt · 62 % Hyd, 3 % Öl, 2 % Zucker (New-York-Style-Preset-Werte) — Mehl sinkt, Masse bleibt N×W', {
+  testCase('Direkt · 62 % Hyd, 3 % Öl, 2 % Zucker (New-York-Style-Preset-Werte): Mehl sinkt, Masse bleibt N×W', {
     oil: 3, sugar: 2, salt: 2.5, yeast: 0.2, ballw: 300
   }, R => {
     const total = 1200; // 4 × 300 g
@@ -2009,24 +2018,24 @@
 
   // Regressionsschutz: state.sugar Default (0) darf das bisherige Öl-freie/zuckerfreie
   // Verhalten (Stand vor Einführung des Zucker-Felds) nicht verändern.
-  testCase('Direkt · Standard ohne Zucker (Default 0) — Formel identisch zum bisherigen Verhalten (Regression)', {}, R => [
+  testCase('Direkt · Standard ohne Zucker (Default 0): Formel identisch zum bisherigen Verhalten (Regression)', {}, R => [
     ['sugar', R.sugar, 0, 0.001],
     ['flour = total/1,651 (unverändert ohne Zucker/Öl)', R.flour, 1000 / 1.651, 0.05],
   ]);
 
   // #gSugarRow blendet analog zu #gOilRow bei sugar < 0,05 g aus, sonst display:flex.
-  testCase('0 % Zucker — #gSugarRow ausgeblendet (Grenzfall exakt 0)', { sugar: 0 }, R => [
+  testCase('0 % Zucker: #gSugarRow ausgeblendet (Grenzfall exakt 0)', { sugar: 0 }, R => [
     ['sugar', R.sugar, 0, 0.001],
     ['#gSugarRow display', document.getElementById('gSugarRow').style.display, 'none'],
   ]);
 
-  testCase('Zucker 2 % — #gSugarRow sichtbar (display:flex)', { sugar: 2 }, R => [
+  testCase('Zucker 2 %: #gSugarRow sichtbar (display:flex)', { sugar: 2 }, R => [
     ['sugar > 0', R.sugar > 0, true],
     ['#gSugarRow display', document.getElementById('gSugarRow').style.display, 'flex'],
   ]);
 
   // Bei Vorteig kommt der Zucker komplett in den Hauptteig, nie in Biga/Poolish (analog zu Öl).
-  // Es gibt bewusst kein "pSugar"-Feld — geprüft wird, dass kein solches DOM-Element existiert
+  // Es gibt bewusst kein "pSugar"-Feld: geprüft wird, dass kein solches DOM-Element existiert
   // und dass die Aufteilungs-Rechnung trotzdem exakt aufgeht.
   testCase('Biga · Zucker geht komplett in den Hauptteig (Vorteig zuckerfrei)', {
     method: 'biga', pref: 70, bhyd: 45, hyd: 65, sugar: 2
@@ -2048,7 +2057,7 @@
   ]);
 
   // Feature-Kombination: Vorteig + Kaltgare "im Stück" + Öl + Zucker gleichzeitig.
-  testCase('Biga · Öl 3 % · Zucker 2 % · Kaltgare im Stück (bulk) — alle Features gleichzeitig korrekt', {
+  testCase('Biga · Öl 3 % · Zucker 2 % · Kaltgare im Stück (bulk): alle Features gleichzeitig korrekt', {
     method: 'biga', pref: 70, bhyd: 45, hyd: 65, oil: 3, sugar: 2, coldStage: 'bulk', yeast: 0.3
   }, R => [
     ['oil > 0 im Hauptteig', R.oil > 0, true],
@@ -2060,7 +2069,7 @@
     ['Summe (inkl. Zucker) = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil + R.sugar, 1000, 0.01],
   ]);
 
-  // js/guide.js: hasSugar = R.sugar >= 0.05 — "Zucker" muss in der Anleitung auftauchen,
+  // js/guide.js: hasSugar = R.sugar >= 0.05: "Zucker" muss in der Anleitung auftauchen,
   // sowohl bei Direkt- als auch bei einer Vorteig-Methode (Biga), und dabei an den
   // dokumentierten Stellen (frühe Zugabe mit Mehl/Wasser/Hefe, NICHT wie Öl erst spät).
   testCase('Direkt · Zucker erscheint in der Anleitung (Zutaten-Zeile & Mischen-Schritt)', {
@@ -2085,7 +2094,7 @@
     ];
   });
 
-  testCase('Kein Zucker (0 %, Direkt) — "Zucker" taucht in der Anleitung nicht auf', {
+  testCase('Kein Zucker (0 %, Direkt): "Zucker" taucht in der Anleitung nicht auf', {
     method: 'direct', sugar: 0, yeast: 0.3
   }, R => {
     const html = document.getElementById('guideSteps').innerHTML;
@@ -2095,7 +2104,7 @@
     ];
   });
 
-  testCase('Kein Zucker (0 %, Biga) — "Zucker" taucht in der Anleitung nicht auf', {
+  testCase('Kein Zucker (0 %, Biga): "Zucker" taucht in der Anleitung nicht auf', {
     method: 'biga', pref: 70, bhyd: 45, hyd: 65, sugar: 0, yeast: 0.3
   }, R => {
     const html = document.getElementById('guideSteps').innerHTML;
@@ -2105,9 +2114,9 @@
     ];
   });
 
-  // Randfälle: 1 bzw. 20 Teiglinge mit Zucker — Masseerhaltung muss auch an den
+  // Randfälle: 1 bzw. 20 Teiglinge mit Zucker: Masseerhaltung muss auch an den
   // Mengen-Extremen exakt aufgehen (analog zu den Öl-/Basis-Randfällen in Sektion 11).
-  testCase('1 Teigling à 250 g mit 2 % Zucker — Masseerhaltung bleibt exakt', {
+  testCase('1 Teigling à 250 g mit 2 % Zucker: Masseerhaltung bleibt exakt', {
     balls: 1, ballw: 250, sugar: 2
   }, R => [
     ['total', R.total, 250, 0],
@@ -2115,7 +2124,7 @@
     ['Summe (inkl. Zucker) = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil + R.sugar, 250, 0.01],
   ]);
 
-  testCase('20 Teiglinge à 250 g mit 2 % Zucker — Masseerhaltung bleibt exakt', {
+  testCase('20 Teiglinge à 250 g mit 2 % Zucker: Masseerhaltung bleibt exakt', {
     balls: 20, ballw: 250, sugar: 2
   }, R => [
     ['total', R.total, 5000, 0],
@@ -2124,10 +2133,10 @@
   ]);
 
   // ─────────────────────────────────────────────────────────────
-  heading('20 · Rezepte-Backup (js/storage.js) — Export/Import als Datei');
+  heading('20 · Rezepte-Backup (js/storage.js): Export/Import als Datei');
   (function () {
     const STORAGE_KEY = 'pizzaRechner';
-    // Wie Sektion 16: eventuell vorhandenen echten Stand sichern/wiederherstellen —
+    // Wie Sektion 16: eventuell vorhandenen echten Stand sichern/wiederherstellen:
     // die Tests dürfen echte Nutzerdaten niemals überschreiben.
     const backup = localStorage.getItem(STORAGE_KEY);
 
@@ -2163,7 +2172,7 @@
       };
       const result = PZ.importRecipes(parsed);
       const recipes = PZ.listRecipes();
-      renderBox('importRecipes() in eine leere Bibliothek — beide Rezepte werden übernommen', [
+      renderBox('importRecipes() in eine leere Bibliothek: beide Rezepte werden übernommen', [
         { label: 'imported = 2', ok: result.imported === 2, actual: result.imported, expected: 2, tol: null },
         { label: 'skipped = 0', ok: result.skipped === 0, actual: result.skipped, expected: 0, tol: null },
         { label: 'Beide Rezepte jetzt in listRecipes()', ok: recipes.length === 2, actual: recipes.length, expected: 2, tol: null },
@@ -2186,7 +2195,7 @@
       const result = PZ.importRecipes(parsed);
       const recipes = PZ.listRecipes();
       const named = recipes.map(r => r.name).sort();
-      renderBox('Namenskollision beim Import — bestehendes Rezept bleibt, Duplikate bekommen unterscheidbare Namen', [
+      renderBox('Namenskollision beim Import: bestehendes Rezept bleibt, Duplikate bekommen unterscheidbare Namen', [
         { label: 'imported = 2', ok: result.imported === 2, actual: result.imported, expected: 2, tol: null },
         { label: 'Insgesamt 3 Rezepte (nichts überschrieben)', ok: recipes.length === 3, actual: recipes.length, expected: 3, tol: null },
         { label: 'Original "Mein Rezept" (balls=4) unverändert vorhanden', ok: recipes.some(r => r.name === 'Mein Rezept' && r.state.balls === 4), actual: recipes.find(r => r.name === 'Mein Rezept'), expected: 'balls=4', tol: null },
@@ -2201,14 +2210,14 @@
       PZ.importRecipes(parsed);
       const result2 = PZ.importRecipes(parsed); // exakt dieselbe Datei nochmal einlesen
       const recipes = PZ.listRecipes();
-      renderBox('Doppelter Import derselben Datei — kein Datenverlust, zweiter Import bekommt eigenen Namen', [
+      renderBox('Doppelter Import derselben Datei: kein Datenverlust, zweiter Import bekommt eigenen Namen', [
         { label: 'Zweiter Import ebenfalls erfolgreich (imported = 1)', ok: result2.imported === 1, actual: result2.imported, expected: 1, tol: null },
         { label: 'Insgesamt 2 unabhängige Rezepte (kein Überschreiben)', ok: recipes.length === 2, actual: recipes.length, expected: 2, tol: null },
         { label: 'Beide mit balls=6 (identischer Inhalt, nur der Name unterscheidet)', ok: recipes.every(r => r.state.balls === 6), actual: recipes.map(r => r.state.balls), expected: '[6,6]', tol: null }
       ]);
     });
 
-    // --- Leere/korrupte Datei — definierter Fehler statt Absturz oder stillem Datenverlust ---
+    // --- Leere/korrupte Datei: definierter Fehler statt Absturz oder stillem Datenverlust ---
     withCleanStorage(() => {
       Object.assign(PZ.state, BASE, { balls: 4 });
       PZ.saveAsNew('Bestehendes Rezept');
@@ -2217,7 +2226,7 @@
       try { PZ.importRecipes({}); } catch (e) { threwOnEmptyObj = true; }
       try { PZ.importRecipes([1, 2, 3]); } catch (e) { threwOnArray = true; }
       const recipesAfter = PZ.listRecipes();
-      renderBox('Leere/korrupte Import-Eingabe — definierter Fehler, bestehende Rezepte bleiben unangetastet', [
+      renderBox('Leere/korrupte Import-Eingabe: definierter Fehler, bestehende Rezepte bleiben unangetastet', [
         { label: 'importRecipes(null) wirft (kein stiller no-op)', ok: threwOnNull, actual: threwOnNull, expected: true, tol: null },
         { label: 'importRecipes({}) ohne recipes-Array wirft', ok: threwOnEmptyObj, actual: threwOnEmptyObj, expected: true, tol: null },
         { label: 'importRecipes([...]) (kein Objekt mit recipes-Feld) wirft', ok: threwOnArray, actual: threwOnArray, expected: true, tol: null },
@@ -2225,7 +2234,7 @@
       ]);
     });
 
-    // --- Datei mit teils kaputten Einträgen — gültige werden importiert, ungültige übersprungen ---
+    // --- Datei mit teils kaputten Einträgen: gültige werden importiert, ungültige übersprungen ---
     withCleanStorage(() => {
       const parsed = {
         recipes: [
@@ -2238,7 +2247,7 @@
       };
       const result = PZ.importRecipes(parsed);
       const recipes = PZ.listRecipes();
-      renderBox('Datei mit teils kaputten Einträgen — gültige Rezepte werden importiert, kaputte übersprungen', [
+      renderBox('Datei mit teils kaputten Einträgen: gültige Rezepte werden importiert, kaputte übersprungen', [
         { label: 'imported = 2 (nur die 2 gültigen)', ok: result.imported === 2, actual: result.imported, expected: 2, tol: null },
         { label: 'skipped = 3 (die 3 kaputten)', ok: result.skipped === 3, actual: result.skipped, expected: 3, tol: null },
         { label: 'total = 5 (alle Einträge der Datei)', ok: result.total === 5, actual: result.total, expected: 5, tol: null },
@@ -2258,7 +2267,7 @@
         const reparsed = JSON.parse(asFileContent); // simuliert FileReader-Ergebnis
         const result = PZ.importRecipes(reparsed);
         const recipes = PZ.listRecipes();
-        renderBox('Vollständige Rundreise Export -> Datei-Text -> Import — Werte bleiben exakt erhalten', [
+        renderBox('Vollständige Rundreise Export -> Datei-Text -> Import: Werte bleiben exakt erhalten', [
           { label: 'imported = 1', ok: result.imported === 1, actual: result.imported, expected: 1, tol: null },
           { label: 'Name erhalten', ok: recipes[0].name === 'Original', actual: recipes[0].name, expected: 'Original', tol: null },
           { label: 'balls erhalten', ok: recipes[0].state.balls === 4, actual: recipes[0].state.balls, expected: 4, tol: null },
@@ -2278,19 +2287,19 @@
 
   // buildGuidePdfBytes() liest die bereits von PZ.calc()/buildGuide() gerenderte
   // Anleitung direkt aus dem DOM (#guideSummary/#flourWarn/#guideSteps) und baut daraus
-  // von Hand ein PDF-1.4-Dokument (kein Font-Embedding, keine externe Bibliothek — s.
+  // von Hand ein PDF-1.4-Dokument (kein Font-Embedding, keine externe Bibliothek: s.
   // Kommentar in js/pdf.js). Getestet wird die reine Datenfunktion, kein window.print()-
-  // artiger Seiteneffekt (analog zu buildShoppingList() in Sektion 15 — printGuide()/
+  // artiger Seiteneffekt (analog zu buildShoppingList() in Sektion 15: printGuide()/
   // printShoppingList() selbst werden aus demselben Grund auch dort nicht unit-getestet).
 
-  // Dekodiert ein Uint8Array 1:1 zurück in einen JS-String (jedes Byte = ein Zeichen —
+  // Dekodiert ein Uint8Array 1:1 zurück in einen JS-String (jedes Byte = ein Zeichen:
   // exakt der Weg, auf dem buildGuidePdfBytes() den PDF-Bytestring erzeugt hat).
   function bytesToStr(bytes) {
     let out = '';
     for (let i = 0; i < bytes.length; i++) out += String.fromCharCode(bytes[i]);
     return out;
   }
-  // Nur Codepoints <= 0xFF sind WinAnsi-/Latin-1-tauglich — Voraussetzung dafür, dass
+  // Nur Codepoints <= 0xFF sind WinAnsi-/Latin-1-tauglich: Voraussetzung dafür, dass
   // sanitizeText() wirklich jeden Textblock von Emoji/Symbolen ohne WinAnsi-Entsprechung
   // befreit hat (sonst würde ein Font ohne Embedding die Zeichen nicht darstellen können).
   function allLatin1(str) {
@@ -2298,7 +2307,7 @@
     return true;
   }
 
-  testCase('Direkt · Standard — PDF-Grundstruktur (Header/Objekte/Trailer gültig)', {}, R => {
+  testCase('Direkt · Standard: PDF-Grundstruktur (Header/Objekte/Trailer gültig)', {}, R => {
     const bytes = PZ.buildGuidePdfBytes();
     const str = bytesToStr(bytes);
     return [
@@ -2312,7 +2321,7 @@
     ];
   });
 
-  testCase('Direkt · Standard — enthält reale Anleitungstexte (Klartext-Regressionsanker)', {}, R => {
+  testCase('Direkt · Standard: enthält reale Anleitungstexte (Klartext-Regressionsanker)', {}, R => {
     const bytes = PZ.buildGuidePdfBytes();
     const str = bytesToStr(bytes);
     return [
@@ -2324,20 +2333,20 @@
     ];
   });
 
-  testCase('Biga (Vorteig) — Tagesabschnitte und Vorteig-Schritte im PDF enthalten', {
+  testCase('Biga (Vorteig): Tagesabschnitte und Vorteig-Schritte im PDF enthalten', {
     method: 'biga', pref: 70, bhyd: 45, hyd: 65, prefMature: 24, prefStage: 'b24'
   }, R => {
     const bytes = PZ.buildGuidePdfBytes();
     const str = bytesToStr(bytes);
     return [
-      ['Tagesabschnitt "Vorteig — Biga ansetzen" enthalten', str.includes('Vorteig') && str.includes('Biga ansetzen'), true],
+      ['Tagesabschnitt "Vorteig: Biga ansetzen" enthalten', str.includes('Vorteig') && str.includes('Biga ansetzen'), true],
       ['Schritt "Biga reifen lassen" enthalten', str.includes('Biga reifen lassen'), true],
       ['Größerer Inhalt (mehr Schritte) erzeugt kein leeres/kaputtes PDF', bytes.length > 500, true],
     ];
   });
 
-  // Reuse der bekannten Warn-Kombination aus Sektion 6 ("Gärzeit zu lang" — Caputo
-  // Pizzeria, extrem lange Gare) — prüft, dass die Mehl-Warnung als eigener,
+  // Reuse der bekannten Warn-Kombination aus Sektion 6 ("Gärzeit zu lang": Caputo
+  // Pizzeria, extrem lange Gare): prüft, dass die Mehl-Warnung als eigener,
   // "Achtung:"-präfigierter Block ins PDF übernommen wird.
   testCase('Mehl-Warnung fließt als "Achtung:"-Block ins PDF ein (Gärzeit zu lang)', {
     flour: 'caputo_pizzeria', yeast: 0.05, hyd: 63
@@ -2353,7 +2362,7 @@
     ];
   });
 
-  testCase('Direkt · Standard — collectGuideContent() liefert nur WinAnsi-taugliche, strukturierte Blöcke', {}, R => {
+  testCase('Direkt · Standard: collectGuideContent() liefert nur WinAnsi-taugliche, strukturierte Blöcke', {}, R => {
     const blocks = PZ._pdfCollectGuideContent();
     return [
       ['Alle Blöcke WinAnsi-tauglich (kein Emoji-Byte > 0xFF)', blocks.every(b => allLatin1(b.text)), true],
@@ -2372,7 +2381,7 @@
       { label: 'Gedankenstrich "–" bleibt WinAnsi-tauglich (kein Codepoint > 0xFF)', ok: allLatin1(PZ._pdfSanitizeText('8–12 min')) },
       { label: 'Leerer/undefined Input liefert leeren String statt Fehler', ok: PZ._pdfSanitizeText('') === '' && PZ._pdfSanitizeText(undefined) === '' },
     ];
-    renderBox('sanitizeText() — Emoji-Bereinigung & WinAnsi-Tauglichkeit', cases.map(c =>
+    renderBox('sanitizeText(): Emoji-Bereinigung & WinAnsi-Tauglichkeit', cases.map(c =>
       ({ label: c.label, ok: c.ok, actual: c.ok, expected: true, tol: null })));
   })();
 
@@ -2383,7 +2392,7 @@
   // dieser Testseite -> die UI-Verdrahtung im Modul läuft nach dem frühen
   // "return" gar nicht erst an, s. Kommentar in js/party.js). Eigener
   // localStorage-Key ("pizzaPartyPlanner"), komplett getrennt vom
-  // Rezepte-Key ("pizzaRechner") — analog zum withCleanStorage()-Muster aus
+  // Rezepte-Key ("pizzaRechner"): analog zum withCleanStorage()-Muster aus
   // Sektion 16/20, aber mit eigenem Key, damit echte Nutzerdaten in beiden
   // Keys unangetastet bleiben.
   (function () {
@@ -2442,7 +2451,7 @@
       const noValidIng = PZ.partyAddCustomPizza('Leere Pizza', [{ name: '', amount: 0, unit: 'g' }]);
       const onlyWhitespaceName = PZ.partyAddCustomPizza('   ', [{ name: 'Salami', amount: 40, unit: 'g' }]);
       const all = PZ.partyGetAllPizzas();
-      renderBox('addCustomPizza() liefert null bei fehlendem Namen oder ohne gültige Zutat — legt nichts an', [
+      renderBox('addCustomPizza() liefert null bei fehlendem Namen oder ohne gültige Zutat: legt nichts an', [
         { label: 'Ohne Namen -> null', ok: noName === null, actual: noName, expected: null, tol: null },
         { label: 'Ohne gültige Zutat -> null', ok: noValidIng === null, actual: noValidIng, expected: null, tol: null },
         { label: 'Nur-Leerzeichen-Name -> null', ok: onlyWhitespaceName === null, actual: onlyWhitespaceName, expected: null, tol: null },
@@ -2477,13 +2486,13 @@
       ]);
     });
 
-    // --- computeAggregatedList(): Kernrechnung — Mengen × Stückzahl, dedupliziert nach Name+Einheit ---
+    // --- computeAggregatedList(): Kernrechnung: Mengen × Stückzahl, dedupliziert nach Name+Einheit ---
     withCleanPartyStorage(() => {
       PZ.partySetQty('preset_margherita', 3); // 3× 100g Mozzarella, 80g Tomatensauce, 3 Blätter Basilikum
       PZ.partySetQty('preset_salami', 2);     // 2× 90g Mozzarella, 80g Tomatensauce, 40g Salami
       const result = PZ.partyComputeAggregatedList();
       const byName = name => result.ingredients.find(i => i.name === name);
-      renderBox('computeAggregatedList() — 3× Margherita + 2× Salami, aggregiert & dedupliziert', [
+      renderBox('computeAggregatedList(): 3× Margherita + 2× Salami, aggregiert & dedupliziert', [
         { label: 'totalPizzaCount = 5', ok: result.totalPizzaCount === 5, actual: result.totalPizzaCount, expected: 5, tol: null },
         { label: '4 unterschiedliche Zutaten (Tomatensauce, Mozzarella, Basilikum, Salami)', ok: result.ingredients.length === 4, actual: result.ingredients.map(i => i.name), expected: 4, tol: null },
         { label: 'Mozzarella dedupliziert: 3×100 + 2×90 = 480 g', ok: byName('Mozzarella').amount === 480, actual: byName('Mozzarella').amount, expected: 480, tol: null },
@@ -2535,7 +2544,7 @@
       const all = PZ.partyGetAllPizzas();
       const result = PZ.partyComputeAggregatedList();
       renderBox('partyResetAllQuantities() setzt alle Stückzahlen zurück, löscht aber keine Pizzen', [
-        { label: 'Weiterhin 9 Pizzen (8 Presets + 1 eigene) — nichts gelöscht', ok: all.length === 9, actual: all.length, expected: 9, tol: null },
+        { label: 'Weiterhin 9 Pizzen (8 Presets + 1 eigene): nichts gelöscht', ok: all.length === 9, actual: all.length, expected: 9, tol: null },
         { label: 'Margherita-Stückzahl ist jetzt 0', ok: PZ.partyGetQty('preset_margherita') === 0, actual: PZ.partyGetQty('preset_margherita'), expected: 0, tol: null },
         { label: 'Salami-Stückzahl ist jetzt 0', ok: PZ.partyGetQty('preset_salami') === 0, actual: PZ.partyGetQty('preset_salami'), expected: 0, tol: null },
         { label: 'Eigene Pizza-Stückzahl ist jetzt 0', ok: PZ.partyGetQty(pizza.id) === 0, actual: PZ.partyGetQty(pizza.id), expected: 0, tol: null },
@@ -2570,7 +2579,7 @@
       let threw = false;
       let pizzas = [];
       try { pizzas = PZ.partyGetAllPizzas(); } catch (e) { threw = true; }
-      renderBox('Korruptes JSON im Party-localStorage — keine Exception, fällt auf die 8 Presets zurück', [
+      renderBox('Korruptes JSON im Party-localStorage: keine Exception, fällt auf die 8 Presets zurück', [
         { label: 'Kein Fehler beim Lesen', ok: !threw, actual: threw, expected: false, tol: null },
         { label: 'Trotzdem die 8 Presets verfügbar', ok: pizzas.length === 8, actual: pizzas.length, expected: 8, tol: null }
       ]);
@@ -2584,7 +2593,7 @@
   // ─────────────────────────────────────────────────────────────
   heading('23 · Sprachversion Deutsch/Englisch (js/i18n.js)');
 
-  // Reine Funktions-/Datenschicht getestet (PZ.t/getLang/setLang/i18nOnChange) — die
+  // Reine Funktions-/Datenschicht getestet (PZ.t/getLang/setLang/i18nOnChange): die
   // DOM-Verdrahtung (applyStaticI18n()/data-i18n-Attribute, Sprachumschalter-UI) läuft
   // in tests/test.html mangels passendem Markup nicht mit, analog zum etablierten Umgang
   // mit anderen UI-Modulen hier (js/ui.js, js/newrecipe.js). Jeder Testblock stellt am
@@ -2669,7 +2678,7 @@
     })();
 
     // Ursprünglichen Sprach-Stand (falls vorhanden) wiederherstellen, sonst auf Deutsch
-    // zurücksetzen — Baseline für alle vorangegangenen Testsektionen in dieser Datei.
+    // zurücksetzen: Baseline für alle vorangegangenen Testsektionen in dieser Datei.
     if (backup !== null) { localStorage.setItem(LANG_KEY, backup); PZ.setLang(backup); }
     else { localStorage.removeItem(LANG_KEY); PZ.setLang('de'); }
   })();
@@ -2681,7 +2690,7 @@
   // (PZ._resolveInitialTheme/getTheme/setTheme), plus ein DOM-Effekt-Test für den
   // Umschalter (#themeSwitch-Stub oben) und die Live-Region-Ansage (#themeAnnounce).
   // Die eigentlichen Dunkelmodus-FARBWERTE (css/styles.css, :root[data-theme="dark"])
-  // sind hier NICHT geprüft — test.html lädt bewusst kein echtes App-Stylesheet (reine
+  // sind hier NICHT geprüft: test.html lädt bewusst kein echtes App-Stylesheet (reine
   // Rechenlogik-/Verhaltens-Tests), Kontrastwerte sind rechnerisch in
   // pizza-rechner-KONTEXT.md dokumentiert und per Screenshot-Verifikation geprüft.
   (function () {
@@ -2690,7 +2699,7 @@
     const attrBackup = document.documentElement.getAttribute('data-theme');
 
     // --- resolveInitialTheme(): reine Entscheidungsfunktion, kein DOM/localStorage ---
-    renderBox('PZ._resolveInitialTheme() — gespeicherte manuelle Wahl schlägt immer die Systemeinstellung', [
+    renderBox('PZ._resolveInitialTheme(): gespeicherte manuelle Wahl schlägt immer die Systemeinstellung', [
       { label: 'stored="dark", System hell -> "dark" (manuelle Wahl gewinnt)', ok: PZ._resolveInitialTheme('dark', false) === 'dark', actual: PZ._resolveInitialTheme('dark', false), expected: 'dark', tol: null },
       { label: 'stored="light", System dunkel -> "light" (manuelle Wahl gewinnt)', ok: PZ._resolveInitialTheme('light', true) === 'light', actual: PZ._resolveInitialTheme('light', true), expected: 'light', tol: null },
       { label: 'stored=null, System dunkel -> "dark" (Systemerkennung greift)', ok: PZ._resolveInitialTheme(null, true) === 'dark', actual: PZ._resolveInitialTheme(null, true), expected: 'dark', tol: null },
@@ -2735,7 +2744,7 @@
     // würde voraussetzen, dass DOMContentLoaded schon gefeuert hat, was innerhalb des synchron
     // während des HTML-Parsings laufenden Test-Inline-Scripts dieser Datei NICHT der Fall ist
     // (identischer Timing-Grund, weshalb die Sprachumschalter-UI in Sektion 23 laut dortigem
-    // Kommentar ebenfalls nicht per simuliertem Klick getestet wird — nur die zugrunde liegende
+    // Kommentar ebenfalls nicht per simuliertem Klick getestet wird: nur die zugrunde liegende
     // API). Click-Verdrahtung + Live-Region-Ansage (#themeAnnounce) bleiben entsprechend
     // ungetestet, analog zu #langSwitch/#langAnnounce.
     (function () {
@@ -2755,10 +2764,203 @@
       ]);
     })();
 
-    // Ursprünglichen Theme-Stand (falls vorhanden) wiederherstellen, sonst Key entfernen —
+    // Ursprünglichen Theme-Stand (falls vorhanden) wiederherstellen, sonst Key entfernen:
     // Baseline für alle vorangegangenen Testsektionen in dieser Datei.
     if (backup !== null) { localStorage.setItem(THEME_KEY, backup); } else { localStorage.removeItem(THEME_KEY); }
     if (attrBackup !== null) { document.documentElement.setAttribute('data-theme', attrBackup); } else { document.documentElement.removeAttribute('data-theme'); }
+  })();
+
+  // ─────────────────────────────────────────────────────────────
+  heading('25 · Globale Hefemengen-/Verschwendungs-Anpassung (js/settings.js, v3.64.0)');
+  (function () {
+    const ADJUST_KEY = 'pizzaRechnerAdjustments';
+    // Wie bei Abschnitt 16/17/18: einen eventuell vorhandenen echten Stand sichern und
+    // am Ende wiederherstellen: Tests dürfen nie echte Nutzereinstellungen überschreiben.
+    const backup = localStorage.getItem(ADJUST_KEY);
+    const adjustBackup = Object.assign({}, PZ.ADJUST);
+
+    // --- Default-Werte exakt wie vom Nutzer festgelegt ---
+    (function () {
+      const d = PZ.ADJUST_DEFAULTS;
+      renderBox('Default-Werte der Anpassungen', [
+        ['yeastAdjust (Hefemenge anpassen)', d.yeastAdjust, 0],
+        ['wasteAdjust (Verschwendung anpassen)', d.wasteAdjust, 2]
+      ].map(([label, actual, expected]) => ({ label, actual, expected, tol: null, ok: actual === expected })));
+    })();
+
+    // --- Wertebereiche / Schrittweiten exakt wie vom Nutzer festgelegt ---
+    (function () {
+      const y = PZ.ADJUST_RANGE.yeastAdjust, w = PZ.ADJUST_RANGE.wasteAdjust;
+      renderBox('Wertebereiche & Schrittweiten', [
+        ['yeastAdjust min', y.min, -50],
+        ['yeastAdjust max', y.max, 100],
+        ['yeastAdjust step', y.step, 5],
+        ['wasteAdjust min', w.min, 0],
+        ['wasteAdjust max', w.max, 15],
+        ['wasteAdjust step', w.step, 1]
+      ].map(([label, actual, expected]) => ({ label, actual, expected, tol: null, ok: actual === expected })));
+    })();
+
+    // --- PZ._clampAdjust(): klemmt auf Bereich UND rundet auf die Schrittweite ---
+    (function () {
+      renderBox('_clampAdjust() klemmt auf Bereich & rundet auf Schrittweite', [
+        { label: 'yeastAdjust 999 -> geklemmt auf Maximum 100', ok: PZ._clampAdjust('yeastAdjust', 999) === 100, actual: PZ._clampAdjust('yeastAdjust', 999), expected: 100, tol: null },
+        { label: 'yeastAdjust -999 -> geklemmt auf Minimum -50', ok: PZ._clampAdjust('yeastAdjust', -999) === -50, actual: PZ._clampAdjust('yeastAdjust', -999), expected: -50, tol: null },
+        { label: 'yeastAdjust 37 (krumm) -> gerundet auf Schrittweite 5 -> 35', ok: PZ._clampAdjust('yeastAdjust', 37) === 35, actual: PZ._clampAdjust('yeastAdjust', 37), expected: 35, tol: null },
+        { label: 'wasteAdjust 999 -> geklemmt auf Maximum 15', ok: PZ._clampAdjust('wasteAdjust', 999) === 15, actual: PZ._clampAdjust('wasteAdjust', 999), expected: 15, tol: null },
+        { label: 'wasteAdjust -5 -> geklemmt auf Minimum 0', ok: PZ._clampAdjust('wasteAdjust', -5) === 0, actual: PZ._clampAdjust('wasteAdjust', -5), expected: 0, tol: null },
+        { label: 'wasteAdjust "abc" (ungültig) -> fällt auf Default 2 zurück', ok: PZ._clampAdjust('wasteAdjust', 'abc') === 2, actual: PZ._clampAdjust('wasteAdjust', 'abc'), expected: 2, tol: null }
+      ]);
+    })();
+
+    // --- Merge-/Vorwärtskompatibilitäts-Verhalten: gespeichertes Teilobjekt + neue Defaults ---
+    (function () {
+      const onlyOneStored = { yeastAdjust: 20 };
+      const merged = PZ._mergeAdjust(onlyOneStored);
+      const emptyStored = PZ._mergeAdjust({});
+      const junkStored = PZ._mergeAdjust(null);
+      renderBox('Merge: gespeichertes Teilobjekt überschreibt nur seine eigenen Keys', [
+        { label: 'Explizit gespeichertes yeastAdjust=20 bleibt 20', ok: merged.yeastAdjust === 20, actual: merged.yeastAdjust, expected: 20, tol: null },
+        { label: 'Nicht gespeichertes wasteAdjust bekommt weiterhin seinen Default (2)', ok: merged.wasteAdjust === 2, actual: merged.wasteAdjust, expected: 2, tol: null },
+        { label: 'Leeres gespeichertes Objekt -> reine Defaults (yeastAdjust=0)', ok: emptyStored.yeastAdjust === 0, actual: emptyStored.yeastAdjust, expected: 0, tol: null },
+        { label: 'null als gespeicherter Wert crasht nicht -> reine Defaults', ok: junkStored.wasteAdjust === 2, actual: junkStored.wasteAdjust, expected: 2, tol: null }
+      ]);
+    })();
+
+    // --- Persistenz: setAdjust() klemmt, persistiert sofort, ignoriert unbekannte Keys ---
+    (function () {
+      localStorage.removeItem(ADJUST_KEY);
+      PZ.setAdjust('wasteAdjust', 999); // muss auf 15 geklemmt werden
+      let raw = null, threw = false;
+      try { raw = JSON.parse(localStorage.getItem(ADJUST_KEY)); } catch (e) { threw = true; }
+      const before = Object.assign({}, PZ.ADJUST);
+      PZ.setAdjust('unbekannterKey', 42);
+      renderBox('setAdjust() klemmt & persistiert sofort in localStorage', [
+        { label: 'Kein Fehler beim Parsen des gespeicherten JSON', ok: !threw, actual: threw, expected: false, tol: null },
+        { label: 'Übergroßer Wert (999) wird VOR dem Speichern auf 15 geklemmt', ok: !!raw && raw.wasteAdjust === 15, actual: raw && raw.wasteAdjust, expected: 15, tol: null },
+        { label: 'PZ.ADJUST.wasteAdjust selbst ebenfalls geklemmt auf 15', ok: PZ.ADJUST.wasteAdjust === 15, actual: PZ.ADJUST.wasteAdjust, expected: 15, tol: null },
+        { label: 'Unbekannter Key wird ignoriert (kein Crash, kein neuer Key, State unverändert)', ok: (function () { let ok2 = true; try { } catch (e) { ok2 = false; } return ok2 && !('unbekannterKey' in PZ.ADJUST) && PZ.ADJUST.wasteAdjust === before.wasteAdjust; })(), actual: 'geprüft', expected: 'geprüft', tol: null }
+      ]);
+      // Baseline für die restlichen Checks in dieser Sektion wiederherstellen.
+      PZ.ADJUST = { yeastAdjust: 0, wasteAdjust: 0 };
+    })();
+
+    // --- Rechenwirkung yeastAdjust: fließt als Faktor auf die Hefe-Bäckerprozentzahl
+    // in den NENNER ein (analog zu Öl/Zucker) -- Masseerhaltung bleibt exakt erhalten. ---
+    (function () {
+      Object.assign(PZ.state, BASE, { balls: 4, ballw: 250, yeast: 0.30, oil: 0, sugar: 0 });
+      setFlour('caputo_pizzeria');
+
+      PZ.ADJUST = { yeastAdjust: 0, wasteAdjust: 0 };
+      PZ.calc();
+      const baseYeast = PZ.R.yeast;
+      const baseTotal = PZ.R.total;
+
+      PZ.ADJUST = { yeastAdjust: 50, wasteAdjust: 0 }; // +50 % mehr Hefe
+      PZ.calc();
+      const R50 = PZ.R;
+      // effektive Bäckerprozentzahl: 0.30% * 1.5 = 0.45%
+      const yEff = (0.30 / 100) * 1.5;
+      const expFlour = (4 * 250) / (1 + 0.62 + 0.028 + yEff);
+      const expYeast50 = expFlour * yEff;
+
+      PZ.ADJUST = { yeastAdjust: -50, wasteAdjust: 0 }; // −50 % weniger Hefe
+      PZ.calc();
+      const Rminus50 = PZ.R;
+
+      renderBox('yeastAdjust: +50 % erhöht die Hefemenge, Masseerhaltung bleibt exakt erhalten', [
+        { label: '+50 %: Hefemenge liegt spürbar über dem Grundwert', ok: R50.yeast > baseYeast, actual: R50.yeast, expected: '> ' + round(baseYeast), tol: null },
+        { label: '+50 %: Hefemenge trifft die erwartete Formel (effektive Bäckerprozentzahl im Nenner)', ok: Math.abs(R50.yeast - expYeast50) <= 0.01, actual: R50.yeast, expected: expYeast50, tol: 0.01 },
+        { label: '+50 %: Gesamtgewicht bleibt exakt N×Teiglingsgewicht (Masseerhaltung)', ok: Math.abs(R50.total - baseTotal) <= 0.001, actual: R50.total, expected: baseTotal, tol: 0.001 },
+        { label: '+50 %: Mehl+Wasser+Salz+Hefe+Öl+Zucker = Gesamtgewicht', ok: Math.abs((R50.flour + R50.water + R50.salt + R50.yeast + R50.oil + R50.sugar) - R50.total) <= 0.01, actual: R50.flour + R50.water + R50.salt + R50.yeast + R50.oil + R50.sugar, expected: R50.total, tol: 0.01 },
+        { label: '−50 %: Hefemenge liegt spürbar unter dem Grundwert', ok: Rminus50.yeast < baseYeast, actual: Rminus50.yeast, expected: '< ' + round(baseYeast), tol: null },
+        { label: '−50 %: Gesamtgewicht bleibt trotzdem exakt N×Teiglingsgewicht', ok: Math.abs(Rminus50.total - baseTotal) <= 0.001, actual: Rminus50.total, expected: baseTotal, tol: 0.001 }
+      ]);
+
+      PZ.ADJUST = { yeastAdjust: 0, wasteAdjust: 0 };
+    })();
+
+    // --- Rechenwirkung wasteAdjust: erhöht "total" VOR der Zutaten-Aufteilung, alle
+    // Zutaten skalieren proportional mit, R.N/R.W (Zielgewicht je Teigling) unverändert. ---
+    (function () {
+      Object.assign(PZ.state, BASE, { balls: 4, ballw: 250, oil: 2, sugar: 0 });
+      setFlour('caputo_pizzeria');
+
+      PZ.ADJUST = { yeastAdjust: 0, wasteAdjust: 0 };
+      PZ.calc();
+      const base = Object.assign({}, PZ.R);
+
+      PZ.ADJUST = { yeastAdjust: 0, wasteAdjust: 10 }; // +10 % Verschwendungspuffer
+      PZ.calc();
+      const R10 = PZ.R;
+      const expTotal = (4 * 250) * 1.10;
+
+      renderBox('wasteAdjust: +10 % erhöht "total" vor der Aufteilung, Ziel-N/-W bleiben unverändert', [
+        { label: 'total = N×W × 1,10 (1000 -> 1100)', ok: Math.abs(R10.total - expTotal) <= 0.001, actual: R10.total, expected: expTotal, tol: 0.001 },
+        { label: 'totalBase bleibt weiterhin die reine N×W-Zahl (1000, ohne Puffer)', ok: Math.abs(R10.totalBase - 1000) <= 0.001, actual: R10.totalBase, expected: 1000, tol: 0.001 },
+        { label: 'R.N (Ziel-Teiglingszahl) bleibt unverändert', ok: R10.N === base.N, actual: R10.N, expected: base.N, tol: null },
+        { label: 'R.W (Ziel-Gewicht je Teigling) bleibt unverändert', ok: R10.W === base.W, actual: R10.W, expected: base.W, tol: null },
+        { label: 'Mehl/Wasser/Salz/Öl skalieren proportional mit (Mehl > Grundwert)', ok: R10.flour > base.flour, actual: R10.flour, expected: '> ' + round(base.flour), tol: null },
+        { label: 'Mehl+Wasser+Salz+Hefe+Öl+Zucker = total (Masseerhaltung gilt weiter, nur mit größerem total)', ok: Math.abs((R10.flour + R10.water + R10.salt + R10.yeast + R10.oil + R10.sugar) - R10.total) <= 0.01, actual: R10.flour + R10.water + R10.salt + R10.yeast + R10.oil + R10.sugar, expected: R10.total, tol: 0.01 },
+        { label: 'wasteAdjust=0 (Baseline): total bleibt exakt N×W ohne jeden Puffer', ok: Math.abs(base.total - 1000) <= 0.001, actual: base.total, expected: 1000, tol: 0.001 }
+      ]);
+
+      PZ.ADJUST = { yeastAdjust: 0, wasteAdjust: 0 };
+    })();
+
+    // --- Kombi-Test: beide Aufschläge gleichzeitig + Vorteig (Biga) -- Hefe geht
+    // vollständig in den Vorteig, wasteAdjust wirkt weiterhin nur auf "total" ---
+    (function () {
+      Object.assign(PZ.state, BASE, {
+        balls: 6, ballw: 280, method: 'biga', pref: 100, bhyd: 45, yeast: 0.3, oil: 2, sugar: 0
+      });
+      setFlour('caputo_cuoco');
+
+      PZ.ADJUST = { yeastAdjust: 20, wasteAdjust: 5 };
+      PZ.calc();
+      const R = PZ.R;
+      const expTotalBase = 6 * 280;
+      const expTotal = expTotalBase * 1.05;
+
+      renderBox('Kombi: yeastAdjust +20 % & wasteAdjust +5 % gleichzeitig, Biga-Vorteig', [
+        { label: 'total = totalBase × 1,05', ok: Math.abs(R.total - expTotal) <= 0.01, actual: R.total, expected: expTotal, tol: 0.01 },
+        { label: 'totalBase bleibt die reine N×W-Zahl ohne Puffer', ok: Math.abs(R.totalBase - expTotalBase) <= 0.001, actual: R.totalBase, expected: expTotalBase, tol: 0.001 },
+        { label: 'Bei Vorteig geht weiterhin 100 % der (bereits erhöhten) Hefe in den Vorteig', ok: Math.abs(R.pYeast - R.yeast) <= 0.01, actual: R.pYeast, expected: R.yeast, tol: 0.01 },
+        { label: 'Hauptteig-Hefe bleibt 0 (unverändert durch den Hefe-Aufschlag)', ok: R.mYeast === 0, actual: R.mYeast, expected: 0, tol: null },
+        { label: 'Masseerhaltung gilt weiterhin (Mehl+Wasser+Salz+Hefe+Öl = total)', ok: Math.abs((R.flour + R.water + R.salt + R.yeast + R.oil + R.sugar) - R.total) <= 0.01, actual: R.flour + R.water + R.salt + R.yeast + R.oil + R.sugar, expected: R.total, tol: 0.01 }
+      ]);
+
+      PZ.ADJUST = { yeastAdjust: 0, wasteAdjust: 0 };
+    })();
+
+    // --- Render-Effekt: renderResult() zeigt/versteckt #wasteNote je nach wasteAdjust ---
+    (function () {
+      Object.assign(PZ.state, BASE, { balls: 4, ballw: 250, oil: 0, sugar: 0 });
+      setFlour('caputo_pizzeria');
+
+      PZ.ADJUST = { yeastAdjust: 0, wasteAdjust: 0 };
+      PZ.calc();
+      const hiddenAtZero = document.getElementById('wasteNote').style.display === 'none';
+
+      PZ.ADJUST = { yeastAdjust: 0, wasteAdjust: 7 };
+      PZ.calc();
+      const wasteNoteEl = document.getElementById('wasteNote');
+      const shownAtSeven = wasteNoteEl.style.display !== 'none';
+      const noteText = wasteNoteEl.textContent;
+
+      renderBox('renderResult() blendet #wasteNote passend zu wasteAdjust ein/aus', [
+        { label: 'wasteAdjust=0 -> #wasteNote bleibt versteckt', ok: hiddenAtZero, actual: hiddenAtZero, expected: true, tol: null },
+        { label: 'wasteAdjust=7 -> #wasteNote wird sichtbar', ok: shownAtSeven, actual: shownAtSeven, expected: true, tol: null },
+        { label: 'wasteAdjust=7 -> Hinweistext nennt den Prozentwert ("7")', ok: noteText.includes('7'), actual: noteText, expected: 'enthält "7"', tol: null }
+      ]);
+
+      PZ.ADJUST = { yeastAdjust: 0, wasteAdjust: 0 };
+    })();
+
+    // Ursprünglichen Stand (falls vorhanden) wiederherstellen, sonst Key entfernen:
+    // Baseline für alle vorangegangenen Testsektionen in dieser Datei.
+    if (backup !== null) { localStorage.setItem(ADJUST_KEY, backup); } else { localStorage.removeItem(ADJUST_KEY); }
+    PZ.ADJUST = adjustBackup;
   })();
 
   // ─────────────────────────────────────────────────────────────

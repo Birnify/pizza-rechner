@@ -202,7 +202,8 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .nav-close:focus-visible,
 .party-qty-btn:focus-visible,
 .party-delete-btn:focus-visible,
-.party-ing-remove:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+.party-ing-remove:focus-visible,
+.adjust-btn:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
 .nav-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;}
 .nav-item{
   display:block;width:100%;text-align:left;padding:13px 14px;min-height:44px;
@@ -287,14 +288,19 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
    unter den dortigen Toggle-Switch zu laufen — in der schmaleren Party-Zeile gibt es
    keinen Switch daneben, das würde nur unnötig Platz verschwenden/umbrechen lassen. */
 .party-pizza-ings.switch-info{padding-right:0;margin-bottom:0;}
-.party-qty-stepper{display:flex;align-items:center;gap:6px;flex-shrink:0;}
-.party-qty-btn{
+/* .adjust-* (v3.64.0, Einstellungen-Menü "Hefemenge"/"Verschwendung" anpassen) teilt
+   sich bewusst dieselben Regeln wie .party-qty-* (Pizza-Party-Stückzahl-Stepper,
+   v3.27.0) -- identisches, bereits etabliertes Stepper-Bedienmuster, kein zweites
+   Icon-/Button-Vokabular für dieselbe Interaktion nötig. */
+.party-qty-stepper,.adjust-stepper{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.party-qty-btn,.adjust-btn{
   width:40px;height:40px;border:1px solid var(--line);border-radius:50%;
   background:var(--card);font-size:17px;font-weight:700;cursor:pointer;color:var(--ink);
   display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;
 }
-.party-qty-btn:hover{border-color:var(--tomato);color:var(--tomato-text);}
-.party-qty-input{width:52px;text-align:center;padding:9px 4px;}
+.party-qty-btn:hover,.adjust-btn:hover{border-color:var(--tomato);color:var(--tomato-text);}
+.party-qty-input,.adjust-input{width:52px;text-align:center;padding:9px 4px;}
+.adjust-unit{font-size:13px;color:var(--muted);margin-left:2px;}
 .party-delete-btn{
   width:40px;height:40px;border:1px solid var(--line);border-radius:50%;
   background:var(--card);cursor:pointer;font-size:15px;flex-shrink:0;
@@ -501,6 +507,10 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .result .total .big{font-size:32px;font-weight:700;color:var(--ink);font-family:var(--font-head);}
 .result .total .lbl{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-top:2px;}
+/* Verschwendungsaufschlag-Hinweis (v3.64.0): erklärt, warum "Gesamtteig" oben mehr
+   zeigt als N x Teiglingsgewicht darunter vermuten lässt -- ohne diesen Hinweis sähe
+   das wie ein Rechenfehler aus. Blendet sich bei 0 % Aufschlag komplett aus (js/calc.js). */
+.result .total .waste-note{font-size:11px;color:var(--muted);margin-top:4px;font-style:italic;}
 .ing{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px;}
 .ing:last-child{border-bottom:none;}
 .ing .name{display:flex;align-items:center;gap:8px;}

@@ -1,4 +1,4 @@
-/* i18n-dict.js — Wörterbuch-Inhalte für js/i18n.js (v3.55.0)
+/* i18n-dict.js: Wörterbuch-Inhalte für js/i18n.js (v3.55.0)
  *
  * Reine Daten, keine Laufzeit-Logik: alle add(key, de, en)-Einträge, die bis v3.54.0
  * direkt in js/i18n.js standen. Ausgelagert, weil js/i18n.js mit 569 Einträgen /
@@ -33,7 +33,7 @@
     DICT.en[key] = en;
   }
 
-  // ---- js/schedule.js — Gärzeit-Fahrplan (13 Zweige × label/bulk/proof) -------------
+  // ---- js/schedule.js: Gärzeit-Fahrplan (13 Zweige × label/bulk/proof) -------------
   add('sched.prefFast.label', 'Vorteig · Schnelle Hauptgare', 'Pre-ferment · Fast bulk rise');
   add('sched.prefFast.bulk', '<b>1–2 h</b> bei Raumtemp (Stockgare)', '<b>1–2 h</b> at room temp (bulk rise)');
   add('sched.prefFast.proof', '<b>2–3 h</b> bei Raumtemp · Fingertest', '<b>2–3 h</b> at room temp · finger test');
@@ -70,7 +70,7 @@
   add('sched.directExtremeBulk.bulk', '<b>1–2 h</b> Raumtemp, dann <b>48–72 h</b> Kühlschrank (4 °C)', '<b>1–2 h</b> room temp, then <b>48–72 h</b> in the fridge (4 °C)');
   add('sched.directExtremeBulk.proof', 'Teiglinge <b>5–6 h</b> vor dem Backen temperieren', 'Let dough balls come to room temp <b>5–6 h</b> before baking');
 
-  // ---- js/guide.js — Schritt-für-Schritt-Anleitung (dynamisch, mit {platzhaltern}) ---
+  // ---- js/guide.js: Schritt-für-Schritt-Anleitung (dynamisch, mit {platzhaltern}) ---
   add('guide.title', 'Schritt-für-Schritt-Anleitung', 'Step-by-step guide');
   add('guide.weekday.0', 'So', 'Sun'); add('guide.weekday.1', 'Mo', 'Mon');
   add('guide.weekday.2', 'Di', 'Tue'); add('guide.weekday.3', 'Mi', 'Wed');
@@ -80,17 +80,17 @@
   add('guide.dur.h', 'h', 'h');
   add('guide.dur.day', 'Tg', 'd');
 
-  add('guide.warn.gareTooLong', 'Gärzeit zu lang für <b>{flourName}</b> (W{flourW}): ~{hours} h geplant, max. {maxH} h empfohlen. Das Gluten baut ab — Teig wird klebrig und reißt. Entweder stärkeres Mehl wählen oder Hefemenge erhöhen.',
-    'Rise time too long for <b>{flourName}</b> (W{flourW}): ~{hours} h planned, max. {maxH} h recommended. Gluten breaks down — the dough gets sticky and tears. Either choose a stronger flour or increase the yeast amount.');
-  add('guide.warn.gareTooShort', 'Gärzeit zu kurz für <b>{flourName}</b> (W{flourW}): ~{hours} h geplant, mind. {minH} h empfohlen. Das Gluten hat keine Zeit sich auszuentspannen — der Teig federt zurück und lässt sich kaum ausziehen. Entweder schwächeres Mehl wählen oder Hefemenge reduzieren.',
-    'Rise time too short for <b>{flourName}</b> (W{flourW}): ~{hours} h planned, min. {minH} h recommended. The gluten has no time to relax — the dough springs back and is hard to stretch. Either choose a weaker flour or reduce the yeast amount.');
+  add('guide.warn.gareTooLong', 'Gärzeit zu lang für <b>{flourName}</b> (W{flourW}): ~{hours} h geplant, max. {maxH} h empfohlen. Das Gluten baut ab: Teig wird klebrig und reißt. Entweder stärkeres Mehl wählen oder Hefemenge erhöhen.',
+    'Rise time too long for <b>{flourName}</b> (W{flourW}): ~{hours} h planned, max. {maxH} h recommended. Gluten breaks down: the dough gets sticky and tears. Either choose a stronger flour or increase the yeast amount.');
+  add('guide.warn.gareTooShort', 'Gärzeit zu kurz für <b>{flourName}</b> (W{flourW}): ~{hours} h geplant, mind. {minH} h empfohlen. Das Gluten hat keine Zeit sich auszuentspannen: der Teig federt zurück und lässt sich kaum ausziehen. Entweder schwächeres Mehl wählen oder Hefemenge reduzieren.',
+    'Rise time too short for <b>{flourName}</b> (W{flourW}): ~{hours} h planned, min. {minH} h recommended. The gluten has no time to relax: the dough springs back and is hard to stretch. Either choose a weaker flour or reduce the yeast amount.');
   add('guide.warn.hydTooHigh', 'Hydration zu hoch für <b>{flourName}</b>: {hyd} % gewählt, max. {hydMax} % empfohlen. Der Teig kann sehr klebrig werden und schwer zu formen sein.',
     'Hydration too high for <b>{flourName}</b>: {hyd} % chosen, max. {hydMax} % recommended. The dough can become very sticky and hard to shape.');
   add('guide.warn.hydTooLow', 'Hydration etwas niedrig für <b>{flourName}</b>: {hyd} % gewählt, {hydMin}–{hydMax} % wären ideal.',
     'Hydration a bit low for <b>{flourName}</b>: {hyd} % chosen, {hydMin}–{hydMax} % would be ideal.');
 
-  add('guide.sec.prefBiga', 'Vorteig — Biga ansetzen', 'Pre-ferment — mix the biga');
-  add('guide.sec.prefPoolish', 'Vorteig — Poolish ansetzen', 'Pre-ferment — mix the poolish');
+  add('guide.sec.prefBiga', 'Vorteig: Biga ansetzen', 'Pre-ferment: mix the biga');
+  add('guide.sec.prefPoolish', 'Vorteig: Poolish ansetzen', 'Pre-ferment: mix the poolish');
   add('guide.sec.main', 'Hauptteig', 'Final dough');
   add('guide.sec.prep', 'Vorbereitung', 'Preparation');
   add('guide.sec.knead', 'Kneten', 'Kneading');
@@ -101,16 +101,16 @@
   add('guide.chip.5min', '~5 min', '~5 min');
   add('guide.step.prefWeigh.body', 'Für den {prefName}: <b>{pf} g Mehl</b>, <b>{pw} g Wasser</b> ({hydTxt}) und <b>{pYeast} g Hefe {yWord}</b>.',
     'For the {prefName}: <b>{pf} g flour</b>, <b>{pw} g water</b> ({hydTxt}) and <b>{pYeast} g {yWord} yeast</b>.');
-  add('guide.pref.poolishRatio', '100% — also 1:1', '100% — i.e. 1:1');
+  add('guide.pref.poolishRatio', '100% (also 1:1)', '100% (i.e. 1:1)');
   add('guide.pref.clampNote', 'Der Vorteig-Anteil wurde automatisch auf <b>{prefEff} %</b> begrenzt: bei {hyd} % Hydration passt nicht mehr Wasser in den {prefType} als insgesamt im Teig ist.',
     'The pre-ferment share was automatically capped at <b>{prefEff} %</b>: at {hyd} % hydration, the {prefType} can\'t hold more water than the whole dough contains.');
   add('guide.step.prefWeigh.tip', 'Wasser hier <b>zimmerwarm</b> (nicht eisgekühlt) – der Vorteig soll ja in Ruhe arbeiten.',
-    'Use <b>room-temperature</b> water here (not ice-cold) — the pre-ferment should work slowly and calmly.');
+    'Use <b>room-temperature</b> water here (not ice-cold): the pre-ferment should work slowly and calmly.');
 
   add('guide.step.bigaMix.title', 'Biga grob mischen', 'Roughly mix the biga');
   add('guide.step.bigaMix.chip', 'mit der Hand', 'by hand');
   add('guide.step.bigaMix.body', 'Hefe im Wasser auflösen, übers Mehl geben und <b>mit den Händen nur grob vermengen</b> – ca. <b>1–2 min</b>, bis keine trockenen Mehlnester mehr da sind. Die Biga bleibt krümelig-stückig, <b>nicht glatt kneten</b>. (Hier keine Maschine nutzen – zu festes Kneten zerstört die Struktur.)',
-    'Dissolve the yeast in the water, pour over the flour and <b>mix roughly by hand only</b> — about <b>1–2 min</b>, until there are no dry flour pockets left. The biga stays crumbly and lumpy, <b>do not knead it smooth</b>. (Don\'t use a machine here — kneading it too firm destroys the structure.)');
+    'Dissolve the yeast in the water, pour over the flour and <b>mix roughly by hand only</b>: about <b>1–2 min</b>, until there are no dry flour pockets left. The biga stays crumbly and lumpy, <b>do not knead it smooth</b>. (Don\'t use a machine here: kneading it too firm destroys the structure.)');
   add('guide.step.bigaMix.warn', 'Es soll aussehen wie nasse Brösel oder grober Streusel, nicht wie ein normaler Teig.',
     'It should look like wet breadcrumbs or coarse crumble, not like a normal dough.');
   add('guide.biga.temp.cool', 'Abgedeckt bei <b>ca. 18 °C</b> reifen lassen (Keller, Speisekammer, Kühlschranktür).',
@@ -128,7 +128,7 @@
   add('guide.step.poolishMix.title', 'Poolish verrühren', 'Stir the poolish');
   add('guide.step.poolishMix.chip', 'mit Löffel / Schneebesen', 'with a spoon / whisk');
   add('guide.step.poolishMix.body', 'Hefe im Wasser auflösen, dann Mehl einrühren – <b>mit einem Löffel oder Schneebesen ca. 2–3 min rühren</b>, bis ein <b>zäher, klumpenfreier Pfannkuchenteig</b> entsteht. Abdecken.',
-    'Dissolve the yeast in the water, then stir in the flour — <b>stir with a spoon or whisk for about 2–3 min</b> until you get a <b>thick, lump-free pancake-batter consistency</b>. Cover.');
+    'Dissolve the yeast in the water, then stir in the flour: <b>stir with a spoon or whisk for about 2–3 min</b> until you get a <b>thick, lump-free pancake-batter consistency</b>. Cover.');
   add('guide.poolish.temp.warm', '<b>1 h</b> bei Raumtemp anspringen lassen, dann bei <b>~20 °C</b> ausreifen.',
     'Let it start for <b>1 h</b> at room temp, then let it fully rise at <b>~20 °C</b>.');
   add('guide.poolish.temp.cold', '<b>1 h</b> bei Raumtemp anspringen lassen, dann <b>kühl stellen (Kühlschrank)</b> und langsam ausreifen.',
@@ -155,7 +155,7 @@
   add('guide.titleSuffix.water', ' + Wasser', ' + water');
   add('guide.titleSuffix.flour', ' + Mehl', ' + flour');
   add('guide.titleSuffix.sugar', ' + Zucker', ' + sugar');
-  // Generischer Begriff "Vorteig" (Pre-ferment) als Schritt-Titel-Basis — bewusst NICHT
+  // Generischer Begriff "Vorteig" (Pre-ferment) als Schritt-Titel-Basis: bewusst NICHT
   // prefName (= "Biga"/"Poolish", Eigenname), sondern der übergeordnete Fachbegriff: an
   // dieser Stelle wird der gesamte, bereits gereifte Vorteig als Zutat in den Hauptteig
   // gegeben (Titel z. B. "Vorteig + Wasser + Mehl").
@@ -176,14 +176,14 @@
   add('guide.salt.hand', 'einstreuen und <b>von Hand ca. 2–3 min einkneten</b>.',
     'sprinkle in and <b>knead in by hand for about 2–3 min</b>.');
   add('guide.step.saltAdd.warn', 'Salz nie direkt auf die Hefe – es bremst sie. Immer zeitversetzt zugeben.',
-    'Never put salt directly on the yeast — it slows it down. Always add it with a delay.');
+    'Never put salt directly on the yeast: it slows it down. Always add it with a delay.');
   add('guide.oilStep', ' Zum Schluss <b>{oil} g Olivenöl</b> nach und nach einarbeiten, bis der Teig es vollständig aufgenommen hat und wieder glatt ist.',
     ' Finally, work in <b>{oil} g olive oil</b> gradually, until the dough has fully absorbed it and is smooth again.');
-  add('guide.oilTip', 'Öl <b>erst nach dem Salz</b> zugeben — kommt es zu früh, umhüllt es das Mehl und stört die Glutenbildung. Langsam einarbeiten, dann wird der Teig geschmeidig.',
-    'Add the oil <b>only after the salt</b> — added too early, it coats the flour and disrupts gluten development. Work it in slowly for a supple dough.');
+  add('guide.oilTip', 'Öl <b>erst nach dem Salz</b> zugeben: kommt es zu früh, umhüllt es das Mehl und stört die Glutenbildung. Langsam einarbeiten, dann wird der Teig geschmeidig.',
+    'Add the oil <b>only after the salt</b>: added too early, it coats the flour and disrupts gluten development. Work it in slowly for a supple dough.');
   add('guide.sugarPhrase', ' sowie <b>{sugar} g Zucker</b>', ' as well as <b>{sugar} g sugar</b>');
-  add('guide.sugarTip', 'Zucker <b>früh mit Mehl, Wasser &amp; Hefe</b> zugeben — er unterstützt die Hefeaktivität und sorgt beim Backen für die typische New-York-Style-Krustenbräunung.',
-    'Add sugar <b>early, with the flour, water &amp; yeast</b> — it supports yeast activity and gives the typical New-York-style crust browning during baking.');
+  add('guide.sugarTip', 'Zucker <b>früh mit Mehl, Wasser &amp; Hefe</b> zugeben: er unterstützt die Hefeaktivität und sorgt beim Backen für die typische New-York-Style-Krustenbräunung.',
+    'Add sugar <b>early, with the flour, water &amp; yeast</b>: it supports yeast activity and gives the typical New-York-style crust browning during baking.');
 
   add('guide.step.weighIngredients.title', 'Zutaten abwiegen', 'Weigh the ingredients');
   add('guide.step.weighIngredients.body', '<b>{flour} g Mehl</b> · <b>{water} g Wasser</b> · <b>{salt} g Salz</b> · <b>{yeast} g Hefe {yWord}</b>{sugarPart}{oilPart}.',
@@ -191,11 +191,11 @@
   add('guide.weighIngredients.sugarPart', ' · <b>{sugar} g Zucker</b>', ' · <b>{sugar} g sugar</b>');
   add('guide.weighIngredients.oilPart', ' · <b>{oil} g Olivenöl</b>', ' · <b>{oil} g olive oil</b>');
   add('guide.step.weighIngredients.tip', 'Für Hefe & Salz eine <b>0,1-g-Feinwaage</b> nutzen – bei diesen kleinen Mengen entscheidend.',
-    'Use a <b>precision scale (0.1 g)</b> for yeast &amp; salt — essential at these small amounts.');
+    'Use a <b>precision scale (0.1 g)</b> for yeast &amp; salt: essential at these small amounts.');
   add('guide.step.waterTempDirect.body', 'Das <b>{water} g Wasser</b> auf <b>{wT} °C</b> bringen{iceTxt}. So landet der Teig nach dem Kneten bei ~{ddt} °C.',
     'Bring the <b>{water} g water</b> to <b>{wT} °C</b>{iceTxt}. That way the dough lands at ~{ddt} °C after kneading.');
   add('guide.step.waterTempDirect.tip', 'Eis abwiegen, im Wasser auflösen bis die Temperatur passt – dann erst loslegen.',
-    'Weigh the ice, let it melt in the water until the temperature is right — only then start.');
+    'Weigh the ice, let it melt in the water until the temperature is right: only then start.');
   add('guide.reserveWaterTip', 'Behalte <b>2–3 EL vom Schüttwasser</b> zurück, um danach die Hefe darin aufzulösen.',
     'Set aside <b>2–3 tbsp of the mixing water</b> to dissolve the yeast in afterwards.');
   add('guide.step.autolyse.title', 'Autolyse (empfohlen)', 'Autolyse (recommended)');
@@ -203,22 +203,22 @@
   add('guide.step.autolyse.body', 'Nur <b>Mehl + Wasser</b> grob mischen (Salz und Hefe kommen erst später), abdecken, ruhen lassen. Weniger Knetarbeit, dehnbarerer Teig.',
     'Roughly mix just <b>flour + water</b> (salt and yeast come later), cover, let it rest. Less kneading work, a more extensible dough.');
   add('guide.step.autolyse.warn', 'Ohne Salz arbeiten die Enzyme im Mehl ungebremst – <b>Autolyse nicht über ~40–60 min ausdehnen</b>. Länger baut das Klebergerüst eher ab als auf (Teig wird zunehmend klebrig-schwach statt elastisch).',
-    'Without salt, the enzymes in the flour work unchecked — <b>don\'t extend the autolyse beyond ~40–60 min</b>. Longer breaks the gluten structure down rather than building it up (the dough gets increasingly sticky-weak instead of elastic).');
+    'Without salt, the enzymes in the flour work unchecked: <b>don\'t extend the autolyse beyond ~40–60 min</b>. Longer breaks the gluten structure down rather than building it up (the dough gets increasingly sticky-weak instead of elastic).');
   add('guide.step.addYeast.title', 'Hefe zugeben', 'Add the yeast');
   add('guide.chip.2min', '~2 min', '~2 min');
   add('guide.yeastType.dry', 'Trockenhefe', 'dry yeast');
   add('guide.yeastType.fresh', 'Frischhefe', 'fresh yeast');
   add('guide.yeast.tinyBody', 'Bei dieser sehr kleinen Menge (<b>{yeast} g</b>) die {yeastTypeName} im <b>zurückbehaltenen Wasser auflösen</b> und gleichmäßig über den Teig geben – trocken eingestreut verteilt sie sich bei so wenig Menge kaum gleichmäßig.',
-    'At this very small amount (<b>{yeast} g</b>), dissolve the {yeastTypeName} in the <b>reserved water</b> and pour it evenly over the dough — sprinkled in dry, it barely distributes evenly at such a small quantity.');
+    'At this very small amount (<b>{yeast} g</b>), dissolve the {yeastTypeName} in the <b>reserved water</b> and pour it evenly over the dough: sprinkled in dry, it barely distributes evenly at such a small quantity.');
   add('guide.yeast.dryBody', 'Trockenhefe gleichmäßig <b>über den Autolyse-Teig streuen</b> und kurz einarbeiten.',
     'Sprinkle dry yeast evenly <b>over the autolyse dough</b> and briefly work it in.');
   add('guide.yeast.freshBody', 'Frischhefe im <b>zurückbehaltenen Wasser auflösen</b> und über den Teig geben.',
     'Dissolve fresh yeast in the <b>reserved water</b> and pour it over the dough.');
   add('guide.yeast.tinyTip', 'Für so kleine Mengen eine <b>0,01-g-Feinwaage</b> nutzen – normale Küchenwaagen liegen hier schnell 30 % daneben.',
-    'Use a <b>0.01 g precision scale</b> for such small amounts — regular kitchen scales can easily be off by 30 % here.');
+    'Use a <b>0.01 g precision scale</b> for such small amounts: regular kitchen scales can easily be off by 30 % here.');
   add('guide.step.dissolveYeast.title', 'Hefe lösen', 'Dissolve the yeast');
   add('guide.yeast.dryDirect', 'Trockenhefe <b>direkt ins Mehl</b> mischen – sie muss nicht vorgelöst werden.',
-    'Mix dry yeast <b>directly into the flour</b> — it doesn\'t need to be dissolved first.');
+    'Mix dry yeast <b>directly into the flour</b>: it doesn\'t need to be dissolved first.');
   add('guide.yeast.freshDirect', 'Frischhefe im <b>temperierten Wasser auflösen</b>, bis keine Stückchen mehr da sind.',
     'Dissolve fresh yeast in the <b>tempered water</b> until no lumps remain.');
 
@@ -230,14 +230,14 @@
   add('guide.mixSalt.hand', 'Mehl, Wasser & Hefe{sugarPhrase} <b>von Hand ca. 3–5 min grob vermengen</b> (bis kein trockenes Mehl mehr bleibt), dann <b>{salt} g Salz einstreuen und weitere 2–3 min einkneten</b>.',
     'Roughly <b>mix flour, water &amp; yeast{sugarPhrase} by hand for about 3–5 min</b> (until no dry flour remains), then <b>sprinkle in the {salt} g salt and knead for another 2–3 min</b>.');
   add('guide.step.mixSalt.warn', 'Salz zeitversetzt zur Hefe zugeben – nie direkt aufeinander.',
-    'Add the salt with a delay after the yeast — never put them directly together.');
+    'Add the salt with a delay after the yeast: never put them directly together.');
 
   add('guide.step.stretchFold.title', 'Stretch &amp; Fold statt Kneten', 'Stretch &amp; fold instead of kneading');
   add('guide.step.stretchFold.chip', '4 × alle 30 min', '4 × every 30 min');
   add('guide.step.stretchFold.body', 'Bei <b>{hyd}% Hydration</b> ist der Teig zu klebrig zum klassischen Kneten. Kurz mischen, dann <b>4 Runden Dehnen & Falten</b> alle 30 min mit <b>nassen Händen</b>.',
     'At <b>{hyd}% hydration</b> the dough is too sticky for classic kneading. Mix briefly, then do <b>4 rounds of stretch &amp; fold</b> every 30 min with <b>wet hands</b>.');
   add('guide.step.stretchFold.tip', 'Zwischen den Runden abgedeckt ruhen lassen – das Gluten entwickelt sich von selbst.',
-    'Let it rest covered between rounds — the gluten develops on its own.');
+    'Let it rest covered between rounds: the gluten develops on its own.');
   add('guide.step.knead.title', 'Kneten', 'Knead');
   add('guide.step.knead.chipMachine', '8–12 min', '8–12 min');
   add('guide.step.knead.chipHand', '10–15 min', '10–15 min');
@@ -263,27 +263,27 @@
   add('guide.step.formBalls.tip', 'Straff geformte Kugeln = runde Pizzen mit gleichmäßigem Rand (Cornicione).',
     'Tightly shaped balls = round pizzas with an even rim (cornicione).');
   add('guide.freezeTip', 'Einfrieren möglich: Teiglinge dünn mit Öl bestreichen, einzeln (nicht berührend) einfrieren – so <b>2–3 Monate</b> haltbar. Auftauen: <b>über Nacht im Kühlschrank</b>, dann <b>3–5 h bei Raumtemperatur</b> und <b>2–4 h Stückgare</b> wie gewohnt.',
-    'Freezing works too: brush the dough balls thinly with oil, freeze individually (not touching) — keeps for <b>2–3 months</b>. Thawing: <b>overnight in the fridge</b>, then <b>3–5 h at room temperature</b> and a normal <b>2–4 h final proof</b>.');
+    'Freezing works too: brush the dough balls thinly with oil, freeze individually (not touching): keeps for <b>2–3 months</b>. Thawing: <b>overnight in the fridge</b>, then <b>3–5 h at room temperature</b> and a normal <b>2–4 h final proof</b>.');
   add('guide.step.finalProof.title', 'Stückgare (Teiglinge)', 'Final proof (dough balls)');
   add('guide.step.finalProof.chipCold', 'kühl · Fingertest', 'cold · finger test');
   add('guide.step.finalProof.chipDefault', 'Fingertest', 'finger test');
   add('guide.step.finalProof.body', '{proof}. <b>Fertig</b>, wenn ein leichter Fingerdruck <b>langsam</b> zurückfedert (eine kleine Delle bleibt).',
     '{proof}. <b>Ready</b> when a light finger press springs back <b>slowly</b> (a small dent remains).');
   add('guide.step.finalProof.tip', 'Teiglinge vor dem Backen wirklich auf Raumtemperatur kommen lassen – kalter Teig reißt beim Ausziehen.',
-    'Really let the dough balls come to room temperature before baking — cold dough tears when stretched.');
+    'Really let the dough balls come to room temperature before baking: cold dough tears when stretched.');
 
   add('guide.step.preheat.title', 'Ofen vorheizen', 'Preheat the oven');
   add('guide.step.preheat.chip', '30–45 min', '30–45 min');
   add('guide.step.preheat.body', 'Pizzastein/-stahl auf <b>höchste Stufe</b> vorheizen. Pizzaofen (Gas/Holz) <b>430–480 °C</b>; Haushaltsofen Maximum (250–300 °C) + Grill, Stein ganz oben.',
     'Preheat the pizza stone/steel on the <b>highest setting</b>. Pizza oven (gas/wood) <b>430–480 °C</b>; home oven maximum (250–300 °C) + grill/broiler, stone at the top.');
   add('guide.step.preheat.tip', 'Der Stein muss richtig durchglühen – lieber 10 min länger. (Startzeit = 50 min vor dem Backen.)',
-    'The stone needs to really heat through — better 10 min too long. (Start time = 50 min before baking.)');
+    'The stone needs to really heat through: better 10 min too long. (Start time = 50 min before baking.)');
   add('guide.step.shape.title', 'Pizza ausziehen', 'Stretch the pizza');
   add('guide.step.shape.chip', 'kein Nudelholz!', 'no rolling pin!');
   add('guide.step.shape.body', 'Teigling in Mehl/Grieß betten, von der Mitte mit den <b>Fingerspitzen flachdrücken</b>, Rand (~1,5 cm) stehen lassen, über die Handrücken auf Größe ziehen.',
     'Bed the dough ball in flour/semolina, <b>flatten from the center with your fingertips</b>, leave the rim (~1.5 cm) untouched, stretch to size over the backs of your hands.');
   add('guide.step.shape.warn', 'Nie ein Nudelholz – das drückt die Luft aus dem Rand. Der Cornicione lebt von der Gärblase.',
-    'Never use a rolling pin — it presses the air out of the rim. The cornicione lives off that trapped gas.');
+    'Never use a rolling pin: it presses the air out of the rim. The cornicione lives off that trapped gas.');
   add('guide.bake.small', 'Pizzaofen bei ~450 °C: <b>60–90 Sekunden</b> (einmal drehen). Haushaltsofen: <b>5–8 min</b> unter dem Grill.',
     'Pizza oven at ~450 °C: <b>60–90 seconds</b> (turn once). Home oven: <b>5–8 min</b> under the grill/broiler.');
   add('guide.bake.large', 'Größere Teiglinge: Pizzaofen <b>~2 min</b>, Haushaltsofen <b>8–12 min</b>.',
@@ -292,22 +292,22 @@
   add('guide.step.bakeTopping.body', 'Zügig belegen (wenig Sauce, gut abgetropfter Mozzarella), sofort einschießen. {bakeTxt} Fertig beim <b>aufgegangenen, gefleckten Rand</b> (Leoparding).',
     'Top quickly (little sauce, well-drained mozzarella), launch immediately. {bakeTxt} Done when the rim is <b>puffed up and leopard-spotted</b>.');
   add('guide.step.bakeTopping.tip', 'Alles vorher bereitstellen – ab dem Ausziehen geht es schnell.',
-    'Have everything ready beforehand — once you start stretching it goes fast.');
+    'Have everything ready beforehand: once you start stretching it goes fast.');
 
   add('guide.schedbar.withTime', '⏱️ <b>Gesamtdauer ca. {dur}</b><br><span class="big">▶ Start {startClock}</span> &nbsp;→&nbsp; <span class="big">🍕 Fertig {endClock}</span>',
     '⏱️ <b>Total time approx. {dur}</b><br><span class="big">▶ Start {startClock}</span> &nbsp;→&nbsp; <span class="big">🍕 Ready {endClock}</span>');
   add('guide.summary.withTime', '{label} · {N} × {W} g · {hyd}% Hydration', '{label} · {N} × {W} g · {hyd}% hydration');
   // Bugfix (v3.38.0): "gib oben eine Start-/Zielzeit an" stimmte seit der
-  // Burgermenü-Navigation (v3.26.0) nicht mehr — Start-/Zielzeit-Felder liegen
+  // Burgermenü-Navigation (v3.26.0) nicht mehr: Start-/Zielzeit-Felder liegen
   // seitdem im eigenen Menüpunkt "Zeitplan", nicht mehr im selben Bereich wie
   // die Anleitung. Der {zeitplan}-Platzhalter wird in js/guide.js mit einem
   // klickbaren <button data-goto="zeitplan">-Snippet befüllt (springt direkt
   // zum Menüpunkt, s. PZ.gotoView() in js/nav.js).
-  add('guide.schedbar.noTime', '⏱️ Gesamtdauer ca. <b>{dur}</b> — lege im Bereich {zeitplan} eine <b>Start-</b> oder <b>Zielzeit</b> fest, dann bekommt jeder Schritt eine Uhrzeit.',
-    '⏱️ Total time approx. <b>{dur}</b> — set a <b>start</b> or <b>target time</b> in the {zeitplan} section, then every step gets a clock time.');
+  add('guide.schedbar.noTime', '⏱️ Gesamtdauer ca. <b>{dur}</b>: lege im Bereich {zeitplan} eine <b>Start-</b> oder <b>Zielzeit</b> fest, dann bekommt jeder Schritt eine Uhrzeit.',
+    '⏱️ Total time approx. <b>{dur}</b>: set a <b>start</b> or <b>target time</b> in the {zeitplan} section, then every step gets a clock time.');
   add('guide.summary.noTime', '{label} · Gesamt ~{dur}', '{label} · Total ~{dur}');
 
-  // ---- js/party.js — Pizza-Party-Planer: 8 Presets + UI-Strings -----------------------
+  // ---- js/party.js: Pizza-Party-Planer: 8 Presets + UI-Strings -----------------------
   add('party.preset.margherita.name', 'Margherita', 'Margherita');
   add('party.ing.tomatoSauce', 'Tomatensauce', 'Tomato sauce');
   add('party.ing.mozzarella', 'Mozzarella', 'Mozzarella');
@@ -340,7 +340,7 @@
   add('party.deleteBtn', 'Eigene Pizza „{name}“ löschen', 'Delete custom pizza "{name}"');
   add('party.deleteConfirm', '„{name}“ wirklich löschen?', 'Really delete "{name}"?');
   add('party.deletedMsg', '„{name}“ wurde gelöscht.', '"{name}" was deleted.');
-  add('party.noneSelectedHint', 'Noch keine Pizza ausgewählt — stelle oben Stückzahlen ein.', 'No pizza selected yet — set the quantities above.');
+  add('party.noneSelectedHint', 'Noch keine Pizza ausgewählt: stelle oben Stückzahlen ein.', 'No pizza selected yet: set the quantities above.');
   add('party.summaryOne', '1 Pizza insgesamt', '1 pizza in total');
   add('party.summaryMany', '{n} Pizzen insgesamt', '{n} pizzas in total');
   add('party.ingRemoveLabel', 'Zutatenzeile {n} entfernen', 'Remove ingredient row {n}');
@@ -353,10 +353,10 @@
   add('party.defaultUnit', 'g', 'g');
   add('party.infoBtnLabel', 'Zutaten von „{name}“ ein-/ausblenden', 'Show/hide ingredients for "{name}"');
   add('btn.partyReset', 'Alle zurücksetzen', 'Reset all');
-  add('hint.partyReset', 'Setzt nur die Stückzahlen zurück — deine eigenen Pizzen bleiben erhalten.', 'Only resets the quantities — your custom pizzas stay saved.');
+  add('hint.partyReset', 'Setzt nur die Stückzahlen zurück: deine eigenen Pizzen bleiben erhalten.', 'Only resets the quantities: your custom pizzas stay saved.');
   add('party.resetMsg', 'Alle Stückzahlen wurden zurückgesetzt.', 'All quantities have been reset.');
 
-  // ---- js/print.js — Einkaufsliste (Druckansicht) --------------------------------
+  // ---- js/print.js: Einkaufsliste (Druckansicht) --------------------------------
   add('print.title', '🛒 Einkaufsliste', '🛒 Shopping list');
   add('print.flour', 'Mehl', 'Flour');
   add('print.water', 'Wasser', 'Water');
@@ -367,40 +367,40 @@
   add('print.ice', 'Eis (für Schüttwasser)', 'Ice (for mixing water)');
   add('print.totalDough', 'Gesamtteig', 'Total dough');
 
-  // ---- js/pdf.js — nur die wenigen Strings, die NICHT bereits per DOM aus guide.js
+  // ---- js/pdf.js: nur die wenigen Strings, die NICHT bereits per DOM aus guide.js
   // kommen (der Rest wird 1:1 aus dem bereits übersetzten, gerenderten Anleitungs-DOM
-  // gelesen — s. Kommentar in js/pdf.js) --------------------------------------------
+  // gelesen: s. Kommentar in js/pdf.js) --------------------------------------------
   add('pdf.tipPrefix', 'Tipp: ', 'Tip: ');
   add('pdf.warnPrefix', 'Achtung: ', 'Note: ');
   add('pdf.notCalculatedYet', 'Noch keine Anleitung berechnet.', 'No guide calculated yet.');
   add('pdf.savedMsg', 'Anleitung als PDF gespeichert.', 'Guide saved as PDF.');
 
-  // ---- js/timer.js — Gärzeit-Timer/Wecker + .ics-Kalendertext --------------------
+  // ---- js/timer.js: Gärzeit-Timer/Wecker + .ics-Kalendertext --------------------
   add('timer.done', '🔔 Fertig!', '🔔 Done!');
   add('timer.reset', 'Zurücksetzen', 'Reset');
   // Aufgeteilt (statt eines Templates mit {clock}), weil der Countdown-Wert live per
   // JS in einem eigenen <span class="timerclock-val"> aktualisiert wird (s. js/timer.js
-  // startTick()) — das Template darf dieses Element nicht "flach" interpolieren.
+  // startTick()): das Template darf dieses Element nicht "flach" interpolieren.
   add('timer.remaining.prefix', '⏳ ', '⏳ ');
   add('timer.remaining.suffix', ' verbleibend', ' remaining');
   add('timer.cancel', 'Abbrechen', 'Cancel');
   add('timer.start', '⏰ Timer starten ({dur})', '⏰ Start timer ({dur})');
-  add('timer.hint', 'ℹ️ Der Timer läuft nur, solange dieser Tab/dieses Fenster geöffnet ist — kein Wecker mehr, wenn du den Tab schließt.',
-    'ℹ️ The timer only runs while this tab/window stays open — no alarm anymore once you close the tab.');
+  add('timer.hint', 'ℹ️ Der Timer läuft nur, solange dieser Tab/dieses Fenster geöffnet ist: kein Wecker mehr, wenn du den Tab schließt.',
+    'ℹ️ The timer only runs while this tab/window stays open: no alarm anymore once you close the tab.');
   add('timer.notificationTitle', '⏰ Timer fertig', '⏰ Timer done');
   add('timer.androidBtn', '📱 Android-Wecker stellen', '📱 Set Android alarm');
   add('timer.icsBtn', '📅 Kalender-Erinnerung', '📅 Calendar reminder');
-  add('timer.hint.android', 'Öffnet die Uhr-App mit vorausgefülltem Timer (Chrome) — oder lade alternativ eine Kalender-Erinnerung herunter.',
-    'Opens the clock app with a pre-filled timer (Chrome) — or download a calendar reminder instead.');
-  add('timer.hint.ios', 'iOS bietet keine Web-Schnittstelle für System-Timer — lade stattdessen eine Kalender-Erinnerung herunter (öffnet die Kalender-App mit Alarm zur richtigen Zeit).',
-    'iOS has no web interface for system timers — download a calendar reminder instead (opens the calendar app with an alert at the right time).');
+  add('timer.hint.android', 'Öffnet die Uhr-App mit vorausgefülltem Timer (Chrome): oder lade alternativ eine Kalender-Erinnerung herunter.',
+    'Opens the clock app with a pre-filled timer (Chrome): or download a calendar reminder instead.');
+  add('timer.hint.ios', 'iOS bietet keine Web-Schnittstelle für System-Timer: lade stattdessen eine Kalender-Erinnerung herunter (öffnet die Kalender-App mit Alarm zur richtigen Zeit).',
+    'iOS has no web interface for system timers: download a calendar reminder instead (opens the calendar app with an alert at the right time).');
   add('timer.androidDefaultLabel', 'Pizza-Teig', 'Pizza dough');
   add('timer.icsDefaultLabel', 'Pizza-Timer', 'Pizza timer');
   add('timer.icsSummaryPrefix', '🍕 ', '🍕 ');
   add('timer.icsDescription', 'Erinnerung vom Teigmeister: {label} ist fertig.', 'Reminder from Teigmeister: {label} is done.');
   add('timer.notifyDefaultLabel', 'Timer', 'Timer');
 
-  // ---- js/ui.js — aria-valuetext-Einheiten, Methode-Hinweise, Zeitplan-Labels ------
+  // ---- js/ui.js: aria-valuetext-Einheiten, Methode-Hinweise, Zeitplan-Labels ------
   add('unit.balls', 'Teiglinge', 'dough balls');
   add('unit.grams', 'Gramm', 'grams');
   add('unit.percentHyd', 'Prozent Hydration', 'percent hydration');
@@ -422,14 +422,14 @@
   add('label.prefTitle.biga', 'Biga (Vortag)', 'Biga (day before)');
   add('label.prefTitle.poolish', 'Poolish (Vortag)', 'Poolish (day before)');
   add('hint.pref.biga', 'Biga klassisch: 70–100 % des Mehls.', 'Classic biga: 70–100 % of the flour.');
-  add('hint.pref.poolish', 'Poolish: meist 30–50 % des Mehls (Wasser 1:1 dazu). Mehr als die Hydration-% geht nicht — sonst wäre mehr Wasser im Poolish als im ganzen Teig.',
-    'Poolish: usually 30–50 % of the flour (water 1:1 with it). Can\'t go higher than the hydration % — otherwise the poolish would hold more water than the whole dough.');
+  add('hint.pref.poolish', 'Poolish: meist 30–50 % des Mehls (Wasser 1:1 dazu). Mehr als die Hydration-% geht nicht: sonst wäre mehr Wasser im Poolish als im ganzen Teig.',
+    'Poolish: usually 30–50 % of the flour (water 1:1 with it). Can\'t go higher than the hydration %: otherwise the poolish would hold more water than the whole dough.');
   add('label.timeMode.start', 'Startzeitpunkt', 'Start time');
   add('label.timeMode.target', 'Soll fertig sein um', 'Should be ready at');
   add('hint.timeMode.start', 'Die Anleitung rechnet vorwärts und zeigt, wann die Pizza fertig ist.', 'The guide calculates forward and shows when the pizza will be ready.');
   add('hint.timeMode.target', 'Die Anleitung rechnet rückwärts und sagt dir, wann du anfangen musst.', 'The guide calculates backward and tells you when to start.');
 
-  // ---- js/flour.js — Mehl-Dropdown: "dur"-Anzeige-Text je Mehl (Namen/Gruppen sind
+  // ---- js/flour.js: Mehl-Dropdown: "dur"-Anzeige-Text je Mehl (Namen/Gruppen sind
   // Markennamen und bleiben unübersetzt, s. Kommentar in js/flour.js) ----------------
   add('flour.dur.upTo48h', 'bis 48 h', 'up to 48 h');
   add('flour.dur.24to48h', '24–48 h', '24–48 h');
@@ -440,37 +440,37 @@
   add('flour.dur.upTo24h', 'bis 24 h', 'up to 24 h');
   add('flour.dur.upTo72h', 'bis 72 h', 'up to 72 h');
 
-  // ---- js/presets.js — Preset-Beschreibungen + Ladehinweis ------------------------
-  add('preset.defaultDesc', 'Wähle ein erprobtes Rezept — alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.',
-    'Choose a proven recipe — all values are set automatically. You can fine-tune anytime afterwards.');
+  // ---- js/presets.js: Preset-Beschreibungen + Ladehinweis ------------------------
+  add('preset.defaultDesc', 'Wähle ein erprobtes Rezept: alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.',
+    'Choose a proven recipe: all values are set automatically. You can fine-tune anytime afterwards.');
   add('preset.napoliKlassisch.desc', 'AVPN-Standard: 60 % Hydration, Tipo 00, 2 % Olivenöl. ~24 h Gesamtgare. Wenig Hefe, klassischer Geschmack.',
     'AVPN standard: 60 % hydration, Tipo 00, 2 % olive oil. ~24 h total rise. Little yeast, classic flavor.');
   add('preset.napoli65.desc', '65 % macht den Teig dehnbarer & verzeihlicher, 2 % Olivenöl. ~24 h: 2 h Raumtemp, dann kühl, vor dem Backen temperieren.',
     '65 % makes the dough more extensible & forgiving, 2 % olive oil. ~24 h: 2 h room temp, then cold, bring to room temp before baking.');
   add('preset.napoliKalt.desc', 'Lange Kaltgare ~48 h im Kühlschrank (4 °C), 2 % Olivenöl. Sehr wenig Hefe, maximales Aroma. Braucht ein starkes Mehl (W300+).',
     'Long cold rise ~48 h in the fridge (4 °C), 2 % olive oil. Very little yeast, maximum flavor. Needs a strong flour (W300+).');
-  add('preset.schnell.desc', 'Gleicher Tag: ~2 h Stockgare + 2–3 h Stückgare bei warmer Raumtemp (24–26 °C), 2 % Olivenöl. Mehr Hefe, weniger Aroma — aber spontan.',
-    'Same day: ~2 h bulk rise + 2–3 h final proof at warm room temp (24–26 °C), 2 % olive oil. More yeast, less flavor — but spontaneous.');
+  add('preset.schnell.desc', 'Gleicher Tag: ~2 h Stockgare + 2–3 h Stückgare bei warmer Raumtemp (24–26 °C), 2 % Olivenöl. Mehr Hefe, weniger Aroma: aber spontan.',
+    'Same day: ~2 h bulk rise + 2–3 h final proof at warm room temp (24–26 °C), 2 % olive oil. More yeast, less flavor: but spontaneous.');
   // Bewusst PLAIN "&" (nicht "&amp;") in allen drei descKey-Einträgen unten:
-  // presets.js setzt sie per `$('presetDesc').textContent = ...` — textContent
+  // presets.js setzt sie per `$('presetDesc').textContent = ...`: textContent
   // dekodiert KEINE HTML-Entities, ein "&amp;" würde also buchstäblich als
   // "&amp;" auf dem Bildschirm erscheinen (Nebenbefund-Fix: derselbe Fehler
   // steckte bereits im deutschen Original-String vor dieser Umstellung).
   add('preset.napoliBiga.desc', '100 % Biga (steifer Vorteig, 45 % Hydration). 24 h reifen lassen, dann Hauptteig mit Restwasser, Salz & 2 % Öl. Sehr offene Krume.',
     '100 % biga (stiff pre-ferment, 45 % hydration). Let it rise 24 h, then final dough with remaining water, salt & 2 % oil. Very open crumb.');
-  add('preset.napoliPoolish.desc', 'Poolish (flüssig 1:1) mit ~66 % des Mehls. 14 h reifen, dann Hauptteig (mit 2 % Öl) — ~22 h Gesamtreife. Milder, luftiger Teig.',
-    'Poolish (liquid 1:1) with ~66 % of the flour. 14 h rise, then final dough (with 2 % oil) — ~22 h total rise. Milder, airier dough.');
-  add('preset.teglia.desc', 'Römische Blechpizza: 75 % Hydration, 4 % Olivenöl, sehr lockere Krume. Teig ist klebrig — mit Stretch & Fold statt langem Kneten arbeiten. 24 h kühl. Braucht sehr starkes Mehl (W330+).',
-    'Roman pan pizza: 75 % hydration, 4 % olive oil, very airy crumb. The dough is sticky — work with stretch & fold instead of long kneading. 24 h cold. Needs a very strong flour (W330+).');
-  add('preset.newyorkStyle.desc', 'New York Style: 62 % Hydration, 3 % Öl, 2 % Zucker (Bräunung & Hefeaktivität) — größere, dünnere Teiglinge. ~26 h Kaltgare für Aroma & knusprig-zähe Kruste. Braucht ein mittelstarkes Mehl (W300+).',
-    'New York style: 62 % hydration, 3 % oil, 2 % sugar (browning & yeast activity) — larger, thinner dough balls. ~26 h cold rise for flavor & a crispy-chewy crust. Needs a medium-strong flour (W300+).');
-  add('preset.customRecipeLoaded', 'Eigenes Rezept „{name}“ geladen — Werte wurden übernommen.', 'Custom recipe "{name}" loaded — values have been applied.');
+  add('preset.napoliPoolish.desc', 'Poolish (flüssig 1:1) mit ~66 % des Mehls. 14 h reifen, dann Hauptteig (mit 2 % Öl): ~22 h Gesamtreife. Milder, luftiger Teig.',
+    'Poolish (liquid 1:1) with ~66 % of the flour. 14 h rise, then final dough (with 2 % oil): ~22 h total rise. Milder, airier dough.');
+  add('preset.teglia.desc', 'Römische Blechpizza: 75 % Hydration, 4 % Olivenöl, sehr lockere Krume. Teig ist klebrig: mit Stretch & Fold statt langem Kneten arbeiten. 24 h kühl. Braucht sehr starkes Mehl (W330+).',
+    'Roman pan pizza: 75 % hydration, 4 % olive oil, very airy crumb. The dough is sticky: work with stretch & fold instead of long kneading. 24 h cold. Needs a very strong flour (W330+).');
+  add('preset.newyorkStyle.desc', 'New York Style: 62 % Hydration, 3 % Öl, 2 % Zucker (Bräunung & Hefeaktivität): größere, dünnere Teiglinge. ~26 h Kaltgare für Aroma & knusprig-zähe Kruste. Braucht ein mittelstarkes Mehl (W300+).',
+    'New York style: 62 % hydration, 3 % oil, 2 % sugar (browning & yeast activity): larger, thinner dough balls. ~26 h cold rise for flavor & a crispy-chewy crust. Needs a medium-strong flour (W300+).');
+  add('preset.customRecipeLoaded', 'Eigenes Rezept „{name}“ geladen: Werte wurden übernommen.', 'Custom recipe "{name}" loaded: values have been applied.');
 
-  // ---- js/newrecipe.js — Live-Meldung nach dem Anlegen ----------------------------
-  add('newrecipe.createdMsg', '„{name}“ wurde angelegt — zu finden in „Meine Rezepte“ und im Presets-Dropdown unter „Eigene Rezepte“. Die aktuelle Berechnung oben bleibt unverändert.',
-    '"{name}" has been created — you\'ll find it under "My recipes" and in the presets dropdown under "Custom recipes". The calculation above remains unchanged.');
+  // ---- js/newrecipe.js: Live-Meldung nach dem Anlegen ----------------------------
+  add('newrecipe.createdMsg', '„{name}“ wurde angelegt: zu finden in „Meine Rezepte“ und im Presets-Dropdown unter „Eigene Rezepte“. Die aktuelle Berechnung oben bleibt unverändert.',
+    '"{name}" has been created: you\'ll find it under "My recipes" and in the presets dropdown under "Custom recipes". The calculation above remains unchanged.');
 
-  // ---- js/main.js — Rezepte-Verwaltung (Prompt/Confirm/Live-Meldungen) ------------
+  // ---- js/main.js: Rezepte-Verwaltung (Prompt/Confirm/Live-Meldungen) ------------
   add('main.saved', '✓ Gespeichert', '✓ Saved');
   add('main.duplicated', '✓ Kopiert', '✓ Duplicated');
   add('main.renamePrompt', 'Neuer Name für dieses Rezept:', 'New name for this recipe:');
@@ -486,12 +486,12 @@
   add('main.importFailedFormat', 'Import fehlgeschlagen: Datei ist kein gültiges Rezepte-Backup.', 'Import failed: file is not a valid recipe backup.');
   add('main.importFailedRead', 'Import fehlgeschlagen: Datei konnte nicht gelesen werden.', 'Import failed: file could not be read.');
 
-  // ---- js/share.js — Teilen-Link-Feedback -----------------------------------------
+  // ---- js/share.js: Teilen-Link-Feedback -----------------------------------------
   add('share.linkCopied', 'Link kopiert!', 'Link copied!');
   add('share.copyFailed', 'Kopieren fehlgeschlagen', 'Copy failed');
 
   // ======================================================================
-  // Statische HTML-Oberfläche (pizza-rechner.html / pizza-rechner-mobile.html) —
+  // Statische HTML-Oberfläche (pizza-rechner.html / pizza-rechner-mobile.html):
   // beide Seiten teilen sich (bis auf Layout-Struktur) fast identischen Text,
   // deshalb EIN gemeinsames Set an Keys für beide.
   // ======================================================================
@@ -521,23 +521,27 @@
   add('onboarding.intro', 'So findest du dich schnell zurecht:', 'Here’s how to get started quickly:');
   add('onboarding.feature.presets.title', 'Fertige Rezepte', 'Ready-made recipes');
   add('onboarding.feature.presets.text',
-    'Wähle ein erprobtes Rezept aus dem Dropdown — alle Werte werden automatisch passend gesetzt. Danach kannst du jederzeit feinjustieren.',
-    'Pick a proven recipe from the dropdown — all values are set automatically. You can fine-tune anything afterwards.');
+    'Wähle ein erprobtes Rezept aus dem Dropdown: alle Werte werden automatisch passend gesetzt. Danach kannst du jederzeit feinjustieren.',
+    'Pick a proven recipe from the dropdown: all values are set automatically. You can fine-tune anything afterwards.');
   add('onboarding.feature.advanced.title', 'Alles anpassbar', 'Fully customizable');
   add('onboarding.feature.advanced.text',
-    'Die Rechner-Seite zeigt zunächst nur die wichtigsten Regler. Über „Erweiterten Modus öffnen“ bekommst du Zugriff auf jedes Detail — Hydration, Salz, Vorteig-Verfahren, Temperaturen &amp; mehr.',
-    'The calculator page starts out showing only the most important sliders. Use “Open advanced mode” to access every detail — hydration, salt, pre-ferment method, temperatures &amp; more.');
+    'Die Rechner-Seite zeigt zunächst nur die wichtigsten Regler. Über „Erweiterten Modus öffnen“ bekommst du Zugriff auf jedes Detail: Hydration, Salz, Vorteig-Verfahren, Temperaturen &amp; mehr.',
+    'The calculator page starts out showing only the most important sliders. Use “Open advanced mode” to access every detail: hydration, salt, pre-ferment method, temperatures &amp; more.');
   add('onboarding.feature.schedule.title', 'Zeitplan', 'Schedule');
   add('onboarding.feature.schedule.text',
-    'Gib an, wann du starten möchtest oder wann die Pizza fertig sein soll — die App rechnet rückwärts und zeigt jeden Schritt mit passender Uhrzeit.',
-    'Enter when you want to start, or when the pizza should be ready — the app calculates backwards and shows every step with a matching time.');
+    'Gib an, wann du starten möchtest oder wann die Pizza fertig sein soll: die App rechnet rückwärts und zeigt jeden Schritt mit passender Uhrzeit.',
+    'Enter when you want to start, or when the pizza should be ready: the app calculates backwards and shows every step with a matching time.');
   add('onboarding.feature.guide.title', 'Anleitung &amp; Timer', 'Guide &amp; timers');
   add('onboarding.feature.guide.text',
-    'Eine Schritt-für-Schritt-Anleitung mit Countdown-Timern führt dich von den Zutaten bis zum fertigen Teig — inklusive Warnung, falls Gärzeit und Mehl nicht zusammenpassen.',
-    'A step-by-step guide with countdown timers walks you from ingredients to finished dough — including a warning if the rise time and flour don’t match.');
+    'Eine Schritt-für-Schritt-Anleitung mit Countdown-Timern führt dich von den Zutaten bis zum fertigen Teig: inklusive Warnung, falls Gärzeit und Mehl nicht zusammenpassen.',
+    'A step-by-step guide with countdown timers walks you from ingredients to finished dough: including a warning if the rise time and flour don’t match.');
+  add('onboarding.feature.party.title', 'Pizza Party', 'Pizza Party');
+  add('onboarding.feature.party.text',
+    'Plane eine Pizza-Party: Wähle Pizzen mit Stückzahl aus, die App berechnet automatisch eine ungefähre Zutatenliste für alle zusammen.',
+    'Plan a pizza party: choose pizzas with quantities, and the app automatically calculates an approximate ingredient list for everyone.');
   add('onboarding.settingsHint',
-    'Tipp: Zusatzfunktionen (Sprache, Darstellung, Timer &amp; mehr) findest du im Menü unter „Einstellungen“ — den „Erweiterten Modus“ für alle Detail-Regler über den gleichnamigen Button auf der Rechner-Seite.',
-    'Tip: find extra features (language, appearance, timers &amp; more) in the menu under “Settings” — and “Advanced mode” for every detail slider via the button on the calculator page.');
+    'Tipp: Zusatzfunktionen (Sprache, Darstellung, Timer &amp; mehr) findest du im Menü unter „Einstellungen“, und den „Erweiterten Modus“ für alle Detail-Regler über den gleichnamigen Button auf der Rechner-Seite.',
+    'Tip: find extra features (language, appearance, timers &amp; more) in the menu under “Settings”, and “Advanced mode” for every detail slider via the button on the calculator page.');
   add('onboarding.dontShowAgain', 'Beim nächsten Start nicht mehr anzeigen', 'Don’t show this again on next launch');
   add('onboarding.cta', 'Los geht’s', 'Let’s go');
 
@@ -575,8 +579,8 @@
   // -- Card: Grundeinstellungen ------------------------------------------------------
   add('card.basics.title', 'Grundeinstellungen', 'Basic settings');
   add('label.flour', 'Mehl', 'Flour');
-  add('hint.flour', 'W-Wert = Glutenstärke. Schwaches Mehl verträgt keine langen Gärzeiten — sehr starkes Mehl braucht sie. Wird per Preset mitgesetzt.',
-    'W value = gluten strength. Weak flour can\'t handle long rise times — very strong flour needs them. Set automatically by presets.');
+  add('hint.flour', 'W-Wert = Glutenstärke. Schwaches Mehl verträgt keine langen Gärzeiten: sehr starkes Mehl braucht sie. Wird per Preset mitgesetzt.',
+    'W value = gluten strength. Weak flour can\'t handle long rise times: very strong flour needs them. Set automatically by presets.');
   add('label.balls', 'Anzahl Teiglinge', 'Number of dough balls');
   add('label.ballw', 'Gewicht pro Teigling', 'Weight per dough ball');
   add('pill.mini180', 'Mini 180', 'Mini 180');
@@ -588,8 +592,8 @@
   add('label.salt', 'Salz', 'Salt');
   add('hint.salt', 'Napoli-Standard: 2,5–3 % (≈ 50–55 g/L Wasser)', 'Napoli standard: 2.5–3% (≈ 50–55 g/L water)');
   add('label.oil', 'Olivenöl', 'Olive oil');
-  add('hint.oil', 'Macht den Teig geschmeidiger &amp; fördert die Bräunung. Klassisch Napoli 0 %, mit Öl 1–3 %, Blech/Teglia 3–5 %. Kommt spät zum Teig — nach dem Salz.',
-    'Makes the dough more supple &amp; promotes browning. Classic Napoli 0%, with oil 1–3%, pan/teglia 3–5%. Added late — after the salt.');
+  add('hint.oil', 'Macht den Teig geschmeidiger &amp; fördert die Bräunung. Klassisch Napoli 0 %, mit Öl 1–3 %, Blech/Teglia 3–5 %. Kommt spät zum Teig: nach dem Salz.',
+    'Makes the dough more supple &amp; promotes browning. Classic Napoli 0%, with oil 1–3%, pan/teglia 3–5%. Added late: after the salt.');
   add('label.sugar', 'Zucker', 'Sugar');
   add('hint.sugar', 'New-York-Style: unterstützt die Hefeaktivität &amp; die Krustenbräunung. Wird früh zugegeben (mit Mehl/Wasser/Hefe), nicht spät wie Öl.',
     'New York style: supports yeast activity &amp; crust browning. Added early (with flour/water/yeast), not late like oil.');
@@ -597,7 +601,7 @@
   // -- Card: Methode & Hefe -----------------------------------------------------------
   // Bewusst PLAIN "&" statt "&amp;": diese beiden Keys werden sowohl per
   // data-i18n (textContent) ALS AUCH per data-i18n-attr (setAttribute, KEINE
-  // Entity-Dekodierung!) für aria-label genutzt — mit "&amp;" würde der
+  // Entity-Dekodierung!) für aria-label genutzt: mit "&amp;" würde der
   // aria-label buchstäblich "&amp;" vorlesen lassen statt "&". Ein reines "&"
   // ist in textContent/Attributwerten gleichermaßen gültig, daher hier bewusst
   // kein HTML-Entity nötig.
@@ -610,8 +614,8 @@
   add('label.bhyd', 'Biga-Hydration', 'Biga hydration');
   add('hint.bhyd', 'Steife Biga: 44–48 %. Poolish ist fix 100 % (1:1).', 'Stiff biga: 44–48%. Poolish is fixed at 100% (1:1).');
   add('label.prefStage', 'Vorteig-Reife', 'Pre-ferment maturity');
-  add('hint.prefStage', 'Reifezeit und Hefemenge hängen zusammen — die Stufe setzt beides passend. Längere Reife = weniger Hefe + kühler stellen (steht in der Anleitung).',
-    'Maturity time and yeast amount are linked — the stage sets both to match. Longer maturity = less yeast + cooler storage (explained in the guide).');
+  add('hint.prefStage', 'Reifezeit und Hefemenge hängen zusammen: die Stufe setzt beides passend. Längere Reife = weniger Hefe + kühler stellen (steht in der Anleitung).',
+    'Maturity time and yeast amount are linked: the stage sets both to match. Longer maturity = less yeast + cooler storage (explained in the guide).');
   add('label.yeastType', 'Hefe-Art', 'Yeast type');
   add('seg.freshYeast', 'Frischhefe', 'Fresh yeast');
   add('seg.dryYeast', 'Trockenhefe', 'Dry yeast');
@@ -625,8 +629,8 @@
   add('label.coldStage', 'Wie verbringt der Teig die Kühlschrank-Zeit?', 'How does the dough spend its fridge time?');
   add('seg.coldBalls', 'Als Teiglinge (praktisch)', 'As dough balls (convenient)');
   add('seg.coldBulk', 'Im Stück (klassisch)', 'In bulk (classic)');
-  add('hint.coldStage', 'Greift nur bei kühlen Führungen (24 h+). <b>Teiglinge:</b> nach 2 h formen, dann kalt — am Backtag nur noch temperieren &amp; backen. <b>Im Stück:</b> der ganze Teig gärt kalt, Formen und Stückgare erst am Backtag.',
-    'Only applies to cold methods (24 h+). <b>Dough balls:</b> shape after 2 h, then cold — on baking day just bring to room temp &amp; bake. <b>In bulk:</b> the whole dough rises cold, shaping and final proof happen on baking day.');
+  add('hint.coldStage', 'Greift nur bei kühlen Führungen (24 h+). <b>Teiglinge:</b> nach 2 h formen, dann kalt: am Backtag nur noch temperieren &amp; backen. <b>Im Stück:</b> der ganze Teig gärt kalt, Formen und Stückgare erst am Backtag.',
+    'Only applies to cold methods (24 h+). <b>Dough balls:</b> shape after 2 h, then cold: on baking day just bring to room temp &amp; bake. <b>In bulk:</b> the whole dough rises cold, shaping and final proof happen on baking day.');
 
   // -- Card: Teigtemperatur & Eiswasser ------------------------------------------------
   add('card.temp.title', 'Teigtemperatur & Eiswasser', 'Dough temperature & ice water');
@@ -634,8 +638,8 @@
   add('hint.ddt', 'Napoli-Ziel nach dem Kneten: 23–25 °C.', 'Napoli target after kneading: 23–25 °C.');
   add('label.room', 'Raumtemperatur', 'Room temperature');
   add('label.flourTemp', 'Mehltemperatur', 'Flour temperature');
-  add('hint.flourTemp', 'Startet gleich der Raumtemperatur, aber unabhängig änderbar — z. B. kühler bei Mehl aus dem Keller oder Kühlschrank.',
-    'Starts equal to room temperature, but can be changed independently — e.g. cooler for flour from the cellar or fridge.');
+  add('hint.flourTemp', 'Startet gleich der Raumtemperatur, aber unabhängig änderbar: z. B. kühler bei Mehl aus dem Keller oder Kühlschrank.',
+    'Starts equal to room temperature, but can be changed independently: e.g. cooler for flour from the cellar or fridge.');
   add('label.knead', 'Knetart', 'Kneading method');
   add('seg.hand', 'Hand', 'Hand');
   add('seg.machine', 'Maschine', 'Machine');
@@ -669,11 +673,11 @@
   add('btn.printShoppingList', 'Einkaufsliste drucken', 'Print shopping list');
   add('btn.printGuide', 'Anleitung drucken', 'Print guide');
   add('btn.savePdf', 'Als PDF speichern', 'Save as PDF');
-  add('hint.savePdf', 'Lädt die Schritt-für-Schritt-Anleitung direkt als PDF-Datei herunter — ganz ohne Druckdialog.',
-    'Downloads the step-by-step guide directly as a PDF file — with no print dialog.');
+  add('hint.savePdf', 'Lädt die Schritt-für-Schritt-Anleitung direkt als PDF-Datei herunter: ganz ohne Druckdialog.',
+    'Downloads the step-by-step guide directly as a PDF file: with no print dialog.');
   add('btn.copyShareLink', 'Link kopieren', 'Copy link');
-  add('hint.copyShareLink', 'Kopiert einen Link, der dieses Rezept komplett enthält — zum Teilen, ohne Login oder Server.',
-    'Copies a link that contains this entire recipe — for sharing, no login or server needed.');
+  add('hint.copyShareLink', 'Kopiert einen Link, der dieses Rezept komplett enthält: zum Teilen, ohne Login oder Server.',
+    'Copies a link that contains this entire recipe: for sharing, no login or server needed.');
 
   // -- Anleitung-Kopf -------------------------------------------------------------------
   add('guide.headTitle', 'Schritt-für-Schritt-Anleitung', 'Step-by-step guide');
@@ -681,32 +685,32 @@
   // -- Card: Meine Rezepte --------------------------------------------------------------
   add('card.myRecipes.title', 'Meine Rezepte', 'My recipes');
   add('label.savedRecipe', 'Gespeichertes Rezept', 'Saved recipe');
-  add('option.noneSavedYet', '— noch keins gespeichert —', '— none saved yet —');
+  add('option.noneSavedYet', '(noch keins gespeichert)', '(none saved yet)');
   add('btn.duplicate', 'Kopieren', 'Duplicate');
   add('btn.rename', 'Umbenennen', 'Rename');
   add('btn.delete', 'Löschen', 'Delete');
-  add('hint.myRecipes', 'Eigene Rezepte sind unabhängig von den Presets oben — hier landen deine per „Speichern" gesicherten Stände.',
-    'Custom recipes are independent from the presets above — this is where your "Save"d states end up.');
+  add('hint.myRecipes', 'Eigene Rezepte sind unabhängig von den Presets oben: hier landen deine per „Speichern" gesicherten Stände.',
+    'Custom recipes are independent from the presets above: this is where your "Save"d states end up.');
   add('btn.exportFile', 'Als Datei sichern', 'Save as file');
   add('btn.importFile', 'Aus Datei laden', 'Load from file');
   add('label.importFile', 'Backup-Datei mit Rezepten auswählen', 'Select a backup file with recipes');
-  add('hint.recipeIO', 'Sichert alle gespeicherten Rezepte als Datei (z. B. vor dem Löschen von Websitedaten) oder lädt eine solche Datei wieder ein — importierte Rezepte werden ergänzt, nichts wird überschrieben.',
-    'Backs up all saved recipes as a file (e.g. before clearing site data) or loads such a file back in — imported recipes are added, nothing gets overwritten.');
+  add('hint.recipeIO', 'Sichert alle gespeicherten Rezepte als Datei (z. B. vor dem Löschen von Websitedaten) oder lädt eine solche Datei wieder ein: importierte Rezepte werden ergänzt, nichts wird überschrieben.',
+    'Backs up all saved recipes as a file (e.g. before clearing site data) or loads such a file back in: imported recipes are added, nothing gets overwritten.');
 
   // -- Card: Neues Rezept anlegen --------------------------------------------------------
   add('card.newRecipe.title', 'Neues Rezept anlegen', 'Create a new recipe');
-  add('hint.newRecipe', 'Legt ein neues, eigenständiges Rezept an — die aktuelle Berechnung im Rechner-Bereich bleibt dabei unverändert. Erscheint danach in „Meine Rezepte“ und im „Fertiges Rezept wählen“-Dropdown unter „Eigene Rezepte“.',
-    'Creates a new, independent recipe — the current calculation in the Calculator area stays unchanged. It then appears under "My recipes" and in the "Choose a ready-made recipe" dropdown under "Custom recipes".');
+  add('hint.newRecipe', 'Legt ein neues, eigenständiges Rezept an: die aktuelle Berechnung im Rechner-Bereich bleibt dabei unverändert. Erscheint danach in „Meine Rezepte“ und im „Fertiges Rezept wählen“-Dropdown unter „Eigene Rezepte“.',
+    'Creates a new, independent recipe: the current calculation in the Calculator area stays unchanged. It then appears under "My recipes" and in the "Choose a ready-made recipe" dropdown under "Custom recipes".');
   add('heading.basics', 'Grundeinstellungen', 'Basic settings');
-  add('hint.newRecipeSugar', 'Nicht flag-/preset-gebunden wie im Hauptrechner — im eigenständigen Formular immer verfügbar.',
-    'Not tied to a flag/preset like in the main calculator — always available in this standalone form.');
+  add('hint.newRecipeSugar', 'Nicht flag-/preset-gebunden wie im Hauptrechner: im eigenständigen Formular immer verfügbar.',
+    'Not tied to a flag/preset like in the main calculator: always available in this standalone form.');
   add('heading.methodYeast', 'Methode & Hefe', 'Method & yeast');
   add('heading.tempIce', 'Teigtemperatur & Eiswasser', 'Dough temperature & ice water');
   add('label.newRecipeFullName', 'Name für das neue Rezept', 'Name for the new recipe');
   add('placeholder.newRecipeFullName', 'Name für das neue Rezept', 'Name for the new recipe');
   add('btn.createRecipe', 'Rezept anlegen', 'Create recipe');
-  add('hint.createRecipe', 'Kalte Gare startet für neu angelegte Rezepte auf „Als Teiglinge (praktisch)“, Zeitplan bleibt leer — beides nach dem Laden im Rechner-Bereich änderbar.',
-    'Cold rise starts as "As dough balls (convenient)" for newly created recipes, schedule stays empty — both changeable after loading in the Calculator area.');
+  add('hint.createRecipe', 'Kalte Gare startet für neu angelegte Rezepte auf „Als Teiglinge (praktisch)“, Zeitplan bleibt leer: beides nach dem Laden im Rechner-Bereich änderbar.',
+    'Cold rise starts as "As dough balls (convenient)" for newly created recipes, schedule stays empty: both changeable after loading in the Calculator area.');
 
   // -- Card: Zeitplan ---------------------------------------------------------------------
   add('card.schedule.title', 'Zeitplan', 'Schedule');
@@ -720,8 +724,8 @@
   // .title- und einen .body-Key; body darf HTML enthalten (hier: <p>), wird per innerHTML
   // gerendert.
   add('card.glossary.title', 'Pizza-Glossar', 'Pizza glossary');
-  add('hint.glossary', 'Kurze Lexikon-Artikel zu Begriffen und Hintergrundwissen rund um Pizza — zum Nachlesen, unabhängig vom Rechner.',
-    'Short reference articles on pizza-related terms and background knowledge — for reading, independent of the calculator.');
+  add('hint.glossary', 'Kurze Lexikon-Artikel zu Begriffen und Hintergrundwissen rund um Pizza: zum Nachlesen, unabhängig vom Rechner.',
+    'Short reference articles on pizza-related terms and background knowledge: for reading, independent of the calculator.');
 
   add('glossary.wwert.title', 'W-Wert (Mehlstärke)', 'W-value (flour strength)');
   add('glossary.wwert.body',
@@ -730,38 +734,38 @@
 
   add('glossary.tipo00.title', '00-Mehl (Tipo 00)', '00 flour (Tipo 00)');
   add('glossary.tipo00.body',
-    '<p>„Tipo 00" ist keine Mehlsorte, sondern eine italienische Vermahlungsstufe: Sie gibt an, wie fein das Mehl gemahlen und wie stark Schale und Keim des Korns entfernt wurden — 00 ist die feinste, hellste Stufe (danach folgen 0, 1, 2 und Vollkorn).</p><p>Für neapolitanische Pizza wird meist ein Tipo-00-Mehl mit hohem W-Wert verwendet, weil die feine Vermahlung einen besonders geschmeidigen, elastischen Teig ergibt. Der Feinheitsgrad allein sagt aber nichts über die Stärke des Mehls aus — ein Tipo-00-Mehl kann sowohl schwach als auch sehr stark sein, das hängt vom W-Wert ab.</p>',
-    '<p>"Tipo 00" isn\'t a type of flour but an Italian milling grade: it indicates how finely the flour is ground and how much of the bran and germ have been removed — 00 is the finest, whitest grade (followed by 0, 1, 2 and whole wheat).</p><p>Neapolitan pizza typically uses a Tipo 00 flour with a high W-value, since the fine grind produces an especially smooth, elastic dough. The grind alone says nothing about the flour\'s strength, though — a Tipo 00 flour can be weak or very strong, depending on its W-value.</p>');
+    '<p>„Tipo 00" ist keine Mehlsorte, sondern eine italienische Vermahlungsstufe: Sie gibt an, wie fein das Mehl gemahlen und wie stark Schale und Keim des Korns entfernt wurden: 00 ist die feinste, hellste Stufe (danach folgen 0, 1, 2 und Vollkorn).</p><p>Für neapolitanische Pizza wird meist ein Tipo-00-Mehl mit hohem W-Wert verwendet, weil die feine Vermahlung einen besonders geschmeidigen, elastischen Teig ergibt. Der Feinheitsgrad allein sagt aber nichts über die Stärke des Mehls aus: ein Tipo-00-Mehl kann sowohl schwach als auch sehr stark sein, das hängt vom W-Wert ab.</p>',
+    '<p>"Tipo 00" isn\'t a type of flour but an Italian milling grade: it indicates how finely the flour is ground and how much of the bran and germ have been removed: 00 is the finest, whitest grade (followed by 0, 1, 2 and whole wheat).</p><p>Neapolitan pizza typically uses a Tipo 00 flour with a high W-value, since the fine grind produces an especially smooth, elastic dough. The grind alone says nothing about the flour\'s strength, though: a Tipo 00 flour can be weak or very strong, depending on its W-value.</p>');
 
   add('glossary.baeckerprozente.title', 'Bäckerprozente', 'Baker\'s percentage');
   add('glossary.baeckerprozente.body',
-    '<p>Bäckerprozente (englisch „baker\'s percentage") sind die Fachsprache jedes Teigrezepts: Alle Zutaten werden nicht in Gramm, sondern relativ zur Mehlmenge angegeben, die immer 100 % entspricht. Ein Rezept mit „62 % Hydration, 2,8 % Salz, 0,3 % Hefe" heißt: Wasser = 62 % der Mehlmenge, Salz = 2,8 % der Mehlmenge, und so weiter.</p><p>Der Vorteil: Rezepte lassen sich verlustfrei auf jede Teigmenge skalieren, ohne jede Zutat einzeln neu umzurechnen — genau das übernimmt dieser Rechner automatisch.</p>',
-    '<p>Baker\'s percentage is the professional shorthand behind every dough recipe: every ingredient is stated not in grams but relative to the flour weight, which always equals 100%. A recipe reading "62% hydration, 2.8% salt, 0.3% yeast" means water = 62% of the flour weight, salt = 2.8% of the flour weight, and so on.</p><p>The advantage: recipes scale to any dough quantity without recalculating each ingredient by hand — exactly what this calculator does automatically.</p>');
+    '<p>Bäckerprozente (englisch „baker\'s percentage") sind die Fachsprache jedes Teigrezepts: Alle Zutaten werden nicht in Gramm, sondern relativ zur Mehlmenge angegeben, die immer 100 % entspricht. Ein Rezept mit „62 % Hydration, 2,8 % Salz, 0,3 % Hefe" heißt: Wasser = 62 % der Mehlmenge, Salz = 2,8 % der Mehlmenge, und so weiter.</p><p>Der Vorteil: Rezepte lassen sich verlustfrei auf jede Teigmenge skalieren, ohne jede Zutat einzeln neu umzurechnen: genau das übernimmt dieser Rechner automatisch.</p>',
+    '<p>Baker\'s percentage is the professional shorthand behind every dough recipe: every ingredient is stated not in grams but relative to the flour weight, which always equals 100%. A recipe reading "62% hydration, 2.8% salt, 0.3% yeast" means water = 62% of the flour weight, salt = 2.8% of the flour weight, and so on.</p><p>The advantage: recipes scale to any dough quantity without recalculating each ingredient by hand: exactly what this calculator does automatically.</p>');
 
   add('glossary.hydration.title', 'Hydration', 'Hydration');
   add('glossary.hydration.body',
-    '<p>Hydration ist der Wasseranteil im Teig, angegeben als Bäckerprozent (Wassermenge geteilt durch Mehlmenge). Niedrige Hydration (58–62 %) ergibt einen griffigen, leicht zu formenden Teig — ideal für Einsteiger.</p><p>Hohe Hydration (68–75 %+) ergibt einen offenporigeren, luftigeren Rand, ist aber klebriger in der Verarbeitung und verlangt oft Dehnen-und-Falten statt klassisches Kneten. Neapolitanische Pizza liegt meist bei 60–65 %, Teglia-/Blechpizza oft deutlich darüber.</p>',
-    '<p>Hydration is the water content of the dough, expressed as a baker\'s percentage (water weight divided by flour weight). Low hydration (58–62%) gives a firm, easy-to-shape dough — great for beginners.</p><p>High hydration (68–75%+) produces a more open, airier crumb and crust rim, but is stickier to handle and often calls for stretch-and-fold instead of classic kneading. Neapolitan pizza usually sits around 60–65%, while pan/tray pizza (teglia) often goes noticeably higher.</p>');
+    '<p>Hydration ist der Wasseranteil im Teig, angegeben als Bäckerprozent (Wassermenge geteilt durch Mehlmenge). Niedrige Hydration (58–62 %) ergibt einen griffigen, leicht zu formenden Teig: ideal für Einsteiger.</p><p>Hohe Hydration (68–75 %+) ergibt einen offenporigeren, luftigeren Rand, ist aber klebriger in der Verarbeitung und verlangt oft Dehnen-und-Falten statt klassisches Kneten. Neapolitanische Pizza liegt meist bei 60–65 %, Teglia-/Blechpizza oft deutlich darüber.</p>',
+    '<p>Hydration is the water content of the dough, expressed as a baker\'s percentage (water weight divided by flour weight). Low hydration (58–62%) gives a firm, easy-to-shape dough: great for beginners.</p><p>High hydration (68–75%+) produces a more open, airier crumb and crust rim, but is stickier to handle and often calls for stretch-and-fold instead of classic kneading. Neapolitan pizza usually sits around 60–65%, while pan/tray pizza (teglia) often goes noticeably higher.</p>');
 
   add('glossary.gluten.title', 'Gluten', 'Gluten');
   add('glossary.gluten.body',
-    '<p>Gluten ist das elastische Eiweißnetzwerk, das entsteht, wenn Mehlproteine (Gliadin und Glutenin) mit Wasser in Kontakt kommen und geknetet oder gefaltet werden. Es macht den Teig dehnbar, hält die von der Hefe produzierten Gasblasen fest und ist verantwortlich für die luftige, offenporige Struktur eines gut gegarten Teigs.</p><p>Je länger und intensiver ein Teig bearbeitet (oder je länger er ruht) wird, desto stärker vernetzt sich das Gluten — bis zu einem Punkt, an dem weiteres Kneten nichts mehr bringt und nur Zeit/Ruhe weiterhilft.</p>',
-    '<p>Gluten is the elastic protein network that forms when flour proteins (gliadin and glutenin) come into contact with water and are kneaded or folded. It makes the dough stretchy, traps the gas bubbles produced by the yeast, and is responsible for the airy, open crumb of a well-risen dough.</p><p>The longer and more intensely a dough is worked (or the longer it rests), the more the gluten network develops — up to a point where further kneading stops helping and only time/rest does.</p>');
+    '<p>Gluten ist das elastische Eiweißnetzwerk, das entsteht, wenn Mehlproteine (Gliadin und Glutenin) mit Wasser in Kontakt kommen und geknetet oder gefaltet werden. Es macht den Teig dehnbar, hält die von der Hefe produzierten Gasblasen fest und ist verantwortlich für die luftige, offenporige Struktur eines gut gegarten Teigs.</p><p>Je länger und intensiver ein Teig bearbeitet (oder je länger er ruht) wird, desto stärker vernetzt sich das Gluten: bis zu einem Punkt, an dem weiteres Kneten nichts mehr bringt und nur Zeit/Ruhe weiterhilft.</p>',
+    '<p>Gluten is the elastic protein network that forms when flour proteins (gliadin and glutenin) come into contact with water and are kneaded or folded. It makes the dough stretchy, traps the gas bubbles produced by the yeast, and is responsible for the airy, open crumb of a well-risen dough.</p><p>The longer and more intensely a dough is worked (or the longer it rests), the more the gluten network develops: up to a point where further kneading stops helping and only time/rest does.</p>');
 
   add('glossary.stretchFold.title', 'Stretch & Fold (Dehnen und Falten)', 'Stretch and fold');
   add('glossary.stretchFold.body',
-    '<p>Stretch & Fold (Dehnen und Falten) ist eine schonende Alternative zum klassischen Kneten, vor allem bei hoher Hydration (ab ca. 70 %), wo der Teig zu klebrig für intensives Kneten wäre. Dabei wird der Teig alle 20–30 Minuten kurz an den Rändern gedehnt und über sich selbst gefaltet, statt ihn durchgehend zu bearbeiten.</p><p>Zwischen den Falten baut sich das Glutennetzwerk von selbst weiter auf, sodass am Ende trotzdem ein stabiler, gut belastbarer Teig entsteht — mit deutlich weniger Kraftaufwand.</p>',
-    '<p>Stretch and fold is a gentle alternative to classic kneading, especially useful at high hydration (roughly 70%+), where the dough would be too sticky to knead intensively. The dough is briefly stretched at the edges and folded over itself every 20–30 minutes instead of being worked continuously.</p><p>Between folds, the gluten network keeps developing on its own, so a stable, resilient dough still forms in the end — with much less physical effort.</p>');
+    '<p>Stretch & Fold (Dehnen und Falten) ist eine schonende Alternative zum klassischen Kneten, vor allem bei hoher Hydration (ab ca. 70 %), wo der Teig zu klebrig für intensives Kneten wäre. Dabei wird der Teig alle 20–30 Minuten kurz an den Rändern gedehnt und über sich selbst gefaltet, statt ihn durchgehend zu bearbeiten.</p><p>Zwischen den Falten baut sich das Glutennetzwerk von selbst weiter auf, sodass am Ende trotzdem ein stabiler, gut belastbarer Teig entsteht: mit deutlich weniger Kraftaufwand.</p>',
+    '<p>Stretch and fold is a gentle alternative to classic kneading, especially useful at high hydration (roughly 70%+), where the dough would be too sticky to knead intensively. The dough is briefly stretched at the edges and folded over itself every 20–30 minutes instead of being worked continuously.</p><p>Between folds, the gluten network keeps developing on its own, so a stable, resilient dough still forms in the end: with much less physical effort.</p>');
 
   add('glossary.windowpane.title', 'Windowpane-Test', 'Windowpane test');
   add('glossary.windowpane.body',
-    '<p>Der Windowpane-Test prüft, ob der Teig genug geknetet ist: Man zieht ein kleines Stück Teig vorsichtig zwischen den Fingern auseinander, bis eine dünne, fast durchsichtige Membran entsteht — wie eine Fensterscheibe (englisch „windowpane").</p><p>Reißt der Teig dabei sofort mit unregelmäßigen Löchern, ist das Glutennetzwerk noch nicht ausreichend entwickelt und braucht mehr Knet- oder Ruhezeit. Hält die Membran stand, ohne sofort zu reißen, ist der Teig bereit für die Stockgare.</p>',
-    '<p>The windowpane test checks whether a dough has been kneaded enough: a small piece is gently stretched between the fingers until it forms a thin, almost translucent membrane — like a windowpane.</p><p>If it tears immediately with ragged holes, the gluten network isn\'t developed enough yet and needs more kneading or rest. If the membrane holds without tearing right away, the dough is ready for bulk fermentation.</p>');
+    '<p>Der Windowpane-Test prüft, ob der Teig genug geknetet ist: Man zieht ein kleines Stück Teig vorsichtig zwischen den Fingern auseinander, bis eine dünne, fast durchsichtige Membran entsteht: wie eine Fensterscheibe (englisch „windowpane").</p><p>Reißt der Teig dabei sofort mit unregelmäßigen Löchern, ist das Glutennetzwerk noch nicht ausreichend entwickelt und braucht mehr Knet- oder Ruhezeit. Hält die Membran stand, ohne sofort zu reißen, ist der Teig bereit für die Stockgare.</p>',
+    '<p>The windowpane test checks whether a dough has been kneaded enough: a small piece is gently stretched between the fingers until it forms a thin, almost translucent membrane: like a windowpane.</p><p>If it tears immediately with ragged holes, the gluten network isn\'t developed enough yet and needs more kneading or rest. If the membrane holds without tearing right away, the dough is ready for bulk fermentation.</p>');
 
   add('glossary.autolyse.title', 'Autolyse', 'Autolyse');
   add('glossary.autolyse.body',
-    '<p>Autolyse bezeichnet eine Ruhephase, bei der nur Mehl und Wasser (ohne Hefe und Salz) für 20–60 Minuten vermischt und dann ungestört stehen gelassen werden, bevor der eigentliche Teig fertiggestellt wird. In dieser Zeit nimmt das Mehl das Wasser vollständig auf und beginnt bereits von selbst, ein Glutennetzwerk zu bilden — ganz ohne Kneten.</p><p>Das verkürzt die spätere Knetzeit spürbar und macht den Teig geschmeidiger. Salz wird bewusst erst danach zugegeben, weil es die Wasseraufnahme des Mehls sonst verlangsamen würde.</p>',
-    '<p>Autolyse is a resting phase in which only flour and water (no yeast or salt) are mixed and left undisturbed for 20–60 minutes before the actual dough is finished. During this time the flour fully absorbs the water and already starts forming a gluten network on its own — without any kneading.</p><p>This noticeably shortens the later kneading time and makes the dough smoother. Salt is deliberately added afterward, since it would otherwise slow down the flour\'s water absorption.</p>');
+    '<p>Autolyse bezeichnet eine Ruhephase, bei der nur Mehl und Wasser (ohne Hefe und Salz) für 20–60 Minuten vermischt und dann ungestört stehen gelassen werden, bevor der eigentliche Teig fertiggestellt wird. In dieser Zeit nimmt das Mehl das Wasser vollständig auf und beginnt bereits von selbst, ein Glutennetzwerk zu bilden: ganz ohne Kneten.</p><p>Das verkürzt die spätere Knetzeit spürbar und macht den Teig geschmeidiger. Salz wird bewusst erst danach zugegeben, weil es die Wasseraufnahme des Mehls sonst verlangsamen würde.</p>',
+    '<p>Autolyse is a resting phase in which only flour and water (no yeast or salt) are mixed and left undisturbed for 20–60 minutes before the actual dough is finished. During this time the flour fully absorbs the water and already starts forming a gluten network on its own: without any kneading.</p><p>This noticeably shortens the later kneading time and makes the dough smoother. Salt is deliberately added afterward, since it would otherwise slow down the flour\'s water absorption.</p>');
 
   add('glossary.poolish.title', 'Poolish', 'Poolish');
   add('glossary.poolish.body',
@@ -775,18 +779,18 @@
 
   add('glossary.kalteGare.title', 'Kalte Gare', 'Cold fermentation');
   add('glossary.kalteGare.body',
-    '<p>Kalte Gare bedeutet, den Teig (oder die bereits geformten Teiglinge) für viele Stunden bis mehrere Tage im Kühlschrank reifen zu lassen, statt bei Raumtemperatur. Die Kälte verlangsamt die Hefeaktivität stark, während enzymatische Prozesse im Mehl weiterlaufen — dadurch entstehen mehr Aromen und eine bekömmlichere, leichter verdauliche Kruste, ohne dass der Teig übergärt.</p><p>Wichtig ist die Unterscheidung: Reift der ganze Teig im Stück kalt, oder werden vorher einzelne Teiglinge geformt und dann kalt gestellt? Beides führt zu leicht unterschiedlichen Ergebnissen (s. Kaltgare-Einstellung im Rechner).</p>',
-    '<p>Cold fermentation means letting the dough (or already-shaped dough balls) rise in the fridge for many hours up to several days, instead of at room temperature. The cold strongly slows down yeast activity while enzymatic processes in the flour keep going — this develops more flavor and a lighter, more digestible crust without the dough over-fermenting.</p><p>One important distinction: does the whole dough rise cold in one piece, or are individual dough balls shaped first and then chilled? Both lead to slightly different results (see the cold-rise setting in the calculator).</p>');
+    '<p>Kalte Gare bedeutet, den Teig (oder die bereits geformten Teiglinge) für viele Stunden bis mehrere Tage im Kühlschrank reifen zu lassen, statt bei Raumtemperatur. Die Kälte verlangsamt die Hefeaktivität stark, während enzymatische Prozesse im Mehl weiterlaufen: dadurch entstehen mehr Aromen und eine bekömmlichere, leichter verdauliche Kruste, ohne dass der Teig übergärt.</p><p>Wichtig ist die Unterscheidung: Reift der ganze Teig im Stück kalt, oder werden vorher einzelne Teiglinge geformt und dann kalt gestellt? Beides führt zu leicht unterschiedlichen Ergebnissen (s. Kaltgare-Einstellung im Rechner).</p>',
+    '<p>Cold fermentation means letting the dough (or already-shaped dough balls) rise in the fridge for many hours up to several days, instead of at room temperature. The cold strongly slows down yeast activity while enzymatic processes in the flour keep going: this develops more flavor and a lighter, more digestible crust without the dough over-fermenting.</p><p>One important distinction: does the whole dough rise cold in one piece, or are individual dough balls shaped first and then chilled? Both lead to slightly different results (see the cold-rise setting in the calculator).</p>');
 
   add('glossary.malzmehl.title', 'Malzmehl (Malto)', 'Malt flour (malto)');
   add('glossary.malzmehl.body',
-    '<p>Malzmehl (italienisch „malto", meist diastatisches Gerstenmalzmehl) enthält Enzyme, die Stärke im Mehl in vergärbaren Zucker aufspalten. Ein kleiner Anteil (oft unter 1 % der Mehlmenge) füttert die Hefe zusätzlich, fördert eine gleichmäßigere Bräunung der Kruste und kann bei sehr langen, kalten Gärzeiten helfen, wenn dem Mehl sonst die Energie ausgeht.</p><p>Viele italienische Pizzamehle haben bereits eine kleine Menge Malzmehl beigemischt — ein separater Zusatz ist meist nur bei sehr langer Reifezeit oder schwächerem Mehl sinnvoll.</p>',
-    '<p>Malt flour (Italian "malto", usually diastatic barley malt flour) contains enzymes that break down starch in the flour into fermentable sugar. A small amount (often under 1% of the flour weight) gives the yeast extra fuel, promotes more even crust browning, and can help during very long, cold fermentations when the flour might otherwise run low on energy.</p><p>Many Italian pizza flours already have a small amount of malt flour blended in — adding more separately usually only makes sense for very long rises or weaker flour.</p>');
+    '<p>Malzmehl (italienisch „malto", meist diastatisches Gerstenmalzmehl) enthält Enzyme, die Stärke im Mehl in vergärbaren Zucker aufspalten. Ein kleiner Anteil (oft unter 1 % der Mehlmenge) füttert die Hefe zusätzlich, fördert eine gleichmäßigere Bräunung der Kruste und kann bei sehr langen, kalten Gärzeiten helfen, wenn dem Mehl sonst die Energie ausgeht.</p><p>Viele italienische Pizzamehle haben bereits eine kleine Menge Malzmehl beigemischt: ein separater Zusatz ist meist nur bei sehr langer Reifezeit oder schwächerem Mehl sinnvoll.</p>',
+    '<p>Malt flour (Italian "malto", usually diastatic barley malt flour) contains enzymes that break down starch in the flour into fermentable sugar. A small amount (often under 1% of the flour weight) gives the yeast extra fuel, promotes more even crust browning, and can help during very long, cold fermentations when the flour might otherwise run low on energy.</p><p>Many Italian pizza flours already have a small amount of malt flour blended in: adding more separately usually only makes sense for very long rises or weaker flour.</p>');
 
   add('glossary.ofenVsBackofen.title', 'Pizzaofen vs. Backofen', 'Pizza oven vs. home oven');
   add('glossary.ofenVsBackofen.body',
-    '<p>Ein dedizierter Pizzaofen (Holz, Gas oder Strom) erreicht 400–500 °C und backt eine neapolitanische Pizza in 60–90 Sekunden — dadurch bleibt der Teig innen saftig, während außen schnell Röstblasen (Leoparding) entstehen.</p><p>Ein normaler Haushaltsbackofen schafft meist nur 250–300 °C, wodurch das Backen 6–12 Minuten dauert und der Teig eher austrocknet, bevor die Kruste ausreichend gebräunt ist. Ein Pizzastahl oder -stein hilft, diesen Unterschied teilweise auszugleichen, indem er Hitze speichert und von unten intensiver an den Teig abgibt, als es ein Backblech könnte.</p>',
-    '<p>A dedicated pizza oven (wood, gas or electric) reaches 400–500°C and bakes a Neapolitan pizza in 60–90 seconds — this keeps the inside of the dough moist while quickly forming charred blisters (leoparding) on the outside.</p><p>A regular home oven usually maxes out at 250–300°C, so baking takes 6–12 minutes and the dough tends to dry out before the crust browns enough. A baking steel or pizza stone helps partly compensate for this by storing heat and transferring it to the dough from below far more intensely than a baking sheet could.</p>');
+    '<p>Ein dedizierter Pizzaofen (Holz, Gas oder Strom) erreicht 400–500 °C und backt eine neapolitanische Pizza in 60–90 Sekunden: dadurch bleibt der Teig innen saftig, während außen schnell Röstblasen (Leoparding) entstehen.</p><p>Ein normaler Haushaltsbackofen schafft meist nur 250–300 °C, wodurch das Backen 6–12 Minuten dauert und der Teig eher austrocknet, bevor die Kruste ausreichend gebräunt ist. Ein Pizzastahl oder -stein hilft, diesen Unterschied teilweise auszugleichen, indem er Hitze speichert und von unten intensiver an den Teig abgibt, als es ein Backblech könnte.</p>',
+    '<p>A dedicated pizza oven (wood, gas or electric) reaches 400–500°C and bakes a Neapolitan pizza in 60–90 seconds: this keeps the inside of the dough moist while quickly forming charred blisters (leoparding) on the outside.</p><p>A regular home oven usually maxes out at 250–300°C, so baking takes 6–12 minutes and the dough tends to dry out before the crust browns enough. A baking steel or pizza stone helps partly compensate for this by storing heat and transferring it to the dough from below far more intensely than a baking sheet could.</p>');
 
   add('glossary.sanMarzano.title', 'San-Marzano-Tomaten', 'San Marzano tomatoes');
   add('glossary.sanMarzano.body',
@@ -795,38 +799,38 @@
 
   add('glossary.passata.title', 'Passata di Pomodoro', 'Passata di pomodoro');
   add('glossary.passata.body',
-    '<p>Passata di pomodoro ist passierte, ungekochte Tomatensauce aus gesiebten, aber nicht weiter reduzierten Tomaten — meist nur mit etwas Salz, manchmal Olivenöl oder Basilikum verfeinert. Anders als eingekochte Pastasaucen wird sie für Pizza bewusst NICHT vorgekocht.</p><p>Der Teig backt die Sauce erst im Ofen fertig, wodurch sie frisch und leicht säuerlich bleibt statt schwer und süßlich. Für die klassische Napoli-Pizza reicht meist ein dünner, gleichmäßiger Löffel Passata, der nicht bis an den Rand reicht.</p>',
-    '<p>Passata di pomodoro is a smooth, uncooked tomato sauce made from sieved tomatoes that aren\'t reduced any further — usually seasoned with just a little salt, sometimes olive oil or basil. Unlike simmered pasta sauces, it\'s deliberately NOT pre-cooked for pizza.</p><p>The dough finishes cooking the sauce in the oven, keeping it fresh and lightly tangy instead of heavy and sweet. For classic Neapolitan pizza, a thin, even spoonful of passata that doesn\'t quite reach the rim is usually enough.</p>');
+    '<p>Passata di pomodoro ist passierte, ungekochte Tomatensauce aus gesiebten, aber nicht weiter reduzierten Tomaten: meist nur mit etwas Salz, manchmal Olivenöl oder Basilikum verfeinert. Anders als eingekochte Pastasaucen wird sie für Pizza bewusst NICHT vorgekocht.</p><p>Der Teig backt die Sauce erst im Ofen fertig, wodurch sie frisch und leicht säuerlich bleibt statt schwer und süßlich. Für die klassische Napoli-Pizza reicht meist ein dünner, gleichmäßiger Löffel Passata, der nicht bis an den Rand reicht.</p>',
+    '<p>Passata di pomodoro is a smooth, uncooked tomato sauce made from sieved tomatoes that aren\'t reduced any further: usually seasoned with just a little salt, sometimes olive oil or basil. Unlike simmered pasta sauces, it\'s deliberately NOT pre-cooked for pizza.</p><p>The dough finishes cooking the sauce in the oven, keeping it fresh and lightly tangy instead of heavy and sweet. For classic Neapolitan pizza, a thin, even spoonful of passata that doesn\'t quite reach the rim is usually enough.</p>');
 
   add('glossary.fiorDiLatte.title', 'Fior di Latte vs. Mozzarella', 'Fior di latte vs. mozzarella');
   add('glossary.fiorDiLatte.body',
-    '<p>Sowohl Fior di Latte als auch klassische Mozzarella gehören zur Familie der „Pasta filata"-Käse (gezogener Käseteig), unterscheiden sich aber in der Milch: Mozzarella (genauer: Mozzarella di Bufala Campana DOP) wird aus Wasserbüffelmilch hergestellt, kräftiger im Geschmack und wasserhaltiger.</p><p>Fior di Latte wird aus Kuhmilch gemacht, ist milder und etwas fester — dadurch für Pizza oft praktischer, weil sie beim Backen weniger Wasser abgibt und den Teig nicht so leicht durchweicht.</p>',
-    '<p>Both fior di latte and classic mozzarella belong to the "pasta filata" (stretched-curd) cheese family, but they differ in the milk used: mozzarella (more precisely, Mozzarella di Bufala Campana DOP) is made from water buffalo milk, giving it a stronger flavor and higher water content.</p><p>Fior di latte is made from cow\'s milk, is milder and slightly firmer — often more practical for pizza, since it releases less water while baking and doesn\'t soak the dough as easily.</p>');
+    '<p>Sowohl Fior di Latte als auch klassische Mozzarella gehören zur Familie der „Pasta filata"-Käse (gezogener Käseteig), unterscheiden sich aber in der Milch: Mozzarella (genauer: Mozzarella di Bufala Campana DOP) wird aus Wasserbüffelmilch hergestellt, kräftiger im Geschmack und wasserhaltiger.</p><p>Fior di Latte wird aus Kuhmilch gemacht, ist milder und etwas fester: dadurch für Pizza oft praktischer, weil sie beim Backen weniger Wasser abgibt und den Teig nicht so leicht durchweicht.</p>',
+    '<p>Both fior di latte and classic mozzarella belong to the "pasta filata" (stretched-curd) cheese family, but they differ in the milk used: mozzarella (more precisely, Mozzarella di Bufala Campana DOP) is made from water buffalo milk, giving it a stronger flavor and higher water content.</p><p>Fior di latte is made from cow\'s milk, is milder and slightly firmer: often more practical for pizza, since it releases less water while baking and doesn\'t soak the dough as easily.</p>');
 
   add('glossary.olivenoel.title', 'Olivenöl (Extra Vergine)', 'Olive oil (extra virgin)');
   add('glossary.olivenoel.body',
-    '<p>Olivenöl kommt bei neapolitanischer Pizza in zwei Rollen vor: als kleiner Anteil im Teig (macht ihn geschmeidiger und fördert die Bräunung, klassisch aber oft ganz weggelassen) und als Finish nach dem Backen, ein dünner Faden „Extra Vergine"-Olivenöl direkt vor dem Servieren.</p><p>Extra Vergine bedeutet kaltgepresst, unraffiniert und mit besonders niedrigem Säuregehalt — dadurch bleibt der fruchtige Eigengeschmack erhalten. Für den Teig selbst reicht meist ein einfacheres Olivenöl, für das Finish lohnt sich ein hochwertiges.</p>',
-    '<p>Olive oil plays two roles in Neapolitan pizza: as a small ingredient in the dough itself (makes it more supple and promotes browning, though classically often left out entirely) and as a finishing touch after baking — a thin drizzle of extra virgin olive oil right before serving.</p><p>Extra virgin means cold-pressed, unrefined and with an especially low acidity level, which preserves the fruity flavor. A simpler olive oil is usually fine for the dough itself, while a higher-quality one is worth it for the finishing drizzle.</p>');
+    '<p>Olivenöl kommt bei neapolitanischer Pizza in zwei Rollen vor: als kleiner Anteil im Teig (macht ihn geschmeidiger und fördert die Bräunung, klassisch aber oft ganz weggelassen) und als Finish nach dem Backen, ein dünner Faden „Extra Vergine"-Olivenöl direkt vor dem Servieren.</p><p>Extra Vergine bedeutet kaltgepresst, unraffiniert und mit besonders niedrigem Säuregehalt: dadurch bleibt der fruchtige Eigengeschmack erhalten. Für den Teig selbst reicht meist ein einfacheres Olivenöl, für das Finish lohnt sich ein hochwertiges.</p>',
+    '<p>Olive oil plays two roles in Neapolitan pizza: as a small ingredient in the dough itself (makes it more supple and promotes browning, though classically often left out entirely) and as a finishing touch after baking: a thin drizzle of extra virgin olive oil right before serving.</p><p>Extra virgin means cold-pressed, unrefined and with an especially low acidity level, which preserves the fruity flavor. A simpler olive oil is usually fine for the dough itself, while a higher-quality one is worth it for the finishing drizzle.</p>');
 
   add('glossary.basilikum.title', 'Frisches Basilikum', 'Fresh basil');
   add('glossary.basilikum.body',
-    '<p>Frisches Basilikum wird bei klassischer Margherita traditionell ERST NACH dem Backen aufgelegt, nicht vorher — die Hitze des Ofens würde die zarten Blätter sonst innerhalb von Sekunden verbrennen und bitter machen.</p><p>Getrocknetes Basilikum verträgt die Backhitze zwar besser, hat aber ein deutlich anderes, weniger frisches Aroma und wird deshalb für die klassische Napoli-Pizza kaum verwendet. Ein paar frische Blätter kurz vor dem Servieren reichen meist aus.</p>',
-    '<p>Fresh basil is traditionally added to a classic Margherita AFTER baking, not before — the oven\'s heat would otherwise scorch the delicate leaves within seconds and turn them bitter.</p><p>Dried basil holds up better to baking heat, but has a noticeably different, less fresh aroma, so it\'s rarely used for classic Neapolitan pizza. A few fresh leaves added just before serving are usually enough.</p>');
+    '<p>Frisches Basilikum wird bei klassischer Margherita traditionell ERST NACH dem Backen aufgelegt, nicht vorher: die Hitze des Ofens würde die zarten Blätter sonst innerhalb von Sekunden verbrennen und bitter machen.</p><p>Getrocknetes Basilikum verträgt die Backhitze zwar besser, hat aber ein deutlich anderes, weniger frisches Aroma und wird deshalb für die klassische Napoli-Pizza kaum verwendet. Ein paar frische Blätter kurz vor dem Servieren reichen meist aus.</p>',
+    '<p>Fresh basil is traditionally added to a classic Margherita AFTER baking, not before: the oven\'s heat would otherwise scorch the delicate leaves within seconds and turn them bitter.</p><p>Dried basil holds up better to baking heat, but has a noticeably different, less fresh aroma, so it\'s rarely used for classic Neapolitan pizza. A few fresh leaves added just before serving are usually enough.</p>');
 
   add('glossary.echteNeapolitanische.title', 'Echte neapolitanische Pizza (AVPN)', 'True Neapolitan pizza (AVPN)');
   add('glossary.echteNeapolitanische.body',
-    '<p>Die „Associazione Verace Pizza Napoletana" (AVPN) ist eine 1984 gegründete Vereinigung, die genaue Regeln für „echte" neapolitanische Pizza festlegt: nur bestimmte Mehltypen, ausschließlich Handarbeit beim Formen (kein Nudelholz), Backzeit von 60–90 Sekunden bei ca. 485 °C im Holzofen, ein Teigrand von 1–2 cm und maximal 35 cm Durchmesser.</p><p>Betriebe, die diese Kriterien erfüllen und sich zertifizieren lassen, dürfen das AVPN-Siegel führen. Die Regeln dienen eher als Referenz/Ideal — die meisten Hobby- und auch viele Profi-Pizzabäcker weichen in Details ab, ohne dass die Pizza dadurch „unecht" wird.</p>',
-    '<p>The "Associazione Verace Pizza Napoletana" (AVPN) is an association founded in 1984 that sets precise rules for "true" Neapolitan pizza: only certain flour types, shaping done exclusively by hand (no rolling pin), a bake time of 60–90 seconds at around 485°C in a wood-fired oven, a crust rim of 1–2 cm, and a maximum diameter of 35 cm.</p><p>Establishments that meet these criteria and get certified may display the AVPN seal. The rules serve more as a reference/ideal — most home cooks and even many professional pizzaioli deviate in the details without the pizza thereby becoming "inauthentic".</p>');
+    '<p>Die „Associazione Verace Pizza Napoletana" (AVPN) ist eine 1984 gegründete Vereinigung, die genaue Regeln für „echte" neapolitanische Pizza festlegt: nur bestimmte Mehltypen, ausschließlich Handarbeit beim Formen (kein Nudelholz), Backzeit von 60–90 Sekunden bei ca. 485 °C im Holzofen, ein Teigrand von 1–2 cm und maximal 35 cm Durchmesser.</p><p>Betriebe, die diese Kriterien erfüllen und sich zertifizieren lassen, dürfen das AVPN-Siegel führen. Die Regeln dienen eher als Referenz/Ideal: die meisten Hobby- und auch viele Profi-Pizzabäcker weichen in Details ab, ohne dass die Pizza dadurch „unecht" wird.</p>',
+    '<p>The "Associazione Verace Pizza Napoletana" (AVPN) is an association founded in 1984 that sets precise rules for "true" Neapolitan pizza: only certain flour types, shaping done exclusively by hand (no rolling pin), a bake time of 60–90 seconds at around 485°C in a wood-fired oven, a crust rim of 1–2 cm, and a maximum diameter of 35 cm.</p><p>Establishments that meet these criteria and get certified may display the AVPN seal. The rules serve more as a reference/ideal: most home cooks and even many professional pizzaioli deviate in the details without the pizza thereby becoming "inauthentic".</p>');
 
   add('glossary.margherita.title', 'Pizza Margherita (Namensgeschichte)', 'Pizza Margherita (name origin)');
   add('glossary.margherita.body',
-    '<p>Der bekanntesten Legende nach wurde die Pizza Margherita 1889 vom neapolitanischen Pizzabäcker Raffaele Esposito zu Ehren von Königin Margherita von Savoyen kreiert — mit Tomate (Rot), Mozzarella (Weiß) und Basilikum (Grün) in den Farben der italienischen Flagge.</p><p>Historiker bezweifeln inzwischen einige Details dieser Geschichte, die Kombination der drei Zutaten war vermutlich schon vorher in Neapel verbreitet. Unabhängig von der genauen Herkunft gilt die Margherita bis heute als die Referenz-Pizza.</p>',
-    '<p>According to the best-known legend, Pizza Margherita was created in 1889 by Neapolitan pizzaiolo Raffaele Esposito in honor of Queen Margherita of Savoy — with tomato (red), mozzarella (white) and basil (green) representing the colors of the Italian flag.</p><p>Historians now doubt some details of this story, and the combination of these three ingredients was likely already common in Naples beforehand. Regardless of its exact origin, the Margherita remains the reference pizza today.</p>');
+    '<p>Der bekanntesten Legende nach wurde die Pizza Margherita 1889 vom neapolitanischen Pizzabäcker Raffaele Esposito zu Ehren von Königin Margherita von Savoyen kreiert: mit Tomate (Rot), Mozzarella (Weiß) und Basilikum (Grün) in den Farben der italienischen Flagge.</p><p>Historiker bezweifeln inzwischen einige Details dieser Geschichte, die Kombination der drei Zutaten war vermutlich schon vorher in Neapel verbreitet. Unabhängig von der genauen Herkunft gilt die Margherita bis heute als die Referenz-Pizza.</p>',
+    '<p>According to the best-known legend, Pizza Margherita was created in 1889 by Neapolitan pizzaiolo Raffaele Esposito in honor of Queen Margherita of Savoy: with tomato (red), mozzarella (white) and basil (green) representing the colors of the Italian flag.</p><p>Historians now doubt some details of this story, and the combination of these three ingredients was likely already common in Naples beforehand. Regardless of its exact origin, the Margherita remains the reference pizza today.</p>');
 
   add('glossary.napoletanaVsRomana.title', 'Neapolitanische vs. Römische Pizza', 'Neapolitan vs. Roman pizza');
   add('glossary.napoletanaVsRomana.body',
-    '<p>Neapolitanische Pizza (Napoletana) hat einen dicken, weichen, luftigen Rand und eine dünne, biegsame Mitte — durch die kurze, sehr heiße Backzeit bleibt sie innen fast schon leicht feucht („al dente").</p><p>Römische Pizza (Romana, auch „scrocchiarella") ist dagegen insgesamt dünn und knusprig-kross bis zum Rand, mit weniger Hydration und oft längerer, kühlerer Backzeit im normalen Backofen. Beide Stile unterscheiden sich deutlich in Teigführung, Hydration und gewünschter Textur.</p>',
-    '<p>Neapolitan pizza (Napoletana) has a thick, soft, airy rim and a thin, pliable center — the short, very hot bake keeps the inside almost slightly moist ("al dente").</p><p>Roman pizza (Romana, also called "scrocchiarella") is instead thin and crisp all the way to the edge, with lower hydration and often a longer, cooler bake in a regular oven. Both styles differ significantly in dough handling, hydration and intended texture.</p>');
+    '<p>Neapolitanische Pizza (Napoletana) hat einen dicken, weichen, luftigen Rand und eine dünne, biegsame Mitte: durch die kurze, sehr heiße Backzeit bleibt sie innen fast schon leicht feucht („al dente").</p><p>Römische Pizza (Romana, auch „scrocchiarella") ist dagegen insgesamt dünn und knusprig-kross bis zum Rand, mit weniger Hydration und oft längerer, kühlerer Backzeit im normalen Backofen. Beide Stile unterscheiden sich deutlich in Teigführung, Hydration und gewünschter Textur.</p>',
+    '<p>Neapolitan pizza (Napoletana) has a thick, soft, airy rim and a thin, pliable center: the short, very hot bake keeps the inside almost slightly moist ("al dente").</p><p>Roman pizza (Romana, also called "scrocchiarella") is instead thin and crisp all the way to the edge, with lower hydration and often a longer, cooler bake in a regular oven. Both styles differ significantly in dough handling, hydration and intended texture.</p>');
 
   add('glossary.newYorkStyle.title', 'New York Style Pizza', 'New York style pizza');
   add('glossary.newYorkStyle.body',
@@ -840,15 +844,15 @@
 
   add('glossary.sfincione.title', 'Sizilianische Pizza (Sfincione)', 'Sicilian pizza (sfincione)');
   add('glossary.sfincione.body',
-    '<p>Sfincione ist die traditionelle sizilianische Pizza: ein dicker, schwammig-luftiger Hefeteig, meist rechteckig in einem Blech gebacken, mit einer würzigen Sauce aus Tomaten, Zwiebeln, Anchovis und Oregano, oft ohne (oder nur mit wenig) geschmolzenem Käse — stattdessen häufig mit Semmelbröseln bestreut.</p><p>Der Name leitet sich vom lateinischen „spongia" (Schwamm) ab und verweist auf die charakteristisch lockere, poröse Krume — traditionell eher Streetfood-Snack als Hauptgericht.</p>',
-    '<p>Sfincione is the traditional Sicilian pizza: a thick, spongy, airy yeasted dough, usually baked rectangular in a pan, topped with a savory sauce of tomatoes, onions, anchovies and oregano, often with little or no melted cheese — breadcrumbs are sprinkled on top instead.</p><p>The name derives from the Latin "spongia" (sponge), referring to its characteristically loose, porous crumb — traditionally eaten more as a street-food snack than a main course.</p>');
+    '<p>Sfincione ist die traditionelle sizilianische Pizza: ein dicker, schwammig-luftiger Hefeteig, meist rechteckig in einem Blech gebacken, mit einer würzigen Sauce aus Tomaten, Zwiebeln, Anchovis und Oregano, oft ohne (oder nur mit wenig) geschmolzenem Käse: stattdessen häufig mit Semmelbröseln bestreut.</p><p>Der Name leitet sich vom lateinischen „spongia" (Schwamm) ab und verweist auf die charakteristisch lockere, poröse Krume: traditionell eher Streetfood-Snack als Hauptgericht.</p>',
+    '<p>Sfincione is the traditional Sicilian pizza: a thick, spongy, airy yeasted dough, usually baked rectangular in a pan, topped with a savory sauce of tomatoes, onions, anchovies and oregano, often with little or no melted cheese: breadcrumbs are sprinkled on top instead.</p><p>The name derives from the Latin "spongia" (sponge), referring to its characteristically loose, porous crumb: traditionally eaten more as a street-food snack than a main course.</p>');
 
   // -- Card: Einstellungen ------------------------------------------------------------------
   add('card.settings.title', 'Einstellungen', 'Settings');
-  add('hint.settings.desktop', 'Schalte einzelne Zusatzfunktionen ein oder aus — deine Wahl wird direkt im Browser gespeichert. Klick auf „i“ zeigt eine kurze Erklärung.',
-    'Turn individual extra features on or off — your choice is saved directly in the browser. Click "i" for a short explanation.');
-  add('hint.settings.mobile', 'Schalte einzelne Zusatzfunktionen ein oder aus — deine Wahl wird direkt im Browser gespeichert. Tipp auf „i“ zeigt eine kurze Erklärung.',
-    'Turn individual extra features on or off — your choice is saved directly in the browser. Tap "i" for a short explanation.');
+  add('hint.settings.desktop', 'Schalte einzelne Zusatzfunktionen ein oder aus: deine Wahl wird direkt im Browser gespeichert. Klick auf „i“ zeigt eine kurze Erklärung.',
+    'Turn individual extra features on or off: your choice is saved directly in the browser. Click "i" for a short explanation.');
+  add('hint.settings.mobile', 'Schalte einzelne Zusatzfunktionen ein oder aus: deine Wahl wird direkt im Browser gespeichert. Tipp auf „i“ zeigt eine kurze Erklärung.',
+    'Turn individual extra features on or off: your choice is saved directly in the browser. Tap "i" for a short explanation.');
   add('flag.timer.name', 'Gärzeit-Timer', 'Rise timer');
   add('flag.timer.infoBtn', 'Erklärung zu „Gärzeit-Timer“ ein-/ausblenden', 'Show/hide explanation for "Rise timer"');
   add('flag.timer.info', 'Countdown mit optionalem Wecker für jeden Anleitungsschritt (z. B. Stockgare, Stückgare).',
@@ -871,38 +875,54 @@
   add('flag.multiRecipes.info', 'Mehrere benannte Rezepte speichern und verwalten statt nur eines.', 'Save and manage multiple named recipes instead of just one.');
   add('flag.newYorkStyle.name', 'New York Style', 'New York Style');
   add('flag.newYorkStyle.infoBtn', 'Erklärung zu „New York Style“ ein-/ausblenden', 'Show/hide explanation for "New York Style"');
-  add('flag.newYorkStyle.info', 'Blendet den Zucker-Regler (Bäckerprozent, wie Öl) bei den Grundeinstellungen ein — für New-York-Style-Teige. Wird auch automatisch angeschaltet, wenn du das „New York Style"-Preset wählst.',
-    'Shows the sugar slider (baker\'s percentage, like oil) in the basic settings — for New York style doughs. Also switches on automatically when you choose the "New York Style" preset.');
+  add('flag.newYorkStyle.info', 'Blendet den Zucker-Regler (Bäckerprozent, wie Öl) bei den Grundeinstellungen ein: für New-York-Style-Teige. Wird auch automatisch angeschaltet, wenn du das „New York Style"-Preset wählst.',
+    'Shows the sugar slider (baker\'s percentage, like oil) in the basic settings: for New York style doughs. Also switches on automatically when you choose the "New York Style" preset.');
   add('flag.hints.name', 'Hinweistexte', 'Hint texts');
   add('flag.hints.infoBtn', 'Erklärung zu „Hinweistexte“ ein-/ausblenden', 'Show/hide explanation for "Hint texts"');
   add('flag.hints.info', 'Erklärende Kurztexte bei Feldern & Buttons ein- oder ausblenden.', 'Turn short explanatory texts on fields & buttons on or off.');
+  // -- Globale Hefemengen-/Verschwendungs-Anpassung (v3.64.0) -------------------------
+  add('flag.yeastAdjust.name', 'Hefemenge anpassen', 'Adjust yeast amount');
+  add('flag.yeastAdjust.infoBtn', 'Erklärung zu „Hefemenge anpassen“ ein-/ausblenden', 'Show/hide explanation for "Adjust yeast amount"');
+  add('flag.yeastAdjust.info',
+    'Persönliche Kalibrierung, falls deine Hefe regelmäßig stärker oder schwächer aufgeht als berechnet: gilt für jedes Rezept gleichermaßen. 0 % = keine Änderung.',
+    'Personal calibration if your yeast consistently rises stronger or weaker than calculated: applies to every recipe equally. 0% = no change.');
+  add('adjust.yeastAdjust.decrease', 'Hefemenge verringern', 'Decrease yeast amount');
+  add('adjust.yeastAdjust.increase', 'Hefemenge erhöhen', 'Increase yeast amount');
+  add('flag.wasteAdjust.name', 'Verschwendung anpassen', 'Adjust waste buffer');
+  add('flag.wasteAdjust.infoBtn', 'Erklärung zu „Verschwendung anpassen“ ein-/ausblenden', 'Show/hide explanation for "Adjust waste buffer"');
+  add('flag.wasteAdjust.info',
+    'Erhöht das errechnete Gesamtgewicht um einen Puffer für Kneteverluste (Schüssel, Hände, Maschine): damit am Ende trotzdem die gewünschte Anzahl Teiglinge im Zielgewicht rauskommt.',
+    'Increases the calculated total dough weight by a buffer for kneading losses (bowl, hands, machine): so you still end up with the desired number of dough balls at the target weight.');
+  add('adjust.wasteAdjust.decrease', 'Verschwendungspuffer verringern', 'Decrease waste buffer');
+  add('adjust.wasteAdjust.increase', 'Verschwendungspuffer erhöhen', 'Increase waste buffer');
+  add('result.wasteNote', 'inkl. {pct} % Verschwendungspuffer', 'incl. {pct}% waste buffer');
   add('flag.lang.name', 'Sprache', 'Language');
   add('flag.lang.infoBtn', 'Erklärung zu „Sprache“ ein-/ausblenden', 'Show/hide explanation for "Language"');
-  add('flag.lang.info', 'Deutsch oder Englisch für die komplette Oberfläche, Anleitung und Exporte. Automatisch anhand deiner Browser-Sprache vorausgewählt, hier jederzeit manuell umschaltbar — deine Wahl wird gespeichert.',
-    'German or English for the entire interface, guide and exports. Automatically pre-selected based on your browser language, switchable manually here anytime — your choice is saved.');
+  add('flag.lang.info', 'Deutsch oder Englisch für die komplette Oberfläche, Anleitung und Exporte. Automatisch anhand deiner Browser-Sprache vorausgewählt, hier jederzeit manuell umschaltbar: deine Wahl wird gespeichert.',
+    'German or English for the entire interface, guide and exports. Automatically pre-selected based on your browser language, switchable manually here anytime: your choice is saved.');
   add('lang.german', 'Deutsch', 'German');
   add('lang.english', 'Englisch', 'English');
   // Live-Region-Ansage nach manuellem Sprachwechsel (#langAnnounce, s. wireLangSwitch()
-  // weiter unten) — WCAG 4.1.3 Status Messages: ein Klick auf "Englisch"/"English" tauscht
+  // weiter unten): WCAG 4.1.3 Status Messages: ein Klick auf "Englisch"/"English" tauscht
   // die KOMPLETTE sichtbare Oberfläche aus (Labels, Anleitung, Hinweise), ohne dass sich
   // der Fokus bewegt. Für Screenreader-Nutzer ist das aria-pressed am geklickten Button
-  // allein kein verlässlicher Beleg für eine derart große, seitenweite Änderung — analog
+  // allein kein verlässlicher Beleg für eine derart große, seitenweite Änderung: analog
   // zum bestehenden #viewAnnounce-Muster beim Bereichswechsel (Burger-Nav, v3.26.0).
   add('lang.announce', 'Sprache: {lang}', 'Language: {lang}');
-  // Dunkelmodus (v3.47.0, js/theme.js) — identisches Umschalter-/Ansage-Muster wie die
+  // Dunkelmodus (v3.47.0, js/theme.js): identisches Umschalter-/Ansage-Muster wie die
   // Sprachwahl direkt darüber.
   add('flag.theme.name', 'Darstellung', 'Appearance');
   add('flag.theme.infoBtn', 'Erklärung zu „Darstellung“ ein-/ausblenden', 'Show/hide explanation for "Appearance"');
-  add('flag.theme.info', 'Hell oder Dunkel für die komplette Oberfläche. Folgt automatisch der Systemeinstellung deines Geräts, hier jederzeit manuell umschaltbar — deine Wahl wird gespeichert und übersteuert danach die Systemeinstellung.',
-    'Light or dark for the entire interface. Automatically follows your device\'s system setting, switchable manually here anytime — your choice is saved and then overrides the system setting.');
+  add('flag.theme.info', 'Hell oder Dunkel für die komplette Oberfläche. Folgt automatisch der Systemeinstellung deines Geräts, hier jederzeit manuell umschaltbar: deine Wahl wird gespeichert und übersteuert danach die Systemeinstellung.',
+    'Light or dark for the entire interface. Automatically follows your device\'s system setting, switchable manually here anytime: your choice is saved and then overrides the system setting.');
   add('theme.light', 'Hell', 'Light');
   add('theme.dark', 'Dunkel', 'Dark');
   add('theme.announce', 'Darstellung: {theme}', 'Appearance: {theme}');
 
   // -- Card: Pizza Party --------------------------------------------------------------------
   add('card.party.title', 'Pizza Party', 'Pizza Party');
-  add('hint.party', 'Wähle Pizzen mit Stückzahl aus — vorgegebene oder eigene, s. u. Unten erscheint eine aggregierte, ungefähre Zutatenliste für die ganze Party. Eigenständiger Bereich: die „Anzahl Teiglinge" im Rechner-Bereich wird hier nicht berücksichtigt.',
-    'Choose pizzas with a quantity — preset or your own, see below. An aggregated, approximate ingredient list for the whole party appears below. Independent area: the "number of dough balls" in the Calculator area is not considered here.');
+  add('hint.party', 'Wähle Pizzen mit Stückzahl aus: vorgegebene oder eigene, s. u. Unten erscheint eine aggregierte, ungefähre Zutatenliste für die ganze Party. Eigenständiger Bereich: die „Anzahl Teiglinge" im Rechner-Bereich wird hier nicht berücksichtigt.',
+    'Choose pizzas with a quantity: preset or your own, see below. An aggregated, approximate ingredient list for the whole party appears below. Independent area: the "number of dough balls" in the Calculator area is not considered here.');
   add('card.newPizza.title', 'Eigene Pizza anlegen', 'Create a custom pizza');
   add('label.partyPizzaName', 'Name', 'Name');
   add('placeholder.partyPizzaName', 'z. B. Peperoni-Spezial', 'e.g. Pepperoni Special');
@@ -912,8 +932,8 @@
   add('hint.partyCreate', 'Bei der Auswahl oben wird die Menge automatisch mit der gewählten Stückzahl hochgerechnet.',
     'In the selection above, the amount is automatically scaled up by the chosen quantity.');
   add('card.partyResult.title', 'Zutatenliste für die Party', 'Ingredient list for the party');
-  add('hint.partyResult', 'Ungefähre Richtmengen für den Einkauf — keine exakte Rezeptberechnung wie beim Teig.',
-    'Approximate guideline amounts for shopping — not an exact recipe calculation like the dough.');
+  add('hint.partyResult', 'Ungefähre Richtmengen für den Einkauf: keine exakte Rezeptberechnung wie beim Teig.',
+    'Approximate guideline amounts for shopping: not an exact recipe calculation like the dough.');
 
   // -- Quick-Bar (nur Mobil) -----------------------------------------------------------------
   add('quickbar.jumpToResult', 'Zum Ergebnis springen: ', 'Jump to result: ');
@@ -921,19 +941,19 @@
   add('quickbar.jumpToPartyResult', 'Zur Zutatenliste springen: ', 'Jump to ingredient list: ');
   add('quickbar.partyNoneYet', 'Noch keine Pizza ausgewählt', 'No pizza selected yet');
 
-  // ---- js/calc.js — Eiswasser-Hinweis (dynamisch berechneter Text) ----------------
+  // ---- js/calc.js: Eiswasser-Hinweis (dynamisch berechneter Text) ----------------
   add('calc.ice.note', 'Nimm <b>{tapWater} g Leitungswasser (~{tapTemp}°)</b> + <b>{ice} g Eis</b>, ergibt ~{wT}° Schüttwasser. Eis vorher abwiegen.',
     'Use <b>{tapWater} g tap water (~{tapTemp}°)</b> + <b>{ice} g ice</b>, giving ~{wT}° mixing water. Weigh the ice beforehand.');
   add('calc.warmNote', 'Schüttwasser leicht anwärmen auf ~{wT}° (z.B. handwarm).', 'Warm the mixing water slightly to ~{wT}° (e.g. lukewarm).');
-  add('calc.tapOkNote', 'Leitungswasser bei ~{tapTemp}° passt direkt — kein Eis nötig.', 'Tap water at ~{tapTemp}° works directly — no ice needed.');
-  add('calc.veryColdWarn', ' <b>Achtung:</b> sehr kalt — ggf. Mehl vorher kühlen.', ' <b>Note:</b> very cold — consider chilling the flour beforehand.');
+  add('calc.tapOkNote', 'Leitungswasser bei ~{tapTemp}° passt direkt: kein Eis nötig.', 'Tap water at ~{tapTemp}° works directly: no ice needed.');
+  add('calc.veryColdWarn', ' <b>Achtung:</b> sehr kalt: ggf. Mehl vorher kühlen.', ' <b>Note:</b> very cold: consider chilling the flour beforehand.');
   // Grenzfall bei sehr hohem Vorteig-Anteil (z. B. Poolish an der Klemmgrenze): das
   // gesamte Wasser steckt im Vorteig, es gibt kein Hauptteig-Schüttwasser mehr zu
   // temperieren (Bugfix v3.48.0, s. pizza-rechner-KONTEXT.md).
-  add('calc.noMixingWaterNote', 'Kein Schüttwasser mehr zu temperieren — bei diesem hohen Vorteig-Anteil steckt das gesamte Wasser bereits im Vorteig.',
-    'No mixing water left to temper — at this high pre-ferment share, all the water is already in the pre-ferment.');
+  add('calc.noMixingWaterNote', 'Kein Schüttwasser mehr zu temperieren: bei diesem hohen Vorteig-Anteil steckt das gesamte Wasser bereits im Vorteig.',
+    'No mixing water left to temper: at this high pre-ferment share, all the water is already in the pre-ferment.');
 
-  // ---- js/storage.js — automatisch generierte Rezeptnamen -------------------------
+  // ---- js/storage.js: automatisch generierte Rezeptnamen -------------------------
   add('storage.migratedRecipeName', 'Mein Rezept', 'My recipe');
   add('storage.defaultRecipeName', 'Rezept {n}', 'Recipe {n}');
   add('storage.importedRecipeFallbackName', 'Importiertes Rezept', 'Imported recipe');

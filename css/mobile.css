@@ -171,6 +171,19 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   box-shadow:2px 0 18px rgba(0,0,0,.25);padding:calc(18px + env(safe-area-inset-top)) 18px 18px calc(18px + env(safe-area-inset-left));
   display:flex;flex-direction:column;gap:4px;overflow-y:auto;
 }
+/* Bugfix (nach v3.63.0): mobile.css lädt NACH css/styles.css und definiert
+   .nav-overlay/.nav-panel hier oben erneut (wegen der safe-area-inset-Anpassungen) --
+   das überschreibt bei gleicher Selektor-Spezifität ungewollt auch die dortigen
+   .onboarding-overlay/.onboarding-panel-Overrides (Willkommens-Screen erschien auf
+   Mobil dadurch linksbündig als schmaler ~300px-Drawer statt zentriert/breit wie auf
+   Desktop). Hier erneut herstellen -- kombiniert mit denselben safe-area-Anpassungen
+   wie .nav-panel oben, aber oben+unten statt oben+links (der Screen ist zentriert,
+   nicht am linken Rand verankert). */
+.onboarding-overlay{align-items:center;justify-content:center;padding:20px;box-sizing:border-box;}
+.onboarding-panel{
+  width:min(92vw,520px);height:auto;max-height:min(88vh,720px);
+  padding:calc(18px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom)) 18px;
+}
 .nav-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .nav-panel-title{font-family:var(--font-head);font-size:18px;font-weight:700;}
 .nav-close{

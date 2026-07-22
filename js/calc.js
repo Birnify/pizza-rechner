@@ -31,13 +31,29 @@
   // ======================================================================
   function calcCore(state) {
     const N = state.balls, W = state.ballw;
-    const total = N * W;
-    const h = state.hyd / 100, s = state.salt / 100, y = state.yeast / 100;
+    const totalBase = N * W;
+    // Verschwendungsaufschlag (v3.64.0, PZ.ADJUST.wasteAdjust, Einstellungen-Menü):
+    // erhöht das vorkalkulierte Gesamtgewicht, damit nach Kneteverlusten (Schüssel/
+    // Hände/Maschine) trotzdem N Teiglinge im Zielgewicht rauskommen. Wirkt VOR der
+    // Aufteilung auf die Zutaten -- "total" ist ab hier bewusst NICHT mehr zwingend
+    // identisch mit N*W (das bleibt totalBase), die Masseerhaltungs-Formel
+    // (Mehl+Wasser+Salz+Hefe+Öl+Zucker=total) gilt aber unverändert weiter.
+    const wasteAdj = (PZ.ADJUST && PZ.ADJUST.wasteAdjust) || 0;
+    const total = totalBase * (1 + wasteAdj / 100);
+    const h = state.hyd / 100, s = state.salt / 100;
+    // Hefe-Aufschlag (v3.64.0, PZ.ADJUST.yeastAdjust, Einstellungen-Menü): persönliche
+    // Kalibrierung für stärkere/schwächere Hefe, fließt als Faktor auf die
+    // Hefe-Bäckerprozentzahl direkt in den Nenner ein (analog zu Öl/Zucker) --
+    // Masseerhaltung bleibt dadurch exakt erhalten (anders als ein nachträglicher
+    // Aufschlag NACH der Berechnung, der das Gesamtgewicht verändert hätte).
+    const yeastAdj = (PZ.ADJUST && PZ.ADJUST.yeastAdjust) || 0;
+    const y = (state.yeast / 100) * (1 + yeastAdj / 100);
     const o = (state.oil || 0) / 100;
     const su = (state.sugar || 0) / 100;
 
     // Mehl = Total / (1 + Hydration + Salz + Hefe + Öl + Zucker)
-    // (Öl und Zucker sind Bäckerprozente wie Salz/Hefe → das Gesamtgewicht bleibt exakt N×W.)
+    // (Öl und Zucker sind Bäckerprozente wie Salz/Hefe → das Gesamtgewicht bleibt exakt N×W
+    // bzw. bei aktivem Verschwendungsaufschlag exakt dem inkl. Puffer berechneten "total".)
     const flour = total / (1 + h + s + y + o + su);
     const water = flour * h;
     const salt  = flour * s;
@@ -102,7 +118,7 @@
     if (hasMixingWater && wT < 1) note += t('calc.veryColdWarn');
 
     return {
-      N, W, total, flour, water, salt, oil, sugar, yeast, yWord,
+      N, W, total, totalBase, wasteAdj, flour, water, salt, oil, sugar, yeast, yWord,
       pf, pw, pYeast, mYeast, mFlour, mWater,
       wT, ice, Ttap, prefEff, prefClamped,
       hasPref, hasMixingWater, note
@@ -117,6 +133,14 @@
     $('totalW').textContent = Math.round(R.total);
     $('ballsOut').textContent = R.N;
     $('ballwOut').textContent = R.W;
+    // Verschwendungsaufschlag (v3.64.0): "Gesamtteig" zeigt jetzt ggf. mehr als
+    // N×Teiglingsgewicht (die Zahlen unter dem großen Gesamtgewicht) -- ohne Hinweis
+    // sähe das wie ein Rechenfehler aus. Blendet sich bei 0 % Aufschlag komplett aus.
+    if ($('wasteNote')) {
+      const showWaste = R.wasteAdj >= 0.05;
+      $('wasteNote').style.display = showWaste ? '' : 'none';
+      if (showWaste) $('wasteNote').textContent = t('result.wasteNote', { pct: Math.round(R.wasteAdj) });
+    }
     $('gFlour').textContent = Math.round(R.flour);
     $('gWater').textContent = Math.round(R.water);
     $('gSalt').textContent  = R.salt.toFixed(1);

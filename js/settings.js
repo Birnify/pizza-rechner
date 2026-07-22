@@ -165,6 +165,109 @@
     });
   }
 
+  // ======================================================================
+  // Globale Hefemengen-/Verschwendungs-Anpassung (v3.64.0) — zwei persönliche
+  // Kalibrierungswerte (in Prozent), unabhängig von PZ.state/PZ.FLAGS: sie gelten für
+  // JEDES Rezept/Preset gleichermaßen (anders als die Rezept-Regler), daher eigener
+  // localStorage-Key `pizzaRechnerAdjustments`, getrennt vom Rezept-Speicher und vom
+  // Feature-Flag-Speicher. js/calc.js liest PZ.ADJUST direkt (defensiv mit
+  // `PZ.ADJUST && ...` geprüft, falls dieses Modul in einer reduzierten Umgebung wie
+  // tests/test.html mal nicht geladen würde — analog zum PZ.FLAGS-Guard oben).
+  //
+  // - yeastAdjust (Default 0 %, Bereich −50…+100 %, Schritt 5 %): persönliche
+  //   Kalibrierung für Nutzer, deren Hefe regelmäßig stärker/schwächer aufgeht als
+  //   von der App angenommen. Fließt in js/calc.js als zusätzlicher Faktor auf die
+  //   Hefe-Bäckerprozentzahl EIN NENNER ein (analog zu Öl/Zucker) — Masseerhaltung
+  //   (Mehl+Wasser+Salz+Hefe+Öl+Zucker=Gesamtgewicht) bleibt dadurch exakt erhalten.
+  // - wasteAdjust (Default 2 %, Bereich 0…15 %, Schritt 1 %): erhöht das
+  //   vorkalkulierte Gesamtgewicht (N×Teiglingsgewicht), damit nach Kneteverlusten
+  //   (Schüssel/Hände/Maschine) trotzdem die gewünschte Anzahl Teiglinge im
+  //   Zielgewicht rauskommt. Wirkt in js/calc.js VOR der Aufteilung auf die Zutaten.
+  const ADJUST_KEY = 'pizzaRechnerAdjustments';
+  const ADJUST_DEFAULTS = { yeastAdjust: 0, wasteAdjust: 2 };
+  const ADJUST_RANGE = {
+    yeastAdjust: { min: -50, max: 100, step: 5 },
+    wasteAdjust: { min: 0, max: 15, step: 1 }
+  };
+
+  function clampAdjust(key, v) {
+    const r = ADJUST_RANGE[key];
+    let n = parseFloat(v);
+    if (!isFinite(n)) n = ADJUST_DEFAULTS[key];
+    n = Math.min(r.max, Math.max(r.min, n));
+    // Auf die Schrittweite runden -- verhindert krumme Werte durch direkte
+    // Zahlenfeld-Eingabe (z. B. getippte "37" bei Schrittweite 5 -> 35).
+    n = Math.round(n / r.step) * r.step;
+    // Rundungsfehler durch Fließkomma-Arithmetik vermeiden (z. B. 0.1+0.2-Effekt).
+    return Math.round(n * 100) / 100;
+  }
+  PZ._clampAdjust = clampAdjust; // für Tests exponiert (reine Funktion, kein State)
+
+  function readAdjust() {
+    let stored = {};
+    try {
+      const raw = localStorage.getItem(ADJUST_KEY);
+      if (raw) stored = JSON.parse(raw) || {};
+    } catch (e) { stored = {}; }
+    if (typeof stored !== 'object' || Array.isArray(stored)) stored = {};
+    const merged = Object.assign({}, ADJUST_DEFAULTS, stored);
+    Object.keys(ADJUST_DEFAULTS).forEach(function (k) { merged[k] = clampAdjust(k, merged[k]); });
+    return merged;
+  }
+  function writeAdjust(a) {
+    try { localStorage.setItem(ADJUST_KEY, JSON.stringify(a)); } catch (e) { /* ignore */ }
+  }
+
+  PZ.ADJUST = readAdjust();
+  PZ.ADJUST_DEFAULTS = ADJUST_DEFAULTS;
+  PZ.ADJUST_RANGE = ADJUST_RANGE;
+
+  // Reine Merge-Funktion (kein localStorage/DOM) — für Tests exponiert, analog zu
+  // PZ._mergeFlags oben (Vorwärtskompatibilitäts-Verhalten prüfbar ohne echten Reload).
+  PZ._mergeAdjust = function (stored) {
+    const merged = Object.assign({}, ADJUST_DEFAULTS, stored || {});
+    Object.keys(ADJUST_DEFAULTS).forEach(function (k) { merged[k] = clampAdjust(k, merged[k]); });
+    return merged;
+  };
+
+  function reflectAdjust() {
+    Object.keys(ADJUST_DEFAULTS).forEach(function (key) {
+      const input = $ ? $(key + 'Input') : document.getElementById(key + 'Input');
+      if (input) input.value = PZ.ADJUST[key];
+    });
+  }
+
+  // Setzt einen einzelnen Anpassungswert, klemmt ihn auf Bereich/Schrittweite, persistiert
+  // sofort und löst eine Neuberechnung aus (die Werte wirken direkt in js/calc.js).
+  function setAdjust(key, value) {
+    if (!(key in ADJUST_DEFAULTS)) return;
+    PZ.ADJUST[key] = clampAdjust(key, value);
+    writeAdjust(PZ.ADJUST);
+    reflectAdjust();
+    if (PZ.calc) PZ.calc();
+  }
+  PZ.setAdjust = setAdjust;
+
+  // --- UI-Verdrahtung der beiden Stepper (nur falls vorhanden — beide Seiten identisch) ---
+  function wireAdjustStepper(key) {
+    const input = $ ? $(key + 'Input') : document.getElementById(key + 'Input');
+    const minus = $ ? $(key + 'Minus') : document.getElementById(key + 'Minus');
+    const plus = $ ? $(key + 'Plus') : document.getElementById(key + 'Plus');
+    if (!input) return;
+    input.value = PZ.ADJUST[key];
+    input.addEventListener('change', function () { setAdjust(key, input.value); });
+    if (minus) minus.addEventListener('click', function () {
+      setAdjust(key, PZ.ADJUST[key] - ADJUST_RANGE[key].step);
+    });
+    if (plus) plus.addEventListener('click', function () {
+      setAdjust(key, PZ.ADJUST[key] + ADJUST_RANGE[key].step);
+    });
+  }
+
+  function wireAdjustSteppers() {
+    Object.keys(ADJUST_DEFAULTS).forEach(wireAdjustStepper);
+  }
+
   // Info-Knöpfe neben jedem Einstellungspunkt (v3.19.0): reines Anzeige-Detail, rührt
   // keine Flags an. Klick/Enter/Space blendet den zugehörigen Erklär-Absatz
   // (<p class="switch-info" id="…">) per hidden-Attribut ein/aus und spiegelt den
@@ -185,5 +288,6 @@
 
   wireCheckboxes();
   wireInfoButtons();
+  wireAdjustSteppers();
   applyFlags();
 })(window);
