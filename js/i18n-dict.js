@@ -508,11 +508,38 @@
   add('nav.party', 'Pizza Party', 'Pizza Party');
   add('nav.glossar', 'Glossar', 'Glossary');
   add('nav.einstellungen', 'Einstellungen', 'Settings');
+  add('nav.onboarding', 'Einführung', 'Introduction');
   add('nav.group.dough', 'Teig-Rechner', 'Dough calculator');
   add('nav.group.party', 'Pizza Party', 'Pizza Party');
   add('nav.toMobile', 'Zur Mobil-Ansicht', 'Switch to mobile view');
   add('nav.toDesktop', 'Zur Desktop-Ansicht', 'Switch to desktop view');
   add('nav.viewAnnounce', 'Ansicht: {label}', 'View: {label}');
+
+  // -- Willkommens-Screen / Einführung (v3.63.0, js/onboarding.js) --------------------
+  add('onboarding.title', 'Willkommen bei Teigmeister', 'Welcome to Teigmeister');
+  add('onboarding.closeLabel', 'Einführung schließen', 'Close introduction');
+  add('onboarding.intro', 'So findest du dich schnell zurecht:', 'Here’s how to get started quickly:');
+  add('onboarding.feature.presets.title', 'Fertige Rezepte', 'Ready-made recipes');
+  add('onboarding.feature.presets.text',
+    'Wähle ein erprobtes Rezept aus dem Dropdown — alle Werte werden automatisch passend gesetzt. Danach kannst du jederzeit feinjustieren.',
+    'Pick a proven recipe from the dropdown — all values are set automatically. You can fine-tune anything afterwards.');
+  add('onboarding.feature.advanced.title', 'Alles anpassbar', 'Fully customizable');
+  add('onboarding.feature.advanced.text',
+    'Die Rechner-Seite zeigt zunächst nur die wichtigsten Regler. Über „Erweiterten Modus öffnen“ bekommst du Zugriff auf jedes Detail — Hydration, Salz, Vorteig-Verfahren, Temperaturen &amp; mehr.',
+    'The calculator page starts out showing only the most important sliders. Use “Open advanced mode” to access every detail — hydration, salt, pre-ferment method, temperatures &amp; more.');
+  add('onboarding.feature.schedule.title', 'Zeitplan', 'Schedule');
+  add('onboarding.feature.schedule.text',
+    'Gib an, wann du starten möchtest oder wann die Pizza fertig sein soll — die App rechnet rückwärts und zeigt jeden Schritt mit passender Uhrzeit.',
+    'Enter when you want to start, or when the pizza should be ready — the app calculates backwards and shows every step with a matching time.');
+  add('onboarding.feature.guide.title', 'Anleitung &amp; Timer', 'Guide &amp; timers');
+  add('onboarding.feature.guide.text',
+    'Eine Schritt-für-Schritt-Anleitung mit Countdown-Timern führt dich von den Zutaten bis zum fertigen Teig — inklusive Warnung, falls Gärzeit und Mehl nicht zusammenpassen.',
+    'A step-by-step guide with countdown timers walks you from ingredients to finished dough — including a warning if the rise time and flour don’t match.');
+  add('onboarding.settingsHint',
+    'Tipp: Zusatzfunktionen (Sprache, Darstellung, Timer &amp; mehr) findest du im Menü unter „Einstellungen“ — den „Erweiterten Modus“ für alle Detail-Regler über den gleichnamigen Button auf der Rechner-Seite.',
+    'Tip: find extra features (language, appearance, timers &amp; more) in the menu under “Settings” — and “Advanced mode” for every detail slider via the button on the calculator page.');
+  add('onboarding.dontShowAgain', 'Beim nächsten Start nicht mehr anzeigen', 'Don’t show this again on next launch');
+  add('onboarding.cta', 'Los geht’s', 'Let’s go');
 
   // -- Card: Fertiges Rezept wählen --------------------------------------------------
   add('card.preset.title', 'Fertiges Rezept wählen', 'Choose a ready-made recipe');

@@ -274,6 +274,33 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
    v3.41.0. var(--muted) allein liegt auf Weiß bei ~5,84:1. */
 .nav-version{margin-top:auto;padding:14px 14px 2px;font-size:11.5px;color:var(--muted);}
 
+/* Willkommens-Screen / Einführung (v3.63.0, js/onboarding.js) -- eigenständiges Modal,
+   das dasselbe Grundmuster wie das Burgermenü wiederverwendet (.nav-overlay-Backdrop,
+   .nav-panel-Kartenoptik, .nav-panel-head/.nav-close), aber als zentrierter, größerer
+   Dialog statt schmalem Seiten-Drawer -- näher am "Vollbild-Screen"-Referenzstil,
+   besonders auf Mobil (92vw nimmt dort praktisch den ganzen Viewport ein). */
+.onboarding-overlay{align-items:center;justify-content:center;padding:20px;box-sizing:border-box;}
+.onboarding-panel{
+  width:min(92vw,520px);height:auto;max-height:min(88vh,720px);
+  border-radius:var(--radius);box-shadow:0 12px 40px rgba(0,0,0,.35);
+}
+.onboarding-intro{margin:0 0 14px;font-size:14.5px;color:var(--ink);}
+.onboarding-features{display:flex;flex-direction:column;gap:16px;margin-bottom:16px;}
+.onboarding-item{display:flex;gap:12px;align-items:flex-start;}
+.onboarding-item .card-icon{flex-shrink:0;}
+.onboarding-item h3{margin:0 0 3px;font-size:14.5px;font-weight:700;color:var(--ink);}
+.onboarding-item p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.45;}
+.onboarding-settings-hint{margin:0 0 14px;}
+.onboarding-checkbox-row{border:none;margin-bottom:16px;}
+.onboarding-checkbox-row .switch-row{padding:0;}
+.onboarding-cta{
+  display:block;width:100%;padding:13px;border-radius:999px;border:1px solid var(--tomato);
+  background:var(--tomato);color:#fff;font-size:14px;font-weight:600;cursor:pointer;
+  box-shadow:0 3px 10px rgba(200,68,46,.3);transition:all .12s;
+}
+.onboarding-cta:hover{background:var(--tomato-dark);border-color:var(--tomato-dark);}
+.onboarding-cta:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+
 /* Pizza-Party-Planer (v3.27.0, js/party.js) — Pizzenauswahl mit Stückzahl-Stepper +
    dynamisches Zutatenzeilen-Formular fürs Anlegen eigener Pizzen. Gemeinsames
    Stylesheet: identisch auf Desktop und Mobil. */
@@ -903,12 +930,70 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     <ul class="nav-list">
       <li><button type="button" class="nav-item" data-goto="glossar" data-i18n="nav.glossar">Glossar</button></li>
       <li><button type="button" class="nav-item" data-goto="einstellungen" data-i18n="nav.einstellungen">Einstellungen</button></li>
+      <li><button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button></li>
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.62.0</span>
+    <span class="nav-version" id="appVersion">v3.63.0</span>
   </div>
 </nav>
+
+<!-- Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay analog zum
+     Burgermenü-Muster (role="dialog" aria-modal="true", eigener Fokus-Trap in
+     js/onboarding.js), aber als zentrierter, größerer Dialog statt Seiten-Drawer (eigene
+     CSS-Klassen .onboarding-overlay/.onboarding-panel statt der schmalen .nav-panel-Breite).
+     Erscheint automatisch beim allerersten Start (kein pizzaOnboardingDontShow-Flag in
+     localStorage) und jederzeit erneut über den Menüpunkt "Einführung" oben. -->
+<div id="onboardingOverlay" class="nav-overlay onboarding-overlay" hidden>
+  <div class="nav-panel onboarding-panel" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
+    <div class="nav-panel-head">
+      <span class="nav-panel-title" id="onboardingTitle" data-i18n="onboarding.title">Willkommen bei Teigmeister</span>
+      <button type="button" id="onboardingClose" class="nav-close" data-i18n-attr="aria-label:onboarding.closeLabel">✕</button>
+    </div>
+    <p class="onboarding-intro" data-i18n="onboarding.intro">So findest du dich schnell zurecht:</p>
+    <div class="onboarding-features">
+      <div class="onboarding-item">
+        <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11c-2 0-3.2-1.6-2.6-3.4C3.9 6 5.3 5 7 5.3 7.4 3.4 9.1 2 11 2s3.6 1.4 4 3.3c1.7-.3 3.1.7 3.6 2.3.6 1.8-.6 3.4-2.6 3.4"/><path d="M6 11v6a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-6"/><path d="M5 20h13"/></svg></span>
+        <div>
+          <h3 data-i18n="onboarding.feature.presets.title">Fertige Rezepte</h3>
+          <p data-i18n="onboarding.feature.presets.text">Wähle ein erprobtes Rezept aus dem Dropdown — alle Werte werden automatisch passend gesetzt. Danach kannst du jederzeit feinjustieren.</p>
+        </div>
+      </div>
+      <div class="onboarding-item">
+        <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M10 17h10"/><circle cx="15" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg></span>
+        <div>
+          <h3 data-i18n="onboarding.feature.advanced.title">Alles anpassbar</h3>
+          <p data-i18n-html="onboarding.feature.advanced.text">Die Rechner-Seite zeigt zunächst nur die wichtigsten Regler. Über „Erweiterten Modus öffnen" bekommst du Zugriff auf jedes Detail — Hydration, Salz, Vorteig-Verfahren, Temperaturen &amp; mehr.</p>
+        </div>
+      </div>
+      <div class="onboarding-item">
+        <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span>
+        <div>
+          <h3 data-i18n="onboarding.feature.schedule.title">Zeitplan</h3>
+          <p data-i18n="onboarding.feature.schedule.text">Gib an, wann du starten möchtest oder wann die Pizza fertig sein soll — die App rechnet rückwärts und zeigt jeden Schritt mit passender Uhrzeit.</p>
+        </div>
+      </div>
+      <div class="onboarding-item">
+        <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h2M4 12h2M4 17.5h2M9 6.5h11M9 12h11M9 17.5h7"/></svg></span>
+        <div>
+          <h3 data-i18n-html="onboarding.feature.guide.title">Anleitung &amp; Timer</h3>
+          <p data-i18n="onboarding.feature.guide.text">Eine Schritt-für-Schritt-Anleitung mit Countdown-Timern führt dich von den Zutaten bis zum fertigen Teig — inklusive Warnung, falls Gärzeit und Mehl nicht zusammenpassen.</p>
+        </div>
+      </div>
+    </div>
+    <div class="hint onboarding-settings-hint" data-i18n-html="onboarding.settingsHint">Tipp: Zusatzfunktionen (Sprache, Darstellung, Timer &amp; mehr) findest du im Menü unter „Einstellungen" — den „Erweiterten Modus" für alle Detail-Regler über den gleichnamigen Button auf der Rechner-Seite.</div>
+    <div class="flag-item onboarding-checkbox-row">
+      <div class="switch-row">
+        <div class="switch-row-main">
+          <label class="switch-name" for="onboardingDontShow" data-i18n="onboarding.dontShowAgain">Beim nächsten Start nicht mehr anzeigen</label>
+        </div>
+        <span class="switch"><input type="checkbox" id="onboardingDontShow" role="switch"><span class="switch-slider" aria-hidden="true"></span></span>
+      </div>
+    </div>
+    <button type="button" class="onboarding-cta" id="onboardingCta" data-i18n="onboarding.cta">Los geht's</button>
+  </div>
+</div>
+
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
 
 <div class="wrap view" data-view="rechner">
@@ -2270,11 +2355,38 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
   add('nav.party', 'Pizza Party', 'Pizza Party');
   add('nav.glossar', 'Glossar', 'Glossary');
   add('nav.einstellungen', 'Einstellungen', 'Settings');
+  add('nav.onboarding', 'Einführung', 'Introduction');
   add('nav.group.dough', 'Teig-Rechner', 'Dough calculator');
   add('nav.group.party', 'Pizza Party', 'Pizza Party');
   add('nav.toMobile', 'Zur Mobil-Ansicht', 'Switch to mobile view');
   add('nav.toDesktop', 'Zur Desktop-Ansicht', 'Switch to desktop view');
   add('nav.viewAnnounce', 'Ansicht: {label}', 'View: {label}');
+
+  // -- Willkommens-Screen / Einführung (v3.63.0, js/onboarding.js) --------------------
+  add('onboarding.title', 'Willkommen bei Teigmeister', 'Welcome to Teigmeister');
+  add('onboarding.closeLabel', 'Einführung schließen', 'Close introduction');
+  add('onboarding.intro', 'So findest du dich schnell zurecht:', 'Here’s how to get started quickly:');
+  add('onboarding.feature.presets.title', 'Fertige Rezepte', 'Ready-made recipes');
+  add('onboarding.feature.presets.text',
+    'Wähle ein erprobtes Rezept aus dem Dropdown — alle Werte werden automatisch passend gesetzt. Danach kannst du jederzeit feinjustieren.',
+    'Pick a proven recipe from the dropdown — all values are set automatically. You can fine-tune anything afterwards.');
+  add('onboarding.feature.advanced.title', 'Alles anpassbar', 'Fully customizable');
+  add('onboarding.feature.advanced.text',
+    'Die Rechner-Seite zeigt zunächst nur die wichtigsten Regler. Über „Erweiterten Modus öffnen“ bekommst du Zugriff auf jedes Detail — Hydration, Salz, Vorteig-Verfahren, Temperaturen &amp; mehr.',
+    'The calculator page starts out showing only the most important sliders. Use “Open advanced mode” to access every detail — hydration, salt, pre-ferment method, temperatures &amp; more.');
+  add('onboarding.feature.schedule.title', 'Zeitplan', 'Schedule');
+  add('onboarding.feature.schedule.text',
+    'Gib an, wann du starten möchtest oder wann die Pizza fertig sein soll — die App rechnet rückwärts und zeigt jeden Schritt mit passender Uhrzeit.',
+    'Enter when you want to start, or when the pizza should be ready — the app calculates backwards and shows every step with a matching time.');
+  add('onboarding.feature.guide.title', 'Anleitung &amp; Timer', 'Guide &amp; timers');
+  add('onboarding.feature.guide.text',
+    'Eine Schritt-für-Schritt-Anleitung mit Countdown-Timern führt dich von den Zutaten bis zum fertigen Teig — inklusive Warnung, falls Gärzeit und Mehl nicht zusammenpassen.',
+    'A step-by-step guide with countdown timers walks you from ingredients to finished dough — including a warning if the rise time and flour don’t match.');
+  add('onboarding.settingsHint',
+    'Tipp: Zusatzfunktionen (Sprache, Darstellung, Timer &amp; mehr) findest du im Menü unter „Einstellungen“ — den „Erweiterten Modus“ für alle Detail-Regler über den gleichnamigen Button auf der Rechner-Seite.',
+    'Tip: find extra features (language, appearance, timers &amp; more) in the menu under “Settings” — and “Advanced mode” for every detail slider via the button on the calculator page.');
+  add('onboarding.dontShowAgain', 'Beim nächsten Start nicht mehr anzeigen', 'Don’t show this again on next launch');
+  add('onboarding.cta', 'Los geht’s', 'Let’s go');
 
   // -- Card: Fertiges Rezept wählen --------------------------------------------------
   add('card.preset.title', 'Fertiges Rezept wählen', 'Choose a ready-made recipe');
@@ -6995,6 +7107,12 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     focusView(view);
   }
   PZ.gotoView = gotoView;
+  // Export für js/onboarding.js (v3.63.0): der "Einführung"-Menüpunkt schließt das
+  // Burgermenü, bevor er das Onboarding-Modal öffnet (zwei gleichzeitig offene
+  // position:fixed;inset:0-Overlays wären verwirrend). restoreFocus=false, weil der
+  // Fokus direkt danach ins neu geöffnete Onboarding-Modal wandert, nicht zurück auf
+  // den Hamburger-Button.
+  PZ.closeNav = closeNav;
 
   if (navToggle && navOverlay) {
     navToggle.addEventListener('click', function () {
@@ -7007,12 +7125,138 @@ header h1{grid-column:2;justify-self:center;text-align:center;}
     navItems.forEach(function (b) {
       b.addEventListener('click', function () {
         const view = b.getAttribute('data-goto');
+        // Menüpunkte ohne eigenen data-goto (z. B. "Einführung", v3.63.0) sind keine
+        // Bereichs-Wechsel -- die werden von ihrem eigenen Modul separat verdrahtet
+        // (js/onboarding.js). Ohne diesen Guard würde activateView(undefined) ALLE
+        // [data-view]-Bereiche verstecken, da keiner das leere data-goto matcht.
+        if (!view) return;
         activateView(view);
         announceView(b.textContent);
         closeNav(false);
         focusView(view);
       });
     });
+  }
+})(window);
+
+</script>
+<script>
+/* onboarding.js — Willkommens-Screen / Einführung (v3.63.0)
+ *
+ * Vorschalt-Modal, das die 4 Kernfunktionen der App kurz vorstellt (Presets/Rezepte,
+ * Anpassung im Erweiterten Modus, Zeitplan, Anleitung & Timer) plus einen kombinierten
+ * Hinweis auf das Einstellungen-Menü und den Erweiterten Modus. Erscheint automatisch
+ * beim allerersten Start (kein "nicht mehr anzeigen"-Flag in localStorage) und ist
+ * jederzeit über den Menüpunkt "Einführung" im Burgermenü erneut aufrufbar.
+ *
+ * Technisch ein eigenständiges Modal-Dialog-Overlay (role="dialog" aria-modal="true"),
+ * analog zum bestehenden Burgermenü-Muster (js/nav.js) -- eigener Fokus-Trap statt
+ * Wiederverwendung von dessen internem, an #navMenu gebundenem Trap. Schließen geht auf
+ * vier Wegen (X-Button, Escape, Klick auf den Hintergrund, CTA-Button) -- die Checkbox
+ * "Beim nächsten Start nicht mehr anzeigen" bestimmt dabei NUR, ob der Screen beim
+ * NÄCHSTEN Start automatisch wieder erscheint, unabhängig davon, wie er diesmal
+ * geschlossen wurde (Nutzer-Entscheidung, Rückfrage-Runde vor der Umsetzung).
+ *
+ * Eigener localStorage-Key `pizzaOnboardingDontShow` ('1'/'0'), getrennt vom
+ * Rezept-Speicher `pizzaRechner`, vom Feature-Flag-Speicher `pizzaRechnerFeatureFlags`
+ * und vom Einfacher-Modus-Speicher `pizzaSimpleMode` -- analog zum Muster aus
+ * js/theme.js/js/simplemode.js.
+ */
+(function (global) {
+  'use strict';
+  const PZ = global.PZ || (global.PZ = {});
+  const $ = PZ.$;
+  const DONT_SHOW_KEY = 'pizzaOnboardingDontShow';
+
+  function readDontShow() {
+    try { return localStorage.getItem(DONT_SHOW_KEY) === '1'; } catch (e) { return false; }
+  }
+  function writeDontShow(v) {
+    try { localStorage.setItem(DONT_SHOW_KEY, v ? '1' : '0'); } catch (e) { /* ignore */ }
+  }
+
+  function wire() {
+    const overlay = $('onboardingOverlay');
+    if (!overlay) return; // Seite ohne Onboarding-Markup (z. B. tests/test.html) -- no-op
+
+    const closeBtn = $('onboardingClose');
+    const ctaBtn = $('onboardingCta');
+    const checkbox = $('onboardingDontShow');
+    const menuItem = $('navOnboardingItem');
+    let lastFocused = null;
+
+    // Tab-Trap-Reihenfolge entspricht der visuellen/DOM-Reihenfolge im Panel: X-Button,
+    // dann die Checkbox, dann der CTA-Button (die reinen Vorstellungstexte dazwischen
+    // sind nicht interaktiv, brauchen also keinen eigenen Trap-Eintrag).
+    function focusablesInPanel() {
+      return [closeBtn, checkbox, ctaBtn].filter(Boolean);
+    }
+
+    function onKeydown(e) {
+      if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+      if (e.key === 'Tab') {
+        const f = focusablesInPanel();
+        const idx = f.indexOf(document.activeElement);
+        if (e.shiftKey) {
+          if (idx <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
+        } else {
+          if (idx === -1 || idx === f.length - 1) { e.preventDefault(); f[0].focus(); }
+        }
+      }
+    }
+
+    // returnFocusEl: optionales explizites Rücksprung-Ziel fürs Schließen -- Default
+    // ist das gerade fokussierte Element (Normalfall). Der "Einführung"-Menüpunkt
+    // übergibt stattdessen explizit navToggle (s. u.): er schließt selbst vorher das
+    // Burgermenü (PZ.closeNav), wodurch der Menüpunkt-Button beim Schließen des
+    // Onboardings längst unsichtbar (nicht mehr fokussierbar) wäre -- ohne diese
+    // Übersteuerung bliebe der Fokus beim Schließen auf dem unsichtbaren X-Button hängen
+    // (Chromium blurt ein fokussiertes Element nicht zuverlässig synchron, nur weil ein
+    // Vorfahre display:none bekommt -- per Headless-Klicktest verifiziert).
+    function open(returnFocusEl) {
+      lastFocused = returnFocusEl || document.activeElement;
+      // Checkbox spiegelt beim Öffnen immer den aktuell gespeicherten Stand -- egal ob
+      // automatischer Erststart (dann unchecked) oder manueller Aufruf über "Einführung"
+      // nach einem früheren "nicht mehr anzeigen" (dann checked).
+      if (checkbox) checkbox.checked = readDontShow();
+      overlay.hidden = false;
+      if (closeBtn) closeBtn.focus();
+      document.addEventListener('keydown', onKeydown);
+    }
+    PZ.openOnboarding = function () { open(); };
+
+    function close() {
+      overlay.hidden = true;
+      document.removeEventListener('keydown', onKeydown);
+      if (checkbox) writeDontShow(checkbox.checked);
+      if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
+    }
+
+    if (closeBtn) closeBtn.addEventListener('click', close);
+    if (ctaBtn) ctaBtn.addEventListener('click', close);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+
+    if (menuItem) {
+      menuItem.addEventListener('click', function () {
+        // Burgermenü zuerst schließen -- zwei gleichzeitig offene position:fixed;inset:0-
+        // Overlays wären verwirrend (doppelter abgedunkelter Hintergrund, zwei konkurrierende
+        // Escape-Handler). restoreFocus=false: der Fokus wandert gleich weiter in dieses
+        // Modal, statt kurz auf den Hamburger-Button zurückzuspringen.
+        if (PZ.closeNav) PZ.closeNav(false);
+        open($('navToggle'));
+      });
+    }
+
+    // Automatisch beim allerersten Start zeigen (kein "nicht mehr anzeigen"-Flag gesetzt).
+    // readDontShow() liefert false sowohl bei fehlendem als auch bei explizit '0'
+    // gespeichertem Wert -- in beiden Fällen soll der Screen erscheinen.
+    if (!readDontShow()) open();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wire);
+  } else {
+    wire();
   }
 })(window);
 

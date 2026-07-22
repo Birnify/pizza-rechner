@@ -8,6 +8,115 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Willkommens-Screen / Einführung (v3.63.0)
+
+Direkter Nutzerauftrag (kein Backlog-Punkt), Brainstorming-Phase mit Rückfrage-Runde:
+neue Nutzer landeten bisher direkt im Rechner ohne jede Einordnung, was die App kann
+(Presets, Anpassung, Zeitplan, Anleitung/Timer) oder wo sich Einstellungen/Erweiterter
+Modus finden. Vorbild war eine Referenz-App mit Vollbild-Screen (Icon+Titel+Text je
+Feature, CTA-Button unten).
+
+**Vier Design-Entscheidungen per Rückfrage geklärt, bevor die Umsetzung begann:**
+1. **Technische Umsetzung:** eigenständiges Modal-Dialog-Overlay (analog zum
+   bestehenden Burgermenü-Muster: `role="dialog"`, `aria-modal="true"`, eigener
+   Fokus-Trap) statt einer neuen `data-view`-Ansicht — kein dauerhafter
+   Navigationspunkt, sondern ein Vorschalt-Overlay.
+2. **Menü-Eintrag:** heißt „Einführung", dritter Eintrag in der bestehenden generischen
+   Liste im Burgermenü, direkt neben „Glossar"/„Einstellungen".
+3. **Schließverhalten:** vier gleichwertige Wege — X-Button, Escape-Taste, Klick auf
+   den Hintergrund, CTA-Button unten. Die Checkbox „Beim nächsten Start nicht mehr
+   anzeigen" bestimmt dabei **nur**, ob der Screen beim NÄCHSTEN App-Start automatisch
+   erneut erscheint — unabhängig davon, wie er diesmal geschlossen wurde.
+4. **Icons & Texte:** bestehende Line-Icons wiederverwendet, wo passend (Chef-Hut-Icon
+   der Preset-Karte, das neue Sliders-Icon aus dem „Einfacher Modus"-Feature v3.62.0,
+   das Uhr-Icon der Zeitplan-Karte); für „Anleitung & Timer" gab es kein passendes
+   bestehendes Icon — dafür ein neues, minimales Listen-/Checklisten-Icon entworfen.
+   Texte (je 1–2 Sätze, Deutsch + Englisch) selbst formuliert, orientiert an den
+   bestehenden Card-Beschreibungen.
+
+**Technische Umsetzung:** neues eigenständiges Modul **`js/onboarding.js`** mit eigenem
+Fokus-Trap (Reihenfolge: X-Button → Checkbox → CTA-Button, Wrap-Around in beide
+Richtungen) — bewusst NICHT der bestehende, an `#navMenu` gebundene Trap aus `js/nav.js`
+wiederverwendet, da dieser fest an dessen eigene `navItems`/`focusablesInPanel()`
+gekoppelt ist. Eigene CSS-Klassen `.onboarding-overlay`/`.onboarding-panel` (statt der
+schmalen `.nav-panel`-Drawer-Breite `min(78vw,300px)`) für einen zentrierten, größeren
+Dialog (`width:min(92vw,520px);max-height:min(88vh,720px)`) — auf Mobil praktisch
+Vollbild, auf Desktop ein großer zentrierter Dialog, näher am Referenzstil.
+
+**`js/nav.js` um zwei kleine, abwärtskompatible Ergänzungen erweitert:**
+- `PZ.closeNav` exportiert (vorher nur intern nutzbar) — der „Einführung"-Menüpunkt
+  schließt damit zuerst das Burgermenü, bevor er das Onboarding-Modal öffnet (zwei
+  gleichzeitig offene `position:fixed;inset:0`-Overlays wären verwirrend gewesen:
+  doppelter abgedunkelter Hintergrund, zwei konkurrierende Escape-Handler).
+- Guard `if (!view) return;` im generischen `.nav-item`-Klick-Handler: der neue
+  „Einführung"-Button hat bewusst **kein** `data-goto`-Attribut (er wechselt keine
+  `data-view`-Ansicht) — ohne den Guard hätte `activateView(undefined)` ALLE
+  `[data-view]`-Bereiche der Seite versteckt, da keiner das leere `data-goto` matcht
+  (echter Blank-Page-Bug, beim ersten Testlauf gedanklich vorhergesehen und präventiv
+  verhindert, nicht erst live aufgetreten).
+
+**Persistenz:** eigener localStorage-Key `pizzaOnboardingDontShow` (`'1'`/`'0'`),
+getrennt von allen bestehenden Keys (`pizzaRechner`, `pizzaRechnerFeatureFlags`,
+`pizzaTheme`, `pizzaSimpleMode`). `readDontShow()` liefert `false` sowohl bei fehlendem
+als auch bei explizit `'0'` gespeichertem Wert — in beiden Fällen erscheint der Screen
+automatisch. Die Checkbox spiegelt beim Öffnen **immer** den aktuell gespeicherten
+Stand (nicht immer unchecked) — ein Nutzer, der den Screen einmal dauerhaft ausgeblendet
+hat und ihn über „Einführung" erneut aufruft, sieht die Checkbox weiterhin als „an".
+
+**Zwei echte Bugs beim Härten (selbst durchgeführt nach dem Kriterienkatalog aus
+`.claude/agents/accessibility-expert.md`, mangels verfügbarem Task-Tool zum
+synchronen Subagenten-Aufruf) gefunden und behoben:**
+1. **Ampersand-Bug** (dieselbe Kategorie wie bereits in v3.62.0 aufgetreten, hier gleich
+   zweimal): zwei Textstellen (`onboarding.feature.advanced.text`,
+   `onboarding.feature.guide.title`) enthalten `&amp;` in der i18n-Datei, waren im
+   Markup aber mit `data-i18n` (textContent, keine Entity-Dekodierung) statt
+   `data-i18n-html` (innerHTML) verknüpft — zeigten beim ersten Screenshot buchstäblich
+   „&amp;" statt „&" an. Korrigiert auf `data-i18n-html`, beim Screenshot-Vergleich
+   bestätigt.
+2. **Fokus-Verlust beim Schließen (WCAG 2.4.3):** wurde das Onboarding über den
+   „Einführung"-Menüpunkt geöffnet, blieb der Fokus beim Schließen auf dem inzwischen
+   unsichtbaren X-Button hängen, statt zu einem sichtbaren Element zurückzukehren.
+   Ursache: `PZ.closeNav(false)` versteckt den Menüpunkt-Button, BEVOR `open()` den
+   „zuletzt fokussierten" Rücksprungpunkt (`lastFocused = document.activeElement`)
+   erfasst — Chromium blurt ein fokussiertes Element aber nicht zuverlässig synchron,
+   nur weil ein Vorfahre `display:none` bekommt (per Headless-Klicktest verifiziert:
+   `document.activeElement` blieb auf dem längst unsichtbaren Element stehen, ein
+   späterer `.focus()`-Aufruf darauf war wirkungslos, da nicht-fokussierbare Elemente
+   `.focus()` ignorieren). Fix: `open(returnFocusEl)` akzeptiert jetzt ein optionales
+   explizites Rücksprung-Ziel; der „Einführung"-Menüpunkt übergibt bewusst `navToggle`
+   (immer sichtbar, immer fokussierbar) statt sich auf `document.activeElement`
+   im Moment des Aufrufs zu verlassen. Der Auto-Erststart-Pfad (kein expliziter
+   Aufrufer) bleibt beim alten Verhalten (`document.activeElement`, i. d. R. `<body>`).
+   Per Headless-Klicktest verifiziert: `activeElement` landet nach dem Schließen jetzt
+   korrekt auf `navToggle` statt auf dem unsichtbaren Close-Button.
+
+**Verifikation (Headless-Edge, `--dump-dom` + iframe-Klick-/Tastatursimulation, kein
+Preview-Server nötig):** kompletter Zyklus getestet — automatische Anzeige beim
+Erststart (kein localStorage-Flag), alle 4 Schließwege (CTA, Escape, Backdrop-Klick,
+X-Button implizit über den Trap-Test), Checkbox-Persistenz (`localStorage` korrekt bei
+checked `'1'`/unchecked `'0'`), Menüpunkt schließt das Burgermenü und öffnet das
+Onboarding, Checkbox spiegelt beim erneuten Öffnen zuverlässig den gespeicherten Stand,
+Tab-Trap-Reihenfolge inkl. Wrap-Around in beide Richtungen (`Tab`/`Shift+Tab`) korrekt.
+Screenshots (Desktop 1300 px + Mobil 420 px) bestätigen sauberes Layout, auf Mobil
+praktisch Vollbild wie vom Referenzstil gewünscht. `tests/test.html` unverändert
+**614/614** grün (`js/onboarding.js` lädt dort bewusst nicht mit, analog zu
+`js/nav.js`/`js/theme.js`/`js/simplemode.js` — reines DOM-Wiring auf echtem Markup,
+kein `test-generator`-Lauf nötig, da `js/calc.js`/`js/schedule.js`/`js/guide.js` nicht
+angefasst wurden).
+
+**Neue i18n-Einträge** (`js/i18n-dict.js`, DE/EN): `nav.onboarding`, `onboarding.title`,
+`onboarding.closeLabel`, `onboarding.intro`, `onboarding.feature.{presets,advanced,
+schedule,guide}.{title,text}`, `onboarding.settingsHint`, `onboarding.dontShowAgain`,
+`onboarding.cta`.
+
+**Geändert:** `js/onboarding.js` (neu), `js/nav.js` (2 kleine Ergänzungen),
+`pizza-rechner.html`, `pizza-rechner-mobile.html`, `css/styles.css`, `js/i18n-dict.js`.
+`?v=` auf `3.63.0` gezogen (Desktop + Mobil, Cache-Busting + Footer-Version).
+`pizza-rechner-mobile-standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v3.63.0 - Willkommens-Screen Onboarding/` enthält den vollständigen
+Schnappschuss. Berechnungslogik (`js/calc.js`, `js/schedule.js`, `js/guide.js`)
+komplett unverändert — reine UI-/Struktur-Änderung.
+
 ## Einfacher Modus für Presets (v3.62.0)
 
 Direkter Nutzerauftrag (kein Backlog-Punkt), Brainstorming-Phase mit Rückfrage-Runde:

@@ -241,6 +241,33 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
    v3.41.0. var(--muted) allein liegt auf Weiß bei ~5,84:1. */
 .nav-version{margin-top:auto;padding:14px 14px 2px;font-size:11.5px;color:var(--muted);}
 
+/* Willkommens-Screen / Einführung (v3.63.0, js/onboarding.js) -- eigenständiges Modal,
+   das dasselbe Grundmuster wie das Burgermenü wiederverwendet (.nav-overlay-Backdrop,
+   .nav-panel-Kartenoptik, .nav-panel-head/.nav-close), aber als zentrierter, größerer
+   Dialog statt schmalem Seiten-Drawer -- näher am "Vollbild-Screen"-Referenzstil,
+   besonders auf Mobil (92vw nimmt dort praktisch den ganzen Viewport ein). */
+.onboarding-overlay{align-items:center;justify-content:center;padding:20px;box-sizing:border-box;}
+.onboarding-panel{
+  width:min(92vw,520px);height:auto;max-height:min(88vh,720px);
+  border-radius:var(--radius);box-shadow:0 12px 40px rgba(0,0,0,.35);
+}
+.onboarding-intro{margin:0 0 14px;font-size:14.5px;color:var(--ink);}
+.onboarding-features{display:flex;flex-direction:column;gap:16px;margin-bottom:16px;}
+.onboarding-item{display:flex;gap:12px;align-items:flex-start;}
+.onboarding-item .card-icon{flex-shrink:0;}
+.onboarding-item h3{margin:0 0 3px;font-size:14.5px;font-weight:700;color:var(--ink);}
+.onboarding-item p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.45;}
+.onboarding-settings-hint{margin:0 0 14px;}
+.onboarding-checkbox-row{border:none;margin-bottom:16px;}
+.onboarding-checkbox-row .switch-row{padding:0;}
+.onboarding-cta{
+  display:block;width:100%;padding:13px;border-radius:999px;border:1px solid var(--tomato);
+  background:var(--tomato);color:#fff;font-size:14px;font-weight:600;cursor:pointer;
+  box-shadow:0 3px 10px rgba(200,68,46,.3);transition:all .12s;
+}
+.onboarding-cta:hover{background:var(--tomato-dark);border-color:var(--tomato-dark);}
+.onboarding-cta:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+
 /* Pizza-Party-Planer (v3.27.0, js/party.js) — Pizzenauswahl mit Stückzahl-Stepper +
    dynamisches Zutatenzeilen-Formular fürs Anlegen eigener Pizzen. Gemeinsames
    Stylesheet: identisch auf Desktop und Mobil. */

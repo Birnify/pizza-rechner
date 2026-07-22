@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-22 · Aktuelle Version: v3.62.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-22 · Aktuelle Version: v3.63.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -179,18 +179,20 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Einfacher Modus für Presets (v3.62.0) = aktueller Stand
+## Willkommens-Screen / Einführung (v3.63.0) = aktueller Stand
 
-Direkter Nutzerauftrag (kein Backlog-Punkt): Rechner-Seite (Desktop + Mobil) zeigt
-standardmäßig nur 3 Kernparameter (Anzahl Teiglinge, Hefe-Art, Knetart) in einer neuen
-Karte „Deine Einstellungen"; Button „Erweiterten Modus öffnen" schaltet auf die volle
-klassische Ansicht (3 Karten) um, ein Gegenknopf zurück. Reiner Sicht-Schalter,
-unabhängig vom Preset-Status, persistiert per eigenem localStorage-Key `pizzaSimpleMode`
-(Default AN). Neues Modul `js/simplemode.js`: verschiebt die 3 bestehenden Feld-Elemente
-per DOM-Reparenting statt sie zu duplizieren — keine eigene State-Synchronisierung nötig.
-Tests unverändert 614/614 (Modul lädt bewusst nicht in `tests/test.html`, reines
-DOM-Wiring, per isoliertem Headless-Klicktest verifiziert). **Volle Details:**
-`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Einfacher Modus für Presets (v3.62.0)".
+Direkter Nutzerauftrag (kein Backlog-Punkt): neues Modal-Overlay `js/onboarding.js`
+stellt die 4 Kernfunktionen (Presets, Erweiterter Modus, Zeitplan, Anleitung & Timer)
+plus einen kombinierten Hinweis auf Einstellungen-Menü/Erweiterten Modus vor. Erscheint
+automatisch beim allerersten Start (kein `pizzaOnboardingDontShow`-Flag in localStorage),
+jederzeit erneut über den neuen Burgermenü-Punkt „Einführung". Checkbox „Beim nächsten
+Start nicht mehr anzeigen" steuert NUR das automatische Wiedererscheinen — schließbar
+auf 4 Wegen (X, Escape, Backdrop-Klick, CTA-Button), alle persistieren den
+Checkbox-Stand gleichermaßen. Eigener Fokus-Trap analog zum Burgermenü-Muster, `js/nav.js`
+um `PZ.closeNav`-Export + Guard für Menüpunkte ohne `data-goto` ergänzt. Tests unverändert
+614/614 (Modul lädt bewusst nicht in `tests/test.html`, reines DOM-Wiring, per Headless-
+Klicktests inkl. Tab-Trap verifiziert). **Volle Details:**
+`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Willkommens-Screen / Einführung (v3.63.0)".
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -355,7 +357,7 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.62.0)
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.63.0)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
@@ -414,24 +416,31 @@ js/glossary.js       Pizza-Glossar (v3.37.0) — eigenständiger Menü-Bereich, 
 js/main.js           Start: Speichern-Button, Rezept-Auswahl/-Buttons, load(), applyMethod(), calc()
 js/nav.js            Gemeinsames Burgermenü-Navigations-Modul (v3.54.0, vorher zwei/drei duplizierte
                      Inline-Scripts): openNav/closeNav/activateView/announceView/focusView/gotoView +
-                     Tab-Trap; läuft bewusst als letztes Script (nach main.js)
-tests/test.html      614 Prüfungen in 24 Kategorien (Doppelklick, kein Server) — lädt 16 der 24
+                     Tab-Trap; läuft bewusst als letztes Script (nach main.js). PZ.closeNav seit
+                     v3.63.0 exportiert (für js/onboarding.js), Klick-Guard für Menüpunkte ohne
+                     eigenen data-goto (z. B. "Einführung")
+js/onboarding.js     Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay mit
+                     eigenem Fokus-Trap, stellt 4 Kernfunktionen vor, automatisch beim Erststart
+                     + jederzeit über Burgermenü-Punkt "Einführung" aufrufbar, Persistenz via
+                     localStorage-Key pizzaOnboardingDontShow. Läuft als letztes Script (nach nav.js)
+tests/test.html      614 Prüfungen in 24 Kategorien (Doppelklick, kein Server) — lädt 16 der 25
                      js/*-Module direkt (dom/state/i18n-dict/i18n/settings/theme/widgets/flour/
                      schedule/guide/calc/print/pdf/storage/share/party); ui.js, timer.js,
-                     presets.js, newrecipe.js, glossary.js, main.js, nav.js, simplemode.js werden
-                     NICHT geladen (reines DOM-Wiring bzw. Browser-APIs) — einzelne Ausschnitte wie
-                     PZ.PRESETS werden bei Bedarf punktuell gestubbt
+                     presets.js, newrecipe.js, glossary.js, main.js, nav.js, simplemode.js,
+                     onboarding.js werden NICHT geladen (reines DOM-Wiring bzw. Browser-APIs) —
+                     einzelne Ausschnitte wie PZ.PRESETS werden bei Bedarf punktuell gestubbt
 README.md            kurzer Einstieg
 ```
 
 **Ladereihenfolge** (Abhängigkeiten): dom → state → i18n-dict → i18n → settings → theme → widgets →
 flour → calc → schedule → guide → timer → ui → simplemode → print → pdf → presets → storage →
-newrecipe → share → party → glossary → main → nav. Jedes Modul ist eine IIFE, kommuniziert nur über `window.PZ`.
+newrecipe → share → party → glossary → main → nav → onboarding. Jedes Modul ist eine IIFE,
+kommuniziert nur über `window.PZ`. `onboarding` MUSS nach `nav` geladen werden (braucht `PZ.closeNav`).
 **`i18n-dict` MUSS vor `i18n` geladen werden** (Handoff über `PZ._I18N_DICT`); **`widgets` MUSS vor
 `flour`/`ui`/`newrecipe` geladen werden** (liefert PZ.makeLink/makeSeg/makePrefStages/
 fillFlourSelect, die diese drei Module beim eigenen Laden direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.62.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.63.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
@@ -1008,13 +1017,19 @@ Keine Code-Änderung durch den Audit nötig.
   statt aller Felder)~~ — **erledigt in v3.62.0** (kein Backlog-Punkt, direkter
   Nutzerauftrag mit Rückfrage-Runde; s. Abschnitt „Einfacher Modus für Presets
   (v3.62.0)" oben).
+- ~~Willkommens-Screen (Onboarding-Modal mit Vorstellung der 4 Kernfunktionen,
+  automatisch beim Erststart + jederzeit über Burgermenü)~~ — **erledigt in v3.63.0**
+  (kein Backlog-Punkt, direkter Nutzerauftrag mit Rückfrage-Runde; s. Abschnitt
+  „Willkommens-Screen / Einführung (v3.63.0)" oben).
 
-**Stand v3.62.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
+**Stand v3.63.0: alle bisherigen Backlog-Punkte sind abgearbeitet** (durchgestrichen
 oben). Der Bring!-Deeplink-Testaufbau ist abschließend geklärt (verworfen, vollständig
-zurückgebaut, keine offene Frage mehr). Keine offenen Nebenbefunde/Kandidaten mehr aus
-früheren Zyklen — für den nächsten Zyklus braucht es wieder frisches Brainstorming in
-Phase 1 (neue Nutzer-Ideen, Design-/Layout-Überarbeitungen, Bugfixes) statt eines
-vorgegebenen Auftrags.
+zurückgebaut, keine offene Frage mehr). Zwei direkte Nutzeraufträge bereits als
+Warteschlange für die nächsten Zyklen angekündigt (noch nicht umgesetzt): 1) Globale
+Hefemengen- und Verschwendungs-Anpassung (zwei neue %-Regler im Einstellungen-Menü),
+2) Einheitensystem-Umschaltung Metrisch/Imperial (automatische Spracherkennung +
+persistente manuelle Übersteuerung). Für einen sonst neuen Zyklus wieder frisches
+Brainstorming in Phase 1 statt eines vorgegebenen Auftrags.
 
 ## Rahmen-Kontext (nicht App-bezogen)
 

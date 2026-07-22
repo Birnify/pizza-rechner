@@ -133,6 +133,12 @@
     focusView(view);
   }
   PZ.gotoView = gotoView;
+  // Export für js/onboarding.js (v3.63.0): der "Einführung"-Menüpunkt schließt das
+  // Burgermenü, bevor er das Onboarding-Modal öffnet (zwei gleichzeitig offene
+  // position:fixed;inset:0-Overlays wären verwirrend). restoreFocus=false, weil der
+  // Fokus direkt danach ins neu geöffnete Onboarding-Modal wandert, nicht zurück auf
+  // den Hamburger-Button.
+  PZ.closeNav = closeNav;
 
   if (navToggle && navOverlay) {
     navToggle.addEventListener('click', function () {
@@ -145,6 +151,11 @@
     navItems.forEach(function (b) {
       b.addEventListener('click', function () {
         const view = b.getAttribute('data-goto');
+        // Menüpunkte ohne eigenen data-goto (z. B. "Einführung", v3.63.0) sind keine
+        // Bereichs-Wechsel -- die werden von ihrem eigenen Modul separat verdrahtet
+        // (js/onboarding.js). Ohne diesen Guard würde activateView(undefined) ALLE
+        // [data-view]-Bereiche verstecken, da keiner das leere data-goto matcht.
+        if (!view) return;
         activateView(view);
         announceView(b.textContent);
         closeNav(false);

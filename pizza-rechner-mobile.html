@@ -30,8 +30,8 @@
   } catch(e) {}
 })();
 </script>
-<link rel="stylesheet" href="css/styles.css?v=3.62.0">
-<link rel="stylesheet" href="css/mobile.css?v=3.62.0">
+<link rel="stylesheet" href="css/styles.css?v=3.63.0">
+<link rel="stylesheet" href="css/mobile.css?v=3.63.0">
 </head>
 <body>
 <header>
@@ -62,12 +62,70 @@
     <ul class="nav-list">
       <li><button type="button" class="nav-item" data-goto="glossar" data-i18n="nav.glossar">Glossar</button></li>
       <li><button type="button" class="nav-item" data-goto="einstellungen" data-i18n="nav.einstellungen">Einstellungen</button></li>
+      <li><button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button></li>
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.62.0</span>
+    <span class="nav-version" id="appVersion">v3.63.0</span>
   </div>
 </nav>
+
+<!-- Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay analog zum
+     Burgermenü-Muster (role="dialog" aria-modal="true", eigener Fokus-Trap in
+     js/onboarding.js), aber als zentrierter, größerer Dialog statt Seiten-Drawer (eigene
+     CSS-Klassen .onboarding-overlay/.onboarding-panel statt der schmalen .nav-panel-Breite).
+     Erscheint automatisch beim allerersten Start (kein pizzaOnboardingDontShow-Flag in
+     localStorage) und jederzeit erneut über den Menüpunkt "Einführung" oben. -->
+<div id="onboardingOverlay" class="nav-overlay onboarding-overlay" hidden>
+  <div class="nav-panel onboarding-panel" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
+    <div class="nav-panel-head">
+      <span class="nav-panel-title" id="onboardingTitle" data-i18n="onboarding.title">Willkommen bei Teigmeister</span>
+      <button type="button" id="onboardingClose" class="nav-close" data-i18n-attr="aria-label:onboarding.closeLabel">✕</button>
+    </div>
+    <p class="onboarding-intro" data-i18n="onboarding.intro">So findest du dich schnell zurecht:</p>
+    <div class="onboarding-features">
+      <div class="onboarding-item">
+        <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11c-2 0-3.2-1.6-2.6-3.4C3.9 6 5.3 5 7 5.3 7.4 3.4 9.1 2 11 2s3.6 1.4 4 3.3c1.7-.3 3.1.7 3.6 2.3.6 1.8-.6 3.4-2.6 3.4"/><path d="M6 11v6a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-6"/><path d="M5 20h13"/></svg></span>
+        <div>
+          <h3 data-i18n="onboarding.feature.presets.title">Fertige Rezepte</h3>
+          <p data-i18n="onboarding.feature.presets.text">Wähle ein erprobtes Rezept aus dem Dropdown — alle Werte werden automatisch passend gesetzt. Danach kannst du jederzeit feinjustieren.</p>
+        </div>
+      </div>
+      <div class="onboarding-item">
+        <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M10 17h10"/><circle cx="15" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg></span>
+        <div>
+          <h3 data-i18n="onboarding.feature.advanced.title">Alles anpassbar</h3>
+          <p data-i18n-html="onboarding.feature.advanced.text">Die Rechner-Seite zeigt zunächst nur die wichtigsten Regler. Über „Erweiterten Modus öffnen" bekommst du Zugriff auf jedes Detail — Hydration, Salz, Vorteig-Verfahren, Temperaturen &amp; mehr.</p>
+        </div>
+      </div>
+      <div class="onboarding-item">
+        <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span>
+        <div>
+          <h3 data-i18n="onboarding.feature.schedule.title">Zeitplan</h3>
+          <p data-i18n="onboarding.feature.schedule.text">Gib an, wann du starten möchtest oder wann die Pizza fertig sein soll — die App rechnet rückwärts und zeigt jeden Schritt mit passender Uhrzeit.</p>
+        </div>
+      </div>
+      <div class="onboarding-item">
+        <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h2M4 12h2M4 17.5h2M9 6.5h11M9 12h11M9 17.5h7"/></svg></span>
+        <div>
+          <h3 data-i18n-html="onboarding.feature.guide.title">Anleitung &amp; Timer</h3>
+          <p data-i18n="onboarding.feature.guide.text">Eine Schritt-für-Schritt-Anleitung mit Countdown-Timern führt dich von den Zutaten bis zum fertigen Teig — inklusive Warnung, falls Gärzeit und Mehl nicht zusammenpassen.</p>
+        </div>
+      </div>
+    </div>
+    <div class="hint onboarding-settings-hint" data-i18n-html="onboarding.settingsHint">Tipp: Zusatzfunktionen (Sprache, Darstellung, Timer &amp; mehr) findest du im Menü unter „Einstellungen" — den „Erweiterten Modus" für alle Detail-Regler über den gleichnamigen Button auf der Rechner-Seite.</div>
+    <div class="flag-item onboarding-checkbox-row">
+      <div class="switch-row">
+        <div class="switch-row-main">
+          <label class="switch-name" for="onboardingDontShow" data-i18n="onboarding.dontShowAgain">Beim nächsten Start nicht mehr anzeigen</label>
+        </div>
+        <span class="switch"><input type="checkbox" id="onboardingDontShow" role="switch"><span class="switch-slider" aria-hidden="true"></span></span>
+      </div>
+    </div>
+    <button type="button" class="onboarding-cta" id="onboardingCta" data-i18n="onboarding.cta">Los geht's</button>
+  </div>
+</div>
+
 <div id="viewAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
 
 <div class="wrap view" data-view="rechner">
@@ -837,33 +895,34 @@
 </div>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.62.0"></script>
-<script src="js/state.js?v=3.62.0"></script>
-<script src="js/i18n-dict.js?v=3.62.0"></script>
-<script src="js/i18n.js?v=3.62.0"></script>
-<script src="js/settings.js?v=3.62.0"></script>
-<script src="js/theme.js?v=3.62.0"></script>
-<script src="js/widgets.js?v=3.62.0"></script>
-<script src="js/flour.js?v=3.62.0"></script>
-<script src="js/calc.js?v=3.62.0"></script>
-<script src="js/schedule.js?v=3.62.0"></script>
-<script src="js/guide.js?v=3.62.0"></script>
-<script src="js/timer.js?v=3.62.0"></script>
-<script src="js/ui.js?v=3.62.0"></script>
-<script src="js/simplemode.js?v=3.62.0"></script>
-<script src="js/print.js?v=3.62.0"></script>
-<script src="js/pdf.js?v=3.62.0"></script>
-<script src="js/presets.js?v=3.62.0"></script>
-<script src="js/storage.js?v=3.62.0"></script>
-<script src="js/newrecipe.js?v=3.62.0"></script>
-<script src="js/share.js?v=3.62.0"></script>
-<script src="js/party.js?v=3.62.0"></script>
-<script src="js/glossary.js?v=3.62.0"></script>
-<script src="js/main.js?v=3.62.0"></script>
+<script src="js/dom.js?v=3.63.0"></script>
+<script src="js/state.js?v=3.63.0"></script>
+<script src="js/i18n-dict.js?v=3.63.0"></script>
+<script src="js/i18n.js?v=3.63.0"></script>
+<script src="js/settings.js?v=3.63.0"></script>
+<script src="js/theme.js?v=3.63.0"></script>
+<script src="js/widgets.js?v=3.63.0"></script>
+<script src="js/flour.js?v=3.63.0"></script>
+<script src="js/calc.js?v=3.63.0"></script>
+<script src="js/schedule.js?v=3.63.0"></script>
+<script src="js/guide.js?v=3.63.0"></script>
+<script src="js/timer.js?v=3.63.0"></script>
+<script src="js/ui.js?v=3.63.0"></script>
+<script src="js/simplemode.js?v=3.63.0"></script>
+<script src="js/print.js?v=3.63.0"></script>
+<script src="js/pdf.js?v=3.63.0"></script>
+<script src="js/presets.js?v=3.63.0"></script>
+<script src="js/storage.js?v=3.63.0"></script>
+<script src="js/newrecipe.js?v=3.63.0"></script>
+<script src="js/share.js?v=3.63.0"></script>
+<script src="js/party.js?v=3.63.0"></script>
+<script src="js/glossary.js?v=3.63.0"></script>
+<script src="js/main.js?v=3.63.0"></script>
 <!-- Burger-Menü-Navigation (bis v3.17.x/v3.18.0 hier als Inline-Script gewachsen) --
      seit v3.54.0 gemeinsames Modul mit der Desktop-Seite, s. js/nav.js (Mobil-
      Implementierung war die massgebliche Referenz beim Auslagern). -->
-<script src="js/nav.js?v=3.62.0"></script>
+<script src="js/nav.js?v=3.63.0"></script>
+<script src="js/onboarding.js?v=3.63.0"></script>
 <script>
   // Mobil-only UI-Glue (kein Eingriff in die PZ-Rechenmodule) -- Quick-Bar-Sync,
   // Party-Quick-Bar, Quick-Save, Akkordeon-Auto-Scroll. Die frühere Sektion "4)
