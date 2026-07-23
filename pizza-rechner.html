@@ -20,7 +20,7 @@
   } catch(e) {}
 })();
 </script>
-<link rel="stylesheet" href="css/styles.css?v=3.69.1">
+<link rel="stylesheet" href="css/styles.css?v=3.70.0">
 </head>
 <body>
 <header>
@@ -57,7 +57,7 @@
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navMobileLink" href="pizza-rechner-mobile.html" data-i18n="nav.toMobile">Zur Mobil-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.69.1</span>
+    <span class="nav-version" id="appVersion">v3.70.0</span>
   </div>
 </nav>
 
@@ -181,17 +181,27 @@
 
       <div class="field" id="ballsField">
         <label id="ballsLabel"><span data-i18n="label.balls">Anzahl Teiglinge</span> <span class="val"><span id="ballsV">4</span></span></label>
-        <div class="row">
-          <input type="range" id="balls" min="1" max="20" step="1" value="4" aria-labelledby="ballsLabel">
+        <div class="stepper" role="group" aria-labelledby="ballsLabel">
+          <button type="button" class="stepper-btn" id="ballsDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
           <input type="number" id="ballsN" min="1" max="50" value="4" aria-labelledby="ballsLabel">
+          <button type="button" class="stepper-btn" id="ballsInc" data-i18n-attr="aria-label:stepper.increase">+</button>
+        </div>
+        <div class="pills">
+          <button type="button" data-balls="2">2</button>
+          <button type="button" data-balls="4">4</button>
+          <button type="button" data-balls="6">6</button>
+          <button type="button" data-balls="8">8</button>
+          <button type="button" data-balls="12">12</button>
         </div>
       </div>
 
       <div class="field">
         <label id="ballwLabel"><span data-i18n="label.ballw">Gewicht pro Teigling</span> <span class="val"><span id="ballwV">250</span> g</span></label>
-        <div class="row">
-          <input type="range" id="ballw" min="150" max="400" step="5" value="250" aria-labelledby="ballwLabel">
-          <input type="number" id="ballwN" min="100" max="500" value="250" aria-labelledby="ballwLabel">
+        <div class="stepper" role="group" aria-labelledby="ballwLabel">
+          <button type="button" class="stepper-btn" id="ballwDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
+          <input type="number" id="ballwN" min="100" max="500" value="250" aria-labelledby="ballwLabel" aria-describedby="ballwUnit">
+          <button type="button" class="stepper-btn" id="ballwInc" data-i18n-attr="aria-label:stepper.increase">+</button>
+          <span class="unit" id="ballwUnit">g</span>
         </div>
         <div class="pills">
           <button data-ballw="180" data-i18n="pill.mini180">Mini 180</button>
@@ -203,27 +213,50 @@
 
       <div class="field">
         <label id="hydLabel"><span data-i18n="label.hyd">Hydration (Wasser)</span> <span class="val"><span id="hydV">62</span> %</span></label>
-        <div class="row">
-          <input type="range" id="hyd" min="50" max="85" step="1" value="62" aria-labelledby="hydLabel">
-          <input type="number" id="hydN" min="40" max="100" value="62" aria-labelledby="hydLabel">
+        <div class="stepper" role="group" aria-labelledby="hydLabel">
+          <button type="button" class="stepper-btn" id="hydDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
+          <input type="number" id="hydN" min="40" max="100" value="62" aria-labelledby="hydLabel" aria-describedby="hydUnit">
+          <button type="button" class="stepper-btn" id="hydInc" data-i18n-attr="aria-label:stepper.increase">+</button>
+          <span class="unit" id="hydUnit">%</span>
+        </div>
+        <div class="pills">
+          <button type="button" data-hyd="60">60 %</button>
+          <button type="button" data-hyd="62">62 %</button>
+          <button type="button" data-hyd="65">65 %</button>
+          <button type="button" data-hyd="70">70 %</button>
+          <button type="button" data-hyd="75">75 %</button>
         </div>
         <div class="hint" data-i18n="hint.hyd">Anfänger 60–62 % · Klassisch Napoli 65 % · Profi 68–70 %+</div>
       </div>
 
       <div class="field">
         <label id="saltLabel"><span data-i18n="label.salt">Salz</span> <span class="val"><span id="saltV">2,8</span> %</span></label>
-        <div class="row">
-          <input type="range" id="salt" min="0" max="4" step="0.1" value="2.8" aria-labelledby="saltLabel">
-          <input type="number" id="saltN" min="0" max="5" step="0.1" value="2.8" aria-labelledby="saltLabel">
+        <div class="stepper" role="group" aria-labelledby="saltLabel">
+          <button type="button" class="stepper-btn" id="saltDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
+          <input type="number" id="saltN" min="0" max="5" step="0.1" value="2.8" aria-labelledby="saltLabel" aria-describedby="saltUnit">
+          <button type="button" class="stepper-btn" id="saltInc" data-i18n-attr="aria-label:stepper.increase">+</button>
+          <span class="unit" id="saltUnit">%</span>
+        </div>
+        <div class="pills">
+          <button type="button" data-salt="2.5">2,5 %</button>
+          <button type="button" data-salt="2.8">2,8 %</button>
+          <button type="button" data-salt="3">3 %</button>
         </div>
         <div class="hint" data-i18n="hint.salt">Napoli-Standard: 2,5–3 % (≈ 50–55 g/L Wasser)</div>
       </div>
 
       <div class="field" style="margin-bottom:0;">
         <label id="oilLabel"><span data-i18n="label.oil">Olivenöl</span> <span class="val"><span id="oilV">2,0</span> %</span></label>
-        <div class="row">
-          <input type="range" id="oil" min="0" max="8" step="0.5" value="2" aria-labelledby="oilLabel">
-          <input type="number" id="oilN" min="0" max="10" step="0.5" value="2" aria-labelledby="oilLabel">
+        <div class="stepper" role="group" aria-labelledby="oilLabel">
+          <button type="button" class="stepper-btn" id="oilDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
+          <input type="number" id="oilN" min="0" max="10" step="0.5" value="2" aria-labelledby="oilLabel" aria-describedby="oilUnit">
+          <button type="button" class="stepper-btn" id="oilInc" data-i18n-attr="aria-label:stepper.increase">+</button>
+          <span class="unit" id="oilUnit">%</span>
+        </div>
+        <div class="pills">
+          <button type="button" data-oil="0">0 %</button>
+          <button type="button" data-oil="2">2 %</button>
+          <button type="button" data-oil="4">4 %</button>
         </div>
         <div class="hint" data-i18n-html="hint.oil">Macht den Teig geschmeidiger &amp; fördert die Bräunung. Klassisch Napoli 0 %, mit Öl 1–3 %, Blech/Teglia 3–5 %. Kommt spät zum Teig: nach dem Salz.</div>
       </div>
@@ -234,12 +267,19 @@
            Row-Abstand nach oben, wenn es sichtbar ist. -->
       <div class="field collapse" id="sugarBlock" style="margin-top:18px;margin-bottom:0;">
         <label id="sugarLabel"><span data-i18n="label.sugar">Zucker</span> <span class="val"><span id="sugarV">0,0</span> %</span></label>
-        <div class="row">
-          <input type="range" id="sugar" min="0" max="5" step="0.5" value="0" aria-labelledby="sugarLabel">
-          <input type="number" id="sugarN" min="0" max="8" step="0.5" value="0" aria-labelledby="sugarLabel">
+        <div class="stepper" role="group" aria-labelledby="sugarLabel">
+          <button type="button" class="stepper-btn" id="sugarDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
+          <input type="number" id="sugarN" min="0" max="8" step="0.5" value="0" aria-labelledby="sugarLabel" aria-describedby="sugarUnit">
+          <button type="button" class="stepper-btn" id="sugarInc" data-i18n-attr="aria-label:stepper.increase">+</button>
+          <span class="unit" id="sugarUnit">%</span>
+        </div>
+        <div class="pills">
+          <button type="button" data-sugar="0">0 %</button>
+          <button type="button" data-sugar="2">2 %</button>
         </div>
         <div class="hint" data-i18n-html="hint.sugar">New-York-Style: unterstützt die Hefeaktivität &amp; die Krustenbräunung. Wird früh zugegeben (mit Mehl/Wasser/Hefe), nicht spät wie Öl.</div>
       </div>
+      <div id="stepperLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
     </div>
 
     <div class="card advanced-only">
@@ -255,20 +295,32 @@
         <div class="hint" id="methodHint" data-i18n-html="hint.method.direct">Direkt: alle Zutaten auf einmal. Einfachster Weg.</div>
       </div>
 
+      <!-- Mengensteuerung vereinfachen (v3.70.0): Stepper statt Slider, bewusst OHNE
+           Schnellwahl-Chips (Scope-Erweiterung, Nutzer-Entscheidung) -- der "gute" Anteil
+           hängt stark von Biga vs. Poolish ab (Biga 70-100 %, Poolish deutlich weniger),
+           ein einziger statischer Chip-Satz würde für die jeweils andere Methode in die
+           Irre führen. Reiner Stepper + Zahlenfeld reicht hier. -->
       <div class="field collapse" id="prefBlock">
         <label id="prefLabel"><span data-i18n="label.pref">Anteil Mehl im Vorteig</span> <span class="val"><span id="prefV">70</span> %</span></label>
-        <div class="row">
-          <input type="range" id="pref" min="10" max="100" step="5" value="70" aria-labelledby="prefLabel">
-          <input type="number" id="prefN" min="10" max="100" value="70" aria-labelledby="prefLabel">
+        <div class="stepper" role="group" aria-labelledby="prefLabel">
+          <button type="button" class="stepper-btn" id="prefDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
+          <input type="number" id="prefN" min="10" max="100" value="70" aria-labelledby="prefLabel" aria-describedby="prefUnit">
+          <button type="button" class="stepper-btn" id="prefInc" data-i18n-attr="aria-label:stepper.increase">+</button>
+          <span class="unit" id="prefUnit">%</span>
         </div>
         <div class="hint" id="prefHint" data-i18n="hint.pref.biga">Biga klassisch: 70–100 % des Mehls.</div>
       </div>
 
+      <!-- Ebenfalls bewusst ohne Chips (v3.70.0): schmaler Wertebereich (40-55 %), nur
+           in EINER Methode (Biga) überhaupt sichtbar, der Hinweistext nennt bereits die
+           engen 44-48 %-Richtwerte -- ein Stepper-Klick genügt hier. -->
       <div class="field collapse" id="bigaHydBlock">
         <label id="bhydLabel"><span data-i18n="label.bhyd">Biga-Hydration</span> <span class="val"><span id="bhydV">45</span> %</span></label>
-        <div class="row">
-          <input type="range" id="bhyd" min="40" max="55" step="1" value="45" aria-labelledby="bhydLabel">
-          <input type="number" id="bhydN" min="35" max="60" value="45" aria-labelledby="bhydLabel">
+        <div class="stepper" role="group" aria-labelledby="bhydLabel">
+          <button type="button" class="stepper-btn" id="bhydDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
+          <input type="number" id="bhydN" min="35" max="60" value="45" aria-labelledby="bhydLabel" aria-describedby="bhydUnit">
+          <button type="button" class="stepper-btn" id="bhydInc" data-i18n-attr="aria-label:stepper.increase">+</button>
+          <span class="unit" id="bhydUnit">%</span>
         </div>
         <div class="hint" data-i18n="hint.bhyd">Steife Biga: 44–48 %. Poolish ist fix 100 % (1:1).</div>
       </div>
@@ -287,11 +339,16 @@
         </div>
       </div>
 
+      <!-- Bewusst ohne NEUE Chips (v3.70.0): #yeastPills darunter ist bereits die
+           etablierte, method-übergreifende Schnellwahl für die Hefemenge -- ein zweiter,
+           redundanter Chip-Satz direkt am Stepper würde nur doppeln. -->
       <div class="field" id="yeastField">
         <label id="yeastLabel"><span data-i18n="label.yeast">Hefemenge</span> <span class="coupled-badge" id="yeastCoupledBadge" data-i18n="label.yeastCoupled" hidden>🔒 An Reifestufe gekoppelt</span> <span class="val"><span id="yeastV">0,30</span> %</span></label>
-        <div class="row">
-          <input type="range" id="yeast" min="0.05" max="3" step="0.05" value="0.30" aria-labelledby="yeastLabel" aria-describedby="yeastHint">
-          <input type="number" id="yeastN" min="0.01" max="5" step="0.01" value="0.30" aria-labelledby="yeastLabel" aria-describedby="yeastHint">
+        <div class="stepper" role="group" aria-labelledby="yeastLabel">
+          <button type="button" class="stepper-btn" id="yeastDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
+          <input type="number" id="yeastN" min="0.01" max="5" step="0.01" value="0.30" aria-labelledby="yeastLabel" aria-describedby="yeastUnit yeastHint">
+          <button type="button" class="stepper-btn" id="yeastInc" data-i18n-attr="aria-label:stepper.increase">+</button>
+          <span class="unit" id="yeastUnit">%</span>
         </div>
         <div class="hint" id="yeastHint" data-i18n="hint.yeast.normal">Prozent bezogen auf Frischhefe. Lange/warme Gare = weniger.</div>
         <div class="pills" id="yeastPills">
@@ -315,26 +372,37 @@
 
     <div class="card advanced-only">
       <h2 data-i18n-attr="aria-label:card.temp.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.5V5a2 2 0 1 0-4 0v9.5a4 4 0 1 0 4 0Z"/><path d="M12 8h1.5"/></svg></span><span data-i18n-html="card.temp.title">Teigtemperatur &amp; Eiswasser</span></h2>
+      <!-- Bewusst ohne Schnellwahl-Chips (v3.70.0, Nutzer-Vorgabe): bei Temperaturfeldern
+           zählt eher ein guter Standardwert als eine Chip-Reihe. Bestehende Defaults
+           bereits geprüft und für sinnvoll befunden (ddt 24°C = Mitte des Napoli-Zielbereichs
+           23-25°C im Hinweistext; room/flourTemp 21°C = übliche Raumtemperatur) -- keine
+           Änderung an den Default-Werten nötig, nur Slider durch Stepper ersetzt. -->
       <div class="field">
         <label id="ddtLabel"><span data-i18n="label.ddt">Ziel-Teigtemperatur</span> <span class="val"><span id="ddtV">24</span> °C</span></label>
-        <div class="row">
-          <input type="range" id="ddt" min="20" max="28" step="0.5" value="24" aria-labelledby="ddtLabel">
-          <input type="number" id="ddtN" min="18" max="30" step="0.5" value="24" aria-labelledby="ddtLabel">
+        <div class="stepper" role="group" aria-labelledby="ddtLabel">
+          <button type="button" class="stepper-btn" id="ddtDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
+          <input type="number" id="ddtN" min="18" max="30" step="0.5" value="24" aria-labelledby="ddtLabel" aria-describedby="ddtUnit">
+          <button type="button" class="stepper-btn" id="ddtInc" data-i18n-attr="aria-label:stepper.increase">+</button>
+          <span class="unit" id="ddtUnit">°C</span>
         </div>
         <div class="hint" data-i18n="hint.ddt">Napoli-Ziel nach dem Kneten: 23–25 °C.</div>
       </div>
       <div class="field">
         <label id="roomLabel"><span data-i18n="label.room">Raumtemperatur</span> <span class="val"><span id="roomV">21</span> °C</span></label>
-        <div class="row">
-          <input type="range" id="room" min="10" max="32" step="1" value="21" aria-labelledby="roomLabel">
-          <input type="number" id="roomN" min="0" max="40" value="21" aria-labelledby="roomLabel">
+        <div class="stepper" role="group" aria-labelledby="roomLabel">
+          <button type="button" class="stepper-btn" id="roomDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
+          <input type="number" id="roomN" min="0" max="40" value="21" aria-labelledby="roomLabel" aria-describedby="roomUnit">
+          <button type="button" class="stepper-btn" id="roomInc" data-i18n-attr="aria-label:stepper.increase">+</button>
+          <span class="unit" id="roomUnit">°C</span>
         </div>
       </div>
       <div class="field">
         <label id="flourTempLabel"><span data-i18n="label.flourTemp">Mehltemperatur</span> <span class="val"><span id="flourTempV">21</span> °C</span></label>
-        <div class="row">
-          <input type="range" id="flourTemp" min="4" max="32" step="1" value="21" aria-labelledby="flourTempLabel">
-          <input type="number" id="flourTempN" min="0" max="40" value="21" aria-labelledby="flourTempLabel">
+        <div class="stepper" role="group" aria-labelledby="flourTempLabel">
+          <button type="button" class="stepper-btn" id="flourTempDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
+          <input type="number" id="flourTempN" min="0" max="40" value="21" aria-labelledby="flourTempLabel" aria-describedby="flourTempUnit">
+          <button type="button" class="stepper-btn" id="flourTempInc" data-i18n-attr="aria-label:stepper.increase">+</button>
+          <span class="unit" id="flourTempUnit">°C</span>
         </div>
         <div class="hint" data-i18n="hint.flourTemp">Startet gleich der Raumtemperatur, aber unabhängig änderbar: z. B. kühler bei Mehl aus dem Keller oder Kühlschrank.</div>
       </div>
@@ -880,33 +948,33 @@
 <footer aria-hidden="true"></footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.69.1"></script>
-<script src="js/state.js?v=3.69.1"></script>
-<script src="js/i18n-dict.js?v=3.69.1"></script>
-<script src="js/i18n.js?v=3.69.1"></script>
-<script src="js/settings.js?v=3.69.1"></script>
-<script src="js/theme.js?v=3.69.1"></script>
-<script src="js/units.js?v=3.69.1"></script>
-<script src="js/widgets.js?v=3.69.1"></script>
-<script src="js/flour.js?v=3.69.1"></script>
-<script src="js/calc.js?v=3.69.1"></script>
-<script src="js/schedule.js?v=3.69.1"></script>
-<script src="js/guide.js?v=3.69.1"></script>
-<script src="js/timer.js?v=3.69.1"></script>
-<script src="js/ui.js?v=3.69.1"></script>
-<script src="js/simplemode.js?v=3.69.1"></script>
-<script src="js/print.js?v=3.69.1"></script>
-<script src="js/pdf.js?v=3.69.1"></script>
-<script src="js/presets.js?v=3.69.1"></script>
-<script src="js/storage.js?v=3.69.1"></script>
-<script src="js/newrecipe.js?v=3.69.1"></script>
-<script src="js/share.js?v=3.69.1"></script>
-<script src="js/party.js?v=3.69.1"></script>
-<script src="js/glossary.js?v=3.69.1"></script>
-<script src="js/main.js?v=3.69.1"></script>
+<script src="js/dom.js?v=3.70.0"></script>
+<script src="js/state.js?v=3.70.0"></script>
+<script src="js/i18n-dict.js?v=3.70.0"></script>
+<script src="js/i18n.js?v=3.70.0"></script>
+<script src="js/settings.js?v=3.70.0"></script>
+<script src="js/theme.js?v=3.70.0"></script>
+<script src="js/units.js?v=3.70.0"></script>
+<script src="js/widgets.js?v=3.70.0"></script>
+<script src="js/flour.js?v=3.70.0"></script>
+<script src="js/calc.js?v=3.70.0"></script>
+<script src="js/schedule.js?v=3.70.0"></script>
+<script src="js/guide.js?v=3.70.0"></script>
+<script src="js/timer.js?v=3.70.0"></script>
+<script src="js/ui.js?v=3.70.0"></script>
+<script src="js/simplemode.js?v=3.70.0"></script>
+<script src="js/print.js?v=3.70.0"></script>
+<script src="js/pdf.js?v=3.70.0"></script>
+<script src="js/presets.js?v=3.70.0"></script>
+<script src="js/storage.js?v=3.70.0"></script>
+<script src="js/newrecipe.js?v=3.70.0"></script>
+<script src="js/share.js?v=3.70.0"></script>
+<script src="js/party.js?v=3.70.0"></script>
+<script src="js/glossary.js?v=3.70.0"></script>
+<script src="js/main.js?v=3.70.0"></script>
 <!-- Burger-Menü-Navigation (v3.26.0) war bis v3.53.0 eine eigenständige Inline-Kopie
      hier -- seit v3.54.0 gemeinsames Modul mit der Mobil-Seite, s. js/nav.js. -->
-<script src="js/nav.js?v=3.69.1"></script>
-<script src="js/onboarding.js?v=3.69.1"></script>
+<script src="js/nav.js?v=3.70.0"></script>
+<script src="js/onboarding.js?v=3.70.0"></script>
 </body>
 </html>

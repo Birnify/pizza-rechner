@@ -116,6 +116,54 @@
   PZ.makeLink = makeLink;
 
   // ======================================================================
+  // makeStepper(cfg) — Zahlenfeld + Minus/Plus-Buttons (v3.70.0, "Mengensteuerung
+  // vereinfachen"): ersetzt für ausgewählte Regler (Anzahl Teiglinge, Gewicht/Teigling,
+  // Hydration, Salz, Öl, Zucker) die bisherige Slider+Zahlenfeld-Kombination. Kein
+  // <input type="range"> mehr -- das Zahlenfeld selbst ist der "zentrale Wert",
+  // Minus/Plus-Buttons ändern ihn um `step`, min/max-Klemmung kommt weiterhin von den
+  // min/max-Attributen des Zahlenfelds selbst (analog zu makeLink()s clampTo()).
+  //   cfg.stateObj    — Objekt, in das state[key] geschrieben wird
+  //   cfg.onSet       — optionaler Callback nach jedem Setzen (z. B. PZ.calc)
+  //   cfg.announceId  — optionale Live-Region-ID (PZ.announce()), nach Klick auf
+  //                     Minus/Plus (nicht beim Tippen ins Zahlenfeld selbst -- da hört
+  //                     der Screenreader den neuen Wert ohnehin beim Tippen mit)
+  // Gibt stepper(numberId, minusId, plusId, key, decimals, step, unitKey, valId) zurück,
+  // die Rückgabe (die set()-Funktion) ist wie bei link() direkt aufrufbar (z. B. von
+  // Presets/Storage/Quick-Pills, identisches Muster wie PZ.set.* bisher).
+  // ======================================================================
+  function makeStepper(cfg) {
+    return function stepper(numberId, minusId, plusId, key, decimals, step, unitKey, valId) {
+      const n = $(numberId), minus = $(minusId), plus = $(plusId);
+      const v = valId ? $(valId) : null;
+      function fmt(val) { return decimals != null ? val.toFixed(decimals).replace('.', ',') : val; }
+      function clampTo(val) {
+        const lo = n.min !== '' ? parseFloat(n.min) : NaN;
+        const hi = n.max !== '' ? parseFloat(n.max) : NaN;
+        if (!isNaN(lo) && val < lo) val = lo;
+        if (!isNaN(hi) && val > hi) val = hi;
+        return val;
+      }
+      function set(val, announce) {
+        val = parseFloat(val);
+        if (isNaN(val)) return;
+        if (decimals != null) val = parseFloat(val.toFixed(decimals)); // Gleitkomma-Rundungsfehler abfangen (z. B. 2,8 - 0,1)
+        val = clampTo(val);
+        cfg.stateObj[key] = val;
+        n.value = val;
+        const disp = fmt(val);
+        if (v) v.textContent = disp;
+        if (announce && cfg.announceId && unitKey) PZ.announce(cfg.announceId, disp + ' ' + t(unitKey));
+        if (cfg.onSet) cfg.onSet();
+      }
+      n.addEventListener('input', () => set(n.value, false));
+      if (minus) minus.addEventListener('click', () => set((parseFloat(n.value) || 0) - step, true));
+      if (plus) plus.addEventListener('click', () => set((parseFloat(n.value) || 0) + step, true));
+      return set;
+    };
+  }
+  PZ.makeStepper = makeStepper;
+
+  // ======================================================================
   // makeSeg(cfg) — Segment-Buttons (aktiver Button per .active/aria-pressed)
   //   cfg.stateObj — Objekt, in das state[key] geschrieben wird
   //   cfg.onSet    — optionaler Callback nach jedem Setzen (z. B. PZ.calc)

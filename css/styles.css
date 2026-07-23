@@ -443,6 +443,46 @@ input[type=number]{
   background:var(--card);
 }
 input[type=number]:focus{outline:none;border-color:var(--tomato);}
+/* Mengensteuerung vereinfachen (v3.70.0): Stepper (Minus/Zahlenfeld/Plus) ersetzt bei
+   ALLEN Slider+Zahlenfeld-Reglern im Hauptrechner die bisherige Kombination -- kein
+   <input type=range> mehr in diesen Feldern, s. js/ui.js + PZ.makeStepper() (js/widgets.js).
+   Betroffen: Anzahl Teiglinge, Gewicht/Teigling, Hydration, Salz, Öl, Zucker (mit
+   permanenter Schnellwahl-Chip-Reihe je Feld) sowie Vorteig-Anteil/Biga-Hydration/
+   Hefemenge/DDT/Raumtemperatur/Mehltemperatur (bewusst OHNE eigene neue Chips -- Hefemenge
+   hat mit #yeastPills bereits eine etablierte Schnellwahl, die übrigen s. Kommentare bei
+   den jeweiligen Feldern in pizza-rechner.html/-mobile.html). Bewusst
+   NICHT angefasst: js/newrecipe.js (separates Mini-Formular "Neues Rezept anlegen"),
+   bleibt wie besprochen bei Slider+Zahlenfeld. Touch-Ziele der Buttons 44×44px
+   (Projekt-Konvention, s. .switch/.timerbtn). */
+.stepper{display:flex;align-items:center;gap:8px;}
+.stepper-btn{
+  width:44px;height:44px;flex-shrink:0;border:1px solid var(--line);background:var(--card);
+  border-radius:var(--radius);font-size:20px;line-height:1;font-weight:700;
+  color:var(--tomato-text);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .12s;
+}
+.stepper-btn:hover{border-color:var(--tomato);background:var(--tomato);color:#fff;}
+.stepper-btn:active{transform:scale(.94);}
+.stepper-btn:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+/* Höhere Spezifität als das generische `input[type=number]{width:78px}` oben (bzw.
+   `width:86px` in css/mobile.css) -- der Nachfahren-Selektor `.stepper input[type=number]`
+   gewinnt unabhängig von der Ladereihenfolge, damit `flex:1` die verfügbare Breite
+   tatsächlich ausfüllt statt auf der festen Zahlenfeld-Breite hängen zu bleiben. */
+.stepper input[type=number]{
+  flex:1;min-width:0;width:auto;text-align:center;font-size:20px;font-weight:700;
+  font-family:var(--font-head);
+}
+.stepper input[type=number]::-webkit-outer-spin-button,
+.stepper input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.stepper input[type=number]{-moz-appearance:textfield;}
+/* accessibility-expert-Befund (v3.70.0): input[type=number]:focus oben löscht das
+   Browser-Default-Outline, ersetzt es aber nur durch eine Border-Farbänderung -- neben
+   den .stepper-btn-Buttons (die sichtbares :focus-visible-Outline haben) fehlte damit ein
+   gleichwertiger Fokus-Indikator fürs Zahlenfeld. Eigenes :focus-visible-Outline ergänzt,
+   identisch zu .stepper-btn. */
+.stepper input[type=number]:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+.stepper .unit{font-size:13px;color:var(--muted);flex-shrink:0;}
+.field.coupled .stepper-btn{opacity:.5;}
 .seg{display:flex;gap:6px;background:var(--bg);padding:4px;border-radius:var(--radius);}
 .seg button{
   flex:1;border:none;background:transparent;padding:9px 6px;border-radius:10px;
@@ -456,6 +496,12 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .pills button:hover{border-color:var(--tomato);color:var(--tomato-text);}
 .pills button.active{background:var(--tomato);border-color:var(--tomato);color:#fff;font-weight:600;}
+/* accessibility-expert-Befund (v3.70.0, MAJOR 2): .pills button hatte app-weit (nicht
+   erst seit diesem Feature -- betrifft auch Hefe-Pills/Vorteig-Reife-Stufen u. a.) KEIN
+   sichtbares :focus-visible-Outline. Klein genug, um direkt mitzufixen statt nur als
+   Backlog-Nebenbefund zu vermerken, da diese Zyklus ohnehin schon mehrere neue
+   .pills-Instanzen einführt. */
+.pills button:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
 /* Einstellungen: Feature-Flag-Umschalter (v3.19.0 — kurzer Name + Info-Knopf +
    Toggle-Switch statt langer Fließtext-Checkbox-Zeile). Jeder Punkt ist ein .flag-item
    (Trennlinie sitzt hier, nicht mehr an .switch-row, damit der ausgeklappte Erklärtext
@@ -651,7 +697,7 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
      darüber (align-items:flex-start am Elternelement) nicht verschoben wird -- Icon und
      Button starten weiterhin an derselben Oberkante, der Button bekommt nur zusätzliche
      (unsichtbare, da kein Rahmen/Hintergrund) Klickfläche nach unten. */
-  min-height:44px;display:flex;align-items:center;
+  min-height:44px;display:flex;align-items:flex-start;
 }
 .step-glossary-link:hover{opacity:.85;}
 .step-glossary-link:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;border-radius:1px;}

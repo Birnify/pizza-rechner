@@ -67,6 +67,12 @@ input[type=range]{height:10px;}
 input[type=range]::-webkit-slider-thumb{width:26px;height:26px;}
 input[type=range]::-moz-range-thumb{width:24px;height:24px;}
 input[type=number]{min-height:40px;font-size:16px;width:86px;}
+/* Mengensteuerung vereinfachen (v3.70.0): Stepper-Zahlenfeld soll die verfügbare
+   Restbreite zwischen den beiden 44px-Buttons ausfüllen statt der festen 86px-Breite
+   direkt darüber zu folgen -- überschreibt sie hier gezielt für `.stepper`-Felder,
+   gleiche Touch-Höhe (44px) wie die flankierenden Minus/Plus-Buttons. */
+.stepper input[type=number]{width:auto;min-height:44px;}
+.stepper-btn{min-height:44px;}
 .selectbox{min-height:44px;font-size:16px;}
 .actions button{min-height:48px;font-size:14px;}
 .timerbtn{min-height:40px;}

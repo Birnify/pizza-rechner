@@ -476,6 +476,46 @@ input[type=number]{
   background:var(--card);
 }
 input[type=number]:focus{outline:none;border-color:var(--tomato);}
+/* Mengensteuerung vereinfachen (v3.70.0): Stepper (Minus/Zahlenfeld/Plus) ersetzt bei
+   ALLEN Slider+Zahlenfeld-Reglern im Hauptrechner die bisherige Kombination -- kein
+   <input type=range> mehr in diesen Feldern, s. js/ui.js + PZ.makeStepper() (js/widgets.js).
+   Betroffen: Anzahl Teiglinge, Gewicht/Teigling, Hydration, Salz, Öl, Zucker (mit
+   permanenter Schnellwahl-Chip-Reihe je Feld) sowie Vorteig-Anteil/Biga-Hydration/
+   Hefemenge/DDT/Raumtemperatur/Mehltemperatur (bewusst OHNE eigene neue Chips -- Hefemenge
+   hat mit #yeastPills bereits eine etablierte Schnellwahl, die übrigen s. Kommentare bei
+   den jeweiligen Feldern in pizza-rechner.html/-mobile.html). Bewusst
+   NICHT angefasst: js/newrecipe.js (separates Mini-Formular "Neues Rezept anlegen"),
+   bleibt wie besprochen bei Slider+Zahlenfeld. Touch-Ziele der Buttons 44×44px
+   (Projekt-Konvention, s. .switch/.timerbtn). */
+.stepper{display:flex;align-items:center;gap:8px;}
+.stepper-btn{
+  width:44px;height:44px;flex-shrink:0;border:1px solid var(--line);background:var(--card);
+  border-radius:var(--radius);font-size:20px;line-height:1;font-weight:700;
+  color:var(--tomato-text);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .12s;
+}
+.stepper-btn:hover{border-color:var(--tomato);background:var(--tomato);color:#fff;}
+.stepper-btn:active{transform:scale(.94);}
+.stepper-btn:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+/* Höhere Spezifität als das generische `input[type=number]{width:78px}` oben (bzw.
+   `width:86px` in css/mobile.css) -- der Nachfahren-Selektor `.stepper input[type=number]`
+   gewinnt unabhängig von der Ladereihenfolge, damit `flex:1` die verfügbare Breite
+   tatsächlich ausfüllt statt auf der festen Zahlenfeld-Breite hängen zu bleiben. */
+.stepper input[type=number]{
+  flex:1;min-width:0;width:auto;text-align:center;font-size:20px;font-weight:700;
+  font-family:var(--font-head);
+}
+.stepper input[type=number]::-webkit-outer-spin-button,
+.stepper input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.stepper input[type=number]{-moz-appearance:textfield;}
+/* accessibility-expert-Befund (v3.70.0): input[type=number]:focus oben löscht das
+   Browser-Default-Outline, ersetzt es aber nur durch eine Border-Farbänderung -- neben
+   den .stepper-btn-Buttons (die sichtbares :focus-visible-Outline haben) fehlte damit ein
+   gleichwertiger Fokus-Indikator fürs Zahlenfeld. Eigenes :focus-visible-Outline ergänzt,
+   identisch zu .stepper-btn. */
+.stepper input[type=number]:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+.stepper .unit{font-size:13px;color:var(--muted);flex-shrink:0;}
+.field.coupled .stepper-btn{opacity:.5;}
 .seg{display:flex;gap:6px;background:var(--bg);padding:4px;border-radius:var(--radius);}
 .seg button{
   flex:1;border:none;background:transparent;padding:9px 6px;border-radius:10px;
@@ -489,6 +529,12 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .pills button:hover{border-color:var(--tomato);color:var(--tomato-text);}
 .pills button.active{background:var(--tomato);border-color:var(--tomato);color:#fff;font-weight:600;}
+/* accessibility-expert-Befund (v3.70.0, MAJOR 2): .pills button hatte app-weit (nicht
+   erst seit diesem Feature -- betrifft auch Hefe-Pills/Vorteig-Reife-Stufen u. a.) KEIN
+   sichtbares :focus-visible-Outline. Klein genug, um direkt mitzufixen statt nur als
+   Backlog-Nebenbefund zu vermerken, da diese Zyklus ohnehin schon mehrere neue
+   .pills-Instanzen einführt. */
+.pills button:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
 /* Einstellungen: Feature-Flag-Umschalter (v3.19.0 — kurzer Name + Info-Knopf +
    Toggle-Switch statt langer Fließtext-Checkbox-Zeile). Jeder Punkt ist ein .flag-item
    (Trennlinie sitzt hier, nicht mehr an .switch-row, damit der ausgeklappte Erklärtext
@@ -684,7 +730,7 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
      darüber (align-items:flex-start am Elternelement) nicht verschoben wird -- Icon und
      Button starten weiterhin an derselben Oberkante, der Button bekommt nur zusätzliche
      (unsichtbare, da kein Rahmen/Hintergrund) Klickfläche nach unten. */
-  min-height:44px;display:flex;align-items:center;
+  min-height:44px;display:flex;align-items:flex-start;
 }
 .step-glossary-link:hover{opacity:.85;}
 .step-glossary-link:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;border-radius:1px;}
@@ -810,6 +856,12 @@ input[type=range]{height:10px;}
 input[type=range]::-webkit-slider-thumb{width:26px;height:26px;}
 input[type=range]::-moz-range-thumb{width:24px;height:24px;}
 input[type=number]{min-height:40px;font-size:16px;width:86px;}
+/* Mengensteuerung vereinfachen (v3.70.0): Stepper-Zahlenfeld soll die verfügbare
+   Restbreite zwischen den beiden 44px-Buttons ausfüllen statt der festen 86px-Breite
+   direkt darüber zu folgen -- überschreibt sie hier gezielt für `.stepper`-Felder,
+   gleiche Touch-Höhe (44px) wie die flankierenden Minus/Plus-Buttons. */
+.stepper input[type=number]{width:auto;min-height:44px;}
+.stepper-btn{min-height:44px;}
 .selectbox{min-height:44px;font-size:16px;}
 .actions button{min-height:48px;font-size:14px;}
 .timerbtn{min-height:40px;}
@@ -1134,17 +1186,26 @@ header{position:relative;text-align:center;}
 
         <div class="field" id="ballsField">
           <label id="ballsLabel" data-i18n="label.balls">Anzahl Teiglinge</label>
-          <div class="row">
-            <input type="range" id="balls" min="1" max="20" step="1" value="4" aria-labelledby="ballsLabel">
+          <div class="stepper" role="group" aria-labelledby="ballsLabel">
+            <button type="button" class="stepper-btn" id="ballsDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
             <input type="number" id="ballsN" min="1" max="50" value="4" aria-labelledby="ballsLabel">
+            <button type="button" class="stepper-btn" id="ballsInc" data-i18n-attr="aria-label:stepper.increase">+</button>
+          </div>
+          <div class="pills">
+            <button type="button" data-balls="2">2</button>
+            <button type="button" data-balls="4">4</button>
+            <button type="button" data-balls="6">6</button>
+            <button type="button" data-balls="8">8</button>
+            <button type="button" data-balls="12">12</button>
           </div>
         </div>
 
         <div class="field">
           <label id="ballwLabel" data-i18n="label.ballw">Gewicht pro Teigling</label>
-          <div class="row">
-            <input type="range" id="ballw" min="150" max="400" step="5" value="250" aria-labelledby="ballwLabel" aria-describedby="ballwUnit">
+          <div class="stepper" role="group" aria-labelledby="ballwLabel">
+            <button type="button" class="stepper-btn" id="ballwDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
             <input type="number" id="ballwN" min="100" max="500" value="250" aria-labelledby="ballwLabel" aria-describedby="ballwUnit">
+            <button type="button" class="stepper-btn" id="ballwInc" data-i18n-attr="aria-label:stepper.increase">+</button>
             <span class="unit" id="ballwUnit">g</span>
           </div>
           <div class="pills">
@@ -1157,30 +1218,50 @@ header{position:relative;text-align:center;}
 
         <div class="field">
           <label id="hydLabel" data-i18n="label.hyd">Hydration (Wasser)</label>
-          <div class="row">
-            <input type="range" id="hyd" min="50" max="85" step="1" value="62" aria-labelledby="hydLabel" aria-describedby="hydUnit">
+          <div class="stepper" role="group" aria-labelledby="hydLabel">
+            <button type="button" class="stepper-btn" id="hydDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
             <input type="number" id="hydN" min="40" max="100" value="62" aria-labelledby="hydLabel" aria-describedby="hydUnit">
+            <button type="button" class="stepper-btn" id="hydInc" data-i18n-attr="aria-label:stepper.increase">+</button>
             <span class="unit" id="hydUnit">%</span>
+          </div>
+          <div class="pills">
+            <button type="button" data-hyd="60">60 %</button>
+            <button type="button" data-hyd="62">62 %</button>
+            <button type="button" data-hyd="65">65 %</button>
+            <button type="button" data-hyd="70">70 %</button>
+            <button type="button" data-hyd="75">75 %</button>
           </div>
           <div class="hint" data-i18n="hint.hyd">Anfänger 60–62 % · Klassisch Napoli 65 % · Profi 68–70 %+</div>
         </div>
 
         <div class="field">
           <label id="saltLabel" data-i18n="label.salt">Salz</label>
-          <div class="row">
-            <input type="range" id="salt" min="0" max="4" step="0.1" value="2.8" aria-labelledby="saltLabel" aria-describedby="saltUnit">
+          <div class="stepper" role="group" aria-labelledby="saltLabel">
+            <button type="button" class="stepper-btn" id="saltDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
             <input type="number" id="saltN" min="0" max="5" step="0.1" value="2.8" aria-labelledby="saltLabel" aria-describedby="saltUnit">
+            <button type="button" class="stepper-btn" id="saltInc" data-i18n-attr="aria-label:stepper.increase">+</button>
             <span class="unit" id="saltUnit">%</span>
+          </div>
+          <div class="pills">
+            <button type="button" data-salt="2.5">2,5 %</button>
+            <button type="button" data-salt="2.8">2,8 %</button>
+            <button type="button" data-salt="3">3 %</button>
           </div>
           <div class="hint" data-i18n="hint.salt">Napoli-Standard: 2,5–3 % (≈ 50–55 g/L Wasser)</div>
         </div>
 
         <div class="field" style="margin-bottom:0;">
           <label id="oilLabel" data-i18n="label.oil">Olivenöl</label>
-          <div class="row">
-            <input type="range" id="oil" min="0" max="8" step="0.5" value="2" aria-labelledby="oilLabel" aria-describedby="oilUnit">
+          <div class="stepper" role="group" aria-labelledby="oilLabel">
+            <button type="button" class="stepper-btn" id="oilDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
             <input type="number" id="oilN" min="0" max="10" step="0.5" value="2" aria-labelledby="oilLabel" aria-describedby="oilUnit">
+            <button type="button" class="stepper-btn" id="oilInc" data-i18n-attr="aria-label:stepper.increase">+</button>
             <span class="unit" id="oilUnit">%</span>
+          </div>
+          <div class="pills">
+            <button type="button" data-oil="0">0 %</button>
+            <button type="button" data-oil="2">2 %</button>
+            <button type="button" data-oil="4">4 %</button>
           </div>
           <div class="hint" data-i18n-html="hint.oil">Macht den Teig geschmeidiger &amp; fördert die Bräunung. Klassisch Napoli 0 %, mit Öl 1–3 %, Blech/Teglia 3–5 %. Kommt spät zum Teig: nach dem Salz.</div>
         </div>
@@ -1191,13 +1272,19 @@ header{position:relative;text-align:center;}
              Row-Abstand nach oben, wenn es sichtbar ist. -->
         <div class="field collapse" id="sugarBlock" style="margin-top:18px;margin-bottom:0;">
           <label id="sugarLabel" data-i18n="label.sugar">Zucker</label>
-          <div class="row">
-            <input type="range" id="sugar" min="0" max="5" step="0.5" value="0" aria-labelledby="sugarLabel" aria-describedby="sugarUnit">
+          <div class="stepper" role="group" aria-labelledby="sugarLabel">
+            <button type="button" class="stepper-btn" id="sugarDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
             <input type="number" id="sugarN" min="0" max="8" step="0.5" value="0" aria-labelledby="sugarLabel" aria-describedby="sugarUnit">
+            <button type="button" class="stepper-btn" id="sugarInc" data-i18n-attr="aria-label:stepper.increase">+</button>
             <span class="unit" id="sugarUnit">%</span>
+          </div>
+          <div class="pills">
+            <button type="button" data-sugar="0">0 %</button>
+            <button type="button" data-sugar="2">2 %</button>
           </div>
           <div class="hint" data-i18n-html="hint.sugar">New-York-Style: unterstützt die Hefeaktivität &amp; die Krustenbräunung. Wird früh zugegeben (mit Mehl/Wasser/Hefe), nicht spät wie Öl.</div>
         </div>
+        <div id="stepperLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
       </div>
     </details>
 
@@ -1215,11 +1302,14 @@ header{position:relative;text-align:center;}
           <div class="hint" id="methodHint" data-i18n-html="hint.method.direct">Direkt: alle Zutaten auf einmal. Einfachster Weg.</div>
         </div>
 
+        <!-- Mengensteuerung vereinfachen (v3.70.0): Stepper statt Slider, bewusst OHNE
+             Schnellwahl-Chips (s. Begründung in pizza-rechner.html). -->
         <div class="field collapse" id="prefBlock">
           <label id="prefLabel" data-i18n="label.pref">Anteil Mehl im Vorteig</label>
-          <div class="row">
-            <input type="range" id="pref" min="10" max="100" step="5" value="70" aria-labelledby="prefLabel" aria-describedby="prefUnit">
+          <div class="stepper" role="group" aria-labelledby="prefLabel">
+            <button type="button" class="stepper-btn" id="prefDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
             <input type="number" id="prefN" min="10" max="100" value="70" aria-labelledby="prefLabel" aria-describedby="prefUnit">
+            <button type="button" class="stepper-btn" id="prefInc" data-i18n-attr="aria-label:stepper.increase">+</button>
             <span class="unit" id="prefUnit">%</span>
           </div>
           <div class="hint" id="prefHint" data-i18n="hint.pref.biga">Biga klassisch: 70–100 % des Mehls.</div>
@@ -1227,9 +1317,10 @@ header{position:relative;text-align:center;}
 
         <div class="field collapse" id="bigaHydBlock">
           <label id="bhydLabel" data-i18n="label.bhyd">Biga-Hydration</label>
-          <div class="row">
-            <input type="range" id="bhyd" min="40" max="55" step="1" value="45" aria-labelledby="bhydLabel" aria-describedby="bhydUnit">
+          <div class="stepper" role="group" aria-labelledby="bhydLabel">
+            <button type="button" class="stepper-btn" id="bhydDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
             <input type="number" id="bhydN" min="35" max="60" value="45" aria-labelledby="bhydLabel" aria-describedby="bhydUnit">
+            <button type="button" class="stepper-btn" id="bhydInc" data-i18n-attr="aria-label:stepper.increase">+</button>
             <span class="unit" id="bhydUnit">%</span>
           </div>
           <div class="hint" data-i18n="hint.bhyd">Steife Biga: 44–48 %. Poolish ist fix 100 % (1:1).</div>
@@ -1249,11 +1340,14 @@ header{position:relative;text-align:center;}
           </div>
         </div>
 
+        <!-- Bewusst ohne neue Chips (v3.70.0): #yeastPills darunter ist bereits die
+             Schnellwahl für die Hefemenge. -->
         <div class="field" id="yeastField">
           <label id="yeastLabel"><span data-i18n="label.yeast">Hefemenge</span> <span class="coupled-badge" id="yeastCoupledBadge" data-i18n="label.yeastCoupled" hidden>🔒 An Reifestufe gekoppelt</span></label>
-          <div class="row">
-            <input type="range" id="yeast" min="0.05" max="3" step="0.05" value="0.30" aria-labelledby="yeastLabel" aria-describedby="yeastUnit yeastHint">
+          <div class="stepper" role="group" aria-labelledby="yeastLabel">
+            <button type="button" class="stepper-btn" id="yeastDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
             <input type="number" id="yeastN" min="0.01" max="5" step="0.01" value="0.30" aria-labelledby="yeastLabel" aria-describedby="yeastUnit yeastHint">
+            <button type="button" class="stepper-btn" id="yeastInc" data-i18n-attr="aria-label:stepper.increase">+</button>
             <span class="unit" id="yeastUnit">%</span>
           </div>
           <div class="hint" id="yeastHint" data-i18n="hint.yeast.normal">Prozent bezogen auf Frischhefe. Lange/warme Gare = weniger.</div>
@@ -1280,28 +1374,33 @@ header{position:relative;text-align:center;}
     <details class="card advanced-only">
       <summary><h2 data-i18n-attr="aria-label:card.temp.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.5V5a2 2 0 1 0-4 0v9.5a4 4 0 1 0 4 0Z"/><path d="M12 8h1.5"/></svg></span><span data-i18n-html="card.temp.title">Teigtemperatur &amp; Eiswasser</span></h2></summary>
       <div class="acc-body">
+        <!-- Bewusst ohne Schnellwahl-Chips (v3.70.0): bei Temperaturfeldern zählt eher
+             ein guter Default (bereits geprüft und passend befunden) als eine Chip-Reihe. -->
         <div class="field">
           <label id="ddtLabel" data-i18n="label.ddt">Ziel-Teigtemperatur</label>
-          <div class="row">
-            <input type="range" id="ddt" min="20" max="28" step="0.5" value="24" aria-labelledby="ddtLabel" aria-describedby="ddtUnit">
+          <div class="stepper" role="group" aria-labelledby="ddtLabel">
+            <button type="button" class="stepper-btn" id="ddtDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
             <input type="number" id="ddtN" min="18" max="30" step="0.5" value="24" aria-labelledby="ddtLabel" aria-describedby="ddtUnit">
+            <button type="button" class="stepper-btn" id="ddtInc" data-i18n-attr="aria-label:stepper.increase">+</button>
             <span class="unit" id="ddtUnit">°C</span>
           </div>
           <div class="hint" data-i18n="hint.ddt">Napoli-Ziel nach dem Kneten: 23–25 °C.</div>
         </div>
         <div class="field">
           <label id="roomLabel" data-i18n="label.room">Raumtemperatur</label>
-          <div class="row">
-            <input type="range" id="room" min="10" max="32" step="1" value="21" aria-labelledby="roomLabel" aria-describedby="roomUnit">
+          <div class="stepper" role="group" aria-labelledby="roomLabel">
+            <button type="button" class="stepper-btn" id="roomDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
             <input type="number" id="roomN" min="0" max="40" value="21" aria-labelledby="roomLabel" aria-describedby="roomUnit">
+            <button type="button" class="stepper-btn" id="roomInc" data-i18n-attr="aria-label:stepper.increase">+</button>
             <span class="unit" id="roomUnit">°C</span>
           </div>
         </div>
         <div class="field">
           <label id="flourTempLabel" data-i18n="label.flourTemp">Mehltemperatur</label>
-          <div class="row">
-            <input type="range" id="flourTemp" min="4" max="32" step="1" value="21" aria-labelledby="flourTempLabel" aria-describedby="flourTempUnit">
+          <div class="stepper" role="group" aria-labelledby="flourTempLabel">
+            <button type="button" class="stepper-btn" id="flourTempDec" data-i18n-attr="aria-label:stepper.decrease">−</button>
             <input type="number" id="flourTempN" min="0" max="40" value="21" aria-labelledby="flourTempLabel" aria-describedby="flourTempUnit">
+            <button type="button" class="stepper-btn" id="flourTempInc" data-i18n-attr="aria-label:stepper.increase">+</button>
             <span class="unit" id="flourTempUnit">°C</span>
           </div>
           <div class="hint" data-i18n="hint.flourTemp">Startet gleich der Raumtemperatur, aber unabhängig änderbar: z. B. kühler bei Mehl aus dem Keller oder Kühlschrank.</div>
@@ -1841,7 +1940,7 @@ header{position:relative;text-align:center;}
           <div class="nav-divider" role="separator"></div>
           <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
           <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-          <span class="nav-version" id="appVersion">v3.69.1</span>
+          <span class="nav-version" id="appVersion">v3.70.0</span>
 
         </div>
       </div>
@@ -2622,6 +2721,12 @@ header{position:relative;text-align:center;}
   add('label.flour', 'Mehl', 'Flour');
   add('hint.flour', 'W-Wert = Glutenstärke. Schwaches Mehl verträgt keine langen Gärzeiten: sehr starkes Mehl braucht sie. Wird per Preset mitgesetzt.',
     'W value = gluten strength. Weak flour can\'t handle long rise times: very strong flour needs them. Set automatically by presets.');
+  // Mengensteuerung vereinfachen (v3.70.0): generische Stepper-Button-Beschriftungen,
+  // wiederverwendet über alle 6 Stepper-Felder hinweg (aria-label allein, kein
+  // sichtbarer Text -- die umgebende role="group"/aria-labelledby liefert den
+  // Feldkontext, s. js/ui.js + pizza-rechner.html/-mobile.html).
+  add('stepper.decrease', 'Verringern', 'Decrease');
+  add('stepper.increase', 'Erhöhen', 'Increase');
   add('label.balls', 'Anzahl Teiglinge', 'Number of dough balls');
   add('label.ballw', 'Gewicht pro Teigling', 'Weight per dough ball');
   add('pill.mini180', 'Mini 180', 'Mini 180');
@@ -4054,6 +4159,54 @@ header{position:relative;text-align:center;}
   PZ.makeLink = makeLink;
 
   // ======================================================================
+  // makeStepper(cfg) — Zahlenfeld + Minus/Plus-Buttons (v3.70.0, "Mengensteuerung
+  // vereinfachen"): ersetzt für ausgewählte Regler (Anzahl Teiglinge, Gewicht/Teigling,
+  // Hydration, Salz, Öl, Zucker) die bisherige Slider+Zahlenfeld-Kombination. Kein
+  // <input type="range"> mehr -- das Zahlenfeld selbst ist der "zentrale Wert",
+  // Minus/Plus-Buttons ändern ihn um `step`, min/max-Klemmung kommt weiterhin von den
+  // min/max-Attributen des Zahlenfelds selbst (analog zu makeLink()s clampTo()).
+  //   cfg.stateObj    — Objekt, in das state[key] geschrieben wird
+  //   cfg.onSet       — optionaler Callback nach jedem Setzen (z. B. PZ.calc)
+  //   cfg.announceId  — optionale Live-Region-ID (PZ.announce()), nach Klick auf
+  //                     Minus/Plus (nicht beim Tippen ins Zahlenfeld selbst -- da hört
+  //                     der Screenreader den neuen Wert ohnehin beim Tippen mit)
+  // Gibt stepper(numberId, minusId, plusId, key, decimals, step, unitKey, valId) zurück,
+  // die Rückgabe (die set()-Funktion) ist wie bei link() direkt aufrufbar (z. B. von
+  // Presets/Storage/Quick-Pills, identisches Muster wie PZ.set.* bisher).
+  // ======================================================================
+  function makeStepper(cfg) {
+    return function stepper(numberId, minusId, plusId, key, decimals, step, unitKey, valId) {
+      const n = $(numberId), minus = $(minusId), plus = $(plusId);
+      const v = valId ? $(valId) : null;
+      function fmt(val) { return decimals != null ? val.toFixed(decimals).replace('.', ',') : val; }
+      function clampTo(val) {
+        const lo = n.min !== '' ? parseFloat(n.min) : NaN;
+        const hi = n.max !== '' ? parseFloat(n.max) : NaN;
+        if (!isNaN(lo) && val < lo) val = lo;
+        if (!isNaN(hi) && val > hi) val = hi;
+        return val;
+      }
+      function set(val, announce) {
+        val = parseFloat(val);
+        if (isNaN(val)) return;
+        if (decimals != null) val = parseFloat(val.toFixed(decimals)); // Gleitkomma-Rundungsfehler abfangen (z. B. 2,8 - 0,1)
+        val = clampTo(val);
+        cfg.stateObj[key] = val;
+        n.value = val;
+        const disp = fmt(val);
+        if (v) v.textContent = disp;
+        if (announce && cfg.announceId && unitKey) PZ.announce(cfg.announceId, disp + ' ' + t(unitKey));
+        if (cfg.onSet) cfg.onSet();
+      }
+      n.addEventListener('input', () => set(n.value, false));
+      if (minus) minus.addEventListener('click', () => set((parseFloat(n.value) || 0) - step, true));
+      if (plus) plus.addEventListener('click', () => set((parseFloat(n.value) || 0) + step, true));
+      return set;
+    };
+  }
+  PZ.makeStepper = makeStepper;
+
+  // ======================================================================
   // makeSeg(cfg) — Segment-Buttons (aktiver Button per .active/aria-pressed)
   //   cfg.stateObj — Objekt, in das state[key] geschrieben wird
   //   cfg.onSet    — optionaler Callback nach jedem Setzen (z. B. PZ.calc)
@@ -5297,45 +5450,47 @@ header{position:relative;text-align:center;}
 
   function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
 
-  // --- Slider <-> Number Verknüpfung ---
-  // `unitKey` liefert (per PZ.t()) einen aria-valuetext fürs Screenreader-Ansagen
-  // (z. B. "62 percent hydration" statt einer nackten Zahl) — reine a11y-Ergänzung,
-  // ändert keine Berechnungslogik. Ein Wörterbuch-KEY statt eines fertigen Strings,
-  // damit ein späterer Sprachwechsel den bereits gesetzten aria-valuetext auf den
-  // vorhandenen Slidern aktualisieren kann (s. refreshUnits() weiter unten).
-  // Seit v3.56.0: gemeinsame Fabrik PZ.makeLink() (js/widgets.js) statt eigener
-  // Implementierung — clamp:true behält das bestehende Zahlenfeld-Clamping (v3.51.0)
-  // bei, onSet:PZ.calc löst wie bisher die Neuberechnung nach jedem Setzen aus.
-  const unitLinks = []; // { slider, unitKey } — für refreshUnits() bei Sprachwechsel
-  const link = PZ.makeLink({ stateObj: state, onSet: PZ.calc, clamp: true, unitLinks: unitLinks });
+  // --- Mengensteuerung vereinfachen (v3.70.0) ---
+  // ALLE Regler im Hauptrechner nutzen jetzt Zahlenfeld + Minus/Plus-Buttons statt
+  // Slider+Zahlenfeld (s. PZ.makeStepper(), js/widgets.js) -- kein <input type=range>
+  // mehr in pizza-rechner.html/-mobile.html. PZ.makeLink() (der Slider-Mechanismus)
+  // bleibt als Fabrik in js/widgets.js bestehen, wird aber von HIER aus nicht mehr
+  // aufgerufen -- js/newrecipe.js nutzt ihn weiterhin unabhängig für sein eigenes
+  // Mini-Formular (nrBalls/nrHyd/... bleiben bewusst bei Slider+Zahlenfeld, nicht Teil
+  // dieses Umbaus). `announceId` liefert eine Live-Region-Ansage bei +/- Klick (nicht
+  // beim Tippen ins Zahlenfeld oder Klick auf eine Schnellwahl-Chip, da dort der neue
+  // Wert ohnehin sofort sichtbar wird).
+  const stepper = PZ.makeStepper({ stateObj: state, onSet: PZ.calc, announceId: 'stepperLiveMsg' });
 
   // Setter-Sammlung (von presets.js und storage.js genutzt)
   PZ.set = {
-    balls: link('balls', 'ballsN', 'balls', 0, 'unit.balls'),
-    ballw: link('ballw', 'ballwN', 'ballw', 0, 'unit.grams'),
-    hyd:   link('hyd', 'hydN', 'hyd', 0, 'unit.percentHyd'),
-    salt:  link('salt', 'saltN', 'salt', 1, 'unit.percentSalt'),
-    oil:   link('oil', 'oilN', 'oil', 1, 'unit.percentOil'),
-    sugar: link('sugar', 'sugarN', 'sugar', 1, 'unit.percentSugar'),
-    pref:  link('pref', 'prefN', 'pref', 0, 'unit.percentPref'),
-    bhyd:  link('bhyd', 'bhydN', 'bhyd', 0, 'unit.percentBhyd'),
-    yeast: link('yeast', 'yeastN', 'yeast', 2, 'unit.percentYeast'),
-    ddt:   link('ddt', 'ddtN', 'ddt', 1, 'unit.celsiusDdt'),
-    room:  link('room', 'roomN', 'room', 0, 'unit.celsiusRoom'),
-    flourTemp: link('flourTemp', 'flourTempN', 'flourTemp', 0, 'unit.celsiusFlourTemp')
+    balls: stepper('ballsN', 'ballsDec', 'ballsInc', 'balls', 0, 1, 'unit.balls', 'ballsV'),
+    ballw: stepper('ballwN', 'ballwDec', 'ballwInc', 'ballw', 0, 10, 'unit.grams', 'ballwV'),
+    hyd:   stepper('hydN', 'hydDec', 'hydInc', 'hyd', 0, 1, 'unit.percentHyd', 'hydV'),
+    salt:  stepper('saltN', 'saltDec', 'saltInc', 'salt', 1, 0.1, 'unit.percentSalt', 'saltV'),
+    oil:   stepper('oilN', 'oilDec', 'oilInc', 'oil', 1, 0.5, 'unit.percentOil', 'oilV'),
+    sugar: stepper('sugarN', 'sugarDec', 'sugarInc', 'sugar', 1, 0.5, 'unit.percentSugar', 'sugarV'),
+    pref:  stepper('prefN', 'prefDec', 'prefInc', 'pref', 0, 5, 'unit.percentPref', 'prefV'),
+    bhyd:  stepper('bhydN', 'bhydDec', 'bhydInc', 'bhyd', 0, 1, 'unit.percentBhyd', 'bhydV'),
+    yeast: stepper('yeastN', 'yeastDec', 'yeastInc', 'yeast', 2, 0.05, 'unit.percentYeast', 'yeastV'),
+    ddt:   stepper('ddtN', 'ddtDec', 'ddtInc', 'ddt', 1, 0.5, 'unit.celsiusDdt', 'ddtV'),
+    room:  stepper('roomN', 'roomDec', 'roomInc', 'room', 0, 1, 'unit.celsiusRoom', 'roomV'),
+    flourTemp: stepper('flourTempN', 'flourTempDec', 'flourTempInc', 'flourTemp', 0, 1, 'unit.celsiusFlourTemp', 'flourTempV')
   };
-
-  // Bei Sprachwechsel: aria-valuetext aller Regler neu setzen (Wert bleibt gleich,
-  // nur die Einheit übersetzt sich), s. Aufruf ganz unten in dieser Datei.
-  function refreshUnits() {
-    unitLinks.forEach(function (u) {
-      u.slider.setAttribute('aria-valuetext', u.fmt(parseFloat(u.slider.value)) + ' ' + t(u.unitKey));
-    });
-  }
 
   // --- Quick-Pills ---
   document.querySelectorAll('[data-ballw]').forEach(b => b.onclick = () => PZ.set.ballw(b.dataset.ballw));
   document.querySelectorAll('[data-yeast]').forEach(b => b.onclick = () => PZ.set.yeast(b.dataset.yeast));
+  // Mengensteuerung vereinfachen (v3.70.0): permanent sichtbare Schnellwahl-Chips für
+  // die 5 neuen Stepper-Felder (Gewicht/Teigling hatte diese Chips bereits vorher, s. o.).
+  // Vorteig-Anteil/Biga-Hydration/DDT/Raumtemperatur/Mehltemperatur bekommen bewusst
+  // KEINE neuen Chips (s. Kommentare in pizza-rechner.html/-mobile.html) -- Hefemenge hat
+  // mit #yeastPills direkt oben bereits ihre eigene, etablierte Schnellwahl.
+  document.querySelectorAll('[data-balls]').forEach(b => b.onclick = () => PZ.set.balls(b.dataset.balls));
+  document.querySelectorAll('[data-hyd]').forEach(b => b.onclick = () => PZ.set.hyd(b.dataset.hyd));
+  document.querySelectorAll('[data-salt]').forEach(b => b.onclick = () => PZ.set.salt(b.dataset.salt));
+  document.querySelectorAll('[data-oil]').forEach(b => b.onclick = () => PZ.set.oil(b.dataset.oil));
+  document.querySelectorAll('[data-sugar]').forEach(b => b.onclick = () => PZ.set.sugar(b.dataset.sugar));
 
   // --- Vorteig-Reife-Stufen: koppeln Reifezeit + Hefemenge (physikalisch abhängig) ---
   // yeast = % bezogen auf Gesamtmehl (geht bei Vorteig komplett in den Vorteig).
@@ -5397,6 +5552,12 @@ header{position:relative;text-align:center;}
     // ist unverändert, der Regler bleibt technisch bedienbar.
     $('yeastField').classList.toggle('coupled', isPref);
     $('yeastCoupledBadge').hidden = !isPref;
+    // accessibility-expert-Befund (v3.70.0, MINOR): die optische Kopplung allein (Klasse
+    // "coupled", s. CSS) teilt Screenreader-Nutzern den gesperrten Zustand nicht mit --
+    // aria-disabled an den beiden neuen Stepper-Buttons ergänzt (der Regler bleibt bewusst
+    // technisch bedienbar, s. Kommentar oben, daher aria-disabled statt disabled).
+    $('yeastDec').setAttribute('aria-disabled', String(isPref));
+    $('yeastInc').setAttribute('aria-disabled', String(isPref));
     $('methodHint').innerHTML = t('hint.method.' + m);
     $('prefTitle').textContent = m === 'biga' ? t('label.prefTitle.biga') : t('label.prefTitle.poolish');
     $('prefHint').innerHTML = m === 'biga' ? t('hint.pref.biga') : t('hint.pref.poolish');
@@ -5432,12 +5593,14 @@ header{position:relative;text-align:center;}
   PZ.applyMethod = applyMethod;
   PZ.updateTimeLabel = updateTimeLabel;
 
-  // Sprachwechsel: Regler-Einheiten (aria-valuetext), Methode-/Zeitplan-Hinweistexte
-  // und die Vorteig-Reife-Pills (deren Labels selbst sprachneutral aus Zahlen bestehen,
-  // aber ihre umgebenden Hinweise nicht) neu rendern.
+  // Sprachwechsel: Methode-/Zeitplan-Hinweistexte und die Vorteig-Reife-Pills (deren
+  // Labels selbst sprachneutral aus Zahlen bestehen, aber ihre umgebenden Hinweise nicht)
+  // neu rendern. Seit v3.70.0 kein refreshUnits() mehr nötig: die Regler-Einheiten hängen
+  // jetzt an statischen aria-describedby-Spans (".unit", übersetzungsfrei -- "%"/"g"/"°C"
+  // sind in DE/EN identisch) statt an einem live nachgeführten aria-valuetext auf einem
+  // (inzwischen entfernten) Slider.
   if (PZ.i18nOnChange) {
     PZ.i18nOnChange(function () {
-      refreshUnits();
       applyMethod();
       updateTimeLabel();
     });

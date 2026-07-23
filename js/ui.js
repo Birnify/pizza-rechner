@@ -7,45 +7,47 @@
 
   function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
 
-  // --- Slider <-> Number Verknüpfung ---
-  // `unitKey` liefert (per PZ.t()) einen aria-valuetext fürs Screenreader-Ansagen
-  // (z. B. "62 percent hydration" statt einer nackten Zahl) — reine a11y-Ergänzung,
-  // ändert keine Berechnungslogik. Ein Wörterbuch-KEY statt eines fertigen Strings,
-  // damit ein späterer Sprachwechsel den bereits gesetzten aria-valuetext auf den
-  // vorhandenen Slidern aktualisieren kann (s. refreshUnits() weiter unten).
-  // Seit v3.56.0: gemeinsame Fabrik PZ.makeLink() (js/widgets.js) statt eigener
-  // Implementierung — clamp:true behält das bestehende Zahlenfeld-Clamping (v3.51.0)
-  // bei, onSet:PZ.calc löst wie bisher die Neuberechnung nach jedem Setzen aus.
-  const unitLinks = []; // { slider, unitKey } — für refreshUnits() bei Sprachwechsel
-  const link = PZ.makeLink({ stateObj: state, onSet: PZ.calc, clamp: true, unitLinks: unitLinks });
+  // --- Mengensteuerung vereinfachen (v3.70.0) ---
+  // ALLE Regler im Hauptrechner nutzen jetzt Zahlenfeld + Minus/Plus-Buttons statt
+  // Slider+Zahlenfeld (s. PZ.makeStepper(), js/widgets.js) -- kein <input type=range>
+  // mehr in pizza-rechner.html/-mobile.html. PZ.makeLink() (der Slider-Mechanismus)
+  // bleibt als Fabrik in js/widgets.js bestehen, wird aber von HIER aus nicht mehr
+  // aufgerufen -- js/newrecipe.js nutzt ihn weiterhin unabhängig für sein eigenes
+  // Mini-Formular (nrBalls/nrHyd/... bleiben bewusst bei Slider+Zahlenfeld, nicht Teil
+  // dieses Umbaus). `announceId` liefert eine Live-Region-Ansage bei +/- Klick (nicht
+  // beim Tippen ins Zahlenfeld oder Klick auf eine Schnellwahl-Chip, da dort der neue
+  // Wert ohnehin sofort sichtbar wird).
+  const stepper = PZ.makeStepper({ stateObj: state, onSet: PZ.calc, announceId: 'stepperLiveMsg' });
 
   // Setter-Sammlung (von presets.js und storage.js genutzt)
   PZ.set = {
-    balls: link('balls', 'ballsN', 'balls', 0, 'unit.balls'),
-    ballw: link('ballw', 'ballwN', 'ballw', 0, 'unit.grams'),
-    hyd:   link('hyd', 'hydN', 'hyd', 0, 'unit.percentHyd'),
-    salt:  link('salt', 'saltN', 'salt', 1, 'unit.percentSalt'),
-    oil:   link('oil', 'oilN', 'oil', 1, 'unit.percentOil'),
-    sugar: link('sugar', 'sugarN', 'sugar', 1, 'unit.percentSugar'),
-    pref:  link('pref', 'prefN', 'pref', 0, 'unit.percentPref'),
-    bhyd:  link('bhyd', 'bhydN', 'bhyd', 0, 'unit.percentBhyd'),
-    yeast: link('yeast', 'yeastN', 'yeast', 2, 'unit.percentYeast'),
-    ddt:   link('ddt', 'ddtN', 'ddt', 1, 'unit.celsiusDdt'),
-    room:  link('room', 'roomN', 'room', 0, 'unit.celsiusRoom'),
-    flourTemp: link('flourTemp', 'flourTempN', 'flourTemp', 0, 'unit.celsiusFlourTemp')
+    balls: stepper('ballsN', 'ballsDec', 'ballsInc', 'balls', 0, 1, 'unit.balls', 'ballsV'),
+    ballw: stepper('ballwN', 'ballwDec', 'ballwInc', 'ballw', 0, 10, 'unit.grams', 'ballwV'),
+    hyd:   stepper('hydN', 'hydDec', 'hydInc', 'hyd', 0, 1, 'unit.percentHyd', 'hydV'),
+    salt:  stepper('saltN', 'saltDec', 'saltInc', 'salt', 1, 0.1, 'unit.percentSalt', 'saltV'),
+    oil:   stepper('oilN', 'oilDec', 'oilInc', 'oil', 1, 0.5, 'unit.percentOil', 'oilV'),
+    sugar: stepper('sugarN', 'sugarDec', 'sugarInc', 'sugar', 1, 0.5, 'unit.percentSugar', 'sugarV'),
+    pref:  stepper('prefN', 'prefDec', 'prefInc', 'pref', 0, 5, 'unit.percentPref', 'prefV'),
+    bhyd:  stepper('bhydN', 'bhydDec', 'bhydInc', 'bhyd', 0, 1, 'unit.percentBhyd', 'bhydV'),
+    yeast: stepper('yeastN', 'yeastDec', 'yeastInc', 'yeast', 2, 0.05, 'unit.percentYeast', 'yeastV'),
+    ddt:   stepper('ddtN', 'ddtDec', 'ddtInc', 'ddt', 1, 0.5, 'unit.celsiusDdt', 'ddtV'),
+    room:  stepper('roomN', 'roomDec', 'roomInc', 'room', 0, 1, 'unit.celsiusRoom', 'roomV'),
+    flourTemp: stepper('flourTempN', 'flourTempDec', 'flourTempInc', 'flourTemp', 0, 1, 'unit.celsiusFlourTemp', 'flourTempV')
   };
-
-  // Bei Sprachwechsel: aria-valuetext aller Regler neu setzen (Wert bleibt gleich,
-  // nur die Einheit übersetzt sich), s. Aufruf ganz unten in dieser Datei.
-  function refreshUnits() {
-    unitLinks.forEach(function (u) {
-      u.slider.setAttribute('aria-valuetext', u.fmt(parseFloat(u.slider.value)) + ' ' + t(u.unitKey));
-    });
-  }
 
   // --- Quick-Pills ---
   document.querySelectorAll('[data-ballw]').forEach(b => b.onclick = () => PZ.set.ballw(b.dataset.ballw));
   document.querySelectorAll('[data-yeast]').forEach(b => b.onclick = () => PZ.set.yeast(b.dataset.yeast));
+  // Mengensteuerung vereinfachen (v3.70.0): permanent sichtbare Schnellwahl-Chips für
+  // die 5 neuen Stepper-Felder (Gewicht/Teigling hatte diese Chips bereits vorher, s. o.).
+  // Vorteig-Anteil/Biga-Hydration/DDT/Raumtemperatur/Mehltemperatur bekommen bewusst
+  // KEINE neuen Chips (s. Kommentare in pizza-rechner.html/-mobile.html) -- Hefemenge hat
+  // mit #yeastPills direkt oben bereits ihre eigene, etablierte Schnellwahl.
+  document.querySelectorAll('[data-balls]').forEach(b => b.onclick = () => PZ.set.balls(b.dataset.balls));
+  document.querySelectorAll('[data-hyd]').forEach(b => b.onclick = () => PZ.set.hyd(b.dataset.hyd));
+  document.querySelectorAll('[data-salt]').forEach(b => b.onclick = () => PZ.set.salt(b.dataset.salt));
+  document.querySelectorAll('[data-oil]').forEach(b => b.onclick = () => PZ.set.oil(b.dataset.oil));
+  document.querySelectorAll('[data-sugar]').forEach(b => b.onclick = () => PZ.set.sugar(b.dataset.sugar));
 
   // --- Vorteig-Reife-Stufen: koppeln Reifezeit + Hefemenge (physikalisch abhängig) ---
   // yeast = % bezogen auf Gesamtmehl (geht bei Vorteig komplett in den Vorteig).
@@ -107,6 +109,12 @@
     // ist unverändert, der Regler bleibt technisch bedienbar.
     $('yeastField').classList.toggle('coupled', isPref);
     $('yeastCoupledBadge').hidden = !isPref;
+    // accessibility-expert-Befund (v3.70.0, MINOR): die optische Kopplung allein (Klasse
+    // "coupled", s. CSS) teilt Screenreader-Nutzern den gesperrten Zustand nicht mit --
+    // aria-disabled an den beiden neuen Stepper-Buttons ergänzt (der Regler bleibt bewusst
+    // technisch bedienbar, s. Kommentar oben, daher aria-disabled statt disabled).
+    $('yeastDec').setAttribute('aria-disabled', String(isPref));
+    $('yeastInc').setAttribute('aria-disabled', String(isPref));
     $('methodHint').innerHTML = t('hint.method.' + m);
     $('prefTitle').textContent = m === 'biga' ? t('label.prefTitle.biga') : t('label.prefTitle.poolish');
     $('prefHint').innerHTML = m === 'biga' ? t('hint.pref.biga') : t('hint.pref.poolish');
@@ -142,12 +150,14 @@
   PZ.applyMethod = applyMethod;
   PZ.updateTimeLabel = updateTimeLabel;
 
-  // Sprachwechsel: Regler-Einheiten (aria-valuetext), Methode-/Zeitplan-Hinweistexte
-  // und die Vorteig-Reife-Pills (deren Labels selbst sprachneutral aus Zahlen bestehen,
-  // aber ihre umgebenden Hinweise nicht) neu rendern.
+  // Sprachwechsel: Methode-/Zeitplan-Hinweistexte und die Vorteig-Reife-Pills (deren
+  // Labels selbst sprachneutral aus Zahlen bestehen, aber ihre umgebenden Hinweise nicht)
+  // neu rendern. Seit v3.70.0 kein refreshUnits() mehr nötig: die Regler-Einheiten hängen
+  // jetzt an statischen aria-describedby-Spans (".unit", übersetzungsfrei -- "%"/"g"/"°C"
+  // sind in DE/EN identisch) statt an einem live nachgeführten aria-valuetext auf einem
+  // (inzwischen entfernten) Slider.
   if (PZ.i18nOnChange) {
     PZ.i18nOnChange(function () {
-      refreshUnits();
       applyMethod();
       updateTimeLabel();
     });

@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-22 · Aktuelle Version: v3.69.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-23 · Aktuelle Version: v3.70.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -179,22 +179,23 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Glossar-Verweise: Dedup + Icon-Ausrichtung (v3.69.1) = aktueller Stand
+## Mengensteuerung vereinfachen (v3.70.0) = aktueller Stand
 
-Zwei-Punkte-Bugfix an den Glossar-Verweisen (v3.68.0). **Bug 1:** derselbe Verweis (z. B.
-„Ofen-Heizarten") erschien mehrfach in der Anleitung, wenn mehrere Schritte dieselbe
-`glossaryId` setzten (Vorheizen UND Backen) — `js/guide.js` (`glossaryLinkHtml()`) rendert
-jetzt jede `glossaryId` nur noch beim ERSTEN Vorkommen (`_usedGlossaryIds`-Set, Reset pro
-`buildGuide()`-Durchlauf). **Bug 2:** das 📖-Icon stand (v. a. Mobil, mehrzeiliger Linktext)
-auf einer eigenen Zeile über dem Link statt daneben — `css/styles.css` `.glossary-ref` jetzt
-`display:flex;align-items:flex-start;gap:6px`, `.step-glossary-link` `text-align:left`.
-**Härtung** (accessibility-expert-Review): Touch-Ziel von `.step-glossary-link` war mit
-`padding:0` zu klein (`min-height:44px;display:flex;align-items:center` ergänzt, Icon-
-Ausrichtung bleibt unverändert), Icon-Text ist jetzt `<span aria-hidden="true">` (verhindert
-doppelte Screenreader-Ansage). Kontrast von `.glossary-ref`-Text (`--muted`, ~3,2:1,
-vorbestehend, nicht Teil dieses Bugfix-Scopes) bewusst nicht mitgefixt, s. Backlog unten.
-712 → **716** Prüfungen grün. **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`,
-Abschnitt „Glossar-Verweise: Dedup + Icon-Ausrichtung (v3.69.1)".
+UX-Review-Punkt umgesetzt: alle 12 Slider+Zahlenfeld-Regler im Hauptrechner (Anzahl
+Teiglinge, Gewicht/Teigling, Hydration, Salz, Öl, Zucker, Vorteig-Anteil, Biga-Hydration,
+Hefemenge, DDT, Raumtemperatur, Mehltemperatur) sind jetzt Stepper (Minus-Button/Zahlenfeld/
+Plus-Button, `PZ.makeStepper()` in `js/widgets.js`) statt Slider+Zahlenfeld — kein
+`<input type=range>` mehr in `pizza-rechner.html`/`pizza-rechner-mobile.html`. Die ersten
+6 Felder (Teiglinge/Gewicht/Hydration/Salz/Öl/Zucker) haben zusätzlich eine permanent
+sichtbare Schnellwahl-Chip-Reihe; die übrigen 6 bewusst ohne neue Chips (Hefemenge hat
+bereits `#yeastPills`, Vorteig-Anteil/Biga-Hydration/Temperaturfelder je nach fachlicher
+Einschätzung ohne sinnvollen universellen Chip-Satz). `js/newrecipe.js` (separates
+Mini-Formular) bleibt unverändert bei Slider+Zahlenfeld. Zwei `accessibility-expert`-Befunde
+eingearbeitet (fehlender `:focus-visible`-Indikator am Stepper-Zahlenfeld + app-weit an
+`.pills button`, `aria-disabled` an den Hefemenge-Stepper-Buttons bei aktiver Kopplung).
+716 Prüfungen unverändert grün (reines DOM-Wiring, in `tests/test.html` nicht geladen).
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Mengensteuerung
+vereinfachen (v3.70.0)".
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -304,9 +305,9 @@ Temperaturlogik, keine Krustenform-Logik) — nur der Regler + das Preset.
   (`PZ.setFlag(p.flag, true)`) und ließ den Regler danach für immer sichtbar, auch nach
   Wechsel auf ein anderes Preset oder „Eigene Einstellung". Das war ungewollt und wurde in
   v3.19.3 korrigiert — der Regler ist jetzt nur sichtbar, solange das Preset „New York
-  Style" aktiv gewählt ist ODER das Flag manuell im Einstellungen-Menü an ist, s. Abschnitt
-  „New York Style: nur temporäre statt dauerhafte Zucker-Regler-Sichtbarkeit (v3.19.3)"
-  weiter oben (= aktueller Stand).
+  Style" aktiv gewählt ist ODER das Flag manuell im Einstellungen-Menü an ist, s.
+  `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „New York Style: nur temporäre statt
+  dauerhafte Zucker-Regler-Sichtbarkeit (v3.19.3)".
   **Bugfix während der v3.19.2-Umsetzung (weiterhin gültig):** `applyFlags()` synct jetzt bei jedem Aufruf auch alle
   Checkbox-`.checked`-Zustände aus `PZ.FLAGS` (vorher setzte `wireCheckboxes()` das nur
   einmalig beim Laden — ein programmatisch gesetztes Flag wie hier hätte die Checkbox
@@ -392,7 +393,9 @@ js/units.js          Einheitensystem-Umschaltung Metrisch/Imperial (v3.65.0): fo
                      Anzeige-Formatierungsschicht (g↔oz/lb, °C↔°F), rührt PZ.state nicht an
 js/widgets.js        Gemeinsame Widget-Fabriken (v3.56.0, vorher in js/ui.js + js/newrecipe.js +
                      js/flour.js dupliziert): PZ.makeLink/makeSeg/makePrefStages/fillFlourSelect —
-                     js/flour.js, js/ui.js, js/newrecipe.js rufen sie als dünne Konfigurationsaufrufe
+                     js/flour.js, js/ui.js, js/newrecipe.js rufen sie als dünne Konfigurationsaufrufe.
+                     Seit v3.70.0 zusätzlich PZ.makeStepper (Zahlenfeld+Minus/Plus statt Slider),
+                     genutzt von js/ui.js; js/newrecipe.js bleibt bei PZ.makeLink (unverändert)
 js/flour.js          PZ.FLOURS (13 Mehle) + PZ.getFlour() + Dropdown-Befüllung (via
                      PZ.fillFlourSelect(), s. js/widgets.js)
 js/calc.js           PZ.calcCore(state)→R reine Rechenfunktion (kein DOM) + PZ.renderResult(R) fürs
@@ -402,8 +405,9 @@ js/guide.js          PZ.buildGuide() — Anleitung + Zeitberechnung + Mehl-Warnu
 js/timer.js          PZ.wireTimers() — Gärzeit-Timer/Wecker je Schritt (Notification + Web-Audio-Beep,
                      State in localStorage['pizzaRechnerTimers'], kein Server/Service-Worker); nutzt
                      Browser-APIs, die bewusst NICHT in tests/test.html geladen/unit-getestet werden
-js/ui.js             Slider/Segmente/Pills/Zeitplan; PZ.set, selectSeg, applyMethod, updateTimeLabel
-                     (Slider/Segmente/Reife-Stufen seit v3.56.0 über js/widgets.js-Fabriken)
+js/ui.js             Stepper/Segmente/Pills/Zeitplan; PZ.set, selectSeg, applyMethod, updateTimeLabel
+                     (Segmente/Reife-Stufen seit v3.56.0, Stepper seit v3.70.0 über
+                     js/widgets.js-Fabriken — kein <input type=range> mehr im Hauptrechner)
 js/simplemode.js     Einfacher Modus für Presets (v3.62.0): #controlsCol.mode-simple/.mode-advanced
                      + DOM-Reparenting der 3 Kernfelder zwischen ihrer Original-Karte und der neuen
                      Karte "Deine Einstellungen", Persistenz via localStorage-Key pizzaSimpleMode
@@ -639,7 +643,7 @@ Rezepte) einzeln ein-/ausschalten können, statt sie fest im Layout zu haben.
   unverändert — das Einstellungen-Menü schaltet ausschließlich Anzeige/Rendering,
   nie eine Bäckerprozent- oder Zeitrechnung.
 
-## Feature-Flag „hints" — Tooltip-/Hinweistexte optional abschaltbar (v3.17.0) = aktueller Stand
+## Feature-Flag „hints" — Tooltip-/Hinweistexte optional abschaltbar (v3.17.0)
 
 Direkter Nutzerwunsch (Erweiterung des Einstellungen-Menüs aus v3.16.0 um einen 7. Flag):
 „Auch die ganzen ToolTip Hinweise würde ich gerne als Optional in die Featureliste
@@ -719,20 +723,35 @@ Keine Code-Änderung durch den Audit nötig.
 
 - ~~Bugfix: Glossar-Verweise doppelt + Icon-Ausrichtung versetzt~~ — **erledigt in
   v3.69.1** (kein Backlog-Punkt, live reproduzierter Bugfix-Auftrag direkt an den
-  Orchestrator; s. Abschnitt „Glossar-Verweise: Dedup + Icon-Ausrichtung (v3.69.1)" oben).
+  Orchestrator; s. `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-Verweise:
+  Dedup + Icon-Ausrichtung (v3.69.1)").
+- ~~Doku-Debt: zwei stale Verweise/Tags in dieser Datei~~ — **erledigt in v3.70.0**:
+  veraltetes zweites „= aktueller Stand"-Tag beim Abschnitt „Feature-Flag „hints"…"
+  (v3.17.0) entfernt; stale Verweis im Zucker-Feld/New-York-Style-Abschnitt auf eine
+  bereits nach HISTORIE ausgelagerte Zwischenüberschrift korrigiert (zeigt jetzt auf
+  `pizza-rechner-KONTEXT-HISTORIE.md`).
+- ~~UX-Review "Teigmeister", Punkt 1: Mengensteuerung vereinfachen~~ — **erledigt in
+  v3.70.0** (kein Backlog-Punkt im engeren Sinne, direkter Nutzerauftrag über den
+  Orchestrator; s. Abschnitt „Mengensteuerung vereinfachen (v3.70.0)" oben).
 - **Nebenbefund aus dem v3.69.1-`accessibility-expert`-Review:** Kontrast von
   `.step .body .glossary-ref`-Text (`color:var(--muted)`, ~3,2:1) liegt unter der
   WCAG-1.4.3-Schwelle 4,5:1 für Fließtext — vorbestehend seit v3.68.0, nicht durch
   v3.69.1 verursacht, bewusst außerhalb des Bugfix-Scopes gelassen. Kandidat für einen
   kleinen, gezielten Folge-Fix (z. B. `var(--step-text)` statt `--muted`).
-- **Nebenbefund (Doku-Debt, kein Code):** in `pizza-rechner-KONTEXT.md` steht beim
-  Abschnitt „Feature-Flag „hints"…" (v3.17.0) noch ein zweites, veraltetes
-  „= aktueller Stand"-Tag neben dem tatsächlich aktuellen (v3.69.1) — beim nächsten
-  Kontext-Pflege-Durchgang entfernen (nur der irreführende Tag, der Abschnitt selbst
-  bleibt stehen). Zusätzlich verweist ein Satz im Zucker-Feld/New-York-Style-Abschnitt
-  („weiter oben (= aktueller Stand)") auf eine Zwischenüberschrift, die inzwischen schon
-  nach `pizza-rechner-KONTEXT-HISTORIE.md` ausgelagert wurde — die Referenz ist dadurch
-  nicht mehr auffindbar und sollte korrigiert/entfernt werden.
+- **Nebenbefund aus dem v3.70.0-`accessibility-expert`-Review (MINOR, unverändert seit
+  jeher, kein neues Problem):** `.pills button` hat weiterhin kein `aria-label`/
+  `aria-describedby` (Screenreader sagt bei Zahlen-Chips wie „250" nur „button 250" statt
+  „250 Gramm"). Betrifft alle `.pills`-Instanzen app-weit, nicht auf die neuen
+  Mengensteuerung-Chips beschränkt. Kandidat für einen kleinen, gezielten Folge-Fix.
+- **UX-Review "Teigmeister", weitere Punkte (bereits an den Orchestrator übergeben,
+  Reihenfolge: Rezeptwahl führen → Komplexität staffeln → Ergebnis priorisieren):**
+  Punkt 2 „Rezeptwahl führen" (3 Empfehlungskarten statt 8er-Preset-Dropdown, `napoli_65`
+  entfernen, Preset-Namen vereinheitlichen) und Punkt 4 „Ergebnis priorisieren" (Aktionsleiste
+  der Ergebniskarte neu ordnen: „Zum Zeitplan" primär, „Rezept teilen" sekundär, Rest in
+  „Weitere Optionen" einklappen) liegen dem Orchestrator mit vollständiger 5-Felder-Definition
+  vor. Punkt 3 „Komplexität staffeln" wurde erwähnt, aber dem Orchestrator bisher NICHT mit
+  vollständiger Definition übergeben (Stand nach diesem Zyklus) — braucht vor Umsetzung noch
+  eine vollständige Auftragsübergabe.
 - **Foto-Anleitung (Fotos je Schritt):** Schritt-für-Schritt-Anleitung um Fotos je
   Schritt ergänzen (z. B. Autolyse, Kneten, Salz zugeben), analog einer Referenz-App,
   die der Nutzer per Screenshot gezeigt hat. Noch nicht spezifiziert (Bildquelle offen:

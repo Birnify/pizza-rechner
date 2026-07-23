@@ -8,6 +8,98 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Mengensteuerung vereinfachen (v3.70.0)
+
+UX-Review "Teigmeister", Punkt 1 (Priorität Hoch), über den `feature-cycle-orchestrator`
+umgesetzt: Slider-plus-Zahlenfeld-Kombinationen durch Stepper (Minus/Plus) mit Schnellwahl
+ersetzt, da Slider und Zahlenfeld denselben Wert redundant steuerten und präzise Änderungen
+per Slider auf Mobilgeräten unnötig feinmotorisch waren.
+
+**Umfang (nach einer Nutzer-Rückfrage zur Scope-Breite erweitert):** ursprünglich beauftragt
+waren die 6 Regler in "Grundeinstellungen" (Anzahl Teiglinge, Gewicht/Teigling, Hydration,
+Salz, Öl, Zucker). Nach Rückfrage des Orchestrators (Interpretation "alle vergleichbaren
+Regler" war mehrdeutig) hat der Nutzer die Erweiterung auf ALLE Slider+Zahlenfeld-Regler im
+Hauptrechner bestätigt: zusätzlich Vorteig-Anteil, Biga-Hydration, Hefemenge, DDT,
+Raumtemperatur, Mehltemperatur (12 Felder insgesamt). `js/newrecipe.js` (separates
+Mini-Formular "Neues Rezept anlegen") bleibt bewusst unverändert bei Slider+Zahlenfeld.
+
+**Neue Fabrik `PZ.makeStepper(cfg)`** (`js/widgets.js`, analog zu `PZ.makeLink()`): statt
+Slider+Zahlenfeld nur noch ein `<input type="number">` + zwei Buttons (`XDec`/`XInc`), die
+den Wert um einen festen `step` ändern. Min/Max-Klemmung weiterhin über die `min`/`max`-
+Attribute des Zahlenfelds selbst (identische `clampTo()`-Logik wie bei `makeLink()`).
+Optionaler `announceId` löst bei +/- Klick (nicht beim Tippen oder Chip-Klick) eine
+`PZ.announce()`-Live-Region-Ansage mit übersetztem Einheitentext aus (neue Live-Region
+`#stepperLiveMsg`). `js/ui.js`: alle 12 `PZ.set.*`-Einträge nutzen jetzt `stepper(...)`
+statt `link(...)`; die dadurch tote `unitLinks`/`refreshUnits()`-Altlast (aria-valuetext-
+Nachführung bei Sprachwechsel, brauchte den jetzt entfernten Slider) wurde entfernt.
+`PZ.makeLink()` selbst bleibt als Fabrik bestehen (wird weiterhin von `js/newrecipe.js`
+für dessen unverändertes Mini-Formular genutzt).
+
+**Schnellwahl-Chips** (`.pills`, permanent sichtbar, kein Ein-/Ausblenden): neu für Anzahl
+Teiglinge (2/4/6/8/12), Hydration (60/62/65/70/75 %, matcht den bestehenden Hinweistext),
+Salz (2,5/2,8/3 %), Öl (0/2/4 %), Zucker (0/2 %) -- Gewicht/Teigling hatte bereits eine
+Chip-Reihe (unverändert übernommen). Bewusst OHNE neue Chips: Vorteig-Anteil (der "gute"
+Wert hängt stark von Biga vs. Poolish ab, ein einziger statischer Chip-Satz hätte für die
+jeweils andere Methode in die Irre geführt), Biga-Hydration (schmaler Bereich 40-55 %, nur
+in einer Methode sichtbar, der Hinweistext nennt bereits die engen 44-48 %-Richtwerte),
+Hefemenge (hat mit `#yeastPills` bereits eine etablierte, method-übergreifende Schnellwahl
+-- nicht dupliziert), DDT/Raumtemperatur/Mehltemperatur (Nutzer-Vorgabe: bei
+Temperaturfeldern zählt eher ein guter Default als eine Chip-Reihe; bestehende Defaults
+24 °C/21 °C/21 °C wurden geprüft und für sinnvoll befunden, keine Änderung nötig).
+
+**CSS** (`css/styles.css` + kleines Override in `css/mobile.css`): neue Klassen `.stepper`
+(Flex-Container), `.stepper-btn` (44×44px Touch-Ziel, Projekt-Konvention), `.stepper .unit`
+(kleine graue Einheit neben dem Zahlenfeld, ersetzt das entfernte Slider-`aria-valuetext` --
+auf Desktop neu ergänzt, auf Mobil gab es das Muster für ballw/hyd/salt/oil/sugar/pref/
+bhyd/yeast/ddt/room/flourTemp teilweise schon). `.field.coupled .stepper-btn{opacity:.5}`
+neu als Pendant zur bestehenden Slider-Ausgrauung (Hefemenge-Feld bei aktiver Vorteig-
+Reife-Stufe optisch gesperrt, technisch weiter bedienbar, unverändertes Verhalten seit
+v3.31.0). `css/mobile.css`: `.stepper input[type=number]{width:auto;min-height:44px}` +
+`.stepper-btn{min-height:44px}` überschreiben gezielt die generische feste Zahlenfeld-
+Breite (`input[type=number]{width:86px}`), damit das Stepper-Zahlenfeld die verfügbare
+Restbreite zwischen den Buttons ausfüllt.
+
+**Härtung** (`accessibility-expert`, zwei Runden -- erst die ursprünglichen 6 Felder, dann
+gezielter Nachtrag zu den 6 zusätzlichen Feldern):
+- BLOCKER/MAJOR 1: `.stepper input[type=number]` hatte keinen sichtbaren
+  `:focus-visible`-Indikator (nur Border-Farbänderung) -- ergänzt, identisch zu
+  `.stepper-btn`.
+- MAJOR 2 (mitgefixt statt nur Backlog-Nebenbefund): `.pills button` hatte app-weit (nicht
+  neu, betraf auch Hefe-Pills/Vorteig-Reife-Stufen u. a.) kein `:focus-visible`-Outline --
+  ergänzt, da dieser Zyklus ohnehin mehrere neue `.pills`-Instanzen einführt.
+- MINOR: Pills-Buttons ohne `aria-label`/`aria-describedby` (Screenreader sagt nur
+  "button 250" statt "250 Gramm") -- bestehendes Pattern, kein neuer Handlungsbedarf.
+  Zweiter Nachtrag: `.field.coupled .stepper-btn{opacity:.5}` hat wie das bisherige
+  Slider-Pendant kein `aria-disabled` -- mitgefixt (`js/ui.js` `applyMethod()` setzt
+  `aria-disabled` an `yeastDec`/`yeastInc` synchron zur `coupled`-Klasse), da trivial
+  ohne neues JS-Konzept möglich.
+- Kein Befund bei: Touch-Ziel-Größe (44×44px erfüllt), Fokus-Reihenfolge, Screenreader-
+  ARIA (`role=group`/`aria-labelledby`/`aria-label`/`aria-describedby` korrekt), Kontrast
+  (unveränderte Farbwerte), native Zahlenfeld-Tastaturbedienung (`step`-Attribut greift
+  weiterhin für Pfeiltasten), fehlende Chips bei den 6 zusätzlichen Feldern (unbedenklich,
+  bewusste UX-Entscheidung ohne funktionale Lücke).
+- `mobile-optimizer` NICHT angefordert: Touch-Ziel-Dimension bereits vollständig durch den
+  `accessibility-expert`-Durchlauf abgedeckt, kein zusätzlicher spezifisch-mobiler Befund
+  zu erwarten.
+
+**Verifikation:** funktional per Headless-Edge-CDP (WebSocket, `--remote-allow-origins=*`)
+auf Desktop UND Mobil: alle 12 Felder ändern `PZ.state` korrekt bei +/- Klick (inkl.
+Dezimalschritten bei Salz/Öl/Zucker/DDT/Hefemenge), Min/Max-Klemmung funktioniert, alle
+Schnellwahl-Chips setzen Werte korrekt, keine `<input type=range>` mehr im DOM für die 12
+Felder (die 12 `nrXxx`-Slider von `js/newrecipe.js` bleiben unverändert bestehen), keine
+Konsolenfehler, Live-Region liefert korrekt übersetzten Text, `yeastField` behält die
+`coupled`-Klasse + `aria-disabled` korrekt synchron zur Methode. `tests/test.html`
+unverändert bei 716 Prüfungen grün (reines DOM-Wiring in `js/ui.js`/`js/widgets.js`, wird
+in der Testdatei nicht geladen -- `test-generator` daher nicht angefordert).
+
+**Geändert:** `js/widgets.js` (neue Fabrik `PZ.makeStepper`), `js/ui.js` (alle `PZ.set.*`
+auf `stepper()` umgestellt, tote Slider-Sprachwechsel-Logik entfernt, `aria-disabled` bei
+Hefemenge-Kopplung), `js/i18n-dict.js` (2 neue Keys `stepper.decrease`/`stepper.increase`),
+`css/styles.css`, `css/mobile.css`, `pizza-rechner.html`, `pizza-rechner-mobile.html`.
+`?v=` + Menü-Version auf `3.70.0` gezogen (Desktop + Mobil). `pizza-rechner-mobile-
+standalone.html` neu gebaut. `Versionen/v3.70.0 - Mengensteuerung vereinfachen/` enthält
+den vollständigen Schnappschuss.
+
 ## Glossar-Verweise: Dedup + Icon-Ausrichtung (v3.69.1)
 
 Klar diagnostizierter Zwei-Punkte-Bugfix an den Glossar-Verweisen aus v3.68.0 (live

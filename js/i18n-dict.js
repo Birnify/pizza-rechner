@@ -595,6 +595,12 @@
   add('label.flour', 'Mehl', 'Flour');
   add('hint.flour', 'W-Wert = Glutenstärke. Schwaches Mehl verträgt keine langen Gärzeiten: sehr starkes Mehl braucht sie. Wird per Preset mitgesetzt.',
     'W value = gluten strength. Weak flour can\'t handle long rise times: very strong flour needs them. Set automatically by presets.');
+  // Mengensteuerung vereinfachen (v3.70.0): generische Stepper-Button-Beschriftungen,
+  // wiederverwendet über alle 6 Stepper-Felder hinweg (aria-label allein, kein
+  // sichtbarer Text -- die umgebende role="group"/aria-labelledby liefert den
+  // Feldkontext, s. js/ui.js + pizza-rechner.html/-mobile.html).
+  add('stepper.decrease', 'Verringern', 'Decrease');
+  add('stepper.increase', 'Erhöhen', 'Increase');
   add('label.balls', 'Anzahl Teiglinge', 'Number of dough balls');
   add('label.ballw', 'Gewicht pro Teigling', 'Weight per dough ball');
   add('pill.mini180', 'Mini 180', 'Mini 180');
