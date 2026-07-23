@@ -369,21 +369,17 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .card-icon svg{width:20px;height:20px;display:block;}
 .result .card-icon{background:var(--basil);color:#fff;}
 /* Einfacher Modus für Presets (v3.62.0): #controlsCol trägt genau eine der beiden
-   Klassen (js/simplemode.js) -- .advanced-only-Elemente (die 3 klassischen Karten +
-   "Einfachen Modus aktivieren"-Button) verschwinden im Einfachen Modus, .simple-only
-   (die neue reduzierte Karte) verschwindet im Erweiterten Modus. Alle betroffenen
-   Elemente bleiben direkte Kinder von #controlsCol (kein zusätzlicher Wrapper), damit
-   der bestehende display:grid;gap:20px-Kartenabstand unverändert für alle sichtbaren
-   Karten gilt. */
+   Klassen (js/simplemode.js) -- .advanced-only-Elemente (die 3 klassischen Karten)
+   verschwinden im Einfachen Modus, .simple-only (die reduzierte Karte) verschwindet im
+   Erweiterten Modus. Alle betroffenen Elemente bleiben direkte Kinder von #controlsCol
+   (kein zusätzlicher Wrapper), damit der bestehende display:grid;gap:20px-Kartenabstand
+   unverändert für alle sichtbaren Karten gilt. Komplexität staffeln (v3.72.0): der
+   frühere Umschalt-Mechanismus über zwei sich gegenseitig ein-/ausblendende
+   .mode-switch-btn-Buttons wurde entfernt (Regel + Klasse gab es nur dafür) -- ersetzt
+   durch den dauerhaft sichtbaren Segmentschalter #modeToggle (reines .seg, s. u.), der
+   NICHT über .simple-only/.advanced-only ein-/ausgeblendet wird. */
 #controlsCol.mode-simple .advanced-only{display:none;}
 #controlsCol.mode-advanced .simple-only{display:none;}
-.mode-switch-btn{
-  display:block;width:100%;padding:11px;border-radius:var(--radius);border:1px solid var(--line);
-  background:var(--card);font-size:13px;font-weight:600;cursor:pointer;color:var(--ink);
-  transition:all .12s;
-}
-.mode-switch-btn:hover{border-color:var(--tomato);color:var(--tomato-text);}
-.mode-switch-btn:focus-visible{outline:2px solid var(--tomato);outline-offset:2px;}
 .selectbox{
   width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:var(--radius);
   font-size:14px;color:var(--ink);background:var(--card);cursor:pointer;
@@ -519,6 +515,11 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;
 }
 .seg button.active{background:var(--tomato);color:#fff;}
+/* accessibility-expert-Befund (v3.72.0, MAJOR 1): .seg button hatte app-weit (nicht nur
+   der neue Komplexitäts-Schalter) kein sichtbares :focus-visible-Outline, anders als
+   .pills button (die dasselbe Muster schon in v3.70.0 bekam). Konsistenter Nachzug für
+   alle .seg-Instanzen. */
+.seg button:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
 .pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;}
 .pills button{
   border:1px solid var(--line);background:var(--card);border-radius:var(--radius-chip);padding:5px 12px;

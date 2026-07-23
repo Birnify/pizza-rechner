@@ -612,12 +612,18 @@
   // sind bereits unter card.basics/card.method/card.temp abgedeckt (s. u.) --
   // hier nur Karten-Titel, Erklärtext und die beiden Umschalt-Buttons.
   add('card.simple.title', 'Deine Einstellungen', 'Your settings');
-  add('hint.simpleMode', 'Für alle Details (Hydration, Salz, Vorteig-Verfahren, Temperaturen &amp; mehr) in den erweiterten Modus wechseln.',
-    'Switch to advanced mode for all the details (hydration, salt, pre-ferment method, temperatures &amp; more).');
-  add('btn.openAdvancedMode', 'Erweiterten Modus öffnen', 'Open advanced mode');
-  add('btn.openSimpleMode', 'Einfachen Modus aktivieren', 'Switch to simple mode');
+  // Komplexität staffeln (v3.72.0): Hinweistext verweist jetzt auf den Segmentschalter
+  // oben ("Profi") statt auf den entfernten Button "Erweiterten Modus öffnen".
+  add('hint.simpleMode', 'Für alle Details (Hydration, Salz, Vorteig-Verfahren, Temperaturen &amp; mehr) oben auf „Profi" wechseln.',
+    'Switch to "Profi" above for all the details (hydration, salt, pre-ferment method, temperatures &amp; more).');
   add('simpleMode.announceSimple', 'Einfacher Modus aktiv.', 'Simple mode active.');
   add('simpleMode.announceAdvanced', 'Erweiterter Modus aktiv.', 'Advanced mode active.');
+  // Segmentschalter "Einfach | Profi" (v3.72.0): dauerhaft sichtbar ganz oben in
+  // #controlsCol, ersetzt die beiden vorherigen, sich gegenseitig ein-/ausblendenden
+  // Umschalt-Buttons (btn.openAdvancedMode/btn.openSimpleMode, entfernt).
+  add('modeToggle.groupLabel', 'Komplexitätsstufe', 'Complexity level');
+  add('modeToggle.simple', 'Einfach', 'Simple');
+  add('modeToggle.profi', 'Profi', 'Pro');
 
   // -- Card: Grundeinstellungen ------------------------------------------------------
   add('card.basics.title', 'Grundeinstellungen', 'Basic settings');

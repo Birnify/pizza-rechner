@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-23 · Aktuelle Version: v3.71.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-23 · Aktuelle Version: v3.72.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -179,31 +179,27 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Rezeptwahl führen (v3.71.0) = aktueller Stand
+## Komplexität staffeln (v3.72.0) = aktueller Stand
 
-UX-Review-Punkt umgesetzt: statt direkt ein 8er-Preset-Dropdown zu zeigen, stehen jetzt 3
-Empfehlungskarten oben (Schnell/Klassisch/Lang, je mit Gärzeit + kurzer Eignung), Klick
-setzt `#preset` + löst dessen `change`-Event aus (identischer Codepfad wie Dropdown-Auswahl,
-keine neue Anwendungslogik). Die volle Liste ist jetzt hinter nativem `<details>/<summary>`
-„Alle Rezepte" eingeklappt (kein eigenes JS für Auf-/Zuklappen). Preset `napoli_65` entfernt
-(`js/presets.js`, beide HTML-Dropdowns, `js/i18n-dict.js`) — Unterschied zu `napoli_klassisch`
-war nur 5 % Hydration, per Hydration-Stepper leicht nachstellbar. Alle verbleibenden
-Preset-Namen auf einheitliches Schema „Name · Gärzeit" gebracht (vorher uneinheitlich:
-`schnell`/`newyork_style` hatten zusätzlich eine Besonderheit neben der Dauer, `teglia`
-eine Hydrationsangabe statt Dauer). `accessibility-expert`-Befund eingearbeitet: die 3
-Empfehlungskarten haben jetzt ein explizites, klar strukturiertes `aria-label`
-(„Schnell: 4–6 h Gärzeit, für spontane Pizza…") statt der unstrukturierten Aneinanderreihung
-ihrer drei sichtbaren Text-Spans. Zwei weitere Befunde bewusst nicht gefixt (vorbestehende
-Muster, außerhalb des Scopes), s. Backlog unten. 716 Prüfungen unverändert grün.
+UX-Review-Punkt umgesetzt: die zwei vorherigen, sich gegenseitig ein-/ausblendenden
+Umschalt-Buttons ("Erweiterten Modus öffnen"/"Einfachen Modus aktivieren") wurden durch
+einen einzigen, DAUERHAFT sichtbaren Segmentschalter „Einfach | Profi" (`#modeToggle`,
+reines `.seg`-Muster) ersetzt, ganz oben in `#controlsCol` vor der Karte "Fertiges Rezept
+wählen" — der aktuelle Modus ist damit sofort erkennbar, ohne erst scrollen/lesen zu
+müssen. `js/simplemode.js`: Zustand/Persistenz/Feld-Zuordnung unverändert, nur die
+Schalter-Verkabelung ersetzt (neue `updateModeToggle()` hält `.active`/`aria-pressed`
+synchron). Da der neue Schalter nie verschwindet, entfiel das alte Fokus-Management-
+Workaround ersatzlos — Fokus bleibt beim Klick auf dem geklickten Button (kein Sprung).
+Alte `.mode-switch-btn`-Buttons + zugehörige i18n-Keys entfernt. `accessibility-expert`-
+Befund eingearbeitet: `.seg button:focus-visible` app-weit ergänzt (fehlte bisher,
+analog zum `.pills button`-Fix aus v3.70.0). Zwei weitere Befunde (Pfeiltasten-Navigation
+für `.seg`-Gruppen, Kontrast inaktiver `.seg`/`.pills`-Buttons) bewusst nicht gefixt
+(app-weite Bestandsmuster, außerhalb des Scopes), s. Backlog unten. 716 Prüfungen
+unverändert grün.
 
-**Zusätzlich (separater Mini-Zyklus v3.70.1, beim Lesen für diesen Punkt entdeckt):**
-Bugfix — der `#preset`-Reset-Mechanismus (setzt das Dropdown bei manueller Reglerbedienung
-zurück) war nach v3.70.0 (Stepper statt Slider) kaputt, da seine ID-Liste noch auf die
-entfernten Slider-Elemente zielte und ohnehin nur 5 von 12 Zahlenfeldern abdeckte.
-
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitte „Rezeptwahl führen
-(v3.71.0)", „Mengensteuerung vereinfachen (v3.70.0)" und „Bugfix: #preset-Reset nach
-Mengensteuerung-Vereinfachung (v3.70.1)".
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitte „Komplexität staffeln
+(v3.72.0)", „Rezeptwahl führen (v3.71.0)", „Mengensteuerung vereinfachen (v3.70.0)" und
+„Bugfix: #preset-Reset nach Mengensteuerung-Vereinfachung (v3.70.1)".
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -368,7 +364,7 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.71.0)
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.72.0)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
@@ -468,7 +464,7 @@ makePrefStages/fillFlourSelect, die diese drei Module beim eigenen Laden direkt 
 `units` MUSS vor `calc`/`guide`/`print` geladen werden (liefert PZ.formatWeight/formatWeightAuto/
 formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.71.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.72.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
@@ -767,11 +763,22 @@ Keine Code-Änderung durch den Audit nötig.
   `<details>`-Semantik reicht laut Review, rein optionale Verbesserung); Fokus-Ring der
   `<summary>` könnte auf Mobil von der Sticky-Quickbar knapp verdeckt werden (nicht sicher
   reproduzierbar, `scrollIntoView()`-Idee als möglicher Folge-Fix).
-- **UX-Review "Teigmeister", weitere Punkte (bereits an den Orchestrator übergeben,
-  Reihenfolge: Komplexität staffeln → Ergebnis priorisieren):** Punkt 3 „Komplexität
-  staffeln" und Punkt 4 „Ergebnis priorisieren" (Aktionsleiste der Ergebniskarte neu
-  ordnen: „Zum Zeitplan" primär, „Rezept teilen" sekundär, Rest in „Weitere Optionen"
-  einklappen) liegen dem Orchestrator mit vollständiger 5-Felder-Definition vor.
+- ~~UX-Review "Teigmeister", Punkt 3: Komplexität staffeln~~ — **erledigt in v3.72.0**
+  (kein Backlog-Punkt im engeren Sinne, direkter Nutzerauftrag über den Orchestrator; s.
+  Abschnitt „Komplexität staffeln (v3.72.0)" oben).
+- **Nebenbefund aus dem v3.72.0-`accessibility-expert`-Review (MAJOR 2, Backlog, app-weit,
+  keine Regression):** keine Pfeiltasten-Navigation (Links/Rechts) für `.seg`-Toggle-
+  Gruppen (ARIA Authoring Practices legen das für `role="group"` + `aria-pressed"` nahe).
+  Betrifft ALLE `.seg`-Elemente app-weit (Teigführung, Hefe-Art, Knetart, Kaltgare-Stufe,
+  Zeitplan-Modus, der neue Komplexitäts-Schalter), nicht neu durch dieses Feature.
+  Kandidat für einen größeren, eigenständigen Folge-Zyklus (App-weiter Arrow-Key-Handler).
+- **Nebenbefund aus dem v3.72.0-`accessibility-expert`-Review (MINOR, vorbestehend,
+  app-weit):** Kontrast des inaktiven `.seg`/`.pills`-Buttons (~2,5:1, unter der
+  3:1-Schwelle für UI-Komponenten). Kandidat für einen kleinen, gezielten Folge-Fix.
+- **UX-Review "Teigmeister", letzter Punkt (bereits an den Orchestrator übergeben):**
+  Punkt 4 „Ergebnis priorisieren" (Aktionsleiste der Ergebniskarte neu ordnen: „Zum
+  Zeitplan" primär, „Rezept teilen" sekundär, Rest in „Weitere Optionen" einklappen) liegt
+  dem Orchestrator mit vollständiger 5-Felder-Definition vor.
 - **Foto-Anleitung (Fotos je Schritt):** Schritt-für-Schritt-Anleitung um Fotos je
   Schritt ergänzen (z. B. Autolyse, Kneten, Salz zugeben), analog einer Referenz-App,
   die der Nutzer per Screenshot gezeigt hat. Noch nicht spezifiziert (Bildquelle offen:

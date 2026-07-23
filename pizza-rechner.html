@@ -20,7 +20,7 @@
   } catch(e) {}
 })();
 </script>
-<link rel="stylesheet" href="css/styles.css?v=3.71.0">
+<link rel="stylesheet" href="css/styles.css?v=3.72.0">
 </head>
 <body>
 <header>
@@ -57,7 +57,7 @@
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navMobileLink" href="pizza-rechner-mobile.html" data-i18n="nav.toMobile">Zur Mobil-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.71.0</span>
+    <span class="nav-version" id="appVersion">v3.72.0</span>
   </div>
 </nav>
 
@@ -129,9 +129,19 @@
   <!-- LINKE SPALTE: EINGABEN -->
   <div class="controls-col mode-simple" id="controlsCol" style="display:grid;gap:20px;">
 
+    <!-- Komplexität staffeln (v3.72.0): dauerhaft sichtbarer Segmentschalter ganz oben,
+         ersetzt die beiden vorherigen, sich gegenseitig ein-/ausblendenden Umschalt-
+         Buttons ("Erweiterten Modus öffnen" / "Einfachen Modus aktivieren") -- der
+         aktuelle Modus ist damit sofort erkennbar, ohne erst scrollen/lesen zu müssen.
+         Wiring + Zustand/Persistenz unverändert in js/simplemode.js. -->
+    <div class="seg mode-toggle" id="modeToggle" role="group" aria-label="Komplexitätsstufe" data-i18n-attr="aria-label:modeToggle.groupLabel">
+      <button type="button" id="modeToggleSimple" class="active" aria-pressed="true" data-i18n="modeToggle.simple">Einfach</button>
+      <button type="button" id="modeToggleProfi" aria-pressed="false" data-i18n="modeToggle.profi">Profi</button>
+    </div>
+
     <div class="card">
       <h2 data-i18n-attr="aria-label:card.preset.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11c-2 0-3.2-1.6-2.6-3.4C3.9 6 5.3 5 7 5.3 7.4 3.4 9.1 2 11 2s3.6 1.4 4 3.3c1.7-.3 3.1.7 3.6 2.3.6 1.8-.6 3.4-2.6 3.4"/><path d="M6 11v6a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-6"/><path d="M5 20h13"/></svg></span><span data-i18n="card.preset.title">Fertiges Rezept wählen</span></h2>
-      <!-- Rezeptwahl führen (v3.71.0): 3 Empfehlungskarten statt direkt ein 8er-Dropdown --
+      <!-- Rezeptwahl führen (v3.72.0): 3 Empfehlungskarten statt direkt ein 8er-Dropdown --
            Schnell/Klassisch/Lang decken die 3 häufigsten Einstiegsfälle ab. Klick setzt
            #preset (unten, jetzt hinter "Alle Rezepte" eingeklappt) + löst dessen 'change'-
            Event aus (js/presets.js) -- identischer Codepfad wie die Dropdown-Auswahl,
@@ -188,11 +198,8 @@
     <div class="card simple-only" id="simpleModeCard">
       <h2 data-i18n-attr="aria-label:card.simple.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M10 17h10"/><circle cx="15" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg></span><span data-i18n="card.simple.title">Deine Einstellungen</span></h2>
       <div id="simpleModeFields"><!-- Ziel für #ballsField/#yeastTypeField/#kneadField, s. js/simplemode.js --></div>
-      <div class="hint" style="margin-top:4px;" data-i18n-html="hint.simpleMode">Für alle Details (Hydration, Salz, Vorteig-Verfahren, Temperaturen &amp; mehr) in den erweiterten Modus wechseln.</div>
-      <button type="button" class="mode-switch-btn" id="openAdvancedBtn" style="margin-top:14px;" data-i18n="btn.openAdvancedMode">Erweiterten Modus öffnen</button>
+      <div class="hint" style="margin-top:4px;" data-i18n-html="hint.simpleMode">Für alle Details (Hydration, Salz, Vorteig-Verfahren, Temperaturen &amp; mehr) oben auf „Profi" wechseln.</div>
     </div>
-
-    <button type="button" class="mode-switch-btn advanced-only" id="openSimpleBtn" data-i18n="btn.openSimpleMode">Einfachen Modus aktivieren</button>
 
     <div class="card advanced-only">
       <h2 data-i18n-attr="aria-label:card.basics.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M12 6 9 8M12 6l3 2M12 10 9 12M12 10l3 2M12 14 9 16M12 14l3 2M12 18l-2.5 1.5M12 18l2.5 1.5"/></svg></span><span data-i18n="card.basics.title">Grundeinstellungen</span></h2>
@@ -319,7 +326,7 @@
         <div class="hint" id="methodHint" data-i18n-html="hint.method.direct">Direkt: alle Zutaten auf einmal. Einfachster Weg.</div>
       </div>
 
-      <!-- Mengensteuerung vereinfachen (v3.71.0): Stepper statt Slider, bewusst OHNE
+      <!-- Mengensteuerung vereinfachen (v3.72.0): Stepper statt Slider, bewusst OHNE
            Schnellwahl-Chips (Scope-Erweiterung, Nutzer-Entscheidung) -- der "gute" Anteil
            hängt stark von Biga vs. Poolish ab (Biga 70-100 %, Poolish deutlich weniger),
            ein einziger statischer Chip-Satz würde für die jeweils andere Methode in die
@@ -335,7 +342,7 @@
         <div class="hint" id="prefHint" data-i18n="hint.pref.biga">Biga klassisch: 70–100 % des Mehls.</div>
       </div>
 
-      <!-- Ebenfalls bewusst ohne Chips (v3.71.0): schmaler Wertebereich (40-55 %), nur
+      <!-- Ebenfalls bewusst ohne Chips (v3.72.0): schmaler Wertebereich (40-55 %), nur
            in EINER Methode (Biga) überhaupt sichtbar, der Hinweistext nennt bereits die
            engen 44-48 %-Richtwerte -- ein Stepper-Klick genügt hier. -->
       <div class="field collapse" id="bigaHydBlock">
@@ -363,7 +370,7 @@
         </div>
       </div>
 
-      <!-- Bewusst ohne NEUE Chips (v3.71.0): #yeastPills darunter ist bereits die
+      <!-- Bewusst ohne NEUE Chips (v3.72.0): #yeastPills darunter ist bereits die
            etablierte, method-übergreifende Schnellwahl für die Hefemenge -- ein zweiter,
            redundanter Chip-Satz direkt am Stepper würde nur doppeln. -->
       <div class="field" id="yeastField">
@@ -396,7 +403,7 @@
 
     <div class="card advanced-only">
       <h2 data-i18n-attr="aria-label:card.temp.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.5V5a2 2 0 1 0-4 0v9.5a4 4 0 1 0 4 0Z"/><path d="M12 8h1.5"/></svg></span><span data-i18n-html="card.temp.title">Teigtemperatur &amp; Eiswasser</span></h2>
-      <!-- Bewusst ohne Schnellwahl-Chips (v3.71.0, Nutzer-Vorgabe): bei Temperaturfeldern
+      <!-- Bewusst ohne Schnellwahl-Chips (v3.72.0, Nutzer-Vorgabe): bei Temperaturfeldern
            zählt eher ein guter Standardwert als eine Chip-Reihe. Bestehende Defaults
            bereits geprüft und für sinnvoll befunden (ddt 24°C = Mitte des Napoli-Zielbereichs
            23-25°C im Hinweistext; room/flourTemp 21°C = übliche Raumtemperatur) -- keine
@@ -972,33 +979,33 @@
 <footer aria-hidden="true"></footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.71.0"></script>
-<script src="js/state.js?v=3.71.0"></script>
-<script src="js/i18n-dict.js?v=3.71.0"></script>
-<script src="js/i18n.js?v=3.71.0"></script>
-<script src="js/settings.js?v=3.71.0"></script>
-<script src="js/theme.js?v=3.71.0"></script>
-<script src="js/units.js?v=3.71.0"></script>
-<script src="js/widgets.js?v=3.71.0"></script>
-<script src="js/flour.js?v=3.71.0"></script>
-<script src="js/calc.js?v=3.71.0"></script>
-<script src="js/schedule.js?v=3.71.0"></script>
-<script src="js/guide.js?v=3.71.0"></script>
-<script src="js/timer.js?v=3.71.0"></script>
-<script src="js/ui.js?v=3.71.0"></script>
-<script src="js/simplemode.js?v=3.71.0"></script>
-<script src="js/print.js?v=3.71.0"></script>
-<script src="js/pdf.js?v=3.71.0"></script>
-<script src="js/presets.js?v=3.71.0"></script>
-<script src="js/storage.js?v=3.71.0"></script>
-<script src="js/newrecipe.js?v=3.71.0"></script>
-<script src="js/share.js?v=3.71.0"></script>
-<script src="js/party.js?v=3.71.0"></script>
-<script src="js/glossary.js?v=3.71.0"></script>
-<script src="js/main.js?v=3.71.0"></script>
+<script src="js/dom.js?v=3.72.0"></script>
+<script src="js/state.js?v=3.72.0"></script>
+<script src="js/i18n-dict.js?v=3.72.0"></script>
+<script src="js/i18n.js?v=3.72.0"></script>
+<script src="js/settings.js?v=3.72.0"></script>
+<script src="js/theme.js?v=3.72.0"></script>
+<script src="js/units.js?v=3.72.0"></script>
+<script src="js/widgets.js?v=3.72.0"></script>
+<script src="js/flour.js?v=3.72.0"></script>
+<script src="js/calc.js?v=3.72.0"></script>
+<script src="js/schedule.js?v=3.72.0"></script>
+<script src="js/guide.js?v=3.72.0"></script>
+<script src="js/timer.js?v=3.72.0"></script>
+<script src="js/ui.js?v=3.72.0"></script>
+<script src="js/simplemode.js?v=3.72.0"></script>
+<script src="js/print.js?v=3.72.0"></script>
+<script src="js/pdf.js?v=3.72.0"></script>
+<script src="js/presets.js?v=3.72.0"></script>
+<script src="js/storage.js?v=3.72.0"></script>
+<script src="js/newrecipe.js?v=3.72.0"></script>
+<script src="js/share.js?v=3.72.0"></script>
+<script src="js/party.js?v=3.72.0"></script>
+<script src="js/glossary.js?v=3.72.0"></script>
+<script src="js/main.js?v=3.72.0"></script>
 <!-- Burger-Menü-Navigation (v3.26.0) war bis v3.53.0 eine eigenständige Inline-Kopie
      hier -- seit v3.54.0 gemeinsames Modul mit der Mobil-Seite, s. js/nav.js. -->
-<script src="js/nav.js?v=3.71.0"></script>
-<script src="js/onboarding.js?v=3.71.0"></script>
+<script src="js/nav.js?v=3.72.0"></script>
+<script src="js/onboarding.js?v=3.72.0"></script>
 </body>
 </html>

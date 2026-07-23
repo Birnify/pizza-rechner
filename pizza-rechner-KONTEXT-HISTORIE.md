@@ -8,6 +8,75 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Komplexität staffeln (v3.72.0)
+
+UX-Review "Teigmeister", Punkt 3 (Priorität Mittel), über den `feature-cycle-orchestrator`
+umgesetzt: der aktuelle Modus (Einfach/Erweitert) war erst erkennbar, wenn man bis zum
+Ende der Einfach-Karte liest bzw. scrollt.
+
+**Segmentschalter statt zwei Buttons:** vorher zwei unabhängige `.mode-switch-btn`-Buttons,
+die sich per `.simple-only`/`.advanced-only`-Kaskade gegenseitig ein-/ausblendeten
+("Erweiterten Modus öffnen" in der `#simpleModeCard`, "Einfachen Modus aktivieren" als
+eigenständiges Element im Erweiterten Modus). Jetzt ein einziger, DAUERHAFT sichtbarer
+Segmentschalter (`<div class="seg mode-toggle" id="modeToggle" role="group"
+aria-label="..."><button id="modeToggleSimple">Einfach</button><button
+id="modeToggleProfi">Profi</button></div>`), platziert als erstes Element in
+`#controlsCol`, noch vor der Karte "Fertiges Rezept wählen" — zeigt den aktuellen Modus
+sofort, ohne dass man scrollen/lesen muss.
+
+**`js/simplemode.js`:** Kernlogik (welche 3 Felder per DOM-Reparenting zwischen
+`#simpleModeFields` und ihrer ursprünglichen Karte wandern, `pizzaSimpleMode`-
+localStorage-Persistenz, `PZ.setSimpleMode()`/`PZ.isSimpleMode()`) komplett unverändert —
+nur der SCHALTER selbst wurde ersetzt. Neue Funktion `updateModeToggle()` (aufgerufen aus
+`applyMode()`) hält `.active`-Klasse + `aria-pressed` der beiden Segment-Buttons synchron
+zum `simple`-Flag, analog zum `.active`/`aria-pressed`-Muster der übrigen `.seg`-Instanzen
+im Rechner (bewusst eigenständig verdrahtet statt über `PZ.makeSeg()`, da der Zustand in
+`simplemode.js`s eigenem Flag lebt, nicht in `PZ.state`). Die `wire()`-Funktion verkabelt
+`#modeToggleSimple`/`#modeToggleProfi` mit `setSimpleMode(true/false)`.
+
+**Entfallenes Fokus-Management:** die alte Implementierung musste den Fokus aktiv auf den
+jeweils GEGENTEILIGEN, neu sichtbaren Button verschieben (WCAG 2.4.3), weil der geklickte
+Button selbst per `display:none` verschwand. Der neue Schalter verschwindet nie (beide
+Segmente bleiben immer sichtbar, nur der `.active`-Zustand wechselt) — der Fokus bleibt
+beim Klick einfach auf dem geklickten Button, identisch zum etablierten `.seg`-Verhalten
+an anderer Stelle im Rechner. Kein Ersatz-Fokus-Management nötig.
+
+**Aufräumen:** alte `#openAdvancedBtn`/`#openSimpleBtn`-Buttons aus beiden HTML-Dateien
+entfernt, `.mode-switch-btn`-CSS-Regel als dead code entfernt (nur dafür da), i18n-Keys
+`btn.openAdvancedMode`/`btn.openSimpleMode` entfernt, dafür `modeToggle.groupLabel`/
+`.simple`/`.profi` neu. Hinweistext in der Einfach-Karte (`hint.simpleMode`) verweist
+jetzt auf "oben auf „Profi" wechseln" statt auf den entfernten Button in derselben Karte.
+
+**Härtung** (`accessibility-expert`):
+- MAJOR 1 (gefixt): `.seg button` hatte app-weit (nicht nur der neue Schalter) kein
+  sichtbares `:focus-visible`-Outline, anders als `.pills button` (bekam das Muster schon
+  in v3.70.0). Konsistenter Ein-Zeilen-Nachzug: `.seg button:focus-visible{outline:2px
+  solid var(--tomato-text);outline-offset:2px;}`.
+- MAJOR 2 (NICHT gefixt, Backlog-Nebenbefund): keine Pfeiltasten-Navigation (Links/Rechts)
+  für die Toggle-Button-Gruppe (ARIA Authoring Practices legen das für `role="group"` +
+  `aria-pressed`-Muster nahe) — betrifft ALLE `.seg`-Elemente app-weit (z. B. Kaltgare-
+  Stufe), nicht nur den neuen Schalter; eine app-weite Arrow-Key-Handler-Ergänzung ginge
+  über den Scope von "Komplexität staffeln" hinaus.
+- MINOR (NICHT gefixt, Backlog-Nebenbefund, vorbestehend): Kontrast des inaktiven `.seg`/
+  `.pills`-Buttons (~2,5:1, unter der 3:1-Schwelle für UI-Komponenten), betrifft app-weit
+  alle inaktiven Zustände, nicht neu durch dieses Feature.
+- Kein Befund bei: Touch-Ziel-Größe (44×44 erfüllt), Screenreader-Semantik (`role=group`/
+  `aria-label`/`aria-pressed` korrekt), Fokus bleibt beim Klick auf dem Button (kein
+  Sprung, wie gewünscht), Live-Region-Ansage vorhanden (`#simpleModeLiveMsg`,
+  unverändert), Fokus-Reihenfolge (Schalter jetzt ganz oben, korrekt), Desktop+Mobil
+  synchron.
+
+**Verifikation:** per Headless-Edge-CDP auf Desktop UND Mobil: alte Buttons entfernt,
+Segmentschalter vorhanden, Klick auf Profi/Einfach wechselt Modus korrekt (Karten-
+Sichtbarkeit, Feld-Reparenting, `.active`/`aria-pressed`, `localStorage`-Persistenz),
+keine Konsolenfehler. `tests/test.html` unverändert 716/716 grün (`simplemode.js` wird
+dort nicht geladen, reines DOM-Wiring).
+
+**Geändert:** `js/simplemode.js`, `js/i18n-dict.js`, `css/styles.css`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`. `?v=` + Menü-Version auf `3.72.0` gezogen (Desktop + Mobil).
+`pizza-rechner-mobile-standalone.html` neu gebaut. `Versionen/v3.72.0 - Komplexität
+staffeln/` enthält den vollständigen Schnappschuss.
+
 ## Rezeptwahl führen (v3.71.0)
 
 UX-Review "Teigmeister", Punkt 2 (Priorität Hoch), über den `feature-cycle-orchestrator`

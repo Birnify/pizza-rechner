@@ -30,8 +30,8 @@
   } catch(e) {}
 })();
 </script>
-<link rel="stylesheet" href="css/styles.css?v=3.71.0">
-<link rel="stylesheet" href="css/mobile.css?v=3.71.0">
+<link rel="stylesheet" href="css/styles.css?v=3.72.0">
+<link rel="stylesheet" href="css/mobile.css?v=3.72.0">
 </head>
 <body>
 <!-- Bottom-Tab-Navigation (v3.68.0) ersetzt das bisherige Burgermenü vollständig auf
@@ -119,10 +119,17 @@
   <!-- LINKE SPALTE (auf Mobil: einzige Spalte): EINGABEN ALS AKKORDEON -->
   <div class="controls-col mode-simple" id="controlsCol" style="display:grid;gap:20px;">
 
+    <!-- Komplexität staffeln (v3.72.0): dauerhaft sichtbarer Segmentschalter ganz oben,
+         s. Begründung in pizza-rechner.html. -->
+    <div class="seg mode-toggle" id="modeToggle" role="group" aria-label="Komplexitätsstufe" data-i18n-attr="aria-label:modeToggle.groupLabel">
+      <button type="button" id="modeToggleSimple" class="active" aria-pressed="true" data-i18n="modeToggle.simple">Einfach</button>
+      <button type="button" id="modeToggleProfi" aria-pressed="false" data-i18n="modeToggle.profi">Profi</button>
+    </div>
+
     <details class="card" open>
       <summary><h2 data-i18n-attr="aria-label:card.preset.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11c-2 0-3.2-1.6-2.6-3.4C3.9 6 5.3 5 7 5.3 7.4 3.4 9.1 2 11 2s3.6 1.4 4 3.3c1.7-.3 3.1.7 3.6 2.3.6 1.8-.6 3.4-2.6 3.4"/><path d="M6 11v6a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-6"/><path d="M5 20h13"/></svg></span><span data-i18n="card.preset.title">Fertiges Rezept wählen</span></h2></summary>
       <div class="acc-body">
-        <!-- Rezeptwahl führen (v3.71.0): 3 Empfehlungskarten statt direkt ein 8er-Dropdown,
+        <!-- Rezeptwahl führen (v3.72.0): 3 Empfehlungskarten statt direkt ein 8er-Dropdown,
              s. Begründung in pizza-rechner.html. -->
         <div class="preset-recommend" role="group" aria-label="Empfohlene Rezepte" data-i18n-attr="aria-label:preset.recommend.groupLabel">
           <button type="button" class="preset-card" data-preset="schnell" aria-label="Schnell: 4–6 h Gärzeit, für spontane Pizza am selben Tag" data-i18n-attr="aria-label:preset.recommend.schnell.ariaLabel">
@@ -178,12 +185,9 @@
       <summary><h2 data-i18n-attr="aria-label:card.simple.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M10 17h10"/><circle cx="15" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg></span><span data-i18n="card.simple.title">Deine Einstellungen</span></h2></summary>
       <div class="acc-body">
         <div id="simpleModeFields"><!-- Ziel für #ballsField/#yeastTypeField/#kneadField, s. js/simplemode.js --></div>
-        <div class="hint" style="margin-top:4px;" data-i18n-html="hint.simpleMode">Für alle Details (Hydration, Salz, Vorteig-Verfahren, Temperaturen &amp; mehr) in den erweiterten Modus wechseln.</div>
-        <button type="button" class="mode-switch-btn" id="openAdvancedBtn" style="margin-top:14px;" data-i18n="btn.openAdvancedMode">Erweiterten Modus öffnen</button>
+        <div class="hint" style="margin-top:4px;" data-i18n-html="hint.simpleMode">Für alle Details (Hydration, Salz, Vorteig-Verfahren, Temperaturen &amp; mehr) oben auf „Profi" wechseln.</div>
       </div>
     </details>
-
-    <button type="button" class="mode-switch-btn advanced-only" id="openSimpleBtn" data-i18n="btn.openSimpleMode">Einfachen Modus aktivieren</button>
 
     <details class="card advanced-only" open>
       <summary><h2 data-i18n-attr="aria-label:card.basics.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M12 6 9 8M12 6l3 2M12 10 9 12M12 10l3 2M12 14 9 16M12 14l3 2M12 18l-2.5 1.5M12 18l2.5 1.5"/></svg></span><span data-i18n="card.basics.title">Grundeinstellungen</span></h2></summary>
@@ -313,7 +317,7 @@
           <div class="hint" id="methodHint" data-i18n-html="hint.method.direct">Direkt: alle Zutaten auf einmal. Einfachster Weg.</div>
         </div>
 
-        <!-- Mengensteuerung vereinfachen (v3.71.0): Stepper statt Slider, bewusst OHNE
+        <!-- Mengensteuerung vereinfachen (v3.72.0): Stepper statt Slider, bewusst OHNE
              Schnellwahl-Chips (s. Begründung in pizza-rechner.html). -->
         <div class="field collapse" id="prefBlock">
           <label id="prefLabel" data-i18n="label.pref">Anteil Mehl im Vorteig</label>
@@ -351,7 +355,7 @@
           </div>
         </div>
 
-        <!-- Bewusst ohne neue Chips (v3.71.0): #yeastPills darunter ist bereits die
+        <!-- Bewusst ohne neue Chips (v3.72.0): #yeastPills darunter ist bereits die
              Schnellwahl für die Hefemenge. -->
         <div class="field" id="yeastField">
           <label id="yeastLabel"><span data-i18n="label.yeast">Hefemenge</span> <span class="coupled-badge" id="yeastCoupledBadge" data-i18n="label.yeastCoupled" hidden>🔒 An Reifestufe gekoppelt</span></label>
@@ -385,7 +389,7 @@
     <details class="card advanced-only">
       <summary><h2 data-i18n-attr="aria-label:card.temp.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.5V5a2 2 0 1 0-4 0v9.5a4 4 0 1 0 4 0Z"/><path d="M12 8h1.5"/></svg></span><span data-i18n-html="card.temp.title">Teigtemperatur &amp; Eiswasser</span></h2></summary>
       <div class="acc-body">
-        <!-- Bewusst ohne Schnellwahl-Chips (v3.71.0): bei Temperaturfeldern zählt eher
+        <!-- Bewusst ohne Schnellwahl-Chips (v3.72.0): bei Temperaturfeldern zählt eher
              ein guter Default (bereits geprüft und passend befunden) als eine Chip-Reihe. -->
         <div class="field">
           <label id="ddtLabel" data-i18n="label.ddt">Ziel-Teigtemperatur</label>
@@ -951,7 +955,7 @@
           <div class="nav-divider" role="separator"></div>
           <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
           <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-          <span class="nav-version" id="appVersion">v3.71.0</span>
+          <span class="nav-version" id="appVersion">v3.72.0</span>
 
         </div>
       </div>
@@ -1053,35 +1057,35 @@
 </nav>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.71.0"></script>
-<script src="js/state.js?v=3.71.0"></script>
-<script src="js/i18n-dict.js?v=3.71.0"></script>
-<script src="js/i18n.js?v=3.71.0"></script>
-<script src="js/settings.js?v=3.71.0"></script>
-<script src="js/theme.js?v=3.71.0"></script>
-<script src="js/units.js?v=3.71.0"></script>
-<script src="js/widgets.js?v=3.71.0"></script>
-<script src="js/flour.js?v=3.71.0"></script>
-<script src="js/calc.js?v=3.71.0"></script>
-<script src="js/schedule.js?v=3.71.0"></script>
-<script src="js/guide.js?v=3.71.0"></script>
-<script src="js/timer.js?v=3.71.0"></script>
-<script src="js/ui.js?v=3.71.0"></script>
-<script src="js/simplemode.js?v=3.71.0"></script>
-<script src="js/print.js?v=3.71.0"></script>
-<script src="js/pdf.js?v=3.71.0"></script>
-<script src="js/presets.js?v=3.71.0"></script>
-<script src="js/storage.js?v=3.71.0"></script>
-<script src="js/newrecipe.js?v=3.71.0"></script>
-<script src="js/share.js?v=3.71.0"></script>
-<script src="js/party.js?v=3.71.0"></script>
-<script src="js/glossary.js?v=3.71.0"></script>
-<script src="js/main.js?v=3.71.0"></script>
+<script src="js/dom.js?v=3.72.0"></script>
+<script src="js/state.js?v=3.72.0"></script>
+<script src="js/i18n-dict.js?v=3.72.0"></script>
+<script src="js/i18n.js?v=3.72.0"></script>
+<script src="js/settings.js?v=3.72.0"></script>
+<script src="js/theme.js?v=3.72.0"></script>
+<script src="js/units.js?v=3.72.0"></script>
+<script src="js/widgets.js?v=3.72.0"></script>
+<script src="js/flour.js?v=3.72.0"></script>
+<script src="js/calc.js?v=3.72.0"></script>
+<script src="js/schedule.js?v=3.72.0"></script>
+<script src="js/guide.js?v=3.72.0"></script>
+<script src="js/timer.js?v=3.72.0"></script>
+<script src="js/ui.js?v=3.72.0"></script>
+<script src="js/simplemode.js?v=3.72.0"></script>
+<script src="js/print.js?v=3.72.0"></script>
+<script src="js/pdf.js?v=3.72.0"></script>
+<script src="js/presets.js?v=3.72.0"></script>
+<script src="js/storage.js?v=3.72.0"></script>
+<script src="js/newrecipe.js?v=3.72.0"></script>
+<script src="js/share.js?v=3.72.0"></script>
+<script src="js/party.js?v=3.72.0"></script>
+<script src="js/glossary.js?v=3.72.0"></script>
+<script src="js/main.js?v=3.72.0"></script>
 <!-- Burger-Menü-Navigation (bis v3.17.x/v3.18.0 hier als Inline-Script gewachsen) --
      seit v3.54.0 gemeinsames Modul mit der Desktop-Seite, s. js/nav.js (Mobil-
      Implementierung war die massgebliche Referenz beim Auslagern). -->
-<script src="js/nav.js?v=3.71.0"></script>
-<script src="js/onboarding.js?v=3.71.0"></script>
+<script src="js/nav.js?v=3.72.0"></script>
+<script src="js/onboarding.js?v=3.72.0"></script>
 <script>
   // Mobil-only UI-Glue (kein Eingriff in die PZ-Rechenmodule) -- Quick-Bar-Sync,
   // Party-Quick-Bar, Quick-Save, Akkordeon-Auto-Scroll. Die frühere Sektion "4)
