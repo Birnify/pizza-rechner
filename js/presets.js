@@ -128,9 +128,24 @@
   // Manuelle Änderung an einem Regler → #preset-Auswahl zurücksetzen (kein Preset/eigenes
   // Rezept mehr aktiv). Seit v3.22.0 gibt es dafür keine "Eigene Einstellung"-Option mehr —
   // ein leerer Wert ohne passende <option> zeigt den Select schlicht ohne Auswahl an.
-  ['hyd', 'salt', 'oil', 'sugar', 'yeast', 'pref', 'bhyd', 'ballw', 'ddt', 'room', 'flourTemp', 'hydN', 'saltN', 'oilN', 'sugarN', 'yeastN'].forEach(id => {
-    const el = $(id);
-    if (el) el.addEventListener('input', () => { $('preset').value = ''; });
+  // Bugfix (v3.71.0-Vorarbeit, beim Lesen für "Rezeptwahl führen" entdeckt): diese Liste
+  // enthielt noch die alten Slider-IDs (hyd/salt/oil/... vor der Mengensteuerung-
+  // Vereinfachung v3.70.0), die es seitdem nicht mehr gibt ($(id) liefert dort still
+  // null, keine Wirkung mehr) -- UND deckte nur 5 von 12 Zahlenfeldern ab (ballwN/prefN/
+  // bhydN/ddtN/roomN/flourTempN/ballsN fehlten komplett). Jetzt: alle 12 Stepper-
+  // Zahlenfelder (Tippen) UND alle 12×2 Stepper-Buttons (Minus/Plus-Klick, der
+  // funktionale Nachfolger des alten Slider-Ziehens) setzen #preset zurück. Schnellwahl-
+  // Chip-Klicks (data-ballw/-yeast/-hyd/...) taten das schon VOR v3.70.0 nicht (rufen
+  // PZ.set.* direkt auf, nicht über ein 'input'-Event) -- unverändert, kein neues
+  // Verhalten, s. Nebenbefund in pizza-rechner-KONTEXT.md.
+  const stepperFields = ['balls', 'ballw', 'hyd', 'salt', 'oil', 'sugar', 'pref', 'bhyd', 'yeast', 'ddt', 'room', 'flourTemp'];
+  stepperFields.forEach(f => {
+    const n = $(f + 'N');
+    if (n) n.addEventListener('input', () => { $('preset').value = ''; });
+    ['Dec', 'Inc'].forEach(suffix => {
+      const btn = $(f + suffix);
+      if (btn) btn.addEventListener('click', () => { $('preset').value = ''; });
+    });
   });
 
   PZ.PRESETS = PRESETS;

@@ -8,6 +8,38 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Bugfix: #preset-Reset nach Mengensteuerung-Vereinfachung (v3.70.1)
+
+Beim Lesen von `js/presets.js` für den Feature-Auftrag „Rezeptwahl führen" entdeckt (kein
+gemeldeter Nutzer-Bug, selbst gefunden): der Block, der `#preset` bei manueller Regler-
+Interaktion auf „kein Preset aktiv" zurücksetzt, hing an einer Liste von Element-IDs, die
+seit v3.70.0 (Mengensteuerung vereinfachen, Stepper statt Slider) teils nicht mehr
+existierten (`hyd`, `salt`, `oil`, `sugar`, `yeast`, `pref`, `bhyd`, `ballw`, `ddt`, `room`,
+`flourTemp` waren die alten Slider-IDs) und ohnehin nur 5 der 12 Zahlenfelder abdeckte
+(`hydN`/`saltN`/`oilN`/`sugarN`/`yeastN` — `ballwN`/`prefN`/`bhydN`/`ddtN`/`roomN`/
+`flourTempN`/`ballsN` fehlten von Anfang an). Folge: nach Auswahl eines Presets blieb der
+Dropdown-Wert nach einem Klick auf einen Stepper-Minus/Plus-Button (dem funktionalen
+Nachfolger des alten Slider-Ziehens) fälschlich auf dem Preset-Namen stehen, obwohl der
+tatsächliche Zustand längst davon abwich.
+
+**Fix (`js/presets.js`):** die ID-Liste durch eine generische Schleife über alle 12
+Stepper-Felder (`balls`/`ballw`/`hyd`/`salt`/`oil`/`sugar`/`pref`/`bhyd`/`yeast`/`ddt`/
+`room`/`flourTemp`) ersetzt, die für jedes Feld sowohl das Zahlenfeld (`XN`, `input`-Event
+fürs Tippen) als auch beide Stepper-Buttons (`XDec`/`XInc`, `click`-Event) verkabelt.
+Schnellwahl-Chip-Klicks (`data-ballw`/`data-yeast`/`data-hyd`/...) lösten das schon VOR
+v3.70.0 nicht aus (rufen `PZ.set.*` direkt auf, nicht über ein `input`-Event) — bewusst
+unverändert gelassen, kein neu eingeführtes Verhalten, da vorbestehende Lücke außerhalb des
+Bugfix-Scopes.
+
+**Verifikation:** per Headless-Edge-CDP (WebSocket): Preset auswählen → Klick auf
+`hydInc`/`ballwDec`/`flourTempInc` → `#preset`-Wert jeweils korrekt auf `''` zurückgesetzt
+(vorher: blieb auf dem Preset-Namen stehen). `tests/test.html` unverändert 716/716 grün
+(reines DOM-Wiring, wird dort nicht geladen).
+
+**Geändert:** `js/presets.js`. `?v=` + Menü-Version auf `3.70.1` gezogen (Desktop + Mobil).
+`pizza-rechner-mobile-standalone.html` neu gebaut. `Versionen/v3.70.1 - Bugfix Preset-Reset
+nach Mengensteuerung/` enthält den vollständigen Schnappschuss.
+
 ## Mengensteuerung vereinfachen (v3.70.0)
 
 UX-Review "Teigmeister", Punkt 1 (Priorität Hoch), über den `feature-cycle-orchestrator`

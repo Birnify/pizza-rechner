@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-23 · Aktuelle Version: v3.70.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-23 · Aktuelle Version: v3.70.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -179,23 +179,18 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Mengensteuerung vereinfachen (v3.70.0) = aktueller Stand
+## Bugfix: #preset-Reset nach Mengensteuerung-Vereinfachung (v3.70.1) = aktueller Stand
 
-UX-Review-Punkt umgesetzt: alle 12 Slider+Zahlenfeld-Regler im Hauptrechner (Anzahl
-Teiglinge, Gewicht/Teigling, Hydration, Salz, Öl, Zucker, Vorteig-Anteil, Biga-Hydration,
-Hefemenge, DDT, Raumtemperatur, Mehltemperatur) sind jetzt Stepper (Minus-Button/Zahlenfeld/
-Plus-Button, `PZ.makeStepper()` in `js/widgets.js`) statt Slider+Zahlenfeld — kein
-`<input type=range>` mehr in `pizza-rechner.html`/`pizza-rechner-mobile.html`. Die ersten
-6 Felder (Teiglinge/Gewicht/Hydration/Salz/Öl/Zucker) haben zusätzlich eine permanent
-sichtbare Schnellwahl-Chip-Reihe; die übrigen 6 bewusst ohne neue Chips (Hefemenge hat
-bereits `#yeastPills`, Vorteig-Anteil/Biga-Hydration/Temperaturfelder je nach fachlicher
-Einschätzung ohne sinnvollen universellen Chip-Satz). `js/newrecipe.js` (separates
-Mini-Formular) bleibt unverändert bei Slider+Zahlenfeld. Zwei `accessibility-expert`-Befunde
-eingearbeitet (fehlender `:focus-visible`-Indikator am Stepper-Zahlenfeld + app-weit an
-`.pills button`, `aria-disabled` an den Hefemenge-Stepper-Buttons bei aktiver Kopplung).
-716 Prüfungen unverändert grün (reines DOM-Wiring, in `tests/test.html` nicht geladen).
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Mengensteuerung
-vereinfachen (v3.70.0)".
+Beim Lesen für „Rezeptwahl führen" entdeckt: nach v3.70.0 (Stepper statt Slider) setzte
+`js/presets.js` bei manueller Reglerbedienung nicht mehr zuverlässig `#preset` auf „kein
+Preset aktiv" zurück — die alte ID-Liste zielte noch auf die entfernten Slider-Elemente
+und deckte nur 5 von 12 Zahlenfeldern ab. Fix: alle 12 Stepper-Zahlenfelder (Tippen) UND
+alle 12×2 Stepper-Buttons (Minus/Plus-Klick) setzen `#preset` jetzt zuverlässig zurück.
+Schnellwahl-Chip-Klicks taten das schon vor v3.70.0 nicht (unverändertes, vorbestehendes
+Verhalten, kein neuer Fehler). 716 Prüfungen unverändert grün (reines DOM-Wiring, nicht in
+`tests/test.html` geladen), per Headless-Edge-CDP funktional verifiziert. **Volle Details:**
+`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Mengensteuerung vereinfachen (v3.70.0)"
+(Haupt-Feature) sowie „Bugfix: #preset-Reset nach Mengensteuerung-Vereinfachung (v3.70.1)".
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -360,7 +355,7 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.69.1)
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.70.1)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
@@ -460,7 +455,7 @@ makePrefStages/fillFlourSelect, die diese drei Module beim eigenen Laden direkt 
 `units` MUSS vor `calc`/`guide`/`print` geladen werden (liefert PZ.formatWeight/formatWeightAuto/
 formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.69.1` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.70.1` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
