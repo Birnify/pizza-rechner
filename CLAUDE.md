@@ -42,10 +42,23 @@ bekommen. Etablierter Ablauf:
 1. Grobe Idee: `/define-feature` ausführen (Rückfragen stellen, wo eine echte Lücke bei
    Motivation/Scope/Abgrenzung besteht) bis die fünf Felder (Name/Idee/Motivation/Scope/
    Abgrenzung) sauber feststehen.
-2. Auftrag an einen langlaufenden Hintergrund-Agenten übergeben: `subagent_type
-   feature-cycle-orchestrator` per Agent-Tool starten, bzw. `SendMessage` an eine bereits
-   in dieser Sitzung laufende Instanz schicken. Nie einen zweiten `Agent`-Aufruf für
-   denselben Auftrag, solange eine Instanz noch lebt und erreichbar ist.
+2. Auftrag an einen Hintergrund-Agenten übergeben: `subagent_type feature-cycle-orchestrator`
+   per Agent-Tool starten. **Seit 2026-07-23 bewusst NUR EIN Zyklus/Punkt pro Instanz:**
+   eine einzelne Instanz, die über mehrere Zyklen hinweg per `SendMessage` immer weiterlief
+   (in einem gemessenen Fall 670 Turns über ~13,5 h für 5 Zyklen), erzeugte durch die
+   akkumulierende Konversation ~196 Mio. Cache-Read-Tokens bei nur ~304K tatsächlich neu
+   generiertem Output — jeder Turn liest die komplette bisherige Konversation erneut,
+   das wird mit wachsender Turn-Zahl immer teurer, ganz ohne dass irgendwas "falsch" läuft.
+   Deshalb gilt jetzt: `SendMessage` an eine laufende Instanz nur **innerhalb** desselben,
+   noch nicht abgeschlossenen Punktes (Sub-Agenten-Ergebnis liefern, Rückfrage beantworten,
+   nach Sitzungslimit fortsetzen). **Sobald eine Instanz einen Punkt abschließt (Phase 5,
+   committet + gepusht) und ihre Runde beendet, für den NÄCHSTEN Punkt der Warteschlange
+   einen frischen `Agent`-Aufruf starten** (nicht dieselbe Instanz per `SendMessage`
+   weiterlaufen lassen), mit der Definition des nächsten Punktes plus kurzem Kontext zum
+   aktuellen Commit-/Versionsstand. Die Orchestrator-Definition selbst (s.
+   `.claude/agents/feature-cycle-orchestrator.md`) erwartet dieses Verhalten und beendet
+   ihre eigene Runde entsprechend nach jedem einzelnen Punkt, statt automatisch
+   weiterzumachen.
    **Wichtig für eine neue Sitzung (z. B. anderer Account/andere Maschine):** eine laufende
    Agenten-Instanz ist niemals sitzungsübergreifend erreichbar, ihre ID existiert nur
    innerhalb der Sitzung, die sie gestartet hat. Jede neue Sitzung muss einen frischen
@@ -53,7 +66,10 @@ bekommen. Etablierter Ablauf:
    einem Prompt, der die aktuelle Warteschlange und relevante Vorentscheidungen enthält).
    Es gibt keine alte Instanz zum Wiederverwenden, das ist kein Fehler.
 3. Mehrere Ideen queuen sequenziell. Reihenfolge explizit angeben ("nach den bisherigen
-   N Punkten anhängen"), statt sie vom Agenten selbst wählen zu lassen.
+   N Punkten anhängen"), statt sie vom Agenten selbst wählen zu lassen. Jeder Punkt der
+   Warteschlange bekommt seine eigene, frische Orchestrator-Instanz (s. Punkt 2) — die
+   Warteschlange selbst führt der Hauptagent (nicht der Orchestrator), der nach jeder
+   Abschluss-Zusammenfassung den nächsten Punkt als neuen `Agent`-Aufruf lostritt.
 4. Kleine, klar umrissene Bugs oder Textfixes brauchen **kein** `/define-feature`, direkt
    mit klarer Diagnose an den Orchestrator übergeben (siehe Bug-Untersuchung unten).
 5. Auto-Push nach jedem Commit ist für den Orchestrator in diesem Projekt standardmäßig
