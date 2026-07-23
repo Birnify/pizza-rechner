@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-23 · Aktuelle Version: v3.70.1 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-23 · Aktuelle Version: v3.71.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -179,18 +179,31 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Bugfix: #preset-Reset nach Mengensteuerung-Vereinfachung (v3.70.1) = aktueller Stand
+## Rezeptwahl führen (v3.71.0) = aktueller Stand
 
-Beim Lesen für „Rezeptwahl führen" entdeckt: nach v3.70.0 (Stepper statt Slider) setzte
-`js/presets.js` bei manueller Reglerbedienung nicht mehr zuverlässig `#preset` auf „kein
-Preset aktiv" zurück — die alte ID-Liste zielte noch auf die entfernten Slider-Elemente
-und deckte nur 5 von 12 Zahlenfeldern ab. Fix: alle 12 Stepper-Zahlenfelder (Tippen) UND
-alle 12×2 Stepper-Buttons (Minus/Plus-Klick) setzen `#preset` jetzt zuverlässig zurück.
-Schnellwahl-Chip-Klicks taten das schon vor v3.70.0 nicht (unverändertes, vorbestehendes
-Verhalten, kein neuer Fehler). 716 Prüfungen unverändert grün (reines DOM-Wiring, nicht in
-`tests/test.html` geladen), per Headless-Edge-CDP funktional verifiziert. **Volle Details:**
-`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Mengensteuerung vereinfachen (v3.70.0)"
-(Haupt-Feature) sowie „Bugfix: #preset-Reset nach Mengensteuerung-Vereinfachung (v3.70.1)".
+UX-Review-Punkt umgesetzt: statt direkt ein 8er-Preset-Dropdown zu zeigen, stehen jetzt 3
+Empfehlungskarten oben (Schnell/Klassisch/Lang, je mit Gärzeit + kurzer Eignung), Klick
+setzt `#preset` + löst dessen `change`-Event aus (identischer Codepfad wie Dropdown-Auswahl,
+keine neue Anwendungslogik). Die volle Liste ist jetzt hinter nativem `<details>/<summary>`
+„Alle Rezepte" eingeklappt (kein eigenes JS für Auf-/Zuklappen). Preset `napoli_65` entfernt
+(`js/presets.js`, beide HTML-Dropdowns, `js/i18n-dict.js`) — Unterschied zu `napoli_klassisch`
+war nur 5 % Hydration, per Hydration-Stepper leicht nachstellbar. Alle verbleibenden
+Preset-Namen auf einheitliches Schema „Name · Gärzeit" gebracht (vorher uneinheitlich:
+`schnell`/`newyork_style` hatten zusätzlich eine Besonderheit neben der Dauer, `teglia`
+eine Hydrationsangabe statt Dauer). `accessibility-expert`-Befund eingearbeitet: die 3
+Empfehlungskarten haben jetzt ein explizites, klar strukturiertes `aria-label`
+(„Schnell: 4–6 h Gärzeit, für spontane Pizza…") statt der unstrukturierten Aneinanderreihung
+ihrer drei sichtbaren Text-Spans. Zwei weitere Befunde bewusst nicht gefixt (vorbestehende
+Muster, außerhalb des Scopes), s. Backlog unten. 716 Prüfungen unverändert grün.
+
+**Zusätzlich (separater Mini-Zyklus v3.70.1, beim Lesen für diesen Punkt entdeckt):**
+Bugfix — der `#preset`-Reset-Mechanismus (setzt das Dropdown bei manueller Reglerbedienung
+zurück) war nach v3.70.0 (Stepper statt Slider) kaputt, da seine ID-Liste noch auf die
+entfernten Slider-Elemente zielte und ohnehin nur 5 von 12 Zahlenfeldern abdeckte.
+
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitte „Rezeptwahl führen
+(v3.71.0)", „Mengensteuerung vereinfachen (v3.70.0)" und „Bugfix: #preset-Reset nach
+Mengensteuerung-Vereinfachung (v3.70.1)".
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -355,7 +368,7 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.70.1)
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.71.0)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
@@ -455,7 +468,7 @@ makePrefStages/fillFlourSelect, die diese drei Module beim eigenen Laden direkt 
 `units` MUSS vor `calc`/`guide`/`print` geladen werden (liefert PZ.formatWeight/formatWeightAuto/
 formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.70.1` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=3.71.0` geladen. **Bei jeder neuen Version mitziehen.**
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
@@ -738,15 +751,27 @@ Keine Code-Änderung durch den Audit nötig.
   `aria-describedby` (Screenreader sagt bei Zahlen-Chips wie „250" nur „button 250" statt
   „250 Gramm"). Betrifft alle `.pills`-Instanzen app-weit, nicht auf die neuen
   Mengensteuerung-Chips beschränkt. Kandidat für einen kleinen, gezielten Folge-Fix.
+- ~~UX-Review "Teigmeister", Punkt 2: Rezeptwahl führen~~ — **erledigt in v3.71.0** (kein
+  Backlog-Punkt im engeren Sinne, direkter Nutzerauftrag über den Orchestrator; s.
+  Abschnitt „Rezeptwahl führen (v3.71.0)" oben).
+- **Nebenbefund aus dem v3.71.0-`accessibility-expert`-Review (MAJOR 2, Bestandsmuster
+  von vor diesem Zyklus, keine Regression):** `<select id="preset">` hat nur ein
+  dynamisches `aria-label` (per i18n gesetzt), keine statische `<label for="preset">`.
+  Funktioniert, aber etwas fragiler falls die i18n-Attribut-Zuweisung zur Laufzeit
+  verzögert/fehlschlägt. Kandidat für einen kleinen Folge-Fix (visuell verstecktes
+  `<label for="preset">` ergänzen).
+- **3 MINOR-Nebenbefunde aus dem v3.71.0-`accessibility-expert`-Review (kosmetisch/
+  optional):** `.preset-card`-Touch-Ziel bei sehr schmalen Viewports (~320px) rechnerisch
+  knapp über 44px (optionaler `@media`-Umbruch auf 2 Karten pro Zeile denkbar);
+  `<summary>` „Alle Rezepte" ohne explizit mitgeführtes `aria-expanded` (native
+  `<details>`-Semantik reicht laut Review, rein optionale Verbesserung); Fokus-Ring der
+  `<summary>` könnte auf Mobil von der Sticky-Quickbar knapp verdeckt werden (nicht sicher
+  reproduzierbar, `scrollIntoView()`-Idee als möglicher Folge-Fix).
 - **UX-Review "Teigmeister", weitere Punkte (bereits an den Orchestrator übergeben,
-  Reihenfolge: Rezeptwahl führen → Komplexität staffeln → Ergebnis priorisieren):**
-  Punkt 2 „Rezeptwahl führen" (3 Empfehlungskarten statt 8er-Preset-Dropdown, `napoli_65`
-  entfernen, Preset-Namen vereinheitlichen) und Punkt 4 „Ergebnis priorisieren" (Aktionsleiste
-  der Ergebniskarte neu ordnen: „Zum Zeitplan" primär, „Rezept teilen" sekundär, Rest in
-  „Weitere Optionen" einklappen) liegen dem Orchestrator mit vollständiger 5-Felder-Definition
-  vor. Punkt 3 „Komplexität staffeln" wurde erwähnt, aber dem Orchestrator bisher NICHT mit
-  vollständiger Definition übergeben (Stand nach diesem Zyklus) — braucht vor Umsetzung noch
-  eine vollständige Auftragsübergabe.
+  Reihenfolge: Komplexität staffeln → Ergebnis priorisieren):** Punkt 3 „Komplexität
+  staffeln" und Punkt 4 „Ergebnis priorisieren" (Aktionsleiste der Ergebniskarte neu
+  ordnen: „Zum Zeitplan" primär, „Rezept teilen" sekundär, Rest in „Weitere Optionen"
+  einklappen) liegen dem Orchestrator mit vollständiger 5-Felder-Definition vor.
 - **Foto-Anleitung (Fotos je Schritt):** Schritt-für-Schritt-Anleitung um Fotos je
   Schritt ergänzen (z. B. Autolyse, Kneten, Salz zugeben), analog einer Referenz-App,
   die der Nutzer per Screenshot gezeigt hat. Noch nicht spezifiziert (Bildquelle offen:

@@ -16,10 +16,6 @@
       method: 'direct', hyd: 60, salt: 2.8, oil: 2, yeastType: 'fresh', yeast: 0.2, ballw: 250, ddt: 24, flour: 'caputo_pizzeria',
       descKey: 'preset.napoliKlassisch.desc'
     },
-    napoli_65: {
-      method: 'direct', hyd: 65, salt: 2.8, oil: 2, yeastType: 'fresh', yeast: 0.3, ballw: 250, ddt: 24, flour: 'caputo_pizzeria',
-      descKey: 'preset.napoli65.desc'
-    },
     napoli_kalt: {
       method: 'direct', hyd: 65, salt: 3.0, oil: 2, yeastType: 'fresh', yeast: 0.1, ballw: 250, ddt: 23, flour: 'caputo_cuoco',
       descKey: 'preset.napoliKalt.desc'
@@ -125,10 +121,19 @@
   }
   $('preset').addEventListener('change', e => handlePresetChange(e.target.value));
 
+  // Rezeptwahl führen (v3.71.0): die 3 Empfehlungskarten (Schnell/Klassisch/Lang) setzen
+  // #preset direkt und lösen dessen 'change'-Event aus -- identischer Codepfad wie eine
+  // Dropdown-Auswahl (handlePresetChange()/applyPreset() oben), keine eigene Logik hier.
+  document.querySelectorAll('.preset-card[data-preset]').forEach(b => b.addEventListener('click', () => {
+    const sel = $('preset');
+    sel.value = b.dataset.preset;
+    sel.dispatchEvent(new Event('change'));
+  }));
+
   // Manuelle Änderung an einem Regler → #preset-Auswahl zurücksetzen (kein Preset/eigenes
   // Rezept mehr aktiv). Seit v3.22.0 gibt es dafür keine "Eigene Einstellung"-Option mehr —
   // ein leerer Wert ohne passende <option> zeigt den Select schlicht ohne Auswahl an.
-  // Bugfix (v3.71.0-Vorarbeit, beim Lesen für "Rezeptwahl führen" entdeckt): diese Liste
+  // Bugfix (v3.70.1, beim Lesen für "Rezeptwahl führen" entdeckt): diese Liste
   // enthielt noch die alten Slider-IDs (hyd/salt/oil/... vor der Mengensteuerung-
   // Vereinfachung v3.70.0), die es seitdem nicht mehr gibt ($(id) liefert dort still
   // null, keine Wirkung mehr) -- UND deckte nur 5 von 12 Zahlenfeldern ab (ballwN/prefN/

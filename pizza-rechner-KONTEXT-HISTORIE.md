@@ -8,6 +8,85 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Rezeptwahl führen (v3.71.0)
+
+UX-Review "Teigmeister", Punkt 2 (Priorität Hoch), über den `feature-cycle-orchestrator`
+umgesetzt: ein natives Dropdown mit acht ähnlich benannten Rezepten verlangt Vorwissen und
+erschwert den Vergleich.
+
+**3 Empfehlungskarten** (`.preset-recommend`/`.preset-card`, `pizza-rechner.html` +
+`pizza-rechner-mobile.html`): Schnell (Preset `schnell`, 4–6 h, "für spontane Pizza am
+selben Tag"), Klassisch (Preset `napoli_klassisch`, 24 h, "bewährter neapolitanischer
+Standard (AVPN)"), Lang (Preset `napoli_kalt`, 48–72 h, "maximales Aroma, braucht starkes
+Mehl (W300+)"). Klick setzt `$('preset').value = key` und löst `dispatchEvent(new
+Event('change'))` aus — identischer Codepfad wie eine Dropdown-Auswahl
+(`handlePresetChange()`/`applyPreset()` in `js/presets.js`), keine eigene Anwendungslogik
+in der Karte selbst. Wiring in `js/presets.js`: ein Klick-Listener auf
+`.preset-card[data-preset]`.
+
+**"Alle Rezepte"** (`<details class="preset-all-details"><summary>`): die volle Preset-
+Liste (unveränderter `<select id="preset">`, komplett gleiche Optionen/Optgroups/IDs/
+Event-Wiring) ist jetzt standardmäßig eingeklappt dahinter. Bewusst natives `<details>`/
+`<summary>` statt eigenem JS-Toggle (kein neues JS-Konzept nötig, konsistent zum
+bestehenden Mobil-Akkordeon-Muster). `#presetDesc` (Beschreibungstext des aktiven Presets)
+bleibt AUSSERHALB des `<details>`, damit er unabhängig vom Auf-/Zuklapp-Zustand sichtbar
+bleibt, egal ob eine Empfehlungskarte oder die volle Liste genutzt wurde.
+
+**Preset `napoli_65` entfernt** (`js/presets.js`-`PRESETS`-Objekt, `<option>` in beiden
+HTML-Dateien, `js/i18n-dict.js`-Keys `option.napoli65`/`preset.napoli65.desc`): unterschied
+sich von `napoli_klassisch` nur um 5 % Hydration und etwas mehr Hefe, per Hydration-Stepper
+(s. v3.70.0) leicht selbst nachstellbar, kein eigenes Preset nötig. Ein unabhängiger
+Test-Fixture-Eintrag `'napoli_65'` in `tests/test.html` (Zeile ~676, Teil einer
+`PRESET_STATES`-artigen Schleife für Mehl-Warnung-/Masseerhaltung-Tests, bewusst unabhängig
+von `PZ.PRESETS` seit `presets.js` in `tests/test.html` gar nicht geladen wird) bleibt
+unangetastet — rein datengetriebener Mathe-Test, keine funktionale Kopplung zum echten
+Preset.
+
+**Einheitliches Namensschema** (`js/i18n-dict.js`, `option.*`-Keys): alle verbleibenden
+Presets folgen jetzt durchgängig „Name · Gärzeit" (gleiches Trennzeichen "·", gleiche
+Position der Zusatzinfo). Vorher uneinheitlich: `schnell` hatte "· gleicher Tag (4–6 h)"
+(Deskriptor + Klammer-Dauer statt reiner Dauer), `newyork_style` hatte "· Zucker & Öl,
+~26 h" (Deskriptor + Dauer kombiniert), `teglia` hatte "· hohe Hydration 75 %" (Hydration
+statt Dauer). Jetzt: `schnell` → "Schnell · 4–6 h", `teglia` → "Teglia / Blech · 24 h",
+`newyork_style` → "New York Style · ~26 h" (nutzt jetzt `data-i18n` statt `data-i18n-html`,
+da kein `&amp;`-Entity mehr im Text). Die ausführlichen Besonderheiten (Zucker/Öl, hohe
+Hydration, Mehl-Anforderung) stehen weiterhin vollständig in den `preset.*.desc`-Texten
+(`#presetDesc`) — hier ging es nur um die kurze Dropdown-Beschriftung.
+
+**Härtung** (`accessibility-expert`, plus Live-Gegenprüfung durch den Hauptagenten):
+- Ein gemeldeter BLOCKER ("Fokus-Trap bei geschlossenem `<details>`") wurde vom
+  Hauptagenten live widerlegt: `getComputedStyle()` zeigt für Nachfahren eines geschlossenen
+  `<details>` irreführend `display:inline-block` statt `none`, aber der native Browser-
+  Mechanismus nimmt sie real aus dem Fokus-/Rendering-Pfad (Bounding-Box 0×0, `.focus()`
+  greift nicht) — kein Handlungsbedarf, kein `inert`/`disabled` nötig.
+- MAJOR 1 (gefixt): Accessible Name der 3 `preset-card`-Buttons war die unstrukturierte
+  Aneinanderreihung von Name+Zeit+Eignung ohne Trennzeichen — jetzt explizites, mit
+  Doppelpunkt/Komma strukturiertes `aria-label` je Karte (z. B. „Schnell: 4–6 h Gärzeit,
+  für spontane Pizza am selben Tag"), die drei sichtbaren `<span>`s dafür `aria-hidden`.
+- MAJOR 2 (NICHT gefixt, Backlog-Nebenbefund): `<select id="preset">` hat nur ein
+  dynamisches `aria-label` (per i18n gesetzt), keine statische `<label for="preset">` —
+  war bereits VOR diesem Zyklus so (Bestandsmuster, keine Regression), daher außerhalb des
+  Scopes belassen.
+- 3 MINOR-Befunde (kosmetisch/optional, nicht gefixt): `.preset-card`-Touch-Ziel bei sehr
+  schmalen Viewports (~320px) rechnerisch knapp über 44px (kein `@media`-Umbruch ergänzt);
+  `<summary>` ohne explizites mitgeführtes `aria-expanded` (native `<details>`-Semantik
+  reicht laut Review); Fokus-Ring der `<summary>` könnte auf Mobil von der Sticky-Quickbar
+  knapp verdeckt werden (nicht sicher reproduzierbar).
+- Kontrast: alle Werte grün (≥4,5:1 hell und dunkel). Fokus-Reihenfolge: korrekt (3 Karten
+  → „Alle Rezepte"-Summary → Dropdown, wenn geöffnet).
+
+**Verifikation:** per Headless-Edge-CDP auf Desktop UND Mobil: alle 3 Empfehlungskarten
+setzen `#preset` + State korrekt (Klassisch → `hyd=60`, Schnell → `yeast=1.5`, Lang →
+`flour=caputo_cuoco`), `napoli_65` weder im DOM noch in `PZ.PRESETS`, `<details>` initial
+geschlossen, `presetDesc` aktualisiert sich bei Kartenklick, `aria-label` korrekt gesetzt
+und übersetzt, keine Konsolenfehler. `tests/test.html` unverändert 716/716 grün (keine
+Berechnungslogik geändert, `presets.js` wird dort nicht geladen).
+
+**Geändert:** `js/presets.js`, `js/i18n-dict.js`, `css/styles.css`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`. `?v=` + Menü-Version auf `3.71.0` gezogen (Desktop + Mobil).
+`pizza-rechner-mobile-standalone.html` neu gebaut. `Versionen/v3.71.0 - Rezeptwahl
+führen/` enthält den vollständigen Schnappschuss.
+
 ## Bugfix: #preset-Reset nach Mengensteuerung-Vereinfachung (v3.70.1)
 
 Beim Lesen von `js/presets.js` für den Feature-Auftrag „Rezeptwahl führen" entdeckt (kein

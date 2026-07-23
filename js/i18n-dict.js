@@ -460,8 +460,6 @@
     'Choose a proven recipe: all values are set automatically. You can fine-tune anytime afterwards.');
   add('preset.napoliKlassisch.desc', 'AVPN-Standard: 60 % Hydration, Tipo 00, 2 % Olivenöl. ~24 h Gesamtgare. Wenig Hefe, klassischer Geschmack.',
     'AVPN standard: 60 % hydration, Tipo 00, 2 % olive oil. ~24 h total rise. Little yeast, classic flavor.');
-  add('preset.napoli65.desc', '65 % macht den Teig dehnbarer & verzeihlicher, 2 % Olivenöl. ~24 h: 2 h Raumtemp, dann kühl, vor dem Backen temperieren.',
-    '65 % makes the dough more extensible & forgiving, 2 % olive oil. ~24 h: 2 h room temp, then cold, bring to room temp before baking.');
   add('preset.napoliKalt.desc', 'Lange Kaltgare ~48 h im Kühlschrank (4 °C), 2 % Olivenöl. Sehr wenig Hefe, maximales Aroma. Braucht ein starkes Mehl (W300+).',
     'Long cold rise ~48 h in the fridge (4 °C), 2 % olive oil. Very little yeast, maximum flavor. Needs a strong flour (W300+).');
   add('preset.schnell.desc', 'Gleicher Tag: ~2 h Stockgare + 2–3 h Stückgare bei warmer Raumtemp (24–26 °C), 2 % Olivenöl. Mehr Hefe, weniger Aroma: aber spontan.',
@@ -567,14 +565,45 @@
   add('optgroup.napoliPref', 'Neapolitanisch · Vorteig', 'Neapolitan · Pre-ferment');
   add('optgroup.otherStyles', 'Andere Stile', 'Other styles');
   add('optgroup.customRecipes', 'Eigene Rezepte', 'Custom recipes');
+  // Rezeptwahl führen (v3.71.0): einheitliches Namensschema für alle verbleibenden
+  // Presets -- immer "Name · Gärzeit" (gleiches Trennzeichen "·", gleiche Position der
+  // Zusatzinfo). Vorher uneinheitlich: "schnell" und "newyorkStyle" hatten zusätzlich
+  // eine Besonderheit VOR/NEBEN der Dauer eingestreut (z. B. "· Zucker & Öl, ~26 h"),
+  // "teglia" hatte statt einer Dauer eine Hydrationsangabe. Jetzt durchgängig nur noch
+  // die Gärzeit (die Besonderheiten stehen weiterhin ausführlich in presetDesc/
+  // *.desc-Keys, hier geht es nur um die kurze Dropdown-Beschriftung).
   add('option.napoliKlassisch', 'Napoli Klassisch (AVPN) · 24 h', 'Napoli Classic (AVPN) · 24 h');
-  add('option.napoli65', 'Napoli 65 % · 24 h (einsteigerfreundlich)', 'Napoli 65% · 24 h (beginner-friendly)');
   add('option.napoliKalt', 'Napoli Lange Kaltgare · 48–72 h', 'Napoli Long Cold Rise · 48–72 h');
-  add('option.schnell', 'Schnell · gleicher Tag (4–6 h)', 'Quick · same day (4–6 h)');
+  add('option.schnell', 'Schnell · 4–6 h', 'Quick · 4–6 h');
   add('option.napoliBiga', 'Napoli mit Biga · 16–24 h', 'Napoli with Biga · 16–24 h');
   add('option.napoliPoolish', 'Napoli mit Poolish · 24–48 h', 'Napoli with Poolish · 24–48 h');
-  add('option.teglia', 'Teglia / Blech · hohe Hydration 75 %', 'Teglia / Pan · high hydration 75%');
-  add('option.newyorkStyle', 'New York Style · Zucker &amp; Öl, ~26 h', 'New York Style · sugar &amp; oil, ~26 h');
+  add('option.teglia', 'Teglia / Blech · 24 h', 'Teglia / Pan · 24 h');
+  add('option.newyorkStyle', 'New York Style · ~26 h', 'New York Style · ~26 h');
+
+  // Drei Empfehlungskarten (v3.71.0, "Rezeptwahl führen"): Schnell/Klassisch/Lang zeigen
+  // Name, Gärzeit und eine kurze Eignung, bevor die volle Preset-Liste (jetzt hinter
+  // "Alle Rezepte" eingeklappt) sichtbar wird.
+  add('preset.recommend.groupLabel', 'Empfohlene Rezepte', 'Recommended recipes');
+  add('preset.recommend.schnell.name', 'Schnell', 'Quick');
+  add('preset.recommend.schnell.time', '4–6 h', '4–6 h');
+  add('preset.recommend.schnell.fit', 'Für spontane Pizza am selben Tag', 'For spontaneous pizza the same day');
+  // accessibility-expert-Befund (v3.71.0, MAJOR 1): der Accessible Name der drei
+  // preset-card-Buttons war bisher nur die kommentarlose Aneinanderreihung von
+  // Name+Zeit+Eignung ohne Trennzeichen (z. B. "Schnell 4–6 h Für spontane Pizza am
+  // selben Tag") -- eigene aria-label-Texte mit Doppelpunkt/Komma-Struktur ergänzt.
+  add('preset.recommend.schnell.ariaLabel', 'Schnell: 4–6 h Gärzeit, für spontane Pizza am selben Tag',
+    'Quick: 4–6 h rise time, for spontaneous pizza the same day');
+  add('preset.recommend.klassisch.name', 'Klassisch', 'Classic');
+  add('preset.recommend.klassisch.time', '24 h', '24 h');
+  add('preset.recommend.klassisch.fit', 'Bewährter neapolitanischer Standard (AVPN)', 'Proven Neapolitan standard (AVPN)');
+  add('preset.recommend.klassisch.ariaLabel', 'Klassisch: 24 h Gärzeit, bewährter neapolitanischer Standard (AVPN)',
+    'Classic: 24 h rise time, proven Neapolitan standard (AVPN)');
+  add('preset.recommend.lang.name', 'Lang', 'Long');
+  add('preset.recommend.lang.time', '48–72 h', '48–72 h');
+  add('preset.recommend.lang.fit', 'Maximales Aroma, braucht starkes Mehl (W300+)', 'Maximum flavor, needs a strong flour (W300+)');
+  add('preset.recommend.lang.ariaLabel', 'Lang: 48–72 h Gärzeit, maximales Aroma, braucht starkes Mehl (W300+)',
+    'Long: 48–72 h rise time, maximum flavor, needs a strong flour (W300+)');
+  add('preset.allRecipes', 'Alle Rezepte', 'All recipes');
 
   // -- Card: Einfacher Modus (v3.62.0) -------------------------------------------------
   // Reduzierte Karte, die im Einfachen Modus die 3 Kernfelder Anzahl-Teiglinge/

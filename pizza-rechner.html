@@ -20,7 +20,7 @@
   } catch(e) {}
 })();
 </script>
-<link rel="stylesheet" href="css/styles.css?v=3.70.1">
+<link rel="stylesheet" href="css/styles.css?v=3.71.0">
 </head>
 <body>
 <header>
@@ -57,7 +57,7 @@
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navMobileLink" href="pizza-rechner-mobile.html" data-i18n="nav.toMobile">Zur Mobil-Ansicht</a>
-    <span class="nav-version" id="appVersion">v3.70.1</span>
+    <span class="nav-version" id="appVersion">v3.71.0</span>
   </div>
 </nav>
 
@@ -131,27 +131,51 @@
 
     <div class="card">
       <h2 data-i18n-attr="aria-label:card.preset.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11c-2 0-3.2-1.6-2.6-3.4C3.9 6 5.3 5 7 5.3 7.4 3.4 9.1 2 11 2s3.6 1.4 4 3.3c1.7-.3 3.1.7 3.6 2.3.6 1.8-.6 3.4-2.6 3.4"/><path d="M6 11v6a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-6"/><path d="M5 20h13"/></svg></span><span data-i18n="card.preset.title">Fertiges Rezept wählen</span></h2>
-      <div class="field" style="margin-bottom:0;">
-        <select id="preset" class="selectbox selectbox-lg" data-i18n-attr="aria-label:card.preset.selectLabel">
-          <option value="" disabled hidden data-i18n="option.preset.none">Kein Rezept ausgewählt</option>
-          <optgroup label="Neapolitanisch · Direkt" data-i18n-attr="label:optgroup.napoliDirect">
-            <option value="napoli_klassisch" data-i18n="option.napoliKlassisch">Napoli Klassisch (AVPN) · 24 h</option>
-            <option value="napoli_65" data-i18n="option.napoli65">Napoli 65 % · 24 h (einsteigerfreundlich)</option>
-            <option value="napoli_kalt" data-i18n="option.napoliKalt">Napoli Lange Kaltgare · 48–72 h</option>
-            <option value="schnell" data-i18n="option.schnell">Schnell · gleicher Tag (4–6 h)</option>
-          </optgroup>
-          <optgroup label="Neapolitanisch · Vorteig" data-i18n-attr="label:optgroup.napoliPref">
-            <option value="napoli_biga" data-i18n="option.napoliBiga">Napoli mit Biga · 16–24 h</option>
-            <option value="napoli_poolish" data-i18n="option.napoliPoolish">Napoli mit Poolish · 24–48 h</option>
-          </optgroup>
-          <optgroup label="Andere Stile" data-i18n-attr="label:optgroup.otherStyles">
-            <option value="teglia" data-i18n="option.teglia">Teglia / Blech · hohe Hydration 75 %</option>
-            <option value="newyork_style" data-i18n-html="option.newyorkStyle">New York Style · Zucker &amp; Öl, ~26 h</option>
-          </optgroup>
-          <optgroup label="Eigene Rezepte" id="presetCustomGroup" data-i18n-attr="label:optgroup.customRecipes"></optgroup>
-        </select>
-        <div class="hint" id="presetDesc" style="margin-top:8px;" data-i18n="preset.defaultDesc">Wähle ein erprobtes Rezept: alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.</div>
+      <!-- Rezeptwahl führen (v3.71.0): 3 Empfehlungskarten statt direkt ein 8er-Dropdown --
+           Schnell/Klassisch/Lang decken die 3 häufigsten Einstiegsfälle ab. Klick setzt
+           #preset (unten, jetzt hinter "Alle Rezepte" eingeklappt) + löst dessen 'change'-
+           Event aus (js/presets.js) -- identischer Codepfad wie die Dropdown-Auswahl,
+           keine neue Anwendungslogik. -->
+      <div class="preset-recommend" role="group" aria-label="Empfohlene Rezepte" data-i18n-attr="aria-label:preset.recommend.groupLabel">
+        <button type="button" class="preset-card" data-preset="schnell" aria-label="Schnell: 4–6 h Gärzeit, für spontane Pizza am selben Tag" data-i18n-attr="aria-label:preset.recommend.schnell.ariaLabel">
+          <span class="preset-card-name" aria-hidden="true" data-i18n="preset.recommend.schnell.name">Schnell</span>
+          <span class="preset-card-time" aria-hidden="true" data-i18n="preset.recommend.schnell.time">4–6 h</span>
+          <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.recommend.schnell.fit">Für spontane Pizza am selben Tag</span>
+        </button>
+        <button type="button" class="preset-card" data-preset="napoli_klassisch" aria-label="Klassisch: 24 h Gärzeit, bewährter neapolitanischer Standard (AVPN)" data-i18n-attr="aria-label:preset.recommend.klassisch.ariaLabel">
+          <span class="preset-card-name" aria-hidden="true" data-i18n="preset.recommend.klassisch.name">Klassisch</span>
+          <span class="preset-card-time" aria-hidden="true" data-i18n="preset.recommend.klassisch.time">24 h</span>
+          <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.recommend.klassisch.fit">Bewährter neapolitanischer Standard (AVPN)</span>
+        </button>
+        <button type="button" class="preset-card" data-preset="napoli_kalt" aria-label="Lang: 48–72 h Gärzeit, maximales Aroma, braucht starkes Mehl (W300+)" data-i18n-attr="aria-label:preset.recommend.lang.ariaLabel">
+          <span class="preset-card-name" aria-hidden="true" data-i18n="preset.recommend.lang.name">Lang</span>
+          <span class="preset-card-time" aria-hidden="true" data-i18n="preset.recommend.lang.time">48–72 h</span>
+          <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.recommend.lang.fit">Maximales Aroma, braucht starkes Mehl (W300+)</span>
+        </button>
       </div>
+      <details class="preset-all-details">
+        <summary class="preset-all-toggle" data-i18n="preset.allRecipes">Alle Rezepte</summary>
+        <div class="field" style="margin-top:12px;margin-bottom:0;">
+          <select id="preset" class="selectbox selectbox-lg" data-i18n-attr="aria-label:card.preset.selectLabel">
+            <option value="" disabled hidden data-i18n="option.preset.none">Kein Rezept ausgewählt</option>
+            <optgroup label="Neapolitanisch · Direkt" data-i18n-attr="label:optgroup.napoliDirect">
+              <option value="napoli_klassisch" data-i18n="option.napoliKlassisch">Napoli Klassisch (AVPN) · 24 h</option>
+              <option value="napoli_kalt" data-i18n="option.napoliKalt">Napoli Lange Kaltgare · 48–72 h</option>
+              <option value="schnell" data-i18n="option.schnell">Schnell · 4–6 h</option>
+            </optgroup>
+            <optgroup label="Neapolitanisch · Vorteig" data-i18n-attr="label:optgroup.napoliPref">
+              <option value="napoli_biga" data-i18n="option.napoliBiga">Napoli mit Biga · 16–24 h</option>
+              <option value="napoli_poolish" data-i18n="option.napoliPoolish">Napoli mit Poolish · 24–48 h</option>
+            </optgroup>
+            <optgroup label="Andere Stile" data-i18n-attr="label:optgroup.otherStyles">
+              <option value="teglia" data-i18n="option.teglia">Teglia / Blech · 24 h</option>
+              <option value="newyork_style" data-i18n="option.newyorkStyle">New York Style · ~26 h</option>
+            </optgroup>
+            <optgroup label="Eigene Rezepte" id="presetCustomGroup" data-i18n-attr="label:optgroup.customRecipes"></optgroup>
+          </select>
+        </div>
+      </details>
+      <div class="hint" id="presetDesc" style="margin-top:8px;" data-i18n="preset.defaultDesc">Wähle ein erprobtes Rezept: alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.</div>
     </div>
 
     <div id="simpleModeLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
@@ -295,7 +319,7 @@
         <div class="hint" id="methodHint" data-i18n-html="hint.method.direct">Direkt: alle Zutaten auf einmal. Einfachster Weg.</div>
       </div>
 
-      <!-- Mengensteuerung vereinfachen (v3.70.1): Stepper statt Slider, bewusst OHNE
+      <!-- Mengensteuerung vereinfachen (v3.71.0): Stepper statt Slider, bewusst OHNE
            Schnellwahl-Chips (Scope-Erweiterung, Nutzer-Entscheidung) -- der "gute" Anteil
            hängt stark von Biga vs. Poolish ab (Biga 70-100 %, Poolish deutlich weniger),
            ein einziger statischer Chip-Satz würde für die jeweils andere Methode in die
@@ -311,7 +335,7 @@
         <div class="hint" id="prefHint" data-i18n="hint.pref.biga">Biga klassisch: 70–100 % des Mehls.</div>
       </div>
 
-      <!-- Ebenfalls bewusst ohne Chips (v3.70.1): schmaler Wertebereich (40-55 %), nur
+      <!-- Ebenfalls bewusst ohne Chips (v3.71.0): schmaler Wertebereich (40-55 %), nur
            in EINER Methode (Biga) überhaupt sichtbar, der Hinweistext nennt bereits die
            engen 44-48 %-Richtwerte -- ein Stepper-Klick genügt hier. -->
       <div class="field collapse" id="bigaHydBlock">
@@ -339,7 +363,7 @@
         </div>
       </div>
 
-      <!-- Bewusst ohne NEUE Chips (v3.70.1): #yeastPills darunter ist bereits die
+      <!-- Bewusst ohne NEUE Chips (v3.71.0): #yeastPills darunter ist bereits die
            etablierte, method-übergreifende Schnellwahl für die Hefemenge -- ein zweiter,
            redundanter Chip-Satz direkt am Stepper würde nur doppeln. -->
       <div class="field" id="yeastField">
@@ -372,7 +396,7 @@
 
     <div class="card advanced-only">
       <h2 data-i18n-attr="aria-label:card.temp.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.5V5a2 2 0 1 0-4 0v9.5a4 4 0 1 0 4 0Z"/><path d="M12 8h1.5"/></svg></span><span data-i18n-html="card.temp.title">Teigtemperatur &amp; Eiswasser</span></h2>
-      <!-- Bewusst ohne Schnellwahl-Chips (v3.70.1, Nutzer-Vorgabe): bei Temperaturfeldern
+      <!-- Bewusst ohne Schnellwahl-Chips (v3.71.0, Nutzer-Vorgabe): bei Temperaturfeldern
            zählt eher ein guter Standardwert als eine Chip-Reihe. Bestehende Defaults
            bereits geprüft und für sinnvoll befunden (ddt 24°C = Mitte des Napoli-Zielbereichs
            23-25°C im Hinweistext; room/flourTemp 21°C = übliche Raumtemperatur) -- keine
@@ -948,33 +972,33 @@
 <footer aria-hidden="true"></footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=3.70.1"></script>
-<script src="js/state.js?v=3.70.1"></script>
-<script src="js/i18n-dict.js?v=3.70.1"></script>
-<script src="js/i18n.js?v=3.70.1"></script>
-<script src="js/settings.js?v=3.70.1"></script>
-<script src="js/theme.js?v=3.70.1"></script>
-<script src="js/units.js?v=3.70.1"></script>
-<script src="js/widgets.js?v=3.70.1"></script>
-<script src="js/flour.js?v=3.70.1"></script>
-<script src="js/calc.js?v=3.70.1"></script>
-<script src="js/schedule.js?v=3.70.1"></script>
-<script src="js/guide.js?v=3.70.1"></script>
-<script src="js/timer.js?v=3.70.1"></script>
-<script src="js/ui.js?v=3.70.1"></script>
-<script src="js/simplemode.js?v=3.70.1"></script>
-<script src="js/print.js?v=3.70.1"></script>
-<script src="js/pdf.js?v=3.70.1"></script>
-<script src="js/presets.js?v=3.70.1"></script>
-<script src="js/storage.js?v=3.70.1"></script>
-<script src="js/newrecipe.js?v=3.70.1"></script>
-<script src="js/share.js?v=3.70.1"></script>
-<script src="js/party.js?v=3.70.1"></script>
-<script src="js/glossary.js?v=3.70.1"></script>
-<script src="js/main.js?v=3.70.1"></script>
+<script src="js/dom.js?v=3.71.0"></script>
+<script src="js/state.js?v=3.71.0"></script>
+<script src="js/i18n-dict.js?v=3.71.0"></script>
+<script src="js/i18n.js?v=3.71.0"></script>
+<script src="js/settings.js?v=3.71.0"></script>
+<script src="js/theme.js?v=3.71.0"></script>
+<script src="js/units.js?v=3.71.0"></script>
+<script src="js/widgets.js?v=3.71.0"></script>
+<script src="js/flour.js?v=3.71.0"></script>
+<script src="js/calc.js?v=3.71.0"></script>
+<script src="js/schedule.js?v=3.71.0"></script>
+<script src="js/guide.js?v=3.71.0"></script>
+<script src="js/timer.js?v=3.71.0"></script>
+<script src="js/ui.js?v=3.71.0"></script>
+<script src="js/simplemode.js?v=3.71.0"></script>
+<script src="js/print.js?v=3.71.0"></script>
+<script src="js/pdf.js?v=3.71.0"></script>
+<script src="js/presets.js?v=3.71.0"></script>
+<script src="js/storage.js?v=3.71.0"></script>
+<script src="js/newrecipe.js?v=3.71.0"></script>
+<script src="js/share.js?v=3.71.0"></script>
+<script src="js/party.js?v=3.71.0"></script>
+<script src="js/glossary.js?v=3.71.0"></script>
+<script src="js/main.js?v=3.71.0"></script>
 <!-- Burger-Menü-Navigation (v3.26.0) war bis v3.53.0 eine eigenständige Inline-Kopie
      hier -- seit v3.54.0 gemeinsames Modul mit der Mobil-Seite, s. js/nav.js. -->
-<script src="js/nav.js?v=3.70.1"></script>
-<script src="js/onboarding.js?v=3.70.1"></script>
+<script src="js/nav.js?v=3.71.0"></script>
+<script src="js/onboarding.js?v=3.71.0"></script>
 </body>
 </html>

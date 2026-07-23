@@ -390,6 +390,36 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 }
 .selectbox:focus{outline:2px solid var(--tomato);outline-offset:1px;}
 .selectbox-lg{padding:11px 12px;border-radius:var(--radius);font-size:14.5px;font-weight:600;}
+/* Rezeptwahl führen (v3.71.0): 3 Empfehlungskarten (Schnell/Klassisch/Lang) vor dem
+   vollen 8er-Dropdown, das jetzt hinter "Alle Rezepte" eingeklappt ist -- s. js/presets.js
+   (Klick setzt #preset + löst dessen change-Event aus, identischer Codepfad). flex-wrap
+   statt fixem 3-Spalten-Grid: wächst/schrumpft ohne Media-Query auf schmalen Mobil-
+   Viewports (wird bei Bedarf zweizeilig statt abgeschnitten). */
+.preset-recommend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+.preset-card{
+  flex:1 1 140px;display:flex;flex-direction:column;align-items:flex-start;gap:3px;
+  text-align:left;border:1px solid var(--line);background:var(--card);border-radius:var(--radius);
+  padding:12px 14px;cursor:pointer;transition:all .12s;min-height:44px;font:inherit;
+}
+.preset-card:hover{border-color:var(--tomato);}
+.preset-card:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+.preset-card-name{font-weight:700;font-size:14px;color:var(--ink);}
+.preset-card-time{font-size:12px;font-weight:600;color:var(--tomato-text);}
+.preset-card-fit{font-size:11.5px;color:var(--muted);line-height:1.3;}
+/* "Alle Rezepte" als natives <details>/<summary> (kein eigenes JS für Auf-/Zuklappen
+   nötig, analog zum bestehenden Mobil-Akkordeon-Muster in css/mobile.css). Alt-Text-
+   Syntax beim generierten Pfeil (`content:'▾' / ''`) verhindert, dass der Pfeil in den
+   Accessible Name des <summary> einfließt -- identischer, bereits im v3.37.0-Audit
+   gefundener Fix wie bei den Mobil-Card-Akkordeons. */
+.preset-all-details{margin-bottom:0;}
+.preset-all-details summary{
+  cursor:pointer;font-size:13px;font-weight:600;color:var(--tomato-text);list-style:none;
+  min-height:44px;display:flex;align-items:center;-webkit-tap-highlight-color:transparent;
+}
+.preset-all-details summary::-webkit-details-marker{display:none;}
+.preset-all-details summary::after{content:'▾' / '';margin-left:4px;font-size:11px;}
+.preset-all-details[open] summary::after{content:'▴' / '';}
+.preset-all-details summary:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
 .card h2{
   margin:0 0 16px;font-size:14px;text-transform:uppercase;letter-spacing:1.2px;
   color:var(--ink);font-weight:700;padding-bottom:10px;border-bottom:1px solid var(--line);

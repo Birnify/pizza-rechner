@@ -423,6 +423,36 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 }
 .selectbox:focus{outline:2px solid var(--tomato);outline-offset:1px;}
 .selectbox-lg{padding:11px 12px;border-radius:var(--radius);font-size:14.5px;font-weight:600;}
+/* Rezeptwahl führen (v3.71.0): 3 Empfehlungskarten (Schnell/Klassisch/Lang) vor dem
+   vollen 8er-Dropdown, das jetzt hinter "Alle Rezepte" eingeklappt ist -- s. js/presets.js
+   (Klick setzt #preset + löst dessen change-Event aus, identischer Codepfad). flex-wrap
+   statt fixem 3-Spalten-Grid: wächst/schrumpft ohne Media-Query auf schmalen Mobil-
+   Viewports (wird bei Bedarf zweizeilig statt abgeschnitten). */
+.preset-recommend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+.preset-card{
+  flex:1 1 140px;display:flex;flex-direction:column;align-items:flex-start;gap:3px;
+  text-align:left;border:1px solid var(--line);background:var(--card);border-radius:var(--radius);
+  padding:12px 14px;cursor:pointer;transition:all .12s;min-height:44px;font:inherit;
+}
+.preset-card:hover{border-color:var(--tomato);}
+.preset-card:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+.preset-card-name{font-weight:700;font-size:14px;color:var(--ink);}
+.preset-card-time{font-size:12px;font-weight:600;color:var(--tomato-text);}
+.preset-card-fit{font-size:11.5px;color:var(--muted);line-height:1.3;}
+/* "Alle Rezepte" als natives <details>/<summary> (kein eigenes JS für Auf-/Zuklappen
+   nötig, analog zum bestehenden Mobil-Akkordeon-Muster in css/mobile.css). Alt-Text-
+   Syntax beim generierten Pfeil (`content:'▾' / ''`) verhindert, dass der Pfeil in den
+   Accessible Name des <summary> einfließt -- identischer, bereits im v3.37.0-Audit
+   gefundener Fix wie bei den Mobil-Card-Akkordeons. */
+.preset-all-details{margin-bottom:0;}
+.preset-all-details summary{
+  cursor:pointer;font-size:13px;font-weight:600;color:var(--tomato-text);list-style:none;
+  min-height:44px;display:flex;align-items:center;-webkit-tap-highlight-color:transparent;
+}
+.preset-all-details summary::-webkit-details-marker{display:none;}
+.preset-all-details summary::after{content:'▾' / '';margin-left:4px;font-size:11px;}
+.preset-all-details[open] summary::after{content:'▴' / '';}
+.preset-all-details summary:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
 .card h2{
   margin:0 0 16px;font-size:14px;text-transform:uppercase;letter-spacing:1.2px;
   color:var(--ink);font-weight:700;padding-bottom:10px;border-bottom:1px solid var(--line);
@@ -1132,27 +1162,48 @@ header{position:relative;text-align:center;}
     <details class="card" open>
       <summary><h2 data-i18n-attr="aria-label:card.preset.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11c-2 0-3.2-1.6-2.6-3.4C3.9 6 5.3 5 7 5.3 7.4 3.4 9.1 2 11 2s3.6 1.4 4 3.3c1.7-.3 3.1.7 3.6 2.3.6 1.8-.6 3.4-2.6 3.4"/><path d="M6 11v6a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-6"/><path d="M5 20h13"/></svg></span><span data-i18n="card.preset.title">Fertiges Rezept wählen</span></h2></summary>
       <div class="acc-body">
-        <div class="field" style="margin-bottom:0;">
-          <select id="preset" class="selectbox selectbox-lg" data-i18n-attr="aria-label:card.preset.selectLabel">
-            <option value="" disabled hidden data-i18n="option.preset.none">Kein Rezept ausgewählt</option>
-            <optgroup label="Neapolitanisch · Direkt" data-i18n-attr="label:optgroup.napoliDirect">
-              <option value="napoli_klassisch" data-i18n="option.napoliKlassisch">Napoli Klassisch (AVPN) · 24 h</option>
-              <option value="napoli_65" data-i18n="option.napoli65">Napoli 65 % · 24 h (einsteigerfreundlich)</option>
-              <option value="napoli_kalt" data-i18n="option.napoliKalt">Napoli Lange Kaltgare · 48–72 h</option>
-              <option value="schnell" data-i18n="option.schnell">Schnell · gleicher Tag (4–6 h)</option>
-            </optgroup>
-            <optgroup label="Neapolitanisch · Vorteig" data-i18n-attr="label:optgroup.napoliPref">
-              <option value="napoli_biga" data-i18n="option.napoliBiga">Napoli mit Biga · 16–24 h</option>
-              <option value="napoli_poolish" data-i18n="option.napoliPoolish">Napoli mit Poolish · 24–48 h</option>
-            </optgroup>
-            <optgroup label="Andere Stile" data-i18n-attr="label:optgroup.otherStyles">
-              <option value="teglia" data-i18n="option.teglia">Teglia / Blech · hohe Hydration 75 %</option>
-              <option value="newyork_style" data-i18n-html="option.newyorkStyle">New York Style · Zucker &amp; Öl, ~26 h</option>
-            </optgroup>
-            <optgroup label="Eigene Rezepte" id="presetCustomGroup" data-i18n-attr="label:optgroup.customRecipes"></optgroup>
-          </select>
-          <div class="hint" id="presetDesc" style="margin-top:8px;" data-i18n="preset.defaultDesc">Wähle ein erprobtes Rezept: alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.</div>
+        <!-- Rezeptwahl führen (v3.71.0): 3 Empfehlungskarten statt direkt ein 8er-Dropdown,
+             s. Begründung in pizza-rechner.html. -->
+        <div class="preset-recommend" role="group" aria-label="Empfohlene Rezepte" data-i18n-attr="aria-label:preset.recommend.groupLabel">
+          <button type="button" class="preset-card" data-preset="schnell" aria-label="Schnell: 4–6 h Gärzeit, für spontane Pizza am selben Tag" data-i18n-attr="aria-label:preset.recommend.schnell.ariaLabel">
+            <span class="preset-card-name" aria-hidden="true" data-i18n="preset.recommend.schnell.name">Schnell</span>
+            <span class="preset-card-time" aria-hidden="true" data-i18n="preset.recommend.schnell.time">4–6 h</span>
+            <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.recommend.schnell.fit">Für spontane Pizza am selben Tag</span>
+          </button>
+          <button type="button" class="preset-card" data-preset="napoli_klassisch" aria-label="Klassisch: 24 h Gärzeit, bewährter neapolitanischer Standard (AVPN)" data-i18n-attr="aria-label:preset.recommend.klassisch.ariaLabel">
+            <span class="preset-card-name" aria-hidden="true" data-i18n="preset.recommend.klassisch.name">Klassisch</span>
+            <span class="preset-card-time" aria-hidden="true" data-i18n="preset.recommend.klassisch.time">24 h</span>
+            <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.recommend.klassisch.fit">Bewährter neapolitanischer Standard (AVPN)</span>
+          </button>
+          <button type="button" class="preset-card" data-preset="napoli_kalt" aria-label="Lang: 48–72 h Gärzeit, maximales Aroma, braucht starkes Mehl (W300+)" data-i18n-attr="aria-label:preset.recommend.lang.ariaLabel">
+            <span class="preset-card-name" aria-hidden="true" data-i18n="preset.recommend.lang.name">Lang</span>
+            <span class="preset-card-time" aria-hidden="true" data-i18n="preset.recommend.lang.time">48–72 h</span>
+            <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.recommend.lang.fit">Maximales Aroma, braucht starkes Mehl (W300+)</span>
+          </button>
         </div>
+        <details class="preset-all-details">
+          <summary class="preset-all-toggle" data-i18n="preset.allRecipes">Alle Rezepte</summary>
+          <div class="field" style="margin-top:12px;margin-bottom:0;">
+            <select id="preset" class="selectbox selectbox-lg" data-i18n-attr="aria-label:card.preset.selectLabel">
+              <option value="" disabled hidden data-i18n="option.preset.none">Kein Rezept ausgewählt</option>
+              <optgroup label="Neapolitanisch · Direkt" data-i18n-attr="label:optgroup.napoliDirect">
+                <option value="napoli_klassisch" data-i18n="option.napoliKlassisch">Napoli Klassisch (AVPN) · 24 h</option>
+                <option value="napoli_kalt" data-i18n="option.napoliKalt">Napoli Lange Kaltgare · 48–72 h</option>
+                <option value="schnell" data-i18n="option.schnell">Schnell · 4–6 h</option>
+              </optgroup>
+              <optgroup label="Neapolitanisch · Vorteig" data-i18n-attr="label:optgroup.napoliPref">
+                <option value="napoli_biga" data-i18n="option.napoliBiga">Napoli mit Biga · 16–24 h</option>
+                <option value="napoli_poolish" data-i18n="option.napoliPoolish">Napoli mit Poolish · 24–48 h</option>
+              </optgroup>
+              <optgroup label="Andere Stile" data-i18n-attr="label:optgroup.otherStyles">
+                <option value="teglia" data-i18n="option.teglia">Teglia / Blech · 24 h</option>
+                <option value="newyork_style" data-i18n="option.newyorkStyle">New York Style · ~26 h</option>
+              </optgroup>
+              <optgroup label="Eigene Rezepte" id="presetCustomGroup" data-i18n-attr="label:optgroup.customRecipes"></optgroup>
+            </select>
+          </div>
+        </details>
+        <div class="hint" id="presetDesc" style="margin-top:8px;" data-i18n="preset.defaultDesc">Wähle ein erprobtes Rezept: alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.</div>
       </div>
     </details>
 
@@ -1302,7 +1353,7 @@ header{position:relative;text-align:center;}
           <div class="hint" id="methodHint" data-i18n-html="hint.method.direct">Direkt: alle Zutaten auf einmal. Einfachster Weg.</div>
         </div>
 
-        <!-- Mengensteuerung vereinfachen (v3.70.1): Stepper statt Slider, bewusst OHNE
+        <!-- Mengensteuerung vereinfachen (v3.71.0): Stepper statt Slider, bewusst OHNE
              Schnellwahl-Chips (s. Begründung in pizza-rechner.html). -->
         <div class="field collapse" id="prefBlock">
           <label id="prefLabel" data-i18n="label.pref">Anteil Mehl im Vorteig</label>
@@ -1340,7 +1391,7 @@ header{position:relative;text-align:center;}
           </div>
         </div>
 
-        <!-- Bewusst ohne neue Chips (v3.70.1): #yeastPills darunter ist bereits die
+        <!-- Bewusst ohne neue Chips (v3.71.0): #yeastPills darunter ist bereits die
              Schnellwahl für die Hefemenge. -->
         <div class="field" id="yeastField">
           <label id="yeastLabel"><span data-i18n="label.yeast">Hefemenge</span> <span class="coupled-badge" id="yeastCoupledBadge" data-i18n="label.yeastCoupled" hidden>🔒 An Reifestufe gekoppelt</span></label>
@@ -1374,7 +1425,7 @@ header{position:relative;text-align:center;}
     <details class="card advanced-only">
       <summary><h2 data-i18n-attr="aria-label:card.temp.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.5V5a2 2 0 1 0-4 0v9.5a4 4 0 1 0 4 0Z"/><path d="M12 8h1.5"/></svg></span><span data-i18n-html="card.temp.title">Teigtemperatur &amp; Eiswasser</span></h2></summary>
       <div class="acc-body">
-        <!-- Bewusst ohne Schnellwahl-Chips (v3.70.1): bei Temperaturfeldern zählt eher
+        <!-- Bewusst ohne Schnellwahl-Chips (v3.71.0): bei Temperaturfeldern zählt eher
              ein guter Default (bereits geprüft und passend befunden) als eine Chip-Reihe. -->
         <div class="field">
           <label id="ddtLabel" data-i18n="label.ddt">Ziel-Teigtemperatur</label>
@@ -1940,7 +1991,7 @@ header{position:relative;text-align:center;}
           <div class="nav-divider" role="separator"></div>
           <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
           <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-          <span class="nav-version" id="appVersion">v3.70.1</span>
+          <span class="nav-version" id="appVersion">v3.71.0</span>
 
         </div>
       </div>
@@ -2586,8 +2637,6 @@ header{position:relative;text-align:center;}
     'Choose a proven recipe: all values are set automatically. You can fine-tune anytime afterwards.');
   add('preset.napoliKlassisch.desc', 'AVPN-Standard: 60 % Hydration, Tipo 00, 2 % Olivenöl. ~24 h Gesamtgare. Wenig Hefe, klassischer Geschmack.',
     'AVPN standard: 60 % hydration, Tipo 00, 2 % olive oil. ~24 h total rise. Little yeast, classic flavor.');
-  add('preset.napoli65.desc', '65 % macht den Teig dehnbarer & verzeihlicher, 2 % Olivenöl. ~24 h: 2 h Raumtemp, dann kühl, vor dem Backen temperieren.',
-    '65 % makes the dough more extensible & forgiving, 2 % olive oil. ~24 h: 2 h room temp, then cold, bring to room temp before baking.');
   add('preset.napoliKalt.desc', 'Lange Kaltgare ~48 h im Kühlschrank (4 °C), 2 % Olivenöl. Sehr wenig Hefe, maximales Aroma. Braucht ein starkes Mehl (W300+).',
     'Long cold rise ~48 h in the fridge (4 °C), 2 % olive oil. Very little yeast, maximum flavor. Needs a strong flour (W300+).');
   add('preset.schnell.desc', 'Gleicher Tag: ~2 h Stockgare + 2–3 h Stückgare bei warmer Raumtemp (24–26 °C), 2 % Olivenöl. Mehr Hefe, weniger Aroma: aber spontan.',
@@ -2693,14 +2742,45 @@ header{position:relative;text-align:center;}
   add('optgroup.napoliPref', 'Neapolitanisch · Vorteig', 'Neapolitan · Pre-ferment');
   add('optgroup.otherStyles', 'Andere Stile', 'Other styles');
   add('optgroup.customRecipes', 'Eigene Rezepte', 'Custom recipes');
+  // Rezeptwahl führen (v3.71.0): einheitliches Namensschema für alle verbleibenden
+  // Presets -- immer "Name · Gärzeit" (gleiches Trennzeichen "·", gleiche Position der
+  // Zusatzinfo). Vorher uneinheitlich: "schnell" und "newyorkStyle" hatten zusätzlich
+  // eine Besonderheit VOR/NEBEN der Dauer eingestreut (z. B. "· Zucker & Öl, ~26 h"),
+  // "teglia" hatte statt einer Dauer eine Hydrationsangabe. Jetzt durchgängig nur noch
+  // die Gärzeit (die Besonderheiten stehen weiterhin ausführlich in presetDesc/
+  // *.desc-Keys, hier geht es nur um die kurze Dropdown-Beschriftung).
   add('option.napoliKlassisch', 'Napoli Klassisch (AVPN) · 24 h', 'Napoli Classic (AVPN) · 24 h');
-  add('option.napoli65', 'Napoli 65 % · 24 h (einsteigerfreundlich)', 'Napoli 65% · 24 h (beginner-friendly)');
   add('option.napoliKalt', 'Napoli Lange Kaltgare · 48–72 h', 'Napoli Long Cold Rise · 48–72 h');
-  add('option.schnell', 'Schnell · gleicher Tag (4–6 h)', 'Quick · same day (4–6 h)');
+  add('option.schnell', 'Schnell · 4–6 h', 'Quick · 4–6 h');
   add('option.napoliBiga', 'Napoli mit Biga · 16–24 h', 'Napoli with Biga · 16–24 h');
   add('option.napoliPoolish', 'Napoli mit Poolish · 24–48 h', 'Napoli with Poolish · 24–48 h');
-  add('option.teglia', 'Teglia / Blech · hohe Hydration 75 %', 'Teglia / Pan · high hydration 75%');
-  add('option.newyorkStyle', 'New York Style · Zucker &amp; Öl, ~26 h', 'New York Style · sugar &amp; oil, ~26 h');
+  add('option.teglia', 'Teglia / Blech · 24 h', 'Teglia / Pan · 24 h');
+  add('option.newyorkStyle', 'New York Style · ~26 h', 'New York Style · ~26 h');
+
+  // Drei Empfehlungskarten (v3.71.0, "Rezeptwahl führen"): Schnell/Klassisch/Lang zeigen
+  // Name, Gärzeit und eine kurze Eignung, bevor die volle Preset-Liste (jetzt hinter
+  // "Alle Rezepte" eingeklappt) sichtbar wird.
+  add('preset.recommend.groupLabel', 'Empfohlene Rezepte', 'Recommended recipes');
+  add('preset.recommend.schnell.name', 'Schnell', 'Quick');
+  add('preset.recommend.schnell.time', '4–6 h', '4–6 h');
+  add('preset.recommend.schnell.fit', 'Für spontane Pizza am selben Tag', 'For spontaneous pizza the same day');
+  // accessibility-expert-Befund (v3.71.0, MAJOR 1): der Accessible Name der drei
+  // preset-card-Buttons war bisher nur die kommentarlose Aneinanderreihung von
+  // Name+Zeit+Eignung ohne Trennzeichen (z. B. "Schnell 4–6 h Für spontane Pizza am
+  // selben Tag") -- eigene aria-label-Texte mit Doppelpunkt/Komma-Struktur ergänzt.
+  add('preset.recommend.schnell.ariaLabel', 'Schnell: 4–6 h Gärzeit, für spontane Pizza am selben Tag',
+    'Quick: 4–6 h rise time, for spontaneous pizza the same day');
+  add('preset.recommend.klassisch.name', 'Klassisch', 'Classic');
+  add('preset.recommend.klassisch.time', '24 h', '24 h');
+  add('preset.recommend.klassisch.fit', 'Bewährter neapolitanischer Standard (AVPN)', 'Proven Neapolitan standard (AVPN)');
+  add('preset.recommend.klassisch.ariaLabel', 'Klassisch: 24 h Gärzeit, bewährter neapolitanischer Standard (AVPN)',
+    'Classic: 24 h rise time, proven Neapolitan standard (AVPN)');
+  add('preset.recommend.lang.name', 'Lang', 'Long');
+  add('preset.recommend.lang.time', '48–72 h', '48–72 h');
+  add('preset.recommend.lang.fit', 'Maximales Aroma, braucht starkes Mehl (W300+)', 'Maximum flavor, needs a strong flour (W300+)');
+  add('preset.recommend.lang.ariaLabel', 'Lang: 48–72 h Gärzeit, maximales Aroma, braucht starkes Mehl (W300+)',
+    'Long: 48–72 h rise time, maximum flavor, needs a strong flour (W300+)');
+  add('preset.allRecipes', 'Alle Rezepte', 'All recipes');
 
   // -- Card: Einfacher Modus (v3.62.0) -------------------------------------------------
   // Reduzierte Karte, die im Einfachen Modus die 3 Kernfelder Anzahl-Teiglinge/
@@ -6168,10 +6248,6 @@ header{position:relative;text-align:center;}
       method: 'direct', hyd: 60, salt: 2.8, oil: 2, yeastType: 'fresh', yeast: 0.2, ballw: 250, ddt: 24, flour: 'caputo_pizzeria',
       descKey: 'preset.napoliKlassisch.desc'
     },
-    napoli_65: {
-      method: 'direct', hyd: 65, salt: 2.8, oil: 2, yeastType: 'fresh', yeast: 0.3, ballw: 250, ddt: 24, flour: 'caputo_pizzeria',
-      descKey: 'preset.napoli65.desc'
-    },
     napoli_kalt: {
       method: 'direct', hyd: 65, salt: 3.0, oil: 2, yeastType: 'fresh', yeast: 0.1, ballw: 250, ddt: 23, flour: 'caputo_cuoco',
       descKey: 'preset.napoliKalt.desc'
@@ -6277,10 +6353,19 @@ header{position:relative;text-align:center;}
   }
   $('preset').addEventListener('change', e => handlePresetChange(e.target.value));
 
+  // Rezeptwahl führen (v3.71.0): die 3 Empfehlungskarten (Schnell/Klassisch/Lang) setzen
+  // #preset direkt und lösen dessen 'change'-Event aus -- identischer Codepfad wie eine
+  // Dropdown-Auswahl (handlePresetChange()/applyPreset() oben), keine eigene Logik hier.
+  document.querySelectorAll('.preset-card[data-preset]').forEach(b => b.addEventListener('click', () => {
+    const sel = $('preset');
+    sel.value = b.dataset.preset;
+    sel.dispatchEvent(new Event('change'));
+  }));
+
   // Manuelle Änderung an einem Regler → #preset-Auswahl zurücksetzen (kein Preset/eigenes
   // Rezept mehr aktiv). Seit v3.22.0 gibt es dafür keine "Eigene Einstellung"-Option mehr —
   // ein leerer Wert ohne passende <option> zeigt den Select schlicht ohne Auswahl an.
-  // Bugfix (v3.71.0-Vorarbeit, beim Lesen für "Rezeptwahl führen" entdeckt): diese Liste
+  // Bugfix (v3.70.1, beim Lesen für "Rezeptwahl führen" entdeckt): diese Liste
   // enthielt noch die alten Slider-IDs (hyd/salt/oil/... vor der Mengensteuerung-
   // Vereinfachung v3.70.0), die es seitdem nicht mehr gibt ($(id) liefert dort still
   // null, keine Wirkung mehr) -- UND deckte nur 5 von 12 Zahlenfeldern ab (ballwN/prefN/
