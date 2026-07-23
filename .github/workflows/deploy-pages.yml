@@ -1,0 +1,44 @@
+name: Deploy to GitHub Pages
+
+# Ersetzt den intransparenten "Deploy from a branch"-Modus (internes GitHub-Event
+# "dynamic", kein eigener Workflow, keine Logs einsehbar). Am 2026-07-23 blieb dieser
+# interne Trigger fuer zwei aufeinanderfolgende Pushes (v3.71.0/v3.72.0) 37 Minuten lang
+# komplett aus, obwohl kein anderer Build lief -- ein verlorenes GitHub-internes Ereignis,
+# nicht reproduzierbar/diagnostizierbar ohne eigenen Workflow. Ein regulaerer
+# "on: push"-Trigger ist deutlich zuverlaessiger und liefert echte, einsehbare Logs.
+#
+# Nach dem Merge dieser Datei einmalig in den Repo-Einstellungen umstellen:
+# Settings -> Pages -> Source -> "GitHub Actions" (statt "Deploy from a branch").
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
