@@ -571,12 +571,23 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
    Stylesheet: identisch auf Desktop und Mobil, analog zum Party-Muster
    oben). Eigener Chevron-Marker analog zu details.card in css/mobile.css,
    hier aber in der gemeinsamen Datei, da glossary.js auf beiden Seiten
-   dieselbe Struktur rendert. */
+   dieselbe Struktur rendert.
+   Design-System-Import Zyklus 4 (v4.3.0, GlossaryItem.jsx-Referenz): Werte
+   waren zahlenmäßig bereits deckungsgleich mit den Zyklus-1-Tokens, jetzt
+   explizit auf var(--font-body)/var(--weight-semibold)/var(--leading-relaxed)
+   umgestellt statt hartkodierter Zahlen, plus Single-Open-Akkordeon-Verhalten
+   in js/glossary.js (Backlog Punkt F). */
 .glossary-item{border-bottom:1px solid var(--line);}
 .glossary-item:last-child{border-bottom:none;}
 .glossary-item summary{
   cursor:pointer;list-style:none;padding:12px 22px 12px 0;position:relative;
-  font-weight:600;font-size:14.5px;min-height:22px;-webkit-tap-highlight-color:transparent;
+  font-family:var(--font-body);font-weight:var(--weight-semibold);font-size:14.5px;
+  min-height:22px;-webkit-tap-highlight-color:transparent;
+  /* accessibility-expert-Befund (v4.3.0, MINOR, WCAG 2.4.11): ohne dies kann ein per
+     gotoGlossaryEntry() (js/guide.js-Verweis) angesprungener Eintrag auf Mobil unter der
+     fixierten Quick-Bar verschwinden -- analog zu #result/#partyResultSummary/details.card,
+     die bereits scroll-margin-top gesetzt haben. */
+  scroll-margin-top:16px;
 }
 .glossary-item summary::-webkit-details-marker{display:none;}
 .glossary-item summary::after{
@@ -593,7 +604,7 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 }
 .glossary-item[open] summary::after{transform:rotate(180deg);}
 .glossary-item summary:hover{color:var(--tomato-text);}
-.glossary-body{margin:0 0 14px;font-size:13.5px;line-height:1.6;color:var(--ink);}
+.glossary-body{margin:0 0 14px;font-size:13.5px;line-height:var(--leading-relaxed);color:var(--ink);}
 .glossary-body p{margin:0 0 8px;}
 .glossary-body p:last-child{margin-bottom:0;}
 
@@ -2079,13 +2090,16 @@ header{position:relative;text-align:center;}
 
 <div class="wrap view" data-view="glossar" hidden>
   <div class="controls-col" style="display:grid;gap:20px;">
-    <details class="card" open>
-      <summary><h2 data-i18n-attr="aria-label:card.glossary.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-1.6-1.3-3.6-2-6.5-2v12c2.9 0 4.9.7 6.5 2 1.6-1.3 3.6-2 6.5-2v-12c-2.9 0-4.9.7-6.5 2Z"/><path d="M12 6.5v12"/></svg></span><span data-i18n="card.glossary.title">Pizza-Glossar</span></h2></summary>
-      <div class="acc-body">
-        <div class="hint" style="margin-bottom:14px;" data-i18n="hint.glossary">Kurze Lexikon-Artikel zu Begriffen und Hintergrundwissen rund um Pizza: zum Nachlesen, unabhängig vom Rechner.</div>
-        <div id="glossaryList"></div>
-      </div>
-    </details>
+    <!-- Design-System-Import Zyklus 4 (v4.3.0): bewusst KEIN details.card wie die übrigen
+         Mobil-Karten (Party/Einstellungen usw.) -- die Referenz (GlossarScreen.jsx) zeigt
+         eine immer offene Card, das übergeordnete "PIZZA-GLOSSAR"-Einklappen entfällt
+         (Backlog Punkt F). Struktur entspricht jetzt 1:1 dem Desktop-Markup (plain
+         .card + h2), nur die einzelnen .glossary-item-Einträge bleiben ein-/ausklappbar. -->
+    <div class="card">
+      <h2 data-i18n-attr="aria-label:card.glossary.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-1.6-1.3-3.6-2-6.5-2v12c2.9 0 4.9.7 6.5 2 1.6-1.3 3.6-2 6.5-2v-12c-2.9 0-4.9.7-6.5 2Z"/><path d="M12 6.5v12"/></svg></span><span data-i18n="card.glossary.title">Pizza-Glossar</span></h2>
+      <div class="hint" style="margin-bottom:14px;" data-i18n="hint.glossary">Kurze Lexikon-Artikel zu Begriffen und Hintergrundwissen rund um Pizza: zum Nachlesen, unabhängig vom Rechner.</div>
+      <div id="glossaryList"></div>
+    </div>
   </div>
 </div>
 
@@ -2270,7 +2284,7 @@ header{position:relative;text-align:center;}
           <div class="nav-divider" role="separator"></div>
           <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
           <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-          <span class="nav-version" id="appVersion">v4.2.0</span>
+          <span class="nav-version" id="appVersion">v4.3.0</span>
 
         </div>
       </div>
@@ -8029,6 +8043,11 @@ header{position:relative;text-align:center;}
  * Verknüpfung aus bestehenden Hinweistexten (bewusst außerhalb des Scopes
  * dieser ersten Fassung, s. pizza-rechner-KONTEXT.md).
  *
+ * Seit v4.3.0 (Design-System-Import Zyklus 4, Backlog Punkt F): Single-Open-
+ * Akkordeon -- klappt ein Artikel auf, klappt der zuvor offene automatisch zu
+ * (max. ein Artikel gleichzeitig offen). Gilt identisch auf Desktop und Mobil,
+ * da beide Seiten dieses Modul laden.
+ *
  * Titel + Text jedes Artikels kommen aus dem i18n-Wörterbuch (js/i18n.js)
  * über die Keys `glossary.<id>.title` / `glossary.<id>.body` (DE+EN, body
  * darf HTML enthalten — z. B. <b>/<p>/<em> — analog zu anderen data-i18n-html-
@@ -8117,6 +8136,18 @@ header{position:relative;text-align:center;}
 
       details.appendChild(summary);
       details.appendChild(body);
+      // Single-Open-Akkordeon (Backlog Punkt F, v4.3.0): sobald dieser Artikel
+      // aufklappt, alle anderen offenen Artikel automatisch zuklappen -- nur
+      // einer gleichzeitig sichtbar. Der native "toggle"-Event feuert auch bei
+      // programmatisch gesetztem .open (z. B. gotoGlossaryEntry() unten), daher
+      // reicht dieser eine Listener pro Artikel, kein zusätzliches Klick-Wiring.
+      details.addEventListener('toggle', function () {
+        if (!details.open) return;
+        Array.prototype.forEach.call(
+          listEl.querySelectorAll('details.glossary-item[open]'),
+          function (d) { if (d !== details) d.open = false; }
+        );
+      });
       listEl.appendChild(details);
     });
   }
@@ -8141,6 +8172,13 @@ header{position:relative;text-align:center;}
     if (PZ.gotoView) PZ.gotoView('glossar');
     const details = listEl.querySelector('details.glossary-item[data-id="' + id + '"]');
     if (!details) return; // unbekannte/falsche ID -> kein Crash, einfach kein Sprung
+    // Vor dem Öffnen explizit alle anderen schließen (Single-Open-Akkordeon) --
+    // unabhängig davon, ob der "toggle"-Listener in renderGlossary() bei diesem
+    // programmatischen Set zuverlässig feuert.
+    Array.prototype.forEach.call(
+      listEl.querySelectorAll('details.glossary-item[open]'),
+      function (d) { if (d !== details) d.open = false; }
+    );
     details.open = true;
     details.scrollIntoView({ behavior: 'smooth', block: 'start' });
     const summary = details.querySelector('summary');

@@ -4,6 +4,11 @@
  * Verknüpfung aus bestehenden Hinweistexten (bewusst außerhalb des Scopes
  * dieser ersten Fassung, s. pizza-rechner-KONTEXT.md).
  *
+ * Seit v4.3.0 (Design-System-Import Zyklus 4, Backlog Punkt F): Single-Open-
+ * Akkordeon -- klappt ein Artikel auf, klappt der zuvor offene automatisch zu
+ * (max. ein Artikel gleichzeitig offen). Gilt identisch auf Desktop und Mobil,
+ * da beide Seiten dieses Modul laden.
+ *
  * Titel + Text jedes Artikels kommen aus dem i18n-Wörterbuch (js/i18n.js)
  * über die Keys `glossary.<id>.title` / `glossary.<id>.body` (DE+EN, body
  * darf HTML enthalten — z. B. <b>/<p>/<em> — analog zu anderen data-i18n-html-
@@ -92,6 +97,18 @@
 
       details.appendChild(summary);
       details.appendChild(body);
+      // Single-Open-Akkordeon (Backlog Punkt F, v4.3.0): sobald dieser Artikel
+      // aufklappt, alle anderen offenen Artikel automatisch zuklappen -- nur
+      // einer gleichzeitig sichtbar. Der native "toggle"-Event feuert auch bei
+      // programmatisch gesetztem .open (z. B. gotoGlossaryEntry() unten), daher
+      // reicht dieser eine Listener pro Artikel, kein zusätzliches Klick-Wiring.
+      details.addEventListener('toggle', function () {
+        if (!details.open) return;
+        Array.prototype.forEach.call(
+          listEl.querySelectorAll('details.glossary-item[open]'),
+          function (d) { if (d !== details) d.open = false; }
+        );
+      });
       listEl.appendChild(details);
     });
   }
@@ -116,6 +133,13 @@
     if (PZ.gotoView) PZ.gotoView('glossar');
     const details = listEl.querySelector('details.glossary-item[data-id="' + id + '"]');
     if (!details) return; // unbekannte/falsche ID -> kein Crash, einfach kein Sprung
+    // Vor dem Öffnen explizit alle anderen schließen (Single-Open-Akkordeon) --
+    // unabhängig davon, ob der "toggle"-Listener in renderGlossary() bei diesem
+    // programmatischen Set zuverlässig feuert.
+    Array.prototype.forEach.call(
+      listEl.querySelectorAll('details.glossary-item[open]'),
+      function (d) { if (d !== details) d.open = false; }
+    );
     details.open = true;
     details.scrollIntoView({ behavior: 'smooth', block: 'start' });
     const summary = details.querySelector('summary');

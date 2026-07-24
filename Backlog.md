@@ -177,7 +177,16 @@ aktiver Zustand), kein genereller Layout-Umbau anderer Bereiche, nur Positionier
 der unteren Leiste. Betrifft ausschließlich iOS-Safari/PWA, keine Android-Anpassung
 vorgesehen, sofern das Problem dort nicht ebenfalls auftritt.
 
-### F. Akkordeon-Verhalten für Glossar-Artikel, Entfernen des Glossar-Gesamt-Einklappens
+### ~~F. Akkordeon-Verhalten für Glossar-Artikel, Entfernen des Glossar-Gesamt-Einklappens~~ — erledigt in v4.3.0
+
+Umgesetzt als Teil von Design-System-Import Zyklus 4 (Glossar-Screen), da das Mockup
+(`GlossarScreen.jsx`) genau dieses Single-Open-Akkordeon-Verhalten zeigt. `js/glossary.js`
+schließt beim Öffnen eines Artikels automatisch alle anderen; der "PIZZA-GLOSSAR"-Header
+in `pizza-rechner-mobile.html` ist kein `<details>` mehr (kein Gesamt-Einklappen). Details:
+`pizza-rechner-KONTEXT.md`, Abschnitt „Design-System-Import Zyklus 4: Glossar-Screen
+(v4.3.0)".
+
+Ursprünglicher Auftragstext (zur Referenz):
 
 Idee: Im Glossar wird beim Aufklappen eines Artikels automatisch der vorher geöffnete
 Artikel wieder eingeklappt (nur ein Artikel gleichzeitig offen). Der übergeordnete

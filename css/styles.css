@@ -490,12 +490,23 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
    Stylesheet: identisch auf Desktop und Mobil, analog zum Party-Muster
    oben). Eigener Chevron-Marker analog zu details.card in css/mobile.css,
    hier aber in der gemeinsamen Datei, da glossary.js auf beiden Seiten
-   dieselbe Struktur rendert. */
+   dieselbe Struktur rendert.
+   Design-System-Import Zyklus 4 (v4.3.0, GlossaryItem.jsx-Referenz): Werte
+   waren zahlenmäßig bereits deckungsgleich mit den Zyklus-1-Tokens, jetzt
+   explizit auf var(--font-body)/var(--weight-semibold)/var(--leading-relaxed)
+   umgestellt statt hartkodierter Zahlen, plus Single-Open-Akkordeon-Verhalten
+   in js/glossary.js (Backlog Punkt F). */
 .glossary-item{border-bottom:1px solid var(--line);}
 .glossary-item:last-child{border-bottom:none;}
 .glossary-item summary{
   cursor:pointer;list-style:none;padding:12px 22px 12px 0;position:relative;
-  font-weight:600;font-size:14.5px;min-height:22px;-webkit-tap-highlight-color:transparent;
+  font-family:var(--font-body);font-weight:var(--weight-semibold);font-size:14.5px;
+  min-height:22px;-webkit-tap-highlight-color:transparent;
+  /* accessibility-expert-Befund (v4.3.0, MINOR, WCAG 2.4.11): ohne dies kann ein per
+     gotoGlossaryEntry() (js/guide.js-Verweis) angesprungener Eintrag auf Mobil unter der
+     fixierten Quick-Bar verschwinden -- analog zu #result/#partyResultSummary/details.card,
+     die bereits scroll-margin-top gesetzt haben. */
+  scroll-margin-top:16px;
 }
 .glossary-item summary::-webkit-details-marker{display:none;}
 .glossary-item summary::after{
@@ -512,7 +523,7 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 }
 .glossary-item[open] summary::after{transform:rotate(180deg);}
 .glossary-item summary:hover{color:var(--tomato-text);}
-.glossary-body{margin:0 0 14px;font-size:13.5px;line-height:1.6;color:var(--ink);}
+.glossary-body{margin:0 0 14px;font-size:13.5px;line-height:var(--leading-relaxed);color:var(--ink);}
 .glossary-body p{margin:0 0 8px;}
 .glossary-body p:last-child{margin-bottom:0;}
 

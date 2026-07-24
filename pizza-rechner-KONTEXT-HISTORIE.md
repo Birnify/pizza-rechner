@@ -8,6 +8,73 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Design-System-Import Zyklus 4: Glossar-Screen (v4.3.0)
+
+Vierter von 5 geplanten Zyklen desselben mobilen Redesigns (Zyklus 1 = Tokens +
+Rechner-Screen, v4.0.0; Zyklus 2 = Anleitung/Zeitplan-Screen, v4.1.0; Zyklus 3 =
+Pizza-Party-Screen, v4.2.0). Referenz: `design-import/ui_kits/teigmeister/GlossarScreen.jsx`
++ `design-import/components/cards/GlossaryItem.jsx` (eine Card mit Single-Open-Akkordeon-
+Liste von Lexikon-Einträgen). Stylt `js/glossary.js`-Ausgabe + Mobil-Markup
+(`pizza-rechner-mobile.html`) auf die Design-Tokens um — Glossar-Inhalte/-Reihenfolge/
+Suchfunktion (keine vorhanden) unverändert.
+
+**Echte Verhaltensänderung (deckt Backlog Punkt F ab, dort als erledigt vermerkt):** Das
+Mockup zeigte nicht nur Optik, sondern explizit Single-Open-Akkordeon-Verhalten
+(`useState`+`onToggle` im React-Code) — deshalb Teil dieses Zyklus statt reiner Optik-Fix
+wie sonst üblich (anders als z. B. Zyklus 2 mit `Note.jsx`, das nur Optik ohne neues
+Verhalten zeigte):
+- `js/glossary.js`: jedes `<details class="glossary-item">` bekommt beim Rendern einen
+  `toggle`-Event-Listener, der beim Aufklappen alle anderen offenen Artikel automatisch
+  schließt (`d.open = false`). Der native `toggle`-Event feuert auch bei programmatisch
+  gesetztem `.open` (verifiziert per Headless-Edge-CDP), daher schließt `gotoGlossaryEntry()`
+  (Sprung aus einem Anleitungsschritt) zusätzlich explizit alle anderen vor dem Öffnen, für
+  Robustheit unabhängig von der Event-Timing-Zusicherung. **Reine JS-Modul(«keine neuen/
+  umbenannten IDs»)-Änderung, wirkt automatisch identisch auf Desktop UND Mobil**, da beide
+  Seiten dasselbe Modul laden — bewusst gemäß Auftrag nicht mobile-only gehalten. Per
+  Headless-Edge-CDP auf beiden Seiten verifiziert: Öffnen schließt den vorherigen Artikel,
+  erneutes Klicken schließt manuell, Zustand übersteht einen Sprachwechsel DE↔EN
+  (`renderGlossary()`-Neuaufbau berücksichtigt weiterhin offene IDs via `openIds`-Set).
+- `pizza-rechner-mobile.html`: die Glossar-Card ist nicht mehr `<details class="card" open>`
+  (wie alle anderen Mobil-Top-Level-Karten, z. B. Party/Einstellungen), sondern ein
+  plaines `<div class="card"><h2>...</h2>...</div>` — 1:1 identisch zur bereits
+  bestehenden Desktop-Struktur. Der „PIZZA-GLOSSAR"-Header hat damit keine eigene
+  Einklapp-Funktion mehr für die gesamte Liste; die Artikelliste ist immer sichtbar. Kein
+  neuer Zustand nötig, kein JS-Wiring — reine Markup-Vereinfachung, `.card h2`/`.card`
+  liefern über die geteilten Zyklus-1-Tokens automatisch identisches Spacing wie Desktop.
+  Bewusst mobile-only (Desktop hatte diese Struktur schon vorher).
+
+**Optik:** `.glossary-item`/`.glossary-item summary`/`.glossary-body` in `css/styles.css`
+waren zahlenmäßig bereits deckungsgleich mit den Zyklus-1-Design-Tokens (Bottom-Hairline
+`--line`, `font-weight:600` = `--weight-semibold`, `line-height:1.6` = `--leading-relaxed`),
+jetzt explizit auf die `var(--font-body)`/`var(--weight-semibold)`/`var(--leading-relaxed)`-
+Tokens umgestellt statt hartkodierter Zahlen (Wartbarkeit, keine optische Änderung).
+
+**Tests:** `tests/test.html` (716 Prüfungen) unverändert grün — `js/glossary.js` wird dort
+laut Dateistruktur-Konvention bewusst nicht geladen (reines DOM-Wiring), daher zusätzlich
+funktional per Headless-Edge-CDP (WebSocket, `--remote-allow-origins=*`, wie in früheren
+Zyklen) auf Desktop **und** Mobil verifiziert (s. o.). Kein `test-generator`-Lauf, da keine
+Berechnungslogik (`js/calc.js`/`js/schedule.js`) geändert wurde.
+
+**`accessibility-expert`-Review** (Hell + Dunkel, Desktop + Mobil): keine Blocker/Major —
+alle Kontraste weit über Schwelle (Begriff-Text 14,16:1 Hell / ~17,5:1 Dunkel, Chevron
+5,16:1 / ~7,79:1, Hover 5,27:1 / ~6,86:1), native `<details>`/`<summary>`-Semantik für das
+Akkordeon-Muster ausreichend (kein zusätzliches `aria-expanded` nötig), Fokus-Reihenfolge/
+Tastaturbedienung korrekt, Mobile-Heading-Struktur (`<h2>` jetzt direkt statt in `<summary>`
+verschachtelt) sauber. Ein MINOR behoben: `.glossary-item summary` bekam
+`scroll-margin-top:16px` (WCAG 2.4.11) — ohne das konnte ein per `gotoGlossaryEntry()`
+angesprungener Artikel auf Mobil unter der fixierten Quick-Bar verschwinden, analog zu den
+bereits vorhandenen `scroll-margin-top`-Werten bei `#result`/`#partyResultSummary`/
+`details.card`.
+
+**Geändert:** `pizza-rechner-mobile.html`, `js/glossary.js`, `css/styles.css`, `Backlog.md`
+(Punkt F als erledigt markiert). `pizza-rechner.html` (Desktop) bewusst NICHT angefasst für
+den Markup-Teil (Layout-only-Ausnahme, s. u.), profitiert aber automatisch vom
+JS-Verhaltensteil. `?v=` auf `4.3.0` gezogen (Mobil, Cache-Busting + Footer-Version).
+`pizza-rechner-mobile-standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v4.3.0 - Design-System-Import Zyklus 4 (Glossar-Screen)/` enthält den
+vollständigen Schnappschuss. Nächster Kandidat: Zyklus 5 (Einstellungen-Screen,
+`design-import/ui_kits/teigmeister/EinstellungenScreen.jsx`), letzter Zyklus dieser Reihe.
+
 ## Design-System-Import Zyklus 3: Pizza-Party-Screen (v4.2.0)
 
 Dritter von 5 geplanten Zyklen desselben mobilen Redesigns (Zyklus 1 = Tokens +
