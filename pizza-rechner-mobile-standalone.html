@@ -2028,7 +2028,7 @@ header{position:relative;text-align:center;}
             <input type="number" id="nrSugarN" min="0" max="8" step="0.5" value="0" aria-labelledby="nrSugarLabel" aria-describedby="nrSugarUnit">
             <span class="unit" id="nrSugarUnit">%</span>
           </div>
-          <div class="hint" data-i18n="hint.newRecipeSugar">Nicht flag-/preset-gebunden wie im Hauptrechner: im eigenständigen Formular immer verfügbar.</div>
+          <div class="hint" data-i18n="hint.newRecipeSugar">Anders als im Hauptrechner (dort sichtbar ab Zucker &gt; 0) hier immer sichtbar, mit „0“ vorbefüllt und frei änderbar.</div>
         </div>
 
         <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:20px 0 12px;border:none;padding:0;" data-i18n="heading.methodYeast">Methode &amp; Hefe</h3>
@@ -2288,16 +2288,6 @@ header{position:relative;text-align:center;}
         <div class="flag-item">
           <div class="switch-row">
             <div class="switch-row-main">
-              <label class="switch-name" for="flagNewYorkStyle" data-i18n="flag.newYorkStyle.name">New York Style</label>
-            </div>
-            <span class="switch"><input type="checkbox" id="flagNewYorkStyle" role="switch" aria-describedby="flagNewYorkStyleInfo"><span class="switch-slider" aria-hidden="true"></span></span>
-          </div>
-          <div class="hint" id="flagNewYorkStyleInfo" data-i18n="flag.newYorkStyle.info">Blendet den Zucker-Regler (Bäckerprozent, wie Öl) bei den Grundeinstellungen ein: für New-York-Style-Teige. Wird auch automatisch angeschaltet, wenn du das „New York Style"-Preset wählst.</div>
-        </div>
-
-        <div class="flag-item">
-          <div class="switch-row">
-            <div class="switch-row-main">
               <label class="switch-name" for="flagHints" data-i18n="flag.hints.name">Hinweistexte</label>
             </div>
             <span class="switch"><input type="checkbox" id="flagHints" role="switch" aria-describedby="flagHintsInfo"><span class="switch-slider" aria-hidden="true"></span></span>
@@ -2345,7 +2335,7 @@ header{position:relative;text-align:center;}
         <div class="nav-divider" role="separator"></div>
         <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.6.0</span>
+        <span class="nav-version" id="appVersion">v4.7.0</span>
 
       </div>
     </details>
@@ -3303,8 +3293,8 @@ header{position:relative;text-align:center;}
   add('hint.newRecipe', 'Legt ein neues, eigenständiges Rezept an: die aktuelle Berechnung im Rechner-Bereich bleibt dabei unverändert. Erscheint danach in „Meine Rezepte“ und im „Fertiges Rezept wählen“-Dropdown unter „Eigene Rezepte“.',
     'Creates a new, independent recipe: the current calculation in the Calculator area stays unchanged. It then appears under "My recipes" and in the "Choose a ready-made recipe" dropdown under "Custom recipes".');
   add('heading.basics', 'Grundeinstellungen', 'Basic settings');
-  add('hint.newRecipeSugar', 'Nicht flag-/preset-gebunden wie im Hauptrechner: im eigenständigen Formular immer verfügbar.',
-    'Not tied to a flag/preset like in the main calculator: always available in this standalone form.');
+  add('hint.newRecipeSugar', 'Anders als im Hauptrechner (dort sichtbar ab Zucker &gt; 0) hier immer sichtbar, mit „0“ vorbefüllt und frei änderbar.',
+    'Unlike the main calculator (shown there only once sugar is above 0), always visible here, pre-filled with "0" and freely editable.');
   add('heading.methodYeast', 'Methode & Hefe', 'Method & yeast');
   add('heading.tempIce', 'Teigtemperatur & Eiswasser', 'Dough temperature & ice water');
   add('label.newRecipeFullName', 'Name für das neue Rezept', 'Name for the new recipe');
@@ -3542,10 +3532,6 @@ header{position:relative;text-align:center;}
   add('flag.multiRecipes.name', 'Mehrere Rezepte', 'Multiple recipes');
   add('flag.multiRecipes.infoBtn', 'Erklärung zu „Mehrere Rezepte“ ein-/ausblenden', 'Show/hide explanation for "Multiple recipes"');
   add('flag.multiRecipes.info', 'Mehrere benannte Rezepte speichern und verwalten statt nur eines.', 'Save and manage multiple named recipes instead of just one.');
-  add('flag.newYorkStyle.name', 'New York Style', 'New York Style');
-  add('flag.newYorkStyle.infoBtn', 'Erklärung zu „New York Style“ ein-/ausblenden', 'Show/hide explanation for "New York Style"');
-  add('flag.newYorkStyle.info', 'Blendet den Zucker-Regler (Bäckerprozent, wie Öl) bei den Grundeinstellungen ein: für New-York-Style-Teige. Wird auch automatisch angeschaltet, wenn du das „New York Style"-Preset wählst.',
-    'Shows the sugar slider (baker\'s percentage, like oil) in the basic settings: for New York style doughs. Also switches on automatically when you choose the "New York Style" preset.');
   add('flag.hints.name', 'Hinweistexte', 'Hint texts');
   add('flag.hints.infoBtn', 'Erklärung zu „Hinweistexte“ ein-/ausblenden', 'Show/hide explanation for "Hint texts"');
   add('flag.hints.info', 'Erklärende Kurztexte bei Feldern & Buttons ein- oder ausblenden.', 'Turn short explanatory texts on fields & buttons on or off.');
@@ -3875,13 +3861,6 @@ header{position:relative;text-align:center;}
     timerSystem: false,   // System-Wecker/Kalender-Links (Teil-Feature von timer)
     freezeHint: false,    // Einfrier-Hinweis in der Anleitung
     multiRecipes: true,   // Mehrere gespeicherte Rezepte (sonst: Einzel-Slot-Verhalten)
-    newYorkStyle: false,  // Zucker-Regler (Bäckerprozent, wie Öl) — sonst ausgeblendet.
-                           // Wirkt seit v3.20.1 NUR noch bei „Eigene Einstellung" (kein
-                           // konkretes Preset aktiv). Das Preset „New York Style" selbst
-                           // schaltet dieses Flag NICHT mehr automatisch/dauerhaft an — es
-                           // blendet den Regler nur, solange es selbst aktiv gewählt ist,
-                           // unabhängig vom Flag-Zustand (s. js/presets.js applyPreset(),
-                           // Fix in v3.19.3/v3.20.1, s. pizza-rechner-KONTEXT.md).
     hints: true           // Tooltip-/Hinweistexte (erklärende .hint-Kurztexte). Default AN:
                            // reine Erklärhilfen sind für neue Nutzer wertvoll, erfahrene
                            // Nutzer können bewusst abschalten (anders als die übrigen, im
@@ -3948,25 +3927,11 @@ header{position:relative;text-align:center;}
     // (v4.5.0) und die Funktionen ohnehin nicht mehr im direkten Sichtfeld stehen, ist
     // ein zusätzlicher globaler Ausblend-Schalter redundant. Kein style.display-Eingriff
     // mehr nötig, die HTML-Elemente bleiben in ihrem Standard-Sichtbarkeitszustand.
-    // Zucker-Regler (New-York-Style): nutzt das etablierte .collapse/.show-Muster
-    // (wie prefBlock/bigaHydBlock) statt style.display — verhindert einen Flackerer
-    // vorm ersten applyFlags()-Lauf, da .collapse per CSS schon vor JS-Ausführung greift.
-    // Sichtbar NUR, wenn ENTWEDER das Preset „New York Style" gerade aktiv im #preset-
-    // Select gewählt ist, ODER „Eigene Einstellung" (kein/unbekanntes Preset) aktiv ist
-    // UND das Flag dauerhaft/manuell an ist (v3.20.1 — verschärft gegenüber v3.19.3, wo
-    // ein manuell angeschalteter Flag den Regler bei JEDEM Preset sichtbar machte, auch
-    // bei Napoli/Teglia, wo Zucker nicht hingehört; s. pizza-rechner-KONTEXT.md). Fragt
-    // dafür live den #preset-Select ab statt einen zusätzlichen State zu duplizieren —
-    // presets.js ruft applyFlags() bei jedem Preset-Wechsel (inkl. "Eigene Einstellung")
-    // neu auf, s. dort.
-    const presetEl = document.getElementById('preset');
-    const presetKey = presetEl ? presetEl.value : '';
-    const isNewYorkPreset = presetKey === 'newyork_style';
-    // "Eigene Einstellung": kein Preset gewählt ODER (im Test-Stub möglich) ein Key, der
-    // in PZ.PRESETS gar nicht existiert — beides zählt als "kein konkretes Preset aktiv".
-    const isCustomSelection = !presetKey || !(PZ.PRESETS && PZ.PRESETS[presetKey]);
-    const sugarBlock = document.getElementById('sugarBlock');
-    if (sugarBlock) sugarBlock.classList.toggle('show', isNewYorkPreset || (isCustomSelection && !!f.newYorkStyle));
+    // Zucker-Regler (#sugarBlock): seit v4.7.0 KEIN Feature-Flag mehr — die Sichtbarkeit
+    // hängt jetzt ausschließlich vom aktuellen state.sugar-Wert ab (0 = ausgeblendet,
+    // > 0 = eingeblendet), unabhängig von Preset/Flag. Wird in js/calc.js (renderResult())
+    // gesetzt, jedes Mal wenn PZ.calc() läuft — nicht mehr hier (s. pizza-rechner-KONTEXT.md,
+    // Backlog Punkt C).
     // Tooltip-/Hinweistexte: EIN globaler Body-Klassen-Schalter statt Dutzender
     // Einzel-Elemente. CSS blendet darüber alle .hint/.timersys-hint/.timerhint-Elemente
     // per display:none aus — die Elemente (und ihre IDs) bleiben dabei im DOM erhalten,
@@ -3994,7 +3959,6 @@ header{position:relative;text-align:center;}
     flagTimerSystem: 'timerSystem',
     flagFreezeHint: 'freezeHint',
     flagMultiRecipes: 'multiRecipes',
-    flagNewYorkStyle: 'newYorkStyle',
     flagHints: 'hints'
   };
 
@@ -5009,8 +4973,16 @@ header{position:relative;text-align:center;}
     // Öl-Zeile ganz ausblenden, wenn kein Öl im Rezept
     if ($('gOilRow')) $('gOilRow').style.display = R.oil >= 0.05 ? 'flex' : 'none';
     if ($('gSugar')) $('gSugar').textContent = fmtW(R.sugar, 1);
-    // Zucker-Zeile ganz ausblenden, wenn kein Zucker im Rezept (Standard: New-York-Style-Feld ist 0)
+    // Zucker-Zeile ganz ausblenden, wenn kein Zucker im Rezept (Standard: 0)
     if ($('gSugarRow')) $('gSugarRow').style.display = R.sugar >= 0.05 ? 'flex' : 'none';
+    // Zucker-Regler (#sugarBlock, Grundeinstellungen): seit v4.7.0 wertbasiert statt
+    // togglebasiert (Backlog Punkt C, ersetzt das entfernte Feature-Flag "New York Style").
+    // Sichtbar NUR, wenn der aktuelle Rezept-Zustand tatsächlich Zucker > 0 enthält --
+    // R.sugar (das berechnete Gewicht) ist exakt 0 genau dann, wenn state.sugar 0 ist
+    // (Mehl > 0 immer), also derselbe 0,05-g-Schwellwert wie bei gSugarRow/mSugarRow.
+    // Nutzt weiterhin das etablierte .collapse/.show-Muster (verhindert einen Flacker-
+    // Moment vorm ersten calc()-Lauf, da .collapse per CSS schon vor JS-Ausführung greift).
+    if ($('sugarBlock')) $('sugarBlock').classList.toggle('show', R.sugar >= 0.05);
 
     if (R.hasPref) {
       $('pFlour').textContent = fmtW(R.pf);
@@ -6625,63 +6597,61 @@ header{position:relative;text-align:center;}
   // "descKey" statt eines fertigen Texts (js/i18n.js, v3.28.0) — presetDesc wird
   // live über t(descKey) nachgeschlagen, damit ein Sprachwechsel den aktuell
   // angezeigten Beschreibungstext mit aktualisiert (s. Re-Render-Hook unten).
+  // Alle Presets setzen "sugar" explizit (0 bei den 6 Presets ohne Zucker, 2 beim
+  // "New York Style"-Preset) — seit v4.7.0 (Backlog Punkt C) gibt es kein Feature-Flag
+  // mehr, das den Zucker-Regler/-Wert beim Preset-Wechsel zurücksetzt (s. applyPreset()
+  // unten); die explizite 0 hier sorgt dafür, dass ein zuvor über "New York Style"
+  // gesetzter Zucker-Wert beim Wechsel auf ein anderes Preset zuverlässig verschwindet
+  // (analog zu "oil", das ebenfalls jedes Preset explizit setzt).
   const PRESETS = {
     napoli_klassisch: {
-      method: 'direct', hyd: 60, salt: 2.8, oil: 2, yeastType: 'fresh', yeast: 0.2, ballw: 250, ddt: 24, flour: 'caputo_pizzeria',
+      method: 'direct', hyd: 60, salt: 2.8, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 0.2, ballw: 250, ddt: 24, flour: 'caputo_pizzeria',
       descKey: 'preset.napoliKlassisch.desc'
     },
     napoli_kalt: {
-      method: 'direct', hyd: 65, salt: 3.0, oil: 2, yeastType: 'fresh', yeast: 0.1, ballw: 250, ddt: 23, flour: 'caputo_cuoco',
+      method: 'direct', hyd: 65, salt: 3.0, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 0.1, ballw: 250, ddt: 23, flour: 'caputo_cuoco',
       descKey: 'preset.napoliKalt.desc'
     },
     schnell: {
-      method: 'direct', hyd: 62, salt: 2.5, oil: 2, yeastType: 'fresh', yeast: 1.5, ballw: 250, ddt: 25, flour: 'caputo_pizzeria',
+      method: 'direct', hyd: 62, salt: 2.5, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 1.5, ballw: 250, ddt: 25, flour: 'caputo_pizzeria',
       descKey: 'preset.schnell.desc'
     },
     napoli_biga: {
-      method: 'biga', hyd: 65, salt: 2.8, oil: 2, pref: 100, bhyd: 45, prefStage: 'b24', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'caputo_cuoco',
+      method: 'biga', hyd: 65, salt: 2.8, oil: 2, sugar: 0, pref: 100, bhyd: 45, prefStage: 'b24', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'caputo_cuoco',
       descKey: 'preset.napoliBiga.desc'
     },
     napoli_poolish: {
-      method: 'poolish', hyd: 66, salt: 2.5, oil: 2, pref: 66, prefStage: 'p14', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'dallag_monica',
+      method: 'poolish', hyd: 66, salt: 2.5, oil: 2, sugar: 0, pref: 66, prefStage: 'p14', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'dallag_monica',
       descKey: 'preset.napoliPoolish.desc'
     },
     teglia: {
-      method: 'direct', hyd: 75, salt: 2.5, oil: 4, yeastType: 'fresh', yeast: 0.3, ballw: 320, ddt: 24, flour: 'caputo_nuvola_super',
+      method: 'direct', hyd: 75, salt: 2.5, oil: 4, sugar: 0, yeastType: 'fresh', yeast: 0.3, ballw: 320, ddt: 24, flour: 'caputo_nuvola_super',
       descKey: 'preset.teglia.desc'
     },
     newyork_style: {
       method: 'direct', hyd: 62, salt: 2.5, oil: 3, sugar: 2, yeastType: 'fresh', yeast: 0.2, ballw: 300, ddt: 24, flour: 'dallag_napoletana',
-      flag: 'newYorkStyle',
       descKey: 'preset.newyorkStyle.desc'
     }
   };
 
   // Verfolgt, welches Preset zuletzt über das #preset-Dropdown aktiv angewendet wurde
   // (nicht dasselbe wie der reine #preset-Wert, der sich schon bei jeder manuellen
-  // Reglereingabe still auf '' zurücksetzt, s. u.) — nur so lässt sich erkennen, ob der
-  // Nutzer gerade WEG von „New York Style" wechselt (v3.20.1, s. u.).
+  // Reglereingabe still auf '' zurücksetzt, s. u.) — für den Re-Render-Hook bei
+  // Sprachwechsel (s. u.).
   let lastAppliedPresetKey = '';
   let lastLoadedRecipeName = null; // für den Re-Render-Hook bei Sprachwechsel (s. u.)
 
   function applyPreset(key) {
     const state = PZ.state, set = PZ.set;
     const p = PRESETS[key];
-    // Wechsel WEG von „New York Style" (zu einem anderen Preset ODER zu „Eigene
-    // Einstellung"): Zucker-Wert auf 0 zurücksetzen. Sonst bliebe ein zuvor gesetzter
-    // Zucker-Wert unbemerkt im State stehen, auch wenn der Regler jetzt (korrekt) verborgen
-    // ist — s. „Zucker-Regler nur bei New-York-Style-Preset" (v3.20.1) in der Kontext-Datei.
-    if (lastAppliedPresetKey === 'newyork_style' && key !== 'newyork_style' && set.sugar) {
-      set.sugar(0);
-    }
     lastAppliedPresetKey = key;
     lastLoadedRecipeName = null;
     if (!p) {
       $('presetDesc').textContent = t('preset.defaultDesc');
-      // Zurück zu "Eigene Einstellung" (oder unbekannter Key): preset-gated Regler
-      // (aktuell nur der Zucker-Regler) wieder ausblenden, sofern das zugehörige Flag
-      // nicht manuell/dauerhaft an ist — applyFlags() liest dafür live aus #preset (s. dort).
-      if (PZ.applyFlags) PZ.applyFlags();
+      // Zurück zu "Eigene Einstellung" (oder unbekannter Key): keine Feldänderung mehr
+      // nötig -- der Zucker-Regler (#sugarBlock) ist seit v4.7.0 wertbasiert (s.
+      // js/calc.js renderResult()) und bleibt einfach bei seinem aktuellen state.sugar-
+      // Wert stehen, bis ein neues Preset oder eine manuelle Eingabe ihn ändert.
       return;
     }
     if (p.method) { state.method = p.method; PZ.selectSeg('method', 'm', p.method); PZ.applyMethod(); }
@@ -6701,17 +6671,10 @@ header{position:relative;text-align:center;}
     if (p.flour) { state.flour = p.flour; const fs = $('flour'); if (fs) fs.value = p.flour; }
     // Vorteig-Reife-Stufe setzt Reifezeit + Hefe passend (nach applyMethod, das die Pills rendert)
     if (p.prefStage && PZ.selectPrefStage) PZ.selectPrefStage(state.method, p.prefStage);
-    // Manche Presets brauchen einen sonst standardmäßig ausgeblendeten Regler sichtbar
-    // (z. B. „New York Style" den Zucker-Regler) — NUR solange dieses Preset aktiv gewählt
-    // ist (v3.19.3). Kein automatisches, dauerhaftes Anschalten des Feature-Flags mehr
-    // (vorher: PZ.setFlag(p.flag, true) — das ließ den Regler auch nach dem Wechsel auf ein
-    // anderes Preset oder „Eigene Einstellung" für immer sichtbar, s. Kontext-Datei). Der
-    // manuelle Flag-Schalter im Einstellungen-Menü wirkt seit v3.20.1 NUR noch bei „Eigene
-    // Einstellung" (kein konkretes Preset aktiv) — bei jedem anderen konkreten Preset bleibt
-    // der Zucker-Regler verborgen, unabhängig vom Flag-Zustand (applyFlags() in
-    // js/settings.js prüft dafür exakt den Preset-Key, nicht mehr das generische
-    // `flag`-Feld).
-    if (PZ.applyFlags) PZ.applyFlags();
+    // Kein applyFlags()-Aufruf mehr nötig: der Zucker-Regler (#sugarBlock) war der einzige
+    // preset-abhängige Sichtbarkeits-Effekt darin, und ist seit v4.7.0 rein wertbasiert
+    // (set.sugar() oben löst über PZ.calc() -> renderResult() bereits die passende
+    // #sugarBlock-Sichtbarkeit aus, s. js/calc.js).
     $('presetDesc').textContent = t(p.descKey);
     PZ.calc();
   }

@@ -769,8 +769,8 @@
   add('hint.newRecipe', 'Legt ein neues, eigenständiges Rezept an: die aktuelle Berechnung im Rechner-Bereich bleibt dabei unverändert. Erscheint danach in „Meine Rezepte“ und im „Fertiges Rezept wählen“-Dropdown unter „Eigene Rezepte“.',
     'Creates a new, independent recipe: the current calculation in the Calculator area stays unchanged. It then appears under "My recipes" and in the "Choose a ready-made recipe" dropdown under "Custom recipes".');
   add('heading.basics', 'Grundeinstellungen', 'Basic settings');
-  add('hint.newRecipeSugar', 'Nicht flag-/preset-gebunden wie im Hauptrechner: im eigenständigen Formular immer verfügbar.',
-    'Not tied to a flag/preset like in the main calculator: always available in this standalone form.');
+  add('hint.newRecipeSugar', 'Anders als im Hauptrechner (dort sichtbar ab Zucker &gt; 0) hier immer sichtbar, mit „0“ vorbefüllt und frei änderbar.',
+    'Unlike the main calculator (shown there only once sugar is above 0), always visible here, pre-filled with "0" and freely editable.');
   add('heading.methodYeast', 'Methode & Hefe', 'Method & yeast');
   add('heading.tempIce', 'Teigtemperatur & Eiswasser', 'Dough temperature & ice water');
   add('label.newRecipeFullName', 'Name für das neue Rezept', 'Name for the new recipe');
@@ -1008,10 +1008,6 @@
   add('flag.multiRecipes.name', 'Mehrere Rezepte', 'Multiple recipes');
   add('flag.multiRecipes.infoBtn', 'Erklärung zu „Mehrere Rezepte“ ein-/ausblenden', 'Show/hide explanation for "Multiple recipes"');
   add('flag.multiRecipes.info', 'Mehrere benannte Rezepte speichern und verwalten statt nur eines.', 'Save and manage multiple named recipes instead of just one.');
-  add('flag.newYorkStyle.name', 'New York Style', 'New York Style');
-  add('flag.newYorkStyle.infoBtn', 'Erklärung zu „New York Style“ ein-/ausblenden', 'Show/hide explanation for "New York Style"');
-  add('flag.newYorkStyle.info', 'Blendet den Zucker-Regler (Bäckerprozent, wie Öl) bei den Grundeinstellungen ein: für New-York-Style-Teige. Wird auch automatisch angeschaltet, wenn du das „New York Style"-Preset wählst.',
-    'Shows the sugar slider (baker\'s percentage, like oil) in the basic settings: for New York style doughs. Also switches on automatically when you choose the "New York Style" preset.');
   add('flag.hints.name', 'Hinweistexte', 'Hint texts');
   add('flag.hints.infoBtn', 'Erklärung zu „Hinweistexte“ ein-/ausblenden', 'Show/hide explanation for "Hint texts"');
   add('flag.hints.info', 'Erklärende Kurztexte bei Feldern & Buttons ein- oder ausblenden.', 'Turn short explanatory texts on fields & buttons on or off.');

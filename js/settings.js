@@ -27,13 +27,6 @@
     timerSystem: false,   // System-Wecker/Kalender-Links (Teil-Feature von timer)
     freezeHint: false,    // Einfrier-Hinweis in der Anleitung
     multiRecipes: true,   // Mehrere gespeicherte Rezepte (sonst: Einzel-Slot-Verhalten)
-    newYorkStyle: false,  // Zucker-Regler (Bäckerprozent, wie Öl) — sonst ausgeblendet.
-                           // Wirkt seit v3.20.1 NUR noch bei „Eigene Einstellung" (kein
-                           // konkretes Preset aktiv). Das Preset „New York Style" selbst
-                           // schaltet dieses Flag NICHT mehr automatisch/dauerhaft an — es
-                           // blendet den Regler nur, solange es selbst aktiv gewählt ist,
-                           // unabhängig vom Flag-Zustand (s. js/presets.js applyPreset(),
-                           // Fix in v3.19.3/v3.20.1, s. pizza-rechner-KONTEXT.md).
     hints: true           // Tooltip-/Hinweistexte (erklärende .hint-Kurztexte). Default AN:
                            // reine Erklärhilfen sind für neue Nutzer wertvoll, erfahrene
                            // Nutzer können bewusst abschalten (anders als die übrigen, im
@@ -100,25 +93,11 @@
     // (v4.5.0) und die Funktionen ohnehin nicht mehr im direkten Sichtfeld stehen, ist
     // ein zusätzlicher globaler Ausblend-Schalter redundant. Kein style.display-Eingriff
     // mehr nötig, die HTML-Elemente bleiben in ihrem Standard-Sichtbarkeitszustand.
-    // Zucker-Regler (New-York-Style): nutzt das etablierte .collapse/.show-Muster
-    // (wie prefBlock/bigaHydBlock) statt style.display — verhindert einen Flackerer
-    // vorm ersten applyFlags()-Lauf, da .collapse per CSS schon vor JS-Ausführung greift.
-    // Sichtbar NUR, wenn ENTWEDER das Preset „New York Style" gerade aktiv im #preset-
-    // Select gewählt ist, ODER „Eigene Einstellung" (kein/unbekanntes Preset) aktiv ist
-    // UND das Flag dauerhaft/manuell an ist (v3.20.1 — verschärft gegenüber v3.19.3, wo
-    // ein manuell angeschalteter Flag den Regler bei JEDEM Preset sichtbar machte, auch
-    // bei Napoli/Teglia, wo Zucker nicht hingehört; s. pizza-rechner-KONTEXT.md). Fragt
-    // dafür live den #preset-Select ab statt einen zusätzlichen State zu duplizieren —
-    // presets.js ruft applyFlags() bei jedem Preset-Wechsel (inkl. "Eigene Einstellung")
-    // neu auf, s. dort.
-    const presetEl = document.getElementById('preset');
-    const presetKey = presetEl ? presetEl.value : '';
-    const isNewYorkPreset = presetKey === 'newyork_style';
-    // "Eigene Einstellung": kein Preset gewählt ODER (im Test-Stub möglich) ein Key, der
-    // in PZ.PRESETS gar nicht existiert — beides zählt als "kein konkretes Preset aktiv".
-    const isCustomSelection = !presetKey || !(PZ.PRESETS && PZ.PRESETS[presetKey]);
-    const sugarBlock = document.getElementById('sugarBlock');
-    if (sugarBlock) sugarBlock.classList.toggle('show', isNewYorkPreset || (isCustomSelection && !!f.newYorkStyle));
+    // Zucker-Regler (#sugarBlock): seit v4.7.0 KEIN Feature-Flag mehr — die Sichtbarkeit
+    // hängt jetzt ausschließlich vom aktuellen state.sugar-Wert ab (0 = ausgeblendet,
+    // > 0 = eingeblendet), unabhängig von Preset/Flag. Wird in js/calc.js (renderResult())
+    // gesetzt, jedes Mal wenn PZ.calc() läuft — nicht mehr hier (s. pizza-rechner-KONTEXT.md,
+    // Backlog Punkt C).
     // Tooltip-/Hinweistexte: EIN globaler Body-Klassen-Schalter statt Dutzender
     // Einzel-Elemente. CSS blendet darüber alle .hint/.timersys-hint/.timerhint-Elemente
     // per display:none aus — die Elemente (und ihre IDs) bleiben dabei im DOM erhalten,
@@ -146,7 +125,6 @@
     flagTimerSystem: 'timerSystem',
     flagFreezeHint: 'freezeHint',
     flagMultiRecipes: 'multiRecipes',
-    flagNewYorkStyle: 'newYorkStyle',
     flagHints: 'hints'
   };
 

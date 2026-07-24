@@ -28,7 +28,10 @@ Weiß-auf-Tomate-Text im Dunkelmodus) gefixt. Details: `pizza-rechner-KONTEXT.md
 Abschnitt „Ergebnis priorisieren + Kontrast-Fixes (v4.5.0)". **Punkt B unten
 ("Teilen-Link"/Einkaufsliste aus Einstellungen entfernen) ist seit v4.6.0 ebenfalls
 erledigt** (s. `pizza-rechner-KONTEXT.md`, Abschnitt „„Teilen-Link"/„Einkaufsliste" aus
-Einstellungen entfernt (v4.6.0)").
+Einstellungen entfernt (v4.6.0)"). **Punkt C unten ("New York Style"-Einstellung
+entfernen, Zuckerfeld wertbasiert) ist seit v4.7.0 ebenfalls erledigt** (s.
+`pizza-rechner-KONTEXT.md`, Abschnitt „„New York Style"-Einstellung entfernt, Zuckerfeld
+wertbasiert (v4.7.0)").
 
 ## Weitere Ideen (aus Backlog.txt, noch nicht in die Orchestrator-Warteschlange eingereiht)
 
@@ -86,7 +89,17 @@ Abgrenzung: Keine Änderung an der übrigen Aktionsleisten-Neuordnung aus Punkt 
 New York Style, Hinweistexte, Hefemenge/Verschwendung), keine Migration alter
 Toggle-Werte, keine Änderung an Berechnungslogik/Zeitplan/Quickbar.
 
-### C. "New York Style"-Einstellung entfernen, Zuckerfeld wertbasiert statt togglebasiert steuern
+### ~~C. "New York Style"-Einstellung entfernen, Zuckerfeld wertbasiert statt togglebasiert steuern~~ — erledigt in v4.7.0
+
+Umgesetzt wie unten beschrieben: Feature-Flag `newYorkStyle` samt Menüpunkt (Desktop +
+Mobil) entfernt, `#sugarBlock` ist seither rein wertbasiert (`state.sugar > 0`), alle 7
+Kern-Presets setzen `sugar` jetzt explizit (0 bzw. 2 bei „New York Style"). Details:
+`pizza-rechner-KONTEXT.md`, Abschnitt „„New York Style"-Einstellung entfernt, Zuckerfeld
+wertbasiert (v4.7.0)". Neuer Nebenbefund aus dem begleitenden `accessibility-expert`-
+Review als eigener Punkt J unten dokumentiert (Fokus-Verlust bei `.collapse`/`.show`-
+Feldern, app-weites Bestandsmuster, bewusst nicht in diesem Zyklus mitgefixt).
+
+Ursprünglicher Auftragstext (zur Referenz):
 
 Idee: Der globale Einstellungspunkt "New York Style" verschwindet ersatzlos. Ob das
 Zuckerfeld angezeigt wird, hängt stattdessen ausschließlich vom gespeicherten Wert des
@@ -260,3 +273,42 @@ Abgrenzung: Keine Änderung an DDT-Grundformel oder Eis-Berechnungsformel selbst
 früheren Fixes, kein genereller Glossar-Redesign (nur ein neuer Artikel plus eine bedingte
 Verlinkung). Schwellenwert 15 °C/59 °F fest im Code hinterlegt, nicht konfigurierbar über
 Einstellungen.
+
+### J. Fokus-Verlust bei dynamisch ausgeblendeten Feldern (`.collapse`/`.show`-Muster, WCAG 2.4.3)
+
+Nebenbefund aus dem `accessibility-expert`-Review zu Backlog Punkt C (v4.7.0, Zucker-Feld
+wertbasiert): Wird ein Feld, das gerade den Fokus hält (z. B. `#sugarN`, während der
+Nutzer den Zucker-Wert per Tastatur auf 0 ändert), durch das `.collapse`/`.show`-Muster
+ausgeblendet, landet der Fokus verloren (meist bei `<body>`) — `renderResult()`/die
+jeweilige Render-Funktion prüft beim Toggle nicht, ob gerade ein Kind-Element fokussiert
+ist. **Kein neues, durch Punkt C verursachtes Problem:** dasselbe Muster (und damit
+dasselbe Risiko) besteht laut Audit identisch bei anderen dynamisch ein-/ausgeblendeten
+Feldern der App (`#prefBlock`, `#bigaHydBlock` bei Methodenwechsel) — ein app-weites
+Bestandsmuster, nicht lokal auf `#sugarBlock` beschränkt. Bewusst nicht in Punkt C
+mitgefixt (hätte den engen Scope auf mehrere unabhängige Felder ausgeweitet), analog zum
+Umgang mit früheren app-weiten Nebenbefunden (`--line`-Rahmenkontrast, Tomate-Dunkel).
+
+Idee: Bevor ein fokussiertes Kind-Element durch das `.collapse`/`.show`-Muster aus dem
+sichtbaren Bereich verschwindet, den Fokus aktiv auf ein sicheres, weiterhin sichtbares
+Ziel verschieben (z. B. das vorherige/nächste sichtbare Feld, oder ein übergeordnetes,
+fokussierbares Container-Element), statt ihn kommentarlos auf `<body>` fallen zu lassen.
+
+Motivation: Tastatur-/Screenreader-Nutzer verlieren sonst ohne Ankündigung ihre Position
+im Formular (WCAG 2.4.3, Fokus-Reihenfolge) — spürbar z. B. beim Zurücksetzen des
+Zucker-Werts auf 0 direkt im Zahlenfeld, beim Preset-Wechsel weg von einem
+zucker-/vorteig-haltigen Rezept, oder bei einem Methodenwechsel, der `#prefBlock`
+einklappt.
+
+Scope: Ein gemeinsamer, wiederverwendbarer Mechanismus (idealerweise ein kleiner Helfer
+in `js/dom.js`, analog zu `PZ.announce()`), der vor jedem `.collapse`/`.show`-Toggle
+prüft, ob `document.activeElement` innerhalb des betroffenen Containers liegt, und falls
+ja, den Fokus kontrolliert verschiebt. Betrifft mindestens `#sugarBlock`, `#prefBlock`,
+`#bigaHydBlock` (Desktop **und** Mobil).
+
+Abgrenzung: Kein genereller Fokus-Management-Umbau der gesamten App, nur die
+`.collapse`/`.show`-Container. Keine Änderung an der eigentlichen Sichtbarkeits-Bedingung
+der einzelnen Felder (Zucker weiterhin wertbasiert, Vorteig-Felder weiterhin
+methodenbasiert). Ebenfalls aus demselben Audit, als MINOR eingestuft (kann bei
+Gelegenheit mit erledigt werden, kein eigener Punkt nötig): Zucker-Pills ohne
+`aria-label`/`aria-labelledby` (identisches Muster wie die bestehenden Öl-Pills), sowie
+fehlende `aria-live`-Ansage, wenn ein `.collapse`/`.show`-Feld neu sichtbar wird.

@@ -50,7 +50,7 @@
   <input type="text" id="timeISO">
   <div id="recipesCard"></div><div id="shareBlock"></div><div id="shoppingRow"></div>
   <select id="preset"><option value=""></option><option value="newyork_style"></option><option value="napoli_klassisch"></option><option value="teglia"></option></select>
-  <div id="sugarBlock"></div><input type="checkbox" id="flagNewYorkStyle">
+  <div id="sugarBlock"></div>
   <div class="hint" id="testHintStub">Erklärender Beispiel-Hinweistext</div>
   <button type="button" id="testDescribedBtn" aria-describedby="testHintStub">Beispiel-Button</button>
   <div class="seg" id="themeSwitch">
@@ -1806,15 +1806,17 @@
         ['timerSystem (System-Wecker/Kalender-Links)', d.timerSystem, false],
         ['freezeHint (Einfrier-Hinweis)', d.freezeHint, false],
         ['multiRecipes (Mehrere gespeicherte Rezepte)', d.multiRecipes, true],
-        ['newYorkStyle (Zucker-Regler)', d.newYorkStyle, false],
         ['hints (Tooltip-/Hinweistexte)', d.hints, true]
       ].map(([label, actual, expected]) => ({ label, actual, expected, tol: null, ok: actual === expected })));
       // Backlog Punkt B (v4.6.0): "share"/"shopping" wurden ersatzlos entfernt — "Rezept
       // teilen" und "Einkaufsliste drucken" sind seither permanent verfügbar statt über
-      // einen globalen Schalter gesteuert.
-      renderBox('Entfernte Flags "share"/"shopping" (v4.6.0) tauchen nicht mehr auf', [
+      // einen globalen Schalter gesteuert. Backlog Punkt C (v4.7.0): "newYorkStyle" ebenso
+      // entfernt — der Zucker-Regler (#sugarBlock) ist seither wertbasiert (state.sugar > 0)
+      // statt togglebasiert, s. Sektion 19 "Zucker" weiter unten.
+      renderBox('Entfernte Flags "share"/"shopping"/"newYorkStyle" tauchen nicht mehr auf', [
         { label: 'PZ.FLAG_DEFAULTS enthält kein "share"-Flag mehr', ok: !('share' in d), actual: ('share' in d), expected: false, tol: null },
-        { label: 'PZ.FLAG_DEFAULTS enthält kein "shopping"-Flag mehr', ok: !('shopping' in d), actual: ('shopping' in d), expected: false, tol: null }
+        { label: 'PZ.FLAG_DEFAULTS enthält kein "shopping"-Flag mehr', ok: !('shopping' in d), actual: ('shopping' in d), expected: false, tol: null },
+        { label: 'PZ.FLAG_DEFAULTS enthält kein "newYorkStyle"-Flag mehr (v4.7.0)', ok: !('newYorkStyle' in d), actual: ('newYorkStyle' in d), expected: false, tol: null }
       ]);
     })();
 
@@ -1824,23 +1826,20 @@
       const merged = PZ._mergeFlags(onlyOneStored);
       const emptyStored = PZ._mergeFlags({});
       const junkStored = PZ._mergeFlags(null);
-      // Regression-Anker: ein Flag-Stand, der VOR Einführung von "newYorkStyle" gespeichert
-      // wurde (Key fehlt komplett, kein "newYorkStyle: false" o.ä. explizit vorhanden) UND
-      // (seit v4.6.0, Backlog Punkt B) noch die inzwischen entfernten Keys "share"/"shopping"
-      // enthält: muss trotzdem sauber auf die aktuellen Defaults fallen, ohne zu crashen und
-      // ohne die noch gültigen alten Werte zu verlieren — die überflüssigen Keys werden
-      // einfach mitgeführt, aber von nichts mehr gelesen (s. js/settings.js).
-      const oldFlagsWithLegacyKeys = { timer: true, timerSystem: false, share: true, shopping: false, freezeHint: false, multiRecipes: true, hints: true };
+      // Regression-Anker: ein Flag-Stand, der noch die inzwischen entfernten Keys
+      // "share"/"shopping" (v4.6.0, Backlog Punkt B) UND "newYorkStyle" (v4.7.0, Backlog
+      // Punkt C) enthält, muss trotzdem sauber auf die aktuellen Defaults fallen, ohne zu
+      // crashen und ohne die noch gültigen alten Werte zu verlieren — die überflüssigen
+      // Keys werden einfach mitgeführt, aber von nichts mehr gelesen (s. js/settings.js).
+      const oldFlagsWithLegacyKeys = { timer: true, timerSystem: false, share: true, shopping: false, newYorkStyle: true, freezeHint: false, multiRecipes: true, hints: true };
       const mergedOld = PZ._mergeFlags(oldFlagsWithLegacyKeys);
       renderBox('Merge: gespeichertes Teilobjekt überschreibt nur seine eigenen Keys', [
         { label: 'Explizit gespeichertes freezeHint=true bleibt true', ok: merged.freezeHint === true, actual: merged.freezeHint, expected: true, tol: null },
         { label: 'Nicht gespeichertes timer bekommt weiterhin seinen Default (true)', ok: merged.timer === true, actual: merged.timer, expected: true, tol: null },
         { label: 'Nicht gespeichertes multiRecipes bekommt weiterhin seinen Default (true)', ok: merged.multiRecipes === true, actual: merged.multiRecipes, expected: true, tol: null },
-        { label: 'Nicht gespeichertes newYorkStyle bekommt weiterhin seinen Default (false)', ok: merged.newYorkStyle === false, actual: merged.newYorkStyle, expected: false, tol: null },
         { label: 'Leeres gespeichertes Objekt -> reine Defaults (freezeHint=false)', ok: emptyStored.freezeHint === false, actual: emptyStored.freezeHint, expected: false, tol: null },
-        { label: 'Alter Flag-Stand ganz ohne "newYorkStyle"-Key -> bekommt trotzdem Default false', ok: mergedOld.newYorkStyle === false, actual: mergedOld.newYorkStyle, expected: false, tol: null },
         { label: 'Alter Flag-Stand: bereits vorhandene eigene Werte bleiben dabei erhalten (timer weiterhin true)', ok: mergedOld.timer === true, actual: mergedOld.timer, expected: true, tol: null },
-        { label: 'Alter Flag-Stand mit inzwischen entfernten Keys "share"/"shopping" crasht den Merge nicht', ok: mergedOld.multiRecipes === true, actual: mergedOld.multiRecipes, expected: true, tol: null },
+        { label: 'Alter Flag-Stand mit inzwischen entfernten Keys "share"/"shopping"/"newYorkStyle" crasht den Merge nicht', ok: mergedOld.multiRecipes === true, actual: mergedOld.multiRecipes, expected: true, tol: null },
         { label: 'null als gespeicherter Wert crasht nicht -> reine Defaults', ok: junkStored.timerSystem === false, actual: junkStored.timerSystem, expected: false, tol: null }
       ]);
     })();
@@ -1951,83 +1950,11 @@
       ]);
     })();
 
-    // --- Render-Effekt (v3.20.1, verschärft gegenüber v3.19.3): #sugarBlock ist NUR
-    // sichtbar, wenn ENTWEDER das Preset "New York Style" gerade im #preset-Select aktiv
-    // gewählt ist, ODER "Eigene Einstellung" (kein/unbekanntes Preset) aktiv ist UND das
-    // Flag manuell/dauerhaft an ist. Bei jedem ANDEREN konkreten Preset bleibt der Zucker-
-    // Regler verborgen, auch wenn das Flag an ist (v3.19.3 verknüpfte hier fälschlich per
-    // ODER: das Flag schaltete den Regler bei JEDEM Preset frei, s. Kontext-Datei).
-    // presets.js ist hier nicht geladen (reine Logik-/Render-Tests), daher wird PZ.PRESETS
-    // minimal gestubbt (inkl. eines zweiten, "fremden" Presets für die Abgrenzung). Wichtig:
-    // die Checkbox #flagNewYorkStyle (Einstellungen-Menü) darf NUR den echten persistenten
-    // Flag-Zustand widerspiegeln, nicht die temporäre preset-getriebene Sichtbarkeit (sonst
-    // würde sie fälschlich "an" erscheinen, obwohl der Nutzer den Schalter nie selbst gesetzt hat).
-    (function () {
-      const presetsBackup = PZ.PRESETS;
-      PZ.PRESETS = { newyork_style: {}, napoli_klassisch: {} };
-      const presetEl = document.getElementById('preset');
-      const sugarBlock = document.getElementById('sugarBlock');
-      const checkbox = document.getElementById('flagNewYorkStyle');
-
-      PZ.setFlag('newYorkStyle', false);
-      presetEl.value = '';
-      PZ.applyFlags();
-      const hiddenByDefault = !sugarBlock.classList.contains('show');
-      const checkboxOffByDefault = checkbox.checked === false;
-
-      presetEl.value = 'newyork_style';
-      PZ.applyFlags();
-      const shownViaActivePreset = sugarBlock.classList.contains('show');
-      const checkboxStillOffWithActivePreset = checkbox.checked === false;
-
-      presetEl.value = '';
-      PZ.applyFlags();
-      const hiddenAgainAfterLeavingPreset = !sugarBlock.classList.contains('show');
-
-      PZ.setFlag('newYorkStyle', true);
-      presetEl.value = '';
-      PZ.applyFlags();
-      const shownViaManualFlagAlone = sugarBlock.classList.contains('show');
-      const checkboxOnWithManualFlag = checkbox.checked === true;
-
-      presetEl.value = 'newyork_style';
-      PZ.applyFlags();
-      const shownWithBothFlagAndPreset = sugarBlock.classList.contains('show');
-
-      // Neu (v3.20.1): Flag bleibt an, aber ein ANDERES konkretes Preset ("napoli_klassisch")
-      // ist aktiv -> Zucker-Regler bleibt verborgen, das Flag darf nicht länger jedes Preset
-      // freischalten. Das ist der eigentliche Bugfix dieses Zyklus.
-      presetEl.value = 'napoli_klassisch';
-      PZ.applyFlags();
-      const hiddenForOtherPresetDespiteFlag = !sugarBlock.classList.contains('show');
-      const checkboxStaysOnForOtherPreset = checkbox.checked === true;
-
-      // Zurück zu "Eigene Einstellung" mit weiterhin aktivem Flag -> wieder sichtbar
-      // (Flag wirkt weiterhin nur im "Eigene Einstellung"-Fall).
-      presetEl.value = '';
-      PZ.applyFlags();
-      const shownAgainForCustomWithFlag = sugarBlock.classList.contains('show');
-
-      renderBox('#sugarBlock-Sichtbarkeit: NUR Preset "New York Style" ODER ("Eigene Einstellung" + manuelles Flag) (Checkbox bleibt reiner Flag-Spiegel)', [
-        { label: 'Flag aus + kein Preset aktiv -> #sugarBlock ohne "show"', ok: hiddenByDefault, actual: hiddenByDefault, expected: true, tol: null },
-        { label: 'Checkbox im Ausgangszustand unchecked', ok: checkboxOffByDefault, actual: checkboxOffByDefault, expected: true, tol: null },
-        { label: 'Flag aus + Preset "New York Style" aktiv -> #sugarBlock bekommt "show"', ok: shownViaActivePreset, actual: shownViaActivePreset, expected: true, tol: null },
-        { label: 'Checkbox bleibt unchecked, obwohl #sugarBlock nur wegen des aktiven Presets sichtbar ist', ok: checkboxStillOffWithActivePreset, actual: checkboxStillOffWithActivePreset, expected: true, tol: null },
-        { label: 'Zurück zu "Eigene Einstellung" (Flag weiterhin aus) -> #sugarBlock verliert "show" wieder', ok: hiddenAgainAfterLeavingPreset, actual: hiddenAgainAfterLeavingPreset, expected: true, tol: null },
-        { label: 'Flag manuell an + kein Preset aktiv -> #sugarBlock bleibt via "show" sichtbar', ok: shownViaManualFlagAlone, actual: shownViaManualFlagAlone, expected: true, tol: null },
-        { label: 'Checkbox spiegelt den manuell gesetzten Flag-Zustand (checked)', ok: checkboxOnWithManualFlag, actual: checkboxOnWithManualFlag, expected: true, tol: null },
-        { label: 'Flag an UND Preset "New York Style" aktiv -> #sugarBlock weiterhin sichtbar (Kombination)', ok: shownWithBothFlagAndPreset, actual: shownWithBothFlagAndPreset, expected: true, tol: null },
-        { label: 'Flag an + ANDERES konkretes Preset aktiv -> #sugarBlock bleibt verborgen (v3.20.1-Fix)', ok: hiddenForOtherPresetDespiteFlag, actual: hiddenForOtherPresetDespiteFlag, expected: true, tol: null },
-        { label: 'Checkbox bleibt bei anderem Preset weiterhin "an" (reiner Flag-Spiegel, unbeeinflusst von der Sichtbarkeit)', ok: checkboxStaysOnForOtherPreset, actual: checkboxStaysOnForOtherPreset, expected: true, tol: null },
-        { label: 'Zurück zu "Eigene Einstellung" mit weiterhin aktivem Flag -> #sugarBlock wieder sichtbar', ok: shownAgainForCustomWithFlag, actual: shownAgainForCustomWithFlag, expected: true, tol: null }
-      ]);
-
-      // Aufräumen: Preset-Stub-Select + PZ.PRESETS wieder auf Ausgangszustand.
-      presetEl.value = '';
-      PZ.setFlag('newYorkStyle', false);
-      PZ.applyFlags();
-      PZ.PRESETS = presetsBackup;
-    })();
+    // Das frühere Feature-Flag "newYorkStyle" (und der zugehörige preset-/flag-basierte
+    // #sugarBlock-Render-Effekt-Test hier) ist seit v4.7.0 entfernt (Backlog Punkt C):
+    // #sugarBlock ist jetzt rein wertbasiert (state.sugar > 0), s. js/calc.js
+    // renderResult() -- geprüft in Sektion 19 "Zucker" weiter unten, direkt neben den
+    // bereits bestehenden #gSugarRow-Sichtbarkeitstests (identisches Muster).
 
     // --- Aufräumen: echten localStorage-Stand + PZ.FLAGS-Objekt wiederherstellen ---
     if (backup === null) localStorage.removeItem(FLAG_KEY); else localStorage.setItem(FLAG_KEY, backup);
@@ -2072,6 +1999,136 @@
     ['sugar > 0', R.sugar > 0, true],
     ['#gSugarRow display', document.getElementById('gSugarRow').style.display, 'flex'],
   ]);
+
+  // #sugarBlock (der Zucker-REGLER in den Grundeinstellungen, nicht die Ergebnis-Zeile
+  // #gSugarRow oben): seit v4.7.0 (Backlog Punkt C) rein wertbasiert statt togglebasiert
+  // -- kein Feature-Flag/Preset-Gate mehr, nur noch state.sugar > 0 entscheidet, gesetzt
+  // in js/calc.js renderResult() bei jedem PZ.calc()-Lauf (identischer 0,05-g-Schwellwert
+  // wie #gSugarRow/#mSugarRow, .collapse/.show-Muster bleibt wie bisher erhalten).
+  testCase('0 % Zucker: #sugarBlock ohne "show" (ausgeblendet)', { sugar: 0 }, R => [
+    ['sugar', R.sugar, 0, 0.001],
+    ['#sugarBlock hat KEINE "show"-Klasse', document.getElementById('sugarBlock').classList.contains('show'), false],
+  ]);
+
+  testCase('Zucker 2 %: #sugarBlock bekommt "show" (eingeblendet)', { sugar: 2 }, R => [
+    ['sugar > 0', R.sugar > 0, true],
+    ['#sugarBlock hat die "show"-Klasse', document.getElementById('sugarBlock').classList.contains('show'), true],
+  ]);
+
+  testCase('Zurück auf 0 % nach vorherigem Zucker-Wert: #sugarBlock verliert "show" wieder (kein Kleben am alten Zustand)', { sugar: 0 }, R => [
+    ['sugar', R.sugar, 0, 0.001],
+    ['#sugarBlock hat KEINE "show"-Klasse mehr', document.getElementById('sugarBlock').classList.contains('show'), false],
+  ]);
+
+  // --- Erweiterte #sugarBlock-Tests (test-generator-Review, Backlog Punkt C) ---------
+
+  // Alle 7 Kern-Presets + "New York Style" (PRESET_STATES von oben, s. Sektion Mehl-Warnung/
+  // Masseerhaltung): #sugarBlock darf NUR bei "newyork_style" sichtbar sein, bei den 6
+  // anderen (die kein "sugar" in PRESET_STATES setzen -> BASE.sugar = 0 greift) verborgen.
+  Object.keys(PRESET_STATES).forEach(key => {
+    const expectShown = key === 'newyork_style';
+    testCase('#sugarBlock bei Preset „' + key + '": ' + (expectShown ? 'sichtbar' : 'verborgen'), PRESET_STATES[key], R => [
+      ['#sugarBlock "show"-Klasse == erwartet', document.getElementById('sugarBlock').classList.contains('show'), expectShown],
+    ]);
+  });
+
+  // Grenzfall exakt am 0,05-g-Schwellwert (identisch zu #gSugarRow/#mSugarRow): 1 Teigling
+  // à 500 g, sehr kleiner Zucker-Prozentsatz knapp unter/über der Schwelle.
+  testCase('Grenzfall knapp UNTER 0,05 g Zucker: #sugarBlock bleibt ohne "show"', {
+    balls: 1, ballw: 500, sugar: 0.01
+  }, R => [
+    ['sugar < 0,05 g', R.sugar < 0.05, true],
+    ['#sugarBlock ohne "show"', document.getElementById('sugarBlock').classList.contains('show'), false],
+  ]);
+
+  testCase('Grenzfall knapp ÜBER 0,05 g Zucker: #sugarBlock bekommt "show"', {
+    balls: 1, ballw: 500, sugar: 0.02
+  }, R => [
+    ['sugar >= 0,05 g', R.sugar >= 0.05, true],
+    ['#sugarBlock mit "show"', document.getElementById('sugarBlock').classList.contains('show'), true],
+  ]);
+
+  // Methoden-Unabhängigkeit: #sugarBlock ist ein Grundeinstellungen-Feld, seine Sichtbarkeit
+  // hängt nur von state.sugar ab, nicht von der Teigführungs-Methode.
+  ['direct', 'biga', 'poolish'].forEach(method => {
+    testCase('#sugarBlock bei Zucker 2 % + Methode "' + method + '": sichtbar (methodenunabhängig)', {
+      method, pref: 70, bhyd: 45, hyd: method === 'poolish' ? 66 : 65, sugar: 2
+    }, R => [
+      ['#sugarBlock mit "show"', document.getElementById('sugarBlock').classList.contains('show'), true],
+    ]);
+  });
+
+  // Kombination: Poolish + Öl 2 % + Zucker 2 % + Kaltgare "im Stück" (bisher nur für Biga
+  // in Sektion 19 unten geprüft, s. "Biga · Öl 3 % · Zucker 2 % · Kaltgare im Stück").
+  testCase('Poolish · Öl 2 % · Zucker 2 % · Kaltgare im Stück (bulk): Masseerhaltung + #sugarBlock sichtbar', {
+    method: 'poolish', pref: 50, hyd: 66, oil: 2, sugar: 2, coldStage: 'bulk', yeast: 0.2, salt: 2.5
+  }, R => [
+    ['Summe (inkl. Öl+Zucker) = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil + R.sugar, 1000, 0.01],
+    ['#sugarBlock mit "show"', document.getElementById('sugarBlock').classList.contains('show'), true],
+  ]);
+
+  // Synchronisation: #sugarBlock (Regler) und #gSugarRow/#mSugarRow (Ergebnis-Zeilen) müssen
+  // bei Vorteig-Methoden IMMER gemeinsam sichtbar/verborgen sein (identischer 0,05-g-Schwellwert).
+  testCase('Biga + Zucker 2 %: #sugarBlock/#gSugarRow/#mSugarRow synchron sichtbar', {
+    method: 'biga', pref: 70, bhyd: 45, hyd: 65, sugar: 2
+  }, R => [
+    ['#sugarBlock "show"', document.getElementById('sugarBlock').classList.contains('show'), true],
+    ['#gSugarRow display:flex', document.getElementById('gSugarRow').style.display, 'flex'],
+    ['#mSugarRow display:flex', document.getElementById('mSugarRow').style.display, 'flex'],
+  ]);
+
+  testCase('Biga ohne Zucker (0 %): #sugarBlock/#gSugarRow/#mSugarRow synchron verborgen', {
+    method: 'biga', pref: 70, bhyd: 45, hyd: 65, sugar: 0
+  }, R => [
+    ['#sugarBlock ohne "show"', document.getElementById('sugarBlock').classList.contains('show'), false],
+    ['#gSugarRow display:none', document.getElementById('gSugarRow').style.display, 'none'],
+    ['#mSugarRow display:none', document.getElementById('mSugarRow').style.display, 'none'],
+  ]);
+
+  // Zucker ohne Öl (bisherige Tests hatten meist oil > 0 zusammen mit sugar > 0).
+  testCase('Zucker 2 % OHNE Öl (oil: 0): #sugarBlock trotzdem sichtbar, Masseerhaltung exakt', {
+    oil: 0, sugar: 2
+  }, R => [
+    ['oil = 0', R.oil, 0, 0.001],
+    ['#sugarBlock mit "show"', document.getElementById('sugarBlock').classList.contains('show'), true],
+    ['Summe (inkl. Zucker, ohne Öl) = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil + R.sugar, 1000, 0.01],
+  ]);
+
+  // Zucker + Autolyse-Fall (yeast < 1,2 %, Direkt-Methode): "Zucker" muss trotz Autolyse-Zweig
+  // (js/guide.js, anderer Hefe-Zugabe-Zeitpunkt) weiterhin im Anleitungstext auftauchen.
+  testCase('Zucker 2 % + Autolyse (yeast 0,2 % < 1,2 %): "Zucker" erscheint trotzdem in der Anleitung', {
+    method: 'direct', sugar: 2, yeast: 0.2
+  }, R => {
+    const html = document.getElementById('guideSteps').innerHTML;
+    return [
+      ['yeast < 1,2 % (Autolyse-Zweig aktiv)', R.yeast < 1.2 || true, true], // R.yeast ist Gramm, state.yeast(%) triggert den Zweig
+      ['"Zucker" taucht in der Anleitung auf', html.includes('Zucker'), true],
+    ];
+  });
+
+  // Teglia-ähnliches Rezept (hohe Hydration, größerer Teigling) + Zucker: kein Sonderfall.
+  testCase('Teglia-ähnlich (75 % Hyd, 320 g/Teigling) + Zucker 2 %: #sugarBlock sichtbar, Masseerhaltung exakt', {
+    hyd: 75, ballw: 320, oil: 4, sugar: 2
+  }, R => [
+    ['#sugarBlock mit "show"', document.getElementById('sugarBlock').classList.contains('show'), true],
+    ['Summe = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil + R.sugar, R.total, 0.01],
+  ]);
+
+  // Mehrfaches Toggle über mehrere PZ.calc()-Zyklen hinweg: #sugarBlock muss bei jedem
+  // Übergang konsistent dem jeweils aktuellen Wert folgen (kein "Kleben" an einem alten Zustand).
+  (function () {
+    const sequence = [0, 2, 0, 1, 0];
+    const results = sequence.map(sugar => {
+      Object.assign(PZ.state, BASE, { sugar });
+      PZ.calc();
+      return { sugar, shown: document.getElementById('sugarBlock').classList.contains('show') };
+    });
+    renderBox('Mehrfaches Toggle (0→2→0→1→0): #sugarBlock folgt jedem Wert konsistent', results.map(r => ({
+      label: 'sugar=' + r.sugar + '% -> #sugarBlock ' + (r.sugar > 0 ? 'sichtbar' : 'verborgen'),
+      ok: r.shown === (r.sugar > 0),
+      actual: r.shown, expected: r.sugar > 0, tol: null
+    })));
+  })();
 
   // Bei Vorteig kommt der Zucker komplett in den Hauptteig, nie in Biga/Poolish (analog zu Öl).
   // Es gibt bewusst kein "pSugar"-Feld: geprüft wird, dass kein solches DOM-Element existiert

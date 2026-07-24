@@ -8,6 +8,93 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## "New York Style"-Einstellung entfernt, Zuckerfeld wertbasiert statt togglebasiert (v4.7.0)
+
+Backlog Punkt C (`Backlog.md`). Auftrag: der globale Einstellungspunkt „New York Style"
+verschwindet ersatzlos; ob das Zuckerfeld (`#sugarBlock`) angezeigt wird, hängt
+stattdessen ausschließlich vom gespeicherten Wert ab (0 = ausgeblendet, größer 0 =
+eingeblendet), unabhängig von Preset/Flag. Bei Preset-Erstellung (`js/newrecipe.js`) ist
+das Feld schon vorher immer sichtbar gewesen (kein Änderungsbedarf dort).
+
+- **`js/settings.js`:** Flag `newYorkStyle` (Default AUS) komplett aus `DEFAULTS` und
+  `CHECKBOX_MAP` entfernt. `applyFlags()` steuert `#sugarBlock` nicht mehr — die gesamte
+  preset-/flag-abhängige Sichtbarkeitslogik (live aus `#preset` gelesener Preset-Key,
+  `isNewYorkPreset`/`isCustomSelection`) wurde ersatzlos gestrichen.
+- **`js/calc.js` (`renderResult(R)`):** neue Zeile direkt neben den bestehenden
+  `#gSugarRow`/`#mSugarRow`-Sichtbarkeits-Togglern: `$('sugarBlock').classList.toggle(
+  'show', R.sugar >= 0.05)` — identischer 0,05-g-Schwellwert wie die beiden
+  Ergebnis-Zeilen, läuft bei jedem `PZ.calc()`-Aufruf mit (Slider-/Stepper-Änderung,
+  Preset-Anwendung, Rezept laden, Sprach-/Einheitenwechsel). Das etablierte
+  `.collapse`/`.show`-Muster (verhindert Flackern vorm ersten Render) bleibt unverändert
+  erhalten, nur die Bedingung ist jetzt wertbasiert statt preset-/flag-basiert.
+- **`js/presets.js`:** alle 7 Kern-Presets setzen `sugar` jetzt explizit (0 bei den 6
+  Presets ohne Zucker, 2 beim „New York Style"-Preset) — analog zu `oil`, das ebenfalls
+  jedes Preset explizit setzt. Dadurch entfällt der bisherige Sonder-Mechanismus, der beim
+  Verlassen des „New York Style"-Presets `sugar` manuell auf 0 zurücksetzte
+  (`lastAppliedPresetKey`-Tracking dafür ebenfalls entfernt, da nicht mehr gebraucht). Das
+  `flag: 'newYorkStyle'`-Feld am Preset-Objekt selbst wurde entfernt — es wurde ohnehin nie
+  von Code gelesen (nur Dokumentationszweck; die tatsächliche Sichtbarkeit lief immer über
+  den hartkodierten Vergleich `presetKey === 'newyork_style'` in `applyFlags()`, die es
+  jetzt gar nicht mehr gibt). Kein genereller `p.flag`-Mechanismus wird vermisst: aktuell
+  nutzt kein anderes Preset ein verstecktes Feld, ein künftiger vergleichbarer Bedarf kann
+  bei Gelegenheit erneut wertbasiert statt flag-basiert gelöst werden.
+- **`pizza-rechner.html`/`pizza-rechner-mobile.html`:** die Menüzeile „New York Style"
+  (Label + Info-Button/Hinweistext + Toggle) komplett aus der Einstellungen-Card entfernt,
+  auf beiden Seiten (unterschiedliches Markup-Detail: Desktop nutzt das Disclosure-Muster
+  mit `.info-btn`, Mobil einen permanent sichtbaren `.hint`-Div — beide vollständig
+  entfernt, keine Reste).
+- **`js/i18n-dict.js`:** `flag.newYorkStyle.name`/`.infoBtn`/`.info` entfernt (nur in der
+  jetzt entfernten Menüzeile referenziert, per `grep` vorab verifiziert — `preset.
+  newyorkStyle.desc`, `option.newyorkStyle` und `glossary.newYorkStyle.*` bleiben
+  unverändert, die betreffen das Preset selbst bzw. den Glossar-Artikel, nicht das Flag).
+  `hint.newRecipeSugar` (Hinweistext im „Neues Rezept anlegen"-Formular) inhaltlich
+  angepasst: verwies bisher auf das jetzt nicht mehr existierende Flag/Preset-Gating,
+  erklärt jetzt stattdessen den Kontrast zur neuen wertbasierten Sichtbarkeit im
+  Hauptrechner.
+- **Bewusst nicht angefasst:** `js/newrecipe.js`/das Zucker-Feld im „Neues Rezept
+  anlegen"-Formular war schon vor diesem Zyklus immer sichtbar (kein `.collapse`, Default
+  „0", frei editierbar) — entsprach bereits exakt der geforderten Vorgabe, keine
+  Code-Änderung nötig. `#gSugarRow`/`#mSugarRow` (Ergebnis-Metadaten) waren bereits seit
+  v3.19.2 wertbasiert (`R.sugar >= 0.05`) — ebenfalls keine Änderung nötig, nur
+  `#sugarBlock` (der Regler selbst) hing bisher noch am Flag/Preset.
+
+**Tests** (`tests/test.html`, Sektion 18 „Feature-Flags" + Sektion 19 „Zucker"): Default-
+Werte-Test um `newYorkStyle` gekürzt, „Entfernte Flags"-Box um `newYorkStyle` ergänzt
+(analog zu `share`/`shopping` aus v4.6.0); Merge-Regressionsanker erweitert um
+`newYorkStyle` im alten Flag-Stand (crasht nicht, wird als überflüssiger Key mitgeführt);
+der komplette alte preset-/flag-basierte `#sugarBlock`-Render-Effekt-Test (11 Einzel-
+Prüfungen, inkl. `PZ.PRESETS`-Stub) ersatzlos entfernt. Neue, rein wertbasierte
+`#sugarBlock`-Tests in Sektion 19, per `test-generator`-Agent (über den Hauptagenten
+angefordert) um 10 zusätzliche Testfälle ergänzt: Preset-Loop über alle 7 Kern-Presets +
+„New York Style" gegen `#sugarBlock` (nur bei `newyork_style` sichtbar), Grenzfall-Tests
+exakt am 0,05-g-Schwellwert (1 Teigling à 500 g, Zucker-Prozentsatz knapp unter/über der
+Schwelle), Methoden-Unabhängigkeit (Direkt/Biga/Poolish), Poolish+Öl+Zucker+Kaltgare-
+„im Stück"-Kombination, `#sugarBlock`/`#gSugarRow`/`#mSugarRow`-Synchronisations-Check,
+Zucker ohne Öl, Zucker im Autolyse-Fall (Hefe < 1,2 %), Teglia-ähnliches Rezept (75 %
+Hydration, 320 g/Teigling) mit Zucker, Mehrfach-Toggle-Sequenz (0→2→0→1→0) über mehrere
+`PZ.calc()`-Zyklen. **748 Prüfungen** bestehen (vorher 720, netto +28), verifiziert per
+Headless-Edge-Dump.
+
+**Accessibility-Review (gezielt, `accessibility-expert`-Agent, über den Hauptagenten
+angefordert):** keine Blocker. Bestätigt OK: Label-Verknüpfung (`aria-labelledby=
+"sugarLabel"`), keine verwaisten `aria-describedby`/`aria-controls`-Referenzen nach dem
+Entfernen des Menüpunkts, `.collapse`/`.show`-Muster funktioniert wie vorgesehen. 1
+MAJOR (Fokus-Verlust beim `.collapse`/`.show`-Ausblenden eines gerade fokussierten
+Kind-Elements, WCAG 2.4.3) + 3 MINOR (Zucker-Pills ohne `aria-label`, fehlende
+`aria-live`-Ansage beim Neu-Einblenden, keine automatisierte ID-Referenz-Absicherung) —
+vom Agenten selbst explizit als **vorbestehendes, app-weites Muster** eingeordnet
+(identisches Risiko besteht seit Langem auch bei `#prefBlock`/`#bigaHydBlock` beim
+Methodenwechsel, nicht durch diesen Zyklus verursacht). Analog zum bisherigen Umgang mit
+app-weiten Nebenbefunden (`--line`-Rahmenkontrast, Tomate-Dunkel) bewusst NICHT in diesem
+eng gefassten Zyklus mitgefixt, sondern als `Backlog.md` Punkt J dokumentiert.
+
+**Geändert:** `js/settings.js`, `js/calc.js`, `js/presets.js`, `js/i18n-dict.js`,
+`pizza-rechner.html`, `pizza-rechner-mobile.html`, `tests/test.html`. `?v=` auf `4.7.0`
+gezogen (Desktop + Mobil, Cache-Busting + Footer-Version).
+`pizza-rechner-mobile-standalone.html` neu gebaut (`python build-mobile-standalone.py`,
+nach dem Versionssprung). `Versionen/v4.7.0 - New York Style entfernt, Zuckerfeld
+wertbasiert/` enthält den vollständigen Schnappschuss.
+
 ## "Teilen-Link"/"Einkaufsliste" aus Einstellungen entfernt (v4.6.0)
 
 Backlog Punkt B (`Backlog.md`), war an Punkt 1 „Ergebnis priorisieren" gekoppelt und seit

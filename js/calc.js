@@ -166,8 +166,16 @@
     // Öl-Zeile ganz ausblenden, wenn kein Öl im Rezept
     if ($('gOilRow')) $('gOilRow').style.display = R.oil >= 0.05 ? 'flex' : 'none';
     if ($('gSugar')) $('gSugar').textContent = fmtW(R.sugar, 1);
-    // Zucker-Zeile ganz ausblenden, wenn kein Zucker im Rezept (Standard: New-York-Style-Feld ist 0)
+    // Zucker-Zeile ganz ausblenden, wenn kein Zucker im Rezept (Standard: 0)
     if ($('gSugarRow')) $('gSugarRow').style.display = R.sugar >= 0.05 ? 'flex' : 'none';
+    // Zucker-Regler (#sugarBlock, Grundeinstellungen): seit v4.7.0 wertbasiert statt
+    // togglebasiert (Backlog Punkt C, ersetzt das entfernte Feature-Flag "New York Style").
+    // Sichtbar NUR, wenn der aktuelle Rezept-Zustand tatsächlich Zucker > 0 enthält --
+    // R.sugar (das berechnete Gewicht) ist exakt 0 genau dann, wenn state.sugar 0 ist
+    // (Mehl > 0 immer), also derselbe 0,05-g-Schwellwert wie bei gSugarRow/mSugarRow.
+    // Nutzt weiterhin das etablierte .collapse/.show-Muster (verhindert einen Flacker-
+    // Moment vorm ersten calc()-Lauf, da .collapse per CSS schon vor JS-Ausführung greift).
+    if ($('sugarBlock')) $('sugarBlock').classList.toggle('show', R.sugar >= 0.05);
 
     if (R.hasPref) {
       $('pFlour').textContent = fmtW(R.pf);
