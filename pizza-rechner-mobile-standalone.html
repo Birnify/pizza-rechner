@@ -686,6 +686,14 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .field label{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;column-gap:8px;font-size:14px;font-weight:600;margin-bottom:6px;}
 .field label .val{color:var(--tomato-text);font-variant-numeric:tabular-nums;font-size:15px;font-family:var(--font-head);flex-shrink:0;}
 .field .hint{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.35;overflow-wrap:break-word;}
+/* Design-System-Import Zyklus 5 (v4.4.0): die Mobil-Einstellungen-Switch-Zeilen
+   (.flag-item, s. u.) nutzen jetzt denselben .hint statt des früheren, eigenen
+   .switch-info (Erklärtext war zuvor hinter einem Info-Knopf versteckt, jetzt
+   dauerhaft sichtbar, s. Kommentar in pizza-rechner-mobile.html). .field .hint
+   deckt das nicht ab (.flag-item ist kein .field) -- eigener, identisch aussehender
+   Selektor plus etwas Bodenabstand vor der .flag-item-Trennlinie (ersetzt das
+   frühere .switch-info{margin:0 0 10px}). */
+.flag-item .hint{font-size:11.5px;color:var(--muted);line-height:1.35;overflow-wrap:break-word;margin:0 0 10px;}
 /* Sichtbare Kopplung Vorteig-Reife <-> Hefemenge (v3.31.0): wenn eine Biga/Poolish-
    Reifestufe aktiv ist, legt die Stufe die Hefemenge automatisch fest. Der Regler
    bleibt technisch bedienbar (rein visuelle Kennzeichnung, keine Interaktions-
@@ -2105,188 +2113,185 @@ header{position:relative;text-align:center;}
 
 <div class="wrap view" data-view="einstellungen" hidden>
   <div class="controls-col" style="display:grid;gap:20px;">
+    <!-- Design-System-Import Zyklus 5 (v4.4.0, EinstellungenScreen.jsx-Referenz): die
+         bisher eine große "Einstellungen"-Karte teilt sich jetzt in zwei Cards ("Anzeige" /
+         "Funktionen"), analog zur Referenz -- das Mockup zeigt zusätzlich eine "Standard-
+         Mehl"-Card, die aber eine vereinfachte Demo-Auswahl ist (KEINE reale App-
+         Funktion, s. Kontext-Datei) und deshalb hier bewusst NICHT ergänzt wird. Alle
+         echten Einstellungspunkte (Sprache/Darstellung/Einheiten, 8 Feature-Flags,
+         Hefemengen-/Verschwendungs-Anpassung) bleiben inhaltlich unverändert, nur die
+         Reihenfolge innerhalb der beiden neuen Gruppen entspricht der bisherigen
+         Gesamt-Reihenfolge. Echte Verhaltensänderung (wie schon bei Zyklus 4 dokumentiert
+         nötig): der bisherige Info-Knopf ("i", Klick blendete den Erklärtext ein/aus)
+         entfällt zugunsten des SwitchRow-Musters aus der Referenz -- jeder Erklärtext
+         steht jetzt als normaler, dauerhaft sichtbarer .hint darunter (dadurch automatisch
+         vom Feature-Flag "Hinweistexte" mit ausblendbar, wie jeder andere .hint in der App
+         auch). Desktop (pizza-rechner.html) behält das bisherige Info-Knopf-Muster
+         unverändert bei (Scope ist mobile-only, s. Kontext-Datei). -->
     <details class="card" open>
-      <summary><h2 data-i18n-attr="aria-label:card.settings.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.8"/><path d="M12 3.5v2M12 18.5v2M20.5 12h-2M5.5 12h-2M18 6l-1.4 1.4M7.4 16.6 6 18M18 18l-1.4-1.4M7.4 7.4 6 6"/></svg></span><span data-i18n="card.settings.title">Einstellungen</span></h2></summary>
+      <summary><h2 data-i18n-attr="aria-label:card.settingsDisplay.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.8"/><path d="M12 3.5v2M12 18.5v2M20.5 12h-2M5.5 12h-2M18 6l-1.4 1.4M7.4 16.6 6 18M18 18l-1.4-1.4M7.4 7.4 6 6"/></svg></span><span data-i18n="card.settingsDisplay.title">Anzeige</span></h2></summary>
       <div class="acc-body">
-        <div class="field" style="margin-bottom:0;">
-          <div class="hint" style="margin-bottom:10px;" data-i18n="hint.settings.mobile">Schalte einzelne Zusatzfunktionen ein oder aus: deine Wahl wird direkt im Browser gespeichert. Tipp auf „i“ zeigt eine kurze Erklärung.</div>
 
-          <div class="flag-item">
-            <div class="switch-row">
-              <div class="switch-row-main">
-                <span class="switch-name" id="langLabel" data-i18n="flag.lang.name">Sprache</span>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagLangInfo" data-i18n-attr="aria-label:flag.lang.infoBtn">i</button>
-              </div>
-              <div class="seg" id="langSwitch" role="group" aria-labelledby="langLabel" style="width:auto;">
-                <button type="button" data-lang="de" data-i18n="lang.german">Deutsch</button>
-                <button type="button" data-lang="en" data-i18n="lang.english">Englisch</button>
-              </div>
-            </div>
-            <p class="switch-info" id="flagLangInfo" hidden data-i18n="flag.lang.info">Deutsch oder Englisch für die komplette Oberfläche, Anleitung und Exporte. Automatisch anhand deiner Browser-Sprache vorausgewählt, hier jederzeit manuell umschaltbar: deine Wahl wird gespeichert.</p>
-            <div id="langAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
+        <div class="field">
+          <label id="langLabel" data-i18n="flag.lang.name">Sprache</label>
+          <div class="seg" id="langSwitch" role="group" aria-labelledby="langLabel">
+            <button type="button" data-lang="de" data-i18n="lang.german">Deutsch</button>
+            <button type="button" data-lang="en" data-i18n="lang.english">Englisch</button>
           </div>
-
-          <div class="flag-item">
-            <div class="switch-row">
-              <div class="switch-row-main">
-                <span class="switch-name" id="themeLabel" data-i18n="flag.theme.name">Darstellung</span>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagThemeInfo" data-i18n-attr="aria-label:flag.theme.infoBtn">i</button>
-              </div>
-              <div class="seg" id="themeSwitch" role="group" aria-labelledby="themeLabel" style="width:auto;">
-                <button type="button" data-theme-choice="light" data-i18n="theme.light">Hell</button>
-                <button type="button" data-theme-choice="dark" data-i18n="theme.dark">Dunkel</button>
-              </div>
-            </div>
-            <p class="switch-info" id="flagThemeInfo" hidden data-i18n="flag.theme.info">Hell oder Dunkel für die komplette Oberfläche. Folgt automatisch der Systemeinstellung deines Geräts, hier jederzeit manuell umschaltbar: deine Wahl wird gespeichert und übersteuert danach die Systemeinstellung.</p>
-            <div id="themeAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
-          </div>
-
-          <div class="flag-item">
-            <div class="switch-row">
-              <div class="switch-row-main">
-                <span class="switch-name" id="unitsLabel" data-i18n="flag.units.name">Einheiten</span>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagUnitsInfo" data-i18n-attr="aria-label:flag.units.infoBtn">i</button>
-              </div>
-              <div class="seg" id="unitSwitch" role="group" aria-labelledby="unitsLabel" style="width:auto;">
-                <button type="button" data-units-choice="metric" data-i18n="units.metric">Metrisch</button>
-                <button type="button" data-units-choice="imperial" data-i18n="units.imperial">Imperial</button>
-              </div>
-            </div>
-            <p class="switch-info" id="flagUnitsInfo" hidden data-i18n="flag.units.info">Metrisch (Gramm, Celsius) oder Imperial (Unzen/Pfund, Fahrenheit) für Ergebnis-Panel, Einkaufsliste, Anleitung und PDF-Export. Automatisch anhand deiner Browser-Region vorausgewählt, hier jederzeit manuell umschaltbar: deine Wahl wird gespeichert. Die Eingabe-Regler (z. B. Teigling-Gewicht, Raumtemperatur) bleiben davon unberührt.</p>
-            <div id="unitsAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
-          </div>
-
-          <div class="flag-item">
-            <div class="switch-row">
-              <div class="switch-row-main">
-                <label class="switch-name" for="flagTimer" data-i18n="flag.timer.name">Gärzeit-Timer</label>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagTimerInfo" data-i18n-attr="aria-label:flag.timer.infoBtn">i</button>
-              </div>
-              <span class="switch"><input type="checkbox" id="flagTimer" role="switch" aria-describedby="flagTimerInfo"><span class="switch-slider" aria-hidden="true"></span></span>
-            </div>
-            <p class="switch-info" id="flagTimerInfo" hidden data-i18n="flag.timer.info">Countdown mit optionalem Wecker für jeden Anleitungsschritt (z. B. Stockgare, Stückgare).</p>
-          </div>
-
-          <div class="flag-item">
-            <div class="switch-row">
-              <div class="switch-row-main">
-                <label class="switch-name" for="flagTimerSystem" data-i18n="flag.timerSystem.name">System-Wecker</label>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagTimerSystemInfo" data-i18n-attr="aria-label:flag.timerSystem.infoBtn">i</button>
-              </div>
-              <span class="switch"><input type="checkbox" id="flagTimerSystem" role="switch" aria-describedby="flagTimerSystemInfo"><span class="switch-slider" aria-hidden="true"></span></span>
-            </div>
-            <p class="switch-info" id="flagTimerSystemInfo" hidden data-i18n="flag.timerSystem.info">Zusätzliche Links zum Android-Wecker oder Kalender, direkt beim Timer.</p>
-          </div>
-
-          <div class="flag-item">
-            <div class="switch-row">
-              <div class="switch-row-main">
-                <label class="switch-name" for="flagShare" data-i18n="flag.share.name">Teilen-Link</label>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagShareInfo" data-i18n-attr="aria-label:flag.share.infoBtn">i</button>
-              </div>
-              <span class="switch"><input type="checkbox" id="flagShare" role="switch" aria-describedby="flagShareInfo"><span class="switch-slider" aria-hidden="true"></span></span>
-            </div>
-            <p class="switch-info" id="flagShareInfo" hidden data-i18n="flag.share.info">Rezept als Link kopieren, um es ohne Login oder Server zu teilen.</p>
-          </div>
-
-          <div class="flag-item">
-            <div class="switch-row">
-              <div class="switch-row-main">
-                <label class="switch-name" for="flagShopping" data-i18n="flag.shopping.name">Einkaufsliste</label>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagShoppingInfo" data-i18n-attr="aria-label:flag.shopping.infoBtn">i</button>
-              </div>
-              <span class="switch"><input type="checkbox" id="flagShopping" role="switch" aria-describedby="flagShoppingInfo"><span class="switch-slider" aria-hidden="true"></span></span>
-            </div>
-            <p class="switch-info" id="flagShoppingInfo" hidden data-i18n="flag.shopping.info">Einkaufsliste aus den Gesamtmengen erzeugen und separat drucken.</p>
-          </div>
-
-          <div class="flag-item">
-            <div class="switch-row">
-              <div class="switch-row-main">
-                <label class="switch-name" for="flagFreezeHint" data-i18n="flag.freezeHint.name">Einfrier-Hinweis</label>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagFreezeHintInfo" data-i18n-attr="aria-label:flag.freezeHint.infoBtn">i</button>
-              </div>
-              <span class="switch"><input type="checkbox" id="flagFreezeHint" role="switch" aria-describedby="flagFreezeHintInfo"><span class="switch-slider" aria-hidden="true"></span></span>
-            </div>
-            <p class="switch-info" id="flagFreezeHintInfo" hidden data-i18n="flag.freezeHint.info">Zusätzlicher Hinweis in der Anleitung zum Einfrieren geformter Teiglinge.</p>
-          </div>
-
-          <div class="flag-item">
-            <div class="switch-row">
-              <div class="switch-row-main">
-                <label class="switch-name" for="flagMultiRecipes" data-i18n="flag.multiRecipes.name">Mehrere Rezepte</label>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagMultiRecipesInfo" data-i18n-attr="aria-label:flag.multiRecipes.infoBtn">i</button>
-              </div>
-              <span class="switch"><input type="checkbox" id="flagMultiRecipes" role="switch" aria-describedby="flagMultiRecipesInfo"><span class="switch-slider" aria-hidden="true"></span></span>
-            </div>
-            <p class="switch-info" id="flagMultiRecipesInfo" hidden data-i18n="flag.multiRecipes.info">Mehrere benannte Rezepte speichern und verwalten statt nur eines.</p>
-          </div>
-
-          <div class="flag-item">
-            <div class="switch-row">
-              <div class="switch-row-main">
-                <label class="switch-name" for="flagNewYorkStyle" data-i18n="flag.newYorkStyle.name">New York Style</label>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagNewYorkStyleInfo" data-i18n-attr="aria-label:flag.newYorkStyle.infoBtn">i</button>
-              </div>
-              <span class="switch"><input type="checkbox" id="flagNewYorkStyle" role="switch" aria-describedby="flagNewYorkStyleInfo"><span class="switch-slider" aria-hidden="true"></span></span>
-            </div>
-            <p class="switch-info" id="flagNewYorkStyleInfo" hidden data-i18n="flag.newYorkStyle.info">Blendet den Zucker-Regler (Bäckerprozent, wie Öl) bei den Grundeinstellungen ein: für New-York-Style-Teige. Wird auch automatisch angeschaltet, wenn du das „New York Style"-Preset wählst.</p>
-          </div>
-
-          <div class="flag-item">
-            <div class="switch-row">
-              <div class="switch-row-main">
-                <label class="switch-name" for="flagHints" data-i18n="flag.hints.name">Hinweistexte</label>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="flagHintsInfo" data-i18n-attr="aria-label:flag.hints.infoBtn">i</button>
-              </div>
-              <span class="switch"><input type="checkbox" id="flagHints" role="switch" aria-describedby="flagHintsInfo"><span class="switch-slider" aria-hidden="true"></span></span>
-            </div>
-            <p class="switch-info" id="flagHintsInfo" hidden data-i18n="flag.hints.info">Erklärende Kurztexte bei Feldern &amp; Buttons ein- oder ausblenden.</p>
-          </div>
-
-          <div class="flag-item">
-            <div class="switch-row">
-              <div class="switch-row-main">
-                <span class="switch-name" id="yeastAdjustLabel" data-i18n="flag.yeastAdjust.name">Hefemenge anpassen</span>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="yeastAdjustInfo" data-i18n-attr="aria-label:flag.yeastAdjust.infoBtn">i</button>
-              </div>
-              <div class="adjust-stepper" role="group" aria-labelledby="yeastAdjustLabel">
-                <button type="button" class="adjust-btn" id="yeastAdjustMinus" data-i18n-attr="aria-label:adjust.yeastAdjust.decrease">−</button>
-                <input type="number" class="adjust-input" id="yeastAdjustInput" min="-50" max="100" step="5" value="0" aria-labelledby="yeastAdjustLabel" aria-describedby="yeastAdjustUnit">
-                <button type="button" class="adjust-btn" id="yeastAdjustPlus" data-i18n-attr="aria-label:adjust.yeastAdjust.increase">+</button>
-                <span class="adjust-unit" id="yeastAdjustUnit">%</span>
-              </div>
-            </div>
-            <p class="switch-info" id="yeastAdjustInfo" hidden data-i18n="flag.yeastAdjust.info">Persönliche Kalibrierung, falls deine Hefe regelmäßig stärker oder schwächer aufgeht als berechnet: gilt für jedes Rezept gleichermaßen. 0 % = keine Änderung.</p>
-          </div>
-
-          <div class="flag-item">
-            <div class="switch-row">
-              <div class="switch-row-main">
-                <span class="switch-name" id="wasteAdjustLabel" data-i18n="flag.wasteAdjust.name">Verschwendung anpassen</span>
-                <button type="button" class="info-btn" aria-expanded="false" aria-controls="wasteAdjustInfo" data-i18n-attr="aria-label:flag.wasteAdjust.infoBtn">i</button>
-              </div>
-              <div class="adjust-stepper" role="group" aria-labelledby="wasteAdjustLabel">
-                <button type="button" class="adjust-btn" id="wasteAdjustMinus" data-i18n-attr="aria-label:adjust.wasteAdjust.decrease">−</button>
-                <input type="number" class="adjust-input" id="wasteAdjustInput" min="0" max="15" step="1" value="2" aria-labelledby="wasteAdjustLabel" aria-describedby="wasteAdjustUnit">
-                <button type="button" class="adjust-btn" id="wasteAdjustPlus" data-i18n-attr="aria-label:adjust.wasteAdjust.increase">+</button>
-                <span class="adjust-unit" id="wasteAdjustUnit">%</span>
-              </div>
-            </div>
-            <p class="switch-info" id="wasteAdjustInfo" hidden data-i18n="flag.wasteAdjust.info">Erhöht das errechnete Gesamtgewicht um einen Puffer für Kneteverluste (Schüssel, Hände, Maschine): damit am Ende trotzdem die gewünschte Anzahl Teiglinge im Zielgewicht rauskommt.</p>
-          </div>
-
-          <!-- "Einführung" + Desktop-Link + Versionsnummer (v3.68.0): zogen mit der
-               Bottom-Tab-Navigation hierher um, da es dafür kein Burgermenü mehr gibt
-               (s. pizza-rechner-KONTEXT.md, Abschnitt "Bottom-Tab-Navigation (Mobil)").
-               Unverändert dieselben Elemente/IDs wie zuvor im Burgermenü -- js/onboarding.js
-               verdrahtet #navOnboardingItem weiterhin per ID, keine JS-Änderung nötig. -->
-          <div class="nav-divider" role="separator"></div>
-          <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
-          <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-          <span class="nav-version" id="appVersion">v4.3.0</span>
-
+          <div class="hint" id="flagLangInfo" data-i18n="flag.lang.info">Deutsch oder Englisch für die komplette Oberfläche, Anleitung und Exporte. Automatisch anhand deiner Browser-Sprache vorausgewählt, hier jederzeit manuell umschaltbar: deine Wahl wird gespeichert.</div>
+          <div id="langAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
         </div>
+
+        <div class="field">
+          <label id="themeLabel" data-i18n="flag.theme.name">Darstellung</label>
+          <div class="seg" id="themeSwitch" role="group" aria-labelledby="themeLabel">
+            <button type="button" data-theme-choice="light" data-i18n="theme.light">Hell</button>
+            <button type="button" data-theme-choice="dark" data-i18n="theme.dark">Dunkel</button>
+          </div>
+          <div class="hint" id="flagThemeInfo" data-i18n="flag.theme.info">Hell oder Dunkel für die komplette Oberfläche. Folgt automatisch der Systemeinstellung deines Geräts, hier jederzeit manuell umschaltbar: deine Wahl wird gespeichert und übersteuert danach die Systemeinstellung.</div>
+          <div id="themeAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
+        </div>
+
+        <div class="field" style="margin-bottom:0;">
+          <label id="unitsLabel" data-i18n="flag.units.name">Einheiten</label>
+          <div class="seg" id="unitSwitch" role="group" aria-labelledby="unitsLabel">
+            <button type="button" data-units-choice="metric" data-i18n="units.metric">Metrisch</button>
+            <button type="button" data-units-choice="imperial" data-i18n="units.imperial">Imperial</button>
+          </div>
+          <div class="hint" id="flagUnitsInfo" data-i18n="flag.units.info">Metrisch (Gramm, Celsius) oder Imperial (Unzen/Pfund, Fahrenheit) für Ergebnis-Panel, Einkaufsliste, Anleitung und PDF-Export. Automatisch anhand deiner Browser-Region vorausgewählt, hier jederzeit manuell umschaltbar: deine Wahl wird gespeichert. Die Eingabe-Regler (z. B. Teigling-Gewicht, Raumtemperatur) bleiben davon unberührt.</div>
+          <div id="unitsAnnounce" class="visually-hidden" role="status" aria-live="polite"></div>
+        </div>
+
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><h2 data-i18n-attr="aria-label:card.settingsFunctions.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h8M16 7h4"/><circle cx="12" cy="7" r="2"/><path d="M4 12h4M12 12h8"/><circle cx="8" cy="12" r="2"/><path d="M4 17h11M19 17h1"/><circle cx="16" cy="17" r="2"/></svg></span><span data-i18n="card.settingsFunctions.title">Funktionen</span></h2></summary>
+      <div class="acc-body">
+        <div class="hint" style="margin-bottom:10px;" data-i18n="hint.settings.mobile">Schalte einzelne Zusatzfunktionen ein oder aus: deine Wahl wird direkt im Browser gespeichert.</div>
+
+        <div class="flag-item">
+          <div class="switch-row">
+            <div class="switch-row-main">
+              <label class="switch-name" for="flagTimer" data-i18n="flag.timer.name">Gärzeit-Timer</label>
+            </div>
+            <span class="switch"><input type="checkbox" id="flagTimer" role="switch" aria-describedby="flagTimerInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+          </div>
+          <div class="hint" id="flagTimerInfo" data-i18n="flag.timer.info">Countdown mit optionalem Wecker für jeden Anleitungsschritt (z. B. Stockgare, Stückgare).</div>
+        </div>
+
+        <div class="flag-item">
+          <div class="switch-row">
+            <div class="switch-row-main">
+              <label class="switch-name" for="flagTimerSystem" data-i18n="flag.timerSystem.name">System-Wecker</label>
+            </div>
+            <span class="switch"><input type="checkbox" id="flagTimerSystem" role="switch" aria-describedby="flagTimerSystemInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+          </div>
+          <div class="hint" id="flagTimerSystemInfo" data-i18n="flag.timerSystem.info">Zusätzliche Links zum Android-Wecker oder Kalender, direkt beim Timer.</div>
+        </div>
+
+        <div class="flag-item">
+          <div class="switch-row">
+            <div class="switch-row-main">
+              <label class="switch-name" for="flagShare" data-i18n="flag.share.name">Teilen-Link</label>
+            </div>
+            <span class="switch"><input type="checkbox" id="flagShare" role="switch" aria-describedby="flagShareInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+          </div>
+          <div class="hint" id="flagShareInfo" data-i18n="flag.share.info">Rezept als Link kopieren, um es ohne Login oder Server zu teilen.</div>
+        </div>
+
+        <div class="flag-item">
+          <div class="switch-row">
+            <div class="switch-row-main">
+              <label class="switch-name" for="flagShopping" data-i18n="flag.shopping.name">Einkaufsliste</label>
+            </div>
+            <span class="switch"><input type="checkbox" id="flagShopping" role="switch" aria-describedby="flagShoppingInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+          </div>
+          <div class="hint" id="flagShoppingInfo" data-i18n="flag.shopping.info">Einkaufsliste aus den Gesamtmengen erzeugen und separat drucken.</div>
+        </div>
+
+        <div class="flag-item">
+          <div class="switch-row">
+            <div class="switch-row-main">
+              <label class="switch-name" for="flagFreezeHint" data-i18n="flag.freezeHint.name">Einfrier-Hinweis</label>
+            </div>
+            <span class="switch"><input type="checkbox" id="flagFreezeHint" role="switch" aria-describedby="flagFreezeHintInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+          </div>
+          <div class="hint" id="flagFreezeHintInfo" data-i18n="flag.freezeHint.info">Zusätzlicher Hinweis in der Anleitung zum Einfrieren geformter Teiglinge.</div>
+        </div>
+
+        <div class="flag-item">
+          <div class="switch-row">
+            <div class="switch-row-main">
+              <label class="switch-name" for="flagMultiRecipes" data-i18n="flag.multiRecipes.name">Mehrere Rezepte</label>
+            </div>
+            <span class="switch"><input type="checkbox" id="flagMultiRecipes" role="switch" aria-describedby="flagMultiRecipesInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+          </div>
+          <div class="hint" id="flagMultiRecipesInfo" data-i18n="flag.multiRecipes.info">Mehrere benannte Rezepte speichern und verwalten statt nur eines.</div>
+        </div>
+
+        <div class="flag-item">
+          <div class="switch-row">
+            <div class="switch-row-main">
+              <label class="switch-name" for="flagNewYorkStyle" data-i18n="flag.newYorkStyle.name">New York Style</label>
+            </div>
+            <span class="switch"><input type="checkbox" id="flagNewYorkStyle" role="switch" aria-describedby="flagNewYorkStyleInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+          </div>
+          <div class="hint" id="flagNewYorkStyleInfo" data-i18n="flag.newYorkStyle.info">Blendet den Zucker-Regler (Bäckerprozent, wie Öl) bei den Grundeinstellungen ein: für New-York-Style-Teige. Wird auch automatisch angeschaltet, wenn du das „New York Style"-Preset wählst.</div>
+        </div>
+
+        <div class="flag-item">
+          <div class="switch-row">
+            <div class="switch-row-main">
+              <label class="switch-name" for="flagHints" data-i18n="flag.hints.name">Hinweistexte</label>
+            </div>
+            <span class="switch"><input type="checkbox" id="flagHints" role="switch" aria-describedby="flagHintsInfo"><span class="switch-slider" aria-hidden="true"></span></span>
+          </div>
+          <div class="hint" id="flagHintsInfo" data-i18n="flag.hints.info">Erklärende Kurztexte bei Feldern &amp; Buttons ein- oder ausblenden.</div>
+        </div>
+
+        <div class="flag-item">
+          <div class="switch-row">
+            <div class="switch-row-main">
+              <span class="switch-name" id="yeastAdjustLabel" data-i18n="flag.yeastAdjust.name">Hefemenge anpassen</span>
+            </div>
+            <div class="adjust-stepper" role="group" aria-labelledby="yeastAdjustLabel">
+              <button type="button" class="adjust-btn" id="yeastAdjustMinus" data-i18n-attr="aria-label:adjust.yeastAdjust.decrease">−</button>
+              <input type="number" class="adjust-input" id="yeastAdjustInput" min="-50" max="100" step="5" value="0" aria-labelledby="yeastAdjustLabel" aria-describedby="yeastAdjustUnit">
+              <button type="button" class="adjust-btn" id="yeastAdjustPlus" data-i18n-attr="aria-label:adjust.yeastAdjust.increase">+</button>
+              <span class="adjust-unit" id="yeastAdjustUnit">%</span>
+            </div>
+          </div>
+          <div class="hint" id="yeastAdjustInfo" data-i18n="flag.yeastAdjust.info">Persönliche Kalibrierung, falls deine Hefe regelmäßig stärker oder schwächer aufgeht als berechnet: gilt für jedes Rezept gleichermaßen. 0 % = keine Änderung.</div>
+        </div>
+
+        <div class="flag-item">
+          <div class="switch-row">
+            <div class="switch-row-main">
+              <span class="switch-name" id="wasteAdjustLabel" data-i18n="flag.wasteAdjust.name">Verschwendung anpassen</span>
+            </div>
+            <div class="adjust-stepper" role="group" aria-labelledby="wasteAdjustLabel">
+              <button type="button" class="adjust-btn" id="wasteAdjustMinus" data-i18n-attr="aria-label:adjust.wasteAdjust.decrease">−</button>
+              <input type="number" class="adjust-input" id="wasteAdjustInput" min="0" max="15" step="1" value="2" aria-labelledby="wasteAdjustLabel" aria-describedby="wasteAdjustUnit">
+              <button type="button" class="adjust-btn" id="wasteAdjustPlus" data-i18n-attr="aria-label:adjust.wasteAdjust.increase">+</button>
+              <span class="adjust-unit" id="wasteAdjustUnit">%</span>
+            </div>
+          </div>
+          <div class="hint" id="wasteAdjustInfo" data-i18n="flag.wasteAdjust.info">Erhöht das errechnete Gesamtgewicht um einen Puffer für Kneteverluste (Schüssel, Hände, Maschine): damit am Ende trotzdem die gewünschte Anzahl Teiglinge im Zielgewicht rauskommt.</div>
+        </div>
+
+        <!-- "Einführung" + Desktop-Link + Versionsnummer (v3.68.0): zogen mit der
+             Bottom-Tab-Navigation hierher um, da es dafür kein Burgermenü mehr gibt
+             (s. pizza-rechner-KONTEXT.md, Abschnitt "Bottom-Tab-Navigation (Mobil)").
+             Unverändert dieselben Elemente/IDs wie zuvor im Burgermenü -- js/onboarding.js
+             verdrahtet #navOnboardingItem weiterhin per ID, keine JS-Änderung nötig. Bleiben
+             am Ende der "Funktionen"-Card (kein reiner Einstellungspunkt, aber die bisherige
+             Gesamt-Reihenfolge/Gruppierung bleibt erhalten, s. Kommentar oben). -->
+        <div class="nav-divider" role="separator"></div>
+        <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
+        <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
+        <span class="nav-version" id="appVersion">v4.4.0</span>
+
       </div>
     </details>
   </div>
@@ -3453,8 +3458,15 @@ header{position:relative;text-align:center;}
   add('card.settings.title', 'Einstellungen', 'Settings');
   add('hint.settings.desktop', 'Schalte einzelne Zusatzfunktionen ein oder aus: deine Wahl wird direkt im Browser gespeichert. Klick auf „i“ zeigt eine kurze Erklärung.',
     'Turn individual extra features on or off: your choice is saved directly in the browser. Click "i" for a short explanation.');
-  add('hint.settings.mobile', 'Schalte einzelne Zusatzfunktionen ein oder aus: deine Wahl wird direkt im Browser gespeichert. Tipp auf „i“ zeigt eine kurze Erklärung.',
-    'Turn individual extra features on or off: your choice is saved directly in the browser. Tap "i" for a short explanation.');
+  // Design-System-Import Zyklus 5 (v4.4.0): Mobil teilt die bisher eine große
+  // Einstellungen-Karte jetzt in zwei Cards ("Anzeige" + "Funktionen") auf und zeigt
+  // jeden Erklärtext dauerhaft als .hint statt hinter einem Info-Knopf -- der alte
+  // Hinweis auf den "i"-Knopf entfällt deshalb hier (Desktop bleibt unverändert,
+  // behält card.settings.title/hint.settings.desktop samt Info-Knopf-Muster).
+  add('card.settingsDisplay.title', 'Anzeige', 'Display');
+  add('card.settingsFunctions.title', 'Funktionen', 'Features');
+  add('hint.settings.mobile', 'Schalte einzelne Zusatzfunktionen ein oder aus: deine Wahl wird direkt im Browser gespeichert.',
+    'Turn individual extra features on or off: your choice is saved directly in the browser.');
   add('flag.timer.name', 'Gärzeit-Timer', 'Rise timer');
   add('flag.timer.infoBtn', 'Erklärung zu „Gärzeit-Timer“ ein-/ausblenden', 'Show/hide explanation for "Rise timer"');
   add('flag.timer.info', 'Countdown mit optionalem Wecker für jeden Anleitungsschritt (z. B. Stockgare, Stückgare).',

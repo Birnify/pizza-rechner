@@ -979,8 +979,15 @@
   add('card.settings.title', 'Einstellungen', 'Settings');
   add('hint.settings.desktop', 'Schalte einzelne Zusatzfunktionen ein oder aus: deine Wahl wird direkt im Browser gespeichert. Klick auf „i“ zeigt eine kurze Erklärung.',
     'Turn individual extra features on or off: your choice is saved directly in the browser. Click "i" for a short explanation.');
-  add('hint.settings.mobile', 'Schalte einzelne Zusatzfunktionen ein oder aus: deine Wahl wird direkt im Browser gespeichert. Tipp auf „i“ zeigt eine kurze Erklärung.',
-    'Turn individual extra features on or off: your choice is saved directly in the browser. Tap "i" for a short explanation.');
+  // Design-System-Import Zyklus 5 (v4.4.0): Mobil teilt die bisher eine große
+  // Einstellungen-Karte jetzt in zwei Cards ("Anzeige" + "Funktionen") auf und zeigt
+  // jeden Erklärtext dauerhaft als .hint statt hinter einem Info-Knopf -- der alte
+  // Hinweis auf den "i"-Knopf entfällt deshalb hier (Desktop bleibt unverändert,
+  // behält card.settings.title/hint.settings.desktop samt Info-Knopf-Muster).
+  add('card.settingsDisplay.title', 'Anzeige', 'Display');
+  add('card.settingsFunctions.title', 'Funktionen', 'Features');
+  add('hint.settings.mobile', 'Schalte einzelne Zusatzfunktionen ein oder aus: deine Wahl wird direkt im Browser gespeichert.',
+    'Turn individual extra features on or off: your choice is saved directly in the browser.');
   add('flag.timer.name', 'Gärzeit-Timer', 'Rise timer');
   add('flag.timer.infoBtn', 'Erklärung zu „Gärzeit-Timer“ ein-/ausblenden', 'Show/hide explanation for "Rise timer"');
   add('flag.timer.info', 'Countdown mit optionalem Wecker für jeden Anleitungsschritt (z. B. Stockgare, Stückgare).',

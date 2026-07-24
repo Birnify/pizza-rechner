@@ -8,6 +8,114 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Design-System-Import Zyklus 5: Einstellungen-Screen (v4.4.0)
+
+Fünfter und letzter Zyklus der mobilen Redesign-Reihe (Zyklus 1 = Tokens +
+Rechner-Screen, v4.0.0; Zyklus 2 = Anleitung/Zeitplan-Screen, v4.1.0; Zyklus 3 =
+Pizza-Party-Screen, v4.2.0; Zyklus 4 = Glossar-Screen, v4.3.0). Referenz:
+`design-import/ui_kits/teigmeister/EinstellungenScreen.jsx` (+ `SegmentedControl.jsx`/
+`Switch.jsx`/`Select.jsx`/`Button.jsx`). Betrifft ausschließlich
+`pizza-rechner-mobile.html` (mobile-only, wie Zyklus 2-4) + eine kleine, geteilte
+`css/styles.css`-Ergänzung — `pizza-rechner.html` (Desktop) bewusst unverändert.
+
+**Mockup ist eine stark vereinfachte Demo-Auswahl, keine 1:1-Vorlage:** Das Mockup zeigt
+nur 3 SegmentedControl-Felder (Einheiten, Sprache — Darstellung/Theme fehlt im Mockup
+komplett), eine „Standard-Mehl"-Select-Card (KEINE reale App-Funktion — die echte App hat
+keinen globalen Standard-Mehl-Einstellungspunkt, nur das Mehl-Dropdown im Rechner selbst)
+und 3 Switch-Zeilen (Timer/Einkaufsliste/Einfrier-Hinweis). Die echte App hat deutlich
+mehr Einstellungspunkte (Sprache, Darstellung, Einheiten, 8 Feature-Flags, 2 Zahlen-
+Stepper-Anpassungen). Sinngemäß statt wörtlich gemappt: **alle bestehenden
+Einstellungspunkte bleiben inhaltlich unverändert erhalten** (keiner entfernt, keiner
+neu hinzugefügt — insbesondere KEINE „Standard-Mehl"-Card, da nicht real), nur die
+optische Darstellungsart wurde übertragen. Die Backlog-Punkte B/C/D (die einzelne
+Einstellungspunkte entfernen/umbauen wollen) sind explizit NICHT Teil dieses Zyklus.
+
+**Struktur-Änderung:** Die bisher eine große „Einstellungen"-Card (`details.card`) teilt
+sich jetzt analog zum Mockup in zwei Cards:
+- **„Anzeige"** (`card.settingsDisplay.title`, Zahnrad-Icon): Sprache/Darstellung/
+  Einheiten, je als eigenes `.field` mit `<label>` oben + volle-Breite `.seg`-Control
+  darunter + `.hint`-Erklärtext — identisches Muster wie z. B. das Teigführung-`.seg` in
+  der Methode-Card (`#methodLabel`/`#method`/`#methodHint`), bereits app-weit etabliert
+  seit Zyklus 1. Vorher standen diese 3 Punkte im schmaleren
+  Label-links/Control-rechts-„switch-row"-Layout mit `style="width:auto"` auf dem `.seg` —
+  jetzt volle Breite, konsistent mit allen anderen `.seg`-Feldern der App.
+- **„Funktionen"** (`card.settingsFunctions.title`, neues Equalizer/Sliders-Icon): die 8
+  Feature-Flag-Switch-Zeilen (Timer/System-Wecker/Teilen-Link/Einkaufsliste/
+  Einfrier-Hinweis/Mehrere Rezepte/New York Style/Hinweistexte) + die 2
+  Zahlen-Stepper-Anpassungen (Hefemenge/Verschwendung anpassen) + der bisherige
+  Navigations-Anhang (Einführung/Desktop-Link/Versionsnummer, unverändert an gleicher
+  Stelle, da kein reiner Einstellungspunkt, aber Teil der bisherigen Reihenfolge).
+
+**Echte Verhaltensänderung (analog zu Zyklus 4, im Auftrag selbst schon vorgegeben):** der
+bisherige Info-Knopf („i", Klick blendete einen versteckten Erklär-Absatz ein/aus, WAI-ARIA-
+Disclosure-Widget-Muster) entfällt für alle 11 betroffenen Zeilen (3 Anzeige-Felder + 8
+Funktionen-Zeilen) zugunsten des SwitchRow-/Field-Musters aus der Referenz: jeder
+Erklärtext ist jetzt ein dauerhaft sichtbarer `<div class="hint">` direkt unter dem
+Feld/der Switch-Zeile, statt hinter einem Klick versteckt. Nebeneffekt: diese Erklärtexte
+werden dadurch automatisch vom bestehenden Feature-Flag „Hinweistexte"
+(`body.hints-off .hint{display:none}`) mit ausgeblendet, wie jeder andere `.hint` in der
+App auch — vorher waren sie davon unabhängig (eigene `.switch-info`-Klasse, nie vom Flag
+erfasst). Die `aria-describedby="flagXxxInfo"`-Referenz auf jedem Switch-`<input>` bleibt
+unverändert bestehen, zeigt jetzt aber auf einen immer sichtbaren statt einen versteckten
+Absatz — laut `accessibility-expert`-Review eine Verbesserung, kein neues Problem.
+Desktop (`pizza-rechner.html`) behält das bisherige Info-Knopf-Muster unverändert bei
+(Scope ist mobile-only) — `js/settings.js`s `wireInfoButtons()` bleibt unverändert (findet
+auf Mobil jetzt einfach keine `.info-btn`-Elemente mehr in der Einstellungen-Card, wird
+weiterhin für Desktop + die dynamisch von `js/party.js` erzeugten Info-Buttons gebraucht).
+
+**CSS (`css/styles.css`):** neue Regel `.flag-item .hint` (identisch zu `.field .hint`,
+plus `margin-bottom:10px` als Ersatz für das frühere `.switch-info{margin:0 0 10px}`) —
+nötig, weil `.field .hint` nur innerhalb eines `.field`-Vorfahren greift, die
+Funktionen-Card-Zeilen aber `.flag-item` (nicht `.field`) als Wrapper nutzen. Kein anderes
+CSS geändert — `.card`/`.field`/`.seg`/`.switch`/`.flag-item`/`.selectbox` waren bereits
+seit Zyklus 1 app-weit auf die Design-Tokens umgestellt, hier nur konsumiert.
+
+**i18n (`js/i18n-dict.js`):** 2 neue Keys `card.settingsDisplay.title`
+(„Anzeige"/„Display") + `card.settingsFunctions.title` („Funktionen"/„Features"). Bestehender
+Key `hint.settings.mobile` textlich angepasst (Hinweis auf den „i"-Knopf entfernt, da er
+auf Mobil nicht mehr existiert) — `hint.settings.desktop` bleibt unverändert (Desktop
+behält den Info-Knopf). Alle 11 bestehenden `flag.*.info`-Texte inhaltlich unverändert
+wiederverwendet, nur als `.hint` statt `.switch-info` gerendert.
+
+**Tests:** `tests/test.html` (716 Prüfungen) unverändert grün — reine Markup/CSS/i18n-
+Text-Änderung, `js/calc.js`/`js/schedule.js` nicht angefasst, kein `test-generator`-Lauf
+nötig. Zusätzlich per Headless-Edge-CDP (WebSocket, `--remote-allow-origins=*`)
+funktional verifiziert: beide neuen Cards rendern korrekt in Hell + Dunkel (390×844
+iPhone-Viewport-Screenshots), Segmented-Controls/Switches/Stepper bedienbar, Sprung zur
+Einstellungen-Ansicht über die Bottom-Tab-Navigation funktioniert.
+
+**`accessibility-expert`-Review** (Hell + Dunkel): keine neuen Blocker/Major/Minor durch
+diesen Zyklus verursacht. Fokus-Reihenfolge, Label-Verknüpfung (`aria-labelledby` bei den
+`.seg`-Gruppen, `for`/`id` bei den echten Checkbox-Switches) und die jetzt immer
+sichtbaren `aria-describedby`-Ziele: keine Befunde. Drei gemeldete Kontrastbefunde
+erwiesen sich nach Nachrechnung als **bereits bekannte, app-weite Bestandsprobleme ohne
+Regression durch diesen Zyklus** (Selbst-Korrektur des Agenten, Werte identisch zu
+früheren Zyklen):
+- `--line`-Randfarbe (`.flag-item`-Trennlinie, `.adjust-btn`-Rahmen): ~1,52:1 Hell /
+  ~1,35:1 Dunkel, unter der 3:1-Schwelle (WCAG 1.4.11) — identischer Wert wie bereits in
+  Zyklus 1 und Zyklus 3 gemessen und als app-weiter Backlog-Nebenbefund dokumentiert
+  (betrifft alle Karten-/Input-/`.seg`/`.pills`-Ränder app-weit). Hier nicht erneut
+  gefixt, s. Backlog.
+- `.seg button` inaktiver Text, Hellmodus: ~4,43:1, knapp unter der 4,5:1-Text-Schwelle —
+  identischer Wert wie in Zyklus 1 gemessen (dort als Grenzfall notiert, nicht gefixt).
+- `.seg button.active`-Text (Weiß auf `--tomato`), Dunkelmodus: ~4,19:1, unter 4,5:1 —
+  identischer Wert wie der bereits dokumentierte `.stepper-btn:hover`-Nebenbefund aus
+  Zyklus 3 (dort für `.party-qty-btn:hover` vor dessen Fix ebenfalls ~4,19:1 gemessen, seither
+  auf `--tomato-dark` umgestellt). `.card-icon` (Icon-Grafik) und der `.switch`-Knopf
+  (Nicht-Text-UI-Element) sind bei 4,19:1 dagegen unproblematisch (WCAG 1.4.11 verlangt
+  nur 3:1) — nur der Text von `.seg button.active` selbst braucht WCAG 1.4.3 (4,5:1). Da
+  `.seg button.active` app-weit genutzt wird (alle Segmented-Controls, nicht nur
+  Einstellungen), keine lokale Lösung innerhalb dieses Zyklus — s. Backlog.
+
+**Geändert:** `pizza-rechner-mobile.html`, `css/styles.css`, `js/i18n-dict.js`. `?v=` auf
+`4.4.0` gezogen (Mobil, Cache-Busting + Footer-Version). `pizza-rechner-mobile-
+standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v4.4.0 - Design-System-Import Zyklus 5 (Einstellungen-Screen)/` enthält den
+vollständigen Schnappschuss. **Damit ist die 5-teilige Design-Import-Reihe komplett**
+(Rechner v4.0.0, Anleitung/Zeitplan v4.1.0, Pizza Party v4.2.0, Glossar v4.3.0,
+Einstellungen v4.4.0) — die `design-import/`-Referenzdateien bleiben als Archiv liegen,
+kein Löschbedarf.
+
 ## Design-System-Import Zyklus 4: Glossar-Screen (v4.3.0)
 
 Vierter von 5 geplanten Zyklen desselben mobilen Redesigns (Zyklus 1 = Tokens +

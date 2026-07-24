@@ -605,6 +605,14 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .field label{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;column-gap:8px;font-size:14px;font-weight:600;margin-bottom:6px;}
 .field label .val{color:var(--tomato-text);font-variant-numeric:tabular-nums;font-size:15px;font-family:var(--font-head);flex-shrink:0;}
 .field .hint{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.35;overflow-wrap:break-word;}
+/* Design-System-Import Zyklus 5 (v4.4.0): die Mobil-Einstellungen-Switch-Zeilen
+   (.flag-item, s. u.) nutzen jetzt denselben .hint statt des früheren, eigenen
+   .switch-info (Erklärtext war zuvor hinter einem Info-Knopf versteckt, jetzt
+   dauerhaft sichtbar, s. Kommentar in pizza-rechner-mobile.html). .field .hint
+   deckt das nicht ab (.flag-item ist kein .field) -- eigener, identisch aussehender
+   Selektor plus etwas Bodenabstand vor der .flag-item-Trennlinie (ersetzt das
+   frühere .switch-info{margin:0 0 10px}). */
+.flag-item .hint{font-size:11.5px;color:var(--muted);line-height:1.35;overflow-wrap:break-word;margin:0 0 10px;}
 /* Sichtbare Kopplung Vorteig-Reife <-> Hefemenge (v3.31.0): wenn eine Biga/Poolish-
    Reifestufe aktiv ist, legt die Stufe die Hefemenge automatisch fest. Der Regler
    bleibt technisch bedienbar (rein visuelle Kennzeichnung, keine Interaktions-
