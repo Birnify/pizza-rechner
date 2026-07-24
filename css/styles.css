@@ -22,7 +22,13 @@
   --card:#fdfaf5;
   --surface-2:#e9e0d2;        /* verschachtelte Fläche (Stepper-Track, Temp-Box, Seg-Track) */
   --surface-inset:#e2d8c8;    /* zurückgesetzter Track (Segmented Control / Subnav) */
-  --line:#d8ccba;
+  /* Kontrast-Fix (Nebenbefund seit v4.0.0, WCAG 1.4.11, 3:1 nötig für UI-Komponenten-
+     Grenzen): #d8ccba gegen --bg/--card lag nur bei ~1,35-1,52:1. Nachgedunkelt auf
+     #8c7b64 -- rechnerisch ~3,48:1 gegen --bg, ~3,93:1 gegen --card (Standard-WCAG-2.0-
+     Luminanzformel, beide über der 3:1-Schwelle mit Sicherheitsmarge). --line-soft
+     bewusst UNVERÄNDERT (dient explizit als "kaum sichtbarer" Trenner, kein
+     UI-Komponenten-Rahmen im Sinne von 1.4.11). */
+  --line:#8c7b64;
   --line-soft:#ece4d6;        /* kaum sichtbarer innerer Trenner */
 
   /* --- Text (warmes Dunkelbraun, nie reines #000) --- */
@@ -189,7 +195,10 @@
     --card:#201d1b;
     --surface-2:#2a2622;
     --surface-inset:#1b1917;
-    --line:#3a332e;
+    /* Kontrast-Fix, analog zum Hellmodus oben: #3a332e gegen --bg/--card lag nur bei
+       ~1,35-1,56:1. Aufgehellt auf #7a6e5f -- rechnerisch ~3,90:1 gegen --bg,
+       ~3,37:1 gegen --card. */
+    --line:#7a6e5f;
     --line-soft:#2c2723;
     --ink:#ede9e6;
     --ink-strong:#f5f1ee;
@@ -400,12 +409,16 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .onboarding-settings-hint{margin:0 0 14px;}
 .onboarding-checkbox-row{border:none;margin-bottom:16px;}
 .onboarding-checkbox-row .switch-row{padding:0;}
+/* Fläche var(--tomato-dark) statt var(--tomato) -- Kontrast-Fix, s. Kommentar bei
+   .actions button.primary weiter unten (identische Nebenbefund-Familie "Weiß auf
+   --tomato-Text im Dunkelmodus"). Hover jetzt per Aufhellungsfilter (Basis ist
+   bereits --tomato-dark). */
 .onboarding-cta{
-  display:block;width:100%;padding:13px;border-radius:999px;border:1px solid var(--tomato);
-  background:var(--tomato);color:#fff;font-size:14px;font-weight:600;cursor:pointer;
+  display:block;width:100%;padding:13px;border-radius:999px;border:1px solid var(--tomato-dark);
+  background:var(--tomato-dark);color:#fff;font-size:14px;font-weight:600;cursor:pointer;
   box-shadow:0 3px 10px rgba(200,68,46,.3);transition:all .12s;
 }
-.onboarding-cta:hover{background:var(--tomato-dark);border-color:var(--tomato-dark);}
+.onboarding-cta:hover{filter:brightness(1.08);}
 .onboarding-cta:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
 
 /* Pizza-Party-Planer (v3.27.0, js/party.js) — Pizzenauswahl mit Stückzahl-Stepper +
@@ -675,7 +688,9 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   color:var(--tomato-text);cursor:pointer;display:flex;align-items:center;justify-content:center;
   transition:all .12s;
 }
-.stepper-btn:hover{border-color:var(--tomato);background:var(--tomato);color:#fff;}
+/* Kontrast-Fix (Nebenbefund seit v4.2.0, "Weiß auf --tomato-Text im Dunkelmodus"):
+   var(--tomato-dark) statt var(--tomato), s. Sammelkommentar bei .actions button.primary. */
+.stepper-btn:hover{border-color:var(--tomato-dark);background:var(--tomato-dark);color:#fff;}
 .stepper-btn:active{transform:scale(.94);}
 .stepper-btn:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
 /* Höhere Spezifität als das generische `input[type=number]{width:78px}` oben (bzw.
@@ -711,7 +726,10 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   flex:1;border:none;background:transparent;padding:9px 6px;border-radius:var(--radius-sm);
   font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;
 }
-.seg button.active{background:var(--tomato);color:#fff;}
+/* Kontrast-Fix (Nebenbefund v4.4.0, ~4,19:1 nachgerechnet, "Weiß auf --tomato-Text im
+   Dunkelmodus"): var(--tomato-dark) statt var(--tomato), s. Sammelkommentar bei
+   .actions button.primary. Betrifft ALLE .seg-Instanzen app-weit. */
+.seg button.active{background:var(--tomato-dark);color:#fff;}
 /* accessibility-expert-Befund (v3.72.0, MAJOR 1): .seg button hatte app-weit (nicht nur
    der neue Komplexitäts-Schalter) kein sichtbares :focus-visible-Outline, anders als
    .pills button (die dasselbe Muster schon in v3.70.0 bekam). Konsistenter Nachzug für
@@ -723,7 +741,9 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   font-size:12px;cursor:pointer;color:var(--ink);transition:all .12s;
 }
 .pills button:hover{border-color:var(--tomato);color:var(--tomato-text);}
-.pills button.active{background:var(--tomato);border-color:var(--tomato);color:#fff;font-weight:600;}
+/* Kontrast-Fix ("Weiß auf --tomato-Text im Dunkelmodus", s. Sammelkommentar bei
+   .actions button.primary): var(--tomato-dark) statt var(--tomato). */
+.pills button.active{background:var(--tomato-dark);border-color:var(--tomato-dark);color:#fff;font-weight:600;}
 /* accessibility-expert-Befund (v3.70.0, MAJOR 2): .pills button hatte app-weit (nicht
    erst seit diesem Feature -- betrifft auch Hefe-Pills/Vorteig-Reife-Stufen u. a.) KEIN
    sichtbares :focus-visible-Outline. Klein genug, um direkt mitzufixen statt nur als
@@ -753,7 +773,9 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .info-btn:hover{border-color:var(--tomato);color:var(--tomato-text);}
 .info-btn:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
-.info-btn[aria-expanded="true"]{background:var(--tomato);border-color:var(--tomato);color:#fff;}
+/* Kontrast-Fix ("Weiß auf --tomato-Text im Dunkelmodus", s. Sammelkommentar bei
+   .actions button.primary): der "i"-Text ist echter Text, nicht nur Dekor. */
+.info-btn[aria-expanded="true"]{background:var(--tomato-dark);border-color:var(--tomato-dark);color:#fff;}
 .switch-info{font-size:11.5px;color:var(--muted);line-height:1.4;margin:0 0 10px;padding-right:54px;}
 /* Toggle-Switch: sichtbare Spur+Daumen per Pseudo-Elementen, das echte <input> deckt per
    position:absolute;inset:0 den kompletten Klick-/Touch-Bereich ab (größer als die
@@ -824,17 +846,47 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   font-size:13px;font-weight:600;cursor:pointer;color:var(--ink);transition:all .12s;
 }
 .actions button:not(.primary):hover{border-color:var(--tomato);color:var(--tomato-text);}
-/* Primäre Aktion ("Speichern") in Terrakotta statt Grün (v3.41.0, Angleichung an den
-   Referenz-Stil) — Pill-Form hebt sie zusätzlich von den rechteckig-abgerundeten
-   sekundären Buttons ab (einheitliche Sprache: Pill = primäre CTA). */
+/* Primäre Aktion in Terrakotta statt Grün (v3.41.0, Angleichung an den Referenz-Stil) —
+   Pill-Form hebt sie zusätzlich von den rechteckig-abgerundeten sekundären Buttons ab
+   (einheitliche Sprache: Pill = primäre CTA). Seit "Ergebnis priorisieren"/Kontrast-Fix
+   (s. u.) ist "Zum Zeitplan" die primäre Aktion, "Speichern" ist in "Weitere Optionen"
+   gewandert und trägt die Klasse nicht mehr. Fläche var(--tomato-dark) statt var(--tomato)
+   (Kontrast-Nebenbefund-Familie "Weiß auf --tomato-Text im Dunkelmodus", WCAG 1.4.3: reines
+   --tomato lag im Dunkelmodus nur bei ~4,19:1 für weißen Text, --tomato-dark bei ~5,38:1 --
+   identisches, bereits in v4.2.0 für .party-qty-btn:hover erprobtes Muster, hier erstmals
+   als DEFAULT-Fläche statt nur als Hover-Zustand). Im Hellmodus unverändert komfortabel
+   über der Schwelle (--tomato-dark dort sogar noch dunkler/kontrastreicher als --tomato). */
 .actions button.primary{
-  background:var(--tomato);color:#fff;border-color:var(--tomato);order:-1;
+  background:var(--tomato-dark);color:#fff;border-color:var(--tomato-dark);order:-1;
   padding:13px;font-size:14px;border-radius:999px;
   box-shadow:0 3px 10px rgba(200,68,46,.3);
 }
-.actions button.primary:hover{background:var(--tomato-dark);border-color:var(--tomato-dark);}
+/* Hover jetzt per Aufhellungsfilter statt Farbwechsel (Basis ist bereits --tomato-dark,
+   ein Wechsel zu demselben Token hätte keinen sichtbaren Hover-Effekt mehr gehabt) --
+   identisches Muster wie .timerbtn:hover weiter unten. */
+.actions button.primary:hover{filter:brightness(1.08);}
 .actions .row2{display:flex;gap:8px;}
 .actions .row2 button{flex:1;min-width:0;background:transparent;font-weight:500;}
+/* "Ergebnis priorisieren": primäre Aktion "Zum Zeitplan" + sekundäre Aktion "Rezept
+   teilen" (bisher "Link kopieren") direkt nebeneinander oben in der Aktionsleiste,
+   gleich breit. #shareBlock bleibt als Ganzes das Flag-Toggle-Ziel von
+   PZ.applyFlags() (Einstellungen > "Teilen-Link") -- unverändert per ID, nur die
+   Position im Markup hat sich geändert. */
+.actions-primary-row{display:flex;gap:8px;align-items:flex-start;}
+.actions-primary-row>*{flex:1;min-width:0;}
+.actions-primary-row button{font-size:14px;padding:13px;}
+/* "Weitere Optionen": Speichern, Einkaufsliste/Anleitung drucken, PDF-Export und die
+   Temperatur-Detailbox sind hier eingeklappt -- identisches <details>/<summary>-Muster
+   wie .preset-all-details (kein eigenes JS zum Auf-/Zuklappen nötig). */
+.more-options-details summary{
+  cursor:pointer;font-size:13px;font-weight:600;color:var(--tomato-text);list-style:none;
+  min-height:44px;display:flex;align-items:center;-webkit-tap-highlight-color:transparent;
+}
+.more-options-details summary::-webkit-details-marker{display:none;}
+.more-options-details summary::after{content:'▾' / '';margin-left:4px;font-size:11px;}
+.more-options-details[open] summary::after{content:'▴' / '';}
+.more-options-details summary:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+.more-options-body{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
 /* Anleitung / Timeline */
 .guidewrap{max-width:980px;margin:0 auto;padding:0 20px 10px;}
 .guidehead{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);}
@@ -975,7 +1027,10 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   font-size:12.5px;font-weight:700;padding:7px 13px;border-radius:var(--radius-chip);cursor:pointer;
   border:1px solid var(--line);background:var(--card);color:var(--ink);
 }
-.timerbtn-start{background:var(--tomato);color:#fff;border-color:var(--tomato);}
+/* Kontrast-Fix ("Weiß auf --tomato-Text im Dunkelmodus", s. Sammelkommentar bei
+   .actions button.primary): var(--tomato-dark) statt var(--tomato). Bestehendes
+   .timerbtn:hover{filter:brightness(.96)} greift unverändert weiter. */
+.timerbtn-start{background:var(--tomato-dark);color:#fff;border-color:var(--tomato-dark);}
 .timerbtn:hover{filter:brightness(.96);}
 a.timerbtn{text-decoration:none;display:inline-block;}
 .timerbtn-alt{background:var(--card);color:var(--ink);}
@@ -989,8 +1044,10 @@ a.timerbtn{text-decoration:none;display:inline-block;}
   font-size:13px;font-weight:800;color:var(--tomato-text);font-variant-numeric:tabular-nums;
   background:var(--chip-bg);border:1px solid var(--crust);padding:5px 11px;border-radius:var(--radius-chip);
 }
+/* Kontrast-Fix ("Weiß auf --tomato-Text im Dunkelmodus", s. Sammelkommentar bei
+   .actions button.primary): var(--tomato-dark) statt var(--tomato). */
 .timerdone{
-  font-size:13px;font-weight:800;color:#fff;background:var(--tomato);
+  font-size:13px;font-weight:800;color:#fff;background:var(--tomato-dark);
   padding:5px 11px;border-radius:var(--radius-chip);animation:timerpulse 1s ease-in-out infinite;
 }
 @keyframes timerpulse{0%,100%{opacity:1;}50%{opacity:.55;}}

@@ -8,6 +8,112 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Ergebnis priorisieren + Kontrast-Fixes (v4.5.0)
+
+Erster Zyklus nach Abschluss der 5-teiligen Design-Import-Reihe, direkter Auftrag aus
+`Backlog.md` (Punkt 1 "Ergebnis priorisieren") plus zwei gebündelte, app-weite
+Kontrast-Nebenbefunde aus den Accessibility-Reviews der letzten fünf Zyklen. Anders als
+die Design-Import-Zyklen bewusst **nicht mobile-only**: `pizza-rechner.html` (Desktop)
+UND `pizza-rechner-mobile.html` (Mobil) wurden gemeinsam geändert, beide Versionsnummern
+sind seither wieder synchron (`4.5.0`).
+
+**Teil A — Ergebnis priorisieren (Aktionsleiste neu geordnet):**
+- Neue `.actions-primary-row` (`css/styles.css`) mit zwei nebeneinanderliegenden,
+  gleich breiten Buttons: primär `#gotoScheduleBtn` ("Zum Zeitplan", ruft die bereits
+  bestehende `PZ.gotoView('zeitplan')` auf — identischer Sprung wie der bestehende
+  Zeitplan-Link im Anleitungs-Banner, `js/guide.js`) und sekundär `#shareLinkBtn`
+  ("Rezept teilen", inhaltlich unverändertes `PZ.copyShareLink()`, nur umbenannt von
+  "Link kopieren"). `#shareBlock` bleibt als Ganzes das Umschalt-Ziel des Feature-Flags
+  "Teilen-Link" (`PZ.applyFlags()`) — nur die Position im Markup hat sich geändert, die
+  ID nicht.
+- Alles Übrige — "Speichern" (`#saveBtn`, verliert die `.primary`-Klasse), "Einkaufsliste
+  drucken"/"Anleitung drucken" (`#shoppingRow`), "Als PDF speichern" (`#pdfGuideBlock`)
+  sowie die komplette Temperatur-Detailbox (`#tempStage`, Wassertemperatur/Eismenge) —
+  wandert in ein neues natives `<details id="moreOptionsDetails" class="more-options-
+  details">` mit `<summary>`"Weitere Optionen"`</summary>`, identisches Muster wie das
+  bestehende `.preset-all-details` (kein eigenes JS zum Auf-/Zuklappen nötig, gleicher
+  Pfeil-Alt-Text-Trick `content:'▾' / ''` gegen einen doppelten Pfeil im Accessible Name).
+  Gesamtteig-Kopfzeile und die 6 Gesamtmengen bleiben unverändert zuerst sichtbar.
+  Vorteig-/Hauptteig-Stufenboxen (`#stagePref`/`#stageMain`) und die Sticky-Quickbar
+  unten bewusst unverändert (außerhalb des Scopes).
+- Alle betroffenen Element-IDs bleiben identisch (`saveBtn`, `shareBlock`, `shoppingRow`,
+  `pdfGuideBlock`, `tempStage`, `shareLinkBtn`, `pdfGuideBtn`) — nur ihre Position im
+  Markup hat sich geändert. `getElementById`-basierter Code (`js/settings.js`
+  `applyFlags()`, `js/main.js` Quickbar-Weiterleitung `#qbSave` → `#saveBtn.click()`)
+  funktioniert dadurch unverändert weiter, unabhängig davon, ob das Ziel gerade in einem
+  eingeklappten `<details>` steckt (`element.click()` löst Events auch bei unsichtbarem/
+  eingeklapptem Element programmatisch aus).
+- Neue i18n-Schlüssel (`js/i18n-dict.js`): `btn.goToSchedule` ("Zum Zeitplan"/"Go to
+  schedule"), `btn.moreOptions` ("Weitere Optionen"/"More options"); `btn.copyShareLink`
+  DE/EN-Text geändert ("Link kopieren"/"Copy link" → "Rezept teilen"/"Share recipe"),
+  der zugehörige Hint-Text (`hint.copyShareLink`) bleibt unverändert (beschreibt weiterhin
+  korrekt, dass ein Link kopiert wird).
+
+**Teil B — zwei app-weite Kontrast-Fixes (WCAG 2.1 AA):**
+- **`--line`-Rahmenkontrast (WCAG 1.4.11, ≥3:1 für UI-Komponenten-Grenzen):** lag
+  bisher bei nur ~1,35-1,52:1 (Hellmodus `#d8ccba`) bzw. ~1,35-1,56:1 (Dunkelmodus
+  `#3a332e`) gegen `--bg`/`--card` — betrifft app-weit `.seg`/`.pills`-Ränder,
+  Input-Ränder, `.adjust-btn`, Karten-Ränder usw. Nachgedunkelt (Hell) bzw. aufgehellt
+  (Dunkel): Hellmodus `--line:#8c7b64` (~3,48:1 gg. `--bg`, ~3,93:1 gg. `--card`),
+  Dunkelmodus `--line:#7a6e5f` (~3,72-3,90:1 gg. `--bg`, ~3,37:1 gg. `--card`) — beide
+  mit Sicherheitsmarge über der 3:1-Schwelle, selbst nach Standard-WCAG-2.0-
+  Luminanzformel nachgerechnet UND vom `accessibility-expert` unabhängig bestätigt
+  (deckungsgleiche Werte). `--line-soft` bewusst UNVERÄNDERT (dient explizit als "kaum
+  sichtbarer" Trenner, kein UI-Komponenten-Rahmen im Sinne von 1.4.11).
+- **Weiß-auf-`--tomato`-Text im Dunkelmodus (WCAG 1.4.3, ≥4,5:1 für Text):** reines
+  `--tomato` (`#d1533c` dunkel) lag bei nur ~4,19:1 für weißen Text — betraf die
+  "wachsende Nebenbefund-Familie" aus mehreren Zyklen (`.party-qty-btn:hover` bereits in
+  v4.2.0 gefixt, `.stepper-btn:hover` seit v4.2.0 offen, `.seg button.active` neu aus
+  v4.4.0). Bei systematischer Durchsicht ALLER `background:var(--tomato)`-Stellen mit
+  echtem Textinhalt (nicht nur Icons/Schalter) wurden insgesamt **10 Stellen** gefunden
+  und auf `var(--tomato-dark)` umgestellt (~5,38:1 dunkel, ~6,29:1 hell — etabliertes
+  v4.2.0-Muster, jetzt konsequent als DEFAULT-Fläche statt nur als Hover-Zustand
+  angewendet): `.onboarding-cta`, `.stepper-btn:hover`, `.seg button.active`,
+  `.pills button.active`, `.info-btn[aria-expanded="true"]` (enthält echten "i"-Text),
+  `.actions button.primary`, `.timerbtn-start`, `.timerdone` (alle `css/styles.css`)
+  sowie `.quickbar .qb-save` und `.calc-subnav .nav-item.active` (`css/mobile.css`,
+  mobile-only). Bei Stellen, deren bisheriger Hover-/Aktiv-Zustand ebenfalls
+  `var(--tomato-dark)` war (jetzt identisch zur neuen Basis, kein Farbwechsel mehr
+  sichtbar gewesen), auf `filter:brightness()` umgestellt (`.actions button.primary:hover`,
+  `.onboarding-cta:hover`, `.quickbar .qb-save:active`) — identisches, bereits
+  etabliertes Muster wie `.timerbtn:hover{filter:brightness(.96)}`.
+  **Bewusst UNVERÄNDERT gelassen** (per Task-Vorgabe explizit abgegrenzt, vom
+  `accessibility-expert` bestätigt): `.card-icon` (reines SVG-Icon, `aria-hidden`, fällt
+  unter WCAG 1.4.11 mit nur 3:1-Pflicht, besteht bei 4,19:1 bereits problemlos) und
+  `.switch input:checked+.switch-slider` (Schalter-Knopf ohne eigenen Text, ebenfalls nur
+  3:1-Pflicht).
+
+**Testen:** `tests/test.html` per Headless-Edge-Dump, **716/716 Prüfungen unverändert
+grün** (keine Berechnungslogik angefasst, alle geänderten IDs sind in `tests/test.html`
+eigene, vom echten HTML unabhängige Stub-Elemente; kein Test prüft den geänderten
+Button-Text). Kein `test-generator`-Lauf nötig (reine Markup-/CSS-Änderung ohne neue
+Verzweigungslogik in `js/calc.js`/`js/schedule.js`/`js/guide.js`, nur Wiederverwendung
+bereits bestehender, andernorts getesteter Funktionen wie `PZ.gotoView()`).
+
+**Härten:** `accessibility-expert`-Review (Desktop + Mobil, Hell- + Dunkelmodus) —
+**40/40 Punkte PASS, keine Blocker/Major/Minor.** Neue Aktionsleisten-Struktur: native
+`<details>`/`<summary>`-Semantik konsistent mit dem bereits geprüften
+`.preset-all-details`-Muster, Fokus-/Tab-Reihenfolge korrekt (`order:-1` für den
+Primär-Button, 44px-Touch-Ziele), Accessible Names aller Buttons korrekt, Live-Region-
+Ankündigung beim Klick auf "Zum Zeitplan" greift über die bestehende
+`PZ.announce()`/Generation-Zähler-Infrastruktur (v3.58.0). Kontrast-Werte unabhängig
+gegengerechnet, decken sich exakt mit den selbst vorab berechneten Werten. Zwei
+Hinweise ohne Blocker-Charakter: `tests/test.html` könnte künftig eine gezielte Ergänzung
+für `#moreOptionsDetails` bekommen (nicht in diesem Zyklus umgesetzt, kein akuter Bedarf
+laut Review); `js/guide.js` wurde gegengecheckt und hat kein String-Matching auf die
+alte Button-Struktur (Grep bestätigt keine Treffer). Kein `mobile-optimizer`-Lauf nötig
+(die Mobil-Änderungen sind reine Farbtoken-Swaps ohne Layout-Änderung bzw. spiegeln die
+bereits geprüfte Desktop-Struktur 1:1).
+
+**Geändert:** `pizza-rechner.html`, `pizza-rechner-mobile.html`, `css/styles.css`,
+`css/mobile.css`, `js/i18n-dict.js`. `?v=` auf `4.5.0` gezogen — **Desktop und Mobil
+sind seit diesem Zyklus wieder synchron** (vorher Desktop `3.72.0`, Mobil `4.4.0`
+auseinandergelaufen, s. Design-Import-Zyklus-1-Abschnitt). `pizza-rechner-mobile-
+standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v4.5.0 - Ergebnis priorisieren + Kontrast-Fixes/` enthält den vollständigen
+Schnappschuss. `Backlog.md` Punkt 1 als erledigt markiert, abhängiger Punkt B damit
+entblockt.
+
 ## Design-System-Import Zyklus 5: Einstellungen-Screen (v4.4.0)
 
 Fünfter und letzter Zyklus der mobilen Redesign-Reihe (Zyklus 1 = Tokens +

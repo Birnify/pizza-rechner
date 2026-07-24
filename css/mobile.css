@@ -99,9 +99,10 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
    (Redesign-Korrektur, direkter Nutzerauftrag) kehrt zur satten Terrakotta-Fläche
    zurück, die der Nutzer im Referenz-Screenshot vermisst hatte — Textur/Farbton
    identisch zum Foto-Header (css/styles.css header{}), damit Kopf- und Fußzeile
-   optisch zusammengehören. Die "Speichern"-Pille bleibt gefüllt (var(--tomato)),
-   bekommt aber einen weißen Rahmen zur Abgrenzung von der jetzt ebenfalls
-   terrakottafarbenen Bar (sonst würden beide Flächen ineinanderlaufen). */
+   optisch zusammengehören. Die "Speichern"-Pille bleibt gefüllt (seit dem
+   Kontrast-Fix weiter unten: var(--tomato-dark)), bekommt aber einen weißen
+   Rahmen zur Abgrenzung von der jetzt ebenfalls terrakottafarbenen Bar (sonst
+   würden beide Flächen ineinanderlaufen). */
 .quickbar{
   position:fixed;left:0;right:0;z-index:20;
   /* Sitzt seit v3.67.0 direkt ÜBER der Bottom-Tab-Navigation statt ganz unten --
@@ -128,12 +129,18 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
    Grund rechnerisch geprüft: die effektive Mischfarbe liegt bei ~5,2:1 gegen den
    Bar-Hintergrund, über der 4,5:1-Schwelle für Fließtext (WCAG 1.4.3). */
 .quickbar .qb-jump small{font-weight:500;font-size:11px;margin-left:2px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:rgba(255,255,255,.85);}
+/* Kontrast-Fix ("Weiß auf --tomato-Text im Dunkelmodus", s. Sammelkommentar bei
+   .actions button.primary in css/styles.css): var(--tomato-dark) statt var(--tomato) --
+   die Bar selbst nutzt bereits --tomato-dark (s. .quickbar oben), der weiße 2px-Rahmen
+   + Schatten grenzen den Button weiterhin sichtbar von der Bar ab. :active jetzt per
+   Aufhellungsfilter (Basis ist bereits --tomato-dark, ein Wechsel zum selben Token hätte
+   keinen sichtbaren Press-Effekt mehr gehabt). */
 .quickbar .qb-save{
   flex-shrink:0;min-height:44px;padding:0 22px;border:2px solid #fff;border-radius:999px;
-  background:var(--tomato);color:#fff;font-size:14px;font-weight:700;
+  background:var(--tomato-dark);color:#fff;font-size:14px;font-weight:700;
   cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.3);
 }
-.quickbar .qb-save:active{background:var(--tomato-dark);}
+.quickbar .qb-save:active{filter:brightness(.85);}
 /* Eigener weißer Fokus-Ring (WCAG 2.4.7/1.4.11): der Button sitzt jetzt auf einer
    ebenfalls terrakottafarbenen Bar -- ein evtl. browser-eigener (oft bläulicher)
    Standard-Fokusring wäre gegen diese warme Farbkombination nicht zuverlässig
@@ -247,7 +254,9 @@ header{position:relative;text-align:center;}
   font-size:13px;font-weight:600;
 }
 .calc-subnav .nav-item:active{background:var(--card);}
-.calc-subnav .nav-item.active{background:var(--tomato);border-left:none;color:#fff;}
+/* Kontrast-Fix ("Weiß auf --tomato-Text im Dunkelmodus", s. Sammelkommentar bei
+   .actions button.primary in css/styles.css): var(--tomato-dark) statt var(--tomato). */
+.calc-subnav .nav-item.active{background:var(--tomato-dark);border-left:none;color:#fff;}
 
 /* Statische Einheit neben Slider+Zahlenfeld (ersetzt die frühere doppelte rote Zahl
    oberhalb im Label) — rein visueller Hinweis, Screenreader bekommen die Einheit über

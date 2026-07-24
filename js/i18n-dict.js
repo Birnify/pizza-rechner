@@ -736,9 +736,15 @@
   add('btn.savePdf', 'Als PDF speichern', 'Save as PDF');
   add('hint.savePdf', 'Lädt die Schritt-für-Schritt-Anleitung direkt als PDF-Datei herunter: ganz ohne Druckdialog.',
     'Downloads the step-by-step guide directly as a PDF file: with no print dialog.');
-  add('btn.copyShareLink', 'Link kopieren', 'Copy link');
+  add('btn.copyShareLink', 'Rezept teilen', 'Share recipe');
   add('hint.copyShareLink', 'Kopiert einen Link, der dieses Rezept komplett enthält: zum Teilen, ohne Login oder Server.',
     'Copies a link that contains this entire recipe: for sharing, no login or server needed.');
+  // "Ergebnis priorisieren" (Aktionsleiste neu geordnet): primäre Aktion "Zum Zeitplan"
+  // springt in den bereits berechneten Zeitplan-Tab (PZ.gotoView, wie der bestehende
+  // Sprung im Anleitungs-Banner); "Weitere Optionen" ist das <summary>-Label des
+  // eingeklappten Bereichs mit Speichern/Einkaufsliste/Anleitung/PDF/Temperatur.
+  add('btn.goToSchedule', 'Zum Zeitplan', 'Go to schedule');
+  add('btn.moreOptions', 'Weitere Optionen', 'More options');
 
   // -- Anleitung-Kopf -------------------------------------------------------------------
   add('guide.headTitle', 'Schritt-für-Schritt-Anleitung', 'Step-by-step guide');

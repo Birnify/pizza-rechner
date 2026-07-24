@@ -103,7 +103,13 @@
   --card:#fdfaf5;
   --surface-2:#e9e0d2;        /* verschachtelte Fläche (Stepper-Track, Temp-Box, Seg-Track) */
   --surface-inset:#e2d8c8;    /* zurückgesetzter Track (Segmented Control / Subnav) */
-  --line:#d8ccba;
+  /* Kontrast-Fix (Nebenbefund seit v4.0.0, WCAG 1.4.11, 3:1 nötig für UI-Komponenten-
+     Grenzen): #d8ccba gegen --bg/--card lag nur bei ~1,35-1,52:1. Nachgedunkelt auf
+     #8c7b64 -- rechnerisch ~3,48:1 gegen --bg, ~3,93:1 gegen --card (Standard-WCAG-2.0-
+     Luminanzformel, beide über der 3:1-Schwelle mit Sicherheitsmarge). --line-soft
+     bewusst UNVERÄNDERT (dient explizit als "kaum sichtbarer" Trenner, kein
+     UI-Komponenten-Rahmen im Sinne von 1.4.11). */
+  --line:#8c7b64;
   --line-soft:#ece4d6;        /* kaum sichtbarer innerer Trenner */
 
   /* --- Text (warmes Dunkelbraun, nie reines #000) --- */
@@ -270,7 +276,10 @@
     --card:#201d1b;
     --surface-2:#2a2622;
     --surface-inset:#1b1917;
-    --line:#3a332e;
+    /* Kontrast-Fix, analog zum Hellmodus oben: #3a332e gegen --bg/--card lag nur bei
+       ~1,35-1,56:1. Aufgehellt auf #7a6e5f -- rechnerisch ~3,90:1 gegen --bg,
+       ~3,37:1 gegen --card. */
+    --line:#7a6e5f;
     --line-soft:#2c2723;
     --ink:#ede9e6;
     --ink-strong:#f5f1ee;
@@ -481,12 +490,16 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .onboarding-settings-hint{margin:0 0 14px;}
 .onboarding-checkbox-row{border:none;margin-bottom:16px;}
 .onboarding-checkbox-row .switch-row{padding:0;}
+/* Fläche var(--tomato-dark) statt var(--tomato) -- Kontrast-Fix, s. Kommentar bei
+   .actions button.primary weiter unten (identische Nebenbefund-Familie "Weiß auf
+   --tomato-Text im Dunkelmodus"). Hover jetzt per Aufhellungsfilter (Basis ist
+   bereits --tomato-dark). */
 .onboarding-cta{
-  display:block;width:100%;padding:13px;border-radius:999px;border:1px solid var(--tomato);
-  background:var(--tomato);color:#fff;font-size:14px;font-weight:600;cursor:pointer;
+  display:block;width:100%;padding:13px;border-radius:999px;border:1px solid var(--tomato-dark);
+  background:var(--tomato-dark);color:#fff;font-size:14px;font-weight:600;cursor:pointer;
   box-shadow:0 3px 10px rgba(200,68,46,.3);transition:all .12s;
 }
-.onboarding-cta:hover{background:var(--tomato-dark);border-color:var(--tomato-dark);}
+.onboarding-cta:hover{filter:brightness(1.08);}
 .onboarding-cta:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
 
 /* Pizza-Party-Planer (v3.27.0, js/party.js) — Pizzenauswahl mit Stückzahl-Stepper +
@@ -756,7 +769,9 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   color:var(--tomato-text);cursor:pointer;display:flex;align-items:center;justify-content:center;
   transition:all .12s;
 }
-.stepper-btn:hover{border-color:var(--tomato);background:var(--tomato);color:#fff;}
+/* Kontrast-Fix (Nebenbefund seit v4.2.0, "Weiß auf --tomato-Text im Dunkelmodus"):
+   var(--tomato-dark) statt var(--tomato), s. Sammelkommentar bei .actions button.primary. */
+.stepper-btn:hover{border-color:var(--tomato-dark);background:var(--tomato-dark);color:#fff;}
 .stepper-btn:active{transform:scale(.94);}
 .stepper-btn:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
 /* Höhere Spezifität als das generische `input[type=number]{width:78px}` oben (bzw.
@@ -792,7 +807,10 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   flex:1;border:none;background:transparent;padding:9px 6px;border-radius:var(--radius-sm);
   font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;
 }
-.seg button.active{background:var(--tomato);color:#fff;}
+/* Kontrast-Fix (Nebenbefund v4.4.0, ~4,19:1 nachgerechnet, "Weiß auf --tomato-Text im
+   Dunkelmodus"): var(--tomato-dark) statt var(--tomato), s. Sammelkommentar bei
+   .actions button.primary. Betrifft ALLE .seg-Instanzen app-weit. */
+.seg button.active{background:var(--tomato-dark);color:#fff;}
 /* accessibility-expert-Befund (v3.72.0, MAJOR 1): .seg button hatte app-weit (nicht nur
    der neue Komplexitäts-Schalter) kein sichtbares :focus-visible-Outline, anders als
    .pills button (die dasselbe Muster schon in v3.70.0 bekam). Konsistenter Nachzug für
@@ -804,7 +822,9 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   font-size:12px;cursor:pointer;color:var(--ink);transition:all .12s;
 }
 .pills button:hover{border-color:var(--tomato);color:var(--tomato-text);}
-.pills button.active{background:var(--tomato);border-color:var(--tomato);color:#fff;font-weight:600;}
+/* Kontrast-Fix ("Weiß auf --tomato-Text im Dunkelmodus", s. Sammelkommentar bei
+   .actions button.primary): var(--tomato-dark) statt var(--tomato). */
+.pills button.active{background:var(--tomato-dark);border-color:var(--tomato-dark);color:#fff;font-weight:600;}
 /* accessibility-expert-Befund (v3.70.0, MAJOR 2): .pills button hatte app-weit (nicht
    erst seit diesem Feature -- betrifft auch Hefe-Pills/Vorteig-Reife-Stufen u. a.) KEIN
    sichtbares :focus-visible-Outline. Klein genug, um direkt mitzufixen statt nur als
@@ -834,7 +854,9 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .info-btn:hover{border-color:var(--tomato);color:var(--tomato-text);}
 .info-btn:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
-.info-btn[aria-expanded="true"]{background:var(--tomato);border-color:var(--tomato);color:#fff;}
+/* Kontrast-Fix ("Weiß auf --tomato-Text im Dunkelmodus", s. Sammelkommentar bei
+   .actions button.primary): der "i"-Text ist echter Text, nicht nur Dekor. */
+.info-btn[aria-expanded="true"]{background:var(--tomato-dark);border-color:var(--tomato-dark);color:#fff;}
 .switch-info{font-size:11.5px;color:var(--muted);line-height:1.4;margin:0 0 10px;padding-right:54px;}
 /* Toggle-Switch: sichtbare Spur+Daumen per Pseudo-Elementen, das echte <input> deckt per
    position:absolute;inset:0 den kompletten Klick-/Touch-Bereich ab (größer als die
@@ -905,17 +927,47 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   font-size:13px;font-weight:600;cursor:pointer;color:var(--ink);transition:all .12s;
 }
 .actions button:not(.primary):hover{border-color:var(--tomato);color:var(--tomato-text);}
-/* Primäre Aktion ("Speichern") in Terrakotta statt Grün (v3.41.0, Angleichung an den
-   Referenz-Stil) — Pill-Form hebt sie zusätzlich von den rechteckig-abgerundeten
-   sekundären Buttons ab (einheitliche Sprache: Pill = primäre CTA). */
+/* Primäre Aktion in Terrakotta statt Grün (v3.41.0, Angleichung an den Referenz-Stil) —
+   Pill-Form hebt sie zusätzlich von den rechteckig-abgerundeten sekundären Buttons ab
+   (einheitliche Sprache: Pill = primäre CTA). Seit "Ergebnis priorisieren"/Kontrast-Fix
+   (s. u.) ist "Zum Zeitplan" die primäre Aktion, "Speichern" ist in "Weitere Optionen"
+   gewandert und trägt die Klasse nicht mehr. Fläche var(--tomato-dark) statt var(--tomato)
+   (Kontrast-Nebenbefund-Familie "Weiß auf --tomato-Text im Dunkelmodus", WCAG 1.4.3: reines
+   --tomato lag im Dunkelmodus nur bei ~4,19:1 für weißen Text, --tomato-dark bei ~5,38:1 --
+   identisches, bereits in v4.2.0 für .party-qty-btn:hover erprobtes Muster, hier erstmals
+   als DEFAULT-Fläche statt nur als Hover-Zustand). Im Hellmodus unverändert komfortabel
+   über der Schwelle (--tomato-dark dort sogar noch dunkler/kontrastreicher als --tomato). */
 .actions button.primary{
-  background:var(--tomato);color:#fff;border-color:var(--tomato);order:-1;
+  background:var(--tomato-dark);color:#fff;border-color:var(--tomato-dark);order:-1;
   padding:13px;font-size:14px;border-radius:999px;
   box-shadow:0 3px 10px rgba(200,68,46,.3);
 }
-.actions button.primary:hover{background:var(--tomato-dark);border-color:var(--tomato-dark);}
+/* Hover jetzt per Aufhellungsfilter statt Farbwechsel (Basis ist bereits --tomato-dark,
+   ein Wechsel zu demselben Token hätte keinen sichtbaren Hover-Effekt mehr gehabt) --
+   identisches Muster wie .timerbtn:hover weiter unten. */
+.actions button.primary:hover{filter:brightness(1.08);}
 .actions .row2{display:flex;gap:8px;}
 .actions .row2 button{flex:1;min-width:0;background:transparent;font-weight:500;}
+/* "Ergebnis priorisieren": primäre Aktion "Zum Zeitplan" + sekundäre Aktion "Rezept
+   teilen" (bisher "Link kopieren") direkt nebeneinander oben in der Aktionsleiste,
+   gleich breit. #shareBlock bleibt als Ganzes das Flag-Toggle-Ziel von
+   PZ.applyFlags() (Einstellungen > "Teilen-Link") -- unverändert per ID, nur die
+   Position im Markup hat sich geändert. */
+.actions-primary-row{display:flex;gap:8px;align-items:flex-start;}
+.actions-primary-row>*{flex:1;min-width:0;}
+.actions-primary-row button{font-size:14px;padding:13px;}
+/* "Weitere Optionen": Speichern, Einkaufsliste/Anleitung drucken, PDF-Export und die
+   Temperatur-Detailbox sind hier eingeklappt -- identisches <details>/<summary>-Muster
+   wie .preset-all-details (kein eigenes JS zum Auf-/Zuklappen nötig). */
+.more-options-details summary{
+  cursor:pointer;font-size:13px;font-weight:600;color:var(--tomato-text);list-style:none;
+  min-height:44px;display:flex;align-items:center;-webkit-tap-highlight-color:transparent;
+}
+.more-options-details summary::-webkit-details-marker{display:none;}
+.more-options-details summary::after{content:'▾' / '';margin-left:4px;font-size:11px;}
+.more-options-details[open] summary::after{content:'▴' / '';}
+.more-options-details summary:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+.more-options-body{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
 /* Anleitung / Timeline */
 .guidewrap{max-width:980px;margin:0 auto;padding:0 20px 10px;}
 .guidehead{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);}
@@ -1056,7 +1108,10 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   font-size:12.5px;font-weight:700;padding:7px 13px;border-radius:var(--radius-chip);cursor:pointer;
   border:1px solid var(--line);background:var(--card);color:var(--ink);
 }
-.timerbtn-start{background:var(--tomato);color:#fff;border-color:var(--tomato);}
+/* Kontrast-Fix ("Weiß auf --tomato-Text im Dunkelmodus", s. Sammelkommentar bei
+   .actions button.primary): var(--tomato-dark) statt var(--tomato). Bestehendes
+   .timerbtn:hover{filter:brightness(.96)} greift unverändert weiter. */
+.timerbtn-start{background:var(--tomato-dark);color:#fff;border-color:var(--tomato-dark);}
 .timerbtn:hover{filter:brightness(.96);}
 a.timerbtn{text-decoration:none;display:inline-block;}
 .timerbtn-alt{background:var(--card);color:var(--ink);}
@@ -1070,8 +1125,10 @@ a.timerbtn{text-decoration:none;display:inline-block;}
   font-size:13px;font-weight:800;color:var(--tomato-text);font-variant-numeric:tabular-nums;
   background:var(--chip-bg);border:1px solid var(--crust);padding:5px 11px;border-radius:var(--radius-chip);
 }
+/* Kontrast-Fix ("Weiß auf --tomato-Text im Dunkelmodus", s. Sammelkommentar bei
+   .actions button.primary): var(--tomato-dark) statt var(--tomato). */
 .timerdone{
-  font-size:13px;font-weight:800;color:#fff;background:var(--tomato);
+  font-size:13px;font-weight:800;color:#fff;background:var(--tomato-dark);
   padding:5px 11px;border-radius:var(--radius-chip);animation:timerpulse 1s ease-in-out infinite;
 }
 @keyframes timerpulse{0%,100%{opacity:1;}50%{opacity:.55;}}
@@ -1202,9 +1259,10 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
    (Redesign-Korrektur, direkter Nutzerauftrag) kehrt zur satten Terrakotta-Fläche
    zurück, die der Nutzer im Referenz-Screenshot vermisst hatte — Textur/Farbton
    identisch zum Foto-Header (css/styles.css header{}), damit Kopf- und Fußzeile
-   optisch zusammengehören. Die "Speichern"-Pille bleibt gefüllt (var(--tomato)),
-   bekommt aber einen weißen Rahmen zur Abgrenzung von der jetzt ebenfalls
-   terrakottafarbenen Bar (sonst würden beide Flächen ineinanderlaufen). */
+   optisch zusammengehören. Die "Speichern"-Pille bleibt gefüllt (seit dem
+   Kontrast-Fix weiter unten: var(--tomato-dark)), bekommt aber einen weißen
+   Rahmen zur Abgrenzung von der jetzt ebenfalls terrakottafarbenen Bar (sonst
+   würden beide Flächen ineinanderlaufen). */
 .quickbar{
   position:fixed;left:0;right:0;z-index:20;
   /* Sitzt seit v3.67.0 direkt ÜBER der Bottom-Tab-Navigation statt ganz unten --
@@ -1231,12 +1289,18 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
    Grund rechnerisch geprüft: die effektive Mischfarbe liegt bei ~5,2:1 gegen den
    Bar-Hintergrund, über der 4,5:1-Schwelle für Fließtext (WCAG 1.4.3). */
 .quickbar .qb-jump small{font-weight:500;font-size:11px;margin-left:2px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:rgba(255,255,255,.85);}
+/* Kontrast-Fix ("Weiß auf --tomato-Text im Dunkelmodus", s. Sammelkommentar bei
+   .actions button.primary in css/styles.css): var(--tomato-dark) statt var(--tomato) --
+   die Bar selbst nutzt bereits --tomato-dark (s. .quickbar oben), der weiße 2px-Rahmen
+   + Schatten grenzen den Button weiterhin sichtbar von der Bar ab. :active jetzt per
+   Aufhellungsfilter (Basis ist bereits --tomato-dark, ein Wechsel zum selben Token hätte
+   keinen sichtbaren Press-Effekt mehr gehabt). */
 .quickbar .qb-save{
   flex-shrink:0;min-height:44px;padding:0 22px;border:2px solid #fff;border-radius:999px;
-  background:var(--tomato);color:#fff;font-size:14px;font-weight:700;
+  background:var(--tomato-dark);color:#fff;font-size:14px;font-weight:700;
   cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.3);
 }
-.quickbar .qb-save:active{background:var(--tomato-dark);}
+.quickbar .qb-save:active{filter:brightness(.85);}
 /* Eigener weißer Fokus-Ring (WCAG 2.4.7/1.4.11): der Button sitzt jetzt auf einer
    ebenfalls terrakottafarbenen Bar -- ein evtl. browser-eigener (oft bläulicher)
    Standard-Fokusring wäre gegen diese warme Farbkombination nicht zuverlässig
@@ -1350,7 +1414,9 @@ header{position:relative;text-align:center;}
   font-size:13px;font-weight:600;
 }
 .calc-subnav .nav-item:active{background:var(--card);}
-.calc-subnav .nav-item.active{background:var(--tomato);border-left:none;color:#fff;}
+/* Kontrast-Fix ("Weiß auf --tomato-Text im Dunkelmodus", s. Sammelkommentar bei
+   .actions button.primary in css/styles.css): var(--tomato-dark) statt var(--tomato). */
+.calc-subnav .nav-item.active{background:var(--tomato-dark);border-left:none;color:#fff;}
 
 /* Statische Einheit neben Slider+Zahlenfeld (ersetzt die frühere doppelte rote Zahl
    oberhalb im Label) — rein visueller Hinweis, Screenreader bekommen die Einheit über
@@ -1806,34 +1872,43 @@ header{position:relative;text-align:center;}
         <div class="ing"><span class="name" data-i18n="ing.plusWholePref">+ ganze Biga/Poolish</span><span class="amt" data-i18n="ing.all">alles</span></div>
       </div>
 
-      <!-- Temperatur -->
-      <div class="stage" id="tempStage">
-        <h3 style="color:var(--tomato);" data-i18n="result.waterTemp">Wassertemperatur</h3>
-        <div class="temp-out">
-          <div class="temp-box"><div class="v"><span id="waterTemp">19°C</span></div><div class="l" data-i18n="result.mixingWater">Schüttwasser</div></div>
-          <div class="temp-box"><div class="v"><span id="iceAmt">0 g</span></div><div class="l" data-i18n="result.ofWhichIce">davon Eis</div></div>
-        </div>
-        <div class="note" id="iceNote"></div>
-      </div>
-
       <div id="shoppingList" class="shoppinglist-card"></div>
 
       <div class="actions">
-        <button class="primary" id="saveBtn" data-i18n="btn.save">Speichern</button>
-        <div class="row2" id="shoppingRow">
-          <button onclick="PZ.printShoppingList()" data-i18n="btn.printShoppingList">Einkaufsliste drucken</button>
-          <button onclick="PZ.printGuide()" data-i18n="btn.printGuide">Anleitung drucken</button>
+        <div class="actions-primary-row">
+          <button type="button" class="primary" id="gotoScheduleBtn" onclick="PZ.gotoView('zeitplan')" data-i18n="btn.goToSchedule">Zum Zeitplan</button>
+          <div id="shareBlock" style="display:flex;flex-direction:column;gap:8px;">
+            <button type="button" id="shareLinkBtn" onclick="PZ.copyShareLink(this)" aria-describedby="shareHint" data-i18n="btn.copyShareLink">Rezept teilen</button>
+            <div class="hint" id="shareHint" style="margin-top:0;" data-i18n="hint.copyShareLink">Kopiert einen Link, der dieses Rezept komplett enthält: zum Teilen, ohne Login oder Server.</div>
+            <div id="shareLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
+          </div>
         </div>
-        <div id="pdfGuideBlock" style="display:flex;flex-direction:column;gap:8px;">
-          <button type="button" id="pdfGuideBtn" onclick="PZ.downloadGuidePDF()" aria-describedby="pdfGuideHint" data-i18n="btn.savePdf">Als PDF speichern</button>
-          <div class="hint" id="pdfGuideHint" style="margin-top:0;" data-i18n="hint.savePdf">Lädt die Schritt-für-Schritt-Anleitung direkt als PDF-Datei herunter: ganz ohne Druckdialog.</div>
-          <div id="pdfGuideLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
-        </div>
-        <div id="shareBlock" style="display:flex;flex-direction:column;gap:8px;">
-          <button type="button" id="shareLinkBtn" onclick="PZ.copyShareLink(this)" aria-describedby="shareHint" data-i18n="btn.copyShareLink">Link kopieren</button>
-          <div class="hint" id="shareHint" style="margin-top:0;" data-i18n="hint.copyShareLink">Kopiert einen Link, der dieses Rezept komplett enthält: zum Teilen, ohne Login oder Server.</div>
-          <div id="shareLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
-        </div>
+
+        <details class="more-options-details" id="moreOptionsDetails">
+          <summary class="more-options-toggle" data-i18n="btn.moreOptions">Weitere Optionen</summary>
+          <div class="more-options-body">
+            <!-- Temperatur -->
+            <div class="stage" id="tempStage">
+              <h3 style="color:var(--tomato);" data-i18n="result.waterTemp">Wassertemperatur</h3>
+              <div class="temp-out">
+                <div class="temp-box"><div class="v"><span id="waterTemp">19°C</span></div><div class="l" data-i18n="result.mixingWater">Schüttwasser</div></div>
+                <div class="temp-box"><div class="v"><span id="iceAmt">0 g</span></div><div class="l" data-i18n="result.ofWhichIce">davon Eis</div></div>
+              </div>
+              <div class="note" id="iceNote"></div>
+            </div>
+
+            <button type="button" id="saveBtn" data-i18n="btn.save">Speichern</button>
+            <div class="row2" id="shoppingRow">
+              <button onclick="PZ.printShoppingList()" data-i18n="btn.printShoppingList">Einkaufsliste drucken</button>
+              <button onclick="PZ.printGuide()" data-i18n="btn.printGuide">Anleitung drucken</button>
+            </div>
+            <div id="pdfGuideBlock" style="display:flex;flex-direction:column;gap:8px;">
+              <button type="button" id="pdfGuideBtn" onclick="PZ.downloadGuidePDF()" aria-describedby="pdfGuideHint" data-i18n="btn.savePdf">Als PDF speichern</button>
+              <div class="hint" id="pdfGuideHint" style="margin-top:0;" data-i18n="hint.savePdf">Lädt die Schritt-für-Schritt-Anleitung direkt als PDF-Datei herunter: ganz ohne Druckdialog.</div>
+              <div id="pdfGuideLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
+            </div>
+          </div>
+        </details>
       </div>
     </div>
   </div>
@@ -2290,7 +2365,7 @@ header{position:relative;text-align:center;}
         <div class="nav-divider" role="separator"></div>
         <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.4.0</span>
+        <span class="nav-version" id="appVersion">v4.5.0</span>
 
       </div>
     </details>
@@ -3215,9 +3290,15 @@ header{position:relative;text-align:center;}
   add('btn.savePdf', 'Als PDF speichern', 'Save as PDF');
   add('hint.savePdf', 'Lädt die Schritt-für-Schritt-Anleitung direkt als PDF-Datei herunter: ganz ohne Druckdialog.',
     'Downloads the step-by-step guide directly as a PDF file: with no print dialog.');
-  add('btn.copyShareLink', 'Link kopieren', 'Copy link');
+  add('btn.copyShareLink', 'Rezept teilen', 'Share recipe');
   add('hint.copyShareLink', 'Kopiert einen Link, der dieses Rezept komplett enthält: zum Teilen, ohne Login oder Server.',
     'Copies a link that contains this entire recipe: for sharing, no login or server needed.');
+  // "Ergebnis priorisieren" (Aktionsleiste neu geordnet): primäre Aktion "Zum Zeitplan"
+  // springt in den bereits berechneten Zeitplan-Tab (PZ.gotoView, wie der bestehende
+  // Sprung im Anleitungs-Banner); "Weitere Optionen" ist das <summary>-Label des
+  // eingeklappten Bereichs mit Speichern/Einkaufsliste/Anleitung/PDF/Temperatur.
+  add('btn.goToSchedule', 'Zum Zeitplan', 'Go to schedule');
+  add('btn.moreOptions', 'Weitere Optionen', 'More options');
 
   // -- Anleitung-Kopf -------------------------------------------------------------------
   add('guide.headTitle', 'Schritt-für-Schritt-Anleitung', 'Step-by-step guide');

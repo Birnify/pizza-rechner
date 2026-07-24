@@ -1,6 +1,6 @@
 # Backlog / Sessionübergabe
 
-Stand: 2026-07-23. Für Fortsetzung in einer neuen Session (auch anderer Account/Maschine).
+Stand: 2026-07-24. Für Fortsetzung in einer neuen Session (auch anderer Account/Maschine).
 Lies zusätzlich `pizza-rechner-KONTEXT.md` (Pflicht, siehe `CLAUDE.md`) für den aktuellen
 App-Stand — diese Datei hier ist nur die Warteschlange/Ideensammlung.
 
@@ -13,56 +13,27 @@ inklusive der seit 2026-07-23 geltenden Regel „ein Zyklus/Punkt pro Instanz" (
 eine Dauer-Instanz über mehrere Zyklen erzeugte in einem gemessenen Fall ~196 Mio.
 Cache-Read-Tokens bei nur ~304K echtem Output).
 
-## Aktuell pausierte Warteschlange (bereits vollständig definiert, bereit für den Orchestrator)
+## Ursprüngliche Warteschlange — beide Punkte erledigt
 
 Ursprünglich zwei Punkte, bereits an eine Orchestrator-Instanz übergeben und von ihr
 bestätigt, aber auf Nutzerwunsch pausiert. **Punkt 2 ist seit v4.0.0 (Design-System-Import
 Zyklus 1: Tokens + Rechner-Screen) erledigt** — der neue `.seg`-Schalter aus dem
 Design-Token-Import bekam automatisch einen sichtbaren Rahmen (`--surface-2`-Fläche +
 `1px solid var(--line)`), identisches Problem, andere Lösung als ursprünglich hier
-geplant. Details: `pizza-rechner-KONTEXT.md`, Abschnitt „Mögliche nächste Schritte".
-Nur noch Punkt 1 ist offen, direkt 1:1 an eine neue, frische Orchestrator-Instanz
-übergebbar.
-
-### Punkt 1: Ergebnis priorisieren
-
-Name: Ergebnis priorisieren
-
-Idee: Die Aktionsleiste am Ende der Ergebniskarte neu ordnen: primäre Aktion "Zum
-Zeitplan", sekundär "Rezept teilen" direkt daneben, alle übrigen Aktionen und Detailboxen
-in einen eingeklappten Bereich "Weitere Optionen" verschieben.
-
-Motivation: Die ausführliche Ergebniskarte konkurriert mit vielen Detailwerten und
-mehreren gleichrangigen Aktionen (UX-Review "Teigmeister", Punkt 4, Priorität Mittel).
-Aktuell stehen Speichern, Einkaufsliste drucken, Anleitung drucken, Als PDF speichern und
-Link kopieren ohne Rangfolge nebeneinander, das erschwert den Abschluss des Rechenflusses
-und die Weiterführung zum eigentlich nächsten Schritt (Zeitplan).
-
-Scope: Primäre Aktion "Zum Zeitplan" (springt in den bestehenden, bereits live
-berechneten Zeitplan-Tab), sekundäre Aktion "Rezept teilen" (bisheriges Link kopieren).
-Speichern, Einkaufsliste drucken, Anleitung drucken, Als PDF speichern sowie die
-"Temperatur"-Detailbox wandern in einen eingeklappten Bereich "Weitere Optionen"
-darunter. Gesamtteig-Kopfzeile und die 6 Gesamtmengen (Mehl/Wasser/Salz/Hefe/Öl/Zucker)
-bleiben wie bisher zuerst sichtbar.
-
-Abgrenzung: Keine Änderung der Berechnungslogik oder der Zeitplan-Funktion selbst, keine
-Änderung an den bereits kollabierbaren Vorteig-/Hauptteig-Stufen, keine Änderung an der
-bestehenden Sticky-Ergebnisleiste (Quickbar) unten.
-
-### ~~Punkt 2: Rahmen-Fix Komplexitätsschalter~~ — erledigt in v4.0.0
-
-Ursprünglich geplant als eigener, kleiner Fix (Rahmen/Kontrast für den freistehenden
-"Einfach | Profi"-Schalter, `.seg` nutzte `background:var(--bg)` identisch zum
-Seitenhintergrund). Stattdessen automatisch durch den Design-Token-Import (Zyklus 1:
-Tokens + Rechner-Screen) miterledigt: `.seg` nutzt jetzt app-weit `background:
-var(--surface-2)` + `border:1px solid var(--line)`. Details:
-`pizza-rechner-KONTEXT.md`, Abschnitt „Mögliche nächste Schritte".
+geplant. **Punkt 1 ist seit v4.5.0 ("Ergebnis priorisieren + Kontrast-Fixes") ebenfalls
+erledigt** — Aktionsleiste der Ergebniskarte neu geordnet (primär "Zum Zeitplan",
+sekundär "Rezept teilen", Rest in "Weitere Optionen" eingeklappt), auf Desktop UND Mobil,
+plus im selben Zyklus zwei app-weite Kontrast-Nebenbefunde (`--line`-Rahmenkontrast,
+Weiß-auf-Tomate-Text im Dunkelmodus) gefixt. Details: `pizza-rechner-KONTEXT.md`,
+Abschnitt „Ergebnis priorisieren + Kontrast-Fixes (v4.5.0)". **Punkt B unten
+("Teilen-Link"/Einkaufsliste aus Einstellungen entfernen) ist damit nicht mehr blockiert**
+und direkt an eine neue Orchestrator-Instanz übergebbar.
 
 ## Weitere Ideen (aus Backlog.txt, noch nicht in die Orchestrator-Warteschlange eingereiht)
 
-Reihenfolge unter den 9 Punkten noch nicht final festgelegt. Ausdrücklicher
-Abhängigkeits-Hinweis: **Punkt B setzt voraus, dass Punkt 1 oben ("Ergebnis
-priorisieren") bereits umgesetzt ist** (referenziert dessen "Weitere Optionen"-Bereich).
+Reihenfolge unter den 9 Punkten noch nicht final festgelegt. **Punkt B war an "Ergebnis
+priorisieren" gekoppelt (referenziert dessen "Weitere Optionen"-Bereich) — diese
+Abhängigkeit ist seit v4.5.0 erfüllt, Punkt B ist damit nicht mehr blockiert.**
 
 ### A. Inline-Verlinkung von Glossar-Begriffen im Anleitungstext
 
@@ -87,7 +58,8 @@ erzwungene Verlinkung ohne passenden Artikel.
 
 ### B. "Teilen-Link" und "Einkaufsliste" aus Einstellungen entfernen, dauerhaft in "Weitere Optionen" verfügbar machen
 
-*(Abhängig von Punkt 1 "Ergebnis priorisieren" oben.)*
+*(War abhängig von "Ergebnis priorisieren" oben — seit v4.5.0 erledigt, Punkt B ist
+jetzt direkt umsetzbar.)*
 
 Idee: Die Einstellungspunkte "Teilen-Link" und "Einkaufsliste" verschwinden ersatzlos.
 Die Funktionen (Rezept teilen/Link kopieren, Einkaufsliste drucken) sind stattdessen immer
