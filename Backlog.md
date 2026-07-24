@@ -26,8 +26,9 @@ sekundär "Rezept teilen", Rest in "Weitere Optionen" eingeklappt), auf Desktop 
 plus im selben Zyklus zwei app-weite Kontrast-Nebenbefunde (`--line`-Rahmenkontrast,
 Weiß-auf-Tomate-Text im Dunkelmodus) gefixt. Details: `pizza-rechner-KONTEXT.md`,
 Abschnitt „Ergebnis priorisieren + Kontrast-Fixes (v4.5.0)". **Punkt B unten
-("Teilen-Link"/Einkaufsliste aus Einstellungen entfernen) ist damit nicht mehr blockiert**
-und direkt an eine neue Orchestrator-Instanz übergebbar.
+("Teilen-Link"/Einkaufsliste aus Einstellungen entfernen) ist seit v4.6.0 ebenfalls
+erledigt** (s. `pizza-rechner-KONTEXT.md`, Abschnitt „„Teilen-Link"/„Einkaufsliste" aus
+Einstellungen entfernt (v4.6.0)").
 
 ## Weitere Ideen (aus Backlog.txt, noch nicht in die Orchestrator-Warteschlange eingereiht)
 
@@ -56,10 +57,15 @@ Abgrenzung: Keine Änderung an Glossar-Artikeln/-Inhalten oder der
 Verlinkungslogik/Zielzuordnung, nur an der Darstellung. Keine Icon-only-Links. Keine
 erzwungene Verlinkung ohne passenden Artikel.
 
-### B. "Teilen-Link" und "Einkaufsliste" aus Einstellungen entfernen, dauerhaft in "Weitere Optionen" verfügbar machen
+### ~~B. "Teilen-Link" und "Einkaufsliste" aus Einstellungen entfernen, dauerhaft in "Weitere Optionen" verfügbar machen~~ — erledigt in v4.6.0
 
-*(War abhängig von "Ergebnis priorisieren" oben — seit v4.5.0 erledigt, Punkt B ist
-jetzt direkt umsetzbar.)*
+Umgesetzt wie unten beschrieben: beide Feature-Flags (`share`/`shopping`, `js/settings.js`)
+samt Menüpunkten (Desktop + Mobil) entfernt, `js/print.js`/`js/pdf.js`-Guards entfernt,
+„Rezept teilen"/„Einkaufsliste drucken"/„Als PDF speichern" seither permanent sichtbar.
+Details: `pizza-rechner-KONTEXT.md`, Abschnitt „„Teilen-Link"/„Einkaufsliste" aus
+Einstellungen entfernt (v4.6.0)".
+
+Ursprünglicher Auftragstext (zur Referenz):
 
 Idee: Die Einstellungspunkte "Teilen-Link" und "Einkaufsliste" verschwinden ersatzlos.
 Die Funktionen (Rezept teilen/Link kopieren, Einkaufsliste drucken) sind stattdessen immer

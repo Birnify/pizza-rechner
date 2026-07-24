@@ -1002,12 +1002,6 @@
   add('flag.timerSystem.infoBtn', 'Erklärung zu „System-Wecker“ ein-/ausblenden', 'Show/hide explanation for "System alarm"');
   add('flag.timerSystem.info', 'Zusätzliche Links zum Android-Wecker oder Kalender, direkt beim Timer.',
     'Extra links to the Android alarm or calendar, right next to the timer.');
-  add('flag.share.name', 'Teilen-Link', 'Share link');
-  add('flag.share.infoBtn', 'Erklärung zu „Teilen-Link“ ein-/ausblenden', 'Show/hide explanation for "Share link"');
-  add('flag.share.info', 'Rezept als Link kopieren, um es ohne Login oder Server zu teilen.', 'Copy the recipe as a link to share it without a login or server.');
-  add('flag.shopping.name', 'Einkaufsliste', 'Shopping list');
-  add('flag.shopping.infoBtn', 'Erklärung zu „Einkaufsliste“ ein-/ausblenden', 'Show/hide explanation for "Shopping list"');
-  add('flag.shopping.info', 'Einkaufsliste aus den Gesamtmengen erzeugen und separat drucken.', 'Generate a shopping list from the total amounts and print it separately.');
   add('flag.freezeHint.name', 'Einfrier-Hinweis', 'Freezing tip');
   add('flag.freezeHint.infoBtn', 'Erklärung zu „Einfrier-Hinweis“ ein-/ausblenden', 'Show/hide explanation for "Freezing tip"');
   add('flag.freezeHint.info', 'Zusätzlicher Hinweis in der Anleitung zum Einfrieren geformter Teiglinge.', 'Extra tip in the guide about freezing shaped dough balls.');

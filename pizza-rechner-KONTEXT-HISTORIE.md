@@ -8,6 +8,84 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## "Teilen-Link"/"Einkaufsliste" aus Einstellungen entfernt (v4.6.0)
+
+Backlog Punkt B (`Backlog.md`), war an Punkt 1 „Ergebnis priorisieren" gekoppelt und seit
+v4.5.0 entblockt. Auftrag: die Einstellungspunkte „Teilen-Link" und „Einkaufsliste"
+verschwinden ersatzlos, die zugehörigen Funktionen (Rezept teilen, Einkaufsliste drucken)
+sind stattdessen unabhängig von einem globalen Schalter permanent verfügbar — die
+"Weitere Optionen"-Struktur aus v4.5.0 macht den bisherigen Ausblend-Schalter redundant.
+
+- **`js/settings.js`:** Flags `share` (Default AN) und `shopping` (Default AUS) komplett
+  aus `DEFAULTS` und `CHECKBOX_MAP` entfernt. `applyFlags()` steuert `#shareBlock`
+  (primäre Aktionsleiste, „Rezept teilen"), `#shoppingRow` („Einkaufsliste drucken"/
+  „Anleitung drucken") und `#pdfGuideBlock` („Als PDF speichern") nicht mehr per
+  `style.display` — alle drei bleiben in ihrem HTML-Standardzustand (sichtbar). PDF-Export
+  teilte sich bislang das `shopping`-Flag mit den beiden Druck-Buttons (dokumentiert in
+  v3.25.0) — da das Flag komplett wegfällt, ist der PDF-Button jetzt ebenfalls
+  bedingungslos sichtbar, obwohl nur „Teilen-Link"/„Einkaufsliste" im Auftrag explizit
+  benannt waren: konsequente Folge, da alle drei am selben inzwischen entfernten Flag
+  hingen (keine separate Flag-Einführung nur für den PDF-Button vorgesehen).
+- **`js/print.js`/`js/pdf.js`:** die defensiven `PZ.FLAGS.shopping === false`-Guards in
+  `printShoppingList()`, `printGuide()`, `downloadGuidePDF()` entfernt (waren ohnehin nur
+  eine zweite Absicherung hinter der jetzt ebenfalls entfernten CSS-Ausblendung).
+- **`pizza-rechner.html`/`pizza-rechner-mobile.html`:** die beiden `.flag-item`-Zeilen
+  „Teilen-Link" (`#flagShare` + Info-Button + Hinweistext) und „Einkaufsliste"
+  (`#flagShopping` + Info-Button + Hinweistext) komplett aus der Einstellungen-Card
+  entfernt, auf beiden Seiten identisch. Keine verwaisten `aria-describedby`/
+  `aria-controls`-Referenzen, da Checkbox+Info-Button+Hinweistext je Zeile als
+  zusammengehöriger Block entfernt wurden.
+- **`js/i18n-dict.js`:** `flag.share.name`/`.infoBtn`/`.info` und `flag.shopping.name`/
+  `.infoBtn`/`.info` entfernt — waren ausschließlich in den jetzt entfernten Menüzeilen
+  referenziert (per `grep` vorab verifiziert), keine anderen Verwendungsstellen.
+- **`PZ._mergeFlags()`/`PZ.FLAGS` robust gegen die jetzt überflüssigen Keys** (Scope-Punkt
+  aus dem Auftrag, kurz verifiziert statt blind angenommen): `readFlags()`/`_mergeFlags()`
+  nutzen weiterhin `Object.assign({}, DEFAULTS, stored)` — ein alter, vor v4.6.0
+  gespeicherter `localStorage`-Stand mit noch vorhandenen `share`/`shopping`-Werten crasht
+  beim Laden nicht, die überflüssigen Keys werden einfach als zusätzliche, von nichts mehr
+  gelesene Objekt-Properties mitgeführt. `setFlag('share', …)`/`setFlag('shopping', …)`
+  greifen nicht mehr (Guard `if (!(key in DEFAULTS)) return;`), verhalten sich also wie
+  jeder andere unbekannte Flag-Key. Keine Migration nötig, kein Crash-Risiko.
+- **CSS:** Kommentar in `css/styles.css` bei `.actions-primary-row` aktualisiert (verwies
+  bisher auf das jetzt entfernte Flag-Toggle-Ziel `#shareBlock`).
+
+**Tests** (`tests/test.html`, Sektion 18 „Feature-Flags / Einstellungen-Menü", manuell
+angepasst statt `test-generator` — keine Berechnungslogik betroffen, nur Flag-Gating/
+Markup): „Alles an"-Baseline (Zeile ~152) um `share`/`shopping` gekürzt; Default-Werte-Test
+um die beiden Zeilen gekürzt, neue eigene `renderBox` verifiziert `!('share' in
+PZ.FLAG_DEFAULTS)`/`!('shopping' in PZ.FLAG_DEFAULTS)`; Merge-Test nutzt jetzt
+`freezeHint` statt `shopping` für den „leeres gespeichertes Objekt"-Check, plus neuer
+Regressionsanker mit einem alten Flag-Stand, der die inzwischen entfernten Keys noch
+enthält (`PZ._mergeFlags()` crasht nicht); Persistenz-Test nutzt `freezeHint` statt
+`shopping` als Beispiel-Flag, plus neue Prüfung, dass `setFlag('share'/'shopping', …)`
+nicht crasht (bewusst KEINE Prüfung auf „Key nicht in `PZ.FLAGS`", da ein echter, vor
+v4.6.0 persistierter `localStorage`-Stand dieses Browsers den Key noch enthalten könnte —
+das wäre kein Bug, sondern das erwartete Vorwärtskompatibilitäts-Verhalten); Render-Effekt-
+Test für `#recipesCard`/`#shareBlock`/`#shoppingRow` neu geschrieben: `#recipesCard`
+weiterhin über `multiRecipes` schaltbar, `#shareBlock`/`#shoppingRow` bleiben jetzt
+nachweislich unabhängig vom Flag-Zustand sichtbar. **720 Prüfungen** bestehen (vorher 716,
+netto +4), verifiziert per Headless-Edge-Dump.
+
+**Accessibility-Review (gezielt, `accessibility-expert`-Agent, über den Hauptagenten
+angefordert):** Fokus-/Tab-Reihenfolge der Einstellungen-Card nach dem Entfernen der
+beiden Zeilen ohne Lücken/Sprünge, keine toten `aria-describedby`/`aria-controls`-
+Referenzen auf die jetzt nicht mehr existierenden IDs `#flagShareInfo`/
+`#flagShoppingInfo`; permanente Sichtbarkeit von `#shareBlock`/`#shoppingRow`/
+`#pdfGuideBlock` bringt keine neuen ARIA-Anforderungen. Keine Blocker/Major durch diese
+Änderung. Der Agent meldete zusätzlich drei vorbestehende Minor-Kontrastbefunde
+(`.hint`/`.warn`/`.tip`, Hellmodus) — laut unabhängiger Nachrechnung des Hauptagenten
+derselbe bereits in Design-Import-Zyklus 1 identifizierte systematische Rechenfehler
+dieses Agenten (reale Werte 4,56–4,93:1, weit über der 4,5:1-Schwelle, nicht die
+gemeldeten ~2,1x:1) — kein neuer/echter Befund, keine Handlung nötig.
+
+**Geändert:** `js/settings.js`, `js/print.js`, `js/pdf.js`, `js/i18n-dict.js`,
+`pizza-rechner.html`, `pizza-rechner-mobile.html`, `css/styles.css`, `tests/test.html`.
+`?v=` auf `4.6.0` gezogen (Desktop + Mobil, Cache-Busting + Footer-Version).
+`pizza-rechner-mobile-standalone.html` neu gebaut (`python build-mobile-standalone.py`,
+nach dem Versionssprung, damit der Build den neuen `?v=`-Stand enthält).
+`Versionen/v4.6.0 - Teilen-Link und Einkaufsliste dauerhaft verfuegbar/` enthält den
+vollständigen Schnappschuss.
+
 ## Ergebnis priorisieren + Kontrast-Fixes (v4.5.0)
 
 Erster Zyklus nach Abschluss der 5-teiligen Design-Import-Reihe, direkter Auftrag aus

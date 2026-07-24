@@ -291,15 +291,12 @@
     PZ.announce('pdfGuideLiveMsg', msg);
   }
 
-  // Feature-Flag "shopping" (js/settings.js): "Als PDF speichern" ist inhaltlich eine
-  // dritte Export-Variante der Anleitung neben den beiden Druck-Buttons und teilt sich
-  // deshalb bewusst dasselbe Flag (s. Kommentar in js/settings.js). Der Button ist bei
-  // deaktiviertem Flag bereits per CSS aus dem Rendering genommen — dieser Guard ist nur
-  // eine defensive zweite Absicherung, analog zu printShoppingList()/printGuide() oben in
-  // js/print.js. `tests/test.html` setzt `PZ.FLAGS.shopping` explizit auf `true` (Baseline
-  // "alles an", s. test.html), daher dort weiterhin uneingeschränkt aufrufbar.
+  // "Als PDF speichern" ist inhaltlich eine dritte Export-Variante der Anleitung neben
+  // den beiden Druck-Buttons in js/print.js. Bis v4.5.0 teilte sich der Button hier einen
+  // Guard mit dem Feature-Flag "shopping" — das Flag wurde in v4.6.0 entfernt (s.
+  // pizza-rechner-KONTEXT.md, Backlog Punkt B): der Button ist seither permanent in
+  // "Weitere Optionen" verfügbar, unabhängig von einem globalen Schalter.
   function downloadGuidePDF() {
-    if (PZ.FLAGS && PZ.FLAGS.shopping === false) return;
     const R = PZ.R;
     if (!R || !R.total) { setPdfMsg(t('pdf.notCalculatedYet')); return; }
     const bytes = buildGuidePdfBytes();

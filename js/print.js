@@ -54,22 +54,17 @@
 
   // Zwei Druckvarianten, ohne den bestehenden window.print()-Mechanismus zu ersetzen:
   // je eine body-Klasse steuert per @media print, was sichtbar bleibt.
-  // Feature-Flag "shopping" (js/settings.js, Default AUS): deckt die komplette
-  // Einkaufsliste/Druck-Funktion ab (js/print.js). Der zugehörige Button ist bei
-  // deaktiviertem Flag bereits per CSS aus dem Rendering genommen (applyFlags() in
-  // settings.js) — dieser Guard ist nur eine defensive zweite Absicherung, falls die
-  // Funktion doch aufgerufen wird. `tests/test.html` setzt `PZ.FLAGS.shopping` explizit
-  // auf `true` (Baseline "alles an", s. test.html), daher dort weiterhin uneingeschränkt
-  // aufrufbar.
+  // Bis v4.5.0 gab es hier einen Guard gegen das Feature-Flag "shopping" — das Flag
+  // wurde in v4.6.0 entfernt (s. pizza-rechner-KONTEXT.md, Backlog Punkt B): die
+  // Buttons "Einkaufsliste drucken"/"Anleitung drucken" sind seither permanent in
+  // "Weitere Optionen" verfügbar, unabhängig von einem globalen Schalter.
   function printShoppingList() {
-    if (PZ.FLAGS && PZ.FLAGS.shopping === false) return;
     buildShoppingList();
     document.body.classList.add('print-shopping');
     window.print();
   }
 
   function printGuide() {
-    if (PZ.FLAGS && PZ.FLAGS.shopping === false) return;
     document.body.classList.add('print-guide');
     window.print();
   }

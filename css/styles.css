@@ -869,9 +869,9 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .actions .row2 button{flex:1;min-width:0;background:transparent;font-weight:500;}
 /* "Ergebnis priorisieren": primäre Aktion "Zum Zeitplan" + sekundäre Aktion "Rezept
    teilen" (bisher "Link kopieren") direkt nebeneinander oben in der Aktionsleiste,
-   gleich breit. #shareBlock bleibt als Ganzes das Flag-Toggle-Ziel von
-   PZ.applyFlags() (Einstellungen > "Teilen-Link") -- unverändert per ID, nur die
-   Position im Markup hat sich geändert. */
+   gleich breit. #shareBlock ist seit v4.6.0 (Backlog Punkt B) permanent sichtbar --
+   das frühere Feature-Flag "Teilen-Link" (Einstellungen) wurde ersatzlos entfernt,
+   PZ.applyFlags() steuert seinen style.display nicht mehr. */
 .actions-primary-row{display:flex;gap:8px;align-items:flex-start;}
 .actions-primary-row>*{flex:1;min-width:0;}
 .actions-primary-row button{font-size:14px;padding:13px;}

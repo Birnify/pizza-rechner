@@ -950,9 +950,9 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .actions .row2 button{flex:1;min-width:0;background:transparent;font-weight:500;}
 /* "Ergebnis priorisieren": primäre Aktion "Zum Zeitplan" + sekundäre Aktion "Rezept
    teilen" (bisher "Link kopieren") direkt nebeneinander oben in der Aktionsleiste,
-   gleich breit. #shareBlock bleibt als Ganzes das Flag-Toggle-Ziel von
-   PZ.applyFlags() (Einstellungen > "Teilen-Link") -- unverändert per ID, nur die
-   Position im Markup hat sich geändert. */
+   gleich breit. #shareBlock ist seit v4.6.0 (Backlog Punkt B) permanent sichtbar --
+   das frühere Feature-Flag "Teilen-Link" (Einstellungen) wurde ersatzlos entfernt,
+   PZ.applyFlags() steuert seinen style.display nicht mehr. */
 .actions-primary-row{display:flex;gap:8px;align-items:flex-start;}
 .actions-primary-row>*{flex:1;min-width:0;}
 .actions-primary-row button{font-size:14px;padding:13px;}
@@ -2268,26 +2268,6 @@ header{position:relative;text-align:center;}
         <div class="flag-item">
           <div class="switch-row">
             <div class="switch-row-main">
-              <label class="switch-name" for="flagShare" data-i18n="flag.share.name">Teilen-Link</label>
-            </div>
-            <span class="switch"><input type="checkbox" id="flagShare" role="switch" aria-describedby="flagShareInfo"><span class="switch-slider" aria-hidden="true"></span></span>
-          </div>
-          <div class="hint" id="flagShareInfo" data-i18n="flag.share.info">Rezept als Link kopieren, um es ohne Login oder Server zu teilen.</div>
-        </div>
-
-        <div class="flag-item">
-          <div class="switch-row">
-            <div class="switch-row-main">
-              <label class="switch-name" for="flagShopping" data-i18n="flag.shopping.name">Einkaufsliste</label>
-            </div>
-            <span class="switch"><input type="checkbox" id="flagShopping" role="switch" aria-describedby="flagShoppingInfo"><span class="switch-slider" aria-hidden="true"></span></span>
-          </div>
-          <div class="hint" id="flagShoppingInfo" data-i18n="flag.shopping.info">Einkaufsliste aus den Gesamtmengen erzeugen und separat drucken.</div>
-        </div>
-
-        <div class="flag-item">
-          <div class="switch-row">
-            <div class="switch-row-main">
               <label class="switch-name" for="flagFreezeHint" data-i18n="flag.freezeHint.name">Einfrier-Hinweis</label>
             </div>
             <span class="switch"><input type="checkbox" id="flagFreezeHint" role="switch" aria-describedby="flagFreezeHintInfo"><span class="switch-slider" aria-hidden="true"></span></span>
@@ -2365,7 +2345,7 @@ header{position:relative;text-align:center;}
         <div class="nav-divider" role="separator"></div>
         <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.5.0</span>
+        <span class="nav-version" id="appVersion">v4.6.0</span>
 
       </div>
     </details>
@@ -3556,12 +3536,6 @@ header{position:relative;text-align:center;}
   add('flag.timerSystem.infoBtn', 'Erklärung zu „System-Wecker“ ein-/ausblenden', 'Show/hide explanation for "System alarm"');
   add('flag.timerSystem.info', 'Zusätzliche Links zum Android-Wecker oder Kalender, direkt beim Timer.',
     'Extra links to the Android alarm or calendar, right next to the timer.');
-  add('flag.share.name', 'Teilen-Link', 'Share link');
-  add('flag.share.infoBtn', 'Erklärung zu „Teilen-Link“ ein-/ausblenden', 'Show/hide explanation for "Share link"');
-  add('flag.share.info', 'Rezept als Link kopieren, um es ohne Login oder Server zu teilen.', 'Copy the recipe as a link to share it without a login or server.');
-  add('flag.shopping.name', 'Einkaufsliste', 'Shopping list');
-  add('flag.shopping.infoBtn', 'Erklärung zu „Einkaufsliste“ ein-/ausblenden', 'Show/hide explanation for "Shopping list"');
-  add('flag.shopping.info', 'Einkaufsliste aus den Gesamtmengen erzeugen und separat drucken.', 'Generate a shopping list from the total amounts and print it separately.');
   add('flag.freezeHint.name', 'Einfrier-Hinweis', 'Freezing tip');
   add('flag.freezeHint.infoBtn', 'Erklärung zu „Einfrier-Hinweis“ ein-/ausblenden', 'Show/hide explanation for "Freezing tip"');
   add('flag.freezeHint.info', 'Zusätzlicher Hinweis in der Anleitung zum Einfrieren geformter Teiglinge.', 'Extra tip in the guide about freezing shaped dough balls.');
@@ -3899,8 +3873,6 @@ header{position:relative;text-align:center;}
   const DEFAULTS = {
     timer: true,          // Gärzeit-Timer/Wecker je Anleitungsschritt
     timerSystem: false,   // System-Wecker/Kalender-Links (Teil-Feature von timer)
-    share: true,          // Teilen-Link
-    shopping: false,      // Einkaufsliste & separater Druck
     freezeHint: false,    // Einfrier-Hinweis in der Anleitung
     multiRecipes: true,   // Mehrere gespeicherte Rezepte (sonst: Einzel-Slot-Verhalten)
     newYorkStyle: false,  // Zucker-Regler (Bäckerprozent, wie Öl) — sonst ausgeblendet.
@@ -3968,16 +3940,14 @@ header{position:relative;text-align:center;}
     // geblieben, auch bei ausgeschaltetem Flag.
     const recipesNavItems = document.querySelectorAll('.nav-item[data-goto="rezepte"]');
     recipesNavItems.forEach(function (item) { item.style.display = f.multiRecipes ? '' : 'none'; });
-    const shareBlock = document.getElementById('shareBlock');
-    if (shareBlock) shareBlock.style.display = f.share ? 'flex' : 'none';
-    const shoppingRow = document.getElementById('shoppingRow');
-    if (shoppingRow) shoppingRow.style.display = f.shopping ? '' : 'none';
-    // "Als PDF speichern" (js/pdf.js) ist inhaltlich eine dritte Export-Variante der
-    // Anleitung (neben den beiden Druck-Buttons oben) — teilt sich bewusst dasselbe
-    // "shopping"-Flag statt ein eigenes Flag zu bekommen: schaltet der Nutzer die
-    // Druck-/Export-Zusatzfunktionen ab, verschwindet der PDF-Button konsistent mit.
-    const pdfGuideBlock = document.getElementById('pdfGuideBlock');
-    if (pdfGuideBlock) pdfGuideBlock.style.display = f.shopping ? 'flex' : 'none';
+    // "Rezept teilen" (#shareBlock, primäre Aktionsleiste) und "Einkaufsliste drucken"/
+    // "Anleitung drucken"/"Als PDF speichern" (#shoppingRow/#pdfGuideBlock, "Weitere
+    // Optionen") sind seit v4.6.0 permanent sichtbar, unabhängig von einem globalen
+    // Schalter — die früheren Flags "share"/"shopping" wurden entfernt (s.
+    // pizza-rechner-KONTEXT.md, Backlog Punkt B): sobald "Weitere Optionen" existiert
+    // (v4.5.0) und die Funktionen ohnehin nicht mehr im direkten Sichtfeld stehen, ist
+    // ein zusätzlicher globaler Ausblend-Schalter redundant. Kein style.display-Eingriff
+    // mehr nötig, die HTML-Elemente bleiben in ihrem Standard-Sichtbarkeitszustand.
     // Zucker-Regler (New-York-Style): nutzt das etablierte .collapse/.show-Muster
     // (wie prefBlock/bigaHydBlock) statt style.display — verhindert einen Flackerer
     // vorm ersten applyFlags()-Lauf, da .collapse per CSS schon vor JS-Ausführung greift.
@@ -4022,8 +3992,6 @@ header{position:relative;text-align:center;}
   const CHECKBOX_MAP = {
     flagTimer: 'timer',
     flagTimerSystem: 'timerSystem',
-    flagShare: 'share',
-    flagShopping: 'shopping',
     flagFreezeHint: 'freezeHint',
     flagMultiRecipes: 'multiRecipes',
     flagNewYorkStyle: 'newYorkStyle',
@@ -6294,22 +6262,17 @@ header{position:relative;text-align:center;}
 
   // Zwei Druckvarianten, ohne den bestehenden window.print()-Mechanismus zu ersetzen:
   // je eine body-Klasse steuert per @media print, was sichtbar bleibt.
-  // Feature-Flag "shopping" (js/settings.js, Default AUS): deckt die komplette
-  // Einkaufsliste/Druck-Funktion ab (js/print.js). Der zugehörige Button ist bei
-  // deaktiviertem Flag bereits per CSS aus dem Rendering genommen (applyFlags() in
-  // settings.js) — dieser Guard ist nur eine defensive zweite Absicherung, falls die
-  // Funktion doch aufgerufen wird. `tests/test.html` setzt `PZ.FLAGS.shopping` explizit
-  // auf `true` (Baseline "alles an", s. test.html), daher dort weiterhin uneingeschränkt
-  // aufrufbar.
+  // Bis v4.5.0 gab es hier einen Guard gegen das Feature-Flag "shopping" — das Flag
+  // wurde in v4.6.0 entfernt (s. pizza-rechner-KONTEXT.md, Backlog Punkt B): die
+  // Buttons "Einkaufsliste drucken"/"Anleitung drucken" sind seither permanent in
+  // "Weitere Optionen" verfügbar, unabhängig von einem globalen Schalter.
   function printShoppingList() {
-    if (PZ.FLAGS && PZ.FLAGS.shopping === false) return;
     buildShoppingList();
     document.body.classList.add('print-shopping');
     window.print();
   }
 
   function printGuide() {
-    if (PZ.FLAGS && PZ.FLAGS.shopping === false) return;
     document.body.classList.add('print-guide');
     window.print();
   }
@@ -6619,15 +6582,12 @@ header{position:relative;text-align:center;}
     PZ.announce('pdfGuideLiveMsg', msg);
   }
 
-  // Feature-Flag "shopping" (js/settings.js): "Als PDF speichern" ist inhaltlich eine
-  // dritte Export-Variante der Anleitung neben den beiden Druck-Buttons und teilt sich
-  // deshalb bewusst dasselbe Flag (s. Kommentar in js/settings.js). Der Button ist bei
-  // deaktiviertem Flag bereits per CSS aus dem Rendering genommen — dieser Guard ist nur
-  // eine defensive zweite Absicherung, analog zu printShoppingList()/printGuide() oben in
-  // js/print.js. `tests/test.html` setzt `PZ.FLAGS.shopping` explizit auf `true` (Baseline
-  // "alles an", s. test.html), daher dort weiterhin uneingeschränkt aufrufbar.
+  // "Als PDF speichern" ist inhaltlich eine dritte Export-Variante der Anleitung neben
+  // den beiden Druck-Buttons in js/print.js. Bis v4.5.0 teilte sich der Button hier einen
+  // Guard mit dem Feature-Flag "shopping" — das Flag wurde in v4.6.0 entfernt (s.
+  // pizza-rechner-KONTEXT.md, Backlog Punkt B): der Button ist seither permanent in
+  // "Weitere Optionen" verfügbar, unabhängig von einem globalen Schalter.
   function downloadGuidePDF() {
-    if (PZ.FLAGS && PZ.FLAGS.shopping === false) return;
     const R = PZ.R;
     if (!R || !R.total) { setPdfMsg(t('pdf.notCalculatedYet')); return; }
     const bytes = buildGuidePdfBytes();

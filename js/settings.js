@@ -25,8 +25,6 @@
   const DEFAULTS = {
     timer: true,          // Gärzeit-Timer/Wecker je Anleitungsschritt
     timerSystem: false,   // System-Wecker/Kalender-Links (Teil-Feature von timer)
-    share: true,          // Teilen-Link
-    shopping: false,      // Einkaufsliste & separater Druck
     freezeHint: false,    // Einfrier-Hinweis in der Anleitung
     multiRecipes: true,   // Mehrere gespeicherte Rezepte (sonst: Einzel-Slot-Verhalten)
     newYorkStyle: false,  // Zucker-Regler (Bäckerprozent, wie Öl) — sonst ausgeblendet.
@@ -94,16 +92,14 @@
     // geblieben, auch bei ausgeschaltetem Flag.
     const recipesNavItems = document.querySelectorAll('.nav-item[data-goto="rezepte"]');
     recipesNavItems.forEach(function (item) { item.style.display = f.multiRecipes ? '' : 'none'; });
-    const shareBlock = document.getElementById('shareBlock');
-    if (shareBlock) shareBlock.style.display = f.share ? 'flex' : 'none';
-    const shoppingRow = document.getElementById('shoppingRow');
-    if (shoppingRow) shoppingRow.style.display = f.shopping ? '' : 'none';
-    // "Als PDF speichern" (js/pdf.js) ist inhaltlich eine dritte Export-Variante der
-    // Anleitung (neben den beiden Druck-Buttons oben) — teilt sich bewusst dasselbe
-    // "shopping"-Flag statt ein eigenes Flag zu bekommen: schaltet der Nutzer die
-    // Druck-/Export-Zusatzfunktionen ab, verschwindet der PDF-Button konsistent mit.
-    const pdfGuideBlock = document.getElementById('pdfGuideBlock');
-    if (pdfGuideBlock) pdfGuideBlock.style.display = f.shopping ? 'flex' : 'none';
+    // "Rezept teilen" (#shareBlock, primäre Aktionsleiste) und "Einkaufsliste drucken"/
+    // "Anleitung drucken"/"Als PDF speichern" (#shoppingRow/#pdfGuideBlock, "Weitere
+    // Optionen") sind seit v4.6.0 permanent sichtbar, unabhängig von einem globalen
+    // Schalter — die früheren Flags "share"/"shopping" wurden entfernt (s.
+    // pizza-rechner-KONTEXT.md, Backlog Punkt B): sobald "Weitere Optionen" existiert
+    // (v4.5.0) und die Funktionen ohnehin nicht mehr im direkten Sichtfeld stehen, ist
+    // ein zusätzlicher globaler Ausblend-Schalter redundant. Kein style.display-Eingriff
+    // mehr nötig, die HTML-Elemente bleiben in ihrem Standard-Sichtbarkeitszustand.
     // Zucker-Regler (New-York-Style): nutzt das etablierte .collapse/.show-Muster
     // (wie prefBlock/bigaHydBlock) statt style.display — verhindert einen Flackerer
     // vorm ersten applyFlags()-Lauf, da .collapse per CSS schon vor JS-Ausführung greift.
@@ -148,8 +144,6 @@
   const CHECKBOX_MAP = {
     flagTimer: 'timer',
     flagTimerSystem: 'timerSystem',
-    flagShare: 'share',
-    flagShopping: 'shopping',
     flagFreezeHint: 'freezeHint',
     flagMultiRecipes: 'multiRecipes',
     flagNewYorkStyle: 'newYorkStyle',
