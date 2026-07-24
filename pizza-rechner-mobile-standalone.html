@@ -508,18 +508,48 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
    unter den dortigen Toggle-Switch zu laufen — in der schmaleren Party-Zeile gibt es
    keinen Switch daneben, das würde nur unnötig Platz verschwenden/umbrechen lassen. */
 .party-pizza-ings.switch-info{padding-right:0;margin-bottom:0;}
-/* .adjust-* (v3.64.0, Einstellungen-Menü "Hefemenge"/"Verschwendung" anpassen) teilt
-   sich bewusst dieselben Regeln wie .party-qty-* (Pizza-Party-Stückzahl-Stepper,
-   v3.27.0) -- identisches, bereits etabliertes Stepper-Bedienmuster, kein zweites
-   Icon-/Button-Vokabular für dieselbe Interaktion nötig. */
+/* .adjust-* (v3.64.0, Einstellungen-Menü "Hefemenge"/"Verschwendung" anpassen) teilte sich
+   bis v4.2.0 dieselben Regeln wie .party-qty-* (Pizza-Party-Stückzahl-Stepper, v3.27.0) --
+   identisches Stepper-Bedienmuster (Minus/Zahlenfeld/Plus). Optik seit Design-Import Zyklus
+   3 (v4.2.0) auseinandergelaufen (s. Kommentar unten), die Struktur-Regel .*-stepper (reines
+   Flex-Layout, keine Optik) bleibt weiterhin geteilt. */
 .party-qty-stepper,.adjust-stepper{display:flex;align-items:center;gap:6px;flex-shrink:0;}
-.party-qty-btn,.adjust-btn{
+/* Design-Import Zyklus 3 (v4.2.0, "Pizza-Party-Screen"): .party-qty-btn/-input jetzt an
+   die app-weite Stepper.jsx-Optik aus Zyklus 1 angeglichen (s. .stepper-btn oben) --
+   eckige --radius-Ecken statt rund, tomatenrote Flächenfüllung beim Hover statt nur
+   Rahmenfarbwechsel, 44px-Touch-Ziel (Projekt-Konvention), Bitter-Ziffern im Zahlenfeld.
+   .adjust-btn/-input (Einstellungen-Menü "Hefemenge"/"Verschwendung anpassen", außerhalb
+   dieses Zyklus) bleibt bewusst bei der alten runden Optik -- dafür aus der bisher
+   geteilten Regel herausgelöst, keine Verhaltensänderung dort. */
+/* accessibility-expert-Befund (v4.2.0, Zyklus 3): border:1px solid var(--line) gegen
+   var(--card) lag bei ~1,51:1 (hell) / ~1,47:1 (dunkel), BLOCKER unter der 3:1-Schwelle
+   (WCAG 1.4.11) -- var(--muted) statt var(--line) behebt das (~5,56:1 hell / ~6,58:1
+   dunkel, selbst nachgerechnet), identisches Muster wie der .switch-slider-"Aus"-Fix
+   weiter oben. Anders als der app-weite --line-Nebenbefund (s. Backlog in
+   pizza-rechner-KONTEXT.md) ist DIESER Rahmen eine neue, eigenständige Regel dieses
+   Zyklus (nicht die geteilte .stepper-btn-Regel) -- lokal fixbar ohne Token-weite Wirkung. */
+.party-qty-btn{
+  width:44px;height:44px;border:1px solid var(--muted);background:var(--card);
+  border-radius:var(--radius);font-size:18px;font-weight:700;cursor:pointer;color:var(--tomato-text);
+  display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;transition:all .12s;
+}
+/* accessibility-expert-Befund: weiß auf var(--tomato) lag im Dunkelmodus bei ~3,76-4,19:1
+   (unter 4,5:1 für normalen Text, MAJOR). var(--tomato-dark) behebt das (~5,38:1 dunkel,
+   selbst nachgerechnet) und verbessert nebenbei auch die Hell-Marge (~6,29:1 statt ~4,9:1,
+   vorher knapp über der Schwelle ohne Komfortmarge). */
+.party-qty-btn:hover{border-color:var(--tomato-dark);background:var(--tomato-dark);color:#fff;}
+.party-qty-btn:active{transform:scale(.94);}
+.party-qty-input{
+  width:52px;text-align:center;padding:9px 4px;font-family:var(--font-numeric);
+  font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;
+}
+.adjust-btn{
   width:40px;height:40px;border:1px solid var(--line);border-radius:50%;
   background:var(--card);font-size:17px;font-weight:700;cursor:pointer;color:var(--ink);
   display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;
 }
-.party-qty-btn:hover,.adjust-btn:hover{border-color:var(--tomato);color:var(--tomato-text);}
-.party-qty-input,.adjust-input{width:52px;text-align:center;padding:9px 4px;}
+.adjust-btn:hover{border-color:var(--tomato);color:var(--tomato-text);}
+.adjust-input{width:52px;text-align:center;padding:9px 4px;}
 .adjust-unit{font-size:13px;color:var(--muted);margin-left:2px;}
 .party-delete-btn{
   width:40px;height:40px;border:1px solid var(--line);border-radius:50%;
@@ -807,12 +837,19 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .switch input:focus-visible+.switch-slider{outline:2px solid var(--tomato-text);outline-offset:2px;}
 /* Results */
 .result{position:sticky;top:20px;}
-.result .total{
+.result .total,
+/* Design-Import Zyklus 3 (v4.2.0, "Pizza-Party-Screen"): #partyResultSummary (js/party.js)
+   sitzt NICHT unter einem .result-Vorfahren (eigenständiger Bereich, kein Rechner-Ergebnis-
+   Panel) -- eigene, zusätzlich passende Selektoren statt die .result-Kapselung dorthin zu
+   ziehen (die würde über .result{position:sticky} unerwünscht in die Akkordeon-Karte
+   hineinwirken). Gleiche TotalSummary.jsx-Optik wie beim Rechner: große Kopfzahl (hier die
+   Pizzenanzahl statt Gesamtteig-Gewicht, s. js/party.js renderPartyResult()) + Label. */
+#partyResultSummary.total{
   text-align:center;padding:16px 14px;background:var(--bg);
   border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);margin-bottom:16px;
 }
-.result .total .big{font-size:32px;font-weight:700;color:var(--ink);font-family:var(--font-head);}
-.result .total .lbl{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-top:2px;}
+.result .total .big,#partyResultSummary.total .big{font-size:32px;font-weight:700;color:var(--ink);font-family:var(--font-head);}
+.result .total .lbl,#partyResultSummary.total .lbl{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-top:2px;}
 /* Verschwendungsaufschlag-Hinweis (v3.64.0): erklärt, warum "Gesamtteig" oben mehr
    zeigt als N x Teiglingsgewicht darunter vermuten lässt -- ohne diesen Hinweis sähe
    das wie ein Rechenfehler aus. Blendet sich bei 0 % Aufschlag komplett aus (js/calc.js). */
@@ -2233,7 +2270,7 @@ header{position:relative;text-align:center;}
           <div class="nav-divider" role="separator"></div>
           <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
           <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-          <span class="nav-version" id="appVersion">v4.1.0</span>
+          <span class="nav-version" id="appVersion">v4.2.0</span>
 
         </div>
       </div>
@@ -2275,8 +2312,12 @@ header{position:relative;text-align:center;}
     <details class="card">
       <summary><h2 data-i18n-attr="aria-label:card.partyResult.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9h14l-1.4 9.2a1.5 1.5 0 0 1-1.5 1.3H7.9a1.5 1.5 0 0 1-1.5-1.3Z"/><path d="M8.5 9 12 4l3.5 5"/></svg></span><span data-i18n="card.partyResult.title">Zutatenliste für die Party</span></h2></summary>
       <div class="acc-body">
-        <div class="hint" style="margin-bottom:10px;" data-i18n="hint.partyResult">Ungefähre Richtmengen für den Einkauf: keine exakte Rezeptberechnung wie beim Teig.</div>
-        <div id="partyResultSummary" style="font-weight:600;margin-bottom:6px;"></div>
+        <!-- Design-Import Zyklus 3 (v4.2.0): amber Note.jsx-Optik statt bisher unstyled
+             Fließtext (.hint hat außerhalb eines .field keine eigene Regel) -- bleibt
+             ZUSÄTZLICH .hint, damit der Feature-Flag „hints" (js/settings.js) das Element
+             weiterhin ein-/ausblenden kann (body.hints-off .hint greift klassenbasiert). -->
+        <div class="hint note" style="margin-bottom:10px;" data-i18n="hint.partyResult">Ungefähre Richtmengen für den Einkauf: keine exakte Rezeptberechnung wie beim Teig.</div>
+        <div id="partyResultSummary"></div>
         <div id="partyResultList"></div>
       </div>
     </details>
@@ -2777,6 +2818,12 @@ header{position:relative;text-align:center;}
   add('party.noneSelectedHint', 'Noch keine Pizza ausgewählt: stelle oben Stückzahlen ein.', 'No pizza selected yet: set the quantities above.');
   add('party.summaryOne', '1 Pizza insgesamt', '1 pizza in total');
   add('party.summaryMany', '{n} Pizzen insgesamt', '{n} pizzas in total');
+  // Design-Import Zyklus 3 (v4.2.0): Label-Halbsätze für die TotalSummary.jsx-Optik der
+  // Kopfzahl (große Zahl + kleines Label statt eines einzelnen Fließtextsatzes, s.
+  // js/party.js renderPartyResult()). party.summaryOne/Many oben bleiben unverändert
+  // (vollständige Sätze, u. a. für tests/test.html).
+  add('party.totalLabelOne', 'Pizza insgesamt', 'pizza in total');
+  add('party.totalLabelMany', 'Pizzen insgesamt', 'pizzas in total');
   add('party.ingRemoveLabel', 'Zutatenzeile {n} entfernen', 'Remove ingredient row {n}');
   add('party.ingNamePlaceholder', 'Zutat, z. B. Mozzarella', 'Ingredient, e.g. mozzarella');
   add('party.ingNameLabel', 'Zutatname', 'Ingredient name');
@@ -7763,6 +7810,7 @@ header{position:relative;text-align:center;}
     if (!summaryEl || !listEl) return;
     const result = computeAggregatedList();
     if (result.totalPizzaCount === 0) {
+      summaryEl.className = '';
       summaryEl.textContent = '';
       listEl.innerHTML = '';
       const hint = document.createElement('div');
@@ -7771,9 +7819,24 @@ header{position:relative;text-align:center;}
       listEl.appendChild(hint);
       return;
     }
-    summaryEl.textContent = result.totalPizzaCount === 1
-      ? t('party.summaryOne')
-      : t('party.summaryMany', { n: result.totalPizzaCount });
+    // Design-Import Zyklus 3 (v4.2.0, "Pizza-Party-Screen"): die Kopfzahl des
+    // Ergebnis-Panels bekommt dieselbe TotalSummary.jsx-Optik wie der Rechner-Screen
+    // (.result .total .big/.lbl aus Zyklus 1, s. css/styles.css) -- große Pizzenzahl +
+    // kleines Label, statt bisher ein einzelner Fließtextsatz. party.summaryOne/Many
+    // bleiben als vollständige Sätze im Wörterbuch erhalten (u. a. für den einfachen
+    // Textvergleich in tests/test.html) und werden hier nicht mehr direkt gerendert.
+    summaryEl.className = 'total';
+    summaryEl.innerHTML = '';
+    const bigEl = document.createElement('div');
+    bigEl.className = 'big';
+    bigEl.textContent = String(result.totalPizzaCount);
+    const lblEl = document.createElement('div');
+    lblEl.className = 'lbl';
+    lblEl.textContent = result.totalPizzaCount === 1
+      ? t('party.totalLabelOne')
+      : t('party.totalLabelMany');
+    summaryEl.appendChild(bigEl);
+    summaryEl.appendChild(lblEl);
     listEl.innerHTML = '';
     result.ingredients.forEach(function (ing) {
       const row = document.createElement('div');
@@ -8636,7 +8699,14 @@ header{position:relative;text-align:center;}
     var partyOut = document.getElementById('qbPartyCount');
     function syncPartyCount(){
       if (!partySrc || !partyOut) return;
-      var txt = partySrc.textContent.trim();
+      // Seit Design-Import Zyklus 3 (v4.2.0) rendert js/party.js die Kopfzahl als
+      // zwei getrennte .big/.lbl-Blöcke (TotalSummary.jsx-Optik) statt eines einzigen
+      // Textknotens -- rohes .textContent würde beide ohne Leerzeichen zusammenkleben
+      // ("6Pizzen insgesamt"). Blöcke einzeln auslesen und mit Leerzeichen verbinden,
+      // mit Fallback auf die alte Methode falls die Struktur mal abweicht.
+      var big = partySrc.querySelector('.big');
+      var lbl = partySrc.querySelector('.lbl');
+      var txt = (big && lbl) ? (big.textContent.trim() + ' ' + lbl.textContent.trim()) : partySrc.textContent.trim();
       partyOut.textContent = txt || ((window.PZ && PZ.t) ? PZ.t('quickbar.partyNoneYet') : 'Noch keine Pizza ausgewählt');
     }
     if (partySrc && partyOut) {

@@ -37,9 +37,9 @@
      Nur hier eingebunden (nicht in pizza-rechner.html): Scope dieses Zyklus ist mobile-only,
      Desktop bleibt bei den bisherigen System-Schriftarten (Georgia/System-Sans), s.
      pizza-rechner-KONTEXT.md, Abschnitt "Design-System-Import Zyklus 1". -->
-<link rel="stylesheet" href="css/fonts.css?v=4.1.0">
-<link rel="stylesheet" href="css/styles.css?v=4.1.0">
-<link rel="stylesheet" href="css/mobile.css?v=4.1.0">
+<link rel="stylesheet" href="css/fonts.css?v=4.2.0">
+<link rel="stylesheet" href="css/styles.css?v=4.2.0">
+<link rel="stylesheet" href="css/mobile.css?v=4.2.0">
 </head>
 <body>
 <!-- Bottom-Tab-Navigation (v3.68.0) ersetzt das bisherige Burgermenü vollständig auf
@@ -969,7 +969,7 @@
           <div class="nav-divider" role="separator"></div>
           <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
           <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-          <span class="nav-version" id="appVersion">v4.1.0</span>
+          <span class="nav-version" id="appVersion">v4.2.0</span>
 
         </div>
       </div>
@@ -1011,8 +1011,12 @@
     <details class="card">
       <summary><h2 data-i18n-attr="aria-label:card.partyResult.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9h14l-1.4 9.2a1.5 1.5 0 0 1-1.5 1.3H7.9a1.5 1.5 0 0 1-1.5-1.3Z"/><path d="M8.5 9 12 4l3.5 5"/></svg></span><span data-i18n="card.partyResult.title">Zutatenliste für die Party</span></h2></summary>
       <div class="acc-body">
-        <div class="hint" style="margin-bottom:10px;" data-i18n="hint.partyResult">Ungefähre Richtmengen für den Einkauf: keine exakte Rezeptberechnung wie beim Teig.</div>
-        <div id="partyResultSummary" style="font-weight:600;margin-bottom:6px;"></div>
+        <!-- Design-Import Zyklus 3 (v4.2.0): amber Note.jsx-Optik statt bisher unstyled
+             Fließtext (.hint hat außerhalb eines .field keine eigene Regel) -- bleibt
+             ZUSÄTZLICH .hint, damit der Feature-Flag „hints" (js/settings.js) das Element
+             weiterhin ein-/ausblenden kann (body.hints-off .hint greift klassenbasiert). -->
+        <div class="hint note" style="margin-bottom:10px;" data-i18n="hint.partyResult">Ungefähre Richtmengen für den Einkauf: keine exakte Rezeptberechnung wie beim Teig.</div>
+        <div id="partyResultSummary"></div>
         <div id="partyResultList"></div>
       </div>
     </details>
@@ -1071,35 +1075,35 @@
 </nav>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=4.1.0"></script>
-<script src="js/state.js?v=4.1.0"></script>
-<script src="js/i18n-dict.js?v=4.1.0"></script>
-<script src="js/i18n.js?v=4.1.0"></script>
-<script src="js/settings.js?v=4.1.0"></script>
-<script src="js/theme.js?v=4.1.0"></script>
-<script src="js/units.js?v=4.1.0"></script>
-<script src="js/widgets.js?v=4.1.0"></script>
-<script src="js/flour.js?v=4.1.0"></script>
-<script src="js/calc.js?v=4.1.0"></script>
-<script src="js/schedule.js?v=4.1.0"></script>
-<script src="js/guide.js?v=4.1.0"></script>
-<script src="js/timer.js?v=4.1.0"></script>
-<script src="js/ui.js?v=4.1.0"></script>
-<script src="js/simplemode.js?v=4.1.0"></script>
-<script src="js/print.js?v=4.1.0"></script>
-<script src="js/pdf.js?v=4.1.0"></script>
-<script src="js/presets.js?v=4.1.0"></script>
-<script src="js/storage.js?v=4.1.0"></script>
-<script src="js/newrecipe.js?v=4.1.0"></script>
-<script src="js/share.js?v=4.1.0"></script>
-<script src="js/party.js?v=4.1.0"></script>
-<script src="js/glossary.js?v=4.1.0"></script>
-<script src="js/main.js?v=4.1.0"></script>
+<script src="js/dom.js?v=4.2.0"></script>
+<script src="js/state.js?v=4.2.0"></script>
+<script src="js/i18n-dict.js?v=4.2.0"></script>
+<script src="js/i18n.js?v=4.2.0"></script>
+<script src="js/settings.js?v=4.2.0"></script>
+<script src="js/theme.js?v=4.2.0"></script>
+<script src="js/units.js?v=4.2.0"></script>
+<script src="js/widgets.js?v=4.2.0"></script>
+<script src="js/flour.js?v=4.2.0"></script>
+<script src="js/calc.js?v=4.2.0"></script>
+<script src="js/schedule.js?v=4.2.0"></script>
+<script src="js/guide.js?v=4.2.0"></script>
+<script src="js/timer.js?v=4.2.0"></script>
+<script src="js/ui.js?v=4.2.0"></script>
+<script src="js/simplemode.js?v=4.2.0"></script>
+<script src="js/print.js?v=4.2.0"></script>
+<script src="js/pdf.js?v=4.2.0"></script>
+<script src="js/presets.js?v=4.2.0"></script>
+<script src="js/storage.js?v=4.2.0"></script>
+<script src="js/newrecipe.js?v=4.2.0"></script>
+<script src="js/share.js?v=4.2.0"></script>
+<script src="js/party.js?v=4.2.0"></script>
+<script src="js/glossary.js?v=4.2.0"></script>
+<script src="js/main.js?v=4.2.0"></script>
 <!-- Burger-Menü-Navigation (bis v3.17.x/v3.18.0 hier als Inline-Script gewachsen) --
      seit v3.54.0 gemeinsames Modul mit der Desktop-Seite, s. js/nav.js (Mobil-
      Implementierung war die massgebliche Referenz beim Auslagern). -->
-<script src="js/nav.js?v=4.1.0"></script>
-<script src="js/onboarding.js?v=4.1.0"></script>
+<script src="js/nav.js?v=4.2.0"></script>
+<script src="js/onboarding.js?v=4.2.0"></script>
 <script>
   // Mobil-only UI-Glue (kein Eingriff in die PZ-Rechenmodule) -- Quick-Bar-Sync,
   // Party-Quick-Bar, Quick-Save, Akkordeon-Auto-Scroll. Die frühere Sektion "4)
@@ -1130,7 +1134,14 @@
     var partyOut = document.getElementById('qbPartyCount');
     function syncPartyCount(){
       if (!partySrc || !partyOut) return;
-      var txt = partySrc.textContent.trim();
+      // Seit Design-Import Zyklus 3 (v4.2.0) rendert js/party.js die Kopfzahl als
+      // zwei getrennte .big/.lbl-Blöcke (TotalSummary.jsx-Optik) statt eines einzigen
+      // Textknotens -- rohes .textContent würde beide ohne Leerzeichen zusammenkleben
+      // ("6Pizzen insgesamt"). Blöcke einzeln auslesen und mit Leerzeichen verbinden,
+      // mit Fallback auf die alte Methode falls die Struktur mal abweicht.
+      var big = partySrc.querySelector('.big');
+      var lbl = partySrc.querySelector('.lbl');
+      var txt = (big && lbl) ? (big.textContent.trim() + ' ' + lbl.textContent.trim()) : partySrc.textContent.trim();
       partyOut.textContent = txt || ((window.PZ && PZ.t) ? PZ.t('quickbar.partyNoneYet') : 'Noch keine Pizza ausgewählt');
     }
     if (partySrc && partyOut) {

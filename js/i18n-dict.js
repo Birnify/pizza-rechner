@@ -358,6 +358,12 @@
   add('party.noneSelectedHint', 'Noch keine Pizza ausgewählt: stelle oben Stückzahlen ein.', 'No pizza selected yet: set the quantities above.');
   add('party.summaryOne', '1 Pizza insgesamt', '1 pizza in total');
   add('party.summaryMany', '{n} Pizzen insgesamt', '{n} pizzas in total');
+  // Design-Import Zyklus 3 (v4.2.0): Label-Halbsätze für die TotalSummary.jsx-Optik der
+  // Kopfzahl (große Zahl + kleines Label statt eines einzelnen Fließtextsatzes, s.
+  // js/party.js renderPartyResult()). party.summaryOne/Many oben bleiben unverändert
+  // (vollständige Sätze, u. a. für tests/test.html).
+  add('party.totalLabelOne', 'Pizza insgesamt', 'pizza in total');
+  add('party.totalLabelMany', 'Pizzen insgesamt', 'pizzas in total');
   add('party.ingRemoveLabel', 'Zutatenzeile {n} entfernen', 'Remove ingredient row {n}');
   add('party.ingNamePlaceholder', 'Zutat, z. B. Mozzarella', 'Ingredient, e.g. mozzarella');
   add('party.ingNameLabel', 'Zutatname', 'Ingredient name');

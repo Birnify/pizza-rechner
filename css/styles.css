@@ -427,18 +427,48 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
    unter den dortigen Toggle-Switch zu laufen — in der schmaleren Party-Zeile gibt es
    keinen Switch daneben, das würde nur unnötig Platz verschwenden/umbrechen lassen. */
 .party-pizza-ings.switch-info{padding-right:0;margin-bottom:0;}
-/* .adjust-* (v3.64.0, Einstellungen-Menü "Hefemenge"/"Verschwendung" anpassen) teilt
-   sich bewusst dieselben Regeln wie .party-qty-* (Pizza-Party-Stückzahl-Stepper,
-   v3.27.0) -- identisches, bereits etabliertes Stepper-Bedienmuster, kein zweites
-   Icon-/Button-Vokabular für dieselbe Interaktion nötig. */
+/* .adjust-* (v3.64.0, Einstellungen-Menü "Hefemenge"/"Verschwendung" anpassen) teilte sich
+   bis v4.2.0 dieselben Regeln wie .party-qty-* (Pizza-Party-Stückzahl-Stepper, v3.27.0) --
+   identisches Stepper-Bedienmuster (Minus/Zahlenfeld/Plus). Optik seit Design-Import Zyklus
+   3 (v4.2.0) auseinandergelaufen (s. Kommentar unten), die Struktur-Regel .*-stepper (reines
+   Flex-Layout, keine Optik) bleibt weiterhin geteilt. */
 .party-qty-stepper,.adjust-stepper{display:flex;align-items:center;gap:6px;flex-shrink:0;}
-.party-qty-btn,.adjust-btn{
+/* Design-Import Zyklus 3 (v4.2.0, "Pizza-Party-Screen"): .party-qty-btn/-input jetzt an
+   die app-weite Stepper.jsx-Optik aus Zyklus 1 angeglichen (s. .stepper-btn oben) --
+   eckige --radius-Ecken statt rund, tomatenrote Flächenfüllung beim Hover statt nur
+   Rahmenfarbwechsel, 44px-Touch-Ziel (Projekt-Konvention), Bitter-Ziffern im Zahlenfeld.
+   .adjust-btn/-input (Einstellungen-Menü "Hefemenge"/"Verschwendung anpassen", außerhalb
+   dieses Zyklus) bleibt bewusst bei der alten runden Optik -- dafür aus der bisher
+   geteilten Regel herausgelöst, keine Verhaltensänderung dort. */
+/* accessibility-expert-Befund (v4.2.0, Zyklus 3): border:1px solid var(--line) gegen
+   var(--card) lag bei ~1,51:1 (hell) / ~1,47:1 (dunkel), BLOCKER unter der 3:1-Schwelle
+   (WCAG 1.4.11) -- var(--muted) statt var(--line) behebt das (~5,56:1 hell / ~6,58:1
+   dunkel, selbst nachgerechnet), identisches Muster wie der .switch-slider-"Aus"-Fix
+   weiter oben. Anders als der app-weite --line-Nebenbefund (s. Backlog in
+   pizza-rechner-KONTEXT.md) ist DIESER Rahmen eine neue, eigenständige Regel dieses
+   Zyklus (nicht die geteilte .stepper-btn-Regel) -- lokal fixbar ohne Token-weite Wirkung. */
+.party-qty-btn{
+  width:44px;height:44px;border:1px solid var(--muted);background:var(--card);
+  border-radius:var(--radius);font-size:18px;font-weight:700;cursor:pointer;color:var(--tomato-text);
+  display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;transition:all .12s;
+}
+/* accessibility-expert-Befund: weiß auf var(--tomato) lag im Dunkelmodus bei ~3,76-4,19:1
+   (unter 4,5:1 für normalen Text, MAJOR). var(--tomato-dark) behebt das (~5,38:1 dunkel,
+   selbst nachgerechnet) und verbessert nebenbei auch die Hell-Marge (~6,29:1 statt ~4,9:1,
+   vorher knapp über der Schwelle ohne Komfortmarge). */
+.party-qty-btn:hover{border-color:var(--tomato-dark);background:var(--tomato-dark);color:#fff;}
+.party-qty-btn:active{transform:scale(.94);}
+.party-qty-input{
+  width:52px;text-align:center;padding:9px 4px;font-family:var(--font-numeric);
+  font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;
+}
+.adjust-btn{
   width:40px;height:40px;border:1px solid var(--line);border-radius:50%;
   background:var(--card);font-size:17px;font-weight:700;cursor:pointer;color:var(--ink);
   display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;
 }
-.party-qty-btn:hover,.adjust-btn:hover{border-color:var(--tomato);color:var(--tomato-text);}
-.party-qty-input,.adjust-input{width:52px;text-align:center;padding:9px 4px;}
+.adjust-btn:hover{border-color:var(--tomato);color:var(--tomato-text);}
+.adjust-input{width:52px;text-align:center;padding:9px 4px;}
 .adjust-unit{font-size:13px;color:var(--muted);margin-left:2px;}
 .party-delete-btn{
   width:40px;height:40px;border:1px solid var(--line);border-radius:50%;
@@ -726,12 +756,19 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .switch input:focus-visible+.switch-slider{outline:2px solid var(--tomato-text);outline-offset:2px;}
 /* Results */
 .result{position:sticky;top:20px;}
-.result .total{
+.result .total,
+/* Design-Import Zyklus 3 (v4.2.0, "Pizza-Party-Screen"): #partyResultSummary (js/party.js)
+   sitzt NICHT unter einem .result-Vorfahren (eigenständiger Bereich, kein Rechner-Ergebnis-
+   Panel) -- eigene, zusätzlich passende Selektoren statt die .result-Kapselung dorthin zu
+   ziehen (die würde über .result{position:sticky} unerwünscht in die Akkordeon-Karte
+   hineinwirken). Gleiche TotalSummary.jsx-Optik wie beim Rechner: große Kopfzahl (hier die
+   Pizzenanzahl statt Gesamtteig-Gewicht, s. js/party.js renderPartyResult()) + Label. */
+#partyResultSummary.total{
   text-align:center;padding:16px 14px;background:var(--bg);
   border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);margin-bottom:16px;
 }
-.result .total .big{font-size:32px;font-weight:700;color:var(--ink);font-family:var(--font-head);}
-.result .total .lbl{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-top:2px;}
+.result .total .big,#partyResultSummary.total .big{font-size:32px;font-weight:700;color:var(--ink);font-family:var(--font-head);}
+.result .total .lbl,#partyResultSummary.total .lbl{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-top:2px;}
 /* Verschwendungsaufschlag-Hinweis (v3.64.0): erklärt, warum "Gesamtteig" oben mehr
    zeigt als N x Teiglingsgewicht darunter vermuten lässt -- ohne diesen Hinweis sähe
    das wie ein Rechenfehler aus. Blendet sich bei 0 % Aufschlag komplett aus (js/calc.js). */

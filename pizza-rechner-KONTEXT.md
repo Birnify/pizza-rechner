@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-24 · Aktuelle Version: v4.1.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-24 · Aktuelle Version: v4.2.0 (Mobil) / v3.72.0 (Desktop) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -179,23 +179,26 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Design-System-Import Zyklus 2: Anleitung/Zeitplan-Screen (v4.1.0) = aktueller Stand
+## Design-System-Import Zyklus 3: Pizza-Party-Screen (v4.2.0) = aktueller Stand
 
-Zweiter von 5 geplanten Zyklen desselben mobilen Redesigns (Zyklus 1 = Tokens +
-Rechner-Screen, v4.0.0). Dieser Zyklus stylt die Schritt-für-Schritt-Anleitung
-(`.step`/`.schedbar`) auf die neuen Design-Tokens um — Logik (`js/guide.js`,
-`js/schedule.js`, `js/timer.js`) unverändert. Überraschung beim Start: die meisten
-`.step`-Regeln entsprachen dank Zyklus 1 bereits exakt den Referenzen, nötig waren nur
-zwei gezielte Fixes: `.step .body .chip` (Technik-/Zeit-Chip) von der alten,
-Crust-umrandeten Gold-Optik auf borderlose `--info-bg`/`--info-text`-Tönung umgestellt
-(analog `Badge.jsx tone="warm"`), `.step .body .tip`-Linksrand von `--basil-text` auf
-`--success` (analog `Note.jsx variant="tip"`). `css/styles.css` (gemeinsam), Desktop-HTML
-unverändert (erbt die Optik trotzdem mit). 716 Prüfungen unverändert grün,
-`accessibility-expert`-Review ohne Befunde.
+Dritter von 5 geplanten Zyklen desselben mobilen Redesigns (Zyklus 1 = Tokens +
+Rechner-Screen, v4.0.0; Zyklus 2 = Anleitung/Zeitplan-Screen, v4.1.0). Stylt den
+Pizza-Party-Planer (`js/party.js`, `pizza-rechner-mobile.html`) auf die Design-Tokens um —
+Berechnungslogik unverändert. Größter Befund: die reale Funktion (Liste wählbarer Pizzen
+mit Stückzahl-Steppern → exakte aggregierte Zutatenliste) ist strukturell anders als das
+Mockup (Gäste-/Pro-Person-Stepper → Teig-Demo-Rechnung + unscharfe Badge-Einkaufsliste) —
+`.ing`-Zeilen nutzten bereits automatisch die Zyklus-1-Tokens, `#partyResultSummary` bekam
+die `TotalSummary`-Kopfzahl-Optik, Stückzahl-Stepper an `.stepper-btn` angeglichen
+(eigene, aus `.adjust-*` herausgelöste Regel), ein `.note`-Kasten für den
+Genauigkeits-Hinweis ergänzt. Badge-Chip-Optik bewusst NICHT erzwungen (echte Liste hat
+immer exakte Mengen). `accessibility-expert`-Review: 1 BLOCKER + 1 MAJOR behoben
+(`.party-qty-btn`-Rahmen/Hover-Kontrast), 1 MAJOR als app-weiter Bestandsbefund (`.note`-
+Rahmen `--crust`) dokumentiert statt lokal gefixt, 1 Fehlalarm selbst widerlegt. 716
+Prüfungen unverändert grün.
 
 **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Design-System-Import
-Zyklus 2: Anleitung/Zeitplan-Screen (v4.1.0)"; vorheriger Abschnitt „Design-System-Import
-Zyklus 1: Tokens + Rechner-Screen (v4.0.0)".
+Zyklus 3: Pizza-Party-Screen (v4.2.0)"; vorherige Abschnitte „Design-System-Import Zyklus 2:
+Anleitung/Zeitplan-Screen (v4.1.0)" und „…Zyklus 1: Tokens + Rechner-Screen (v4.0.0)".
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -364,7 +367,7 @@ pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.72.0
                      v4.0.0 bewusst NICHT mitgezogen, s. u.: Design-Import Zyklus 1 ist
                      mobile-only, Desktop lädt weiterhin ohne css/fonts.css)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle,
-                     ?v=4.1.0)
+                     ?v=4.2.0)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
 index.html           Weiterleitung auf pizza-rechner.html
@@ -473,7 +476,7 @@ formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 
 **Cache-Busting:** CSS/JS werden mit `?v=X.Y.Z` geladen. **Bei jeder neuen Version mitziehen.**
 Seit v4.0.0 bewusst **auseinandergelaufen**: `pizza-rechner-mobile.html` (+ zugehörige
-Standalone-Datei) steht bei `?v=4.1.0`, `pizza-rechner.html` (Desktop) bewusst weiter bei
+Standalone-Datei) steht bei `?v=4.2.0`, `pizza-rechner.html` (Desktop) bewusst weiter bei
 `?v=3.72.0`, weil Design-Import-Zyklen bis auf Weiteres mobile-only sind (Desktop-HTML wird
 nicht angefasst). Bei einem künftigen Zyklus, der auch Desktop ändert, beide wieder
 synchron auf denselben Stand ziehen.
@@ -481,7 +484,7 @@ synchron auf denselben Stand ziehen.
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien steht `<span class="nav-version"
 id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine JS-Logik dahinter. Seit v4.0.0
-ebenfalls auseinandergelaufen (Mobil `v4.1.0`, Desktop weiter `v3.72.0`), analog zum
+ebenfalls auseinandergelaufen (Mobil `v4.2.0`, Desktop weiter `v3.72.0`), analog zum
 Cache-Busting oben. **Bei jedem Versionssprung von Hand mitziehen** (zusammen mit `?v=` und der
 Kontext-Datei — bei allen drei HTML-Dateien, also auch `pizza-rechner-mobile-standalone.html`
 nach dem Rebuild, gegenprüfen), sonst zeigt die Live-App die falsche Version an.
@@ -738,16 +741,32 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
-- **Design-System-Import Zyklus 3 von 5 (Pizza-Party-Screen):** nächster Schritt der
+- **Design-System-Import Zyklus 4 von 5 (Glossar-Screen):** nächster Schritt der
   mehrteiligen mobilen Redesign-Reihe (Zyklus 1 = Tokens + Rechner, v4.0.0; Zyklus 2 =
-  Anleitung/Zeitplan-Screen, s. o., erledigt in v4.1.0). Referenzdatei:
-  `design-import/ui_kits/teigmeister/PartyScreen.jsx` (Gäste-/Pizzen-Stepper,
-  Pro-Person-Teigmathematik, aggregierte Einkaufsliste). Betrifft `js/party.js` +
-  zugehöriges Markup/CSS in `pizza-rechner-mobile.html`/`css/mobile.css` (+ ggf.
-  punktuelle gemeinsame `css/styles.css`-Ergänzungen, analog Zyklus 1+2) — reine
-  Optik-Umstellung auf die bereits app-weit aktiven Tokens, Pizza-Party-Rechenlogik
-  bleibt unangetastet. Nach Zyklus 3 noch offen: Zyklus 4 (Glossar-Screen,
-  `GlossarScreen.jsx`), Zyklus 5 (Einstellungen-Screen, `EinstellungenScreen.jsx`).
+  Anleitung/Zeitplan-Screen, v4.1.0; Zyklus 3 = Pizza-Party-Screen, s. o., erledigt in
+  v4.2.0). Referenzdatei: `design-import/ui_kits/teigmeister/GlossarScreen.jsx`
+  (Akkordeon-Liste von Lexikon-Einträgen, jeweils nur einer gleichzeitig offen). Betrifft
+  `js/glossary.js` + zugehöriges Markup/CSS in `pizza-rechner-mobile.html`/`css/mobile.css`
+  (+ ggf. punktuelle gemeinsame `css/styles.css`-Ergänzungen, analog Zyklus 1-3) — reine
+  Optik-Umstellung auf die bereits app-weit aktiven Tokens, Glossar-Inhalte/-Logik bleiben
+  unangetastet. Nach Zyklus 4 noch offen: Zyklus 5 (Einstellungen-Screen,
+  `EinstellungenScreen.jsx`).
+- **Nebenbefund aus dem v4.2.0-`accessibility-expert`-Review (MAJOR, Hellmodus, app-weit,
+  vorbestehend, keine Regression):** `.note`-Rahmen (`var(--crust)` gegen `var(--note-bg)`)
+  liegt bei ~2,33-2,49:1, unter der 3:1-Schwelle (WCAG 1.4.11). Betrifft alle `.note`-
+  Instanzen app-weit (Eiswasser-/DDT-Notizen, seit v4.2.0 auch der Party-Genauigkeits-
+  Hinweis), nicht neu durch diesen Zyklus. Fix bräuchte eine `--crust`-Wertänderung
+  app-weit (betrifft auch `.temp-box`/`.timerclock`/Schedbar-Rahmen) — Kandidat für einen
+  eigenen, künftigen Kontrast-Zyklus, analog zum bestehenden `--line`-Nebenbefund aus
+  Zyklus 1 (s. u.).
+- **Nebenbefund aus dem v4.2.0-`accessibility-expert`-Review (vermutlich MAJOR, Dunkelmodus,
+  app-weit, nicht verifiziert):** `.stepper-btn:hover` (Hauptrechner-Stepper: Teiglinge,
+  Gewicht, Hydration, Salz, Öl, Zucker) füllt wie `.party-qty-btn:hover` vor dessen Fix mit
+  `var(--tomato)` + weißem Text — der dort gemessene Dunkelmodus-Kontrast (~3,76-4,19:1,
+  unter 4,5:1) ist vermutlich identisch, aber für `.stepper-btn` noch nicht verifiziert/
+  gefixt (app-weite Wirkung, außerhalb des Party-Screen-Scopes von v4.2.0). Kandidat für
+  einen kleinen, gezielten Folge-Fix (`var(--tomato-dark)` statt `var(--tomato)`, gleiches
+  Muster wie der v4.2.0-Fix).
 - ~~Backlog.md Punkt 2 „Rahmen-Fix Komplexitätsschalter"~~ — **erledigt als Nebeneffekt
   von v4.0.0** (Design-System-Import Zyklus 1): `.seg` nutzt jetzt `--surface-2` +
   sichtbaren `1px solid var(--line)`-Rahmen statt der bisherigen, identisch zum

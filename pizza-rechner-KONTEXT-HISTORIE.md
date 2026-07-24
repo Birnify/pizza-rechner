@@ -8,6 +8,121 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Design-System-Import Zyklus 3: Pizza-Party-Screen (v4.2.0)
+
+Dritter von 5 geplanten Zyklen desselben mobilen Redesigns (Zyklus 1 = Tokens +
+Rechner-Screen, v4.0.0; Zyklus 2 = Anleitung/Zeitplan-Screen, v4.1.0, s. u.). Referenz:
+`design-import/ui_kits/teigmeister/PartyScreen.jsx` (Gäste-/Pizzen-pro-Person-Stepper +
+Teig-Bäckerprozent-Demo + `TotalSummary`/`IngredientRow`/Badge-Einkaufsliste), plus die
+Komponenten-Referenzen `components/cards/TotalSummary.jsx`, `.../IngredientRow.jsx`,
+`components/core/Badge.jsx`, `components/feedback/Note.jsx`, `components/forms/
+Stepper.jsx`. Betrifft `js/party.js`, `pizza-rechner-mobile.html`, `css/styles.css`
+(gemeinsam mit Desktop) — mobile-only Scope wie in Zyklus 1/2, Desktop-HTML
+(`pizza-rechner.html`) bleibt unverändert.
+
+**Struktureller Befund direkt zu Beginn (größer als die "Überraschungen" der Vorzyklen):**
+die reale Pizza-Party-Funktion (`js/party.js`, v3.27.0+) ist strukturell komplett anders
+als das Mockup. Mockup: Gäste-Stepper × Pizzen-pro-Person-Stepper → erfundene
+Bäckerprozent-Teigrechnung (`flour = total/1.65` etc., reine Demo-Platzhalterformel) +
+eine separate „Einkaufsliste"-Karte mit `TotalSummary` (kg Teig) + `IngredientRow`
+(Mehl/Wasser/Salz/Hefe) + unscharfen Badge-Chips ohne Menge (🛒 Passata, Mozzarella, ...).
+Real: eine Liste **wählbarer** Pizzen (Presets + eigene) mit je einem Stückzahl-Stepper
+pro Pizza, daraus eine **aggregierte, exakte** Zutatenliste für alle Beläge (keine
+Teigberechnung, kein Dough-Gewicht — der Party-Planer ist bewusst vom Rechner getrennt,
+s. Dateistruktur-Abschnitt). Es gibt also weder einen Gäste-/Pro-Person-Stepper noch eine
+separate "ungefähre, mengenlose" Badge-Kategorie in der echten Funktion. Reaktion darauf
+(Design-Entscheidungen im Rahmen des Auftrags, dokumentiert statt stillschweigend
+entschieden):
+- **Stückzahl-Stepper je Pizza** (`.party-qty-btn`/`.party-qty-input`, bisher rund/40px,
+  eigene Optik) auf die app-weite `Stepper.jsx`-Optik aus Zyklus 1 angeglichen (eckige
+  `--radius`-Ecken, tomatenrote Flächenfüllung beim Hover, 44px-Touch-Ziel, Bitter-Ziffern
+  im Zahlenfeld) — als **eigene, aus der bisher geteilten `.adjust-*`-Regel (Einstellungen-
+  Menü „Hefemenge"/„Verschwendung anpassen") herausgelöste** CSS-Regel, damit `.adjust-btn`
+  (außerhalb dieses Zyklus) unverändert bleibt.
+- **`#partyResultSummary`** (bisher ein einzelner Fließtextsatz „X Pizzen insgesamt")
+  bekommt die `TotalSummary.jsx`-Optik (große Kopfzahl + kleines Label, `js/party.js`
+  `renderPartyResult()` baut jetzt `.total > .big + .lbl` statt reinem Text) — die einzige
+  im echten Feature verfügbare „große Kopfzahl" ist die Pizzenanzahl (kein Teig-Gewicht
+  vorhanden). `#partyResultSummary` liegt NICHT unter einem `.result`-Vorfahren (eigener
+  Bereich, kein Rechner-Ergebnis-Panel) — eigene CSS-Selektoren `#partyResultSummary.total`
+  ergänzen `.result .total` statt die `.result`-Kapselung (die `position:sticky` mitbrächte)
+  dorthin zu ziehen. `party.summaryOne`/`party.summaryMany` (volle Sätze) bleiben im
+  Wörterbuch für Tests/mögliche andere Verwender erhalten, neue `party.totalLabelOne`/
+  `party.totalLabelMany` (nur das Label-Halbwort) kommen dazu. Die Mobil-Quickbar-Spiegelung
+  (`pizza-rechner-mobile.html`, Inline-Script) liest jetzt `.big`+`.lbl` einzeln und fügt sie
+  mit Leerzeichen zusammen (rohes `textContent` hätte sie ohne Leerzeichen verklebt).
+- **`hint.partyResult`** (bisher unstyled Fließtext — `.hint` hat außerhalb eines `.field`
+  keine eigene Regel) bekommt zusätzlich die Klasse `note` (amber `Note.jsx variant="note"`-
+  Optik, bereits bestehende `.note`-Regel aus `css/styles.css`, keine neue CSS nötig) —
+  bleibt bewusst ZUSÄTZLICH `.hint`, damit der Feature-Flag „hints" (`js/settings.js`)
+  das Element weiterhin ein-/ausblenden kann.
+- **Badge-Chip-Optik für die Einkaufsliste bewusst NICHT übernommen:** die echte
+  aggregierte Zutatenliste (`#partyResultList`, `.ing`-Zeilen) hat für JEDE Zutat eine
+  exakte Menge — es gibt keine separate „ungefähre, mengenlose" Kategorie wie die
+  Badge-Chips im Mockup. Die `.ing`-Zeilen nutzten dank identischer Klassennamen bereits
+  **automatisch** die Zyklus-1-Tokens (kein Code nötig) — Badges hier zu erzwingen hätte
+  echte Information (die Mengenangabe) gekostet, keine Verbesserung.
+- **Card-Akzentfarbe** (`accent="basil"` im Mockup für die Einkaufsliste-Karte) bewusst
+  nicht übernommen — dieses Konzept existiert nirgends im echten App-Code (auch nicht beim
+  Rechner-Ergebnis-Panel aus Zyklus 1), außerhalb des in diesem Auftrag konkret benannten
+  Scopes (Stepper/Note/TotalSummary/IngredientRow/Badge).
+
+**`accessibility-expert`-Review** (neue/geänderte Farbkombinationen, hell + dunkel):
+- **BLOCKER, behoben:** `.party-qty-btn`-Rahmen `var(--line)` gegen `var(--card)` lag bei
+  ~1,51:1 (hell) / ~1,47:1 (dunkel), unter der 3:1-Schwelle (WCAG 1.4.11). `var(--muted)`
+  statt `var(--line)` behebt es (~5,56:1 hell / ~6,58:1 dunkel, selbst nachgerechnet) —
+  identisches Muster wie der bestehende `.switch-slider`-„Aus"-Fix. Lokal fixbar, da
+  `.party-qty-btn` eine neue, eigenständige Regel dieses Zyklus ist (nicht die geteilte
+  `.stepper-btn`-Regel, die diesen Fix NICHT mitbekommen hat, s. Nebenbefund unten).
+- **MAJOR, behoben:** `.party-qty-btn:hover` weiß auf `var(--tomato)` lag im Dunkelmodus
+  bei ~3,76-4,19:1 (unter 4,5:1 für normalen Text). `var(--tomato-dark)` statt `var(--tomato)`
+  behebt es (~5,38:1 dunkel, selbst nachgerechnet) und verbessert nebenbei die
+  Hell-Modus-Marge (~6,29:1 statt ~4,9:1, vorher ohne Komfortmarge).
+  `.stepper-btn:hover` (die geteilte, app-weite Rechner-Stepper-Regel) hat exakt dasselbe
+  Muster (`background:var(--tomato);color:#fff`) und vermutlich denselben Dunkelmodus-Fehler
+  — hier NICHT mitgefixt (App-weite Wirkung, außerhalb des Party-Screen-Scopes dieses
+  Zyklus), s. Nebenbefund unten.
+- **MAJOR, NICHT gefixt (dokumentierter Nebenbefund, s. Backlog):** `.note`-Rahmen
+  (`var(--crust)` gegen `var(--note-bg)`) liegt im Hellmodus bei ~2,33-2,49:1 (unter der
+  3:1-Schwelle). Pre-existing, app-weite `.note`-Klasse (u. a. Eiswasser-/DDT-Notizen seit
+  vor diesem Zyklus), durch diesen Zyklus nur erneut sichtbar gemacht (eine zusätzliche
+  Verwendungsstelle bei `hint.partyResult`), keine Regression. Analog zum bereits
+  dokumentierten `--line`-Nebenbefund aus Zyklus 1 nicht lokal gefixt (würde `--crust`
+  app-weit ändern, u. a. `.temp-box`/`.timerclock`/Schedbar-Rahmen betreffen) — Kandidat
+  für einen künftigen, eigenen Kontrast-Zyklus, s. Backlog.
+- **Fehlalarm, kein Fix:** `.lbl`-Label (`var(--muted)` gegen `var(--bg)`) im Hellmodus,
+  ursprünglich mit 4,26:1/FAIL gemeldet — sowohl vom `accessibility-expert` selbst als auch
+  unabhängig vom Orchestrator nachgerechnet: **~4,93:1, PASS.** Kleinere, aber
+  schwellenkippende Abweichung als der systematische Zyklus-1-Fehler (dort ~Faktor 2),
+  hier nur ~0,7 Punkte Differenz — trotzdem beim jeweils gemeldeten Blocker/Major-Befund
+  IMMER selbst gegenrechnen, bevor Token-Werte geändert werden (Lehre bleibt gültig).
+- Restliche Befunde PASS ohne Änderung: TotalSummary-Kopfzahl (beide Themes > 11:1),
+  `.note`-Fließtext (beide Themes > 4,5:1), `.party-qty-btn`-Text im Ruhezustand (beide
+  Themes > 5:1), Touch-Ziele 44×44px, Fokus-Indikatoren, Feature-Flag-Integration.
+
+**Tests:** `tests/test.html` unverändert **716/716 grün** (Headless-Edge-Dump, `file:///C:/...`-
+URL-Form nötig unter Windows — `file:///c/...` liefert ERR_FILE_NOT_FOUND). Kein
+`test-generator`-Lauf nötig (reine Optik/Markup-Änderung, keine Berechnungslogik
+angefasst). `js/party.js`s UI-Render-Code läuft in `tests/test.html` ohnehin nicht (früher
+Return mangels Party-DOM-Stubs, s. Dateistruktur-Kommentar in `js/party.js`) — die
+`renderPartyResult()`-Änderung ist dadurch für die Testsuite unsichtbar, aber risikofrei.
+
+**Nebenbefunde fürs Backlog** (neu, nicht in diesem Zyklus behoben):
+1. `.stepper-btn:hover` (app-weite Rechner-Stepper-Optik aus Zyklus 1, `css/styles.css`)
+   hat denselben `background:var(--tomato);color:#fff`-Hover wie `.party-qty-btn:hover`
+   VOR diesem Fix — vermutlich derselbe Dunkelmodus-Kontrastfehler (~3,76-4,19:1), aber
+   nicht im Rahmen dieses Party-Screen-Zyklus verifiziert/gefixt (app-weite Wirkung auf
+   alle Hauptrechner-Stepper: Teiglinge, Gewicht, Hydration, Salz, Öl, Zucker).
+2. `.note`-Rahmen (`--crust` gegen `--note-bg`) im Hellmodus ~2,33-2,49:1, app-weit
+   (Eiswasser-/DDT-Notizen, jetzt auch `hint.partyResult`) — s. Detailbefund oben.
+
+**Geändert:** `js/party.js`, `js/i18n-dict.js`, `css/styles.css` (gemeinsam mit Desktop —
+Desktop erbt die Token-/Kontrast-Fixes automatisch mit, analog Zyklus 1/2, HTML-Datei
+selbst unverändert), `pizza-rechner-mobile.html`. `?v=` auf `4.2.0` gezogen (nur Mobil,
+Desktop bleibt bei `3.72.0`). `pizza-rechner-mobile-standalone.html` neu gebaut.
+`Versionen/v4.2.0 - Design-System-Import Zyklus 3 (Pizza-Party-Screen)/` enthält den
+vollständigen Schnappschuss.
+
 ## Design-System-Import Zyklus 2: Anleitung/Zeitplan-Screen (v4.1.0)
 
 Zweiter von 5 geplanten Zyklen des mobilen Redesigns aus dem Claude-Design-Projekt

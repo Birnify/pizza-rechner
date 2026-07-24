@@ -383,6 +383,7 @@
     if (!summaryEl || !listEl) return;
     const result = computeAggregatedList();
     if (result.totalPizzaCount === 0) {
+      summaryEl.className = '';
       summaryEl.textContent = '';
       listEl.innerHTML = '';
       const hint = document.createElement('div');
@@ -391,9 +392,24 @@
       listEl.appendChild(hint);
       return;
     }
-    summaryEl.textContent = result.totalPizzaCount === 1
-      ? t('party.summaryOne')
-      : t('party.summaryMany', { n: result.totalPizzaCount });
+    // Design-Import Zyklus 3 (v4.2.0, "Pizza-Party-Screen"): die Kopfzahl des
+    // Ergebnis-Panels bekommt dieselbe TotalSummary.jsx-Optik wie der Rechner-Screen
+    // (.result .total .big/.lbl aus Zyklus 1, s. css/styles.css) -- große Pizzenzahl +
+    // kleines Label, statt bisher ein einzelner Fließtextsatz. party.summaryOne/Many
+    // bleiben als vollständige Sätze im Wörterbuch erhalten (u. a. für den einfachen
+    // Textvergleich in tests/test.html) und werden hier nicht mehr direkt gerendert.
+    summaryEl.className = 'total';
+    summaryEl.innerHTML = '';
+    const bigEl = document.createElement('div');
+    bigEl.className = 'big';
+    bigEl.textContent = String(result.totalPizzaCount);
+    const lblEl = document.createElement('div');
+    lblEl.className = 'lbl';
+    lblEl.textContent = result.totalPizzaCount === 1
+      ? t('party.totalLabelOne')
+      : t('party.totalLabelMany');
+    summaryEl.appendChild(bigEl);
+    summaryEl.appendChild(lblEl);
     listEl.innerHTML = '';
     result.ingredients.forEach(function (ing) {
       const row = document.createElement('div');
