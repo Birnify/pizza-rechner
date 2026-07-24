@@ -233,13 +233,17 @@ header{position:relative;text-align:center;}
 /* Sekundär-Navigation (Segmented Control) für die drei Rechner-Unterbereiche
    (Rechner/Rezepte/Zeitplan), oben in jeder der drei Ansichten eingebettet -- ersetzt
    die frühere Burgermenü-Gruppe "Teig-Rechner". */
+/* Design-Import Zyklus 1 (v4.0.0): Track-Fläche var(--surface-inset) statt var(--bg)
+   -- passend zur SubNav-Komponente des importierten Design-Systems (zurückgesetzter
+   Track, etwas dunkler/tiefer als die verschachtelte var(--surface-2)-Fläche der
+   .seg-Schalter). Hatte bereits vorher einen Rahmen (anders als .seg, s. dort). */
 .calc-subnav{
-  display:flex;gap:6px;background:var(--bg);border:1px solid var(--line);
+  display:flex;gap:6px;background:var(--surface-inset);border:1px solid var(--line);
   border-radius:var(--radius);padding:4px;margin-bottom:18px;
 }
 .calc-subnav .nav-item{
   flex:1;width:auto;text-align:center;padding:9px 6px;min-height:44px;
-  border:none;border-radius:8px;background:none;color:var(--ink);
+  border:none;border-radius:var(--radius-xs);background:none;color:var(--ink);
   font-size:13px;font-weight:600;
 }
 .calc-subnav .nav-item:active{background:var(--card);}

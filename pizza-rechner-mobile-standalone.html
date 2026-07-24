@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Teigmeister">
-<meta name="theme-color" content="#c8442e">
+<meta name="theme-color" content="#c4472e">
 <title>Teigmeister · Mobil</title>
 <!-- Dunkelmodus (v3.47.0): früheste mögliche Anwendung von data-theme, VOR den CSS-Links,
      verhindert einen kurzen Hell/Dunkel-Flash beim Laden (js/theme.js unten am Body-Ende
@@ -16,7 +16,8 @@
      Kopf-Script in pizza-rechner.html, PLUS das theme-color-Meta (das pizza-rechner.html
      nicht hat) hier zusaetzlich synchron mitgesetzt -- js/theme.js's applyThemeColorMeta()
      uebernimmt danach dieselbe Logik fuer spaetere Theme-Wechsel (v3.52.0-Fix, vorher
-     blieb das Meta bei jedem Theme statisch terrakotta). -->
+     blieb das Meta bei jedem Theme statisch terrakotta). Werte v4.0.0 auf die neuen
+     Design-Import-Tokens gezogen (--tomato hell / --bg dunkel, s. js/theme.js). -->
 <script>
 (function(){
   try{
@@ -26,29 +27,183 @@
     }
     document.documentElement.setAttribute('data-theme', t);
     var tcm = document.querySelector('meta[name="theme-color"]');
-    if (tcm) tcm.setAttribute('content', t === 'dark' ? '#1c1815' : '#c8442e');
+    if (tcm) tcm.setAttribute('content', t === 'dark' ? '#151312' : '#c4472e');
   } catch(e) {}
 })();
 </script>
+<!-- Selbst gehostete Webfonts (v4.0.0, Design-Import Zyklus 1): MUSS vor css/styles.css
+     laden, damit die dortigen --font-display/--font-body/--font-numeric/--font-head-Werte
+     (Bitter + Hanken Grotesk) die passenden @font-face-Regeln vorfinden -- s. css/fonts.css.
+     Nur hier eingebunden (nicht in pizza-rechner.html): Scope dieses Zyklus ist mobile-only,
+     Desktop bleibt bei den bisherigen System-Schriftarten (Georgia/System-Sans), s.
+     pizza-rechner-KONTEXT.md, Abschnitt "Design-System-Import Zyklus 1". -->
 <style>
+/* Teigmeister webfonts -- selbst gehostet (v4.0.0 Design-Import Zyklus 1).
+   Bitter (Slab-Serif, Display/Zahlen) + Hanken Grotesk (Body/UI), beide SIL-OFL-
+   lizenziert, kostenlos. Ersetzt den Google-Fonts-@import aus dem Claude-Design-Projekt
+   (design-import/tokens/fonts.css) durch lokale WOFF2-Dateien in fonts/, damit die App
+   weiterhin komplett offline (file://, kein Internet) funktioniert -- s. Abschnitt
+   "Design-System-Import Zyklus 1: Tokens + Rechner-Screen" in pizza-rechner-KONTEXT.md.
+
+   Beide Dateien sind VARIABLE Fonts (ein einziges .woff2 deckt den ganzen 400-800-
+   Gewichtsbereich ab, dank font-weight:"400 800" statt einer Datei je Schnitt) --
+   dadurch reichen 3 Dateien (Bitter normal, Bitter italic, Hanken Grotesk normal)
+   statt 11 Einzelschnitten. Nur das Latin-Subset (deckt Umlaute/ß/Sonderzeichen wie
+   °, %, × ab) wurde geladen -- reicht für die deutsche UI, s. unicode-range unten.
+   Zeichen außerhalb dieses Bereichs (z. B. Pfeil → in wenigen Hinweistexten) fallen
+   automatisch auf die System-Sans-Fallback-Kette in --font-body zurück. */
+@font-face{
+  font-family:'Bitter';
+  font-style:normal;
+  font-weight:400 800;
+  font-display:swap;
+  src:url('fonts/bitter-normal-variable.woff2') format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face{
+  font-family:'Bitter';
+  font-style:italic;
+  font-weight:400 800;
+  font-display:swap;
+  src:url('fonts/bitter-italic-variable.woff2') format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face{
+  font-family:'Hanken Grotesk';
+  font-style:normal;
+  font-weight:400 800;
+  font-display:swap;
+  src:url('fonts/hanken-grotesk-normal-variable.woff2') format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+</style>
+<style>
+/* ============================================================================
+   Design-Tokens (v4.0.0, "Design-System-Import Zyklus 1: Tokens + Rechner-Screen")
+   Importiert aus dem Claude-Design-Projekt "Teigmeister Design System"
+   (claude.ai/design, c6b7bf59-3709-4d13-990e-4807c5058ea2), lokal abgelegt unter
+   design-import/tokens/*.css. Diese Datei übernimmt die Token-NAMEN 1:1 aus dem
+   Import (Farben/Typografie/Spacing), die DUNKELMODUS-Werte sind exakt die dort
+   vorgegebene Palette, die HELLMODUS-Werte sind eine eigene, analoge Ableitung
+   (gleiche Namen/Struktur, warme gedeckte Farbwerte passend zum bisherigen Look
+   der App — im Claude-Design-Projekt war nur Dunkelmodus ausgearbeitet).
+   Alte Token-Namen (--basil, --note-bg, --tip-bg, --chip-bg, --temp-highlight-bg …)
+   bleiben als Aliase erhalten, damit bestehende CSS-Regeln unverändert weiter
+   funktionieren — s. jeweilige Kommentare unten. Volle Details zur Migration:
+   pizza-rechner-KONTEXT.md, Abschnitt "Design-System-Import Zyklus 1". */
 :root{
-  --tomato:#c8442e;
-  --tomato-dark:#a8341f;
-  --basil:#3a7d44;
-  --crust:#e8c98a;
-  --bg:#faf6f0;
-  --card:#ffffff;
-  --ink:#2b2420;
-  --muted:#6e6359;
-  --line:#ece3d8;
-  --shadow:0 2px 14px rgba(120,90,60,.10);
-  --font-head:Georgia,'Iowan Old Style','Palatino Linotype','Book Antiqua',serif;
+  /* Hellmodus-Werte seit 2026-07-24 die AUTORITATIVE, vom Claude-Design-Team final
+     abgestimmte Version aus design-import/tokens/colors.css ([data-theme="light"]-
+     Block dort) — ersetzt eine erste eigene Ableitung, die nur bis zum offiziellen
+     Update dieser Session galt. Individuell für AA-Kontrast auf hellem Grund
+     nachjustiert (kein simples Invertieren der Dunkelmodus-Werte). */
+  /* --- Oberflächen (warmes Creme, nie reines Weiß) --- */
+  --bg:#f2ece2;
+  --card:#fdfaf5;
+  --surface-2:#e9e0d2;        /* verschachtelte Fläche (Stepper-Track, Temp-Box, Seg-Track) */
+  --surface-inset:#e2d8c8;    /* zurückgesetzter Track (Segmented Control / Subnav) */
+  --line:#d8ccba;
+  --line-soft:#ece4d6;        /* kaum sichtbarer innerer Trenner */
+
+  /* --- Text (warmes Dunkelbraun, nie reines #000) --- */
+  --ink:#2a2320;
+  --ink-strong:#1b1512;       /* max. Betonung (kräftiger als --ink) */
+  --muted:#6d645b;
+  --step-text:#463f38;
+  --muted-soft:#8f8477;       /* Kleingedrucktes, deaktivierte Labels */
+  --on-accent:#ffffff;        /* Text auf gesättigter Akzentfläche */
+
+  /* --- Akzent (Tomatenrot) --- */
+  --tomato:#c4472e;
+  --tomato-dark:#a83c26;
+  --tomato-text:#af3f29;      /* Tomate ALS Text auf Karten-/Seitenfläche, ~5,2:1 */
+  --tomato-disabled:#e6c6bc;
+  --tomato-soft-bg:#f8e4dc;   /* dezente Tomate-Tönung für mittelbetonte Flächen */
+  --tomato-soft-hover:#f3d5ca;
+
+  /* --- Semantisch (klar getrennt von Tomate UND voneinander) --- */
+  --success:#4f8c4a;           /* Basil/Oliv — Zeitplan-Leiste, Tipp-Akzent */
+  --success-text:#3c7337;
+  --warning:#c9882b;           /* Ocker — bewusst NIE tomatenrot, s. Design-Import-Notiz */
+  --warning-text:#8f6111;
+  --biga-text:#8a6710;         /* Vorteig-Stufen-Akzent, ~5,0:1 auf --card (selbst geprüft/nachjustiert, s. Kommentar unten Design-Import Zyklus 1) */
+  --crust:#b58c4a;             /* Kruste/Gold — Notiz-Rahmen, Header-Trennlinie */
+
+  /* --- Hinweisboxen — genau DREI Kategorien, klar unterscheidbar --- */
+  --info-bg:#efe6d6;
+  --info-text:#665a45;
+  --success-bg:#e4efe1;
+  --warn-bg:#f6ebd0;
+
+  /* --- Fokusring (kühl, bewusst getrennt von Akzent + Semantik) --- */
+  --focus:#2f7a99;
+
+  /* --- Schatten / Abdunklung --- */
+  --shadow:0 2px 14px rgba(64,44,30,.12);
+  --shadow-lg:0 12px 40px rgba(64,44,30,.16);
+  --shadow-cta:0 3px 10px rgba(120,44,26,.20);
+  --shadow-bar:0 -6px 20px rgba(64,44,30,.13);
+  --scrim:rgba(18,11,7,.55);   /* Foto-Header-Abdunklung / Modal-Backdrop */
+
+  /* --- Typografie-Skala (v4.0.0-Import, für Hell- UND Dunkelmodus identisch) ---
+     Basis 16px, Verhältnis 1,25 (große Terz), 5 Stufen. Bewusst noch NICHT app-weit
+     auf jede bestehende Regel angewendet (Scope dieses Zyklus: Rechner-Screen +
+     Infrastruktur) — als wiederverwendbare Werte für neue/überarbeitete Regeln da. */
+  --font-display:'Bitter',Georgia,'Iowan Old Style','Palatino Linotype','Book Antiqua',serif;
+  --font-body:'Hanken Grotesk',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-numeric:'Bitter',Georgia,'Iowan Old Style','Palatino Linotype','Book Antiqua',serif;
+  --font-head:var(--font-numeric); /* Alias: bisheriger Name, deckt Überschriften + Zahlen ab */
+  --text-meta:13px;
+  --text-body:16px;
+  --text-title:20px;
+  --text-stat:25px;
+  --text-display:31px;
+  --text-hero:var(--text-display);
+  --text-stat-sm:var(--text-title);
+  --text-body-sm:var(--text-body);
+  --text-label:var(--text-meta);
+  --text-caption:var(--text-meta);
+  --text-hint:var(--text-meta);
+  --text-micro:var(--text-meta);
+  --weight-regular:400;
+  --weight-medium:500;
+  --weight-semibold:600;
+  --weight-bold:700;
+  --weight-heavy:800;
+  --leading-tight:1.2;
+  --leading-snug:1.4;
+  --leading-body:1.5;
+  --leading-relaxed:1.6;
+  --tracking-label:1.2px;
+  --tracking-eyebrow:1px;
+
+  /* --- Spacing / Radius / Touch-Größen (v4.0.0-Import) --- */
+  --space-xxs:4px;
+  --space-xs:8px;
+  --space-sm:10px;
+  --space-md:14px;
+  --space-lg:18px;
+  --space-xl:20px;
+  --space-2xl:24px;
+  --space-3xl:32px;
+  --radius-xs:8px;
+  --radius-sm:10px;
   /* Visuelles Redesign v3.41.0: zurück zu einer rundlicheren Optik (Karten, Eingaben,
      Chips/Pills) statt der scharfen 3px/6px-Kanten aus v3.13.0 — bewusste, vom Nutzer
      bestätigte Kurskorrektur, s. Abschnitt "Visuelles Redesign v3.41.0" in
      pizza-rechner-KONTEXT.md. */
   --radius:14px;
   --radius-chip:999px;
+  --touch-min:44px;
+  --control-h:44px;
+  --icon-badge:34px;
+  --tabbar-h:58px;
+  --summarybar-h:64px;
+  --content-max:980px;
+  --focus-width:2px;
+  --focus-offset:2px;
+
   /* Header-Foto-Slot (v3.41.0 als Platzhalter-Mechanismus eingeführt, echtes Bild
      seit v3.44.0 aktiv: assets/header-pizza.jpg, vom Nutzer bereitgestellt — s.
      Abschnitt "Echtes Header-Foto eingebunden (v3.44.0)" in pizza-rechner-KONTEXT.md
@@ -61,35 +216,34 @@
      beim Inlinen automatisch für pizza-rechner-mobile-standalone.html, die im
      Projekt-Root selbst liegt). */
   --header-photo:url('assets/header-pizza.jpg');
-  /* Dunkelmodus (v3.47.0): zusätzliche semantische Tokens für Fälle, in denen dieselbe
-     Farbe zwei UNTERSCHIEDLICHE Rollen hat, die sich unter Dunkelmodus entgegengesetzt
-     verhalten müssten (z. B. var(--tomato) als gesättigte Button-/Badge-Füllfläche MIT
-     weißer Schrift bleibt unverändert dunkelmodus-tauglich, aber dieselbe Farbe direkt
-     als TEXT auf der Karten-/Seitenfläche braucht im Dunkelmodus einen helleren Ton, sonst
-     fällt der Kontrast unter 4,5:1, WCAG 1.4.3). Light-Defaults hier entsprechen exakt den
-     bisherigen Werten (keine optische Änderung im hellen Modus), nur der
-     :root[data-theme="dark"]-Block unten überschreibt sie mit im Dunkelmodus geprüften
-     Tönen (rechnerisch verifiziert, s. Kommentare dort). */
-  --tomato-text:var(--tomato-dark);
-  --basil-text:var(--basil);
-  /* Feste, THEMENUNABHÄNGIGE dunkle Fläche für die zwei Fälle, in denen var(--ink) bisher
-     zweckentfremdet als "immer dunkler Badge-Hintergrund mit weißer Schrift" diente
-     (.step .num, .step .body .timechip) — würde sonst im Dunkelmodus hell (var(--ink) ist
-     dort ja die Textfarbe) und die weiße Schrift verschwände. */
-  --ink-strong:#2b2420;
-  --note-bg:#fff8ec;
-  --note-text:#7a5d20;
-  --note-text-strong:#5e4715;
-  --chip-bg:#fff3e8;
-  --chip-text:#b5651a;
-  --warn-bg:#fdf0ec;
-  --warn-text:#9a3a1c;
-  --tip-bg:#f1f7f1;
-  --temp-highlight-bg:#fdf1ec;
-  --step-text:#5a514a;
-  --biga-text:#b5851a;
+
+  /* --- Alte Token-Namen als Aliase (Rückwärtskompatibilität, s. Kommentar oben) ---
+     Feste, THEMENUNABHÄNGIGE dunkle Fläche für die zwei Fälle, in denen früher
+     var(--ink-strong) zweckentfremdet als "immer dunkler Badge-Hintergrund mit
+     weißer Schrift" diente (.step .num, .step .body .timechip) — eigener Name seit
+     v4.0.0, weil --ink-strong jetzt die neue Bedeutung "max. Text-Betonung" trägt
+     (s. oben). Unverändert #2b2420 in beiden Themes, wie zuvor. */
+  --badge-ink:#2b2420;
+  --basil:var(--success);
+  --basil-text:var(--success-text);
+  --note-bg:var(--info-bg);
+  --note-text:var(--info-text);
+  --note-text-strong:#4a3f2e;
+  --chip-bg:#f3e6cc;
+  --chip-text:#8a6a28;
+  --warn-text:var(--warning-text);
+  --tip-bg:var(--success-bg);
+  --temp-highlight-bg:var(--info-bg);
   color-scheme:light;
 }
+/* Fokusring-Basisregel (v4.0.0-Import, design-import/tokens/base.css): kühler,
+   von Akzent/Semantik bewusst getrennter Ton (--focus) als APP-WEITER Default für
+   Elemente ohne eigene :focus-visible-Regel. Bestehende, bereits geprüfte
+   komponentenspezifische Regeln (z. B. .seg button:focus-visible mit
+   var(--tomato-text)) haben höhere Selektor-Spezifität und gewinnen unverändert
+   weiter — diese Basisregel ändert dort nichts, deckt nur bisher unbehandelte
+   Elemente ab. */
+:focus-visible{outline:var(--focus-width) solid var(--focus);outline-offset:var(--focus-offset);}
 /* Dunkelmodus (v3.47.0): automatisch per prefers-color-scheme voreingestellt (Inline-Script
    im <head> beider HTML-Dateien setzt data-theme früh genug, um einen Hell/Dunkel-Flash beim
    Laden zu vermeiden), manuell übersteuerbar per Umschalter in den Einstellungen (js/theme.js,
@@ -107,29 +261,54 @@
    unten eigene, dunkelmoduserprobte Werte. */
 @media screen{
   :root[data-theme="dark"]{
-    --bg:#1c1815;
-    --card:#241f19;
-    --ink:#f0e9e0;
-    --muted:#b3a89c;
-    --line:#4a4038;
-    --shadow:0 2px 14px rgba(0,0,0,.4);
-    /* Helleres Terrakotta/Basil für Text- und Fokusring-Rollen (vorher var(--tomato-dark)/
-       var(--basil) direkt) — gegen die neue dunkle Karten-/Seitenfläche gerechnet:
-       #ef7a5c auf #241f19 ~5,92:1 / auf #1c1815 ~6,39:1; #6fbb6f auf #1c2e1f (Tipp-Box)
-       ~6,17:1, auf #241f19 ~7,01:1 — jeweils deutlich über der 4,5:1- bzw. 3:1-Schwelle. */
+    /* Exakte Palette aus design-import/tokens/colors.css ([data-theme="dark"]-Block,
+       identisch zum bare-:root-Fallback dort) -- "dark-mode-first", vom Claude-
+       Design-Team ausgearbeitet. Ersetzt den bisherigen, in v3.47.0 selbst
+       kalibrierten Dunkelmodus 1:1 (s. Abschnitt "Design-System-Import Zyklus 1"
+       in pizza-rechner-KONTEXT.md). */
+    --bg:#151312;
+    --card:#201d1b;
+    --surface-2:#2a2622;
+    --surface-inset:#1b1917;
+    --line:#3a332e;
+    --line-soft:#2c2723;
+    --ink:#ede9e6;
+    --ink-strong:#f5f1ee;
+    --muted:#a8a19c;
+    --step-text:#cdc6c0;
+    --muted-soft:#7d766f;
+    --tomato:#d1533c;
+    --tomato-dark:#b8442d;
     --tomato-text:#ef7a5c;
-    --basil-text:#6fbb6f;
-    --note-bg:#3a2f18;
+    --tomato-disabled:#5a3a32;
+    --tomato-soft-bg:#38221c;
+    --tomato-soft-hover:#472a22;
+    --success:#5f9d5a;
+    --success-text:#8bc283;
+    --warning:#d99a3c;
+    --warning-text:#e8b25a;
+    --biga-text:#d9ab3f;
+    --crust:#c9a86a;
+    --info-bg:#302b25;
+    --info-text:#cabca6;
+    --success-bg:#1e2a1b;
+    --warn-bg:#3b2c0e;
+    --focus:#8ab4c8;
+    --shadow:0 2px 14px rgba(0,0,0,.4);
+    --shadow-lg:0 12px 40px rgba(0,0,0,.5);
+    --shadow-cta:0 3px 10px rgba(0,0,0,.45);
+    --shadow-bar:0 -6px 20px rgba(0,0,0,.45);
+    --scrim:rgba(15,11,9,.62);
+    /* Alte Token-Namen als Aliase, s. Kommentar im :root-Block oben. */
+    --basil-text:var(--success-text);
+    --note-bg:var(--info-bg);
     --note-text:#e0b563;
     --note-text-strong:#f0c878;
     --chip-bg:#3d2a18;
     --chip-text:#e8935a;
-    --warn-bg:#3d1f18;
-    --warn-text:#e8735a;
-    --tip-bg:#1c2e1f;
-    --temp-highlight-bg:#3a2620;
-    --step-text:#c9beb2;
-    --biga-text:#d9ab3f;
+    --warn-text:var(--warning-text);
+    --tip-bg:var(--success-bg);
+    --temp-highlight-bg:var(--info-bg);
     color-scheme:dark;
   }
 }
@@ -139,7 +318,7 @@
   clip:rect(0,0,0,0);white-space:nowrap;border:0;
 }
 body{
-  margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  margin:0;font-family:var(--font-body);
   background:var(--bg);color:var(--ink);line-height:1.5;
   -webkit-font-smoothing:antialiased;
 }
@@ -172,7 +351,15 @@ header{
 header h1{
   margin:0;font-family:var(--font-head);font-size:26px;font-weight:700;
   letter-spacing:.2px;text-shadow:0 1px 4px rgba(0,0,0,.35);
+  /* display:flex + gap (v4.0.0, Design-Import Zyklus 1): Platz für das neue Logo-<img>
+     vor dem Wordmark (bisher nur Mobil, s. pizza-rechner-mobile.html) -- mit nur einem
+     Text-Kind (Desktop, unverändert kein <img>) verhält sich das optisch identisch zu
+     vorher (weiterhin zentriert via header{text-align:center} + justify-content:center). */
+  display:flex;align-items:center;justify-content:center;gap:10px;
 }
+/* Logo (v4.0.0, Design-Import Zyklus 1, nur Mobil -- s. Kommentar oben): 36×36px,
+   9px Radius, exakt wie design-import/guidelines/brand-header.card.html vorgibt. */
+header h1 .app-logo{width:36px;height:36px;border-radius:9px;flex-shrink:0;}
 header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .wrap{max-width:980px;margin:0 auto;padding:20px;display:grid;gap:20px;grid-template-columns:1fr;}
 @media(min-width:860px){.wrap{grid-template-columns:1fr 360px;align-items:start;}}
@@ -542,9 +729,18 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .stepper input[type=number]:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
 .stepper .unit{font-size:13px;color:var(--muted);flex-shrink:0;}
 .field.coupled .stepper-btn{opacity:.5;}
-.seg{display:flex;gap:6px;background:var(--bg);padding:4px;border-radius:var(--radius);}
+/* Design-Import Zyklus 1 (v4.0.0): Track-Fläche var(--surface-2) statt var(--bg) +
+   sichtbare Hairline-Umrandung -- vorher war der Schalter (identische Farbe wie der
+   Seitenhintergrund, kein Rahmen) freistehend praktisch unsichtbar, s. Backlog-Punkt
+   "Rahmen-Fix Komplexitätsschalter" in pizza-rechner-KONTEXT.md. Erledigt diesen
+   Punkt für ALLE .seg-Instanzen app-weit (Teigführung, Hefe-Art, Knetart, Kaltgare-
+   Stufe, Zeitplan-Modus, Komplexitäts-Schalter), nicht nur den Komplexitäts-Schalter. */
+.seg{
+  display:flex;gap:6px;background:var(--surface-2);border:1px solid var(--line);
+  padding:4px;border-radius:var(--radius);
+}
 .seg button{
-  flex:1;border:none;background:transparent;padding:9px 6px;border-radius:10px;
+  flex:1;border:none;background:transparent;padding:9px 6px;border-radius:var(--radius-sm);
   font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;
 }
 .seg button.active{background:var(--tomato);color:#fff;}
@@ -625,8 +821,12 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .ing:last-child{border-bottom:none;}
 .ing .name{display:flex;align-items:center;gap:8px;}
 .ing .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.ing .amt{font-weight:700;font-variant-numeric:tabular-nums;}
-.ing .amt small{font-weight:500;color:var(--muted);font-size:11px;margin-left:3px;}
+/* font-family (v4.0.0, Design-Import Zyklus 1): var(--font-numeric) (Bitter, tabellarische
+   Ziffern) statt der geerbten Body-Schrift -- gemessene Mengen bekommen dieselbe
+   Slab-Serif-Behandlung wie die große Gesamtteig-Zahl (.result .total .big) und die
+   Temperatur-Werte (.temp-box .v), s. components/cards/IngredientRow.jsx im Import. */
+.ing .amt{font-weight:700;font-variant-numeric:tabular-nums;font-family:var(--font-numeric);}
+.ing .amt small{font-weight:500;color:var(--muted);font-size:11px;margin-left:3px;font-family:var(--font-body);}
 .stage{margin-top:18px;}
 .stage h3{
   font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--basil-text);
@@ -639,7 +839,7 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .note b{color:var(--note-text-strong);}
 .temp-out{display:flex;gap:10px;margin-top:6px;align-items:stretch;}
-.temp-box{flex:1;text-align:center;background:var(--bg);border-radius:var(--radius);padding:12px 8px;}
+.temp-box{flex:1;text-align:center;background:var(--surface-2);border-radius:var(--radius);padding:12px 8px;}
 .temp-box:first-child{flex:1.4;background:var(--temp-highlight-bg);border:1px solid var(--crust);}
 .temp-box .v{font-size:22px;font-weight:800;color:var(--tomato-text);font-variant-numeric:tabular-nums;font-family:var(--font-head);}
 .temp-box .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
@@ -682,10 +882,13 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   padding:16px 18px;margin-bottom:10px;
 }
 .step .num{
-  /* var(--ink-strong) statt var(--ink) (v3.47.0 Dunkelmodus): var(--ink) ist die
+  /* var(--badge-ink) statt var(--ink) (v3.47.0 Dunkelmodus): var(--ink) ist die
      THEMENABHÄNGIGE Textfarbe (wird im Dunkelmodus hell) -- als Badge-Füllfläche mit
-     weißer Schrift braucht dieser Kreis aber eine fest dunkle Fläche in beiden Themes. */
-  flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--ink-strong);color:#fff;
+     weißer Schrift braucht dieser Kreis aber eine fest dunkle Fläche in beiden Themes.
+     Umbenannt von --ink-strong auf --badge-ink in v4.0.0 (Design-Import Zyklus 1):
+     --ink-strong trägt seither die neue Token-Bedeutung "max. Text-Betonung" aus dem
+     importierten Design-System, --badge-ink ist der eigene, unveränderte Fixwert. */
+  flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--badge-ink);color:#fff;
   display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;font-family:var(--font-head);
 }
 .step .body{flex:1;min-width:0;}
@@ -697,7 +900,7 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .step .body p{margin:0;font-size:13.5px;color:var(--step-text);line-height:1.5;}
 .step .body p b{color:var(--ink);}
 .step .body .timechip{
-  font-size:12px;font-weight:800;background:var(--ink-strong);color:#fff;
+  font-size:12px;font-weight:800;background:var(--badge-ink);color:#fff;
   padding:3px 11px;border-radius:var(--radius-chip);letter-spacing:.3px;margin-left:auto;
 }
 .schedbar{
@@ -725,8 +928,13 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   padding:7px 10px;border-left:3px solid var(--basil-text);
 }
 .step .body .warn{
+  /* Design-Import Zyklus 1 (v4.0.0): linker Rand jetzt var(--warning) statt var(--tomato)
+     -- die importierten Warn-Tokens sind bewusst Ocker, nie Tomatenrot, damit eine Warnung
+     nicht mit dem Marken-/CTA-Akzent verwechselt werden kann (s. Kommentar in
+     design-import/tokens/colors.css). background/color folgten dieser Trennung bereits
+     automatisch über die --warn-bg/--warn-text-Aliase (s. :root oben). */
   margin-top:7px;font-size:12.5px;color:var(--warn-text);background:var(--warn-bg);border-radius:2px;
-  padding:7px 10px;border-left:3px solid var(--tomato);
+  padding:7px 10px;border-left:3px solid var(--warning);
 }
 /* Glossar-Verweis (v3.68.0, "Glossar-Verweise in der Anleitung"): kleiner, unauffälliger
    Sprung-Link am Ende eines Anleitungsschritts (js/guide.js glossaryLinkHtml()) --
@@ -1053,13 +1261,17 @@ header{position:relative;text-align:center;}
 /* Sekundär-Navigation (Segmented Control) für die drei Rechner-Unterbereiche
    (Rechner/Rezepte/Zeitplan), oben in jeder der drei Ansichten eingebettet -- ersetzt
    die frühere Burgermenü-Gruppe "Teig-Rechner". */
+/* Design-Import Zyklus 1 (v4.0.0): Track-Fläche var(--surface-inset) statt var(--bg)
+   -- passend zur SubNav-Komponente des importierten Design-Systems (zurückgesetzter
+   Track, etwas dunkler/tiefer als die verschachtelte var(--surface-2)-Fläche der
+   .seg-Schalter). Hatte bereits vorher einen Rahmen (anders als .seg, s. dort). */
 .calc-subnav{
-  display:flex;gap:6px;background:var(--bg);border:1px solid var(--line);
+  display:flex;gap:6px;background:var(--surface-inset);border:1px solid var(--line);
   border-radius:var(--radius);padding:4px;margin-bottom:18px;
 }
 .calc-subnav .nav-item{
   flex:1;width:auto;text-align:center;padding:9px 6px;min-height:44px;
-  border:none;border-radius:8px;background:none;color:var(--ink);
+  border:none;border-radius:var(--radius-xs);background:none;color:var(--ink);
   font-size:13px;font-weight:600;
 }
 .calc-subnav .nav-item:active{background:var(--card);}
@@ -1077,9 +1289,15 @@ header{position:relative;text-align:center;}
 <body>
 <!-- Bottom-Tab-Navigation (v3.68.0) ersetzt das bisherige Burgermenü vollständig auf
      Mobil -- die Kopfzeile zeigt jetzt nur noch den Titel, kein Menü-Button mehr nötig.
-     Desktop behält unverändert sein Burgermenü (s. pizza-rechner.html). -->
+     Desktop behält unverändert sein Burgermenü (s. pizza-rechner.html).
+     Logo (v4.0.0, Design-Import Zyklus 1): aus dem Claude-Design-Projekt importiertes
+     App-Icon (design-import/assets/logo.svg, lokal unter assets/logo.svg), 36×36px vor
+     dem Wordmark -- ersetzt das bisherige 🍕-Emoji, s. design-import/guidelines/
+     brand-header.card.html. alt="" (dekorativ): der Markenname steht bereits als Text
+     daneben, ein zweiter Vorlese-Name wäre redundant (analog zum bestehenden
+     .card-icon aria-hidden-Muster). -->
 <header>
-  <h1>🍕 <span data-i18n="app.title">Teigmeister</span></h1>
+  <h1><img src="assets/logo.svg" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
 </header>
 
 <!-- Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay analog zum
@@ -1996,7 +2214,7 @@ header{position:relative;text-align:center;}
           <div class="nav-divider" role="separator"></div>
           <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
           <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-          <span class="nav-version" id="appVersion">v3.72.0</span>
+          <span class="nav-version" id="appVersion">v4.0.0</span>
 
         </div>
       </div>
@@ -3847,7 +4065,8 @@ header{position:relative;text-align:center;}
   // --bg im Dunkelmodus (s. css/styles.css :root[data-theme="dark"]) — MUSS bei einer
   // künftigen Änderung dieser beiden CSS-Werte von Hand mitgezogen werden, da der Browser
   // nur das Meta-Attribut liest, keine berechneten Styles.
-  const THEME_COLOR = { light: '#c8442e', dark: '#1c1815' };
+  // v4.0.0 (Design-Import Zyklus 1): auf die neuen Token-Werte mitgezogen.
+  const THEME_COLOR = { light: '#c4472e', dark: '#151312' };
   function applyThemeColorMeta(theme) {
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', THEME_COLOR[theme] || THEME_COLOR.light);

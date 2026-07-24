@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-23 · Aktuelle Version: v3.72.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-24 · Aktuelle Version: v4.0.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -179,25 +179,24 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Komplexität staffeln (v3.72.0) = aktueller Stand
+## Design-System-Import Zyklus 1: Tokens + Rechner-Screen (v4.0.0) = aktueller Stand
 
-UX-Review-Punkt umgesetzt: die zwei vorherigen, sich gegenseitig ein-/ausblendenden
-Umschalt-Buttons ("Erweiterten Modus öffnen"/"Einfachen Modus aktivieren") wurden durch
-einen einzigen, DAUERHAFT sichtbaren Segmentschalter „Einfach | Profi" (`#modeToggle`,
-reines `.seg`-Muster) ersetzt, ganz oben in `#controlsCol` vor der Karte "Fertiges Rezept
-wählen" — der aktuelle Modus ist damit sofort erkennbar, ohne erst scrollen/lesen zu
-müssen. `js/simplemode.js`: Zustand/Persistenz/Feld-Zuordnung unverändert, nur die
-Schalter-Verkabelung ersetzt (neue `updateModeToggle()` hält `.active`/`aria-pressed`
-synchron). Da der neue Schalter nie verschwindet, entfiel das alte Fokus-Management-
-Workaround ersatzlos — Fokus bleibt beim Klick auf dem geklickten Button (kein Sprung).
-Alte `.mode-switch-btn`-Buttons + zugehörige i18n-Keys entfernt. `accessibility-expert`-
-Befund eingearbeitet: `.seg button:focus-visible` app-weit ergänzt (fehlte bisher,
-analog zum `.pills button`-Fix aus v3.70.0). Zwei weitere Befunde (Pfeiltasten-Navigation
-für `.seg`-Gruppen, Kontrast inaktiver `.seg`/`.pills`-Buttons) bewusst nicht gefixt
-(app-weite Bestandsmuster, außerhalb des Scopes), s. Backlog unten. 716 Prüfungen
-unverändert grün.
+Erster von 5 geplanten Zyklen, die ein komplettes mobiles Redesign aus einem
+Claude-Design-Projekt (c6b7bf59-3709-4d13-990e-4807c5058ea2, lokal unter
+`design-import/`) in die echte App übernehmen. Dieser Zyklus: neue Design-Tokens
+(Farben/Typografie/Spacing) app-weit über `css/styles.css` eingeführt (Hellmodus
+offiziell nachgeliefert, Dunkelmodus exakt aus dem Import), Bitter + Hanken Grotesk
+als WOFF2 selbst gehostet (`fonts/`, `css/fonts.css`, nur Mobil eingebunden), neues
+Logo (`assets/logo.svg`) im Mobil-Header, `.seg`-Schalter bekommt sichtbaren Rahmen
++ `--surface-2`-Fläche (löst Backlog-Punkt „Rahmen-Fix Komplexitätsschalter"
+ersatzlos), Warnbox-Akzent auf Ocker statt Tomate umgestellt (klare Trennung von
+Marken-Akzent), Ergebnis-Panel/TempBox/IngredientRow ans neue Token-System
+angeglichen. `pizza-rechner.html` (Desktop) unverändert, nur `pizza-rechner-mobile.html`
++ gemeinsame `css/`-Dateien angefasst. 716 Prüfungen unverändert grün (reine
+Optik-Änderung).
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitte „Komplexität staffeln
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Design-System-Import
+Zyklus 1: Tokens + Rechner-Screen (v4.0.0)"; frühere Abschnitte „Komplexität staffeln
 (v3.72.0)", „Rezeptwahl führen (v3.71.0)", „Mengensteuerung vereinfachen (v3.70.0)" und
 „Bugfix: #preset-Reset nach Mengensteuerung-Vereinfachung (v3.70.1)".
 
@@ -364,13 +363,24 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.72.0)
-pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle)
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.72.0 -- seit
+                     v4.0.0 bewusst NICHT mitgezogen, s. u.: Design-Import Zyklus 1 ist
+                     mobile-only, Desktop lädt weiterhin ohne css/fonts.css)
+pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle,
+                     ?v=4.0.0)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
 index.html           Weiterleitung auf pizza-rechner.html
-css/styles.css       komplettes Stylesheet (inkl. .selectbox / .selectbox-lg / .viewlink)
+css/styles.css       komplettes Stylesheet (inkl. .selectbox / .selectbox-lg / .viewlink),
+                     Design-Tokens (Farben/Typografie/Spacing) seit v4.0.0 aus dem
+                     Claude-Design-Projekt-Import, gemeinsam für Desktop + Mobil
 css/mobile.css       Ergänzungen NUR für pizza-rechner-mobile.html (Akkordeon, Touch-Ziele, Quick-Bar)
+css/fonts.css        selbst gehostete Webfonts (Bitter + Hanken Grotesk, v4.0.0), NUR in
+                     pizza-rechner-mobile.html eingebunden (vor css/styles.css) — Desktop bleibt
+                     bei Georgia/System-Sans, s. Design-Import-Zyklus-1-Abschnitt oben
+fonts/               3 WOFF2-Dateien (Bitter normal/italic, Hanken Grotesk normal, je variabel
+                     400-800), von css/fonts.css referenziert
+assets/logo.svg      App-Icon (v4.0.0, aus dem Design-Import), im Mobil-Header vor "Teigmeister"
 js/dom.js            $-Helfer, legt globalen Namespace window.PZ an + PZ.announce(elementId, text)
                      (v3.58.0, gemeinsamer Live-Region-Helfer — Clear-then-delayed-set mit
                      Generation-Zähler je Element-ID, ersetzt 7+ frühere Einzelkopien)
@@ -464,12 +474,18 @@ makePrefStages/fillFlourSelect, die diese drei Module beim eigenen Laden direkt 
 `units` MUSS vor `calc`/`guide`/`print` geladen werden (liefert PZ.formatWeight/formatWeightAuto/
 formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=3.72.0` geladen. **Bei jeder neuen Version mitziehen.**
+**Cache-Busting:** CSS/JS werden mit `?v=X.Y.Z` geladen. **Bei jeder neuen Version mitziehen.**
+Seit v4.0.0 bewusst **auseinandergelaufen**: `pizza-rechner-mobile.html` (+ zugehörige
+Standalone-Datei) steht bei `?v=4.0.0`, `pizza-rechner.html` (Desktop) bewusst weiter bei
+`?v=3.72.0`, weil Design-Import-Zyklen bis auf Weiteres mobile-only sind (Desktop-HTML wird
+nicht angefasst). Bei einem künftigen Zyklus, der auch Desktop ändert, beide wieder
+synchron auf denselben Stand ziehen.
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
-Burgermenü (`.nav-panel`) beider HTML-Dateien (Desktop + Mobil, identisch) steht
-`<span class="nav-version" id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine
-JS-Logik dahinter. **Bei jedem Versionssprung von Hand mitziehen** (zusammen mit `?v=` und der
+Burgermenü (`.nav-panel`) beider HTML-Dateien steht `<span class="nav-version"
+id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine JS-Logik dahinter. Seit v4.0.0
+ebenfalls auseinandergelaufen (Mobil `v4.0.0`, Desktop weiter `v3.72.0`), analog zum
+Cache-Busting oben. **Bei jedem Versionssprung von Hand mitziehen** (zusammen mit `?v=` und der
 Kontext-Datei — bei allen drei HTML-Dateien, also auch `pizza-rechner-mobile-standalone.html`
 nach dem Rebuild, gegenprüfen), sonst zeigt die Live-App die falsche Version an.
 
@@ -725,6 +741,31 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
+- **Design-System-Import Zyklus 2 von 5 (Anleitung/Zeitplan-Screen):** nächster Schritt
+  der mehrteiligen mobilen Redesign-Reihe (Zyklus 1 = Tokens + Rechner, s. o., erledigt
+  in v4.0.0). Referenzdatei: `design-import/ui_kits/teigmeister/AnleitungScreen.jsx`
+  (olive Zeitplan-Leiste + nummerierte Schrittkarten mit Technik-/Zeit-Chips und
+  Tipp-/Warn-Boxen). Tokens/Fonts/Logo aus Zyklus 1 sind bereits app-weit aktiv, dieser
+  Zyklus muss sie nur noch für den Anleitungs-Bereich in Markup/CSS umsetzen.
+- ~~Backlog.md Punkt 2 „Rahmen-Fix Komplexitätsschalter"~~ — **erledigt als Nebeneffekt
+  von v4.0.0** (Design-System-Import Zyklus 1): `.seg` nutzt jetzt `--surface-2` +
+  sichtbaren `1px solid var(--line)`-Rahmen statt der bisherigen, identisch zum
+  Seitenhintergrund gefärbten Fläche. Betrifft alle `.seg`-Instanzen app-weit, nicht
+  nur den Komplexitätsschalter. **Backlog.md Punkt 1 „Ergebnis priorisieren" bleibt
+  offen** (reine Optik-Angleichung ersetzt keine Aktionsleisten-Neuordnung), weiterhin
+  bereit für eine eigene Orchestrator-Instanz mit vollständiger Definition.
+- **Nebenbefund aus v4.0.0 (Design-System-Import Zyklus 1), MAJOR, Hellmodus,
+  app-weit, vorbestehend (keine Regression):** `--line` (#d8ccba) gegen `--bg`
+  (#f2ece2) liegt bei ~1,35:1, unter der 3:1-Schwelle aus WCAG 1.4.11 für
+  UI-Komponenten-Grenzen (betrifft Karten-/Input-/`.seg`/`.pills`-Ränder app-weit; der
+  alte Wert lag mit ~1,18:1 in derselben Größenordnung, keine Verschlechterung durch
+  diesen Zyklus). Auch die Flächenkontraste zwischen benachbarten neutralen
+  Oberflächen sind durchgängig niedrig (`--card` vs. `--bg` ~1,13:1, `--surface-2` vs.
+  `--bg` ~1,11:1) — bewusste, tonale Design-Philosophie der ganzen App, keine
+  Fehlfarbe. Eine echte Behebung bräuchte eine grundsätzliche Entscheidung über die
+  gesamte Hellmodus-Palette (deutlich dunklerer `--line`-Ton oder zusätzliche
+  Schatten/Konturen app-weit) und damit einen eigenen, vom Nutzer zu bestätigenden
+  Folge-Zyklus, nicht einen kleinen Fix nebenbei.
 - ~~Bugfix: Glossar-Verweise doppelt + Icon-Ausrichtung versetzt~~ — **erledigt in
   v3.69.1** (kein Backlog-Punkt, live reproduzierter Bugfix-Auftrag direkt an den
   Orchestrator; s. `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-Verweise:

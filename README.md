@@ -30,7 +30,11 @@ pizza-rechner-mobile.html     Mobil-Ansicht (Quelle), eigene Bottom-Tab-Navigati
 pizza-rechner-mobile-standalone.html   Build-Ergebnis (alles inline), diese Datei aufs Handy
 build-mobile-standalone.py    Erzeugt die Standalone-Datei aus pizza-rechner-mobile.html
 index.html                    Weiterleitung auf pizza-rechner.html
-css/                          Stylesheets (styles.css gemeinsam, mobile.css nur Mobil)
+css/                          Stylesheets (styles.css gemeinsam, mobile.css nur Mobil,
+                              fonts.css selbst gehostete Webfonts nur Mobil, s. u.)
+fonts/                        Bitter + Hanken Grotesk als WOFF2 (Design-Import v4.0.0),
+                              lokal gehostet fürs Offline-Prinzip -- nur von der Mobil-
+                              Ansicht geladen (css/fonts.css)
 js/                           modulare Logik, siehe Dateistruktur in pizza-rechner-KONTEXT.md
 tests/test.html               Rechenlogik-Tests (per Doppelklick öffnen, kein Server nötig)
 Versionen/                    vollständige Schnappschüsse je Version (siehe Versionen/LIESMICH.txt)

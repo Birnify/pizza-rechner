@@ -1,0 +1,10 @@
+/* Teigmeister design system — global entry point.
+ * Consumers link THIS file only. It is a list of @import lines; every token, font
+ * and base rule the system ships lives in the files below. Fonts (Bitter + Hanken
+ * Grotesk) are a PROPOSED enhancement over the live app's system-font stack — see
+ * tokens/fonts.css. The font @import must come first. */
+@import "tokens/fonts.css";
+@import "tokens/colors.css";
+@import "tokens/typography.css";
+@import "tokens/spacing.css";
+@import "tokens/base.css";

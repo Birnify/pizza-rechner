@@ -1,0 +1,24 @@
+/* Teigmeister webfonts.
+ *
+ * ⚠️ PROPOSED ENHANCEMENT — the live Birnify/pizza-rechner app ships NO webfonts
+ * (system Georgia + platform sans only). This block introduces the brand type
+ * concept; it is not yet in the shipped product.
+ *
+ * Pairing (both SIL OFL, free — zero licensing):
+ *   • Bitter          — slab serif for display, wordmark & all measured numerals.
+ *                       Drawn for on-screen reading at small sizes; sturdy slabs +
+ *                       true tabular figures = precise, warm, glanceable numbers.
+ *   • Hanken Grotesk  — humanist grotesque for body & UI. Tall x-height, open
+ *                       apertures → legible at a quick, floury-handed kitchen glance.
+ *
+ * Loaded from Google Fonts for this design system. IN PRODUCTION, self-host WOFF2
+ * subsets (Latin + digits / ° % glyphs, font-display:swap) for best PWA performance
+ * — expect ~15–30 KB per family subset.
+ *
+ * TEIGMEISTER APP DECISION (2026-07-24): self-host the WOFF2 subsets locally so the
+ * app keeps working fully offline (file:// double-click, no internet) — see
+ * CLAUDE.md / pizza-rechner-KONTEXT.md "kein Internet" principle. Do NOT ship the
+ * @import below as-is; replace with local @font-face rules pointing at
+ * fonts/bitter-*.woff2 and fonts/hanken-grotesk-*.woff2 once downloaded.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap');

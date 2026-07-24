@@ -64,7 +64,8 @@
   // --bg im Dunkelmodus (s. css/styles.css :root[data-theme="dark"]) — MUSS bei einer
   // künftigen Änderung dieser beiden CSS-Werte von Hand mitgezogen werden, da der Browser
   // nur das Meta-Attribut liest, keine berechneten Styles.
-  const THEME_COLOR = { light: '#c8442e', dark: '#1c1815' };
+  // v4.0.0 (Design-Import Zyklus 1): auf die neuen Token-Werte mitgezogen.
+  const THEME_COLOR = { light: '#c4472e', dark: '#151312' };
   function applyThemeColorMeta(theme) {
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', THEME_COLOR[theme] || THEME_COLOR.light);

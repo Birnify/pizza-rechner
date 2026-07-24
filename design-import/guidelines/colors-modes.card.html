@@ -1,0 +1,26 @@
+<!-- @dsCard group="Colors" viewport="700x230" name="Two modes — surfaces & text" subtitle="Dark (default) and Light share the same roles; each scoped by data-theme" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><link rel="stylesheet" href="../styles.css">
+<style>
+html,body{margin:0}.modes{display:grid;grid-template-columns:1fr 1fr}
+.pane{padding:18px}.pane[data-theme]{background:var(--bg);font-family:var(--font-body)}
+.mh{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.4px;color:var(--tomato-text);margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--tomato);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
+.t1{color:var(--ink);font-size:15px;font-weight:700}.t2{color:var(--muted);font-size:12.5px;margin-top:2px}
+.sw{display:flex;gap:6px;margin-top:12px}.chip{flex:1;height:26px;border-radius:6px}
+.b{display:inline-block;margin-top:12px;background:var(--tomato);color:var(--on-accent);border-radius:14px;padding:7px 14px;font-size:12.5px;font-weight:600}
+</style></head>
+<body><div class="modes">
+<div class="pane" data-theme="dark"><p class="mh">Dark</p>
+  <div class="card"><div class="t1">Gesamtteig 1240 g</div><div class="t2">Sekundärtext auf Karte</div>
+    <div class="sw"><span class="chip" style="background:var(--bg)"></span><span class="chip" style="background:var(--surface-2)"></span><span class="chip" style="background:var(--info-bg)"></span><span class="chip" style="background:var(--success)"></span><span class="chip" style="background:var(--warning)"></span></div>
+    <span class="b">Speichern</span>
+  </div>
+</div>
+<div class="pane" data-theme="light"><p class="mh">Light</p>
+  <div class="card"><div class="t1">Gesamtteig 1240 g</div><div class="t2">Sekundärtext auf Karte</div>
+    <div class="sw"><span class="chip" style="background:var(--bg)"></span><span class="chip" style="background:var(--surface-2)"></span><span class="chip" style="background:var(--info-bg)"></span><span class="chip" style="background:var(--success)"></span><span class="chip" style="background:var(--warning)"></span></div>
+    <span class="b">Speichern</span>
+  </div>
+</div>
+</div></body></html>

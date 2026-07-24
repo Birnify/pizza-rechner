@@ -1,0 +1,33 @@
+/* Teigmeister — Spacing, radius & sizing tokens.
+ * Grounded in the real values used throughout the source stylesheet: 10px gaps,
+ * 14px card radius, 18px field spacing, 20px card padding. The scale keeps those
+ * exact values rather than snapping to a strict 4/8 grid. */
+:root{
+  /* --- Spacing scale --- */
+  --space-xxs:4px;
+  --space-xs:8px;
+  --space-sm:10px;   /* row gaps, button gaps */
+  --space-md:14px;   /* chip/step gaps */
+  --space-lg:18px;   /* between form fields */
+  --space-xl:20px;   /* card internal padding */
+  --space-2xl:24px;  /* view gaps, section spacing */
+  --space-3xl:32px;
+
+  /* --- Corner radius --- */
+  --radius-xs:8px;    /* nested seg button, subnav item */
+  --radius-sm:10px;   /* seg button (active pill) */
+  --radius:14px;      /* cards, inputs, buttons, notes — the signature radius */
+  --radius-chip:999px;/* pills, badges, primary CTA, circular icon buttons */
+
+  /* --- Touch / control sizing --- */
+  --touch-min:44px;   /* minimum touch target (Apple HIG, used app-wide) */
+  --control-h:44px;   /* stepper buttons, switches on mobile */
+  --icon-badge:34px;  /* circular icon badge before card titles */
+  --tabbar-h:58px;    /* bottom tab bar content height */
+  --summarybar-h:64px;/* sticky bottom summary (quick) bar */
+  --content-max:980px;/* max content width (desktop) */
+
+  /* --- Focus ring --- */
+  --focus-width:2px;
+  --focus-offset:2px;
+}

@@ -1,0 +1,134 @@
+/* Teigmeister — Color tokens.
+ * TWO themes, same token structure. Dark is the default (bare :root) and also
+ * scoped to [data-theme="dark"]; light is scoped to [data-theme="light"]. Set
+ * data-theme on <html> (or any wrapper) to switch. Every dark value is grounded in
+ * Birnify/pizza-rechner and the product's warm-anthracite philosophy; the light
+ * counterpart mirrors the SAME roles on a warm cream base (never pure white), with
+ * accent/semantic/tint/text values individually re-tuned for AA contrast on light
+ * surfaces (a naive invert would fail). Brand pillars hold in both: warm base,
+ * tomato the single accent, olive/ochre semantics distinct from tomato. */
+:root,
+[data-theme="dark"]{
+  /* --- Surfaces (warm anthracite, never #000) --- */
+  --bg:#151312;                /* page floor — warm anthracite */
+  --card:#201d1b;              /* card surface, one tone lighter for elevation contrast */
+  --surface-2:#2a2622;         /* nested / inset surface (steppers, temp boxes, inputs) */
+  --surface-inset:#1b1917;     /* recessed track (segmented control track, sliders) */
+  --line:#3a332e;              /* 1px hairline border */
+  --line-soft:#2c2723;         /* barely-visible inner divider */
+
+  /* --- Text --- */
+  --ink:#ede9e6;               /* primary text — warm off-white (not pure white) */
+  --ink-strong:#f5f1ee;        /* max-emphasis headings */
+  --muted:#a8a19c;             /* secondary — muted beige-gray */
+  --step-text:#cdc6c0;         /* step-guide body — warm, between ink and muted */
+  --muted-soft:#7d766f;        /* fine print, disabled labels */
+  --on-accent:#ffffff;         /* text on saturated accent fills */
+
+  /* --- Accent (tomato red — single primary accent) --- */
+  --tomato:#d1533c;            /* CTA / active fills — slightly desaturated for dark comfort */
+  --tomato-dark:#b8442d;       /* press / hover-darker */
+  --tomato-text:#ef7a5c;       /* tomato AS TEXT on a surface (lighter for AA contrast) */
+  --tomato-disabled:#5a3a32;   /* disabled CTA fill */
+  /* Tonal accent (medium-emphasis buttons & accent badges): a low-chroma tomato
+   * tint that sits calmly on --card, so accent can appear on a fill WITHOUT the
+   * loud full-tomato wash reserved for the one primary CTA. */
+  --tomato-soft-bg:#38221c;
+  --tomato-soft-hover:#472a22;
+
+  /* --- Semantic (kept clearly distinct from tomato AND from each other) --- */
+  --success:#5f9d5a;           /* ONE muted olive — schedule-bar fill + tip accent/dot */
+  --success-text:#8bc283;      /* the same olive, lightened for text on dark surfaces */
+  --warning:#d99a3c;           /* ochre-orange — warning fills + accents */
+  --warning-text:#e8b25a;      /* ochre as text on dark surfaces */
+  --biga-text:#d9ab3f;         /* biga/pre-ferment stage accent */
+
+  /* --- Warm decorative accent --- */
+  --crust:#c9a86a;             /* toasted-crust gold — note borders, header rule */
+
+  /* --- Notice tints — exactly THREE semantic categories, clearly separated ---
+   * Each notice surface is one of these, never an ad-hoc brown. They read as
+   * distinct at a glance: quiet gray-brown vs. olive-green vs. ochre-gold.
+   *
+   *  1 · NEUTRAL / INFORMATIONAL — one low-chroma warm tone. Used by info notes,
+   *      technique chips, badges, and the highlighted temperature tile. */
+  --info-bg:#302b25;
+  --info-text:#cabca6;
+  /*  2 · POSITIVE / SUCCESS — the olive family above. --success is the solid fill
+   *      (schedule bar); --success-bg is its dark tint (tip box), --success-text
+   *      its light text. All three are the SAME hue, so tip + schedule match. */
+  --success-bg:#1e2a1b;
+  /*  3 · WARNING — ochre only (--warning / --warning-text above), on a dark ochre
+   *      tint. Deliberately never tomato-red, so it can't be mistaken for the
+   *      accent or for a neutral note. */
+  --warn-bg:#3b2c0e;
+
+  /* --- Focus ring (cool-toned, deliberately separate from accent + semantics) --- */
+  --focus:#8ab4c8;             /* light, slightly cool 2px outline */
+
+  /* --- Shadow / scrim --- */
+  --shadow:0 2px 14px rgba(0,0,0,.4);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.5);
+  --shadow-cta:0 3px 10px rgba(0,0,0,.45);
+  --shadow-bar:0 -6px 20px rgba(0,0,0,.45);  /* upward shadow, sticky summary bar */
+  --scrim:rgba(15,11,9,.62);   /* photo-header darkening / modal backdrop */
+
+  color-scheme:dark;
+}
+
+/* ============================================================================
+ * LIGHT THEME — warm cream counterpart. Same roles, re-tuned for light surfaces.
+ * ============================================================================ */
+[data-theme="light"]{
+  /* --- Surfaces (warm cream, never pure white) --- */
+  --bg:#f2ece2;                /* page floor — warm cream (the light analogue of anthracite) */
+  --card:#fdfaf5;             /* card surface — near-white warm, raised above the cream page */
+  --surface-2:#e9e0d2;         /* nested / inset surface — one tone DOWN from card */
+  --surface-inset:#e2d8c8;     /* recessed track — darker still, so the moving pill reads as raised */
+  --line:#d8ccba;              /* 1px hairline border */
+  --line-soft:#ece4d6;         /* barely-visible inner divider */
+
+  /* --- Text (warm near-black, not pure #000) --- */
+  --ink:#2a2320;               /* primary text — warm dark brown, ~13:1 on card */
+  --ink-strong:#1b1512;        /* max-emphasis headings */
+  --muted:#6d645b;             /* secondary — warm gray-brown, ~5.3:1 on card (AA) */
+  --step-text:#463f38;         /* step-guide body — ~8:1 on card */
+  --muted-soft:#8f8477;        /* fine print, disabled labels */
+  --on-accent:#ffffff;         /* text on saturated accent fills */
+
+  /* --- Accent (tomato) — fill deepened so white labels clear AA; text darker for AA on cream --- */
+  --tomato:#c4472e;            /* CTA / active fills — deeper than dark-mode so #fff label ≥ AA-large */
+  --tomato-dark:#a83c26;       /* press / hover-darker */
+  --tomato-text:#af3f29;       /* tomato AS TEXT on a light surface — ~5.2:1 on card */
+  --tomato-disabled:#e6c6bc;   /* disabled CTA fill (muted tomato tint) */
+  --tomato-soft-bg:#f8e4dc;    /* tonal accent fill — warm tomato tint on cream */
+  --tomato-soft-hover:#f3d5ca;
+
+  /* --- Semantic (olive/ochre, deepened for light surfaces, distinct from tomato) --- */
+  --success:#4f8c4a;           /* olive solid fill (schedule bar) — #fff label ≥ AA-large */
+  --success-text:#3c7337;      /* olive as text on light card — ~4.8:1 */
+  --warning:#c9882b;           /* ochre solid fill — dark text on it */
+  --warning-text:#8f6111;      /* ochre as text on light card — ~5:1 */
+  --biga-text:#946f10;         /* biga/pre-ferment accent as text on light */
+
+  /* --- Warm decorative accent --- */
+  --crust:#b58c4a;             /* toasted-crust gold — deeper so it reads as a border on cream */
+
+  /* --- Notice tints — same 3 categories, light versions --- */
+  --info-bg:#efe6d6;           /* 1 · neutral/informational — warm tan tint */
+  --info-text:#665a45;         /* readable brown on the tan tint — ~5:1 */
+  --success-bg:#e4efe1;        /* 2 · success — light olive tint (with --success-text) */
+  --warn-bg:#f6ebd0;           /* 3 · warning — light ochre tint (with --warning-text) */
+
+  /* --- Focus ring (cool-toned, darker so it's visible on light) --- */
+  --focus:#2f7a99;             /* slightly cool 2px outline, clearly separate from tomato */
+
+  /* --- Shadow / scrim (soft, warm-neutral for light) --- */
+  --shadow:0 2px 14px rgba(64,44,30,.12);
+  --shadow-lg:0 12px 40px rgba(64,44,30,.16);
+  --shadow-cta:0 3px 10px rgba(120,44,26,.20);
+  --shadow-bar:0 -6px 20px rgba(64,44,30,.13);
+  --scrim:rgba(18,11,7,.55);   /* photo header still darkens for its white serif title */
+
+  color-scheme:light;
+}

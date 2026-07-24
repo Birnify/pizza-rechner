@@ -1,0 +1,251 @@
+Backlog
+
+___
+
+Name: Inline-Verlinkung von Glossar-Begriffen im Anleitungstext (statt separatem "Mehr im Glossar"-Link)
+
+Idee: Statt eines separaten Zeilenlinks unterhalb der Anleitung ("📖 Mehr zu Kalte Gare im Glossar") wird das relevante Fachwort direkt im bestehenden Anleitungstext selbst zum klickbaren Link zum passenden Glossar-Artikel, z. B. "...dann 3–5 h bei Raumtemperatur und 2–4 h Stückgare wie gewohnt" mit "Stückgare" als Hyperlink.
+
+Motivation: Separate "Mehr erfahren"-Links sind laut UX-Best-Practices eine schwächere Lösung als Inline-Links, weil sie zusätzlichen visuellen Platz brauchen und den Lesefluss unterbrechen, während ein direkt im Satz verlinktes Fachwort denselben Zweck erfüllt, ohne einen zusätzlichen UI-Block zu benötigen. Der Linktext bleibt dabei automatisch selbsterklärend und eindeutig, da er exakt dem Begriff entspricht, den der Nutzer gerade liest, was auch für Screenreader-Nutzer klar verständlich ist.
+
+Scope:
+
+In jedem Anleitungsschritt wird das erste Vorkommen des Begriffs, der einen passenden Glossar-Artikel hat, im Fließtext als Hyperlink markiert (Unterstreichung/Farbe wie bei bestehenden Links).
+
+Der Linktext entspricht exakt dem Artikeltitel im Glossar (z. B. "Stückgare", "Kalte Gare", "Autolyse", "Windowpane-Test"), keine zusätzlichen Wörter wie "Mehr zu" oder "im Glossar".
+
+Klick/Tap auf den verlinkten Begriff führt direkt zum entsprechenden Glossar-Artikel (gleiches Sprungziel wie bisher).
+
+Der bisherige separate Zeilenlink ("📖 Mehr zu [Thema] im Glossar") wird an den entsprechenden Stellen entfernt, sofern der Begriff im Fließtext bereits inline verlinkt ist.
+
+Falls ein Anleitungsschritt den Glossar-Begriff nicht wörtlich im Fließtext erwähnt, bleibt der bisherige separate Link als Fallback erhalten (kein Zwang, künstlich Wörter einzufügen).
+
+Abgrenzung:
+
+Keine Änderung an den Glossar-Artikeln selbst oder deren Inhalten.
+
+Keine Änderung an der Verlinkungslogik/Zielzuordnung (welcher Begriff zu welchem Artikel führt), nur an der Darstellung des Links.
+
+Keine Einführung von Icon-only-Links (das war Variante B, hier nicht Teil des Scopes).
+
+Gilt nur für Anleitungsschritte mit vorhandenem, passendem Glossar-Artikel; keine Verlinkung erzwingen, wo kein Artikel existiert.
+
+___
+
+Name: "Teilen-Link" und "Einkaufsliste" aus Einstellungen entfernen, dauerhaft in "Weitere Optionen" verfügbar machen
+
+Idee: Die beiden Einstellungspunkte "Teilen-Link" und "Einkaufsliste" verschwinden ersatzlos aus den Einstellungen. Die zugehörigen Funktionen (Rezept teilen/Link kopieren, Einkaufsliste drucken) sind stattdessen immer im neuen eingeklappten Bereich "Weitere Optionen" der Ergebniskarte verfügbar, unabhängig von einem globalen Schalterzustand.
+
+Motivation: Die aktuell laufende Änderung verschiebt Speichern, Einkaufsliste drucken, Anleitung drucken, Als PDF speichern in einen eingeklappten "Weitere Optionen"-Bereich und macht "Rezept teilen" zur permanenten sekundären Aktion. Die bisherigen Einstellungstoggles "Teilen-Link" und "Einkaufsliste" hatten den Zweck, diese Funktionen bei Bedarf ganz auszublenden, was jetzt überflüssig ist: Da die Funktionen ohnehin nicht mehr im direkten Sichtfeld stehen, sondern erst nach einem bewussten Klick auf "Weitere Optionen" erscheinen, ist ein zusätzlicher globaler Ausblend-Schalter redundant und verschlankt das Einstellungsmenü ohne Funktionsverlust.
+
+Scope:
+
+Entfernen des Menüpunkts "Teilen-Link" (Label, Info-Button, Toggle) aus den Einstellungen.
+
+Entfernen des Menüpunkts "Einkaufsliste" (Label, Info-Button, Toggle) aus den Einstellungen.
+
+Entfernen der zugehörigen Bedingungslogik, die bisher basierend auf diesen Toggles die Sichtbarkeit von "Rezept teilen" (sekundäre Aktion) bzw. "Einkaufsliste drucken" (im "Weitere Optionen"-Bereich) steuerte.
+
+"Rezept teilen" bleibt wie in der laufenden Änderung beschrieben permanent als sekundäre Aktion sichtbar.
+
+"Einkaufsliste drucken" ist dauerhaft und bedingungslos im "Weitere Optionen"-Bereich verfügbar, zusammen mit Speichern, Anleitung drucken, Als PDF speichern.
+
+Abgrenzung:
+
+Keine Änderung an der übrigen, bereits definierten Neuordnung der Aktionsleiste (primär "Zum Zeitplan", sekundär "Rezept teilen", restliche Aktionen in "Weitere Optionen").
+
+Keine Änderung an anderen Einstellungspunkten (Gärzeit-Timer, System-Wecker, Mehrere Rezepte, New York Style, Hinweistexte, Hefemenge/Verschwendung).
+
+Keine Migration/Bereinigung eventuell gespeicherter alter Toggle-Werte für diese beiden Punkte.
+
+Keine Änderung an der Berechnungslogik, Zeitplan-Funktion oder Sticky-Quickbar.
+
+___
+
+Name: "New York Style"-Einstellung entfernen, Zuckerfeld wertbasiert statt togglebasiert steuern
+
+Idee: Der globale Einstellungspunkt "New York Style" verschwindet ersatzlos. Ob das Zuckerfeld (Menge/Metadaten) angezeigt wird, hängt stattdessen ausschließlich vom gespeicherten Wert des jeweiligen Presets ab: 0 = ausgeblendet, größer 0 = eingeblendet. In der Preset-Erstellung ist das Feld immer sichtbar, mit "0" vorbefüllt und frei veränderbar.
+
+Motivation: Aktuell steuert ein globaler Toggle in den Einstellungen, ob das Zuckerfeld in der App überhaupt zur Verfügung steht, unabhängig vom einzelnen Preset. Das ist unnötig starr, da manche Presets (z. B. New-York-Style-Rezepte) Zucker brauchen und andere nicht – die Sichtbarkeit sollte sich am tatsächlich gespeicherten Wert orientieren statt an einer separaten, global gültigen Schalterstellung. Dieses Muster (Feld nur zeigen, wenn ein relevanter Wert vorliegt) ist ein etabliertes UX-Prinzip für optionale Formularfelder.
+
+Scope:
+
+Entfernen des Menüpunkts "New York Style" (Label, Info-Button, Toggle) komplett aus den Einstellungen.
+
+Entfernen der zugrunde liegenden globalen Bedingungslogik, die bisher basierend auf diesem Toggle das Zuckerfeld ein-/ausgeblendet hat.
+
+Anzeige bei bestehenden/gespeicherten Presets: Zucker-Metadaten und Zucker-Option werden nur angezeigt, wenn der gespeicherte Wert größer 0 ist; bei gespeichertem Wert 0 bleiben Feld und Metadaten vollständig ausgeblendet.
+
+Anzeige bei Preset-Erstellung/Bearbeitung: Das Zuckerfeld ist grundsätzlich immer sichtbar, vorbefüllt mit dem Wert "0", frei editierbar durch den Nutzer.
+
+Beim Speichern: Wird das Preset mit einem Wert größer 0 gespeichert, werden ab dann Zucker-Metadaten und -Option auch in der normalen (Nicht-Bearbeitungs-)Ansicht dieses Presets angezeigt, analog zu den bestehenden Standard-Presets. Wird mit 0 gespeichert, bleibt das Feld in der normalen Ansicht ausgeblendet, wie bei allen anderen zuckerfreien Presets.
+
+Abgrenzung:
+
+Keine Änderung an anderen Presets-Feldern oder der generellen Preset-Struktur (Mehl, Wasser, Salz, Hefe, Olivenöl etc.).
+
+Keine Änderung an anderen Einstellungspunkten (Gärzeit-Timer, System-Wecker, Teilen-Link, Einkaufsliste, Mehrere Rezepte, Hinweistexte, Hefemenge/Verschwendung).
+
+Keine Migration/Bereinigung bereits gespeicherter Presets nötig, da die neue Logik automatisch anhand des vorhandenen Zuckerwerts (0 vs. größer 0) greift, ohne dass alte Daten verändert werden müssen.
+
+Kein Einfluss auf die eigentliche DDT-/Rezeptberechnung, nur auf die Sichtbarkeit von Feld und Metadaten.
+
+___
+
+Name: Einfrier-Hinweis aus Anleitung und Einstellungen entfernen, Glossar-Artikel "Einfrieren" erstellen
+
+Idee: Die Einfrier-Hinweisbox verschwindet ersatzlos aus der Anleitung (Schritt "Stückgare (Teiglinge)" bzw. überall, wo sie sonst noch erscheint), der zugehörige Toggle "Einfrier-Hinweis" verschwindet ersatzlos aus den Einstellungen, und der Inhalt wird stattdessen als eigenständiger Glossar-Artikel "Einfrieren" verfügbar gemacht.
+
+Motivation: Die Einfrier-Hinweisbox ("Einfrieren möglich: Teiglinge dünn mit Öl bestreichen, einzeln einfrieren – so 2–3 Monate haltbar. Auftauen: über Nacht im Kühlschrank, dann 3–5 h bei Raumtemperatur und 2–4 h Stückgare") ist ein Zusatzinfo-Block, der die Anleitung optisch verlängert, obwohl er nur für den Teil der Nutzer relevant ist, die tatsächlich einfrieren möchten. Das passt zum bereits laufenden Muster in diesem Fix-Zyklus (Eis-Hinweis, Hefe/Salz-Hinweis etc.), optionale Zusatzinfos aus der Kernanleitung ins Glossar zu verlagern, statt sie dauerhaft einzublenden.
+
+Scope:
+
+Entfernen der Einfrier-Hinweisbox aus dem Anleitungsschritt "Stückgare (Teiglinge)" (bzw. allen Stellen, an denen sie aktuell über den Einstellungstoggle eingeblendet wird).
+
+Entfernen des Menüpunkts "Einfrier-Hinweis" (Label, Info-Button, Toggle) aus den Einstellungen.
+
+Entfernen der zugrunde liegenden Bedingungslogik, die den Hinweis basierend auf dem Toggle-Zustand ein-/ausblendet.
+
+Neuer Glossar-Artikel "Einfrieren" mit dem bisherigen Hinweisinhalt: Teiglinge dünn mit Öl bestreichen, einzeln (nicht berührend) einfrieren, 2–3 Monate haltbar; Auftauen über Nacht im Kühlschrank, dann 3–5 h bei Raumtemperatur, dann 2–4 h Stückgare wie gewohnt.
+
+Der bestehende Link "Mehr zu Kalte Gare im Glossar" (siehe Schritt 10) bleibt als Vorbild-Muster erhalten; ein vergleichbarer Verweis auf den neuen "Einfrieren"-Artikel kann optional ergänzt werden, sofern gewünscht.
+
+Abgrenzung:
+
+Keine Änderung an der übrigen Anleitung von Schritt 10 (Stückgare-Zeiten, Fingertest-Hinweis, Timer-Button, "Mehr zu Kalte Gare im Glossar"-Link).
+
+Keine Änderung an anderen Einstellungen (Gärzeit-Timer, System-Wecker, Teilen-Link, Einkaufsliste, Mehrere Rezepte, New York Style, Hinweistexte, Hefemenge/Verschwendung).
+
+Kein genereller Glossar-Redesign, nur ein neuer Artikel.
+
+Keine Migration/Bereinigung eventuell gespeicherter alter Toggle-Werte für "Einfrier-Hinweis", sofern nicht separat gewünscht.
+
+___
+
+Name: Untere Navigationsleiste rutscht hoch, Farblücke am Bildschirmrand
+
+Beobachtung: Gelegentlich verschiebt sich die untere Menüleiste (Rechner/Pizza Party/Glossar/Einstellungen) nach oben, sodass darunter ein unbedeckter Farbstreifen bis zum echten Gerätrand sichtbar wird, statt dass die Leiste bündig am unteren Rand klebt.
+
+Wahrscheinliche Ursache: In iOS Safari (bzw. als installierte PWA) verändert sich die Höhe des sichtbaren Viewports dynamisch, wenn die Adressleiste ein- oder ausgeblendet wird. Fixierte Elemente (position: fixed; bottom: 0) werden dabei nicht immer korrekt neu positioniert, besonders wenn env(safe-area-inset-bottom) fehlt, der Viewport-Meta-Tag kein viewport-fit=cover enthält, oder wenn iOS diese Werte nach einer Seitenaktion (z. B. Tab-Wechsel) zwischenzeitlich auf 0 zurücksetzt. Das erklärt auch, warum der Bug "manchmal" auftritt und nicht dauerhaft – er ist an das Ein-/Ausblenden der Safari-UI gekoppelt, nicht an einen festen Layoutfehler.
+
+Scope für den Fix:
+
+Sicherstellen, dass der Viewport-Meta-Tag viewport-fit=cover enthält, damit env(safe-area-inset-bottom) überhaupt zuverlässige Werte liefert.
+
+Der Menüleisten-Container erhält padding-bottom: env(safe-area-inset-bottom, 0) mit Fallback, statt sich rein auf bottom: 0 zu verlassen.
+
+Prüfen, ob die Positionierung robuster mit position: sticky statt fixed funktioniert, da sticky-Elemente von iOS-Viewport-Sprüngen tendenziell weniger betroffen sind, oder alternativ das bekannte Workaround-Muster (kurzer programmatischer Scroll-Trigger beim Tab-Wechsel) testen, falls das Problem bestehen bleibt.
+
+Testen auf mehreren iOS-Versionen/Geräten, da dieses Verhalten je nach iOS-Version unterschiedlich stark auftritt (bekannter WebKit-Bug in aktuellen iOS-Betas).
+
+Abgrenzung:
+
+Kein Eingriff in die Funktionalität der Menüleiste selbst (Icons, Navigation, aktiver Zustand).
+
+Kein genereller Layout-Umbau anderer Seitenbereiche, nur die Positionierungslogik der unteren Leiste.
+
+Betrifft ausschließlich iOS-Safari/PWA-Verhalten; keine Android-spezifische Anpassung vorgesehen, sofern das Problem dort nicht ebenfalls auftritt.
+
+___
+
+Name: Akkordeon-Verhalten für Glossar-Artikel, Entfernen des Glossar-Gesamt-Einklappens
+
+Idee: Im Glossar wird beim Aufklappen eines Artikels automatisch der vorher geöffnete Artikel wieder eingeklappt (nur ein Artikel gleichzeitig offen). Zusätzlich verliert der übergeordnete "PIZZA-GLOSSAR"-Header seine Einklapp-Funktion für die gesamte Liste, da dieses Verhalten keinen praktischen Nutzen hat.
+
+Motivation: Aktuell lässt sich jeder Glossar-Artikel unabhängig voneinander aufklappen, wodurch mehrere lange Texte gleichzeitig sichtbar sein können und die Liste unübersichtlich wird, wie im Screenshot zu sehen ist, wo "San-Marzano-Tomaten" bereits weit ausgeklappt ist, während weitere Artikel darunter ebenfalls offenstehen könnten. Der "PIZZA-GLOSSAR"-Header besitzt zusätzlich einen eigenen Auf-/Zuklapp-Pfeil, der die komplette Artikelliste auf einmal verbirgt, was in der Praxis nur zusätzliche, unnötige Klicks erzeugt, da man das Glossar ja gerade deshalb öffnet, um Artikel zu lesen.
+
+Scope:
+
+Einführung eines Akkordeon-Verhaltens für alle Glossar-Artikel: Wird ein neuer Artikel aufgeklappt, klappt der zuvor geöffnete automatisch zu (nur ein Artikel gleichzeitig sichtbar).
+
+Entfernen des Einklapp-Pfeils/der Einklapp-Funktion am "PIZZA-GLOSSAR"-Container-Header selbst; die Liste der Artikel ist immer sichtbar, nur einzelne Artikelinhalte bleiben ein-/ausklappbar.
+
+Gilt für alle Glossar-Artikel unabhängig von Kategorie (W-Wert, 00-Mehl, Bäckerprozente, San-Marzano-Tomaten, Passata di Pomodoro etc.).
+
+Abgrenzung:
+
+Keine Änderung an den Artikelinhalten selbst.
+
+Keine Änderung an der Suchfunktion oder Sortierung im Glossar, sofern vorhanden.
+
+Kein Zusammenhang mit dem separat besprochenen Akkordeon-Feature für Hinweisboxen in der Rechner-Anleitung (das ist ein eigenständiger, unabhängiger Fix für einen anderen Bereich der App).
+
+Keine Persistenz des Aufklapp-Zustands über App-Neustart hinweg, sofern nicht anders gewünscht.
+
+___
+
+Bug: Info-Button bei "Verschwendung anpassen" wird vom "-"-Stepper-Button überdeckt.
+
+Ursache (vermutet): Die Zeile enthält Label + Info-Icon + Minus-Button + Eingabefeld + Plus-Button + %-Einheit nebeneinander; das Eingabefeld hat wahrscheinlich eine fixe Mindestbreite, die bei diesem längeren Label ("Verschwendung anpassen" ist länger als z. B. "Hefemenge anpassen") nicht mehr genug Platz für den Info-Button lässt, wodurch sich die Elemente überlappen statt umzubrechen.
+
+Vorgeschlagener Fix: Das Eingabefeld (aktuell zeigt es z. B. "3") schmaler machen bzw. mit min-width statt fixer width versehen, damit es sich an den verfügbaren Platz anpasst, ohne den Info-Button zu verdecken. Alternativ: Label und Steuerzeile bei zu wenig Platz per Flexbox-Wrap auf zwei Zeilen umbrechen lassen, statt zu überlappen.
+
+Scope-Ergänzung für den laufenden Zyklus:
+
+Eingabefeld-Breite bei "Verschwendung anpassen" (und vorsorglich bei "Hefemenge anpassen", da strukturell identisch) reduzieren bzw. flexibel gestalten.
+
+Sicherstellen, dass Info-Button-Icon in beiden Zeilen immer vollständig sichtbar bleibt, unabhängig von Label-Länge oder Bildschirmbreite.
+
+Kein Eingriff in die Wertelogik der Stepper selbst (Plus/Minus-Funktion, aktuelle Werte 0% bzw. 3%).
+
+___
+
+Name: Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (Akkordeon)
+
+Idee: Die bisher permanent sichtbaren Hinweis-/Tipp-Boxen (grüne 💡-Boxen, orange ⚠️-Boxen) innerhalb der Anleitungsschritte werden standardmäßig eingeklappt und nur über einen kleinen Info-Button pro Schritt aufklappbar. Wird ein zweiter Hinweis geöffnet, klappt der zuvor geöffnete automatisch zu, sodass nie mehr als eine Hinweisbox gleichzeitig sichtbar ist.
+
+Motivation: Aktuell werden alle Hinweise (z. B. "Für Hefe & Salz eine 0,1-g-Feinwaage nutzen", "Eis abwiegen, im Wasser auflösen bis die Temperatur passt", die Autolyse-Warnung) dauerhaft ausgeklappt angezeigt. Das verlängert jede Schrittkarte erheblich und erschwert den schnellen Überblick über die eigentliche Kernanweisung, besonders auf kleinen Mobildisplays, wo mehrere Boxen ohne Scrollen kaum passen. Ein Akkordeon-Verhalten hält die Liste kompakt, ohne die Zusatzinfos komplett zu entfernen.
+
+Scope:
+
+Jede Hinweisbox (💡 Tipp, ⚠️ Warnung) bekommt einen eingeklappten Standardzustand, sichtbar nur als kompakter Info-Button/Icon-Zeile innerhalb der jeweiligen Schrittkarte.
+
+Tippen auf den Info-Button klappt die zugehörige Box auf (Text sichtbar); erneutes Tippen klappt sie wieder zu.
+
+Globaler Zustand pro Ansicht/Session: Wird eine neue Hinweisbox aufgeklappt, wird jede zuvor geöffnete Hinweisbox automatisch eingeklappt (nur eine Box gleichzeitig offen, unabhängig davon, in welchem Schritt sie liegt).
+
+Gilt einheitlich für alle Hinweistypen (💡 Tipp-Boxen und ⚠️ Warnboxen) in allen Anleitungsschritten.
+
+Optische Kennzeichnung des Info-Buttons bleibt konsistent mit bestehendem Farbschema (grün für Tipp, orange/rot für Warnung).
+
+Abgrenzung:
+
+Kein Eingriff in den Inhalt der Hinweistexte selbst, nur in deren Darstellung/Interaktion.
+
+Keine Änderung an der zuvor beschlossenen Entfernung der Eis-Hinweisbox aus Schritt 2 (das ist bereits separat umgesetzt).
+
+Keine Änderung an der Kernanleitung, Zahlenwerten oder Schrittreihenfolge.
+
+Keine Persistenz des Auf-/Zugeklappt-Zustands über App-Neustart hinweg (rein sitzungsbezogenes UI-Verhalten), sofern nicht anders gewünscht.
+
+___
+
+Name: Zieltemperatur statt Eis in der Hauptanleitung, Eis nur als Glossar-Fallback
+
+Idee: Die Hauptanleitung im Rechner spricht ausschließlich von einer konkreten Ziel-Wassertemperatur (generisch "Temperatur", automatisch in °C oder °F je nach Nutzereinstellung), die per Thermometer eingestellt wird. Eis, Eismenge und der redundante Anwärm-Hinweistext verschwinden komplett aus der Hauptanleitung. Erst wenn die Zieltemperatur unter 15°C (bzw. 59°F) fällt, erscheint ein Verweis-Link zu einem neuen Glossar-Artikel, der das Eis-Verfahren als Lösung für diesen Grenzfall erklärt.
+
+Motivation: Die bisherige Eis-Berechnung setzt voraus, dass Leitungswasser exakt bei Raumtemperatur startet, was oft nicht zutrifft und die berechnete Eismenge ungenau macht. Eine direkt angezeigte Zieltemperatur ist einfacher und robuster, weil man nur mit warmem/kaltem Leitungswasser mischt, bis das Thermometer den Zielwert zeigt. Leitungswasser in Deutschland liegt je nach Jahreszeit meist zwischen ca. 8°C und 15°C+, unterhalb dieser Untergrenze reicht reines Mischen nicht mehr und Eis wird als verlässliches Werkzeug gebraucht. Zusätzlich zeigt ein Screenshot aus der App, dass die aktuelle UI redundant ist: Der Hinweistext "Schüttwasser leicht anwärmen auf ~27°C (z. B. handwarm)" wiederholt nur die bereits prominent angezeigte Temperaturzahl, ohne neuen Informationswert.
+
+Scope:
+
+Hauptanleitung zeigt nur noch die Ziel-Wassertemperatur in einer einzigen Box (Label "Wassertemperatur" + Wert in aktiver Einheit °C/°F), kein Eis-Text, keine Eismenge, kein separater Anwärm-Hinweistext.
+
+Die "Davon Eis"-Box und der Zusatztext "Schüttwasser leicht anwärmen auf..." entfallen vollständig aus dem UI-Layout der Wassertemperatur-Karte.
+
+Interner Schwellenwert-Vergleich erfolgt einheitlich in Celsius (15°C = 59°F), unabhängig von der angezeigten Einheit; Umrechnung erfolgt nur für die Darstellung.
+
+Bei Zielwassertemperatur unter 15°C (bzw. 59°F) erscheint ein Hinweis-Link: "Temperatur mit Leitungswasser nicht erreichbar? → Glossar: Eis-Methode".
+
+Neuer Glossar-Artikel wird erstellt, der erklärt: was DDT ist, warum es eine Wassertemperatur-Untergrenze durch Leitungswasser gibt, wie die Eismenge berechnet wird (bestehende Formel bleibt technische Grundlage), und wie Eis + Wasser praktisch gemischt wird.
+
+Bestehende Eis-Berechnungslogik im Code (js/calc.js) bleibt technisch erhalten und wird ausschließlich für den Glossar-Fallback-Wert weiterverwendet, nicht mehr standardmäßig in der Hauptanleitung angezeigt.
+
+Abgrenzung:
+
+Keine Änderung an der DDT-Grundformel oder an der Eis-Berechnungsformel selbst.
+
+Keine Änderung am Komplexitätsschalter (.seg) oder anderen unabhängigen UI-Elementen aus früheren Fixes.
+
+Kein genereller Glossar-Redesign, nur ein neuer Artikel plus die eine bedingte Verlinkung.
+
+Schwellenwert 15°C/59°F ist fest im Code hinterlegt, nicht konfigurierbar über Einstellungen.

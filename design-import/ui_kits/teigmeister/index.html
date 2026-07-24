@@ -1,0 +1,68 @@
+<!-- @dsCard group="Teigmeister App" viewport="880x820" name="Teigmeister PWA — interactive" subtitle="Live phone frame: Rechner, Anleitung, Pizza Party, Glossar, Einstellungen" -->
+<!-- @startingPoint section="Teigmeister App" subtitle="Full dark-mode dough-calculator app, 5 screens" viewport="880x820" -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teigmeister — UI Kit</title>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  body{margin:0;background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 20px;font-family:var(--font-body)}
+  #root{display:flex}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="Phone.jsx"></script>
+<script type="text/babel" src="RechnerScreen.jsx"></script>
+<script type="text/babel" src="AnleitungScreen.jsx"></script>
+<script type="text/babel" src="PartyScreen.jsx"></script>
+<script type="text/babel" src="GlossarScreen.jsx"></script>
+<script type="text/babel" src="EinstellungenScreen.jsx"></script>
+<script type="text/babel">
+const { BottomTabBar, SummaryBar } = window.TeigmeisterDesignSystem_c6b7bf;
+const { useState, useRef } = React;
+
+function App() {
+  const [view, setView] = useState("rechner");
+  const scrollRef = useRef(null);
+  const jump = () => scrollRef.current && scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+
+  const Screen = {
+    rechner: <RechnerScreen scrollRef={scrollRef} />,
+    party: <PartyScreen />,
+    glossar: <GlossarScreen />,
+    einstellungen: <EinstellungenScreen />,
+  }[view];
+
+  // Only the calculator shows the sticky summary bar (with save).
+  const showSummary = view === "rechner";
+
+  return (
+    <Phone>
+      {Screen}
+      {showSummary && (
+        <SummaryBar position="static" total="1000 g" count="4 Teiglinge"
+          onSave={() => {}} onJump={jump}
+          style={{ position: "absolute", left: 0, right: 0, bottom: "var(--tabbar-h)" }} />
+      )}
+      <BottomTabBar position="static" value={view} onChange={setView}
+        style={{ position: "absolute", left: 0, right: 0, bottom: 0, paddingBottom: 8 }}
+        items={[
+          { id: "rechner", label: "Rechner", icon: "rechner" },
+          { id: "party", label: "Pizza Party", icon: "party" },
+          { id: "glossar", label: "Glossar", icon: "glossar" },
+          { id: "einstellungen", label: "Einstellungen", icon: "settings" },
+        ]} />
+    </Phone>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

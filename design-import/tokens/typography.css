@@ -1,0 +1,63 @@
+/* Teigmeister — Typography tokens.
+ * PROPOSED type concept (see tokens/fonts.css): a slab serif (Bitter) carries every
+ * display/headline and every measured number (dough weights, temperatures, timers)
+ * with true tabular figures; a humanist grotesque (Hanken Grotesk) carries all body,
+ * labels and UI. Slab-for-numbers = sturdy, distinct, glanceable digits that hold up
+ * at small sizes on a phone in a kitchen; grotesque-for-body = tall x-height + open
+ * apertures for quick reads. This REPLACES the live app's system-font stack. */
+:root{
+  /* --- Families ---
+   * PROPOSED brand concept (see tokens/fonts.css): Bitter slab for display + all
+   * measured numerals; Hanken Grotesk humanist grotesque for body & UI. Fallbacks
+   * keep the app readable before the webfonts load (and if they fail). */
+  --font-display:'Bitter',Georgia,'Times New Roman',serif;
+  --font-body:'Hanken Grotesk',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  /* Prominent measured values (weights/temps/percent) — slab with tabular figures. */
+  --font-numeric:'Bitter',Georgia,'Times New Roman',serif;
+
+  /* --- Modular type scale ---
+   * Base 16px (mobile body), ratio 1.25 (major third). FIVE deliberate steps, each
+   * a clear jump from its neighbour (gaps widen going up: 3 / 4 / 5 / 6 px) so no
+   * two roles look alike at a glance. Font-WEIGHT + case + colour carry the
+   * secondary hierarchy WITHIN a step — size does the primary work.
+   *
+   *   step 0  --text-meta     13px   16 ÷ 1.25
+   *   step 1  --text-body     16px   base
+   *   step 2  --text-title    20px   16 × 1.25
+   *   step 3  --text-stat     25px   20 × 1.25   (stat numbers)
+   *   step 4  --text-display  31px   25 × 1.25   (hero wordmark + big result number)
+   */
+  --text-meta:13px;
+  --text-body:16px;
+  --text-title:20px;
+  --text-stat:25px;
+  --text-display:31px;
+
+  /* Semantic aliases — every role maps onto one of the 5 steps above.
+   * (Collapsed from the old 10-step scale: hint+micro+caption+label → meta;
+   *  body-sm → body; stat-sm → title; hero → display.) */
+  --text-hero:var(--text-display);     /* app header wordmark */
+  --text-stat-sm:var(--text-title);    /* inline field value (Bitter, tabular) */
+  --text-body-sm:var(--text-body);     /* step body, glossary body */
+  --text-label:var(--text-meta);       /* uppercase section / field labels */
+  --text-caption:var(--text-meta);     /* chips, notes */
+  --text-hint:var(--text-meta);        /* hint text, fine print */
+  --text-micro:var(--text-meta);       /* bottom-tab labels, badges */
+
+  /* --- Weights --- */
+  --weight-regular:400;
+  --weight-medium:500;
+  --weight-semibold:600;       /* labels, nav items, most UI */
+  --weight-bold:700;           /* headings, active states, values */
+  --weight-heavy:800;          /* stat numbers, time chips */
+
+  /* --- Line heights --- */
+  --leading-tight:1.2;         /* headings, stat numbers */
+  --leading-snug:1.4;          /* labels, chips */
+  --leading-body:1.5;          /* body copy */
+  --leading-relaxed:1.6;       /* glossary long-form */
+
+  /* --- Tracking --- */
+  --tracking-label:1.2px;      /* uppercase section labels (.card h2) */
+  --tracking-eyebrow:1px;      /* smaller uppercase (nav group titles, badges) */
+}

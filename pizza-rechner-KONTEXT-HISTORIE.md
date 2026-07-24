@@ -8,6 +8,161 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Design-System-Import Zyklus 1: Tokens + Rechner-Screen (v4.0.0)
+
+Der Nutzer hat in Claude Design (claude.ai/design, Projekt "Teigmeister Design System",
+c6b7bf59-3709-4d13-990e-4807c5058ea2) ein vollständiges Redesign der MOBILEN Ansicht
+erarbeiten lassen: neue Farb-/Typografie-/Spacing-Tokens plus High-Fidelity-Mockups für
+alle 5 Screens (Rechner, Anleitung/Zeitplan, Pizza Party, Glossar, Einstellungen). Das
+komplette Projekt wurde per DesignSync-MCP heruntergeladen nach `design-import/`
+(`tokens/*.css`, `components/**/*.jsx` als React/Babel-Referenzcode — NICHT direkt
+übernehmbar, nur Spezifikation für Layout/Optik, echte App bleibt Vanilla-JS ohne
+Build-Tooling, `ui_kits/teigmeister/*.jsx` als High-Fidelity-Screen-Mockups). Geplant als
+5 aufeinanderfolgende `feature-cycle-orchestrator`-Zyklen (ein Screen pro Zyklus, jeweils
+frische Instanz nach Abschluss). Dies ist Zyklus 1: Tokens + Rechner-Screen.
+
+**Vom Nutzer vorab getroffene Entscheidungen:**
+- Web-Fonts (Bitter + Hanken Grotesk, beide SIL-OFL) selbst hosten statt Google-Fonts-
+  `@import` (Offline-Prinzip der App).
+- Hell/Dunkel-Umschalter bleibt (`js/theme.js`). Die importierte Palette ist
+  "dark-mode-first" konzipiert — ersetzt den bisherigen Dunkelmodus 1:1; der Hellmodus
+  braucht eine analoge Ableitung mit denselben Token-Namen.
+- Scope ist mobile-only: nur `pizza-rechner-mobile.html` + `css/mobile.css` direkt
+  anfassen, gemeinsame `css/styles.css`-Tokens sind erlaubt (beide Seiten erben sie,
+  das ist keine Verletzung von "Mobile-only", da rein infrastrukturell).
+
+**Tokens (`css/styles.css` `:root` + `:root[data-theme="dark"]`):** komplett neue
+Token-Sätze aus `design-import/tokens/colors.css`/`typography.css`/`spacing.css`
+übernommen — Oberflächen (`--bg`/`--card`/`--surface-2`/`--surface-inset`/`--line`/
+`--line-soft`), Text (`--ink`/`--ink-strong`/`--muted`/`--step-text`/`--muted-soft`/
+`--on-accent`), Akzent (`--tomato`/`--tomato-dark`/`--tomato-text`/`--tomato-disabled`/
+`--tomato-soft-bg`/`--tomato-soft-hover`), Semantik (`--success`/`--success-text`/
+`--warning`/`--warning-text`/`--biga-text`/`--crust`), Hinweisboxen (`--info-bg`/
+`--info-text`/`--success-bg`/`--warn-bg`), Fokusring (`--focus`, neu: kühler Ton statt
+des bisherigen Tomate-Fokusrings, als APP-WEITE `:focus-visible`-Basisregel für Elemente
+ohne eigene Komponentenregel — bestehende `.seg button:focus-visible` &Co. mit
+`var(--tomato-text)` haben höhere Spezifität und bleiben unverändert), Schatten
+(`--shadow`/`--shadow-lg`/`--shadow-cta`/`--shadow-bar`), `--scrim`. Dazu die
+Typografie-Skala (`--text-meta` … `--text-display`, Gewichte, Zeilenhöhen, Tracking) und
+Spacing/Radius/Touch-Skala (`--space-*`, `--radius-xs`/`--radius-sm`, `--touch-min`,
+`--control-h`, `--icon-badge`, `--tabbar-h` …) als wiederverwendbare Infrastruktur
+(bewusst noch nicht auf jede bestehende Regel angewendet — Scope ist Rechner-Screen +
+Grundlage für die 4 folgenden Zyklen).
+
+**Dunkelmodus:** exakte Werte aus dem Import übernommen (z. B. `--bg:#151312`,
+`--card:#201d1b`, `--tomato:#d1533c`, `--success:#5f9d5a`, `--warning:#d99a3c`,
+`--focus:#8ab4c8`) — ersetzt die bisherige, in v3.47.0 selbst kalibrierte Palette 1:1.
+
+**Hellmodus:** eigene analoge Ableitung nötig, da das Claude-Design-Projekt nur
+Dunkelmodus ausgearbeitet hatte. Der Nutzer hat im Verlauf dieses Zyklus eine
+offizielle, vom Design-Team nachgelieferte Version bereitgestellt (warmes Creme statt
+reinem Weiß: `--bg:#f2ece2`, `--card:#fdfaf5`, `--tomato:#c4472e`, `--focus:#2f7a99`
+usw.), die übernommen wurde (ersetzt eine erste eigene Zwischenableitung dieses
+Zyklus). Ein `accessibility-expert`-Zwischenlauf hatte für mehrere dieser Werte
+gravierende WCAG-Verstöße gemeldet (z. B. `--warning-text`/`--warn-bg` angeblich
+2,18:1) — beim eigenen Nachrechnen mit der Standard-WCAG-Leuchtdichtenformel (verifiziert
+an Schwarz/Weiß=21:1) reproduzierten sich diese Zahlen NICHT (real ~4,56:1, AA-konform);
+die pauschalen Abdunklungs-Vorschläge aus diesem Lauf wurden deshalb bewusst NICHT
+übernommen, um die sorgfältig kalibrierte offizielle Palette nicht grundlos zu
+verschlechtern. Ein echter, selbst verifizierter Mini-Befund wurde trotzdem gefixt:
+`--biga-text` lag mit `#946f10` auf `--card` bei ~4,44:1 (knapp unter 4,5:1) — auf
+`#8a6710` nachgedunkelt (~5,0:1), zugleich eine Verbesserung gegenüber dem alten Wert
+vor diesem Zyklus (~3,32:1). Alle anderen geprüften Text/Hintergrund-Kombinationen lagen
+bereits über 4,5:1 (nachgerechnet: `--muted`/`--step-text`/`--tomato-text`/
+`--info-text`/`--success-text` je auf ihrem jeweiligen Hintergrund).
+
+**Bekannter, bewusst nicht gefixter Nebenbefund (Hellmodus, app-weit,
+vorbestehend):** `--line` (#d8ccba) gegen `--bg` (#f2ece2) liegt bei ~1,35:1 — unter
+der 3:1-Schwelle aus WCAG 1.4.11 für UI-Komponenten-Grenzen. Betrifft alle Hairline-
+Ränder app-weit (Karten, Inputs, `.seg`/`.pills`-Rahmen), nicht neu durch diesen
+Zyklus — der alte Wert lag mit ~1,18:1 in derselben Größenordnung (sogar leicht
+niedriger). Auch die Flächenkontraste zwischen benachbarten neutralen Oberflächen
+(`--card` vs. `--bg` ~1,13:1, `--surface-2` vs. `--bg` ~1,11:1) sind durchgängig
+niedrig — das ist eine bewusste, app-weit konsistente "warme, gedeckte" Design-
+Philosophie (tonale statt kontrastreiche Flächentrennung), keine Regression dieses
+Zyklus. Eine echte Behebung würde eine grundsätzliche Design-Entscheidung über die
+gesamte Hellmodus-Palette erfordern (deutlich dunklerer `--line`-Ton oder zusätzliche
+Schatten/Konturen app-weit) — das sprengt den Scope von "Tokens + Rechner-Screen" und
+gehört als eigener, bewusst vom Nutzer zu bestätigender Folge-Zyklus ins Backlog (s.
+unten), analog zum etablierten Umgang mit früheren "app-weiten Bestandsmuster"-Befunden
+(z. B. `.seg`/`.pills`-Inaktiv-Kontrast aus v3.72.0).
+
+**Fonts (`css/fonts.css`, `fonts/`):** Bitter (Slab-Serif, Display/Zahlen) + Hanken
+Grotesk (Body/UI) als variable WOFF2-Fonts von Google Fonts heruntergeladen (nur
+Latin-Subset, deckt deutsche Umlaute/Sonderzeichen ab) und lokal unter `fonts/`
+abgelegt (3 Dateien: Bitter normal/italic, Hanken Grotesk normal — je EIN variables
+File deckt den ganzen 400–800-Gewichtsbereich ab dank `font-weight:"400 800"`).
+`css/fonts.css` nur in `pizza-rechner-mobile.html` eingebunden (vor `css/styles.css`,
+Ladereihenfolge-Pflicht) — Desktop bleibt unverändert bei Georgia/System-Sans, da
+außerhalb des Mobile-only-Scopes. `--font-head`/`--font-display`/`--font-numeric`
+zeigen jetzt auf Bitter (deckt automatisch alle bisherigen `var(--font-head)`-Stellen
+ab: Überschriften, `.result .total .big`, `.temp-box .v`, `.step .num`, `.schedbar
+.big` — kein Markup-Umbau nötig), `body{font-family:var(--font-body)}` (Hanken
+Grotesk) ersetzt die bisher hartkodierte System-Sans-Kette. `.ing .amt` bekommt
+zusätzlich explizit `var(--font-numeric)` (vorher ungesetzt, erbte Body-Schrift).
+
+**Alte Token-Namen als Aliase erhalten** (Rückwärtskompatibilität, keine Regel im Rest
+der Datei musste umgeschrieben werden): `--basil`/`--basil-text` → `--success`/
+`--success-text`, `--note-bg`/`--note-text` → `--info-bg`/`--info-text`, `--tip-bg` →
+`--success-bg`, `--temp-highlight-bg` → `--info-bg`, `--warn-text` → `--warning-text`.
+Eine echte Namenskollision gab es bei `--ink-strong`: bisher zweckentfremdet als feste,
+themenunabhängige dunkle Badge-Fläche (`.step .num`, `.step .body .timechip`), neu
+aber mit der Bedeutung "maximale Text-Betonung" aus dem Import belegt — der alte
+Anwendungsfall wurde auf einen neuen eigenen Namen `--badge-ink` umbenannt (Wert
+unverändert `#2b2420`, weiterhin themenunabhängig), `--ink-strong` trägt jetzt die
+neue Bedeutung.
+
+**Gezielte Optik-Fixes (Design-Import macht sie möglich, kein zusätzlicher Scope):**
+- `.seg{background:var(--surface-2);border:1px solid var(--line);...}` (vorher
+  `background:var(--bg)`, KEIN Rahmen) — betrifft ALLE `.seg`-Instanzen app-weit
+  (Teigführung, Hefe-Art, Knetart, Kaltgare-Stufe, Zeitplan-Modus, der Komplexitäts-
+  Schalter `#modeToggle`). Löst **Backlog.md Punkt 2 "Rahmen-Fix
+  Komplexitätsschalter" ersatzlos** (dort explizit als Ursache benannt: `.seg` nutzte
+  `var(--bg)`, identisch zum Seitenhintergrund, dadurch beim freistehenden
+  Komplexitätsschalter unsichtbar) — dieser Backlog-Punkt entfällt.
+- `.calc-subnav{background:var(--surface-inset);...}` (vorher `var(--bg)`, hatte aber
+  bereits einen Rahmen).
+- `.step .body .warn{border-left:3px solid var(--warning);...}` (vorher `var(--tomato)`)
+  — Warnungen sind jetzt konsequent Ocker statt Tomate, können nicht mehr mit dem
+  Marken-/CTA-Akzent verwechselt werden (Design-Entscheidung aus dem Import:
+  "Deliberately never tomato-red").
+- `.temp-box{background:var(--surface-2);...}` (vorher `var(--bg)`) — bessere
+  Abhebung von der Kartenfläche, TempBox-Komponente aus dem Import folgend.
+- Logo (`assets/logo.svg`, aus `design-import/assets/logo.svg`) ersetzt das bisherige
+  🍕-Emoji im Mobil-Header (`header h1{display:flex;...}` + `.app-logo{width:36px;
+  height:36px;border-radius:9px}`, exakt nach `design-import/guidelines/
+  brand-header.card.html`). `alt=""` (dekorativ, "Teigmeister" steht als Text daneben).
+- `theme-color`-Meta + `js/theme.js`s `THEME_COLOR`-Konstante auf die neuen Token-Werte
+  gezogen (`#c4472e` hell / `#151312` dunkel, vorher `#c8442e`/`#1c1815`).
+
+**Geprüft, aber NICHT als eigenständige Umsetzung nötig befunden:** Preset-Karten
+(`.preset-card`), Ergebnis-Panel-Struktur (`.result .total`/`.ing`/`.temp-box`/`.note`),
+Card-Komponente (Icon-Badge, Titel-Typografie, linker Akzentrand), Stepper
+(`.stepper-btn`) entsprachen strukturell bereits sehr genau den importierten
+Komponenten-Spezifikationen (`components/cards/*.jsx`, `components/forms/Stepper.jsx`)
+— das Claude-Design-Projekt war explizit "grounded in Birnify/pizza-rechner", die
+bestehende App war also bereits die Referenzbasis. Kein Markup-Umbau nötig, nur die
+Token-Werte darunter haben sich geändert. **Backlog.md Punkt 1 "Ergebnis
+priorisieren"** (Aktionsleiste neu ordnen, "Weitere Optionen" einklappen) ist trotz
+Überschneidung mit der `SummaryBar`-Komponente des Imports NICHT durch diesen Zyklus
+erledigt — reine Optik-Angleichung ersetzt keine Verhaltens-/Struktur-Änderung der
+Aktionsleiste, bleibt offen für einen eigenen Zyklus.
+
+**Tests:** `tests/test.html` unverändert 716/716 grün (Headless-Edge-Dump) — reine
+CSS-/Markup-/Font-Änderung, keine Rechenlogik angefasst, kein `test-generator`-Lauf
+nötig.
+
+**Geändert:** `css/styles.css`, `css/mobile.css`, `css/fonts.css` (neu), `js/theme.js`,
+`pizza-rechner-mobile.html`. NICHT geändert: `pizza-rechner.html` (Desktop),
+`js/calc.js`/`js/schedule.js`/`js/guide.js` (Rechenlogik). Neu: `fonts/` (3 WOFF2),
+`assets/logo.svg`. `?v=` auf `4.0.0` gezogen (nur Mobil-Datei + zugehörige CSS/JS-
+Kommentare). `pizza-rechner-mobile-standalone.html` neu gebaut (Font-/Bild-Pfade
+korrekt relativ zum Projekt-Root umgeschrieben, verifiziert). `Versionen/v4.0.0 -
+Design-System-Import Zyklus 1 (Tokens + Rechner)/` enthält den vollständigen
+Schnappschuss (inkl. `fonts/` und `assets/`, anders als frühere Schnappschüsse ohne
+diese Ordner — bewusste Verbesserung, da dieser Zyklus erstmals eine harte
+`fonts/`-Abhängigkeit einführt).
+
 ## Komplexität staffeln (v3.72.0)
 
 UX-Review "Teigmeister", Punkt 3 (Priorität Mittel), über den `feature-cycle-orchestrator`
