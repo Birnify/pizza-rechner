@@ -31,7 +31,9 @@ erledigt** (s. `pizza-rechner-KONTEXT.md`, Abschnitt „„Teilen-Link"/„Einka
 Einstellungen entfernt (v4.6.0)"). **Punkt C unten ("New York Style"-Einstellung
 entfernen, Zuckerfeld wertbasiert) ist seit v4.7.0 ebenfalls erledigt** (s.
 `pizza-rechner-KONTEXT.md`, Abschnitt „„New York Style"-Einstellung entfernt, Zuckerfeld
-wertbasiert (v4.7.0)").
+wertbasiert (v4.7.0)"). **Punkt D unten (Einfrier-Hinweis entfernen, Glossar-Artikel
+"Einfrieren") ist seit v4.8.0 ebenfalls erledigt** (s. `pizza-rechner-KONTEXT.md`,
+Abschnitt „Einfrier-Hinweis entfernt, Glossar-Artikel „Einfrieren" (v4.8.0)").
 
 ## Weitere Ideen (aus Backlog.txt, noch nicht in die Orchestrator-Warteschlange eingereiht)
 
@@ -120,7 +122,16 @@ Abgrenzung: Keine Änderung an anderen Preset-Feldern/-Struktur, keine Änderung
 Einstellungspunkten, keine Migration bestehender Presets nötig (neue Logik greift
 automatisch anhand des vorhandenen Werts), kein Einfluss auf DDT-/Rezeptberechnung.
 
-### D. Einfrier-Hinweis aus Anleitung und Einstellungen entfernen, Glossar-Artikel "Einfrieren" erstellen
+### ~~D. Einfrier-Hinweis aus Anleitung und Einstellungen entfernen, Glossar-Artikel "Einfrieren" erstellen~~ — erledigt in v4.8.0
+
+Umgesetzt wie unten beschrieben: die Einfrier-Hinweisbox (tatsächlich im Schritt
+"Teiglinge formen", nicht "Stückgare (Teiglinge)" -- s. Korrektur im Kontext-Abschnitt)
+und das Feature-Flag `freezeHint` samt Menüpunkt (Desktop + Mobil) sind ersatzlos
+entfernt, Inhalt lebt als neuer Glossar-Artikel "Einfrieren" weiter, per Glossar-Verweis
+vom Anleitungsschritt aus verlinkt. Details: `pizza-rechner-KONTEXT.md`, Abschnitt
+„Einfrier-Hinweis entfernt, Glossar-Artikel „Einfrieren" (v4.8.0)".
+
+Ursprünglicher Auftragstext (zur Referenz):
 
 Idee: Die Einfrier-Hinweisbox verschwindet ersatzlos aus der Anleitung (Schritt
 "Stückgare (Teiglinge)"), der Toggle "Einfrier-Hinweis" verschwindet ersatzlos aus den

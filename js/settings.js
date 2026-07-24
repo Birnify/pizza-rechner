@@ -25,7 +25,6 @@
   const DEFAULTS = {
     timer: true,          // Gärzeit-Timer/Wecker je Anleitungsschritt
     timerSystem: false,   // System-Wecker/Kalender-Links (Teil-Feature von timer)
-    freezeHint: false,    // Einfrier-Hinweis in der Anleitung
     multiRecipes: true,   // Mehrere gespeicherte Rezepte (sonst: Einzel-Slot-Verhalten)
     hints: true           // Tooltip-/Hinweistexte (erklärende .hint-Kurztexte). Default AN:
                            // reine Erklärhilfen sind für neue Nutzer wertvoll, erfahrene
@@ -69,8 +68,8 @@
   // Wendet die aktuellen Flags auf die statischen UI-Blöcke an (Karten/Buttons komplett
   // aus dem Rendering nehmen per display:none — sauberer als nur optisch verstecken,
   // display:none nimmt Elemente auch aus Tab-Reihenfolge & Accessibility-Tree) und stößt
-  // ein Neu-Rendern der Anleitung an (js/guide.js liest PZ.FLAGS.timer/freezeHint dort
-  // bei jedem buildGuide()-Lauf neu aus).
+  // ein Neu-Rendern der Anleitung an (js/guide.js liest PZ.FLAGS.timer dort bei jedem
+  // buildGuide()-Lauf neu aus).
   function applyFlags() {
     const f = PZ.FLAGS;
     const recipesCard = document.getElementById('recipesCard');
@@ -123,7 +122,6 @@
   const CHECKBOX_MAP = {
     flagTimer: 'timer',
     flagTimerSystem: 'timerSystem',
-    flagFreezeHint: 'freezeHint',
     flagMultiRecipes: 'multiRecipes',
     flagHints: 'hints'
   };

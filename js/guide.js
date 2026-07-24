@@ -295,13 +295,15 @@
     st(t('guide.step.bulkRise.title'), f.cold && !ballsCold ? t('guide.step.bulkRise.chipColdBalls') : t('guide.step.bulkRise.chipDefault'),
       t('guide.step.bulkRise.body', { bulk: f.bulk }), timerBox('stockgare', f.bulkMin), f.bulkMin,
       { glossaryId: bulkColdGlossary });
+    // Einfrier-Hinweis (bis v4.7.0 hier als optionaler .tip-Textblock, Feature-Flag
+    // "freezeHint"): seit v4.8.0 (Backlog Punkt D) ersatzlos entfernt -- Inhalt lebt jetzt
+    // als eigenständiger Glossar-Artikel "Einfrieren" weiter (js/glossary.js), von hier aus
+    // per Glossar-Verweis verlinkt, analog zum "Mehr zu Kalte Gare im Glossar"-Muster
+    // weiter unten am Stückgare-Schritt.
     st(t('guide.step.formBalls.title'), `${R.N} × ${g(R.W)}`,
       t('guide.step.formBalls.body', { N: R.N, W: g(R.W), boxTxt: ballsCold ? t('guide.box.cold') : t('guide.box.normal') }),
-      tip(t('guide.step.formBalls.tip'))
-      // Feature-Flag "freezeHint" (js/settings.js): Default AUS, optionaler Zusatz-Tipp.
-      // `tests/test.html` setzt `PZ.FLAGS.freezeHint` explizit auf `true` (Baseline "alles
-      // an", s. test.html) — der bestehende Einfrier-Hinweis-Test bleibt dadurch stabil.
-      + (PZ.FLAGS && PZ.FLAGS.freezeHint === false ? '' : tip(t('guide.freezeTip'))), 10);
+      tip(t('guide.step.formBalls.tip')), 10,
+      { glossaryId: 'einfrieren' });
     st(t('guide.step.finalProof.title'), ballsCold ? t('guide.step.finalProof.chipCold') : t('guide.step.finalProof.chipDefault'),
       t('guide.step.finalProof.body', { proof: f.proof }),
       (f.cold ? tip(t('guide.step.finalProof.tip')) : '') + timerBox('stueckgare', f.proofMin), f.proofMin,

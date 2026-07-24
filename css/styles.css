@@ -536,6 +536,11 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 }
 .glossary-item[open] summary::after{transform:rotate(180deg);}
 .glossary-item summary:hover{color:var(--tomato-text);}
+/* accessibility-expert-Befund (v4.8.0, Backlog Punkt D, optischer Konsistenz-Fix -- kein
+   WCAG-Blocker, der native Browser-Fokusring erfüllt 2.4.7 bereits): gebrandeter
+   Tomate-Fokusring analog zu .preset-all-details/.more-options-details summary, statt sich
+   auf den Browser-Default zu verlassen. */
+.glossary-item summary:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
 .glossary-body{margin:0 0 14px;font-size:13.5px;line-height:var(--leading-relaxed);color:var(--ink);}
 .glossary-body p{margin:0 0 8px;}
 .glossary-body p:last-child{margin-bottom:0;}

@@ -42,6 +42,7 @@
     'poolish',
     'biga',
     'kalteGare',
+    'einfrieren',
     'malzmehl',
     'ofenVsBackofen',
     'ofenHeizarten',

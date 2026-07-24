@@ -8,6 +8,105 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Einfrier-Hinweis entfernt, Glossar-Artikel "Einfrieren" (v4.8.0)
+
+Backlog Punkt D (`Backlog.md`). Auftrag: die Einfrier-Hinweisbox verschwindet ersatzlos
+aus der Anleitung (Schritt „Stückgare (Teiglinge)" laut Auftragstext — tatsächlich stand
+der Zusatz-Tipp im vorangehenden Schritt „Teiglinge formen", `js/guide.js`,
+`guide.step.formBalls`), der Menüpunkt „Einfrier-Hinweis" verschwindet ersatzlos aus den
+Einstellungen, Inhalt wird als eigenständiger Glossar-Artikel „Einfrieren" verfügbar.
+
+- **`js/settings.js`:** Flag `freezeHint` (Default `false`) aus `DEFAULTS` entfernt,
+  Eintrag `flagFreezeHint: 'freezeHint'` aus `CHECKBOX_MAP` entfernt. Erklärender Kommentar
+  bei `applyFlags()` angepasst (verwies vorher auf `PZ.FLAGS.timer/freezeHint`, jetzt nur
+  noch `timer`).
+- **`pizza-rechner.html` + `pizza-rechner-mobile.html`:** die komplette
+  `.flag-item`-Menüzeile „Einfrier-Hinweis" (Label + Info-Button + Checkbox
+  `#flagFreezeHint` + Info-Text `#flagFreezeHintInfo`) entfernt, auf beiden Seiten
+  identisch.
+- **`js/guide.js`:** der bisher an den `freezeHint`-Flag gekoppelte `.tip`-Textblock im
+  `formBalls`-Schritt (`tip(t('guide.freezeTip'))`) ist ersatzlos entfernt. Stattdessen
+  bekommt genau dieser Schritt jetzt `{ glossaryId: 'einfrieren' }` als Options-Objekt —
+  identisches Verweis-Muster wie das bestehende „Mehr zu Kalte Gare im Glossar" an
+  Stockgare-/Stückgare-Schritten (`glossaryLinkHtml()`, Dedup über `_usedGlossaryIds`).
+  Der Verweis erscheint unabhängig von Methode/Kaltgare-Stufe (anders als `kalteGare`, das
+  nur bei tatsächlich kalter Führung erscheint), da der Einfrier-Hinweis grundsätzlich für
+  jedes Rezept relevant sein kann.
+- **`js/glossary.js`:** neuer Eintrag `'einfrieren'` in `PZ.GLOSSARY_TOPICS`, direkt nach
+  `'kalteGare'` einsortiert (thematisch am nächsten: beide drehen sich um Lagerung/
+  Kühlung der Teiglinge nach dem Formen). Kein struktureller Eingriff nötig — die Liste
+  wird komplett dynamisch aus i18n-Keys gerendert (Single-Open-Akkordeon aus v4.3.0
+  unverändert wiederverwendet).
+- **`js/i18n-dict.js`:** `flag.freezeHint.name`/`.infoBtn`/`.info` sowie `guide.freezeTip`
+  (DE+EN) entfernt — keine anderen Verwendungsstellen mehr. Neu: `glossary.einfrieren.title`
+  („Einfrieren"/„Freezing") + `glossary.einfrieren.body` (DE+EN, zwei Absätze im Stil der
+  bestehenden Glossar-Artikel: Vorgehen beim Einfrieren dünn geölter, einzeln gefrorener
+  Teiglinge, Haltbarkeit 2–3 Monate; Auftauen über Nacht im Kühlschrank, dann 3–5 h
+  Raumtemperatur, dann normale 2–4 h Stückgare).
+- **`css/styles.css`:** ergänzender, vom `accessibility-expert`-Review vorgeschlagener
+  Konsistenz-Fix (kein WCAG-Blocker, der native Browser-Fokusring erfüllt 2.4.7 bereits):
+  `.glossary-item summary:focus-visible{outline:2px solid var(--tomato-text);
+  outline-offset:2px;}`, analog zu `.preset-all-details`/`.more-options-details summary`.
+  Gilt für alle Glossar-Artikel, nicht nur den neuen.
+
+**Tests** (`tests/test.html`, 748 → **746**, netto −2 ohne Abdeckungsverlust): Baseline-
+Objekt (`Object.assign(PZ.FLAGS, {...})`) um `freezeHint` bereinigt. Sektion „10 ·
+Anleitungs-Hinweise": die 3 bisherigen „Einfrier-Hinweis erscheint …"-Tests (4 Prüfungen)
+durch 2 Regressionstests ersetzt, die die Abwesenheit des alten Inline-Texts prüfen
+(Direkt-Standard + Biga/coldStage „bulk"). Sektion „18 · Feature-Flags": Default-Werte-Box
+um `freezeHint` bereinigt (dafür in der „Entfernte Flags"-Box ergänzt, jetzt
+„share"/"shopping"/"newYorkStyle"/"freezeHint" gemeinsam); Merge-/Persistenz-Tests von
+`freezeHint` auf `timerSystem` als weiterhin gültiges Flag umgestellt (der
+Vorwärtskompatibilitäts-Regressionsanker `oldFlagsWithLegacyKeys` behält `freezeHint:
+false` bewusst bei, jetzt als vierter entfernter Legacy-Key neben share/shopping/
+newYorkStyle); der `buildGuide()`-Render-Effekt-Test prüft nur noch das Flag `timer`
+(freezeHint-Assertions entfernt, −2 Prüfungen). Sektion „27 · Glossar-Verweise in der
+Anleitung": 2 neue Tests (`data-glossary-id="einfrieren"` erscheint genau 1× im
+formBalls-Schritt, Direkt-Standard + Biga/coldStage „bulk"). Alle 746 Prüfungen grün
+(Headless-Edge-Dump).
+
+**`accessibility-expert`-Review** (gezielt: neuer Glossar-Artikel + entfernte
+Anleitungsbox/Einstellungszeile): keine Blocker. Ein MAJOR-Fund (fehlender expliziter
+Fokusring auf `.glossary-item summary`) vom Reviewer selbst auf MINOR/optionalen
+Konsistenz-Fix herabgestuft (nativer Browser-Fokusring erfüllt WCAG 2.4.7 bereits,
+identische Einschätzung wie beim ursprünglichen Glossar-Audit in v4.3.0) — trotzdem
+ergänzt, s. `css/styles.css`-Bullet oben. Bestätigt sauber: i18n-Einträge vollständig
+(DE+EN), Fokus-Management bei `gotoGlossaryEntry()` korrekt, `scroll-margin-top`
+vorhanden, Glossar-Verweis-Button (44px Touch-Ziel, Fokus-Ring, `aria-hidden` aufs Icon)
+korrekt, keine verwaisten `aria-describedby`/`aria-controls`-Referenzen nach dem Entfernen
+der Einstellungszeile, Einstellungen-Card strukturell sauber.
+
+**Nicht angefasst** (laut Scope/Abgrenzung): übrige Anleitung des Stückgare-/
+Teiglinge-formen-Schritts (Stückgare-Zeiten, Fingertest-Hinweis, Timer-Button, „Mehr zu
+Kalte Gare im Glossar"-Link), andere Einstellungspunkte, kein genereller
+Glossar-Redesign, keine Migration alter `freezeHint`-Toggle-Werte im `localStorage`
+(`PZ._mergeFlags()` bereits vorwärtskompatibel, per Regressionstest verifiziert).
+
+**Geändert:** `js/settings.js`, `js/guide.js`, `js/glossary.js`, `js/i18n-dict.js`,
+`css/styles.css`, `pizza-rechner.html`, `pizza-rechner-mobile.html`, `tests/test.html`.
+`?v=` auf `4.8.0` gezogen (Desktop + Mobil, Cache-Busting + Menü-Versionsanzeige).
+`pizza-rechner-mobile-standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v4.8.0 - Einfrier-Hinweis entfernt, Glossar-Artikel Einfrieren/` enthält den
+vollständigen Schnappschuss.
+
+## "New York Style"-Einstellung entfernt, Zuckerfeld wertbasiert (v4.7.0)
+
+Backlog Punkt C. Der globale Einstellungspunkt „New York Style" (`js/settings.js`-Flag +
+Menüzeile, Desktop + Mobil) ist ersatzlos entfernt. `#sugarBlock` (der Zucker-Regler in
+den Grundeinstellungen) ist jetzt rein wertbasiert: sichtbar bei `state.sugar > 0`,
+ausgeblendet bei 0 — gesetzt in `js/calc.js` (`renderResult()`), identischer
+0,05-g-Schwellwert wie die bereits bestehenden `#gSugarRow`/`#mSugarRow`. Alle 7
+Kern-Presets (`js/presets.js`) setzen `sugar` jetzt explizit (0 bzw. 2 bei „New York
+Style"). `test-generator`-Review (10 zusätzliche Testfälle) + `accessibility-expert`-
+Review (keine Blocker; 1 Major + 3 Minor als vorbestehendes, app-weites
+Fokus-/ARIA-Muster eingeordnet, s. `Backlog.md` Punkt J) durchgelaufen — 748 Prüfungen
+grün (vorher 720).
+
+**Volle Details:** Abschnitt „'New York Style'-Einstellung entfernt, Zuckerfeld
+wertbasiert statt togglebasiert (v4.7.0)" weiter unten in dieser Datei; vorheriger
+Abschnitt „'Teilen-Link'/'Einkaufsliste' aus Einstellungen entfernt (v4.6.0)" ebenfalls
+dort.
+
 ## "New York Style"-Einstellung entfernt, Zuckerfeld wertbasiert statt togglebasiert (v4.7.0)
 
 Backlog Punkt C (`Backlog.md`). Auftrag: der globale Einstellungspunkt „New York Style"

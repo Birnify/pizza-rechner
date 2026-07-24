@@ -267,8 +267,6 @@
   add('guide.box.normal', 'Box', 'container');
   add('guide.step.formBalls.tip', 'Straff geformte Kugeln = runde Pizzen mit gleichmäßigem Rand (Cornicione).',
     'Tightly shaped balls = round pizzas with an even rim (cornicione).');
-  add('guide.freezeTip', 'Einfrieren möglich: Teiglinge dünn mit Öl bestreichen, einzeln (nicht berührend) einfrieren – so <b>2–3 Monate</b> haltbar. Auftauen: <b>über Nacht im Kühlschrank</b>, dann <b>3–5 h bei Raumtemperatur</b> und <b>2–4 h Stückgare</b> wie gewohnt.',
-    'Freezing works too: brush the dough balls thinly with oil, freeze individually (not touching): keeps for <b>2–3 months</b>. Thawing: <b>overnight in the fridge</b>, then <b>3–5 h at room temperature</b> and a normal <b>2–4 h final proof</b>.');
   add('guide.step.finalProof.title', 'Stückgare (Teiglinge)', 'Final proof (dough balls)');
   add('guide.step.finalProof.chipCold', 'kühl · Fingertest', 'cold · finger test');
   add('guide.step.finalProof.chipDefault', 'Fingertest', 'finger test');
@@ -849,6 +847,15 @@
     '<p>Kalte Gare bedeutet, den Teig (oder die bereits geformten Teiglinge) für viele Stunden bis mehrere Tage im Kühlschrank reifen zu lassen, statt bei Raumtemperatur. Die Kälte verlangsamt die Hefeaktivität stark, während enzymatische Prozesse im Mehl weiterlaufen: dadurch entstehen mehr Aromen und eine bekömmlichere, leichter verdauliche Kruste, ohne dass der Teig übergärt.</p><p>Wichtig ist die Unterscheidung: Reift der ganze Teig im Stück kalt, oder werden vorher einzelne Teiglinge geformt und dann kalt gestellt? Beides führt zu leicht unterschiedlichen Ergebnissen (s. Kaltgare-Einstellung im Rechner).</p>',
     '<p>Cold fermentation means letting the dough (or already-shaped dough balls) rise in the fridge for many hours up to several days, instead of at room temperature. The cold strongly slows down yeast activity while enzymatic processes in the flour keep going: this develops more flavor and a lighter, more digestible crust without the dough over-fermenting.</p><p>One important distinction: does the whole dough rise cold in one piece, or are individual dough balls shaped first and then chilled? Both lead to slightly different results (see the cold-rise setting in the calculator).</p>');
 
+  // Neuer Eintrag (v4.8.0, Backlog Punkt D): bis v4.7.0 stand dieser Inhalt als optionaler
+  // .tip-Textblock (Feature-Flag "freezeHint") direkt im Schritt "Teiglinge formen" -- seit
+  // v4.8.0 ersatzlos entfernt und stattdessen hier als eigenständiger Glossar-Artikel
+  // verfügbar, per Glossar-Verweis vom Schritt aus verlinkt (s. js/guide.js).
+  add('glossary.einfrieren.title', 'Einfrieren', 'Freezing');
+  add('glossary.einfrieren.body',
+    '<p>Fertig geformte Teiglinge lassen sich problemlos einfrieren, praktisch z. B. wenn ein Rezept mehr Teiglinge ergibt, als am selben Tag gebraucht werden. Dünn mit Öl bestreichen und einzeln, mit Abstand zueinander (nicht berührend), einfrieren: erst wenn sie durchgefroren sind, können sie zusammen in einem Beutel/einer Box gelagert werden, ohne aneinander festzukleben. So halten sie sich etwa <b>2–3 Monate</b>.</p><p>Zum Auftauen zuerst <b>über Nacht im Kühlschrank</b> langsam auftauen lassen, dann <b>3–5 Stunden bei Raumtemperatur</b> weiter temperieren, und anschließend ganz normal <b>2–4 Stunden Stückgare</b> wie bei einem frisch geformten Teigling.</p>',
+    '<p>Fully shaped dough balls freeze well, handy for example when a recipe makes more dough balls than are needed on the same day. Brush them thinly with oil and freeze individually, spaced apart (not touching): only once they\'re frozen solid can they be stored together in one bag/container without sticking to each other. This keeps them for roughly <b>2–3 months</b>.</p><p>To thaw, first let them defrost slowly <b>overnight in the fridge</b>, then bring them further up to temperature for <b>3–5 hours at room temperature</b>, and finally do a normal <b>2–4 hour final proof</b> just like a freshly shaped dough ball.</p>');
+
   add('glossary.malzmehl.title', 'Malzmehl (Malto)', 'Malt flour (malto)');
   add('glossary.malzmehl.body',
     '<p>Malzmehl (italienisch „malto", meist diastatisches Gerstenmalzmehl) enthält Enzyme, die Stärke im Mehl in vergärbaren Zucker aufspalten. Ein kleiner Anteil (oft unter 1 % der Mehlmenge) füttert die Hefe zusätzlich, fördert eine gleichmäßigere Bräunung der Kruste und kann bei sehr langen, kalten Gärzeiten helfen, wenn dem Mehl sonst die Energie ausgeht.</p><p>Viele italienische Pizzamehle haben bereits eine kleine Menge Malzmehl beigemischt: ein separater Zusatz ist meist nur bei sehr langer Reifezeit oder schwächerem Mehl sinnvoll.</p>',
@@ -1002,9 +1009,6 @@
   add('flag.timerSystem.infoBtn', 'Erklärung zu „System-Wecker“ ein-/ausblenden', 'Show/hide explanation for "System alarm"');
   add('flag.timerSystem.info', 'Zusätzliche Links zum Android-Wecker oder Kalender, direkt beim Timer.',
     'Extra links to the Android alarm or calendar, right next to the timer.');
-  add('flag.freezeHint.name', 'Einfrier-Hinweis', 'Freezing tip');
-  add('flag.freezeHint.infoBtn', 'Erklärung zu „Einfrier-Hinweis“ ein-/ausblenden', 'Show/hide explanation for "Freezing tip"');
-  add('flag.freezeHint.info', 'Zusätzlicher Hinweis in der Anleitung zum Einfrieren geformter Teiglinge.', 'Extra tip in the guide about freezing shaped dough balls.');
   add('flag.multiRecipes.name', 'Mehrere Rezepte', 'Multiple recipes');
   add('flag.multiRecipes.infoBtn', 'Erklärung zu „Mehrere Rezepte“ ein-/ausblenden', 'Show/hide explanation for "Multiple recipes"');
   add('flag.multiRecipes.info', 'Mehrere benannte Rezepte speichern und verwalten statt nur eines.', 'Save and manage multiple named recipes instead of just one.');
