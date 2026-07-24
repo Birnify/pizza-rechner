@@ -876,6 +876,14 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
    werden im Dunkelmodus-Block überschrieben), Fix gilt daher für Hell- UND Dunkelmodus
    gleichermaßen -- rechnerisch gegengeprüft. */
 .daybadge.d2{background:#8d6814;}
+/* Design-Import Zyklus 2 (v4.1.0, "Anleitung/Zeitplan-Screen"): .step/.schedbar/
+   .step .num/.step .body .timechip/.step .body .warn wurden gegen die Referenzen
+   StepCard.jsx/ScheduleBar.jsx/Note.jsx aus design-import/ geprüft und stimmten
+   bereits exakt überein (Zyklus 1 hatte die dafür nötigen Tokens -- --card, --line,
+   --badge-ink, --font-head/--font-numeric, --basil/--success, --crust,
+   --warning/--warn-bg/--warn-text -- schon app-weit eingeführt). Nur .step .body
+   .chip (Technik-Chip) und der .tip-Linksrand brauchten noch eine echte Anpassung,
+   s. Kommentare dort. */
 .step{
   display:flex;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
   border-left:3px solid var(--line);
@@ -894,7 +902,14 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .step .body{flex:1;min-width:0;}
 .step .body h4{margin:2px 0 5px;font-size:15.5px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-weight:700;}
 .step .body .chip{
-  font-size:11px;font-weight:700;background:var(--chip-bg);color:var(--chip-text);border:1px solid var(--crust);
+  /* Design-Import Zyklus 2 (v4.1.0): borderless Info-Tönung statt der alten,
+     Crust-umrandeten Chip-Farbe (--chip-bg/--chip-text) -- entspricht jetzt exakt
+     Badge.jsx tone="warm" aus dem Import (--info-bg/--info-text, kein sichtbarer
+     Rahmen). Kontrast selbst nachgerechnet (sRGB-Gammakorrektur/relative Luminanz):
+     Hellmodus ~5,45:1, Dunkelmodus ~7,51:1 -- beide über der 4,5:1-AA-Schwelle für
+     Fließtext, obwohl hier nur ein kleiner Chip-Text ist. Alte --chip-bg/--chip-text-
+     Aliase bleiben in :root für evtl. andere Verwender unverändert bestehen. */
+  font-size:11px;font-weight:700;background:var(--info-bg);color:var(--info-text);border:1px solid transparent;
   padding:2px 9px;border-radius:var(--radius-chip);letter-spacing:.3px;text-transform:none;
 }
 .step .body p{margin:0;font-size:13.5px;color:var(--step-text);line-height:1.5;}
@@ -924,8 +939,12 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .schedbar-goto-zeitplan:hover{opacity:.85;}
 .schedbar-goto-zeitplan:focus-visible{outline:2px solid #fff;outline-offset:2px;border-radius:1px;}
 .step .body .tip{
+  /* Design-Import Zyklus 2 (v4.1.0): Linksrand jetzt var(--success) statt
+     var(--basil-text) -- entspricht exakt Note.jsx variant="tip" aus dem Import
+     (borderLeft: var(--success)). Textfarbe bleibt var(--basil-text) (=
+     --success-text), das war schon vorher korrekt. */
   margin-top:7px;font-size:12.5px;color:var(--basil-text);background:var(--tip-bg);border-radius:2px;
-  padding:7px 10px;border-left:3px solid var(--basil-text);
+  padding:7px 10px;border-left:3px solid var(--success);
 }
 .step .body .warn{
   /* Design-Import Zyklus 1 (v4.0.0): linker Rand jetzt var(--warning) statt var(--tomato)
@@ -2214,7 +2233,7 @@ header{position:relative;text-align:center;}
           <div class="nav-divider" role="separator"></div>
           <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
           <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-          <span class="nav-version" id="appVersion">v4.0.0</span>
+          <span class="nav-version" id="appVersion">v4.1.0</span>
 
         </div>
       </div>

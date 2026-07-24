@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-24 · Aktuelle Version: v4.0.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-24 · Aktuelle Version: v4.1.0 · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -179,26 +179,23 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Design-System-Import Zyklus 1: Tokens + Rechner-Screen (v4.0.0) = aktueller Stand
+## Design-System-Import Zyklus 2: Anleitung/Zeitplan-Screen (v4.1.0) = aktueller Stand
 
-Erster von 5 geplanten Zyklen, die ein komplettes mobiles Redesign aus einem
-Claude-Design-Projekt (c6b7bf59-3709-4d13-990e-4807c5058ea2, lokal unter
-`design-import/`) in die echte App übernehmen. Dieser Zyklus: neue Design-Tokens
-(Farben/Typografie/Spacing) app-weit über `css/styles.css` eingeführt (Hellmodus
-offiziell nachgeliefert, Dunkelmodus exakt aus dem Import), Bitter + Hanken Grotesk
-als WOFF2 selbst gehostet (`fonts/`, `css/fonts.css`, nur Mobil eingebunden), neues
-Logo (`assets/logo.svg`) im Mobil-Header, `.seg`-Schalter bekommt sichtbaren Rahmen
-+ `--surface-2`-Fläche (löst Backlog-Punkt „Rahmen-Fix Komplexitätsschalter"
-ersatzlos), Warnbox-Akzent auf Ocker statt Tomate umgestellt (klare Trennung von
-Marken-Akzent), Ergebnis-Panel/TempBox/IngredientRow ans neue Token-System
-angeglichen. `pizza-rechner.html` (Desktop) unverändert, nur `pizza-rechner-mobile.html`
-+ gemeinsame `css/`-Dateien angefasst. 716 Prüfungen unverändert grün (reine
-Optik-Änderung).
+Zweiter von 5 geplanten Zyklen desselben mobilen Redesigns (Zyklus 1 = Tokens +
+Rechner-Screen, v4.0.0). Dieser Zyklus stylt die Schritt-für-Schritt-Anleitung
+(`.step`/`.schedbar`) auf die neuen Design-Tokens um — Logik (`js/guide.js`,
+`js/schedule.js`, `js/timer.js`) unverändert. Überraschung beim Start: die meisten
+`.step`-Regeln entsprachen dank Zyklus 1 bereits exakt den Referenzen, nötig waren nur
+zwei gezielte Fixes: `.step .body .chip` (Technik-/Zeit-Chip) von der alten,
+Crust-umrandeten Gold-Optik auf borderlose `--info-bg`/`--info-text`-Tönung umgestellt
+(analog `Badge.jsx tone="warm"`), `.step .body .tip`-Linksrand von `--basil-text` auf
+`--success` (analog `Note.jsx variant="tip"`). `css/styles.css` (gemeinsam), Desktop-HTML
+unverändert (erbt die Optik trotzdem mit). 716 Prüfungen unverändert grün,
+`accessibility-expert`-Review ohne Befunde.
 
 **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Design-System-Import
-Zyklus 1: Tokens + Rechner-Screen (v4.0.0)"; frühere Abschnitte „Komplexität staffeln
-(v3.72.0)", „Rezeptwahl führen (v3.71.0)", „Mengensteuerung vereinfachen (v3.70.0)" und
-„Bugfix: #preset-Reset nach Mengensteuerung-Vereinfachung (v3.70.1)".
+Zyklus 2: Anleitung/Zeitplan-Screen (v4.1.0)"; vorheriger Abschnitt „Design-System-Import
+Zyklus 1: Tokens + Rechner-Screen (v4.0.0)".
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -367,7 +364,7 @@ pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=3.72.0
                      v4.0.0 bewusst NICHT mitgezogen, s. u.: Design-Import Zyklus 1 ist
                      mobile-only, Desktop lädt weiterhin ohne css/fonts.css)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle,
-                     ?v=4.0.0)
+                     ?v=4.1.0)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
 index.html           Weiterleitung auf pizza-rechner.html
@@ -476,7 +473,7 @@ formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 
 **Cache-Busting:** CSS/JS werden mit `?v=X.Y.Z` geladen. **Bei jeder neuen Version mitziehen.**
 Seit v4.0.0 bewusst **auseinandergelaufen**: `pizza-rechner-mobile.html` (+ zugehörige
-Standalone-Datei) steht bei `?v=4.0.0`, `pizza-rechner.html` (Desktop) bewusst weiter bei
+Standalone-Datei) steht bei `?v=4.1.0`, `pizza-rechner.html` (Desktop) bewusst weiter bei
 `?v=3.72.0`, weil Design-Import-Zyklen bis auf Weiteres mobile-only sind (Desktop-HTML wird
 nicht angefasst). Bei einem künftigen Zyklus, der auch Desktop ändert, beide wieder
 synchron auf denselben Stand ziehen.
@@ -484,7 +481,7 @@ synchron auf denselben Stand ziehen.
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien steht `<span class="nav-version"
 id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine JS-Logik dahinter. Seit v4.0.0
-ebenfalls auseinandergelaufen (Mobil `v4.0.0`, Desktop weiter `v3.72.0`), analog zum
+ebenfalls auseinandergelaufen (Mobil `v4.1.0`, Desktop weiter `v3.72.0`), analog zum
 Cache-Busting oben. **Bei jedem Versionssprung von Hand mitziehen** (zusammen mit `?v=` und der
 Kontext-Datei — bei allen drei HTML-Dateien, also auch `pizza-rechner-mobile-standalone.html`
 nach dem Rebuild, gegenprüfen), sonst zeigt die Live-App die falsche Version an.
@@ -741,12 +738,16 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
-- **Design-System-Import Zyklus 2 von 5 (Anleitung/Zeitplan-Screen):** nächster Schritt
-  der mehrteiligen mobilen Redesign-Reihe (Zyklus 1 = Tokens + Rechner, s. o., erledigt
-  in v4.0.0). Referenzdatei: `design-import/ui_kits/teigmeister/AnleitungScreen.jsx`
-  (olive Zeitplan-Leiste + nummerierte Schrittkarten mit Technik-/Zeit-Chips und
-  Tipp-/Warn-Boxen). Tokens/Fonts/Logo aus Zyklus 1 sind bereits app-weit aktiv, dieser
-  Zyklus muss sie nur noch für den Anleitungs-Bereich in Markup/CSS umsetzen.
+- **Design-System-Import Zyklus 3 von 5 (Pizza-Party-Screen):** nächster Schritt der
+  mehrteiligen mobilen Redesign-Reihe (Zyklus 1 = Tokens + Rechner, v4.0.0; Zyklus 2 =
+  Anleitung/Zeitplan-Screen, s. o., erledigt in v4.1.0). Referenzdatei:
+  `design-import/ui_kits/teigmeister/PartyScreen.jsx` (Gäste-/Pizzen-Stepper,
+  Pro-Person-Teigmathematik, aggregierte Einkaufsliste). Betrifft `js/party.js` +
+  zugehöriges Markup/CSS in `pizza-rechner-mobile.html`/`css/mobile.css` (+ ggf.
+  punktuelle gemeinsame `css/styles.css`-Ergänzungen, analog Zyklus 1+2) — reine
+  Optik-Umstellung auf die bereits app-weit aktiven Tokens, Pizza-Party-Rechenlogik
+  bleibt unangetastet. Nach Zyklus 3 noch offen: Zyklus 4 (Glossar-Screen,
+  `GlossarScreen.jsx`), Zyklus 5 (Einstellungen-Screen, `EinstellungenScreen.jsx`).
 - ~~Backlog.md Punkt 2 „Rahmen-Fix Komplexitätsschalter"~~ — **erledigt als Nebeneffekt
   von v4.0.0** (Design-System-Import Zyklus 1): `.seg` nutzt jetzt `--surface-2` +
   sichtbaren `1px solid var(--line)`-Rahmen statt der bisherigen, identisch zum

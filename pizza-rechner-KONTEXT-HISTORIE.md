@@ -8,6 +8,70 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Design-System-Import Zyklus 2: Anleitung/Zeitplan-Screen (v4.1.0)
+
+Zweiter von 5 geplanten Zyklen des mobilen Redesigns aus dem Claude-Design-Projekt
+(c6b7bf59-3709-4d13-990e-4807c5058ea2, lokal unter `design-import/`). Referenzdateien:
+`design-import/ui_kits/teigmeister/AnleitungScreen.jsx` (High-Fidelity-Mockup) sowie die
+Komponenten `components/feedback/ScheduleBar.jsx`, `components/cards/StepCard.jsx`,
+`components/feedback/Note.jsx`, `components/core/Badge.jsx` (jeweils mit vollständigem
+CSS-in-JS-Styling als Spezifikation, nicht als Code zu übernehmen). Auftrag betraf
+ausschließlich die Optik der bestehenden Schritt-für-Schritt-Anleitung — keine neue
+Akkordeon-/Einklapp-Logik (das ist Backlog-Punkt H, separat) und keine Änderung an der
+Wassertemperatur-/Eis-Darstellung (Backlog-Punkt I, separat). Die eigentliche
+Anleitungslogik (`PZ.buildGuide()` in `js/guide.js`, Gärzeit-Fahrplan `PZ.schedule()`,
+Timer `PZ.wireTimers()`) blieb komplett unangetastet, nur Markup-Klassen/CSS wurden neu
+gestylt.
+
+**Überraschender Befund direkt zu Beginn:** ein Abgleich der bestehenden `.step`/
+`.schedbar`/`.step .num`/`.step .body .timechip`/`.step .body .warn`-Regeln
+(`css/styles.css`) gegen die vier Referenzdateien zeigte, dass diese bereits **exakt**
+den neuen Design-Vorgaben entsprachen — Zyklus 1 hatte beim Einführen des Token-Systems
+(u. a. `--badge-ink`-Umbenennung, `.step .body .warn` auf `var(--warning)` statt
+`var(--tomato)`, `--basil`/`--success`-Aliasing) diese Regeln bereits implizit
+mitkonvertiert, ohne dass das damals als eigener Punkt benannt war. Dadurch reduzierte
+sich der tatsächliche Änderungsbedarf in diesem Zyklus auf zwei gezielte Fixes:
+
+1. **`.step .body .chip`** (Technik-/Zeit-Chip in der Schrittkarten-Titelzeile, z. B.
+   "mit der Hand", "27°C"): vorher `background:var(--chip-bg);color:var(--chip-text);
+   border:1px solid var(--crust)` (alte, umrandete Gold-Chip-Optik) — jetzt
+   `background:var(--info-bg);color:var(--info-text);border:1px solid transparent`,
+   entspricht exakt `Badge.jsx tone="warm"` aus dem Import (borderloser Tonal-Chip). Die
+   alten `--chip-bg`/`--chip-text`-Token-Aliase bleiben in `:root` unverändert stehen
+   (falls andere Stellen sie noch nutzen).
+2. **`.step .body .tip`**-Linksrand: vorher `var(--basil-text)` (=`--success-text`,
+   dunkleres Grün) — jetzt `var(--success)` (helleres Grün), entspricht exakt
+   `Note.jsx variant="tip"` (`borderLeft: var(--success)`). Hintergrund/Textfarbe waren
+   bereits korrekt und blieben unverändert.
+
+Beide Änderungen liegen in `css/styles.css` (gemeinsame Datei), da die betroffenen
+Klassen bereits Desktop UND Mobil gemeinsam nutzen (analog zur Zyklus-1-Handhabung
+gemeinsamer Token-Regeln) — `pizza-rechner.html` (Desktop) selbst wurde nicht editiert,
+erbt die neue Optik aber automatisch mit, genau wie schon in Zyklus 1.
+
+**Verifikation:** visuell per Headless-Edge-CDP (WebSocket-Steuerung, `Page.navigate` +
+`Runtime.evaluate` + `Page.captureScreenshot`), in Hell- **und** Dunkelmodus, sowie mit
+und ohne gesetzte Start-/Zielzeit (Fahrplan-Banner mit echter `--success`-Fläche
+gegenüber dem grauen "noch keine Zeit gesetzt"-Gradient-Fallback aus `js/guide.js`,
+unverändert). `tests/test.html`: **716/716 Prüfungen weiterhin grün** (reine
+CSS-Änderung, `js/calc.js`/`js/schedule.js`/`js/guide.js` nicht angefasst — `test-
+generator` daher nicht angefordert). `accessibility-expert`-Review (gezielt, nur die
+zwei geänderten Regeln) kam **ohne Befunde** zurück: `.chip`-Text/Hintergrund-Kontrast
+Hellmodus ~4,6–5,5:1 (je nach Rechenweg, beide über der 4,5:1-Schwelle), Dunkelmodus
+~7,3–7,5:1; `.tip`-Linksrand gegen Box- und Kartenfläche in beiden Themes über der
+3:1-UI-Komponenten-Schwelle (WCAG 1.4.11) — anders als beim Zyklus-1-Audit diesmal keine
+widersprüchliche PASS/FAIL-Einordnung zwischen Spezialist und eigener Nachrechnung.
+
+**Versionierung:** Minor-Sprung v4.0.0 → **v4.1.0** (Fortsetzung desselben, bereits als
+Major eingestuften Redesigns — "weiteres Feature/Screen im selben Redesign", nicht erneut
+Major). `?v=4.1.0` + `<span class="nav-version">` in `pizza-rechner-mobile.html`
+mitgezogen (Desktop bleibt bewusst bei `?v=3.72.0`, s. Dateistruktur-Abschnitt in der
+Hauptdatei), `pizza-rechner-mobile-standalone.html` neu gebaut. Nächster Kandidat:
+Zyklus 3 (Pizza-Party-Screen, `design-import/ui_kits/teigmeister/PartyScreen.jsx`).
+
+**Geändert:** `css/styles.css`, `pizza-rechner-mobile.html` (nur `?v=`/Versionsnummer),
+`pizza-rechner-mobile-standalone.html` (Rebuild).
+
 ## Design-System-Import Zyklus 1: Tokens + Rechner-Screen (v4.0.0)
 
 Der Nutzer hat in Claude Design (claude.ai/design, Projekt "Teigmeister Design System",
