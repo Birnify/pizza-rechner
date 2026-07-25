@@ -95,9 +95,28 @@
   function applyMethod() {
     const m = state.method;
     const isPref = m !== 'direct';
-    $('prefBlock').classList.toggle('show', isPref);
-    $('bigaHydBlock').classList.toggle('show', m === 'biga');
-    $('prefStageBlock').classList.toggle('show', isPref);
+    // Backlog Punkt J (v4.12.0, WCAG 2.4.3): #prefBlock/#bigaHydBlock/#prefStageBlock
+    // werden hier ggf. MEHRERE gleichzeitig ausgeblendet (z. B. Biga -> Direkt blendet
+    // alle drei auf einmal aus) -- deshalb EIN gebündelter PZ.moveFocusBeforeHide()-Aufruf
+    // mit der vollständigen Liste der tatsächlich verschwindenden Container, BEVOR
+    // irgendeine der .show-Klassen entfernt wird (s. Batch-Warnung in js/dom.js). Ohne
+    // Bündelung würde ein einzeln aufgerufener Helfer den Fokus u. U. auf einen Nachbarn
+    // legen, der im nächsten Schritt selbst mit ausgeblendet wird -- der Fokus ginge dann
+    // trotzdem verloren, nur einen Schritt später. Fallback-Ziel: der Methode-
+    // Segmentschalter selbst (bleibt in jedem Fall sichtbar, ist der naheliegendste
+    // "vorige" Bezugspunkt für einen Methodenwechsel).
+    const prefBlockEl = $('prefBlock'), bigaHydBlockEl = $('bigaHydBlock'), prefStageBlockEl = $('prefStageBlock');
+    const hidingNow = [];
+    if (!isPref && prefBlockEl.classList.contains('show')) hidingNow.push(prefBlockEl);
+    if (m !== 'biga' && bigaHydBlockEl.classList.contains('show')) hidingNow.push(bigaHydBlockEl);
+    if (!isPref && prefStageBlockEl.classList.contains('show')) hidingNow.push(prefStageBlockEl);
+    if (hidingNow.length && PZ.moveFocusBeforeHide) PZ.moveFocusBeforeHide(hidingNow, $('method'));
+    prefBlockEl.classList.toggle('show', isPref);
+    bigaHydBlockEl.classList.toggle('show', m === 'biga');
+    prefStageBlockEl.classList.toggle('show', isPref);
+    // #stagePref/#stageMain (Ergebnis-Panel, Vorteig-/Hauptteig-Aufteilung) enthalten
+    // ausschließlich reinen Anzeigetext (keine Buttons/Eingabefelder) -- kein
+    // Fokus-Schutz nötig, PZ.moveFocusBeforeHide() wäre hier ein reines No-op.
     $('stagePref').classList.toggle('show', isPref);
     $('stageMain').classList.toggle('show', isPref);
     // Bei Vorteig steuert die Reife-Stufe die Hefe → generische Hefe-Pills ausblenden

@@ -44,7 +44,9 @@ Ausschluss) ist seit v4.10.0 ebenfalls erledigt** (s. `pizza-rechner-KONTEXT.md`
 Abschnitt „Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (v4.10.0)"). **Punkt I
 unten (Zieltemperatur statt Eis in der Hauptanleitung) ist seit v4.11.0 ebenfalls erledigt**
 (s. `pizza-rechner-KONTEXT.md`, Abschnitt „Zieltemperatur statt Eis in der Hauptanleitung,
-Eis nur als Glossar-Fallback (v4.11.0)").
+Eis nur als Glossar-Fallback (v4.11.0)"). **Punkt J unten (Fokus-Verlust bei
+`.collapse`/`.show`-Feldern) ist seit v4.12.0 ebenfalls erledigt** (s.
+`pizza-rechner-KONTEXT.md`, Abschnitt „Fokus-Erhalt bei .collapse/.show-Feldern (v4.12.0)").
 
 ## Weitere Ideen (aus Backlog.txt, noch nicht in die Orchestrator-Warteschlange eingereiht)
 
@@ -366,7 +368,23 @@ früheren Fixes, kein genereller Glossar-Redesign (nur ein neuer Artikel plus ei
 Verlinkung). Schwellenwert 15 °C/59 °F fest im Code hinterlegt, nicht konfigurierbar über
 Einstellungen.
 
-### J. Fokus-Verlust bei dynamisch ausgeblendeten Feldern (`.collapse`/`.show`-Muster, WCAG 2.4.3)
+### ~~J. Fokus-Verlust bei dynamisch ausgeblendeten Feldern (`.collapse`/`.show`-Muster, WCAG 2.4.3)~~ — erledigt in v4.12.0
+
+Umgesetzt wie unten beschrieben: neuer gemeinsamer Helfer `PZ.moveFocusBeforeHide(containers,
+fallbackTarget)` + `PZ.toggleCollapse(container, show, opts)` (`js/dom.js`), verschiebt den
+Fokus kontrolliert weg, bevor ein fokussiertes `.collapse`/`.show`-Feld verschwindet (nie
+mehr kommentarlos auf `<body>`), inkl. optionaler Live-Region-Ansage beim Neu-Erscheinen.
+Eingebaut in `#sugarBlock` (`js/calc.js`), `#prefBlock`/`#bigaHydBlock`/`#prefStageBlock`
+(`js/ui.js applyMethod()`, gegen gleichzeitig verschwindende Nachbar-Container gehärtet) und
+im „Neues Rezept anlegen"-Formular (`js/newrecipe.js`, nicht im engeren Scope genannt, aber
+identisches Muster, geringer Zusatzaufwand). Beide MINOR-Nebenbefunde mit erledigt:
+Zucker-Pills bekommen `aria-label`; die Live-Region-Ansage beim Neu-Erscheinen wurde bewusst
+nur für `#sugarBlock` umgesetzt, nicht für `#prefBlock`/`#bigaHydBlock`/`#prefStageBlock`
+(Abgrenzung: ein Methodenwechsel blendet oft mehrere Felder gleichzeitig ein, mehrere
+simultane Live-Region-Ansagen wären eher verwirrend als hilfreich). Details:
+`pizza-rechner-KONTEXT.md`, Abschnitt „Fokus-Erhalt bei .collapse/.show-Feldern (v4.12.0)".
+
+Ursprünglicher Auftragstext (zur Referenz):
 
 Nebenbefund aus dem `accessibility-expert`-Review zu Backlog Punkt C (v4.7.0, Zucker-Feld
 wertbasiert): Wird ein Feld, das gerade den Fokus hält (z. B. `#sugarN`, während der

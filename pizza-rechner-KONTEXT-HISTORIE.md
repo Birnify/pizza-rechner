@@ -8,6 +8,107 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Fokus-Erhalt bei .collapse/.show-Feldern (v4.12.0)
+
+Backlog Punkt J (`Backlog.md`). Nebenbefund aus dem `accessibility-expert`-Review zu Backlog
+Punkt C (v4.7.0): wird ein Feld, das gerade den Fokus hält, per `.collapse`/`.show`-Muster
+ausgeblendet (z. B. `#sugarN` beim Zurücksetzen auf 0 %), fiel der Fokus bislang kommentarlos
+auf `<body>` — ein app-weites Bestandsmuster (`#sugarBlock`, `#prefBlock`, `#bigaHydBlock`,
+`#prefStageBlock`), nicht lokal auf ein Feld beschränkt (WCAG 2.4.3).
+
+- **Neuer gemeinsamer Helfer** `PZ.moveFocusBeforeHide(containers, fallbackTarget)`
+  (`js/dom.js`, analog zu `PZ.announce()`): `containers` ist ein einzelnes Element ODER ein
+  Array mehrerer Elemente, die GEMEINSAM/UNMITTELBAR NACHEINANDER verschwinden. Prüft, ob
+  `document.activeElement` innerhalb eines der Container liegt; falls ja, verschiebt den
+  Fokus in dieser Reihenfolge: (1) nächstes sichtbares, nicht mit-betroffenes Geschwister-
+  Element NACH dem letzten Container, (2) voriges sichtbares Geschwister VOR dem ersten
+  Container, (3) optionaler `fallbackTarget` (falls sichtbar), (4) übergeordnetes
+  `.card`-Element, per `tabindex="-1"` fokussierbar gemacht — niemals `<body>`.
+  **Batch-Sicherheit:** werden mehrere Container gleichzeitig ausgeblendet (z. B. bei einem
+  Methodenwechsel Biga → Direkt verschwinden `#prefBlock`/`#bigaHydBlock`/`#prefStageBlock`
+  auf einmal), müssen ALLE tatsächlich verschwindenden Container in EINEM Aufruf übergeben
+  werden — sonst würde der Helfer beim ersten Container einen Nachbarn als Fokus-Ziel wählen,
+  der im nächsten Schritt selbst mit ausgeblendet wird (Fokus ginge dann trotzdem verloren,
+  nur einen Schritt später).
+- **Zweiter Helfer** `PZ.toggleCollapse(container, show, opts)` (`js/dom.js`): dünner Wrapper
+  für einen EINZELNEN, unabhängig getoggelten Container (z. B. `#sugarBlock`) — kombiniert
+  `PZ.moveFocusBeforeHide()` mit der bestehenden `.show`-Klasse UND optional einer
+  Live-Region-Ansage beim NEU-Erscheinen (`opts.announceId`/`opts.announceText`, identisches
+  Muster wie das `#waterTempGlossaryRef`-Announcement aus v4.11.0 — feuert nur beim Wechsel
+  verborgen→sichtbar, ermittelt über den `.show`-Klassenzustand VOR dem Toggle, kein
+  zusätzlicher Modul-Variable-Tracker nötig).
+- **Eingebaut:** `js/calc.js` (`renderResult()`, `#sugarBlock`-Toggle) nutzt
+  `PZ.toggleCollapse()` inkl. neuer Live-Region `#sugarBlockLiveMsg` (Desktop + Mobil,
+  neuer i18n-Key `result.sugarFieldShownAnnounce`). `js/ui.js` (`applyMethod()`) sammelt vor
+  den drei bestehenden `classList.toggle()`-Zeilen (`#prefBlock`/`#bigaHydBlock`/
+  `#prefStageBlock`) in einem Array `hidingNow`, welche Container tatsächlich verschwinden,
+  und ruft `PZ.moveFocusBeforeHide(hidingNow, $('method'))` EINMAL vorher auf (Fallback: der
+  Methode-Segmentschalter selbst, bleibt immer sichtbar). `#stagePref`/`#stageMain`
+  (Ergebnis-Panel) bewusst unverändert — enthalten nur Anzeigetext, keine fokussierbaren
+  Elemente. `js/newrecipe.js` (`nrApplyMethod()`) bekam dasselbe Bündelungsmuster für
+  `nrPrefBlock`/`nrBigaHydBlock`/`nrPrefStageBlock` (Fallback: `$('nrMethod')`) — nicht im
+  engeren Scope genannt, aber identisches Muster im „Neues Rezept anlegen"-Formular, geringer
+  Zusatzaufwand.
+- **MINOR-Nebenbefunde mit erledigt** (aus demselben ursprünglichen Audit): Zucker-Pills
+  (`data-sugar`-Buttons) bekommen `aria-label` ("0 % Zucker"/"2 % Zucker", neue i18n-Keys
+  `pill.sugar0.ariaLabel`/`pill.sugar2.ariaLabel`, DE+EN) — vorher nur der reine Zahlentext
+  ("0 %"/"2 %") ohne Feldkontext. Fehlende Live-Region-Ansage beim Neu-Erscheinen eines
+  `.collapse`/`.show`-Felds: für `#sugarBlock` umgesetzt (s. o.); bewusst NICHT auf
+  `#prefBlock`/`#bigaHydBlock`/`#prefStageBlock` ausgeweitet (Abgrenzung, eigene
+  Design-Entscheidung) — ein Methodenwechsel blendet oft mehrere Felder gleichzeitig ein,
+  drei simultane Live-Region-Ansagen wären eher verwirrend als hilfreich.
+
+**Tests** (`tests/test.html`, neue Sektion „31 · Fokus-Erhalt bei .collapse/.show-Feldern"):
+12 selbst geschriebene Testfälle (`PZ.moveFocusBeforeHide()`-Einzelcontainer/Batch/kein-
+Nachfolger/kein-Ziel-überhaupt/No-op außerhalb, `PZ.toggleCollapse()`-Verstecken/Erscheinen/
+kein-Doppel-Announce/ohne-opts, `#sugarBlock`-Integration Fokus-Erhalt + Live-Region), dazu
+6 vom `test-generator`-Subagenten vorgeschlagene Randfälle (leere/undefined Argumente,
+unsichtbarer `fallbackTarget`, mehrfache Aufrufe ohne Reset, nicht-fokussierbares direktes
+Geschwister, `opts` nur teilweise befüllt, fehlende Live-Region-ID, Preset-Wechsel während
+Fokus im Feld, Schwellenwert-Grenzfall 0,05 g). **Beim eigenen Review 2 Fehler in den
+Subagenten-Vorschlägen gefunden und vor der Übernahme korrigiert:** ein Testfall prüfte
+fälschlich das übernächste statt das direkte nicht-fokussierbare Geschwister-Element (hätte
+den eigentlichen Skip-Zweig nie erreicht), ein anderer rief `toggleCollapse()` mit
+`show:false` auf, um das Fehlen von `announceId` zu testen — ein Verstecken-Aufruf löst aber
+so oder so nie ein Announce aus, der Test wäre auch bei fehlerhafter Implementierung grün
+gewesen. Beide korrigiert (Kommentare im Testcode markieren die Korrektur). Alle **923
+Prüfungen** grün (864 → 923), per Headless-Edge-Dump eigenständig verifiziert (nicht nur die
+Subagenten-Angabe übernommen).
+
+**`accessibility-expert`-Review:** keine Blocker/Major. Alle 5 geprüften Punkte PASS: Fokus
+nach Zucker-Ausblenden landet nie auf `<body>`; Methodenwechsel-Fokus-Bündelung verhindert
+gegenseitige Fokus-Wahl gleichzeitig verschwindender Container; Live-Region
+`#sugarBlockLiveMsg` korrekt verdrahtet (Desktop + Mobil); Zucker-Pills-`aria-label` korrekt
+gesetzt, DE+EN; „Neues Rezept anlegen"-Formular übernimmt dasselbe Muster. Ein dokumentierter
+MINOR-Punkt ohne Handlungsbedarf: nur 2 Zucker-Pills (0 %/2 %) statt mehr Werte — bestehende,
+bewusste Design-Entscheidung (Schnellwahl-Muster, analog zu anderen Pills), keine Änderung
+durch diesen Audit ausgelöst.
+
+**Geändert:** `js/dom.js`, `js/calc.js`, `js/ui.js`, `js/newrecipe.js`, `js/i18n-dict.js`,
+`pizza-rechner.html`, `pizza-rechner-mobile.html`, `tests/test.html`. `?v=`/sichtbare
+Versionsnummer auf `4.12.0` gezogen (Desktop + Mobil, Cache-Busting + Menü-Version).
+`pizza-rechner-mobile-standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v4.12.0 - Fokus-Erhalt bei .collapse-.show-Feldern/` enthält den vollständigen
+Schnappschuss.
+
+## Zieltemperatur statt Eis in der Hauptanleitung, Eis nur als Glossar-Fallback (v4.11.0)
+
+Backlog Punkt I. Ergebnis-Panel zeigt nur noch die reine Ziel-Wassertemperatur (eine
+`.temp-box`, Label „Schüttwasser"); die frühere „davon Eis"-Box + Anwärm-Hinweistext
+(`#iceAmt`/`#iceNote`) sind entfernt (Desktop + Mobil). Unter 15 °C/59 °F (intern immer
+Celsius verglichen, unabhängig vom Einheitensystem) erscheint stattdessen ein bedingter
+Verweis-Link (`#waterTempGlossaryRef`) zum neuen, generisch gehaltenen Glossar-Artikel
+„Eis-Methode" (DDT, Leitungswasser-Untergrenze, Energiebilanz-Formel, Praxis-Mischanleitung).
+`js/guide.js`-Anleitungsschritte sprechen ebenfalls nur noch von der Zieltemperatur, kein
+Eis-Text mehr. `R.ice`/`R.note`/die Energiebilanz-Formel bleiben in `js/calc.js` technisch
+unverändert (nur nicht mehr angezeigt); Einkaufsliste (`js/print.js`) bewusst unangetastet
+(außerhalb des Auftrags-Scope). `accessibility-expert`-Nachfix: Live-Region-Announcement
+beim Neu-Erscheinen des Links ergänzt (WCAG 4.1.3). 864 Prüfungen grün (833 → 864).
+
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Zieltemperatur statt Eis
+in der Hauptanleitung, Eis nur als Glossar-Fallback (v4.11.0)"; vorheriger Abschnitt
+„Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (v4.10.0)" ebenfalls dort.
+
 ## Zieltemperatur statt Eis in der Hauptanleitung, Eis nur als Glossar-Fallback (v4.11.0)
 
 Backlog Punkt I (`Backlog.md`). Auftrag: die Hauptanleitung/das Ergebnis-Panel spricht nur

@@ -182,7 +182,17 @@
     // (Mehl > 0 immer), also derselbe 0,05-g-Schwellwert wie bei gSugarRow/mSugarRow.
     // Nutzt weiterhin das etablierte .collapse/.show-Muster (verhindert einen Flacker-
     // Moment vorm ersten calc()-Lauf, da .collapse per CSS schon vor JS-Ausführung greift).
-    if ($('sugarBlock')) $('sugarBlock').classList.toggle('show', R.sugar >= 0.05);
+    // Backlog Punkt J (v4.12.0, WCAG 2.4.3 + 4.1.3): PZ.toggleCollapse() statt direktem
+    // classList.toggle() -- verschiebt den Fokus kontrolliert weg, falls #sugarN/-Dec/-Inc
+    // gerade fokussiert war (z. B. Nutzer setzt Zucker per Tastatur auf 0), UND kündigt das
+    // Neu-Erscheinen des Felds per Live-Region an (analog zum #waterTempGlossaryRef-Muster
+    // aus v4.11.0, s. renderResult()-Kommentar weiter unten).
+    if ($('sugarBlock')) {
+      PZ.toggleCollapse($('sugarBlock'), R.sugar >= 0.05, {
+        announceId: 'sugarBlockLiveMsg',
+        announceText: t('result.sugarFieldShownAnnounce')
+      });
+    }
 
     if (R.hasPref) {
       $('pFlour').textContent = fmtW(R.pf);

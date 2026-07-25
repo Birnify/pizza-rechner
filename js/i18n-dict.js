@@ -663,6 +663,12 @@
   add('label.sugar', 'Zucker', 'Sugar');
   add('hint.sugar', 'New-York-Style: unterstützt die Hefeaktivität &amp; die Krustenbräunung. Wird früh zugegeben (mit Mehl/Wasser/Hefe), nicht spät wie Öl.',
     'New York style: supports yeast activity &amp; crust browning. Added early (with flour/water/yeast), not late like oil.');
+  // Backlog Punkt J (MINOR-Nebenbefund, v4.12.0): Zucker-Pills hatten bislang kein
+  // aria-label -- Screenreader lasen nur den reinen Zahlentext ("0 %"/"2 %") ohne
+  // Feldkontext vor. Identisches Muster wie preset.recommend.*.ariaLabel oben
+  // (data-i18n-attr="aria-label:...").
+  add('pill.sugar0.ariaLabel', '0 % Zucker', '0% sugar');
+  add('pill.sugar2.ariaLabel', '2 % Zucker', '2% sugar');
 
   // -- Card: Methode & Hefe -----------------------------------------------------------
   // Bewusst PLAIN "&" statt "&amp;": diese beiden Keys werden sowohl per
@@ -743,6 +749,11 @@
   // bei jedem calc()-Lauf), s. js/calc.js.
   add('result.iceMethodLinkAnnounce', 'Neuer Hinweis: Zieltemperatur mit Leitungswasser nicht erreichbar, Eis-Methode im Glossar verfügbar.',
     'New notice: this target temperature can\'t be reached with tap water, the ice method is available in the glossary.');
+  // Live-Region-Ansage (WCAG 4.1.3, Backlog Punkt J, v4.12.0): wird per PZ.announce()
+  // NUR beim Neu-Erscheinen von #sugarBlock ausgelöst (nicht bei jedem calc()-Lauf),
+  // identisches Muster wie result.iceMethodLinkAnnounce oben, s. js/calc.js.
+  add('result.sugarFieldShownAnnounce', 'Neues Feld eingeblendet: Zucker.',
+    'New field shown: sugar.');
   add('yeast.fresh', '(frisch)', '(fresh)');
   add('yeast.dry', '(trocken)', '(dry)');
   add('btn.save', 'Speichern', 'Save');

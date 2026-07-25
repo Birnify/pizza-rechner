@@ -1759,12 +1759,15 @@ header{position:relative;text-align:center;}
             <span class="unit" id="sugarUnit">%</span>
           </div>
           <div class="pills">
-            <button type="button" data-sugar="0">0 %</button>
-            <button type="button" data-sugar="2">2 %</button>
+            <button type="button" data-sugar="0" aria-label="0 % Zucker" data-i18n-attr="aria-label:pill.sugar0.ariaLabel">0 %</button>
+            <button type="button" data-sugar="2" aria-label="2 % Zucker" data-i18n-attr="aria-label:pill.sugar2.ariaLabel">2 %</button>
           </div>
           <div class="hint" data-i18n-html="hint.sugar">New-York-Style: unterstützt die Hefeaktivität &amp; die Krustenbräunung. Wird früh zugegeben (mit Mehl/Wasser/Hefe), nicht spät wie Öl.</div>
         </div>
         <div id="stepperLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
+        <!-- Backlog Punkt J (v4.12.0, WCAG 4.1.3): Live-Region für PZ.toggleCollapse()s
+             Ansage beim Neu-Erscheinen von #sugarBlock, s. js/calc.js. -->
+        <div id="sugarBlockLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
       </div>
     </details>
 
@@ -2393,7 +2396,7 @@ header{position:relative;text-align:center;}
         <div class="nav-divider" role="separator"></div>
         <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.11.0</span>
+        <span class="nav-version" id="appVersion">v4.12.0</span>
 
       </div>
     </details>
@@ -2535,6 +2538,88 @@ header{position:relative;text-align:center;}
     global.setTimeout(function () {
       if (gen === announceGens[elementId]) el.textContent = text;
     }, 50);
+  };
+
+  // PZ.moveFocusBeforeHide(containers, fallbackTarget) — Backlog Punkt J (v4.12.0,
+  // WCAG 2.4.3 Fokus-Reihenfolge). Nebenbefund aus dem accessibility-expert-Review zu
+  // Backlog Punkt C (v4.7.0): wird ein Feld, das gerade den Fokus hält, per
+  // .collapse/.show-Muster ausgeblendet, fällt der Fokus kommentarlos auf <body> --
+  // Tastatur-/Screenreader-Nutzer verlieren dadurch unbemerkt ihre Position im Formular.
+  // App-weites Bestandsmuster (u. a. #sugarBlock in js/calc.js, #prefBlock/#bigaHydBlock/
+  // #prefStageBlock in js/ui.js applyMethod() und js/newrecipe.js nrApplyMethod()) --
+  // deshalb hier EIN gemeinsamer Helfer statt lokaler Einzel-Fixes je Stelle.
+  //
+  // `containers`: ein einzelnes Element ODER ein Array mehrerer Elemente, die alle
+  // GEMEINSAM/UNMITTELBAR NACHEINANDER ausgeblendet werden (z. B. applyMethod() blendet
+  // bei einem Methodenwechsel mehrere .collapse-Container gleichzeitig aus). Wichtig:
+  // ALLE gerade tatsächlich verschwindenden Container in einem Aufruf übergeben, NICHT
+  // einzeln pro Container aufrufen -- sonst würde der Helfer beim ersten Container einen
+  // Nachbarn als "sicheres Ziel" wählen, der im nächsten Schritt selbst verschwindet
+  // (Fokus würde dann trotzdem verloren gehen, nur einen Schritt später).
+  // `fallbackTarget`: optionales, garantiert sichtbar bleibendes Element (z. B. das
+  // auslösende Steuerelement selbst, etwa der Methode-Segmentschalter) -- wird genutzt,
+  // falls kein passendes Geschwister-Element gefunden wird.
+  //
+  // Strategie (robusteste, am wenigsten überraschende Wahl): zuerst das nächste
+  // sichtbare, nicht mit-betroffene Geschwister-Element NACH dem letzten Container
+  // (= "das nächste Feld"), sonst das vorherige sichtbare Geschwister VOR dem ersten
+  // Container (= "das vorige Feld"), sonst der optionale `fallbackTarget`, zuletzt das
+  // übergeordnete Card-/Container-Element (per tabindex="-1" fokussierbar gemacht) --
+  // niemals kommentarlos auf <body> fallen lassen.
+  const FOCUSABLE_SEL = 'a[href],button:not([disabled]),input:not([disabled]),' +
+    'select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+  function isVisibleEl(el) { return !!(el && el.offsetParent !== null); }
+  PZ.moveFocusBeforeHide = function (containers, fallbackTarget) {
+    const list = Array.isArray(containers) ? containers.filter(Boolean) : (containers ? [containers] : []);
+    if (!list.length) return;
+    const active = document.activeElement;
+    if (!list.some(function (c) { return c.contains(active); })) return; // Fokus liegt gar nicht in einem der Container
+
+    function inList(el) { return list.indexOf(el) !== -1; }
+    function focusableIn(el) {
+      if (!el || inList(el) || !isVisibleEl(el)) return null;
+      if (el.matches && el.matches(FOCUSABLE_SEL)) return el;
+      return el.querySelector ? el.querySelector(FOCUSABLE_SEL) : null;
+    }
+
+    const last = list[list.length - 1];
+    for (let sib = last.nextElementSibling; sib; sib = sib.nextElementSibling) {
+      const target = focusableIn(sib);
+      if (target) { target.focus(); return; }
+    }
+    const first = list[0];
+    for (let sib = first.previousElementSibling; sib; sib = sib.previousElementSibling) {
+      const target = focusableIn(sib);
+      if (target) { target.focus(); return; }
+    }
+    if (fallbackTarget && isVisibleEl(fallbackTarget)) { fallbackTarget.focus(); return; }
+    const card = first.closest ? (first.closest('.card') || first.parentElement) : first.parentElement;
+    if (card) {
+      if (!card.hasAttribute('tabindex')) card.setAttribute('tabindex', '-1');
+      card.focus();
+    }
+  };
+
+  // PZ.toggleCollapse(container, show, opts) — Backlog Punkt J (v4.12.0). Dünner
+  // Wrapper für den EINZELNEN, unabhängig (nicht als Teil einer Batch-Umschaltung wie
+  // applyMethod()) getoggelten .collapse-Container, z. B. #sugarBlock: kombiniert den
+  // Fokus-Schutz (PZ.moveFocusBeforeHide) mit der bestehenden .show-Klasse UND optional
+  // einer Live-Region-Ansage beim NEU-Erscheinen (WCAG 4.1.3, identisches Muster wie das
+  // #waterTempGlossaryRef-Announcement aus v4.11.0) -- feuert nur beim Wechsel
+  // verborgen->sichtbar, nicht bei jedem Render, während der Container ohnehin schon
+  // sichtbar ist/bleibt. `opts`: { announceId, announceText } (beide nötig, sonst keine
+  // Ansage). Für gemeinsam/gleichzeitig getoggelte Container-Gruppen (z. B. applyMethod())
+  // NICHT diesen Wrapper je Container einzeln aufrufen (s. Batch-Warnung oben bei
+  // PZ.moveFocusBeforeHide) -- dort direkt PZ.moveFocusBeforeHide() mit der vollständigen
+  // Container-Liste EINMAL vor allen Toggles aufrufen.
+  PZ.toggleCollapse = function (container, show, opts) {
+    if (!container) return;
+    const wasVisible = container.classList.contains('show');
+    if (!show && wasVisible) PZ.moveFocusBeforeHide(container);
+    container.classList.toggle('show', show);
+    if (show && !wasVisible && opts && opts.announceId && opts.announceText && PZ.announce) {
+      PZ.announce(opts.announceId, opts.announceText);
+    }
   };
 })(window);
 
@@ -3245,6 +3330,12 @@ header{position:relative;text-align:center;}
   add('label.sugar', 'Zucker', 'Sugar');
   add('hint.sugar', 'New-York-Style: unterstützt die Hefeaktivität &amp; die Krustenbräunung. Wird früh zugegeben (mit Mehl/Wasser/Hefe), nicht spät wie Öl.',
     'New York style: supports yeast activity &amp; crust browning. Added early (with flour/water/yeast), not late like oil.');
+  // Backlog Punkt J (MINOR-Nebenbefund, v4.12.0): Zucker-Pills hatten bislang kein
+  // aria-label -- Screenreader lasen nur den reinen Zahlentext ("0 %"/"2 %") ohne
+  // Feldkontext vor. Identisches Muster wie preset.recommend.*.ariaLabel oben
+  // (data-i18n-attr="aria-label:...").
+  add('pill.sugar0.ariaLabel', '0 % Zucker', '0% sugar');
+  add('pill.sugar2.ariaLabel', '2 % Zucker', '2% sugar');
 
   // -- Card: Methode & Hefe -----------------------------------------------------------
   // Bewusst PLAIN "&" statt "&amp;": diese beiden Keys werden sowohl per
@@ -3325,6 +3416,11 @@ header{position:relative;text-align:center;}
   // bei jedem calc()-Lauf), s. js/calc.js.
   add('result.iceMethodLinkAnnounce', 'Neuer Hinweis: Zieltemperatur mit Leitungswasser nicht erreichbar, Eis-Methode im Glossar verfügbar.',
     'New notice: this target temperature can\'t be reached with tap water, the ice method is available in the glossary.');
+  // Live-Region-Ansage (WCAG 4.1.3, Backlog Punkt J, v4.12.0): wird per PZ.announce()
+  // NUR beim Neu-Erscheinen von #sugarBlock ausgelöst (nicht bei jedem calc()-Lauf),
+  // identisches Muster wie result.iceMethodLinkAnnounce oben, s. js/calc.js.
+  add('result.sugarFieldShownAnnounce', 'Neues Feld eingeblendet: Zucker.',
+    'New field shown: sugar.');
   add('yeast.fresh', '(frisch)', '(fresh)');
   add('yeast.dry', '(trocken)', '(dry)');
   add('btn.save', 'Speichern', 'Save');
@@ -5089,7 +5185,17 @@ header{position:relative;text-align:center;}
     // (Mehl > 0 immer), also derselbe 0,05-g-Schwellwert wie bei gSugarRow/mSugarRow.
     // Nutzt weiterhin das etablierte .collapse/.show-Muster (verhindert einen Flacker-
     // Moment vorm ersten calc()-Lauf, da .collapse per CSS schon vor JS-Ausführung greift).
-    if ($('sugarBlock')) $('sugarBlock').classList.toggle('show', R.sugar >= 0.05);
+    // Backlog Punkt J (v4.12.0, WCAG 2.4.3 + 4.1.3): PZ.toggleCollapse() statt direktem
+    // classList.toggle() -- verschiebt den Fokus kontrolliert weg, falls #sugarN/-Dec/-Inc
+    // gerade fokussiert war (z. B. Nutzer setzt Zucker per Tastatur auf 0), UND kündigt das
+    // Neu-Erscheinen des Felds per Live-Region an (analog zum #waterTempGlossaryRef-Muster
+    // aus v4.11.0, s. renderResult()-Kommentar weiter unten).
+    if ($('sugarBlock')) {
+      PZ.toggleCollapse($('sugarBlock'), R.sugar >= 0.05, {
+        announceId: 'sugarBlockLiveMsg',
+        announceText: t('result.sugarFieldShownAnnounce')
+      });
+    }
 
     if (R.hasPref) {
       $('pFlour').textContent = fmtW(R.pf);
@@ -6237,9 +6343,28 @@ header{position:relative;text-align:center;}
   function applyMethod() {
     const m = state.method;
     const isPref = m !== 'direct';
-    $('prefBlock').classList.toggle('show', isPref);
-    $('bigaHydBlock').classList.toggle('show', m === 'biga');
-    $('prefStageBlock').classList.toggle('show', isPref);
+    // Backlog Punkt J (v4.12.0, WCAG 2.4.3): #prefBlock/#bigaHydBlock/#prefStageBlock
+    // werden hier ggf. MEHRERE gleichzeitig ausgeblendet (z. B. Biga -> Direkt blendet
+    // alle drei auf einmal aus) -- deshalb EIN gebündelter PZ.moveFocusBeforeHide()-Aufruf
+    // mit der vollständigen Liste der tatsächlich verschwindenden Container, BEVOR
+    // irgendeine der .show-Klassen entfernt wird (s. Batch-Warnung in js/dom.js). Ohne
+    // Bündelung würde ein einzeln aufgerufener Helfer den Fokus u. U. auf einen Nachbarn
+    // legen, der im nächsten Schritt selbst mit ausgeblendet wird -- der Fokus ginge dann
+    // trotzdem verloren, nur einen Schritt später. Fallback-Ziel: der Methode-
+    // Segmentschalter selbst (bleibt in jedem Fall sichtbar, ist der naheliegendste
+    // "vorige" Bezugspunkt für einen Methodenwechsel).
+    const prefBlockEl = $('prefBlock'), bigaHydBlockEl = $('bigaHydBlock'), prefStageBlockEl = $('prefStageBlock');
+    const hidingNow = [];
+    if (!isPref && prefBlockEl.classList.contains('show')) hidingNow.push(prefBlockEl);
+    if (m !== 'biga' && bigaHydBlockEl.classList.contains('show')) hidingNow.push(bigaHydBlockEl);
+    if (!isPref && prefStageBlockEl.classList.contains('show')) hidingNow.push(prefStageBlockEl);
+    if (hidingNow.length && PZ.moveFocusBeforeHide) PZ.moveFocusBeforeHide(hidingNow, $('method'));
+    prefBlockEl.classList.toggle('show', isPref);
+    bigaHydBlockEl.classList.toggle('show', m === 'biga');
+    prefStageBlockEl.classList.toggle('show', isPref);
+    // #stagePref/#stageMain (Ergebnis-Panel, Vorteig-/Hauptteig-Aufteilung) enthalten
+    // ausschließlich reinen Anzeigetext (keine Buttons/Eingabefelder) -- kein
+    // Fokus-Schutz nötig, PZ.moveFocusBeforeHide() wäre hier ein reines No-op.
     $('stagePref').classList.toggle('show', isPref);
     $('stageMain').classList.toggle('show', isPref);
     // Bei Vorteig steuert die Reife-Stufe die Hefe → generische Hefe-Pills ausblenden
@@ -7496,9 +7621,17 @@ header{position:relative;text-align:center;}
   function nrApplyMethod() {
     const m = nrState.method;
     const isPref = m !== 'direct';
-    $('nrPrefBlock').classList.toggle('show', isPref);
-    $('nrBigaHydBlock').classList.toggle('show', m === 'biga');
-    $('nrPrefStageBlock').classList.toggle('show', isPref);
+    // Backlog Punkt J (v4.12.0, WCAG 2.4.3): identisches Bündelungs-Muster wie
+    // applyMethod() in js/ui.js -- s. dortigen Kommentar für die Begründung.
+    const nrPrefBlockEl = $('nrPrefBlock'), nrBigaHydBlockEl = $('nrBigaHydBlock'), nrPrefStageBlockEl = $('nrPrefStageBlock');
+    const hidingNow = [];
+    if (!isPref && nrPrefBlockEl.classList.contains('show')) hidingNow.push(nrPrefBlockEl);
+    if (m !== 'biga' && nrBigaHydBlockEl.classList.contains('show')) hidingNow.push(nrBigaHydBlockEl);
+    if (!isPref && nrPrefStageBlockEl.classList.contains('show')) hidingNow.push(nrPrefStageBlockEl);
+    if (hidingNow.length && PZ.moveFocusBeforeHide) PZ.moveFocusBeforeHide(hidingNow, $('nrMethod'));
+    nrPrefBlockEl.classList.toggle('show', isPref);
+    nrBigaHydBlockEl.classList.toggle('show', m === 'biga');
+    nrPrefStageBlockEl.classList.toggle('show', isPref);
     $('nrYeastPills').style.display = isPref ? 'none' : '';
     // Sichtbare Kopplung (v3.31.0), analog zu applyMethod() in js/ui.js.
     $('nrYeastField').classList.toggle('coupled', isPref);

@@ -92,9 +92,17 @@
   function nrApplyMethod() {
     const m = nrState.method;
     const isPref = m !== 'direct';
-    $('nrPrefBlock').classList.toggle('show', isPref);
-    $('nrBigaHydBlock').classList.toggle('show', m === 'biga');
-    $('nrPrefStageBlock').classList.toggle('show', isPref);
+    // Backlog Punkt J (v4.12.0, WCAG 2.4.3): identisches Bündelungs-Muster wie
+    // applyMethod() in js/ui.js -- s. dortigen Kommentar für die Begründung.
+    const nrPrefBlockEl = $('nrPrefBlock'), nrBigaHydBlockEl = $('nrBigaHydBlock'), nrPrefStageBlockEl = $('nrPrefStageBlock');
+    const hidingNow = [];
+    if (!isPref && nrPrefBlockEl.classList.contains('show')) hidingNow.push(nrPrefBlockEl);
+    if (m !== 'biga' && nrBigaHydBlockEl.classList.contains('show')) hidingNow.push(nrBigaHydBlockEl);
+    if (!isPref && nrPrefStageBlockEl.classList.contains('show')) hidingNow.push(nrPrefStageBlockEl);
+    if (hidingNow.length && PZ.moveFocusBeforeHide) PZ.moveFocusBeforeHide(hidingNow, $('nrMethod'));
+    nrPrefBlockEl.classList.toggle('show', isPref);
+    nrBigaHydBlockEl.classList.toggle('show', m === 'biga');
+    nrPrefStageBlockEl.classList.toggle('show', isPref);
     $('nrYeastPills').style.display = isPref ? 'none' : '';
     // Sichtbare Kopplung (v3.31.0), analog zu applyMethod() in js/ui.js.
     $('nrYeastField').classList.toggle('coupled', isPref);

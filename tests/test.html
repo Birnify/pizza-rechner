@@ -50,7 +50,31 @@
   <input type="text" id="timeISO">
   <div id="recipesCard"></div><div id="shareBlock"></div><div id="shoppingRow"></div>
   <select id="preset"><option value=""></option><option value="newyork_style"></option><option value="napoli_klassisch"></option><option value="teglia"></option></select>
-  <div id="sugarBlock"></div>
+  <!-- Eigener Wrapper um Zucker-Feld + Vorgänger-Feld + Live-Region (Backlog Punkt J,
+       v4.12.0): hält die Geschwister-Traversierung von PZ.moveFocusBeforeHide() beim
+       sugarBlock-Integrationstest von den unabhängigen fm*-Stubs weiter unten getrennt --
+       sonst würde "nächstes sichtbares Geschwister" fälschlich über die Wrapper-Grenze
+       hinweg bei den fm*-Stubs landen statt (wie im echten Markup) beim vorigen Feld
+       innerhalb derselben Karte. -->
+  <div id="sugarBlockCardStub">
+    <div id="sugarBlockBefore"><button type="button" id="sugarBlockBeforeBtn">before-sugar</button></div>
+    <div id="sugarBlock"><button type="button" id="sugarBlockFocusStub">Zucker-Test-Fokus</button></div>
+    <div id="sugarBlockLiveMsg" role="status" aria-live="polite"></div>
+  </div>
+  <!-- Backlog Punkt J (v4.12.0, WCAG 2.4.3): Stub-Markup für PZ.moveFocusBeforeHide()/
+       PZ.toggleCollapse() (js/dom.js), realistische Geschwister-Struktur nötig (die
+       Helfer laufen echte DOM-Traversierung auf offsetParent-Sichtbarkeit, kein reiner
+       State-Vergleich). Sichtbarkeit wird in den Tests selbst per style.display
+       gesteuert -- tests/test.html lädt bewusst KEIN echtes App-Stylesheet, ".collapse"
+       hat hier also keine CSS-Wirkung. -->
+  <div id="fmBefore"><button type="button" id="fmBeforeBtn">before</button></div>
+  <div id="fmA"><button type="button" id="fmBtnA">in A</button></div>
+  <div id="fmB"><button type="button" id="fmBtnB">in B</button></div>
+  <div id="fmAfter"><button type="button" id="fmAfterBtn">after</button></div>
+  <div id="tcContainer"><button type="button" id="tcBtn">tc</button></div>
+  <div id="tcLiveMsg" role="status" aria-live="polite"></div>
+  <div class="card" id="fmFallbackWrap"><div id="fmFallbackContainer"><button type="button" id="fmFallbackBtn">fallback-container</button></div></div>
+  <button type="button" id="fmExternalFallback">external-fallback</button>
   <div class="hint" id="testHintStub">Erklärender Beispiel-Hinweistext</div>
   <button type="button" id="testDescribedBtn" aria-describedby="testHintStub">Beispiel-Button</button>
   <div class="seg" id="themeSwitch">
@@ -64,6 +88,11 @@
   </div>
   <div id="unitsAnnounce" role="status" aria-live="polite"></div>
   <div id="wasteNote"></div>
+  <!-- fmPrevOnly-Paar bewusst als LETZTE Kinder von #stubs (kein nachfolgendes
+       Geschwister im DOM) -- testet den "kein sichtbarer Nachfolger -> voriges
+       Geschwister"-Zweig von PZ.moveFocusBeforeHide(). -->
+  <div id="fmPrevOnlyBefore"><button type="button" id="fmPrevOnlyBeforeBtn">before-only</button></div>
+  <div id="fmPrevOnly"><button type="button" id="fmPrevOnlyBtn">prevonly</button></div>
 </div>
 
 <script src="../js/dom.js"></script>
@@ -4115,6 +4144,507 @@
       ]);
     })();
 
+  })();
+
+  // ─────────────────────────────────────────────────────────────
+  heading('31 · Fokus-Erhalt bei .collapse/.show-Feldern (Backlog Punkt J, v4.12.0, WCAG 2.4.3/4.1.3)');
+
+  // --- PZ.moveFocusBeforeHide() (js/dom.js): reine DOM-Traversierung, unabhängig von
+  // PZ.state/PZ.calc(). Alle fm*-Stubs s. #stubs oben. ---------------------------------
+  (function () {
+    // Test 1: einzelner Container -> Fokus wandert zum nächsten sichtbaren Geschwister
+    const fmA = document.getElementById('fmA');
+    const fmBtnA = document.getElementById('fmBtnA');
+    const fmBtnB = document.getElementById('fmBtnB');
+    fmBtnA.focus();
+    const focusedBefore1 = document.activeElement === fmBtnA;
+    PZ.moveFocusBeforeHide(fmA);
+    const movedToNextSibling = document.activeElement === fmBtnB;
+    renderBox('moveFocusBeforeHide · einzelner Container: Fokus wandert zum nächsten sichtbaren Geschwister', [
+      { label: 'Fokus lag vorher im Container (Validierung)', ok: focusedBefore1, actual: focusedBefore1, expected: true, tol: null },
+      { label: 'Fokus liegt danach im nächsten Geschwister-Feld (#fmBtnB)', ok: movedToNextSibling, actual: document.activeElement && document.activeElement.id, expected: 'fmBtnB', tol: null }
+    ]);
+  })();
+
+  (function () {
+    // Test 2: Batch-Aufruf (mehrere gleichzeitig verschwindende Container) -- der
+    // Helfer darf den Fokus NICHT auf einen ebenfalls betroffenen Nachbarn legen
+    // (sonst ginge er beim darauffolgenden Toggle dieses Nachbarn erneut verloren).
+    const fmA = document.getElementById('fmA');
+    const fmB = document.getElementById('fmB');
+    const fmBtnA = document.getElementById('fmBtnA');
+    const fmAfterBtn = document.getElementById('fmAfterBtn');
+    fmBtnA.focus();
+    PZ.moveFocusBeforeHide([fmA, fmB]);
+    const skippedAffectedSibling = document.activeElement === fmAfterBtn;
+    renderBox('moveFocusBeforeHide · Batch (mehrere gleichzeitig verschwindende Container): überspringt mit-betroffenen Nachbarn', [
+      { label: 'Fokus landet NICHT in #fmB (wird im selben Zug auch versteckt), sondern beim übernächsten sichtbaren Feld (#fmAfterBtn)', ok: skippedAffectedSibling, actual: document.activeElement && document.activeElement.id, expected: 'fmAfterBtn', tol: null }
+    ]);
+  })();
+
+  (function () {
+    // Test 3: kein nachfolgendes Geschwister vorhanden -> Fokus wandert zum vorigen
+    const fmPrevOnly = document.getElementById('fmPrevOnly');
+    const fmPrevOnlyBtn = document.getElementById('fmPrevOnlyBtn');
+    const fmPrevOnlyBeforeBtn = document.getElementById('fmPrevOnlyBeforeBtn');
+    fmPrevOnlyBtn.focus();
+    PZ.moveFocusBeforeHide(fmPrevOnly);
+    const movedToPrevSibling = document.activeElement === fmPrevOnlyBeforeBtn;
+    renderBox('moveFocusBeforeHide · kein nachfolgendes Geschwister: Fokus wandert zum vorigen sichtbaren Geschwister', [
+      { label: 'Fokus liegt danach im vorigen Geschwister-Feld (#fmPrevOnlyBeforeBtn)', ok: movedToPrevSibling, actual: document.activeElement && document.activeElement.id, expected: 'fmPrevOnlyBeforeBtn', tol: null }
+    ]);
+  })();
+
+  (function () {
+    // Test 4: weder vor- noch nachgelagertes Geschwister -> expliziter Fallback greift
+    const fmFallbackContainer = document.getElementById('fmFallbackContainer');
+    const fmFallbackBtn = document.getElementById('fmFallbackBtn');
+    const fmExternalFallback = document.getElementById('fmExternalFallback');
+    fmFallbackBtn.focus();
+    PZ.moveFocusBeforeHide(fmFallbackContainer, fmExternalFallback);
+    const movedToExplicitFallback = document.activeElement === fmExternalFallback;
+    renderBox('moveFocusBeforeHide · kein Geschwister-Ziel: expliziter fallbackTarget wird fokussiert', [
+      { label: 'Fokus liegt danach auf dem übergebenen fallbackTarget (#fmExternalFallback)', ok: movedToExplicitFallback, actual: document.activeElement && document.activeElement.id, expected: 'fmExternalFallback', tol: null }
+    ]);
+  })();
+
+  (function () {
+    // Test 5: weder Geschwister-Ziel noch fallbackTarget -> übergeordnetes .card-Element
+    // wird per tabindex="-1" fokussierbar gemacht und fokussiert (niemals <body>).
+    const fmFallbackContainer = document.getElementById('fmFallbackContainer');
+    const fmFallbackBtn = document.getElementById('fmFallbackBtn');
+    const fmFallbackWrap = document.getElementById('fmFallbackWrap');
+    fmFallbackBtn.focus();
+    PZ.moveFocusBeforeHide(fmFallbackContainer);
+    const movedToCard = document.activeElement === fmFallbackWrap;
+    const cardGotTabindex = fmFallbackWrap.getAttribute('tabindex') === '-1';
+    const neverFellBackToBody = document.activeElement !== document.body;
+    renderBox('moveFocusBeforeHide · kein Ziel überhaupt: übergeordnetes .card-Element wird fokussiert (nie <body>)', [
+      { label: 'Fokus liegt danach auf dem übergeordneten .card-Element', ok: movedToCard, actual: document.activeElement && document.activeElement.id, expected: 'fmFallbackWrap', tol: null },
+      { label: '.card-Element bekommt tabindex="-1" (fokussierbar, aber kein Tab-Stop)', ok: cardGotTabindex, actual: fmFallbackWrap.getAttribute('tabindex'), expected: '-1', tol: null },
+      { label: 'Fokus fällt in KEINEM Fall kommentarlos auf <body>', ok: neverFellBackToBody, actual: neverFellBackToBody, expected: true, tol: null }
+    ]);
+  })();
+
+  (function () {
+    // Test 6: Fokus liegt gar nicht im Container -> No-op, kein ungewollter Fokus-Klau
+    const fmA = document.getElementById('fmA');
+    const fmBeforeBtn = document.getElementById('fmBeforeBtn');
+    fmBeforeBtn.focus();
+    PZ.moveFocusBeforeHide(fmA);
+    const focusUnchanged = document.activeElement === fmBeforeBtn;
+    renderBox('moveFocusBeforeHide · Fokus liegt außerhalb des Containers: No-op', [
+      { label: 'Fokus bleibt unverändert (kein Eingriff, wenn nichts betroffen ist)', ok: focusUnchanged, actual: document.activeElement && document.activeElement.id, expected: 'fmBeforeBtn', tol: null }
+    ]);
+  })();
+
+  // --- PZ.toggleCollapse() (js/dom.js): kombiniert Fokus-Schutz + .show-Klasse + optionale
+  // Live-Region-Ansage beim Neu-Erscheinen. -------------------------------------------------
+  (function () {
+    const tcContainer = document.getElementById('tcContainer');
+    const tcBtn = document.getElementById('tcBtn');
+    const tcLiveMsg = document.getElementById('tcLiveMsg');
+
+    // 1) Verstecken, während fokussiert: Fokus wandert weg, Klasse verschwindet.
+    tcContainer.classList.add('show');
+    tcBtn.focus();
+    PZ.toggleCollapse(tcContainer, false);
+    const classRemoved = !tcContainer.classList.contains('show');
+    const focusMovedOut = !tcContainer.contains(document.activeElement);
+
+    // 2) Neu-Erscheinen: Klasse wird gesetzt, Live-Region wird SOFORT geleert (Announce
+    // ausgelöst, s. identisches Timing-Argument wie beim bestehenden
+    // #waterTempGlossaryLiveMsg-Test weiter oben in dieser Datei).
+    tcLiveMsg.textContent = 'Sentinel-vor-Erscheinen';
+    PZ.toggleCollapse(tcContainer, true, { announceId: 'tcLiveMsg', announceText: 'Testansage' });
+    const classAdded = tcContainer.classList.contains('show');
+    const announcedOnAppear = tcLiveMsg.textContent === '';
+
+    // 3) Bleibt sichtbar (erneuter true-Aufruf, kein echter Übergang): keine erneute Ansage.
+    tcLiveMsg.textContent = 'Sentinel-bereits-sichtbar';
+    PZ.toggleCollapse(tcContainer, true, { announceId: 'tcLiveMsg', announceText: 'Testansage 2' });
+    const noRepeatedAnnounce = tcLiveMsg.textContent === 'Sentinel-bereits-sichtbar';
+
+    // 4) Ohne opts: kein Fehler, Klasse funktioniert trotzdem normal.
+    let noOptsErrorThrown = false;
+    try { PZ.toggleCollapse(tcContainer, false); } catch (e) { noOptsErrorThrown = true; }
+    const classRemovedWithoutOpts = !tcContainer.classList.contains('show');
+
+    renderBox('toggleCollapse · Fokus-Schutz + .show-Klasse + Live-Region-Ansage nur beim Neu-Erscheinen', [
+      { label: 'Verstecken: .show"-Klasse wird entfernt', ok: classRemoved, actual: classRemoved, expected: true, tol: null },
+      { label: 'Verstecken: Fokus verlässt den Container (via moveFocusBeforeHide)', ok: focusMovedOut, actual: focusMovedOut, expected: true, tol: null },
+      { label: 'Neu-Erscheinen: "show"-Klasse wird gesetzt', ok: classAdded, actual: classAdded, expected: true, tol: null },
+      { label: 'Neu-Erscheinen: Live-Region wird sofort geleert (Announce ausgelöst)', ok: announcedOnAppear, actual: announcedOnAppear, expected: true, tol: null },
+      { label: 'Bleibt sichtbar (kein echter Übergang): KEINE erneute Ansage', ok: noRepeatedAnnounce, actual: noRepeatedAnnounce, expected: true, tol: null },
+      { label: 'Aufruf ohne opts wirft keinen Fehler', ok: !noOptsErrorThrown, actual: noOptsErrorThrown, expected: false, tol: null },
+      { label: 'Verstecken ohne opts funktioniert unverändert (Klasse entfernt)', ok: classRemovedWithoutOpts, actual: classRemovedWithoutOpts, expected: true, tol: null }
+    ]);
+  })();
+
+  // --- Integration: #sugarBlock (js/calc.js renderResult()) nutzt PZ.toggleCollapse() -----
+  (function () {
+    // Fokus-Erhalt: Nutzer setzt Zucker per Tastatur/Wert-Eingabe zurück auf 0, während das
+    // Zucker-Feld fokussiert ist -- der Fokus darf nicht kommentarlos auf <body> fallen.
+    Object.assign(PZ.state, BASE, { sugar: 2 });
+    PZ.calc();
+    const sugarBlockEl = document.getElementById('sugarBlock');
+    const focusStub = document.getElementById('sugarBlockFocusStub');
+    const shownBeforeReset = sugarBlockEl.classList.contains('show');
+    focusStub.focus();
+    const focusedBeforeReset = document.activeElement === focusStub;
+
+    Object.assign(PZ.state, BASE, { sugar: 0 });
+    PZ.calc();
+    const hiddenAfterReset = !sugarBlockEl.classList.contains('show');
+    const focusLeftContainer = !sugarBlockEl.contains(document.activeElement);
+    const focusNotOnBody = document.activeElement !== document.body;
+    const focusLandedOnPreviousField = document.activeElement === document.getElementById('sugarBlockBeforeBtn');
+
+    renderBox('#sugarBlock · Fokus-Erhalt beim Zurücksetzen auf 0 % (Backlog Punkt J)', [
+      { label: '#sugarBlock ist vor dem Reset sichtbar (Validierung)', ok: shownBeforeReset, actual: shownBeforeReset, expected: true, tol: null },
+      { label: 'Fokus lag im Zucker-Feld (Validierung)', ok: focusedBeforeReset, actual: focusedBeforeReset, expected: true, tol: null },
+      { label: '#sugarBlock verliert nach Reset auf 0 % die "show"-Klasse', ok: hiddenAfterReset, actual: hiddenAfterReset, expected: true, tol: null },
+      { label: 'Fokus verlässt das verschwindende Feld', ok: focusLeftContainer, actual: focusLeftContainer, expected: true, tol: null },
+      { label: 'Fokus fällt NICHT kommentarlos auf <body>', ok: focusNotOnBody, actual: focusNotOnBody, expected: true, tol: null },
+      { label: 'Fokus landet auf dem vorigen sichtbaren Feld (#sugarBlockBeforeBtn)', ok: focusLandedOnPreviousField, actual: document.activeElement && document.activeElement.id, expected: 'sugarBlockBeforeBtn', tol: null }
+    ]);
+  })();
+
+  (function () {
+    // Live-Region-Ansage: feuert nur beim Übergang "verborgen -> sichtbar", identisches
+    // Timing-Argument wie der bestehende #waterTempGlossaryLiveMsg-Test weiter oben.
+    const liveEl = document.getElementById('sugarBlockLiveMsg');
+    Object.assign(PZ.state, BASE, { sugar: 0 });
+    PZ.calc();
+    liveEl.textContent = 'Sentinel-vor-Uebergang';
+    Object.assign(PZ.state, BASE, { sugar: 2 });
+    PZ.calc();
+    const clearedOnAppear = liveEl.textContent === '';
+    liveEl.textContent = 'Sentinel-bereits-sichtbar';
+    Object.assign(PZ.state, BASE, { sugar: 2, balls: 6 });
+    PZ.calc();
+    const untouchedWhileAlreadyVisible = liveEl.textContent === 'Sentinel-bereits-sichtbar';
+    renderBox('#sugarBlock · Live-Region-Ansage feuert nur beim Neu-Erscheinen, nicht bei jedem calc()', [
+      { label: 'Übergang "verborgen -> sichtbar": Live-Region wird sofort geleert (Announce ausgelöst)', ok: clearedOnAppear, actual: clearedOnAppear, expected: true, tol: null },
+      { label: 'Bleibt bereits sichtbar: Live-Region wird NICHT erneut angefasst', ok: untouchedWhileAlreadyVisible, actual: untouchedWhileAlreadyVisible, expected: true, tol: null }
+    ]);
+    Object.assign(PZ.state, BASE); // Baseline für nachfolgende Tests wiederherstellen
+    PZ.calc();
+  })();
+
+  // --- Sugar-Pills aria-label (MINOR-Nebenbefund, Backlog Punkt J): identisches Muster wie
+  // die bereits geprüften preset.recommend.*.ariaLabel-Attribute. Kein DOM-Stub hierfür
+  // vorhanden (js/ui.js/pizza-rechner.html werden in test.html nicht geladen) -- daher nur
+  // ein i18n-Wörterbuch-Test, dass die neuen Keys existieren und in beiden Sprachen gefüllt
+  // sind; die tatsächliche DOM-Verdrahtung wird per accessibility-expert-Review verifiziert. ---
+  (function () {
+    const deLabel0 = PZ.t ? PZ.t('pill.sugar0.ariaLabel') : '';
+    const deLabel2 = PZ.t ? PZ.t('pill.sugar2.ariaLabel') : '';
+    PZ.setLang('en');
+    const enLabel0 = PZ.t ? PZ.t('pill.sugar0.ariaLabel') : '';
+    const enLabel2 = PZ.t ? PZ.t('pill.sugar2.ariaLabel') : '';
+    PZ.setLang('de');
+    renderBox('i18n · Zucker-Pills aria-label-Wörterbucheinträge (pill.sugar0/2.ariaLabel) vorhanden, DE+EN', [
+      { label: 'DE-Text für 0 %-Pill nicht leer und nicht der rohe Key', ok: !!deLabel0 && deLabel0 !== 'pill.sugar0.ariaLabel', actual: deLabel0, expected: '(gefüllter Text)', tol: null },
+      { label: 'DE-Text für 2 %-Pill nicht leer und nicht der rohe Key', ok: !!deLabel2 && deLabel2 !== 'pill.sugar2.ariaLabel', actual: deLabel2, expected: '(gefüllter Text)', tol: null },
+      { label: 'EN-Text für 0 %-Pill vorhanden und unterscheidet sich vom DE-Text', ok: !!enLabel0 && enLabel0 !== deLabel0, actual: enLabel0, expected: '(englischer Text)', tol: null },
+      { label: 'EN-Text für 2 %-Pill vorhanden und unterscheidet sich vom DE-Text', ok: !!enLabel2 && enLabel2 !== deLabel2, actual: enLabel2, expected: '(englischer Text)', tol: null }
+    ]);
+  })();
+
+  // --- Zusätz-Randfälle für PZ.moveFocusBeforeHide() (test-generator-Review, Backlog
+  // Punkt J) --------------------------------------------------------------------------
+  (function () {
+    // Test 7: leeres Argument oder undefined (defensive Programmierung)
+    const fmBeforeBtn = document.getElementById('fmBeforeBtn');
+    fmBeforeBtn.focus();
+    const focusBeforeEmpty = document.activeElement === fmBeforeBtn;
+    let noErrorOnEmpty = true;
+    try {
+      PZ.moveFocusBeforeHide(undefined);
+      PZ.moveFocusBeforeHide(null);
+      PZ.moveFocusBeforeHide([]);
+      PZ.moveFocusBeforeHide([null, undefined, false]);
+    } catch (e) { noErrorOnEmpty = false; }
+    const focusUnchangedAfterEmpty = document.activeElement === fmBeforeBtn;
+    renderBox('moveFocusBeforeHide · leeres/undefined containers-Argument: No-op ohne Fehler', [
+      { label: 'Kein Fehler bei undefined/null/[]/Filter-Ergebnisse', ok: noErrorOnEmpty, actual: noErrorOnEmpty, expected: true, tol: null },
+      { label: 'Fokus bleibt unverändert (lag nicht in einem Container)', ok: focusUnchangedAfterEmpty, actual: focusUnchangedAfterEmpty, expected: true, tol: null }
+    ]);
+  })();
+
+  (function () {
+    // Test 8: fallbackTarget selbst unsichtbar (offsetParent === null) -- sollte übersprungen werden
+    const fmFallbackContainer = document.getElementById('fmFallbackContainer');
+    const fmFallbackBtn = document.getElementById('fmFallbackBtn');
+    const fmExternalFallback = document.getElementById('fmExternalFallback');
+    const fmFallbackWrap = document.getElementById('fmFallbackWrap');
+
+    fmExternalFallback.style.display = 'none';
+    fmFallbackBtn.focus();
+    PZ.moveFocusBeforeHide(fmFallbackContainer, fmExternalFallback);
+
+    const bypassedInvisibleFallback = document.activeElement === fmFallbackWrap;
+    fmExternalFallback.style.display = '';
+
+    renderBox('moveFocusBeforeHide · fallbackTarget unsichtbar: wird übersprungen, nächster Fallback greift', [
+      { label: 'Fokus landet NICHT auf unsichtbarem fallbackTarget', ok: document.activeElement !== fmExternalFallback, actual: document.activeElement && document.activeElement.id, expected: '(nicht fmExternalFallback)', tol: null },
+      { label: 'Fokus landet stattdessen auf .card-Element (nächster Fallback)', ok: bypassedInvisibleFallback, actual: document.activeElement && document.activeElement.id, expected: 'fmFallbackWrap', tol: null }
+    ]);
+  })();
+
+  (function () {
+    // Test 9: Mehrfach aufeinanderfolgende Aufrufe ohne Reset
+    const fmA = document.getElementById('fmA');
+    const fmBtnA = document.getElementById('fmBtnA');
+    const fmBtnB = document.getElementById('fmBtnB');
+    const fmAfterBtn = document.getElementById('fmAfterBtn');
+
+    fmBtnA.focus();
+    PZ.moveFocusBeforeHide(fmA);
+    const firstMoveTarget = document.activeElement;
+
+    PZ.moveFocusBeforeHide(fmA);
+    const secondMoveNoChange = document.activeElement === firstMoveTarget;
+
+    const fmB = document.getElementById('fmB');
+    fmBtnB.focus();
+    PZ.moveFocusBeforeHide(fmB);
+    const thirdMoveTarget = document.activeElement;
+
+    renderBox('moveFocusBeforeHide · mehrfach aufeinanderfolgende Aufrufe: robuste Behandlung', [
+      { label: 'Erste Verschiebung: Fokus geht zum nächsten Feld', ok: firstMoveTarget && firstMoveTarget !== fmBtnA, actual: firstMoveTarget && firstMoveTarget.id, expected: 'fmBtnB', tol: null },
+      { label: 'Zweiter Aufruf (Fokus schon außen): keine Änderung, No-op', ok: secondMoveNoChange, actual: secondMoveNoChange, expected: true, tol: null },
+      { label: 'Dritte Verschiebung (neuer Container): funktioniert unabhängig weiter', ok: thirdMoveTarget !== fmBtnB, actual: thirdMoveTarget && thirdMoveTarget.id, expected: 'fmAfterBtn', tol: null }
+    ]);
+  })();
+
+  (function () {
+    // Test 10: direktes Geschwister ohne fokussierbaren Inhalt wird übersprungen, die
+    // Traversierung geht zum übernächsten Geschwister weiter.
+    // KORREKTUR (eigene Verifikation, s. Abschluss-Zusammenfassung): der ursprüngliche
+    // test-generator-Vorschlag leerte #fmAfter, aber #fmA's UNMITTELBARER Nachfolger ist
+    // #fmB (bereits fokussierbar) -- der Test hätte #fmAfter nie erreicht und damit den
+    // eigentlichen "skip nicht-fokussierbares Geschwister"-Zweig gar nicht geprüft. Hier
+    // stattdessen #fmB selbst (den direkten Nachfolger) vorübergehend nicht-fokussierbar
+    // machen, damit die Traversierung wirklich bis #fmAfter weiterlaufen muss.
+    const fmA = document.getElementById('fmA');
+    const fmBtnA = document.getElementById('fmBtnA');
+    const fmB = document.getElementById('fmB');
+    const fmAfterBtn = document.getElementById('fmAfterBtn');
+
+    const originalFmBHtml = fmB.innerHTML;
+    fmB.innerHTML = '<div>reiner Text, kein Button</div>';
+
+    fmBtnA.focus();
+    PZ.moveFocusBeforeHide(fmA);
+
+    const skippedNonFocusableSibling = document.activeElement === fmAfterBtn;
+    const focusNotOnBody = document.activeElement !== document.body;
+
+    fmB.innerHTML = originalFmBHtml;
+
+    renderBox('moveFocusBeforeHide · direktes Geschwister ohne fokussierbaren Inhalt wird übersprungen', [
+      { label: 'Fokus überspringt das nicht-fokussierbare Geschwister und landet beim übernächsten (#fmAfterBtn)', ok: skippedNonFocusableSibling, actual: document.activeElement && document.activeElement.id, expected: 'fmAfterBtn', tol: null },
+      { label: 'Fokus fällt nicht auf <body>', ok: focusNotOnBody, actual: focusNotOnBody, expected: true, tol: null }
+    ]);
+  })();
+
+  // --- Zusätz-Randfälle für PZ.toggleCollapse() (test-generator-Review) ---------------
+  (function () {
+    // Test 11: opts mit nur announceId (announceText fehlt)
+    const tcContainer = document.getElementById('tcContainer');
+    const tcLiveMsg = document.getElementById('tcLiveMsg');
+
+    tcContainer.classList.remove('show');
+    tcLiveMsg.textContent = 'Sentinel-vorher';
+
+    PZ.toggleCollapse(tcContainer, true, { announceId: 'tcLiveMsg' });
+
+    const classAdded = tcContainer.classList.contains('show');
+    const noAnnounceWithoutText = tcLiveMsg.textContent === 'Sentinel-vorher';
+
+    renderBox('toggleCollapse · opts.announceId ohne announceText: keine Ansage', [
+      { label: 'Klasse wird trotzdem gesetzt', ok: classAdded, actual: classAdded, expected: true, tol: null },
+      { label: 'Live-Region wird NICHT angesprochen (kein announceText)', ok: noAnnounceWithoutText, actual: noAnnounceWithoutText, expected: true, tol: null }
+    ]);
+  })();
+
+  (function () {
+    // Test 12: opts mit nur announceText (announceId fehlt), WÄHREND eines echten
+    // Neu-Erscheinens (show:true, vorher nicht sichtbar).
+    // KORREKTUR (eigene Verifikation): der ursprüngliche test-generator-Vorschlag rief
+    // hier show:false (Verstecken) auf -- ein hide-Aufruf löst so oder so NIE ein
+    // Announce aus (s. toggleCollapse-Guard "show && !wasVisible"), der Test hätte also
+    // auch bei fehlerhaft implementiertem announceId-Fallback grün gemeldet (falsch-
+    // positiv). Hier stattdessen show:true bei zuvor unsichtbarem Container, damit der
+    // Announce-Zweig überhaupt erreicht wird und das Fehlen von announceId wirklich zählt.
+    const tcContainer = document.getElementById('tcContainer');
+    const tcLiveMsg = document.getElementById('tcLiveMsg');
+
+    tcContainer.classList.remove('show');
+    tcLiveMsg.textContent = 'Sentinel-vorher';
+
+    PZ.toggleCollapse(tcContainer, true, { announceText: 'Testansage ohne ID' });
+
+    const classAdded = tcContainer.classList.contains('show');
+    const noAnnounceWithoutId = tcLiveMsg.textContent === 'Sentinel-vorher';
+
+    renderBox('toggleCollapse · opts.announceText ohne announceId (bei echtem Neu-Erscheinen): keine Ansage', [
+      { label: 'Klasse wird trotzdem gesetzt', ok: classAdded, actual: classAdded, expected: true, tol: null },
+      { label: 'Live-Region wird NICHT angesprochen (kein announceId)', ok: noAnnounceWithoutId, actual: noAnnounceWithoutId, expected: true, tol: null }
+    ]);
+  })();
+
+  (function () {
+    // Test 13: container === null oder undefined
+    let noErrorOnNullContainer = true;
+    try {
+      PZ.toggleCollapse(null, true);
+      PZ.toggleCollapse(undefined, false);
+    } catch (e) { noErrorOnNullContainer = false; }
+
+    renderBox('toggleCollapse · container === null/undefined: No-op ohne Fehler', [
+      { label: 'Kein Fehler bei null oder undefined container', ok: noErrorOnNullContainer, actual: noErrorOnNullContainer, expected: true, tol: null }
+    ]);
+  })();
+
+  (function () {
+    // Test 14: Live-Region-Element existiert nicht
+    const tcContainer = document.getElementById('tcContainer');
+    const nonexistentLiveId = 'this-element-does-not-exist-' + Math.random();
+
+    tcContainer.classList.remove('show');
+    let noErrorOnMissingLiveRegion = true;
+    try {
+      PZ.toggleCollapse(tcContainer, true, { announceId: nonexistentLiveId, announceText: 'test' });
+    } catch (e) { noErrorOnMissingLiveRegion = false; }
+
+    const classStillAdded = tcContainer.classList.contains('show');
+
+    renderBox('toggleCollapse · Live-Region existiert nicht (announceId auf fehlende ID): tolerant', [
+      { label: 'Kein Fehler, auch wenn Live-Region nicht gefunden wird', ok: noErrorOnMissingLiveRegion, actual: noErrorOnMissingLiveRegion, expected: true, tol: null },
+      { label: 'Klasse wird trotzdem gesetzt (Funktion arbeitet robust weiter)', ok: classStillAdded, actual: classStillAdded, expected: true, tol: null }
+    ]);
+  })();
+
+  (function () {
+    // Test 15: Schnelles Hintereinander-Toggle (show/hide/show)
+    const tcContainer = document.getElementById('tcContainer');
+    const tcLiveMsg = document.getElementById('tcLiveMsg');
+
+    tcContainer.classList.remove('show');
+    tcLiveMsg.textContent = 'Sentinel-start';
+
+    PZ.toggleCollapse(tcContainer, true, { announceId: 'tcLiveMsg', announceText: 'Ansage 1' });
+    PZ.toggleCollapse(tcContainer, false, { announceId: 'tcLiveMsg', announceText: 'Ansage 2' });
+    PZ.toggleCollapse(tcContainer, true, { announceId: 'tcLiveMsg', announceText: 'Ansage 3' });
+
+    const lastCallTriggeredAnnounce = tcLiveMsg.textContent === '';
+
+    renderBox('toggleCollapse · Schnelles Hintereinander-Toggle: Generation-Zähler funktioniert', [
+      { label: 'Letzter show=true-Aufruf triggert Announce sofort (Live-Region geleert)', ok: lastCallTriggeredAnnounce, actual: lastCallTriggeredAnnounce, expected: true, tol: null }
+    ]);
+  })();
+
+  // --- Zusätz-Randfälle für #sugarBlock-Integration (js/calc.js, test-generator-Review) ---
+  (function () {
+    // Test 16: Preset-Wechsel mit sugar > 0 → sugar = 0, während #sugarBlock fokussiert ist
+    const sugarBlockEl = document.getElementById('sugarBlock');
+    const focusStub = document.getElementById('sugarBlockFocusStub');
+    const sugarBlockBeforeBtn = document.getElementById('sugarBlockBeforeBtn');
+
+    Object.assign(PZ.state, BASE, { sugar: 2 });
+    PZ.calc();
+    const shownInitially = sugarBlockEl.classList.contains('show');
+
+    focusStub.focus();
+    const focusInSugarBlock = sugarBlockEl.contains(document.activeElement);
+
+    Object.assign(PZ.state, BASE, { sugar: 0 });
+    PZ.calc();
+
+    const hiddenAfterPreset = !sugarBlockEl.classList.contains('show');
+    const focusLeftAfterPreset = !sugarBlockEl.contains(document.activeElement);
+    const focusLandedOnPrevious = document.activeElement === sugarBlockBeforeBtn;
+
+    renderBox('#sugarBlock · Preset-Wechsel (sugar 2 → 0) während Fokus im Feld: kontrollierter Fokus-Shift', [
+      { label: '#sugarBlock sichtbar vor Preset-Wechsel', ok: shownInitially, actual: shownInitially, expected: true, tol: null },
+      { label: 'Fokus lag im #sugarBlock (Validierung)', ok: focusInSugarBlock, actual: focusInSugarBlock, expected: true, tol: null },
+      { label: '#sugarBlock wird nach Preset-Wechsel versteckt', ok: hiddenAfterPreset, actual: hiddenAfterPreset, expected: true, tol: null },
+      { label: 'Fokus verlässt das verschwindende Feld', ok: focusLeftAfterPreset, actual: focusLeftAfterPreset, expected: true, tol: null },
+      { label: 'Fokus landet auf dem vorigen sichtbaren Feld', ok: focusLandedOnPrevious, actual: document.activeElement && document.activeElement.id, expected: 'sugarBlockBeforeBtn', tol: null }
+    ]);
+  })();
+
+  (function () {
+    // Test 17: Grenzfall exakt bei 0,05 g Sichtbarkeits-Schwelle mit Fokus im Feld
+    const sugarBlockEl = document.getElementById('sugarBlock');
+    const focusStub = document.getElementById('sugarBlockFocusStub');
+    const sugarBlockBeforeBtn = document.getElementById('sugarBlockBeforeBtn');
+
+    Object.assign(PZ.state, BASE, { sugar: 0.008 });
+    PZ.calc();
+    focusStub.focus();
+
+    const sugarAtThreshold = PZ.R.sugar;
+    const containerVisibleAtThreshold = sugarBlockEl.classList.contains('show');
+
+    Object.assign(PZ.state, BASE, { sugar: 0.009 });
+    PZ.calc();
+
+    const sugarAboveThreshold = PZ.R.sugar;
+    const containerVisibleAbove = sugarBlockEl.classList.contains('show');
+
+    focusStub.focus();
+    Object.assign(PZ.state, BASE, { sugar: 0.008 });
+    PZ.calc();
+
+    const focusLeftBelow = !sugarBlockEl.contains(document.activeElement);
+    const focusOnPreviousField = document.activeElement === sugarBlockBeforeBtn;
+
+    renderBox('#sugarBlock · Grenzfall exakt 0,05 g mit Fokus im Feld: Schwelle respektieren', [
+      { label: 'Zucker unterhalb Schwelle < 0,05 g berechnet', ok: sugarAtThreshold < 0.05, actual: sugarAtThreshold, expected: '< 0.05', tol: null },
+      { label: 'Container bleibt verborgen unterhalb Schwelle', ok: !containerVisibleAtThreshold, actual: containerVisibleAtThreshold, expected: false, tol: null },
+      { label: 'Zucker oberhalb Schwelle >= 0,05 g geprüft', ok: sugarAboveThreshold >= 0.05, actual: sugarAboveThreshold, expected: '>= 0.05', tol: null },
+      { label: 'Container wird sichtbar oberhalb Schwelle', ok: containerVisibleAbove, actual: containerVisibleAbove, expected: true, tol: null },
+      { label: 'Zurück unter Schwelle mit Fokus: Fokus verlässt Container', ok: focusLeftBelow, actual: focusLeftBelow, expected: true, tol: null },
+      { label: 'Fokus landet auf vorherigem Feld', ok: focusOnPreviousField, actual: document.activeElement && document.activeElement.id, expected: 'sugarBlockBeforeBtn', tol: null }
+    ]);
+  })();
+
+  (function () {
+    // Test 18: Mehrfaches schnelles Zucker-Toggle (0 → 2 → 0 → 2) mit Live-Region-Ansagen
+    const sugarBlockEl = document.getElementById('sugarBlock');
+    const sugarBlockLiveMsg = document.getElementById('sugarBlockLiveMsg');
+
+    Object.assign(PZ.state, BASE, { sugar: 0 });
+    PZ.calc();
+    sugarBlockLiveMsg.textContent = 'Sentinel-1';
+
+    Object.assign(PZ.state, BASE, { sugar: 2 });
+    PZ.calc();
+    const liveRegionClearedOn1stShow = sugarBlockLiveMsg.textContent === '';
+
+    sugarBlockLiveMsg.textContent = 'Sentinel-2';
+
+    Object.assign(PZ.state, BASE, { sugar: 0 });
+    PZ.calc();
+    const liveUnchangedOnHide = sugarBlockLiveMsg.textContent === 'Sentinel-2';
+
+    sugarBlockLiveMsg.textContent = 'Sentinel-3';
+
+    Object.assign(PZ.state, BASE, { sugar: 2 });
+    PZ.calc();
+    const liveRegionClearedOn2ndShow = sugarBlockLiveMsg.textContent === '';
+
+    renderBox('#sugarBlock · Schnelles Zucker-Toggle: Live-Region-Ansagen korrekt gesteuert', [
+      { label: 'Erstes Einschalten (0 → 2): Live-Region geleert (Announce)', ok: liveRegionClearedOn1stShow, actual: liveRegionClearedOn1stShow, expected: true, tol: null },
+      { label: 'Verstecken (2 → 0): Live-Region wird NICHT angefasst', ok: liveUnchangedOnHide, actual: liveUnchangedOnHide, expected: true, tol: null },
+      { label: 'Zweites Einschalten (0 → 2): Live-Region wieder geleert (erneute Ansage)', ok: liveRegionClearedOn2ndShow, actual: liveRegionClearedOn2ndShow, expected: true, tol: null }
+    ]);
+    Object.assign(PZ.state, BASE);
+    PZ.calc();
   })();
 
   // ─────────────────────────────────────────────────────────────
