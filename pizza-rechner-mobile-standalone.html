@@ -1051,22 +1051,40 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .schedbar-goto-zeitplan:hover{opacity:.85;}
 .schedbar-goto-zeitplan:focus-visible{outline:2px solid #fff;outline-offset:2px;border-radius:1px;}
-.step .body .tip{
-  /* Design-Import Zyklus 2 (v4.1.0): Linksrand jetzt var(--success) statt
-     var(--basil-text) -- entspricht exakt Note.jsx variant="tip" aus dem Import
-     (borderLeft: var(--success)). Textfarbe bleibt var(--basil-text) (=
-     --success-text), das war schon vorher korrekt. */
-  margin-top:7px;font-size:12.5px;color:var(--basil-text);background:var(--tip-bg);border-radius:2px;
-  padding:7px 10px;border-left:3px solid var(--success);
+/* Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (v4.10.0, Backlog Punkt H,
+   "Akkordeon"): .tip/.warn waren bis hierher permanent sichtbare Volltext-Boxen (Farbwerte
+   unverändert von hier übernommen -- oliv/--success für Tipp, ocker/--warning für Warnung,
+   s. Kommentare der jeweils vorherigen Fassung dieser Regeln in der Historie). Jetzt zeigt
+   .hint-toggle nur noch einen kompakten Label-Button, .hint-body den Volltext, standardmäßig
+   per display:none versteckt und erst mit der Klasse .is-open sichtbar (von js/guide.js
+   gesetzt). Struktur/Klick-Verhalten (App-weites Single-Open-Akkordeon): js/guide.js. */
+.step .body .hintbox{margin-top:7px;}
+.step .body .hintbox+.hintbox{margin-top:6px;}
+.step .body .hint-toggle{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12.5px;font-weight:700;line-height:1;font-family:inherit;
+  border:none;border-left:3px solid var(--success);border-radius:2px;
+  padding:8px 11px;min-height:32px;cursor:pointer;
+  background:var(--tip-bg);color:var(--basil-text);
 }
-.step .body .warn{
-  /* Design-Import Zyklus 1 (v4.0.0): linker Rand jetzt var(--warning) statt var(--tomato)
-     -- die importierten Warn-Tokens sind bewusst Ocker, nie Tomatenrot, damit eine Warnung
-     nicht mit dem Marken-/CTA-Akzent verwechselt werden kann (s. Kommentar in
-     design-import/tokens/colors.css). background/color folgten dieser Trennung bereits
-     automatisch über die --warn-bg/--warn-text-Aliase (s. :root oben). */
-  margin-top:7px;font-size:12.5px;color:var(--warn-text);background:var(--warn-bg);border-radius:2px;
-  padding:7px 10px;border-left:3px solid var(--warning);
+.step .body .hintbox-warn .hint-toggle{
+  border-left-color:var(--warning);background:var(--warn-bg);color:var(--warn-text);
+}
+.step .body .hint-toggle:hover{filter:brightness(.96);}
+.step .body .hint-toggle:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+.step .body .hint-toggle-icon{font-size:13px;}
+/* Aufklapp-Pfeil zusätzlich zum aria-expanded-Zustand -- rein dekorativ (kein eigener
+   Text/aria-Attribut nötig), analog .more-options-details summary::after. */
+.step .body .hint-toggle::after{content:'▾';margin-left:2px;font-size:10px;opacity:.75;}
+.step .body .hint-toggle[aria-expanded="true"]::after{content:'▴';}
+.step .body .hint-body{
+  display:none;margin-top:2px;font-size:12.5px;line-height:1.45;border-radius:2px;
+  padding:7px 10px;border-left:3px solid var(--success);
+  background:var(--tip-bg);color:var(--basil-text);
+}
+.step .body .hint-body.is-open{display:block;}
+.step .body .hintbox-warn .hint-body{
+  border-left-color:var(--warning);background:var(--warn-bg);color:var(--warn-text);
 }
 /* Glossar-Verweis (v3.68.0, "Glossar-Verweise in der Anleitung"): kleiner, unauffälliger
    Sprung-Link am Ende eines Anleitungsschritts (js/guide.js glossaryLinkHtml()) --
@@ -1166,6 +1184,12 @@ footer{text-align:center;font-size:11.5px;color:var(--muted);padding:0 20px 30px
   body{background:#fff;}
   .timerbox,.timerhint{display:none;}
   .glossary-ref{display:none;}
+  /* Einklappbare Hinweisboxen (v4.10.0, Backlog Punkt H): auf Papier gibt es keine
+     Interaktion -- Toggle-Button ausblenden, Volltext IMMER zeigen (unabhängig vom
+     Bildschirm-Aufklappzustand), damit "Anleitung drucken" wie bisher den kompletten
+     Tipp-/Warntext enthält. */
+  .step .body .hint-toggle{display:none;}
+  .step .body .hint-body{display:block!important;}
   /* Anleitung drucken: nur die Schritt-für-Schritt-Anleitung bleibt sichtbar */
   body.print-guide .result{display:none;}
   /* Einkaufsliste drucken: alles außer der Einkaufsliste ausblenden (inkl. Anleitung + Ergebnis-Panel) */
@@ -2356,7 +2380,7 @@ header{position:relative;text-align:center;}
         <div class="nav-divider" role="separator"></div>
         <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.9.1</span>
+        <span class="nav-version" id="appVersion">v4.10.0</span>
 
       </div>
     </details>
@@ -2622,6 +2646,11 @@ header{position:relative;text-align:center;}
   // js/guide.js und PZ.gotoGlossaryEntry() in js/glossary.js. {term} kommt aus dem
   // jeweiligen glossary.<id>.title-Eintrag, damit der Linktext immer zum Zieltitel passt.
   add('guide.glossaryLink.label', 'Mehr zu {term} im Glossar', 'More on {term} in the glossary');
+  // Einklappbare Hinweisboxen (v4.10.0, Backlog Punkt H): sichtbarer Text des Toggle-
+  // Buttons ist zugleich sein Accessible Name (kein zusätzliches aria-label nötig) --
+  // Auf-/Zu-Zustand wird über aria-expanded angesagt, analog zum bestehenden .info-btn-Muster.
+  add('guide.hint.toggleTip', 'Tipp', 'Tip');
+  add('guide.hint.toggleWarn', 'Warnung', 'Warning');
   add('guide.weekday.0', 'So', 'Sun'); add('guide.weekday.1', 'Mo', 'Mon');
   add('guide.weekday.2', 'Di', 'Tue'); add('guide.weekday.3', 'Mi', 'Wed');
   add('guide.weekday.4', 'Do', 'Thu'); add('guide.weekday.5', 'Fr', 'Fri');
@@ -5220,8 +5249,36 @@ header{position:relative;text-align:center;}
   function st(title, chip, body, extra, dur, opts) {
     _items.push(Object.assign({ title, chip, body, extra: extra || '', dur: dur || 0 }, opts || {}));
   }
-  function tip(txt) { return `<div class="tip">💡 ${txt}</div>`; }
-  function warn(txt) { return `<div class="warn">⚠️ ${txt}</div>`; }
+  // Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (v4.10.0, Backlog Punkt H,
+  // "Akkordeon"): tip()/warn() bauten bis hierher permanent sichtbare `<div class="tip">`/
+  // `<div class="warn">`-Volltextblöcke. Jetzt liefern beide stattdessen einen kompakten
+  // Toggle-Button (.hint-toggle, initial `aria-expanded="false"`) + einen initial
+  // versteckten Volltext-Container (.hint-body). App-weites Single-Open-Verhalten (immer
+  // maximal EIN Hinweis gleichzeitig offen, über alle Schritte hinweg) wird unten im
+  // gemeinsamen, bereits bestehenden delegierten Klick-Listener auf #guideSteps ergänzt --
+  // da es je Seite (Desktop/Mobil) nur diesen EINEN #guideSteps-Container gibt, ist "app-
+  // weit" damit automatisch erfüllt, ohne eigene globale Zustandsvariable. Technisches
+  // Vorbild: js/glossary.js löst dasselbe Grundmuster (ein Artikel offen schließt alle
+  // anderen) scoped auf eine <details>-Liste -- hier ist die Struktur (Button + Div statt
+  // <details>/<summary>) bewusst anders, weil mehrere Hinweisboxen INNERHALB eines einzigen
+  // Anleitungsschritts vorkommen können (z. B. Warnung + Öl-Tipp im selben Schritt), wo ein
+  // natives <details> die visuelle .step-Karte stärker verändert hätte.
+  // `_hintSeq` (Reset je buildGuide()-Durchlauf, analog `_usedGlossaryIds`) vergibt
+  // eindeutige IDs für die aria-controls-Verknüpfung Button -> Textcontainer.
+  let _hintSeq = 0;
+  function hintBox(kind, icon, txt) {
+    const id = 'hintbox-' + (_hintSeq++);
+    const label = t(kind === 'warn' ? 'guide.hint.toggleWarn' : 'guide.hint.toggleTip');
+    return `<div class="hintbox hintbox-${kind}">` +
+      `<button type="button" class="hint-toggle" aria-expanded="false" aria-controls="${id}">` +
+      `<span class="hint-toggle-icon" aria-hidden="true">${icon}</span>` +
+      `<span class="hint-toggle-label">${label}</span>` +
+      `</button>` +
+      `<div class="hint-body" id="${id}">${txt}</div>` +
+      `</div>`;
+  }
+  function tip(txt) { return hintBox('tip', '💡', txt); }
+  function warn(txt) { return hintBox('warn', '⚠️', txt); }
   // Timer-Widget-Platzhalter für Schritte mit nennenswerter Wartezeit (js/timer.js rendert hinein).
   // Feature-Flag "timer" (js/settings.js): ist das Feature deaktiviert, wird gar kein
   // Platzhalter gerendert — js/timer.js findet dann nichts zu verdrahten, und das damit
@@ -5363,6 +5420,7 @@ header{position:relative;text-align:center;}
     let matureMin = 0;                        // Vorteig-Reifezeit (nur bei Biga/Poolish)
     _items = [];
     _usedGlossaryIds = new Set();              // Dedup-Reset je buildGuide()-Durchlauf
+    _hintSeq = 0;                              // Hinweisbox-ID-Reset je buildGuide()-Durchlauf
 
     // ===== VORTEIG (Biga / Poolish) =====
     if (pref) {
@@ -5623,11 +5681,43 @@ header{position:relative;text-align:center;}
   // identische Burgermenü-Inline-Scripts auf Desktop + Mobil) — falls aus irgendeinem
   // Grund nicht vorhanden (z. B. isolierte Testumgebung ohne Menü-Markup/js/nav.js),
   // passiert einfach nichts (kein Crash).
+  // Einklappbare Hinweisboxen (v4.10.0, Backlog Punkt H): kleine Helfer für den
+  // Auf-/Zuklapp-Zustand eines einzelnen .hint-toggle-Buttons + seines per
+  // aria-controls verknüpften .hint-body-Containers.
+  function hintBodyOf(btn) {
+    const id = btn.getAttribute('aria-controls');
+    return id ? document.getElementById(id) : null;
+  }
+  function openHintToggle(btn) {
+    btn.setAttribute('aria-expanded', 'true');
+    const body = hintBodyOf(btn);
+    if (body) body.classList.add('is-open');
+  }
+  function closeHintToggle(btn) {
+    btn.setAttribute('aria-expanded', 'false');
+    const body = hintBodyOf(btn);
+    if (body) body.classList.remove('is-open');
+  }
+
   const guideStepsEl = $('guideSteps');
   if (guideStepsEl) {
     guideStepsEl.addEventListener('click', function (e) {
       const zeitplanBtn = e.target.closest('.schedbar-goto-zeitplan');
       if (zeitplanBtn) { if (PZ.gotoView) PZ.gotoView('zeitplan'); return; }
+      // Einklappbare Hinweisboxen (v4.10.0, Backlog Punkt H): App-weites Single-Open-
+      // Akkordeon -- vor dem (ggf.) Öffnen DIESES Toggles werden alle anderen gerade
+      // offenen Hinweisboxen im gesamten #guideSteps-Container geschlossen (nicht nur
+      // innerhalb desselben Schritts), danach der geklickte Button umgeschaltet.
+      const hintBtn = e.target.closest('.hint-toggle');
+      if (hintBtn) {
+        const wasOpen = hintBtn.getAttribute('aria-expanded') === 'true';
+        Array.prototype.forEach.call(
+          guideStepsEl.querySelectorAll('.hint-toggle[aria-expanded="true"]'),
+          function (b) { if (b !== hintBtn) closeHintToggle(b); }
+        );
+        if (wasOpen) closeHintToggle(hintBtn); else openHintToggle(hintBtn);
+        return;
+      }
       // Glossar-Verweise (v3.68.0): identisches Delegations-Muster wie der
       // Zeitplan-Sprung direkt darüber -- ein einziger Listener auf dem stabilen
       // #guideSteps-Container statt Einzel-Listenern, die bei jedem buildGuide()-Neuaufbau
@@ -6493,9 +6583,16 @@ header{position:relative;text-align:center;}
           blocks.push({ type: 'stepTitle', num: num, text: title });
           const body = textOf(child.querySelector('.body > p'));
           if (body) blocks.push({ type: 'body', text: body });
-          const extras = child.querySelectorAll('.body > .tip, .body > .warn');
+          // Einklappbare Hinweisboxen (v4.10.0, Backlog Punkt H): .tip/.warn sind keine
+          // direkten `.body`-Kinder mehr, sondern `.hint-body`-Textcontainer innerhalb
+          // eines `.hintbox`-Wrappers (Toggle-Button + Text). `textContent` liefert den
+          // vollen Text unabhängig vom aktuellen Auf-/Zugeklappt-Zustand (CSS-Sichtbarkeit
+          // beeinflusst textContent nicht) -- der PDF-Export enthält also weiterhin IMMER
+          // den kompletten Hinweistext, unabhängig davon, ob er im Bildschirm gerade offen
+          // oder eingeklappt ist.
+          const extras = child.querySelectorAll('.body > .hintbox > .hint-body');
           Array.prototype.forEach.call(extras, function (ex) {
-            const isWarn = ex.classList.contains('warn');
+            const isWarn = ex.parentElement && ex.parentElement.classList.contains('hintbox-warn');
             const t = textOf(ex);
             if (t) blocks.push({ type: isWarn ? 'warn' : 'tip', text: t });
           });

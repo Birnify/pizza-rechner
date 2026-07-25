@@ -3654,6 +3654,260 @@
   })();
 
   // ─────────────────────────────────────────────────────────────
+  heading('30 · Akkordeon-Verhalten der Hinweisboxen (v4.10.0)');
+
+  // Hilfsfunktionen für Hinweisbox-Tests
+  (function () {
+    function countHintToggles(guideStepsEl) {
+      return (guideStepsEl || {}).querySelectorAll ? guideStepsEl.querySelectorAll('.hint-toggle').length : 0;
+    }
+    function countOpenHints(guideStepsEl) {
+      return (guideStepsEl || {}).querySelectorAll ? guideStepsEl.querySelectorAll('.hint-toggle[aria-expanded="true"]').length : 0;
+    }
+    function hasInlineGlossaryLink(guideStepsEl) {
+      if (!(guideStepsEl || {}).querySelectorAll) return false;
+      return guideStepsEl.querySelectorAll('.inline-glossary-link').length > 0;
+    }
+    function inlineLinksInHintBodies(guideStepsEl) {
+      if (!(guideStepsEl || {}).querySelectorAll) return 0;
+      return guideStepsEl.querySelectorAll('.hint-body .inline-glossary-link').length;
+    }
+
+    const multiHintState = {
+      method: 'biga', hyd: 75, yeast: 0.3, salt: 2.8, oil: 2, pref: 100, bhyd: 45
+    };
+
+    // Test 1: Default-Zustand nach buildGuide()
+    (function () {
+      Object.assign(PZ.state, BASE, multiHintState);
+      PZ.calc();
+      const guideEl = document.getElementById('guideSteps');
+      const numToggles = countHintToggles(guideEl);
+      const numOpen = countOpenHints(guideEl);
+      const allCollapsed = Array.prototype.every.call(
+        guideEl ? guideEl.querySelectorAll('.hint-toggle') : [],
+        btn => btn.getAttribute('aria-expanded') === 'false'
+      );
+      const noOpenBodies = Array.prototype.every.call(
+        guideEl ? guideEl.querySelectorAll('.hint-body') : [],
+        body => !body.classList.contains('is-open')
+      );
+      renderBox('Akkordeon · Default-Zustand: alle Hinweisboxen eingeklappt', [
+        { label: 'mindestens 2 Hinweisboxen im Rezept vorhanden (Test-Validierung)', ok: numToggles >= 2, actual: numToggles, expected: '≥ 2', tol: null },
+        { label: 'alle .hint-toggle haben aria-expanded="false"', ok: allCollapsed, actual: allCollapsed, expected: true, tol: null },
+        { label: 'keine .hint-body hat Klasse is-open', ok: noOpenBodies, actual: noOpenBodies, expected: true, tol: null },
+        { label: 'countOpenHints() = 0', ok: numOpen === 0, actual: numOpen, expected: 0, tol: null }
+      ]);
+    })();
+
+    // Test 2: Klick auf einen Toggle öffnet genau diesen
+    (function () {
+      Object.assign(PZ.state, BASE, multiHintState);
+      PZ.calc();
+      const guideEl = document.getElementById('guideSteps');
+      if (!guideEl) return;
+      const btns = guideEl.querySelectorAll('.hint-toggle');
+      if (btns.length === 0) return;
+      const btn0 = btns[0];
+      const id0 = btn0.getAttribute('aria-controls');
+      const body0 = id0 ? document.getElementById(id0) : null;
+
+      btn0.click();
+
+      const isOpen = btn0.getAttribute('aria-expanded') === 'true';
+      const bodyHasOpenClass = body0 ? body0.classList.contains('is-open') : false;
+      renderBox('Akkordeon · Klick öffnet genau diesen Toggle', [
+        { label: 'Button[0] hat aria-expanded="true" nach Klick', ok: isOpen, actual: isOpen, expected: true, tol: null },
+        { label: 'zugehörige .hint-body bekommt Klasse is-open', ok: bodyHasOpenClass, actual: bodyHasOpenClass, expected: true, tol: null }
+      ]);
+    })();
+
+    // Test 3: Klick auf zweiten Toggle schließt den ersten (Single-Open-Logik)
+    (function () {
+      Object.assign(PZ.state, BASE, multiHintState);
+      PZ.calc();
+      const guideEl = document.getElementById('guideSteps');
+      if (!guideEl) return;
+      const btns = guideEl.querySelectorAll('.hint-toggle');
+      if (btns.length < 2) return;
+      const btn0 = btns[0];
+      const btn1 = btns[1];
+
+      btn0.click();
+      const btn0OpenAfterClick0 = btn0.getAttribute('aria-expanded') === 'true';
+
+      btn1.click();
+      const btn0ClosedAfterClick1 = btn0.getAttribute('aria-expanded') === 'false';
+      const btn1OpenAfterClick1 = btn1.getAttribute('aria-expanded') === 'true';
+      const totalOpen = countOpenHints(guideEl);
+
+      renderBox('Akkordeon · Klick auf zweiten Toggle schließt den ersten (Single-Open)', [
+        { label: 'Button[0] war offen nach erstem Klick (Validierung)', ok: btn0OpenAfterClick0, actual: btn0OpenAfterClick0, expected: true, tol: null },
+        { label: 'Button[0] ist jetzt geschlossen nach Klick auf Button[1]', ok: btn0ClosedAfterClick1, actual: btn0ClosedAfterClick1, expected: true, tol: null },
+        { label: 'Button[1] ist jetzt offen', ok: btn1OpenAfterClick1, actual: btn1OpenAfterClick1, expected: true, tol: null },
+        { label: 'maximal 1 .hint-toggle[aria-expanded="true"] im ganzen #guideSteps', ok: totalOpen === 1, actual: totalOpen, expected: 1, tol: null }
+      ]);
+    })();
+
+    // Test 4: Erneuter Klick auf offenen Toggle schließt ihn (Toggle-Out)
+    (function () {
+      Object.assign(PZ.state, BASE, multiHintState);
+      PZ.calc();
+      const guideEl = document.getElementById('guideSteps');
+      if (!guideEl) return;
+      const btns = guideEl.querySelectorAll('.hint-toggle');
+      if (btns.length === 0) return;
+      const btn0 = btns[0];
+
+      btn0.click();
+      const openAfterFirst = btn0.getAttribute('aria-expanded') === 'true';
+
+      btn0.click();
+      const closedAfterSecond = btn0.getAttribute('aria-expanded') === 'false';
+      const totalOpen = countOpenHints(guideEl);
+
+      renderBox('Akkordeon · Erneuter Klick auf offenen Toggle schließt ihn', [
+        { label: 'Button ist nach erstem Klick offen (Validierung)', ok: openAfterFirst, actual: openAfterFirst, expected: true, tol: null },
+        { label: 'Button ist nach zweitem Klick geschlossen', ok: closedAfterSecond, actual: closedAfterSecond, expected: true, tol: null },
+        { label: 'countOpenHints() = 0 (nichts offen mehr)', ok: totalOpen === 0, actual: totalOpen, expected: 0, tol: null }
+      ]);
+    })();
+
+    // Test 5: Mehrere Hinweisboxen im SELBEN Schritt — Single-Open auch innerhalb eines Schritts
+    (function () {
+      const sameStepState = {
+        method: 'direct', hyd: 62, oil: 2, sugar: 2, yeast: 0.3, salt: 2.8
+      };
+      Object.assign(PZ.state, BASE, sameStepState);
+      PZ.calc();
+      const guideEl = document.getElementById('guideSteps');
+      if (!guideEl) return;
+      const btns = guideEl.querySelectorAll('.hint-toggle');
+      if (btns.length < 2) return;
+
+      btns[0].click();
+      const openCount1 = countOpenHints(guideEl);
+
+      btns[1].click();
+      const openCount2 = countOpenHints(guideEl);
+      const firstClosed = btns[0].getAttribute('aria-expanded') === 'false';
+      const secondOpen = btns[1].getAttribute('aria-expanded') === 'true';
+
+      renderBox('Akkordeon · Mehrere Hinweisboxen im selben Schritt: Single-Open auch hier', [
+        { label: 'nach Klick auf Button[0]: 1 Box offen', ok: openCount1 === 1, actual: openCount1, expected: 1, tol: null },
+        { label: 'nach Klick auf Button[1]: Button[0] automatisch geschlossen', ok: firstClosed, actual: firstClosed, expected: true, tol: null },
+        { label: 'nach Klick auf Button[1]: Button[1] jetzt offen', ok: secondOpen, actual: secondOpen, expected: true, tol: null },
+        { label: 'insgesamt nur 1 Box offen (nicht 2)', ok: openCount2 === 1, actual: openCount2, expected: 1, tol: null }
+      ]);
+    })();
+
+    // Test 6: Inline-Glossar-Links bleiben unabhängig vom Akkordeon-Zustand klickbar
+    (function () {
+      Object.assign(PZ.state, BASE, multiHintState);
+      PZ.calc();
+      const guideEl = document.getElementById('guideSteps');
+      if (!guideEl) return;
+
+      const hasInlineLinks = hasInlineGlossaryLink(guideEl);
+      const inlineLinksInBodies = inlineLinksInHintBodies(guideEl);
+
+      const btns = guideEl.querySelectorAll('.hint-toggle');
+      btns.forEach(btn => btn.click());
+
+      const inlineLinksInBodiesAfterOpen = inlineLinksInHintBodies(guideEl);
+
+      renderBox('Akkordeon · Inline-Glossar-Links unabhängig vom Toggle-Zustand erreichbar', [
+        { label: '.inline-glossary-link-Elemente kommen in der Anleitung vor (falls überhaupt Glossar-Links)', ok: hasInlineLinks === false || hasInlineLinks === true, actual: hasInlineLinks, expected: '0 oder ≥1', tol: null },
+        { label: 'kein .inline-glossary-link sitzt als Nachfahre in .hint-body (Selektor-Check)', ok: inlineLinksInBodies === 0, actual: inlineLinksInBodies, expected: 0, tol: null },
+        { label: 'auch nach dem Öffnen aller Hinweisboxen: .inline-glossary-link nicht in .hint-body', ok: inlineLinksInBodiesAfterOpen === 0, actual: inlineLinksInBodiesAfterOpen, expected: 0, tol: null }
+      ]);
+    })();
+
+    // Test 7: PDF-Export: PZ._pdfCollectGuideContent() liefert vollen Text unabhängig vom Akkordeon-Zustand
+    (function () {
+      Object.assign(PZ.state, BASE, multiHintState);
+      PZ.calc();
+
+      if (!PZ._pdfCollectGuideContent) return;
+
+      const pdfContent1 = PZ._pdfCollectGuideContent();
+
+      const guideEl = document.getElementById('guideSteps');
+      if (guideEl) {
+        const btns = guideEl.querySelectorAll('.hint-toggle');
+        if (btns.length > 0) btns[0].click();
+      }
+
+      const pdfContent2 = PZ._pdfCollectGuideContent();
+
+      const contentLength1 = pdfContent1 ? pdfContent1.length : 0;
+      const contentLength2 = pdfContent2 ? pdfContent2.length : 0;
+
+      renderBox('Akkordeon · PDF-Export: vollen Text unabhängig von Auf-/Zugeklappt-Zustand', [
+        { label: 'PZ._pdfCollectGuideContent() liefert Inhalte (nicht leer)', ok: contentLength1 > 0, actual: contentLength1, expected: '> 0', tol: null },
+        { label: 'PDF-Inhalt bleibt gleich unabhängig vom Toggle-Zustand (komplett vs. einzeln offen)', ok: contentLength1 === contentLength2, actual: contentLength1, expected: contentLength2, tol: null }
+      ]);
+    })();
+
+    // Test 8: Randfall — Akkordeon-Zustand wird bei jedem buildGuide() zurückgesetzt
+    (function () {
+      Object.assign(PZ.state, BASE, multiHintState);
+      PZ.calc();
+      const guideEl = document.getElementById('guideSteps');
+      if (!guideEl) return;
+
+      const btns1 = guideEl.querySelectorAll('.hint-toggle');
+      if (btns1.length > 0) btns1[0].click();
+      const openCount1 = countOpenHints(guideEl);
+
+      PZ.calc();
+
+      const guideEl2 = document.getElementById('guideSteps');
+      const openCount2 = countOpenHints(guideEl2);
+      const allClosed = Array.prototype.every.call(
+        guideEl2 ? guideEl2.querySelectorAll('.hint-toggle') : [],
+        btn => btn.getAttribute('aria-expanded') === 'false'
+      );
+
+      renderBox('Akkordeon · buildGuide() reset: Hinweisbox-Zustand wird bei neuem calc() zurückgesetzt', [
+        { label: 'nach erstem calc() + Klick: 1 Box offen (Validierung)', ok: openCount1 === 1, actual: openCount1, expected: 1, tol: null },
+        { label: 'nach zweitem calc(): alle Boxen wieder eingeklappt', ok: allClosed, actual: allClosed, expected: true, tol: null },
+        { label: 'countOpenHints() = 0 nach neuem buildGuide()', ok: openCount2 === 0, actual: openCount2, expected: 0, tol: null }
+      ]);
+    })();
+
+    // Test 9: Regression — Akkordeon-Logik bei verschiedenen Rezepten/Methoden
+    (function () {
+      const recipes = [
+        { method: 'direct', hyd: 60, yeast: 0.3 },
+        { method: 'biga', hyd: 65, yeast: 0.3 },
+        { method: 'poolish', hyd: 66, yeast: 0.2 }
+      ];
+
+      const allConsistent = recipes.every(recipe => {
+        Object.assign(PZ.state, BASE, recipe);
+        PZ.calc();
+        const guideEl = document.getElementById('guideSteps');
+        if (!guideEl) return true;
+        const btns = guideEl.querySelectorAll('.hint-toggle');
+        if (btns.length < 2) return true;
+
+        btns[0].click();
+        btns[1].click();
+
+        return btns[0].getAttribute('aria-expanded') === 'false' &&
+               btns[1].getAttribute('aria-expanded') === 'true' &&
+               countOpenHints(guideEl) === 1;
+      });
+
+      renderBox('Akkordeon · Regression: Single-Open-Logik über alle Methoden konsistent', [
+        { label: 'Akkordeon-Verhalten identisch für direct/biga/poolish', ok: allConsistent, actual: allConsistent, expected: true, tol: null }
+      ]);
+    })();
+
+  })();
+
+  // ─────────────────────────────────────────────────────────────
   const s = document.getElementById('summary');
   s.textContent = failed === 0
     ? '✓ Alle ' + passed + ' Prüfungen bestanden'

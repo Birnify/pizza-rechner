@@ -1,6 +1,6 @@
 # Backlog / Sessionübergabe
 
-Stand: 2026-07-24. Für Fortsetzung in einer neuen Session (auch anderer Account/Maschine).
+Stand: 2026-07-25. Für Fortsetzung in einer neuen Session (auch anderer Account/Maschine).
 Lies zusätzlich `pizza-rechner-KONTEXT.md` (Pflicht, siehe `CLAUDE.md`) für den aktuellen
 App-Stand — diese Datei hier ist nur die Warteschlange/Ideensammlung.
 
@@ -39,7 +39,9 @@ ebenfalls erledigt** (s. `pizza-rechner-KONTEXT.md`, Abschnitt „Inline-Verlink
 Glossar-Begriffen im Anleitungstext (v4.9.0)"). **Punkt E unten (Bug: untere
 Navigationsleiste rutscht hoch) ist seit v4.9.1 umgesetzt, aber NICHT auf echtem
 iOS-Gerät bestätigt** (s. `pizza-rechner-KONTEXT.md`, Abschnitt „Bottom-Nav iOS
-Safe-Area Fix (v4.9.1)").
+Safe-Area Fix (v4.9.1)"). **Punkt H unten (Einklappbare Hinweisboxen mit gegenseitigem
+Ausschluss) ist seit v4.10.0 ebenfalls erledigt** (s. `pizza-rechner-KONTEXT.md`,
+Abschnitt „Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (v4.10.0)").
 
 ## Weitere Ideen (aus Backlog.txt, noch nicht in die Orchestrator-Warteschlange eingereiht)
 
@@ -245,6 +247,19 @@ Persistenz des Aufklapp-Zustands über App-Neustart, sofern nicht anders gewüns
 
 ### G. Bug: Info-Button bei "Verschwendung anpassen" wird vom "−"-Stepper-Button überdeckt
 
+**Status (2026-07-25): Bereits gelöst, keine Umsetzung mehr nötig.** Live per Headless-
+Browser bei echter Mobil-Breite (375px) gegengeprüft (Screenshot-Vergleich Hell/Dunkel):
+"Verschwendung anpassen" und "Hefemenge anpassen" brechen sauber auf zwei Zeilen um,
+der Stepper (−/Eingabefeld/+/%) sitzt in einer eigenen Zeile darunter, keine
+Überlappung. Ursache der Auflösung: das Design-Import Zyklus 5 (v4.4.0,
+"Einstellungen-Screen") hat den ursprünglich crowded Info-Button ("i", öffnete/schloss
+den Erklärtext) komplett entfernt und durch einen dauerhaft sichtbaren `.hint`-Text
+darunter ersetzt (`.switch-row` enthält jetzt nur noch das Label, `.adjust-stepper` ist
+eine eigene Zeile darunter) — das genau die Zeile, die vorher überlappte, existiert in
+dieser Form nicht mehr. Kein Code-Fix nötig, dieser Punkt bleibt nur zur Doku stehen.
+
+<details><summary>Ursprüngliche Beobachtung/vorgeschlagener Fix (archiviert, nicht mehr relevant)</summary>
+
 Ursache (vermutet): Zeile enthält Label + Info-Icon + Minus-Button + Eingabefeld +
 Plus-Button + %-Einheit nebeneinander; Eingabefeld hat wahrscheinlich eine fixe
 Mindestbreite, die bei diesem längeren Label ("Verschwendung anpassen" länger als z. B.
@@ -260,7 +275,24 @@ anpassen", strukturell identisch) reduzieren/flexibel gestalten. Sicherstellen, 
 Info-Button-Icon in beiden Zeilen immer vollständig sichtbar bleibt, unabhängig von
 Label-Länge/Bildschirmbreite. Kein Eingriff in die Wertelogik der Stepper selbst.
 
-### H. Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (Akkordeon)
+</details>
+
+### ~~H. Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (Akkordeon)~~ — erledigt in v4.10.0
+
+Umgesetzt wie unten beschrieben, mit einem wichtigen Vorbehalt: der Auftragstext stammt von
+VOR dem Design-Import-Redesign (v4.0.0-v4.9.1) und referenziert die ALTE Emoji-Farboptik
+("grüne 💡, orange ⚠️"). Die konzeptionelle Absicht (Akkordeon, App-weites Single-Open)
+wurde 1:1 umgesetzt, aber gegen die TATSÄCHLICH aktuelle Optik/Klassenstruktur (`.tip` =
+oliv-grüner Linksrand, `.warn` = ocker-Linksrand, beide ohne Emoji-Hintergrundfläche, seit
+Design-Import Zyklus 1-2). `.note`-Boxen (Ergebnis-Panel, `#iceNote`) bewusst NICHT
+einbezogen: kein Teil eines einzelnen Anleitungsschritts (anders als der Scope-Text
+"innerhalb der Anleitungsschritte" es verlangt), einmaliges Banner statt wiederkehrender
+Box je Schritt, und Gegenstand des separaten, noch offenen Backlog Punkts I. `#flourWarn`
+(Mehl-Warnung) ebenfalls unverändert (kein Schritt-Bestandteil, direkt handlungsrelevant).
+Details: `pizza-rechner-KONTEXT.md`, Abschnitt „Einklappbare Hinweisboxen mit
+gegenseitigem Ausschluss (v4.10.0)".
+
+Ursprünglicher Auftragstext (zur Referenz):
 
 Idee: Die bisher permanent sichtbaren Hinweis-/Tipp-Boxen (grüne 💡, orange ⚠️) innerhalb
 der Anleitungsschritte werden standardmäßig eingeklappt, nur über einen kleinen

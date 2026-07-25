@@ -142,9 +142,16 @@
           blocks.push({ type: 'stepTitle', num: num, text: title });
           const body = textOf(child.querySelector('.body > p'));
           if (body) blocks.push({ type: 'body', text: body });
-          const extras = child.querySelectorAll('.body > .tip, .body > .warn');
+          // Einklappbare Hinweisboxen (v4.10.0, Backlog Punkt H): .tip/.warn sind keine
+          // direkten `.body`-Kinder mehr, sondern `.hint-body`-Textcontainer innerhalb
+          // eines `.hintbox`-Wrappers (Toggle-Button + Text). `textContent` liefert den
+          // vollen Text unabhängig vom aktuellen Auf-/Zugeklappt-Zustand (CSS-Sichtbarkeit
+          // beeinflusst textContent nicht) -- der PDF-Export enthält also weiterhin IMMER
+          // den kompletten Hinweistext, unabhängig davon, ob er im Bildschirm gerade offen
+          // oder eingeklappt ist.
+          const extras = child.querySelectorAll('.body > .hintbox > .hint-body');
           Array.prototype.forEach.call(extras, function (ex) {
-            const isWarn = ex.classList.contains('warn');
+            const isWarn = ex.parentElement && ex.parentElement.classList.contains('hintbox-warn');
             const t = textOf(ex);
             if (t) blocks.push({ type: isWarn ? 'warn' : 'tip', text: t });
           });

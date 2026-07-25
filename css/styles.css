@@ -970,22 +970,40 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .schedbar-goto-zeitplan:hover{opacity:.85;}
 .schedbar-goto-zeitplan:focus-visible{outline:2px solid #fff;outline-offset:2px;border-radius:1px;}
-.step .body .tip{
-  /* Design-Import Zyklus 2 (v4.1.0): Linksrand jetzt var(--success) statt
-     var(--basil-text) -- entspricht exakt Note.jsx variant="tip" aus dem Import
-     (borderLeft: var(--success)). Textfarbe bleibt var(--basil-text) (=
-     --success-text), das war schon vorher korrekt. */
-  margin-top:7px;font-size:12.5px;color:var(--basil-text);background:var(--tip-bg);border-radius:2px;
-  padding:7px 10px;border-left:3px solid var(--success);
+/* Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (v4.10.0, Backlog Punkt H,
+   "Akkordeon"): .tip/.warn waren bis hierher permanent sichtbare Volltext-Boxen (Farbwerte
+   unverändert von hier übernommen -- oliv/--success für Tipp, ocker/--warning für Warnung,
+   s. Kommentare der jeweils vorherigen Fassung dieser Regeln in der Historie). Jetzt zeigt
+   .hint-toggle nur noch einen kompakten Label-Button, .hint-body den Volltext, standardmäßig
+   per display:none versteckt und erst mit der Klasse .is-open sichtbar (von js/guide.js
+   gesetzt). Struktur/Klick-Verhalten (App-weites Single-Open-Akkordeon): js/guide.js. */
+.step .body .hintbox{margin-top:7px;}
+.step .body .hintbox+.hintbox{margin-top:6px;}
+.step .body .hint-toggle{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12.5px;font-weight:700;line-height:1;font-family:inherit;
+  border:none;border-left:3px solid var(--success);border-radius:2px;
+  padding:8px 11px;min-height:32px;cursor:pointer;
+  background:var(--tip-bg);color:var(--basil-text);
 }
-.step .body .warn{
-  /* Design-Import Zyklus 1 (v4.0.0): linker Rand jetzt var(--warning) statt var(--tomato)
-     -- die importierten Warn-Tokens sind bewusst Ocker, nie Tomatenrot, damit eine Warnung
-     nicht mit dem Marken-/CTA-Akzent verwechselt werden kann (s. Kommentar in
-     design-import/tokens/colors.css). background/color folgten dieser Trennung bereits
-     automatisch über die --warn-bg/--warn-text-Aliase (s. :root oben). */
-  margin-top:7px;font-size:12.5px;color:var(--warn-text);background:var(--warn-bg);border-radius:2px;
-  padding:7px 10px;border-left:3px solid var(--warning);
+.step .body .hintbox-warn .hint-toggle{
+  border-left-color:var(--warning);background:var(--warn-bg);color:var(--warn-text);
+}
+.step .body .hint-toggle:hover{filter:brightness(.96);}
+.step .body .hint-toggle:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+.step .body .hint-toggle-icon{font-size:13px;}
+/* Aufklapp-Pfeil zusätzlich zum aria-expanded-Zustand -- rein dekorativ (kein eigener
+   Text/aria-Attribut nötig), analog .more-options-details summary::after. */
+.step .body .hint-toggle::after{content:'▾';margin-left:2px;font-size:10px;opacity:.75;}
+.step .body .hint-toggle[aria-expanded="true"]::after{content:'▴';}
+.step .body .hint-body{
+  display:none;margin-top:2px;font-size:12.5px;line-height:1.45;border-radius:2px;
+  padding:7px 10px;border-left:3px solid var(--success);
+  background:var(--tip-bg);color:var(--basil-text);
+}
+.step .body .hint-body.is-open{display:block;}
+.step .body .hintbox-warn .hint-body{
+  border-left-color:var(--warning);background:var(--warn-bg);color:var(--warn-text);
 }
 /* Glossar-Verweis (v3.68.0, "Glossar-Verweise in der Anleitung"): kleiner, unauffälliger
    Sprung-Link am Ende eines Anleitungsschritts (js/guide.js glossaryLinkHtml()) --
@@ -1085,6 +1103,12 @@ footer{text-align:center;font-size:11.5px;color:var(--muted);padding:0 20px 30px
   body{background:#fff;}
   .timerbox,.timerhint{display:none;}
   .glossary-ref{display:none;}
+  /* Einklappbare Hinweisboxen (v4.10.0, Backlog Punkt H): auf Papier gibt es keine
+     Interaktion -- Toggle-Button ausblenden, Volltext IMMER zeigen (unabhängig vom
+     Bildschirm-Aufklappzustand), damit "Anleitung drucken" wie bisher den kompletten
+     Tipp-/Warntext enthält. */
+  .step .body .hint-toggle{display:none;}
+  .step .body .hint-body{display:block!important;}
   /* Anleitung drucken: nur die Schritt-für-Schritt-Anleitung bleibt sichtbar */
   body.print-guide .result{display:none;}
   /* Einkaufsliste drucken: alles außer der Einkaufsliste ausblenden (inkl. Anleitung + Ergebnis-Panel) */

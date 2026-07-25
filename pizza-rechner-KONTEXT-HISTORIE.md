@@ -8,6 +8,120 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (v4.10.0)
+
+Backlog Punkt H (`Backlog.md`). Auftrag: die bisher permanent sichtbaren Hinweis-/Tipp-Boxen
+(`.tip`, `.warn`) innerhalb der Anleitungsschritte werden standardmäßig eingeklappt, nur über
+einen kleinen Toggle pro Box aufklappbar; wird eine zweite Box geöffnet, klappt die zuvor
+geöffnete automatisch zu (nie mehr als eine Box gleichzeitig sichtbar, APP-WEIT über alle
+Schritte hinweg, nicht nur pro Schritt). **Wichtiger Vorbehalt aus dem Auftrag:** der
+Backlog-Text stammt von VOR dem Design-Import-Redesign (v4.0.0-v4.9.1) und referenziert die
+ALTE Emoji-Farboptik ("grüne 💡, orange ⚠️"); umgesetzt wurde die KONZEPTUELLE Absicht
+(Akkordeon, Single-Open) gegen die TATSÄCHLICH aktuelle Optik/Klassenstruktur (`.tip` = oliv-
+grüner Linksrand, `.warn` = ocker-Linksrand, beide ohne Emoji-Hintergrundfläche, seit
+Zyklus 1-2 des Design-Imports).
+
+- **`js/guide.js` — `hintBox(kind, icon, txt)` ersetzt die bisherigen `tip()`/`warn()`-
+  Implementierungen:** statt `<div class="tip">💡 ${txt}</div>` liefert jede der beiden
+  Funktionen jetzt `<div class="hintbox hintbox-tip|hintbox-warn"><button class="hint-toggle"
+  aria-expanded="false" aria-controls="hintbox-N">💡/⚠️ + "Tipp"/"Warnung"</button><div
+  class="hint-body" id="hintbox-N">${txt}</div></div>`. `_hintSeq` (Reset je `buildGuide()`-
+  Durchlauf, analog `_usedGlossaryIds`) vergibt die IDs für die `aria-controls`-Verknüpfung.
+- **App-weites Single-Open-Akkordeon:** ein einziger delegierter Klick-Listener auf
+  `#guideSteps` (bereits vorhanden für Zeitplan-Sprung/Glossar-Links) bekam einen zusätzlichen
+  Zweig für `.hint-toggle`-Klicks: vor dem Öffnen des geklickten Toggles werden ALLE anderen
+  gerade offenen `.hint-toggle[aria-expanded="true"]` im gesamten Container geschlossen
+  (`closeHintToggle()`), danach der geklickte Button umgeschaltet (`openHintToggle()`/
+  `closeHintToggle()`, je nach vorherigem Zustand). Da es je Seite (Desktop/Mobil) nur EINEN
+  `#guideSteps`-Container gibt, ist "app-weit" damit automatisch erfüllt, ohne eigene globale
+  Zustandsvariable — technisches Vorbild war `js/glossary.js` (Single-Open für Glossar-
+  Artikel), hier verallgemeinert von einer `<details>`-Liste auf beliebig viele Button+Div-
+  Paare, die auch mehrfach INNERHALB eines einzigen Schritts vorkommen können (z. B. Warnung +
+  Öl-Tipp im selben "Mischen & Salz"-Schritt).
+- **Kein Eingriff in Hinweistext-Inhalte** (Scope-Vorgabe) — nur Darstellung/Interaktion.
+  `#flourWarn` (Mehl-Warnung, oberhalb der Schritte) und `#iceNote` (`.note`, Ergebnis-Panel)
+  bewusst NICHT angefasst: beide sind kein Teil eines einzelnen Anleitungsschritts (Scope laut
+  Backlog-Text: "innerhalb der Anleitungsschritte"), sondern eigenständige, app-weit einmalige
+  Banner mit direkt handlungsrelevantem Inhalt — Verstecken hinter einem zusätzlichen Klick
+  hätte dort eher geschadet als geholfen. `#iceNote` ist zudem Gegenstand von Backlog Punkt I
+  (separates, noch offenes Vorhaben), eine überlappende Änderung wäre verfrüht gewesen.
+- **Keine Kollision mit Inline-Glossar-Links (Backlog Punkt A, v4.9.0):** `inlineGlossaryLink()`
+  wird ausschließlich auf Schritt-TITEL und den Haupt-Body-Text angewendet (immer sichtbarer
+  `<h4>`/`<p>`-Inhalt), niemals auf den `tip()`/`warn()`-Extra-Text — verifiziert durch
+  Code-Durchsicht aller `inlineGlossaryLink()`-Aufrufstellen und zusätzlich per neuem Test
+  (Selektor-Check `.hint-body .inline-glossary-link` muss immer 0 Treffer liefern, auch nach
+  Öffnen aller Boxen). Ein Inline-Glossar-Link bleibt also unabhängig vom Akkordeon-Zustand
+  jederzeit erreichbar/fokussierbar.
+- **`css/styles.css`:** `.step .body .tip`/`.step .body .warn` (Volltext-Box) ersetzt durch
+  `.hintbox`/`.hint-toggle`/`.hint-body` (Farbwerte 1:1 übernommen: `--tip-bg`/`--basil-text`
+  bzw. `--warn-bg`/`--warn-text`, unverändert seit Design-Import Zyklus 1/2). Neuer
+  `@media print`-Block: `.hint-toggle{display:none}` + `.hint-body{display:block!important}` —
+  auf Papier gibt es keine Interaktion, der volle Hinweistext bleibt beim Drucken IMMER
+  sichtbar (identisch zum bisherigen Verhalten vor diesem Zyklus).
+- **`js/pdf.js`:** Extraktions-Selektor in `collectGuideContent()` von `.body > .tip, .body >
+  .warn` auf `.body > .hintbox > .hint-body` umgestellt (mit `isWarn`-Ermittlung über
+  `ex.parentElement.classList.contains('hintbox-warn')`). `textContent` liefert den vollen
+  Text unabhängig vom aktuellen Auf-/Zugeklappt-Zustand — der PDF-Export war sonst durch die
+  neue Struktur gebrochen (alte Selektoren fanden nichts mehr).
+- **`js/i18n-dict.js`:** 2 neue Keys `guide.hint.toggleTip`/`guide.hint.toggleWarn`
+  ("Tipp"/"Warnung", DE+EN). Sichtbarer Button-Text ist zugleich der Accessible Name (kein
+  zusätzliches `aria-label` nötig), Auf-/Zu-Zustand wird über `aria-expanded` kommuniziert,
+  analog zum bestehenden `.info-btn`-Muster.
+
+**Tests** (`tests/test.html`, `test-generator`-Agent, neue Sektion „30 · Akkordeon-Verhalten
+der Hinweisboxen (v4.10.0)", 807 → **833**, +26 Prüfungen): 9 Testfälle mit echten
+`.click()`-Interaktionen im echten Browser-DOM (kein Mock) — Default-Zustand (alle Boxen
+eingeklappt), Klick öffnet genau den geklickten Toggle, Klick auf einen zweiten Toggle (auch
+im selben Schritt) schließt den ersten automatisch (Single-Open app-weit, max. 1 gleichzeitig
+offen), erneuter Klick klappt wieder zu, Inline-Glossar-Links sitzen nie als Nachfahre in
+`.hint-body`, `PZ._pdfCollectGuideContent()` liefert unabhängig vom Toggle-Zustand denselben
+Inhalt, Akkordeon-Zustand wird bei jedem neuen `buildGuide()`/`calc()`-Aufruf zurückgesetzt
+(frisches `innerHTML`), Regressionsanker über direct/biga/poolish. Alle 833 Prüfungen grün
+(Headless-Edge-Dump, `msedge --headless=new --dump-dom`). Test-Sektionsnummer bewusst auf
+„30" statt der vom Agenten vorgeschlagenen „29" korrigiert (Sektion 29 war bereits durch
+„Inline-Verlinkung von Glossar-Begriffen" aus v4.9.0 belegt).
+
+**`accessibility-expert`-Review** (gezielt, neues Interaktionsmuster): keine Blocker/Major.
+Disclosure-Pattern (`aria-expanded`/`aria-controls`) korrekt nach ARIA Authoring Practices;
+natives `<button>` ausreichend tastaturbedienbar, kein zusätzliches Fokusmanagement beim
+Öffnen/Schließen nötig (anders als bei Sprüngen von außen, z. B. `gotoGlossaryEntry()`); Touch-
+Ziel ~32px liegt über der WCAG-2.5.8-Mindestgröße von 24px (bewusst kompakter als die
+44px-Konvention anderswo in der App, da Kompaktheit der Kern des Features ist); keine
+zusätzliche `aria-live`-Ansage nötig (`aria-expanded` am fokussierten Button reicht); Kontrast
+der Grundfarben unverändert seit v4.0.0/v4.1.0 AA-konform. 2 optionale Minor-Befunde ohne
+Handlungspflicht: (1) Accessible Name der Toggles ist generisch "Tipp"/"Warnung" ohne
+Schritt-Kontext — technisch ausreichend, ein kontextreicheres `aria-label` wäre UX-seitig
+"nice to have", bräuchte aber eine Parametrisierung mit Schritt-Kontext (aufwendiger als der
+Wortlaut vermuten lässt), nicht umgesetzt; (2) Dunkelmodus-Fokusring-Kontrast
+(`--tomato-text` #ef7a5c) gegen `--tip-bg`/`--warn-bg` rechnerisch nachgeprüft: 5,43:1 (Tipp,
+Hintergrund #1e2a1b) bzw. 4,90:1 (Warnung, Hintergrund #3b2c0e) — beide komfortabel über der
+3:1-Schwelle (WCAG 1.4.11), unbedenklich.
+
+**Geändert:** `js/guide.js`, `css/styles.css`, `js/i18n-dict.js`, `js/pdf.js`,
+`tests/test.html`, `pizza-rechner.html`, `pizza-rechner-mobile.html` (nur `?v=`/
+Versionsanzeige, kein eigenes Markup nötig — die gesamte Struktur wird zur Laufzeit von
+`js/guide.js` gerendert, wirkt dadurch identisch auf Desktop und Mobil). `?v=` auf `4.10.0`
+gezogen (Desktop + Mobil, Cache-Busting + Menü-Versionsanzeige). `pizza-rechner-mobile-
+standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v4.10.0 - Akkordeon-Hinweisboxen/` enthält den vollständigen Schnappschuss.
+
+## Bottom-Nav iOS Safe-Area Fix (v4.9.1)
+
+Backlog Punkt E (Bugfix, Live-Reproduktion nicht möglich, s. `Backlog.md`). `css/mobile.css`:
+`env(safe-area-inset-*)`-Fallbacks (`, 0px`) bei `.bottom-tabs`/`.quickbar` ergänzt;
+`position:sticky` statt `fixed` geprüft und bewusst verworfen (kein `min-height:100dvh`-
+Flex-Shell-Layout in dieser App, Risiko dass die Leiste bei kurzem Inhalt nicht am
+Bildschirmrand bleibt). Stattdessen `js/nav.js`: `activateView()` löst nach jedem
+Tab-Wechsel einen minimalen Scroll-Nudge aus (erzwingt einen iOS-Reflow inkl.
+Safe-Area-Neuberechnung), nur wenn `.bottom-tabs` existiert (Mobil-only). `viewport-fit=
+cover` war bereits vorhanden. 807 Prüfungen unverändert grün (kein Logik-Eingriff).
+**WICHTIG: NICHT auf echtem iOS-Gerät verifiziert** — vor endgültigem "gelöst" auf
+echtem iPhone/iPad (Safari + PWA) gegenprüfen.
+
+**Volle Details:** Abschnitt „Bottom-Nav iOS Safe-Area Fix (v4.9.1)" weiter unten in
+dieser Datei; vorheriger Abschnitt „Inline-Verlinkung von Glossar-Begriffen im
+Anleitungstext (v4.9.0)" ebenfalls dort.
+
 ## Bottom-Nav iOS Safe-Area Fix (v4.9.1)
 
 Backlog Punkt E (`Backlog.md`). Beobachtung: die untere Bottom-Tab-Navigation (und die

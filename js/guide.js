@@ -53,8 +53,36 @@
   function st(title, chip, body, extra, dur, opts) {
     _items.push(Object.assign({ title, chip, body, extra: extra || '', dur: dur || 0 }, opts || {}));
   }
-  function tip(txt) { return `<div class="tip">💡 ${txt}</div>`; }
-  function warn(txt) { return `<div class="warn">⚠️ ${txt}</div>`; }
+  // Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (v4.10.0, Backlog Punkt H,
+  // "Akkordeon"): tip()/warn() bauten bis hierher permanent sichtbare `<div class="tip">`/
+  // `<div class="warn">`-Volltextblöcke. Jetzt liefern beide stattdessen einen kompakten
+  // Toggle-Button (.hint-toggle, initial `aria-expanded="false"`) + einen initial
+  // versteckten Volltext-Container (.hint-body). App-weites Single-Open-Verhalten (immer
+  // maximal EIN Hinweis gleichzeitig offen, über alle Schritte hinweg) wird unten im
+  // gemeinsamen, bereits bestehenden delegierten Klick-Listener auf #guideSteps ergänzt --
+  // da es je Seite (Desktop/Mobil) nur diesen EINEN #guideSteps-Container gibt, ist "app-
+  // weit" damit automatisch erfüllt, ohne eigene globale Zustandsvariable. Technisches
+  // Vorbild: js/glossary.js löst dasselbe Grundmuster (ein Artikel offen schließt alle
+  // anderen) scoped auf eine <details>-Liste -- hier ist die Struktur (Button + Div statt
+  // <details>/<summary>) bewusst anders, weil mehrere Hinweisboxen INNERHALB eines einzigen
+  // Anleitungsschritts vorkommen können (z. B. Warnung + Öl-Tipp im selben Schritt), wo ein
+  // natives <details> die visuelle .step-Karte stärker verändert hätte.
+  // `_hintSeq` (Reset je buildGuide()-Durchlauf, analog `_usedGlossaryIds`) vergibt
+  // eindeutige IDs für die aria-controls-Verknüpfung Button -> Textcontainer.
+  let _hintSeq = 0;
+  function hintBox(kind, icon, txt) {
+    const id = 'hintbox-' + (_hintSeq++);
+    const label = t(kind === 'warn' ? 'guide.hint.toggleWarn' : 'guide.hint.toggleTip');
+    return `<div class="hintbox hintbox-${kind}">` +
+      `<button type="button" class="hint-toggle" aria-expanded="false" aria-controls="${id}">` +
+      `<span class="hint-toggle-icon" aria-hidden="true">${icon}</span>` +
+      `<span class="hint-toggle-label">${label}</span>` +
+      `</button>` +
+      `<div class="hint-body" id="${id}">${txt}</div>` +
+      `</div>`;
+  }
+  function tip(txt) { return hintBox('tip', '💡', txt); }
+  function warn(txt) { return hintBox('warn', '⚠️', txt); }
   // Timer-Widget-Platzhalter für Schritte mit nennenswerter Wartezeit (js/timer.js rendert hinein).
   // Feature-Flag "timer" (js/settings.js): ist das Feature deaktiviert, wird gar kein
   // Platzhalter gerendert — js/timer.js findet dann nichts zu verdrahten, und das damit
@@ -196,6 +224,7 @@
     let matureMin = 0;                        // Vorteig-Reifezeit (nur bei Biga/Poolish)
     _items = [];
     _usedGlossaryIds = new Set();              // Dedup-Reset je buildGuide()-Durchlauf
+    _hintSeq = 0;                              // Hinweisbox-ID-Reset je buildGuide()-Durchlauf
 
     // ===== VORTEIG (Biga / Poolish) =====
     if (pref) {
@@ -456,11 +485,43 @@
   // identische Burgermenü-Inline-Scripts auf Desktop + Mobil) — falls aus irgendeinem
   // Grund nicht vorhanden (z. B. isolierte Testumgebung ohne Menü-Markup/js/nav.js),
   // passiert einfach nichts (kein Crash).
+  // Einklappbare Hinweisboxen (v4.10.0, Backlog Punkt H): kleine Helfer für den
+  // Auf-/Zuklapp-Zustand eines einzelnen .hint-toggle-Buttons + seines per
+  // aria-controls verknüpften .hint-body-Containers.
+  function hintBodyOf(btn) {
+    const id = btn.getAttribute('aria-controls');
+    return id ? document.getElementById(id) : null;
+  }
+  function openHintToggle(btn) {
+    btn.setAttribute('aria-expanded', 'true');
+    const body = hintBodyOf(btn);
+    if (body) body.classList.add('is-open');
+  }
+  function closeHintToggle(btn) {
+    btn.setAttribute('aria-expanded', 'false');
+    const body = hintBodyOf(btn);
+    if (body) body.classList.remove('is-open');
+  }
+
   const guideStepsEl = $('guideSteps');
   if (guideStepsEl) {
     guideStepsEl.addEventListener('click', function (e) {
       const zeitplanBtn = e.target.closest('.schedbar-goto-zeitplan');
       if (zeitplanBtn) { if (PZ.gotoView) PZ.gotoView('zeitplan'); return; }
+      // Einklappbare Hinweisboxen (v4.10.0, Backlog Punkt H): App-weites Single-Open-
+      // Akkordeon -- vor dem (ggf.) Öffnen DIESES Toggles werden alle anderen gerade
+      // offenen Hinweisboxen im gesamten #guideSteps-Container geschlossen (nicht nur
+      // innerhalb desselben Schritts), danach der geklickte Button umgeschaltet.
+      const hintBtn = e.target.closest('.hint-toggle');
+      if (hintBtn) {
+        const wasOpen = hintBtn.getAttribute('aria-expanded') === 'true';
+        Array.prototype.forEach.call(
+          guideStepsEl.querySelectorAll('.hint-toggle[aria-expanded="true"]'),
+          function (b) { if (b !== hintBtn) closeHintToggle(b); }
+        );
+        if (wasOpen) closeHintToggle(hintBtn); else openHintToggle(hintBtn);
+        return;
+      }
       // Glossar-Verweise (v3.68.0): identisches Delegations-Muster wie der
       // Zeitplan-Sprung direkt darüber -- ein einziger Listener auf dem stabilen
       // #guideSteps-Container statt Einzel-Listenern, die bei jedem buildGuide()-Neuaufbau

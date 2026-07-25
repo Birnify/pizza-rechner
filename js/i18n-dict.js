@@ -77,6 +77,11 @@
   // js/guide.js und PZ.gotoGlossaryEntry() in js/glossary.js. {term} kommt aus dem
   // jeweiligen glossary.<id>.title-Eintrag, damit der Linktext immer zum Zieltitel passt.
   add('guide.glossaryLink.label', 'Mehr zu {term} im Glossar', 'More on {term} in the glossary');
+  // Einklappbare Hinweisboxen (v4.10.0, Backlog Punkt H): sichtbarer Text des Toggle-
+  // Buttons ist zugleich sein Accessible Name (kein zusätzliches aria-label nötig) --
+  // Auf-/Zu-Zustand wird über aria-expanded angesagt, analog zum bestehenden .info-btn-Muster.
+  add('guide.hint.toggleTip', 'Tipp', 'Tip');
+  add('guide.hint.toggleWarn', 'Warnung', 'Warning');
   add('guide.weekday.0', 'So', 'Sun'); add('guide.weekday.1', 'Mo', 'Mon');
   add('guide.weekday.2', 'Di', 'Tue'); add('guide.weekday.3', 'Mi', 'Wed');
   add('guide.weekday.4', 'Do', 'Thu'); add('guide.weekday.5', 'Fr', 'Fri');
