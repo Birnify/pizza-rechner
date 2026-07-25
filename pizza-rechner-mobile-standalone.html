@@ -963,8 +963,8 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .ing .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 /* font-family (v4.0.0, Design-Import Zyklus 1): var(--font-numeric) (Bitter, tabellarische
    Ziffern) statt der geerbten Body-Schrift -- gemessene Mengen bekommen dieselbe
-   Slab-Serif-Behandlung wie die große Gesamtteig-Zahl (.result .total .big) und die
-   Temperatur-Werte (.temp-box .v), s. components/cards/IngredientRow.jsx im Import. */
+   Slab-Serif-Behandlung wie die große Gesamtteig-Zahl (.result .total .big),
+   s. components/cards/IngredientRow.jsx im Import. */
 .ing .amt{font-weight:700;font-variant-numeric:tabular-nums;font-family:var(--font-numeric);}
 .ing .amt small{font-weight:500;color:var(--muted);font-size:11px;margin-left:3px;font-family:var(--font-body);}
 .stage{margin-top:18px;}
@@ -978,18 +978,6 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   font-size:12.5px;margin-top:14px;color:var(--note-text);line-height:1.45;
 }
 .note b{color:var(--note-text-strong);}
-.temp-out{display:flex;gap:10px;margin-top:6px;align-items:stretch;}
-.temp-box{flex:1;text-align:center;background:var(--surface-2);border-radius:var(--radius);padding:12px 8px;}
-/* Seit Backlog Punkt I (v4.11.0): nur noch EIN .temp-box-Kind in .temp-out (die "davon
-   Eis"-Box wurde entfernt) -- der frühere flex:1.4-Wert war für den Größenvergleich mit
-   einer zweiten, schmaleren Nachbar-Box gedacht und wäre mit nur einem Flex-Kind ohnehin
-   optisch identisch zu flex:1 (accessibility-expert-Review-Hinweis: MINOR/Wartbarkeit,
-   kein visueller Fehler). Auf flex:1 vereinfacht, highlight-Optik (Fläche/Rahmen) bleibt
-   unverändert über :first-child erhalten, falls die Karte künftig wieder mehrere
-   Temperatur-Werte nebeneinander zeigen sollte. */
-.temp-box:first-child{flex:1;background:var(--temp-highlight-bg);border:1px solid var(--crust);}
-.temp-box .v{font-size:22px;font-weight:800;color:var(--tomato-text);font-variant-numeric:tabular-nums;font-family:var(--font-head);}
-.temp-box .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
 .actions{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
 .actions button{
   padding:11px;border-radius:var(--radius);border:1px solid var(--line);background:var(--card);
@@ -1162,9 +1150,12 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
    zwei nebeneinanderliegenden Flex-Items, `align-items:flex-start` hält das Icon oben am
    (ggf. mehrzeiligen) Linktext ausgerichtet statt vertikal zentriert. Icon-`<span>` trägt
    `aria-hidden="true"` (js/guide.js), da der Button-Text bereits vorgelesen wird. */
-/* Selektor bewusst unscoped (nicht mehr nur .step .body .glossary-ref) seit Backlog
-   Punkt I (v4.11.0, "Zieltemperatur statt Eis"): #waterTempGlossaryRef im Ergebnis-Panel
-   (js/calc.js) nutzt dieselbe Klasse außerhalb eines .step-Anleitungsschritts. */
+/* Selektor bewusst unscoped (nicht nur .step .body .glossary-ref) seit Backlog Punkt I
+   (v4.11.0): bis v4.16.0 nutzte auch #waterTempGlossaryRef im Ergebnis-Panel (js/calc.js)
+   dieselbe Klasse außerhalb eines .step-Anleitungsschritts. Seit v4.16.0 ("Schüttwasser-
+   Anzeige entfernen") ist js/guide.js wieder der einzige Nutzer -- Selektor bleibt trotzdem
+   unscoped (kein funktionaler Nachteil, spart eine erneute Änderung bei künftigem
+   Wiederauftauchen eines Verweises außerhalb von .step). */
 .glossary-ref{margin-top:7px;font-size:12.5px;color:var(--muted);display:flex;align-items:flex-start;gap:6px;}
 /* Foto der fertigen Pizza (v3.69.0), abschließender Anleitungsschritt nach dem Backen --
    gemeinsame Regel für Desktop UND Mobil (beide laden css/styles.css), kein separates
@@ -2012,19 +2003,6 @@ header{position:relative;text-align:center;}
         <details class="more-options-details" id="moreOptionsDetails">
           <summary class="more-options-toggle" data-i18n="btn.moreOptions">Weitere Optionen</summary>
           <div class="more-options-body">
-            <!-- Temperatur -->
-            <div class="stage" id="tempStage">
-              <h3 style="color:var(--tomato);" data-i18n="result.waterTemp">Wassertemperatur</h3>
-              <div class="temp-out">
-                <div class="temp-box"><div class="v"><span id="waterTemp">19°C</span></div><div class="l" data-i18n="result.mixingWater">Schüttwasser</div></div>
-              </div>
-              <div class="glossary-ref" id="waterTempGlossaryRef" style="display:none;">
-                <span aria-hidden="true">📖</span>
-                <button type="button" class="step-glossary-link" data-glossary-id="eisMethode" data-i18n="result.iceMethodLink">Temperatur mit Leitungswasser nicht erreichbar? Glossar: Eis-Methode</button>
-              </div>
-              <div id="waterTempGlossaryLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
-            </div>
-
             <button type="button" id="saveBtn" data-i18n="btn.save">Speichern</button>
             <div class="row2" id="shoppingRow">
               <button onclick="PZ.printShoppingList()" data-i18n="btn.printShoppingList">Einkaufsliste drucken</button>
@@ -2449,7 +2427,7 @@ header{position:relative;text-align:center;}
         <div class="nav-divider" role="separator"></div>
         <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.15.0</span>
+        <span class="nav-version" id="appVersion">v4.16.0</span>
 
       </div>
     </details>
@@ -3456,22 +3434,14 @@ header{position:relative;text-align:center;}
   add('ing.plusWholePref', '+ ganze Biga/Poolish', '+ whole biga/poolish');
   add('ing.all', 'alles', 'all of it');
   add('result.mainDough', 'Hauptteig (am Backtag)', 'Final dough (on baking day)');
-  add('result.waterTemp', 'Wassertemperatur', 'Water temperature');
-  add('result.mixingWater', 'Schüttwasser', 'Mixing water');
-  // Backlog Punkt I (v4.11.0, "Zieltemperatur statt Eis in der Hauptanleitung"): ersetzt
-  // die bisherige "davon Eis"-Box (result.ofWhichIce, entfernt) -- bedingter Verweis-Link
-  // im Ergebnis-Panel (#waterTempGlossaryRef, js/calc.js), sichtbar sobald die interne
-  // Zielwassertemperatur unter 15 °C/59 °F liegt.
-  add('result.iceMethodLink', 'Temperatur mit Leitungswasser nicht erreichbar? Glossar: Eis-Methode',
-    'Can\'t reach this temperature with tap water? Glossary: ice method');
-  // Live-Region-Ansage (WCAG 4.1.3, accessibility-expert-Befund im Punkt-I-Review): wird
-  // per PZ.announce() NUR beim Neu-Erscheinen von #waterTempGlossaryRef ausgelöst (nicht
-  // bei jedem calc()-Lauf), s. js/calc.js.
-  add('result.iceMethodLinkAnnounce', 'Neuer Hinweis: Zieltemperatur mit Leitungswasser nicht erreichbar, Eis-Methode im Glossar verfügbar.',
-    'New notice: this target temperature can\'t be reached with tap water, the ice method is available in the glossary.');
+  // result.waterTemp/result.mixingWater/result.iceMethodLink/result.iceMethodLinkAnnounce
+  // (die separate Wassertemperatur-/Schüttwasser-Anzeige im Ergebnis-Panel inkl. bedingtem
+  // Glossar-Verweis-Link, Backlog Punkt I/v4.11.0) sind seit v4.16.0 ("Schüttwasser-Anzeige
+  // entfernen") ersatzlos entfernt -- der Wert bleibt weiterhin in der Schritt-für-Schritt-
+  // Anleitung sichtbar (guide.step.waterTemp.* in dieser Datei), nur die redundante
+  // Extra-Anzeige im Ergebnis-Panel ist weg.
   // Live-Region-Ansage (WCAG 4.1.3, Backlog Punkt J, v4.12.0): wird per PZ.announce()
-  // NUR beim Neu-Erscheinen von #sugarBlock ausgelöst (nicht bei jedem calc()-Lauf),
-  // identisches Muster wie result.iceMethodLinkAnnounce oben, s. js/calc.js.
+  // NUR beim Neu-Erscheinen von #sugarBlock ausgelöst (nicht bei jedem calc()-Lauf).
   add('result.sugarFieldShownAnnounce', 'Neues Feld eingeblendet: Zucker.',
     'New field shown: sugar.');
   add('yeast.fresh', '(frisch)', '(fresh)');
@@ -3866,13 +3836,12 @@ header{position:relative;text-align:center;}
   add('quickbar.partyNoneYet', 'Noch keine Pizza ausgewählt', 'No pizza selected yet');
 
   // ---- js/calc.js: Eiswasser-Hinweis (dynamisch berechneter Text) ----------------
-  // Seit Backlog Punkt I (v4.11.0): R.note (gebaut aus diesen 4 Keys) wird in
-  // calcCore() weiterhin berechnet (Energiebilanz-Formel technisch unverändert), aber
-  // NIRGENDS mehr angezeigt (weder Ergebnis-Panel #iceNote [entfernt] noch Anleitung) --
-  // das Ergebnis-Panel zeigt seither nur noch den reinen Zieltemperaturwert plus,
-  // unterhalb 15 °C, den neuen Glossar-Verweis-Link (result.iceMethodLink oben). Die
-  // Keys bleiben stehen, da tests/test.html Sektion 2 weiterhin R.note direkt (nicht
-  // mehr über das DOM) gegen calc.noMixingWaterNote prüft.
+  // Seit Backlog Punkt I (v4.11.0) und weiterhin seit v4.16.0 ("Schüttwasser-Anzeige
+  // entfernen"): R.note (gebaut aus diesen Keys) wird in calcCore() weiterhin berechnet
+  // (Energiebilanz-Formel technisch unverändert), aber NIRGENDS mehr im DOM angezeigt --
+  // weder im Ergebnis-Panel (auch der bedingte Glossar-Verweis-Link ist seit v4.16.0 weg)
+  // noch in der Anleitung. Die Keys bleiben stehen, da tests/test.html Sektion 2
+  // weiterhin R.note direkt (nicht mehr über das DOM) gegen calc.noMixingWaterNote prüft.
   add('calc.ice.note', 'Nimm <b>{tapWater} Leitungswasser (~{tapTemp})</b> + <b>{ice} Eis</b>, ergibt ~{wT} Schüttwasser. Eis vorher abwiegen.',
     'Use <b>{tapWater} tap water (~{tapTemp})</b> + <b>{ice} ice</b>, giving ~{wT} mixing water. Weigh the ice beforehand.');
   add('calc.warmNote', 'Schüttwasser leicht anwärmen auf ~{wT} (z.B. handwarm).', 'Warm the mixing water slightly to ~{wT} (e.g. lukewarm).');
@@ -5091,13 +5060,6 @@ header{position:relative;text-align:center;}
   // letzte Ergebnisse (für die Anleitung)
   PZ.R = {};
 
-  // Backlog Punkt I (v4.11.0, accessibility-expert-Befund, WCAG 4.1.3 Status Messages):
-  // merkt sich den zuletzt gerenderten Sichtbarkeits-Zustand von #waterTempGlossaryRef,
-  // damit die Live-Region-Ansage (s. renderResult() unten) nur beim NEU-Erscheinen des
-  // Links feuert (Regler-Bewegung, die wT gerade unter 15 °C drückt) -- nicht bei jedem
-  // calc()-Aufruf, während der Link ohnehin schon sichtbar ist bzw. bleibt.
-  let prevGlossaryRefVisible = false;
-
   // ======================================================================
   // calcCore(state) — reine Rechenfunktion, kein DOM-Zugriff
   // ======================================================================
@@ -5171,7 +5133,7 @@ header{position:relative;text-align:center;}
     // Grenzfall (v3.48.0-Fix): bei sehr hohem Vorteig-Anteil kann das gesamte Wasser im
     // Vorteig stecken (z. B. Poolish-Preset an der Klemmgrenze) — dann gibt es kein
     // Schüttwasser mehr zu temperieren. Derselbe Schwellwert wie js/guide.js (hasMW),
-    // damit Anleitungsschritt und Ergebnis-Panel konsistent verschwinden.
+    // damit der Anleitungsschritt entsprechend verschwindet.
     const hasMixingWater = mWater >= 1;
     // Einheitensystem-Umschaltung (v3.65.0): PZ.formatWeight()/PZ.formatTemp() liefern
     // bereits den kompletten Text inkl. Einheit (g/oz bzw. °C/°F) -- die zugehörigen
@@ -5195,6 +5157,10 @@ header{position:relative;text-align:center;}
     }
     if (hasMixingWater && wT < 1) note += t('calc.veryColdWarn');
 
+    // wT/ice/note/hasMixingWater bleiben vollständig berechnet, auch wenn seit v4.16.0
+    // ("Schüttwasser-Anzeige entfernen") keine eigene Wassertemperatur-Box mehr im
+    // Ergebnis-Panel steht -- der Zieltemperaturwert bleibt weiterhin Teil der
+    // Schritt-für-Schritt-Anleitung (js/guide.js), redundant war nur die separate Anzeige.
     return {
       N, W, total, totalBase, wasteAdj, flour, water, salt, oil, sugar, yeast, yWord,
       pf, pw, pYeast, mYeast, mFlour, mWater,
@@ -5209,14 +5175,13 @@ header{position:relative;text-align:center;}
   // ======================================================================
   function renderResult(R) {
     // Einheitensystem-Umschaltung (v3.65.0, js/units.js): PZ.formatWeight()/
-    // PZ.formatWeightAuto()/PZ.formatTemp() liefern den kompletten Anzeigetext INKL.
-    // Einheit (z. B. "600 g" bzw. "21.2 oz") -- das HTML hält dafür keine eigenen
-    // statischen Einheiten-Suffixe (" g"/"°") mehr vor, s. pizza-rechner.html/-mobile.html.
+    // PZ.formatWeightAuto() liefern den kompletten Anzeigetext INKL. Einheit (z. B.
+    // "600 g" bzw. "21.2 oz") -- das HTML hält dafür keine eigenen statischen
+    // Einheiten-Suffixe (" g") mehr vor, s. pizza-rechner.html/-mobile.html.
     // Defensive Fallbacks (falls js/units.js aus irgendeinem Grund nicht geladen ist,
     // z. B. isolierte Testumgebung) reproduzieren 1:1 das bisherige Metrisch-Verhalten.
     const fmtW = PZ.formatWeight || function (x, d) { return (d > 0 ? x.toFixed(d) : String(Math.round(x))) + ' g'; };
     const fmtWA = PZ.formatWeightAuto || function (x) { return (x < 10 ? x.toFixed(2) : String(Math.round(x))) + ' g'; };
-    const fmtT = PZ.formatTemp || function (x) { return x + '°C'; };
 
     $('totalW').textContent = fmtW(R.total);
     $('ballsOut').textContent = R.N;
@@ -5278,54 +5243,8 @@ header{position:relative;text-align:center;}
       if ($('mSugar')) $('mSugar').textContent = fmtW(R.sugar, 1);
       if ($('mSugarRow')) $('mSugarRow').style.display = R.sugar >= 0.05 ? 'flex' : 'none';
     }
-
-    $('waterTemp').textContent = fmtT(R.wT);
-    // Backlog Punkt I (v4.11.0, "Zieltemperatur statt Eis in der Hauptanleitung"): die
-    // "davon Eis"-Box (#iceAmt) + der textuelle Eiswasser-/Anwärm-Hinweis (#iceNote,
-    // R.note) sind aus dem Ergebnis-Panel entfernt -- die Box zeigt nur noch den reinen
-    // Zieltemperaturwert. R.note/R.ice werden weiterhin in calcCore() berechnet (die
-    // Energiebilanz-Formel bleibt technisch vollständig erhalten, s. Abgrenzung der
-    // Feature-Definition), nur eben nirgends mehr direkt ins Ergebnis-Panel geschrieben.
-    // Stattdessen: ein bedingter Glossar-Verweis-Link (identisches Delegations-Muster wie
-    // js/guide.js' [data-glossary-id], s. Listener weiter unten), sobald die interne
-    // Zielwassertemperatur unter 15 °C liegt -- fester Schwellenwert (== 59 °F), bewusst
-    // NICHT über Einstellungen konfigurierbar, immer in Celsius verglichen (R.wT ist
-    // unabhängig vom Einheitensystem immer Celsius, s. js/units.js).
-    if ($('waterTempGlossaryRef')) {
-      const glossaryRefVisible = R.wT < 15;
-      $('waterTempGlossaryRef').style.display = glossaryRefVisible ? 'flex' : 'none';
-      // WCAG 4.1.3 Status Messages (accessibility-expert-Befund): ohne diese Ansage
-      // bemerkt ein Screenreader-Nutzer das plötzliche Erscheinen des Links (bei einer
-      // Reglerbewegung, die wT unter 15 °C drückt) sonst nur durch zufälliges erneutes
-      // Durchnavigieren des Panels. Feuert bewusst NUR beim Wechsel "verborgen -> sichtbar"
-      // (s. prevGlossaryRefVisible oben), nicht bei jedem calc()-Lauf.
-      if (glossaryRefVisible && !prevGlossaryRefVisible) {
-        if (PZ.announce) PZ.announce('waterTempGlossaryLiveMsg', t('result.iceMethodLinkAnnounce'));
-      }
-      prevGlossaryRefVisible = glossaryRefVisible;
-    }
-    // Ganzen Wassertemperatur-Block ausblenden, wenn es kein Schüttwasser mehr gibt
-    // (analog zum bestehenden Öl-/Zucker-Zeilen-Muster, s. gOilRow/gSugarRow oben).
-    if ($('tempStage')) $('tempStage').style.display = R.hasMixingWater ? '' : 'none';
   }
   PZ.renderResult = renderResult;
-
-  // Klick-Delegation für #waterTempGlossaryRef (Backlog Punkt I, v4.11.0): identisches
-  // Muster wie der bestehende [data-glossary-id]-Listener in js/guide.js (#guideSteps),
-  // aber ein eigener Listener nötig, da die Wassertemperatur-Karte im Ergebnis-Panel
-  // außerhalb von #guideSteps liegt. #tempStage selbst wird von renderResult() nie neu
-  // aufgebaut (nur einzelne Kind-Elemente/-Attribute), ein einmalig beim Laden
-  // registrierter, auf #tempStage delegierter Listener bleibt daher über beliebig viele
-  // spätere calc()-Läufe hinweg gültig -- kein "vor jedem Render neu verdrahten" nötig.
-  const tempStageEl = $('tempStage');
-  if (tempStageEl) {
-    tempStageEl.addEventListener('click', function (e) {
-      const glossaryBtn = e.target.closest('[data-glossary-id]');
-      if (glossaryBtn && PZ.gotoGlossaryEntry) {
-        PZ.gotoGlossaryEntry(glossaryBtn.getAttribute('data-glossary-id'));
-      }
-    });
-  }
 
   // ======================================================================
   // calc() — Fassade: rechnet, publiziert PZ.R, rendert, löst die Anleitung aus.

@@ -26,13 +26,6 @@
   // letzte Ergebnisse (für die Anleitung)
   PZ.R = {};
 
-  // Backlog Punkt I (v4.11.0, accessibility-expert-Befund, WCAG 4.1.3 Status Messages):
-  // merkt sich den zuletzt gerenderten Sichtbarkeits-Zustand von #waterTempGlossaryRef,
-  // damit die Live-Region-Ansage (s. renderResult() unten) nur beim NEU-Erscheinen des
-  // Links feuert (Regler-Bewegung, die wT gerade unter 15 °C drückt) -- nicht bei jedem
-  // calc()-Aufruf, während der Link ohnehin schon sichtbar ist bzw. bleibt.
-  let prevGlossaryRefVisible = false;
-
   // ======================================================================
   // calcCore(state) — reine Rechenfunktion, kein DOM-Zugriff
   // ======================================================================
@@ -106,7 +99,7 @@
     // Grenzfall (v3.48.0-Fix): bei sehr hohem Vorteig-Anteil kann das gesamte Wasser im
     // Vorteig stecken (z. B. Poolish-Preset an der Klemmgrenze) — dann gibt es kein
     // Schüttwasser mehr zu temperieren. Derselbe Schwellwert wie js/guide.js (hasMW),
-    // damit Anleitungsschritt und Ergebnis-Panel konsistent verschwinden.
+    // damit der Anleitungsschritt entsprechend verschwindet.
     const hasMixingWater = mWater >= 1;
     // Einheitensystem-Umschaltung (v3.65.0): PZ.formatWeight()/PZ.formatTemp() liefern
     // bereits den kompletten Text inkl. Einheit (g/oz bzw. °C/°F) -- die zugehörigen
@@ -130,6 +123,10 @@
     }
     if (hasMixingWater && wT < 1) note += t('calc.veryColdWarn');
 
+    // wT/ice/note/hasMixingWater bleiben vollständig berechnet, auch wenn seit v4.16.0
+    // ("Schüttwasser-Anzeige entfernen") keine eigene Wassertemperatur-Box mehr im
+    // Ergebnis-Panel steht -- der Zieltemperaturwert bleibt weiterhin Teil der
+    // Schritt-für-Schritt-Anleitung (js/guide.js), redundant war nur die separate Anzeige.
     return {
       N, W, total, totalBase, wasteAdj, flour, water, salt, oil, sugar, yeast, yWord,
       pf, pw, pYeast, mYeast, mFlour, mWater,
@@ -144,14 +141,13 @@
   // ======================================================================
   function renderResult(R) {
     // Einheitensystem-Umschaltung (v3.65.0, js/units.js): PZ.formatWeight()/
-    // PZ.formatWeightAuto()/PZ.formatTemp() liefern den kompletten Anzeigetext INKL.
-    // Einheit (z. B. "600 g" bzw. "21.2 oz") -- das HTML hält dafür keine eigenen
-    // statischen Einheiten-Suffixe (" g"/"°") mehr vor, s. pizza-rechner.html/-mobile.html.
+    // PZ.formatWeightAuto() liefern den kompletten Anzeigetext INKL. Einheit (z. B.
+    // "600 g" bzw. "21.2 oz") -- das HTML hält dafür keine eigenen statischen
+    // Einheiten-Suffixe (" g") mehr vor, s. pizza-rechner.html/-mobile.html.
     // Defensive Fallbacks (falls js/units.js aus irgendeinem Grund nicht geladen ist,
     // z. B. isolierte Testumgebung) reproduzieren 1:1 das bisherige Metrisch-Verhalten.
     const fmtW = PZ.formatWeight || function (x, d) { return (d > 0 ? x.toFixed(d) : String(Math.round(x))) + ' g'; };
     const fmtWA = PZ.formatWeightAuto || function (x) { return (x < 10 ? x.toFixed(2) : String(Math.round(x))) + ' g'; };
-    const fmtT = PZ.formatTemp || function (x) { return x + '°C'; };
 
     $('totalW').textContent = fmtW(R.total);
     $('ballsOut').textContent = R.N;
@@ -213,54 +209,8 @@
       if ($('mSugar')) $('mSugar').textContent = fmtW(R.sugar, 1);
       if ($('mSugarRow')) $('mSugarRow').style.display = R.sugar >= 0.05 ? 'flex' : 'none';
     }
-
-    $('waterTemp').textContent = fmtT(R.wT);
-    // Backlog Punkt I (v4.11.0, "Zieltemperatur statt Eis in der Hauptanleitung"): die
-    // "davon Eis"-Box (#iceAmt) + der textuelle Eiswasser-/Anwärm-Hinweis (#iceNote,
-    // R.note) sind aus dem Ergebnis-Panel entfernt -- die Box zeigt nur noch den reinen
-    // Zieltemperaturwert. R.note/R.ice werden weiterhin in calcCore() berechnet (die
-    // Energiebilanz-Formel bleibt technisch vollständig erhalten, s. Abgrenzung der
-    // Feature-Definition), nur eben nirgends mehr direkt ins Ergebnis-Panel geschrieben.
-    // Stattdessen: ein bedingter Glossar-Verweis-Link (identisches Delegations-Muster wie
-    // js/guide.js' [data-glossary-id], s. Listener weiter unten), sobald die interne
-    // Zielwassertemperatur unter 15 °C liegt -- fester Schwellenwert (== 59 °F), bewusst
-    // NICHT über Einstellungen konfigurierbar, immer in Celsius verglichen (R.wT ist
-    // unabhängig vom Einheitensystem immer Celsius, s. js/units.js).
-    if ($('waterTempGlossaryRef')) {
-      const glossaryRefVisible = R.wT < 15;
-      $('waterTempGlossaryRef').style.display = glossaryRefVisible ? 'flex' : 'none';
-      // WCAG 4.1.3 Status Messages (accessibility-expert-Befund): ohne diese Ansage
-      // bemerkt ein Screenreader-Nutzer das plötzliche Erscheinen des Links (bei einer
-      // Reglerbewegung, die wT unter 15 °C drückt) sonst nur durch zufälliges erneutes
-      // Durchnavigieren des Panels. Feuert bewusst NUR beim Wechsel "verborgen -> sichtbar"
-      // (s. prevGlossaryRefVisible oben), nicht bei jedem calc()-Lauf.
-      if (glossaryRefVisible && !prevGlossaryRefVisible) {
-        if (PZ.announce) PZ.announce('waterTempGlossaryLiveMsg', t('result.iceMethodLinkAnnounce'));
-      }
-      prevGlossaryRefVisible = glossaryRefVisible;
-    }
-    // Ganzen Wassertemperatur-Block ausblenden, wenn es kein Schüttwasser mehr gibt
-    // (analog zum bestehenden Öl-/Zucker-Zeilen-Muster, s. gOilRow/gSugarRow oben).
-    if ($('tempStage')) $('tempStage').style.display = R.hasMixingWater ? '' : 'none';
   }
   PZ.renderResult = renderResult;
-
-  // Klick-Delegation für #waterTempGlossaryRef (Backlog Punkt I, v4.11.0): identisches
-  // Muster wie der bestehende [data-glossary-id]-Listener in js/guide.js (#guideSteps),
-  // aber ein eigener Listener nötig, da die Wassertemperatur-Karte im Ergebnis-Panel
-  // außerhalb von #guideSteps liegt. #tempStage selbst wird von renderResult() nie neu
-  // aufgebaut (nur einzelne Kind-Elemente/-Attribute), ein einmalig beim Laden
-  // registrierter, auf #tempStage delegierter Listener bleibt daher über beliebig viele
-  // spätere calc()-Läufe hinweg gültig -- kein "vor jedem Render neu verdrahten" nötig.
-  const tempStageEl = $('tempStage');
-  if (tempStageEl) {
-    tempStageEl.addEventListener('click', function (e) {
-      const glossaryBtn = e.target.closest('[data-glossary-id]');
-      if (glossaryBtn && PZ.gotoGlossaryEntry) {
-        PZ.gotoGlossaryEntry(glossaryBtn.getAttribute('data-glossary-id'));
-      }
-    });
-  }
 
   // ======================================================================
   // calc() — Fassade: rechnet, publiziert PZ.R, rendert, löst die Anleitung aus.

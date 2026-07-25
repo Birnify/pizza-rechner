@@ -8,6 +8,90 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Schüttwasser-Anzeige entfernen (v4.16.0)
+
+Vom Nutzer per `/define-feature` strukturiert (Name/Idee/Motivation/Scope/Abgrenzung
+feststehend): die separate Wassertemperatur-/Schüttwasser-Anzeige im Ergebnis-Panel
+(unter „Weitere Optionen") entfällt ersatzlos, weil der Wert bereits in der
+Schritt-für-Schritt-Anleitung steht (seit Backlog Punkt I/v4.11.0, „Zieltemperatur
+statt Eis in der Hauptanleitung") — die Extra-Box war redundant. Bewusst NICHT
+angefasst (Abgrenzung): die Berechnung selbst (`wT`/`ice`, DDT-/Energiebilanz-Formel)
+bleibt vollständig erhalten und weiterhin Teil der Anleitung.
+
+- **`pizza-rechner.html`/`pizza-rechner-mobile.html`:** kompletter
+  `<div class="stage" id="tempStage">`-Block entfernt (Überschrift „Wassertemperatur",
+  `.temp-box` mit Wert `#waterTemp` + Label „Schüttwasser", bedingter Glossar-Verweis-
+  Link `#waterTempGlossaryRef` auf den Artikel „Eis-Methode" samt eigener Live-Region
+  `#waterTempGlossaryLiveMsg`), identisches Vorgehen auf beiden Seiten. Der
+  „Weitere Optionen"-Bereich geht danach nahtlos vom „Rezept teilen"-Block zum
+  „Speichern"-Button über, kein verwaister/leerer Container.
+- **`js/calc.js` (`renderResult()`):** den DOM-Schreibcode für `#waterTemp`/
+  `#waterTempGlossaryRef`/`#waterTempGlossaryLiveMsg`/`#tempStage` sowie den separaten
+  Klick-Delegations-Listener auf `#tempStage` entfernt, inkl. der `prevGlossaryRefVisible`-
+  Zustandsvariable (nur für die entfernte Live-Region-Ansage gebraucht) und der nicht
+  mehr genutzten `fmtT`-Formatierungsfunktion in `renderResult()`. `calcCore()` bleibt
+  **unverändert**: `R.wT`, `R.ice`, `R.note`, `R.hasMixingWater` werden weiterhin exakt
+  wie vorher berechnet (Energiebilanz-Formel technisch vollständig erhalten) — nur die
+  Anzeige dieser Werte im Ergebnis-Panel entfällt, `js/guide.js` zeigt den
+  Zieltemperaturwert unverändert in der Anleitung.
+- **`css/styles.css`:** die dadurch verwaisten `.temp-out`/`.temp-box`-Regeln entfernt
+  (inkl. `.temp-box:first-child`-Highlight-Regel). `.stage`/`.stage h3` bleiben
+  unverändert (weiterhin für `#stagePref`/`#stageMain` gebraucht). `.glossary-ref`
+  bleibt unverändert bestehen (weiterhin von `js/guide.js`s Inline-Glossar-Verweisen
+  genutzt), Kommentar zur Historie des unscoped-Selektors aktualisiert.
+- **`js/i18n-dict.js`:** die vier dadurch ungenutzten Einträge `result.waterTemp`,
+  `result.mixingWater`, `result.iceMethodLink`, `result.iceMethodLinkAnnounce`
+  entfernt. Die `calc.*`-Notiz-Keys (`calc.ice.note`, `calc.warmNote`, `calc.tapOkNote`,
+  `calc.veryColdWarn`, `calc.noMixingWaterNote`) bleiben bestehen, da `calcCore()`
+  `R.note` weiterhin daraus baut (von `tests/test.html` direkt gegen `R.note` geprüft,
+  nicht mehr über das DOM). Der Glossar-Artikel „eisMethode" selbst bleibt unverändert
+  im Glossar-Menü (Kategorie „Basics") erreichbar — nur der eine Inline-Verweis-Link
+  aus dem Ergebnis-Panel ist weg, die Hauptroute über die Glossar-Navigation war schon
+  vorher der primäre Zugang.
+
+**Tests** (`tests/test.html`): das komplette DOM-Testcluster zu `#waterTemp`/
+`#tempStage`/`#waterTempGlossaryRef`/`#waterTempGlossaryLiveMsg` in Sektion 2
+„Wassertemperatur & Eismenge" entfernt (Schwellenwert-Tests bei 14/15/16 °C, Live-
+Region-Announce, Imperial-Schwellenwert-Vergleich, Biga-/Poolish-Varianten,
+Preset-ähnliche Konfiguration, Randfall `mWater = 0`, Klick-Test ohne
+`PZ.gotoGlossaryEntry()` — zusammen ca. 29 Einzelprüfungen), sowie eine Prüfung aus
+dem bestehenden Imperial-Integrationstest (`#waterTemp` „°F"-Check, die
+`formatTemp()`-Formatierung selbst bleibt über einen eigenständigen direkten Test
+abgedeckt). Die rein rechnerischen Tests (`R.wT`, `R.ice`, `R.note`,
+`R.hasMixingWater` via `PZ.calcCore()`/`PZ.calc()`) blieben unverändert bestehen, der
+Bugfix-v3.48.0-Poolish-Extremfalltest wurde von 2 DOM-abhängigen Boxen auf 1
+konsolidierte, rein rechnerische Box umgebaut. Netto **922 → 893** Prüfungen (−29).
+Alle 893 grün, im Preview-Tool durch den Hauptagenten auf einem frischen,
+garantiert cache-freien Port verifiziert (s. Nebenbefund unten). Kein
+`test-generator`-Lauf nötig (keine neue Berechnungslogik, nur Entfernen von
+DOM-Rendering-Code + zugehörigen DOM-Tests).
+
+**Accessibility-Review (gezielt, `accessibility-expert`-Agent):** Status BESTANDEN,
+keine Befunde. Fokusreihenfolge im Ergebnis-Panel intakt (`#shareLinkBtn` →
+`#moreOptionsDetails` → `#saveBtn`), keine verwaisten `aria-describedby`/
+`aria-labelledby`-Referenzen auf die entfernten IDs, `.glossary-ref`/`.stage`-CSS
+sauber (weiterhin korrekt für die verbleibenden Nutzer dieser Klassen), Glossar-
+Artikel „eisMethode" weiterhin über die Glossar-Navigation erreichbar, keine neuen
+Kontrast-/Fokus-Probleme (reine Entfernung, kein neues Markup).
+
+**Nebenbefund/Prozess-Lernpunkt (kein App-Code, reine Arbeitsweise):** ein erster
+Verifikationsversuch des Hauptagenten im Preview-Tool meldete fälschlich weiterhin
+„922 passed" bei sichtbarem `#summary` auf „läuft…" hängend — Ursache war ein
+wiederverwendeter Preview-Tab/-Port mit einer im Browser gecachten alten Version von
+`js/calc.js` (keine `?v=`-Cache-Busting-Query auf `tests/test.html` selbst bzw. beim
+wiederverwendeten Tab). Nach Diagnose (direkter no-store-Fetch zeigte die korrekte
+Datei) auf einem komplett frischen, nie zuvor besuchten Port neu verifiziert: „893
+passed, 0 failed", `#summary` und Konsole übereinstimmend. Für künftige Zyklen
+festgehalten: bei Preview-Verifikation von `tests/test.html` im Zweifel einen
+frischen Port/Tab verwenden statt einen wiederverwendeten, wenn die gemeldete Zahl
+von der eigenen Erwartung abweicht.
+
+**Geändert:** `pizza-rechner.html`, `pizza-rechner-mobile.html`, `css/styles.css`,
+`js/calc.js`, `js/i18n-dict.js`, `tests/test.html`. `?v=` auf `4.16.0` gezogen
+(Desktop + Mobil, Cache-Busting + Menü-Version). `pizza-rechner-mobile-standalone.html`
+neu gebaut (`python build-mobile-standalone.py`). `Versionen/v4.16.0 - Schüttwasser-
+Anzeige entfernen/` enthält den vollständigen Schnappschuss.
+
 ## Rezepte-Reiter fest aktivieren (v4.15.0)
 
 Vom Nutzer per `/define-feature` strukturiert (Name/Idee/Motivation/Scope/Abgrenzung

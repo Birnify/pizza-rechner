@@ -736,22 +736,14 @@
   add('ing.plusWholePref', '+ ganze Biga/Poolish', '+ whole biga/poolish');
   add('ing.all', 'alles', 'all of it');
   add('result.mainDough', 'Hauptteig (am Backtag)', 'Final dough (on baking day)');
-  add('result.waterTemp', 'Wassertemperatur', 'Water temperature');
-  add('result.mixingWater', 'Schüttwasser', 'Mixing water');
-  // Backlog Punkt I (v4.11.0, "Zieltemperatur statt Eis in der Hauptanleitung"): ersetzt
-  // die bisherige "davon Eis"-Box (result.ofWhichIce, entfernt) -- bedingter Verweis-Link
-  // im Ergebnis-Panel (#waterTempGlossaryRef, js/calc.js), sichtbar sobald die interne
-  // Zielwassertemperatur unter 15 °C/59 °F liegt.
-  add('result.iceMethodLink', 'Temperatur mit Leitungswasser nicht erreichbar? Glossar: Eis-Methode',
-    'Can\'t reach this temperature with tap water? Glossary: ice method');
-  // Live-Region-Ansage (WCAG 4.1.3, accessibility-expert-Befund im Punkt-I-Review): wird
-  // per PZ.announce() NUR beim Neu-Erscheinen von #waterTempGlossaryRef ausgelöst (nicht
-  // bei jedem calc()-Lauf), s. js/calc.js.
-  add('result.iceMethodLinkAnnounce', 'Neuer Hinweis: Zieltemperatur mit Leitungswasser nicht erreichbar, Eis-Methode im Glossar verfügbar.',
-    'New notice: this target temperature can\'t be reached with tap water, the ice method is available in the glossary.');
+  // result.waterTemp/result.mixingWater/result.iceMethodLink/result.iceMethodLinkAnnounce
+  // (die separate Wassertemperatur-/Schüttwasser-Anzeige im Ergebnis-Panel inkl. bedingtem
+  // Glossar-Verweis-Link, Backlog Punkt I/v4.11.0) sind seit v4.16.0 ("Schüttwasser-Anzeige
+  // entfernen") ersatzlos entfernt -- der Wert bleibt weiterhin in der Schritt-für-Schritt-
+  // Anleitung sichtbar (guide.step.waterTemp.* in dieser Datei), nur die redundante
+  // Extra-Anzeige im Ergebnis-Panel ist weg.
   // Live-Region-Ansage (WCAG 4.1.3, Backlog Punkt J, v4.12.0): wird per PZ.announce()
-  // NUR beim Neu-Erscheinen von #sugarBlock ausgelöst (nicht bei jedem calc()-Lauf),
-  // identisches Muster wie result.iceMethodLinkAnnounce oben, s. js/calc.js.
+  // NUR beim Neu-Erscheinen von #sugarBlock ausgelöst (nicht bei jedem calc()-Lauf).
   add('result.sugarFieldShownAnnounce', 'Neues Feld eingeblendet: Zucker.',
     'New field shown: sugar.');
   add('yeast.fresh', '(frisch)', '(fresh)');
@@ -1146,13 +1138,12 @@
   add('quickbar.partyNoneYet', 'Noch keine Pizza ausgewählt', 'No pizza selected yet');
 
   // ---- js/calc.js: Eiswasser-Hinweis (dynamisch berechneter Text) ----------------
-  // Seit Backlog Punkt I (v4.11.0): R.note (gebaut aus diesen 4 Keys) wird in
-  // calcCore() weiterhin berechnet (Energiebilanz-Formel technisch unverändert), aber
-  // NIRGENDS mehr angezeigt (weder Ergebnis-Panel #iceNote [entfernt] noch Anleitung) --
-  // das Ergebnis-Panel zeigt seither nur noch den reinen Zieltemperaturwert plus,
-  // unterhalb 15 °C, den neuen Glossar-Verweis-Link (result.iceMethodLink oben). Die
-  // Keys bleiben stehen, da tests/test.html Sektion 2 weiterhin R.note direkt (nicht
-  // mehr über das DOM) gegen calc.noMixingWaterNote prüft.
+  // Seit Backlog Punkt I (v4.11.0) und weiterhin seit v4.16.0 ("Schüttwasser-Anzeige
+  // entfernen"): R.note (gebaut aus diesen Keys) wird in calcCore() weiterhin berechnet
+  // (Energiebilanz-Formel technisch unverändert), aber NIRGENDS mehr im DOM angezeigt --
+  // weder im Ergebnis-Panel (auch der bedingte Glossar-Verweis-Link ist seit v4.16.0 weg)
+  // noch in der Anleitung. Die Keys bleiben stehen, da tests/test.html Sektion 2
+  // weiterhin R.note direkt (nicht mehr über das DOM) gegen calc.noMixingWaterNote prüft.
   add('calc.ice.note', 'Nimm <b>{tapWater} Leitungswasser (~{tapTemp})</b> + <b>{ice} Eis</b>, ergibt ~{wT} Schüttwasser. Eis vorher abwiegen.',
     'Use <b>{tapWater} tap water (~{tapTemp})</b> + <b>{ice} ice</b>, giving ~{wT} mixing water. Weigh the ice beforehand.');
   add('calc.warmNote', 'Schüttwasser leicht anwärmen auf ~{wT} (z.B. handwarm).', 'Warm the mixing water slightly to ~{wT} (e.g. lukewarm).');

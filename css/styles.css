@@ -882,8 +882,8 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 .ing .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 /* font-family (v4.0.0, Design-Import Zyklus 1): var(--font-numeric) (Bitter, tabellarische
    Ziffern) statt der geerbten Body-Schrift -- gemessene Mengen bekommen dieselbe
-   Slab-Serif-Behandlung wie die große Gesamtteig-Zahl (.result .total .big) und die
-   Temperatur-Werte (.temp-box .v), s. components/cards/IngredientRow.jsx im Import. */
+   Slab-Serif-Behandlung wie die große Gesamtteig-Zahl (.result .total .big),
+   s. components/cards/IngredientRow.jsx im Import. */
 .ing .amt{font-weight:700;font-variant-numeric:tabular-nums;font-family:var(--font-numeric);}
 .ing .amt small{font-weight:500;color:var(--muted);font-size:11px;margin-left:3px;font-family:var(--font-body);}
 .stage{margin-top:18px;}
@@ -897,18 +897,6 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   font-size:12.5px;margin-top:14px;color:var(--note-text);line-height:1.45;
 }
 .note b{color:var(--note-text-strong);}
-.temp-out{display:flex;gap:10px;margin-top:6px;align-items:stretch;}
-.temp-box{flex:1;text-align:center;background:var(--surface-2);border-radius:var(--radius);padding:12px 8px;}
-/* Seit Backlog Punkt I (v4.11.0): nur noch EIN .temp-box-Kind in .temp-out (die "davon
-   Eis"-Box wurde entfernt) -- der frühere flex:1.4-Wert war für den Größenvergleich mit
-   einer zweiten, schmaleren Nachbar-Box gedacht und wäre mit nur einem Flex-Kind ohnehin
-   optisch identisch zu flex:1 (accessibility-expert-Review-Hinweis: MINOR/Wartbarkeit,
-   kein visueller Fehler). Auf flex:1 vereinfacht, highlight-Optik (Fläche/Rahmen) bleibt
-   unverändert über :first-child erhalten, falls die Karte künftig wieder mehrere
-   Temperatur-Werte nebeneinander zeigen sollte. */
-.temp-box:first-child{flex:1;background:var(--temp-highlight-bg);border:1px solid var(--crust);}
-.temp-box .v{font-size:22px;font-weight:800;color:var(--tomato-text);font-variant-numeric:tabular-nums;font-family:var(--font-head);}
-.temp-box .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
 .actions{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
 .actions button{
   padding:11px;border-radius:var(--radius);border:1px solid var(--line);background:var(--card);
@@ -1081,9 +1069,12 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
    zwei nebeneinanderliegenden Flex-Items, `align-items:flex-start` hält das Icon oben am
    (ggf. mehrzeiligen) Linktext ausgerichtet statt vertikal zentriert. Icon-`<span>` trägt
    `aria-hidden="true"` (js/guide.js), da der Button-Text bereits vorgelesen wird. */
-/* Selektor bewusst unscoped (nicht mehr nur .step .body .glossary-ref) seit Backlog
-   Punkt I (v4.11.0, "Zieltemperatur statt Eis"): #waterTempGlossaryRef im Ergebnis-Panel
-   (js/calc.js) nutzt dieselbe Klasse außerhalb eines .step-Anleitungsschritts. */
+/* Selektor bewusst unscoped (nicht nur .step .body .glossary-ref) seit Backlog Punkt I
+   (v4.11.0): bis v4.16.0 nutzte auch #waterTempGlossaryRef im Ergebnis-Panel (js/calc.js)
+   dieselbe Klasse außerhalb eines .step-Anleitungsschritts. Seit v4.16.0 ("Schüttwasser-
+   Anzeige entfernen") ist js/guide.js wieder der einzige Nutzer -- Selektor bleibt trotzdem
+   unscoped (kein funktionaler Nachteil, spart eine erneute Änderung bei künftigem
+   Wiederauftauchen eines Verweises außerhalb von .step). */
 .glossary-ref{margin-top:7px;font-size:12.5px;color:var(--muted);display:flex;align-items:flex-start;gap:6px;}
 /* Foto der fertigen Pizza (v3.69.0), abschließender Anleitungsschritt nach dem Backen --
    gemeinsame Regel für Desktop UND Mobil (beide laden css/styles.css), kein separates

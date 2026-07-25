@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-25 · Aktuelle Version: v4.15.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-26 · Aktuelle Version: v4.16.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -64,7 +64,10 @@ die anderen Mengen sinken nur minimal, weil das Öl seinen Gewichtsanteil bekomm
   blenden je bei 0 % aus)
 - Bei Vorteig: Aufteilung Vorteig-Stufe / Hauptteig-Stufe (**100 % der Hefe in den Vorteig**,
   **Öl und Zucker komplett in den Hauptteig** — nie in Biga/Poolish)
-- Wassertemperatur (DDT) + Eismenge (Energiebilanz mit Schmelzwärme 334 J/g)
+- **Keine eigene Wassertemperatur-/Schüttwasser-Anzeige mehr** (seit v4.16.0 entfernt,
+  redundant zur Anleitung): die Berechnung (DDT + Eismenge, Energiebilanz mit
+  Schmelzwärme 334 J/g) läuft weiterhin intern (`js/calc.js`), der Wert steht nur noch
+  in der Schritt-für-Schritt-Anleitung (s. u.)
 - Buttons: Drucken, Speichern
 
 ### 3. Schritt-für-Schritt-Anleitung (unten, volle Breite)
@@ -177,23 +180,21 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Rezepte-Reiter fest aktivieren (v4.15.0) = aktueller Stand
+## Schüttwasser-Anzeige entfernen (v4.16.0) = aktueller Stand
 
-Vom Nutzer per `/define-feature` strukturiert, Umsetzungsdetails in einer eigenen
-Rückfrage-Runde geklärt: das Feature-Flag `multiRecipes` („Mehrere Rezepte") entfällt.
-„Meine Rezepte" (`#recipesCard`) und der Rezepte-Nav-Reiter/-Menüpunkt sind jetzt fest
-und dauerhaft sichtbar statt vom Flag gesteuert — `js/settings.js`s `applyFlags()`
-fasst ihr `style.display` nicht mehr an. Analog zur Entfernung von `share`/`shopping`
-(v4.6.0), `newYorkStyle` (v4.7.0) und `freezeHint` (v4.8.0): die zugehörige
-`.flag-item`-Checkbox-Zeile in beiden Einstellungen-Karten (Desktop + Mobil) wurde
-ersatzlos entfernt, ein alter gespeicherter `multiRecipes`-Wert im `localStorage`
-bleibt bewusst als harmlose, nie mehr gelesene Karteileiche stehen (keine aktive
-Migration/Bereinigung). `accessibility-expert`-Review ohne Befund. `tests/test.html`:
-923 → **922** (netto −1, Section 18 „Feature-Flags" angepasst).
+Vom Nutzer per `/define-feature` strukturiert: die separate Wassertemperatur-/
+Schüttwasser-Anzeige im Ergebnis-Panel (unter „Weitere Optionen", inkl. bedingtem
+Glossar-Verweis-Link + Live-Region) ist ersatzlos entfernt — der Wert steht bereits
+in der Anleitung (seit v4.11.0). Die Berechnung selbst (`R.wT`/`R.ice`, DDT-/
+Energiebilanz-Formel in `js/calc.js` `calcCore()`) bleibt unverändert erhalten, nur
+die Anzeige im Ergebnis-Panel (Desktop + Mobil) sowie die zugehörigen DOM-Tests und
+verwaisten CSS-/i18n-Einträge entfielen. `accessibility-expert`-Review ohne Befund.
+`tests/test.html`: 922 → **893** (netto −29, entferntes DOM-Testcluster in Sektion 2
+„Wassertemperatur & Eismenge").
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Rezepte-Reiter fest
-aktivieren (v4.15.0)"; vorheriger Abschnitt „Glossar-Gruppierung (v4.14.0)" ebenfalls
-dort.
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Schüttwasser-
+Anzeige entfernen (v4.16.0)"; vorheriger Abschnitt „Rezepte-Reiter fest aktivieren
+(v4.15.0)" ebenfalls dort.
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -349,11 +350,11 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.15.0 -- seit
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.16.0 -- seit
                      v4.5.0 synchron mit Mobil, s. u.: Desktop lädt weiterhin ohne
                      css/fonts.css, das ist unabhängig von der Versionsnummer)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle,
-                     ?v=4.15.0)
+                     ?v=4.16.0)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
 index.html           Weiterleitung auf pizza-rechner.html
@@ -449,7 +450,7 @@ js/onboarding.js     Willkommens-Screen / Einführung (v3.63.0): eigenständiges
                      eigenem Fokus-Trap, stellt 4 Kernfunktionen vor, automatisch beim Erststart
                      + jederzeit über Burgermenü-Punkt "Einführung" aufrufbar, Persistenz via
                      localStorage-Key pizzaOnboardingDontShow. Läuft als letztes Script (nach nav.js)
-tests/test.html      922 Prüfungen in 31 Kategorien (Doppelklick, kein Server) — lädt 17 der 27
+tests/test.html      893 Prüfungen in 31 Kategorien (Doppelklick, kein Server) — lädt 17 der 27
                      js/*-Module direkt (dom/state/i18n-dict/i18n/settings/theme/units/widgets/
                      flour/schedule/guide/calc/print/pdf/storage/share/party); ui.js, timer.js,
                      presets.js, newrecipe.js, glossary.js, main.js, nav.js, simplemode.js,
@@ -471,14 +472,14 @@ formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 **Cache-Busting:** CSS/JS werden mit `?v=X.Y.Z` geladen. **Bei jeder neuen Version mitziehen.**
 Zwischen v4.0.0 und v4.4.0 bewusst auseinandergelaufen (Design-Import-Zyklen waren
 mobile-only, Desktop-HTML wurde nicht angefasst) — **seit v4.5.0 wieder synchron**, beide
-HTML-Dateien stehen bei `?v=4.15.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
+HTML-Dateien stehen bei `?v=4.16.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
 erneut bewusst entscheiden, ob ein Auseinanderlaufen sinnvoll ist oder beide mitgezogen
 werden.
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien steht `<span class="nav-version"
 id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine JS-Logik dahinter. Seit v4.5.0
-wieder synchron (beide `v4.15.0`), analog zum Cache-Busting oben. **Bei jedem
+wieder synchron (beide `v4.16.0`), analog zum Cache-Busting oben. **Bei jedem
 Versionssprung von Hand mitziehen** (zusammen mit `?v=` und der Kontext-Datei — bei allen
 drei HTML-Dateien, also auch `pizza-rechner-mobile-standalone.html` nach dem Rebuild,
 gegenprüfen), sonst zeigt die Live-App die falsche Version an.
@@ -531,7 +532,7 @@ gegenprüfen), sonst zeigt die Live-App die falsche Version an.
 - **Versionen-Workflow (Pflicht bei jeder Änderung):** kompletten lauffähigen Stand nach
   `Versionen/vX.Y.Z - [Beschreibung]/` kopieren (html, index, css/, js/, README; tests/ optional).
   SemVer: Patch=Fix, Minor=Feature, Major=Umbau. `?v=` in der HTML mitziehen.
-- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 923 Prüfungen in
+- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 893 Prüfungen in
   31 Kategorien** (s. Dateistruktur oben): Bäckerprozente, DDT/Eis, Vorteig-Aufteilung, Trockenhefe,
   Schedule-Schwellen, Mehl-Warnung, Backzeit-Skalierung, Olivenöl (Masseerhaltung), Anleitungs-
   Hinweise, Randfälle/Edge Cases, Kombinationen, Zeitplan-Rückwärtsrechnung, Einkaufsliste,
@@ -737,6 +738,10 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
+- ~~Schüttwasser-Anzeige entfernen~~ — **erledigt in v4.16.0** (kein Backlog-Punkt im
+  engeren Sinne, direkter Nutzerauftrag per `/define-feature`; s. Abschnitt
+  „Schüttwasser-Anzeige entfernen (v4.16.0)" oben). Die separate Wassertemperatur-/
+  Schüttwasser-Box im Ergebnis-Panel ist weg, der Wert bleibt in der Anleitung.
 - ~~Rezepte-Reiter fest aktivieren (Feature-Flag `multiRecipes` entfernen)~~ —
   **erledigt in v4.15.0** (kein Backlog-Punkt im engeren Sinne, direkter Nutzerauftrag
   per `/define-feature`; s. Abschnitt „Rezepte-Reiter fest aktivieren (v4.15.0)"
