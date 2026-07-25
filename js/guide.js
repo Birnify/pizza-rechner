@@ -220,7 +220,11 @@
     // unterstützt die Hefeaktivität, statt (wie Öl) das Glutennetz zu stören.
     const sugarPhrase = hasSugar ? t('guide.sugarPhrase', { sugar: g(R.sugar) }) : '';
     const sugarTip = hasSugar ? tip(t('guide.sugarTip')) : '';
-    const iceTxt = R.ice > 0 ? t('guide.iceTxt', { ice: g(R.ice) }) : '';
+    // Backlog Punkt I (v4.11.0, "Zieltemperatur statt Eis in der Hauptanleitung"): die
+    // Wassertemperatur-Schritte unten sprechen nur noch von der reinen Zieltemperatur,
+    // kein Eis-/Eismengen-Text mehr (iceTxt/waterTemp.tip-Bausteine entfallen komplett).
+    // R.ice/R.note bleiben in js/calc.js technisch weiter berechnet (Energiebilanz-Formel
+    // unverändert), werden hier aber bewusst nicht mehr gelesen.
     let matureMin = 0;                        // Vorteig-Reifezeit (nur bei Biga/Poolish)
     _items = [];
     _usedGlossaryIds = new Set();              // Dedup-Reset je buildGuide()-Durchlauf
@@ -268,8 +272,8 @@
       const hasMW = R.mWater >= 1, hasMF = R.mFlour >= 1;
       if (hasMW) {
         st(t('guide.step.waterTemp.title'), gt(R.wT),
-          t('guide.step.waterTemp.body', { mWater: g(R.mWater), wT: gt(R.wT), iceTxt: iceTxt }),
-          R.ice > 0 ? tip(t('guide.step.waterTemp.tip')) : '', 5);
+          t('guide.step.waterTemp.body', { mWater: g(R.mWater), wT: gt(R.wT) }),
+          '', 5);
       }
       const addParts = [];
       if (hasMW) addParts.push(t('guide.pref.addWater', { mWater: g(R.mWater) }));
@@ -305,8 +309,8 @@
         }),
         tip(t('guide.step.weighIngredients.tip')), 5);
       st(t('guide.step.waterTemp.title'), gt(R.wT),
-        t('guide.step.waterTempDirect.body', { water: g(R.water), wT: gt(R.wT), iceTxt: iceTxt, ddt: gt(state.ddt) }),
-        R.ice > 0 ? tip(t('guide.step.waterTempDirect.tip')) : '', 5);
+        t('guide.step.waterTempDirect.body', { water: g(R.water), wT: gt(R.wT), ddt: gt(state.ddt) }),
+        '', 5);
       if (state.yeast < 1.2) {
         // Autolyse: Hefe kommt erst DANACH in den Teig — kein Widerspruch in der Reihenfolge
         const tinyYeast = R.yeast < 1;   // < 1 g lässt sich trocken kaum gleichmäßig verteilen

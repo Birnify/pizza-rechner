@@ -35,6 +35,7 @@
     'tipo00',
     'baeckerprozente',
     'hydration',
+    'eisMethode',
     'gluten',
     'stretchFold',
     'windowpane',

@@ -41,8 +41,8 @@
   <span id="mOil"></span><div id="mOilRow"></div>
   <span id="mSugar"></span><div id="mSugarRow"></div>
   <div id="mYeastRow"></div>
-  <span id="waterTemp"></span><span id="iceAmt"></span><div id="iceNote"></div>
-  <div id="tempStage"></div>
+  <span id="waterTemp"></span>
+  <div id="tempStage"><div id="waterTempGlossaryRef"></div><div id="waterTempGlossaryLiveMsg"></div></div>
   <div id="guideSummary"></div><div id="guideSteps"></div>
   <div id="flourWarn"></div>
   <div id="shoppingList"></div>
@@ -400,22 +400,23 @@
   // --- Bugfix v3.48.0, Extremfall: Poolish-Preset "napoli_poolish" (pref 66 bei hyd 66):
   // das gesamte Wasser steckt bereits im Poolish, mWater ist exakt 0. Vorher zeigte das
   // Ergebnis-Panel trotzdem weiterhin "Nimm X g Leitungswasser + Y g Eis", obwohl es gar
-  // kein Hauptteig-Schüttwasser mehr zu temperieren gibt. Jetzt: eigene Erklär-Notiz statt
-  // widersinniger Mengenangabe, ganzer Wassertemperatur-Block (#tempStage) ausgeblendet. ---
+  // kein Hauptteig-Schüttwasser mehr zu temperieren gibt. Ganzer Wassertemperatur-Block
+  // (#tempStage) wird stattdessen ausgeblendet. Seit Backlog Punkt I (v4.11.0): R.note
+  // (die "Erklär-Notiz") landet nirgends mehr im DOM (#iceNote entfernt) -- geprüft wird
+  // daher der berechnete Wert R.note direkt statt eines DOM-Texts. ---
   (function () {
     Object.assign(PZ.state, BASE, {
       method: 'poolish', pref: 66, hyd: 66, room: 30, flourTemp: 30, ddt: 24, knead: '6'
     });
     PZ.calc();
     const R = PZ.R;
-    const noteHtml = (document.getElementById('iceNote') || {}).innerHTML || '';
     const tempStageEl = document.getElementById('tempStage');
     const tempStageHidden = !!tempStageEl && tempStageEl.style.display === 'none';
     const expectedNote = PZ.t('calc.noMixingWaterNote');
     renderBox('Bugfix v3.48.0 · Poolish-Extremfall (pref 66/hyd 66): mWater = 0 wird sauber abgefangen', [
       { label: 'mWater ist exakt 0 (das gesamte Wasser steckt im Poolish)', ok: R.mWater === 0, actual: R.mWater, expected: 0, tol: null },
       { label: 'ice bleibt 0 (keine widersinnige Eismenge gegen 0 g Wasser)', ok: R.ice === 0, actual: R.ice, expected: 0, tol: null },
-      { label: '#iceNote zeigt die neue Erklär-Notiz statt "Nimm 0 g Leitungswasser + 0 g Eis"', ok: noteHtml === expectedNote, actual: noteHtml, expected: expectedNote, tol: null },
+      { label: 'R.note ist die neue Erklär-Notiz statt "Nimm 0 g Leitungswasser + 0 g Eis" (nicht mehr im DOM, s. calc.js)', ok: R.note === expectedNote, actual: R.note, expected: expectedNote, tol: null },
       { label: '#tempStage (ganzer Wassertemperatur-Block) wird ausgeblendet', ok: tempStageHidden, actual: tempStageHidden, expected: true, tol: null }
     ]);
 
@@ -427,6 +428,215 @@
     const tempStageShownAgain = tempStageEl.style.display !== 'none';
     renderBox('#tempStage wird bei normalem Rezept (mWater > 0) wieder eingeblendet', [
       { label: 'Nach Rückkehr zu Direkt/Standard ist #tempStage wieder sichtbar', ok: tempStageShownAgain, actual: tempStageShownAgain, expected: true, tol: null }
+    ]);
+  })();
+
+  // --- Backlog Punkt I (v4.11.0, "Zieltemperatur statt Eis in der Hauptanleitung"):
+  // #waterTempGlossaryRef (Verweis-Link zum neuen Glossar-Artikel "eisMethode") erscheint
+  // NUR, wenn die interne Zielwassertemperatur unter 15 °C liegt -- strikt "<", nicht
+  // "<=" (s. js/calc.js: R.wT < 15). room/flourTemp/ddt/knead so gewählt, dass wT ohne
+  // Rundungsartefakte exakt auf 14/15/16 °C landet (friction=3 bei Hand, s. Sektion 2 oben). ---
+  testCase('Glossar-Verweis-Link · wT genau am Schwellenwert (15 °C): bleibt verborgen ("< 15", nicht "<= 15")', {
+    room: 27, flourTemp: 27, ddt: 24, knead: '3'
+  }, R => [
+    ['wT', R.wT, 15, 0],
+    ['#waterTempGlossaryRef.style.display bei genau 15 °C', document.getElementById('waterTempGlossaryRef').style.display, 'none', null]
+  ]);
+
+  testCase('Glossar-Verweis-Link · wT knapp unter dem Schwellenwert (14 °C): sichtbar', {
+    room: 28, flourTemp: 27, ddt: 24, knead: '3'
+  }, R => [
+    ['wT', R.wT, 14, 0],
+    ['#waterTempGlossaryRef.style.display bei 14 °C', document.getElementById('waterTempGlossaryRef').style.display, 'flex', null]
+  ]);
+
+  testCase('Glossar-Verweis-Link · wT knapp über dem Schwellenwert (16 °C): verborgen', {
+    room: 26, flourTemp: 27, ddt: 24, knead: '3'
+  }, R => [
+    ['wT', R.wT, 16, 0],
+    ['#waterTempGlossaryRef.style.display bei 16 °C', document.getElementById('waterTempGlossaryRef').style.display, 'none', null]
+  ]);
+
+  // --- Live-Region-Ansage beim Neu-Erscheinen des Glossar-Verweis-Links (WCAG 4.1.3,
+  // accessibility-expert-Befund aus dem Punkt-I-Review): PZ.announce() (js/dom.js) soll
+  // NUR beim Übergang "verborgen -> sichtbar" feuern, nicht bei jedem calc()-Aufruf,
+  // während der Link ohnehin schon sichtbar bleibt (s. prevGlossaryRefVisible in
+  // js/calc.js). PZ.announce() leert die Live-Region SOFORT synchron, der eigentliche
+  // Text kommt erst nach 50ms (s. js/dom.js) -- das sofortige Leeren reicht hier als
+  // Nachweis, dass announce() ausgelöst wurde, ohne den echten Timer abwarten zu müssen
+  // (analog zum bestehenden Verzicht auf Timing-Tests für js/timer.js in dieser Datei). ---
+  (function () {
+    const liveEl = document.getElementById('waterTempGlossaryLiveMsg');
+    // 1) Bewusst zuerst in den "verborgen"-Zustand bringen (wT >= 15), unabhängig vom
+    // Ausgang vorheriger Testfälle in dieser Sektion.
+    Object.assign(PZ.state, BASE, { room: 22, flourTemp: 22, ddt: 24, knead: '3' });
+    PZ.calc();
+    // 2) Sentinel-Text setzen, dann in den "sichtbar"-Zustand wechseln (wT < 15).
+    liveEl.textContent = 'Sentinel-vor-Uebergang';
+    Object.assign(PZ.state, BASE, { room: 28, flourTemp: 27, ddt: 24, knead: '3' });
+    PZ.calc();
+    const clearedOnAppear = liveEl.textContent === '';
+    // 3) Erneuter calc()-Aufruf, während der Link bereits sichtbar bleibt (kein neuer
+    // Übergang) -- der Sentinel-Wert darf NICHT erneut gelöscht werden.
+    liveEl.textContent = 'Sentinel-bereits-sichtbar';
+    Object.assign(PZ.state, BASE, { room: 28, flourTemp: 27, ddt: 24, knead: '3', balls: 5 });
+    PZ.calc();
+    const untouchedWhileAlreadyVisible = liveEl.textContent === 'Sentinel-bereits-sichtbar';
+    renderBox('Live-Region-Ansage · #waterTempGlossaryLiveMsg feuert nur beim Neu-Erscheinen des Links, nicht bei jedem calc()', [
+      { label: 'Übergang "verborgen -> sichtbar": Live-Region wird sofort geleert (PZ.announce() ausgelöst)', ok: clearedOnAppear, actual: clearedOnAppear, expected: true, tol: null },
+      { label: 'Link bleibt bereits sichtbar: Live-Region wird NICHT erneut angefasst (kein wiederholtes Announce)', ok: untouchedWhileAlreadyVisible, actual: untouchedWhileAlreadyVisible, expected: true, tol: null }
+    ]);
+  })();
+
+  // --- Schwellenwert-Vergleich bleibt einheitlich in Celsius, unabhängig vom aktiven
+  // Einheitensystem (Metrisch/Imperial, js/units.js): 15 °C == 59 °F ist derselbe interne
+  // Grenzwert, die Imperial-Anzeige rechnet nur die DARSTELLUNG um, nie den Vergleich selbst. ---
+  (function () {
+    const UNITS_KEY = 'pizzaUnits';
+    const backup = localStorage.getItem(UNITS_KEY);
+    Object.assign(PZ.state, BASE, { room: 27, flourTemp: 27, ddt: 24, knead: '3' }); // wT = 15 exakt
+    PZ.setUnitSystem('imperial');
+    PZ.calc();
+    const ref = document.getElementById('waterTempGlossaryRef');
+    const waterTempTextAt15 = document.getElementById('waterTemp').textContent;
+    const hiddenAt15Imperial = ref.style.display === 'none';
+    Object.assign(PZ.state, BASE, { room: 28, flourTemp: 27, ddt: 24, knead: '3' }); // wT = 14 exakt
+    PZ.calc();
+    const waterTempTextAt14 = document.getElementById('waterTemp').textContent;
+    const shownAt14Imperial = ref.style.display === 'flex';
+    PZ.setUnitSystem('metric');
+    PZ.calc();
+    if (backup !== null) { localStorage.setItem(UNITS_KEY, backup); } else { localStorage.removeItem(UNITS_KEY); }
+    renderBox('Glossar-Verweis-Link · Einheitensystem-Wechsel Metrisch/Imperial ändert nichts an der (Celsius-internen) Schwellenwert-Logik', [
+      { label: '#waterTemp zeigt "59°F" (Imperial-Anzeige von 15 °C, Grenzfall)', ok: waterTempTextAt15 === '59°F', actual: waterTempTextAt15, expected: '59°F', tol: null },
+      { label: 'Bei 15 °C/59 °F (Imperial aktiv) bleibt der Verweis-Link verborgen', ok: hiddenAt15Imperial, actual: hiddenAt15Imperial, expected: true, tol: null },
+      { label: '#waterTemp zeigt "57°F" (Imperial-Anzeige von 14 °C, unter der Schwelle)', ok: waterTempTextAt14 === '57°F', actual: waterTempTextAt14, expected: '57°F', tol: null },
+      { label: 'Bei 14 °C/57 °F (Imperial aktiv) erscheint der Verweis-Link', ok: shownAt14Imperial, actual: shownAt14Imperial, expected: true, tol: null }
+    ]);
+  })();
+
+  // --- Glossar-Verweis-Link · Biga-Methode (v4.11.0): wT < 15 triggert den Link, unabhängig
+  // von der Vorteig-Methode. Biga mit wT=14 (knapp unter der Schwelle) sollte den Link anzeigen. ---
+  testCase('Glossar-Verweis-Link · Biga + wT knapp unter 15 °C (14 °C): sichtbar', {
+    method: 'biga', pref: 70, bhyd: 45, hyd: 65,
+    room: 28, flourTemp: 27, ddt: 24, knead: '3'
+  }, R => [
+    ['wT', R.wT, 14, 0],
+    ['#waterTempGlossaryRef.style.display bei Biga + 14 °C', document.getElementById('waterTempGlossaryRef').style.display, 'flex', null]
+  ]);
+
+  // --- Glossar-Verweis-Link · Poolish-Methode (v4.11.0): wT < 15 triggert den Link, unabhängig
+  // von der Vorteig-Methode. Poolish mit wT=14 (knapp unter der Schwelle) sollte den Link anzeigen. ---
+  testCase('Glossar-Verweis-Link · Poolish + wT knapp unter 15 °C (14 °C): sichtbar', {
+    method: 'poolish', pref: 66, hyd: 66,
+    room: 28, flourTemp: 27, ddt: 24, knead: '3'
+  }, R => [
+    ['wT', R.wT, 14, 0],
+    ['#waterTempGlossaryRef.style.display bei Poolish + 14 °C', document.getElementById('waterTempGlossaryRef').style.display, 'flex', null]
+  ]);
+
+  // --- Glossar-Verweis-Link · Biga mit wT genau an der Schwelle (15 °C): verborgen ---
+  testCase('Glossar-Verweis-Link · Biga + wT exakt 15 °C: verborgen', {
+    method: 'biga', pref: 70, bhyd: 45, hyd: 65,
+    room: 27, flourTemp: 27, ddt: 24, knead: '3'
+  }, R => [
+    ['wT', R.wT, 15, 0],
+    ['#waterTempGlossaryRef.style.display bei Biga + 15 °C', document.getElementById('waterTempGlossaryRef').style.display, 'none', null]
+  ]);
+
+  // --- Glossar-Verweis-Link · Preset-ähnliche Konfiguration: napoli_kalt startet mit moderaten
+  // Bedingungen (Normalraum), der Link bleibt verborgen (wT >= 15). Mit WÄRMEREM Raum (z.B.
+  // Sommer) sinkt wT unter 15 (mehr Kühlbedarf -> kälteres Schüttwasser nötig, s. Sektion 2
+  // "Eiswasser · Maschine, Sommer" oben) und der Link wird sichtbar.
+  // (Korrektur, s. pizza-rechner-KONTEXT.md/Commit-Historie: ein KÜHLERER Raum/Mehl senkt wT
+  // NICHT, sondern erhöht es -- die DDT-Formel subtrahiert room/flourTemp von ddt*3, ein
+  // kälterer Raum braucht also WÄRMERES Schüttwasser zum Ausgleich, nicht kälteres.) ---
+  (function () {
+    // napoli_kalt-ähnliche Config: method direct, hyd 65, yeast 0.1 (lange Gare)
+    Object.assign(PZ.state, BASE, {
+      method: 'direct', hyd: 65, salt: 3.0, oil: 2, yeast: 0.1, flour: 'caputo_cuoco',
+      room: 22, flourTemp: 22, ddt: 24, knead: '3'
+    });
+    PZ.calc();
+    const R1 = Object.assign({}, PZ.R);
+    const link1 = document.getElementById('waterTempGlossaryRef').style.display;
+    // Wärmerer Raum: room 28, flourTemp 27 (Sommer, identische Werte wie der 14°C-Testfall
+    // oben in dieser Sektion) -> wT = 24*3 - 28 - 27 - 3 = 14
+    Object.assign(PZ.state, BASE, {
+      method: 'direct', hyd: 65, salt: 3.0, oil: 2, yeast: 0.1, flour: 'caputo_cuoco',
+      room: 28, flourTemp: 27, ddt: 24, knead: '3'
+    });
+    PZ.calc();
+    const R2 = Object.assign({}, PZ.R);
+    const link2 = document.getElementById('waterTempGlossaryRef').style.display;
+    renderBox('Glossar-Verweis-Link · Preset-ähnliche Konfiguration: Link folgt wT-Schwelle bei Temperaturwechsel', [
+      { label: 'Bei normaler Temperatur (22 °C) liegt wT über 15 °C', ok: R1.wT >= 15, actual: R1.wT, expected: '≥ 15', tol: null },
+      { label: 'Link ist bei normalem wT verborgen', ok: link1 === 'none', actual: link1, expected: 'none', tol: null },
+      { label: 'Bei wärmerem Raum (28 °C) fällt wT unter 15 °C', ok: R2.wT < 15, actual: R2.wT, expected: '< 15', tol: null },
+      { label: 'Link wird bei tieferem wT sichtbar', ok: link2 === 'flex', actual: link2, expected: 'flex', tol: null }
+    ]);
+  })();
+
+  // --- Glossar-Verweis-Link · Randfall: mWater = 0 (Poolish-Extremfall), #tempStage wird
+  // ausgeblendet. js/calc.js setzt #waterTempGlossaryRef.style.display UNBEDINGT nach R.wT
+  // (kein hasMixingWater-Guard dort) -- bei room=30/flourTemp=30/ddt=24/knead='6' ist
+  // wT = 24*3-30-30-6 = 6 (deutlich unter 15, warmer Sommer-Raum braucht viel Kühlung).
+  // Der Link-Container selbst bekommt also 'flex' (logisch korrekt für wT=6), bleibt aber
+  // wegen des übergeordneten #tempStage{display:none} unsichtbar -- genau dieses
+  // Zusammenspiel (Kind-Element "an", Eltern-Element "aus") prüft dieser Testfall. ---
+  (function () {
+    Object.assign(PZ.state, BASE, {
+      method: 'poolish', pref: 66, hyd: 66, room: 30, flourTemp: 30, ddt: 24, knead: '6'
+    });
+    PZ.calc();
+    const R = PZ.R;
+    const tempStageEl = document.getElementById('tempStage');
+    const refEl = document.getElementById('waterTempGlossaryRef');
+    const tempStageHidden = tempStageEl && tempStageEl.style.display === 'none';
+    const refDisplay = refEl && refEl.style.display;
+    renderBox('Glossar-Verweis-Link · Randfall: Poolish mit mWater=0, #tempStage ausgeblendet', [
+      { label: 'mWater ist 0 (gesamtes Wasser im Poolish)', ok: R.mWater === 0, actual: R.mWater, expected: 0, tol: null },
+      { label: '#tempStage wird wegen hasMixingWater=false ausgeblendet', ok: tempStageHidden, actual: tempStageHidden, expected: true, tol: null },
+      { label: 'wT liegt unter 15 °C (warmer Sommer-Raum erfordert Kühlung)', ok: R.wT < 15, actual: R.wT, expected: '< 15', tol: null },
+      { label: 'Link-Container bekommt trotzdem "flex" (kein hasMixingWater-Guard in calc.js), bleibt aber wegen #tempStage unsichtbar', ok: refDisplay === 'flex', actual: refDisplay, expected: 'flex', tol: null }
+    ]);
+  })();
+
+  // --- Klick auf Glossar-Link ohne PZ.gotoGlossaryEntry() verfügbar (tests/test.html
+  // lädt js/glossary.js bewusst nicht). Der Listener in js/calc.js prüft per null-check,
+  // sollte also keinen Fehler werfen. Test: simuliere Klick auf den Link. ---
+  (function () {
+    Object.assign(PZ.state, BASE, { room: 28, flourTemp: 27, ddt: 24, knead: '3' }); // wT = 14
+    PZ.calc();
+    const refEl = document.getElementById('waterTempGlossaryRef');
+    let clickErrorThrown = false;
+    try {
+      if (refEl && refEl.style.display === 'flex') {
+        // Simuliere Klick auf den Link (falls sichtbar)
+        refEl.click();
+      }
+    } catch (e) {
+      clickErrorThrown = true;
+    }
+    renderBox('Klick auf Glossar-Link · ohne PZ.gotoGlossaryEntry() verfügbar: kein Fehler', [
+      { label: 'Link-Klick wirft keinen Fehler (null-check in calc.js greift)', ok: !clickErrorThrown, actual: clickErrorThrown, expected: false, tol: null }
+    ]);
+  })();
+
+  // --- Glossar-Artikel "eisMethode" auf Nicht-Leerheit (DE+EN) ---
+  (function () {
+    const titleDE = PZ.t('glossary.eisMethode.title');
+    const bodyDE = PZ.t('glossary.eisMethode.body');
+    const savedLang = PZ.getLang && PZ.getLang();
+    if (PZ.setLang) PZ.setLang('en');
+    const titleEN = PZ.t('glossary.eisMethode.title');
+    const bodyEN = PZ.t('glossary.eisMethode.body');
+    if (PZ.setLang && savedLang) PZ.setLang(savedLang);
+    renderBox('Glossar-Artikel · eisMethode: title & body nicht leer (DE+EN)', [
+      { label: 'glossary.eisMethode.title DE nicht leer', ok: titleDE && titleDE.length > 0, actual: titleDE.length, expected: '> 0', tol: null },
+      { label: 'glossary.eisMethode.body DE nicht leer', ok: bodyDE && bodyDE.length > 0, actual: bodyDE.length, expected: '> 0', tol: null },
+      { label: 'glossary.eisMethode.title EN nicht leer', ok: titleEN && titleEN.length > 0, actual: titleEN.length, expected: '> 0', tol: null },
+      { label: 'glossary.eisMethode.body EN nicht leer', ok: bodyEN && bodyEN.length > 0, actual: bodyEN.length, expected: '> 0', tol: null }
     ]);
   })();
 

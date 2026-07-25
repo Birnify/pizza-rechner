@@ -26,6 +26,13 @@
   // letzte Ergebnisse (für die Anleitung)
   PZ.R = {};
 
+  // Backlog Punkt I (v4.11.0, accessibility-expert-Befund, WCAG 4.1.3 Status Messages):
+  // merkt sich den zuletzt gerenderten Sichtbarkeits-Zustand von #waterTempGlossaryRef,
+  // damit die Live-Region-Ansage (s. renderResult() unten) nur beim NEU-Erscheinen des
+  // Links feuert (Regler-Bewegung, die wT gerade unter 15 °C drückt) -- nicht bei jedem
+  // calc()-Aufruf, während der Link ohnehin schon sichtbar ist bzw. bleibt.
+  let prevGlossaryRefVisible = false;
+
   // ======================================================================
   // calcCore(state) — reine Rechenfunktion, kein DOM-Zugriff
   // ======================================================================
@@ -198,13 +205,52 @@
     }
 
     $('waterTemp').textContent = fmtT(R.wT);
-    $('iceAmt').textContent = fmtW(R.ice);
-    $('iceNote').innerHTML = R.note;
+    // Backlog Punkt I (v4.11.0, "Zieltemperatur statt Eis in der Hauptanleitung"): die
+    // "davon Eis"-Box (#iceAmt) + der textuelle Eiswasser-/Anwärm-Hinweis (#iceNote,
+    // R.note) sind aus dem Ergebnis-Panel entfernt -- die Box zeigt nur noch den reinen
+    // Zieltemperaturwert. R.note/R.ice werden weiterhin in calcCore() berechnet (die
+    // Energiebilanz-Formel bleibt technisch vollständig erhalten, s. Abgrenzung der
+    // Feature-Definition), nur eben nirgends mehr direkt ins Ergebnis-Panel geschrieben.
+    // Stattdessen: ein bedingter Glossar-Verweis-Link (identisches Delegations-Muster wie
+    // js/guide.js' [data-glossary-id], s. Listener weiter unten), sobald die interne
+    // Zielwassertemperatur unter 15 °C liegt -- fester Schwellenwert (== 59 °F), bewusst
+    // NICHT über Einstellungen konfigurierbar, immer in Celsius verglichen (R.wT ist
+    // unabhängig vom Einheitensystem immer Celsius, s. js/units.js).
+    if ($('waterTempGlossaryRef')) {
+      const glossaryRefVisible = R.wT < 15;
+      $('waterTempGlossaryRef').style.display = glossaryRefVisible ? 'flex' : 'none';
+      // WCAG 4.1.3 Status Messages (accessibility-expert-Befund): ohne diese Ansage
+      // bemerkt ein Screenreader-Nutzer das plötzliche Erscheinen des Links (bei einer
+      // Reglerbewegung, die wT unter 15 °C drückt) sonst nur durch zufälliges erneutes
+      // Durchnavigieren des Panels. Feuert bewusst NUR beim Wechsel "verborgen -> sichtbar"
+      // (s. prevGlossaryRefVisible oben), nicht bei jedem calc()-Lauf.
+      if (glossaryRefVisible && !prevGlossaryRefVisible) {
+        if (PZ.announce) PZ.announce('waterTempGlossaryLiveMsg', t('result.iceMethodLinkAnnounce'));
+      }
+      prevGlossaryRefVisible = glossaryRefVisible;
+    }
     // Ganzen Wassertemperatur-Block ausblenden, wenn es kein Schüttwasser mehr gibt
     // (analog zum bestehenden Öl-/Zucker-Zeilen-Muster, s. gOilRow/gSugarRow oben).
     if ($('tempStage')) $('tempStage').style.display = R.hasMixingWater ? '' : 'none';
   }
   PZ.renderResult = renderResult;
+
+  // Klick-Delegation für #waterTempGlossaryRef (Backlog Punkt I, v4.11.0): identisches
+  // Muster wie der bestehende [data-glossary-id]-Listener in js/guide.js (#guideSteps),
+  // aber ein eigener Listener nötig, da die Wassertemperatur-Karte im Ergebnis-Panel
+  // außerhalb von #guideSteps liegt. #tempStage selbst wird von renderResult() nie neu
+  // aufgebaut (nur einzelne Kind-Elemente/-Attribute), ein einmalig beim Laden
+  // registrierter, auf #tempStage delegierter Listener bleibt daher über beliebig viele
+  // spätere calc()-Läufe hinweg gültig -- kein "vor jedem Render neu verdrahten" nötig.
+  const tempStageEl = $('tempStage');
+  if (tempStageEl) {
+    tempStageEl.addEventListener('click', function (e) {
+      const glossaryBtn = e.target.closest('[data-glossary-id]');
+      if (glossaryBtn && PZ.gotoGlossaryEntry) {
+        PZ.gotoGlossaryEntry(glossaryBtn.getAttribute('data-glossary-id'));
+      }
+    });
+  }
 
   // ======================================================================
   // calc() — Fassade: rechnet, publiziert PZ.R, rendert, löst die Anleitung aus.

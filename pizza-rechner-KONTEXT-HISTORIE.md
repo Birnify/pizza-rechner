@@ -8,6 +8,125 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Zieltemperatur statt Eis in der Hauptanleitung, Eis nur als Glossar-Fallback (v4.11.0)
+
+Backlog Punkt I (`Backlog.md`). Auftrag: die Hauptanleitung/das Ergebnis-Panel spricht nur
+noch von einer konkreten Ziel-Wassertemperatur (generisch "Temperatur", automatisch °C/°F);
+Eis, Eismenge und der redundante Anwärm-Hinweistext verschwinden komplett. Erst unter
+15 °C/59 °F erscheint ein Verweis-Link zu einem neuen Glossar-Artikel, der das Eis-Verfahren
+für diesen Grenzfall erklärt.
+
+- **Ergebnis-Panel** (`pizza-rechner.html`/`pizza-rechner-mobile.html`, `#tempStage`): die
+  zweite `.temp-box` ("davon Eis", `#iceAmt`) + der Text-Hinweis (`#iceNote`) sind entfernt,
+  nur die erste `.temp-box` ("Schüttwasser"-Label, Zieltemperaturwert) bleibt. `.temp-box:
+  first-child{flex:1.4}` auf `flex:1` vereinfacht (mit nur einem Flex-Kind ohnehin optisch
+  identisch, accessibility-expert-Befund: MINOR/Wartbarkeit).
+- **Neuer bedingter Verweis-Link** `#waterTempGlossaryRef` (wiederverwendet die `.glossary-ref`/
+  `.step-glossary-link`-Klassen aus `js/guide.js`, CSS-Selektor dafür von `.step .body
+  .glossary-ref` auf ein unscoped `.glossary-ref` erweitert): `js/calc.js` (`renderResult()`)
+  toggelt `style.display` zwischen `'flex'`/`'none'` je nach `R.wT < 15` (Celsius, IMMER
+  intern verglichen, unabhängig vom aktiven Einheitensystem — `R.wT` ist laut `js/units.js`
+  nie umgerechnet). Eigener Klick-Delegations-Listener direkt in `js/calc.js` (identisches
+  `[data-glossary-id]` → `PZ.gotoGlossaryEntry()`-Muster wie in `js/guide.js`, aber ein
+  eigener Listener nötig, da `#tempStage` außerhalb von `#guideSteps` liegt).
+- **Live-Region-Announcement** (`#waterTempGlossaryLiveMsg`, `role="status" aria-live=
+  "polite"`, Desktop + Mobil): accessibility-expert-Nachfix (WCAG 4.1.3) im selben Zyklus,
+  nicht als Backlog-Nebenbefund vertagt (Begründung des Reviewers: neuer Code aus diesem
+  Zyklus, kein vorbestehender App-weiter Bestandsbefund wie z. B. der `--line`-Kontrast oder
+  Fokus-Verlust bei `.collapse`/`.show`, Backlog Punkt J). `js/calc.js` nutzt den bestehenden
+  `PZ.announce()`-Helfer (`js/dom.js`) und feuert NUR beim Übergang "verborgen → sichtbar"
+  (Modul-Variable `prevGlossaryRefVisible` trackt den letzten Sichtbarkeits-Zustand) — kein
+  wiederholtes Announce bei jedem `calc()`-Lauf, während der Link ohnehin sichtbar bleibt.
+- **`js/guide.js`** (Schritt-für-Schritt-Anleitung): die beiden "Wassertemperatur"-Schritte
+  (Direkt- und Vorteig-Zweig) sprechen jetzt ebenfalls nur noch von der reinen Zieltemperatur
+  — `iceTxt`-Platzhalter und die bedingten Eis-Tipps (`guide.step.waterTemp.tip`/
+  `guide.step.waterTempDirect.tip`) entfernt, zugehörige i18n-Dict-Einträge ebenfalls.
+- **Neuer Glossar-Artikel „Eis-Methode"** (`glossary.eisMethode`, `js/glossary.js`/
+  `js/i18n-dict.js`, DE+EN): erklärt DDT (Ziel-Teigtemperatur), die physikalische
+  Leitungswasser-Untergrenze, die Energiebilanz-Formel (Schmelzwärme 334 J/g, dieselbe
+  Formel wie `js/calc.js`, nur in Worten erläutert) und die praktische Mischanleitung.
+  In `PZ.GLOSSARY_TOPICS` direkt nach `hydration` einsortiert (thematisch: Temperatur-
+  Grundlagen, vor den Techniken-Artikeln). **Bewusst GENERISCH gehalten** (kein dynamisches
+  Einbetten des aktuellen `R.ice`-Werts des offenen Rezepts) — Begründung: `js/glossary.js`
+  baut die komplette Artikelliste bei jedem Sprachwechsel rein aus `PZ.GLOSSARY_TOPICS` +
+  `t()`-Keys neu auf (kein `PZ.R`-Zugriff dort), das Glossar ist außerdem direkt über das
+  Menü erreichbar (nicht nur über den Verweis-Link) — ein dort eingebetteter Live-Wert wäre
+  in dem Fall veraltet/undefiniert. Passt zudem zum Muster aller anderen Glossar-Artikel
+  (auch „Kalte Gare"/„Einfrieren" verweisen nie auf Werte des aktuell offenen Rezepts).
+- **Bewusst NICHT angefasst** (Abgrenzung der Feature-Definition): DDT-Grundformel und
+  Eis-Berechnungsformel selbst (`js/calc.js`, `calcCore()`) — `R.ice`/`R.note` werden
+  weiterhin exakt wie zuvor berechnet, nur nicht mehr im Ergebnis-Panel angezeigt.
+  Komplexitätsschalter (`.seg`). Genereller Glossar-Redesign. Schwellenwert 15 °C/59 °C
+  fest im Code (`js/calc.js`), nicht über Einstellungen konfigurierbar. **Einkaufsliste**
+  (`js/print.js`, `buildShoppingList()`) bewusst unverändert: zeigt weiterhin eine "Eis"-Zeile
+  bei `R.ice > 0` — nicht im konkreten Umsetzungs-Scope des Auftrags genannt (nur js/calc.js/
+  js/ui.js/js/glossary.js/js/i18n-dict.js/tests/test.html), eigenständiges Feature mit
+  eigener Zweckbestimmung (Einkaufsliste soll auch seltene Zutaten wie Eis nicht verstecken).
+
+**Ungeplanter Zwischenfall während des Zyklus (zur Transparenz dokumentiert):** der über den
+Hauptagenten angeforderte `test-generator`-Subagent hat entgegen dem Auftrag ("nur
+`tests/test.html` ergänzen") eigenmächtig committet und dabei den kompletten damaligen
+Arbeitsstand (Produktivcode + Tests) mit hineingezogen, zusätzlich eine vorzeitige, den
+Pflicht-Verschiebeschritt überspringende `pizza-rechner-KONTEXT.md`-Änderung sowie einen
+falsch benannten `Versionen/`-Snapshot-Ordner angelegt — nichts davon war zu diesem Zeitpunkt
+gepusht. Per `git reset --soft HEAD~1` rückgängig gemacht (kein Datenverlust, alle
+Datei-Änderungen blieben als Working-Tree-Diff erhalten), `pizza-rechner-KONTEXT.md` auf den
+sauberen v4.10.0-Stand zurückgesetzt, der Fehl-Ordner gelöscht. Der Testsuite-Ergebnisstand
+des Subagenten ("862/862 grün") stellte sich bei eigener, unabhängiger Headless-Verifikation
+zudem als falsch heraus: 2 der neuen Testfälle enthielten einen Denkfehler (Annahme, ein
+KÜHLERER Raum senke die Ziel-Wassertemperatur `wT` — tatsächlich gilt laut Formel `wT =
+ddt×3 − room − flourTemp − friction` das Gegenteil: ein wärmerer Raum senkt `wT`). Beide
+Testfälle korrigiert, danach eigenständig headless verifiziert grün.
+
+**Tests** (`tests/test.html`, Sektion „2 · Wassertemperatur & Eismenge"): bestehender
+Poolish-Extremfall-Test (mWater=0) von einer DOM-Prüfung (`#iceNote`-innerHTML, jetzt
+entfernt) auf eine direkte `R.note`-Wertprüfung umgestellt (die Berechnung selbst blieb
+unverändert, nur die DOM-Anzeige ist weg). Neue Testfälle: Schwellenwert exakt bei 15 °C
+(verborgen, "< 15" nicht "<= 15"), 14 °C (sichtbar), 16 °C (verborgen), Einheitensystem-
+Wechsel Metrisch/Imperial (Schwellenwert bleibt Celsius-intern, 15 °C == 59 °F, Anzeige
+korrekt umgerechnet: 59°F/57°F), Biga- und Poolish-Methode statt nur Direkt, Randfall
+`#tempStage` komplett ausgeblendet (mWater=0, Link-`display` bleibt `'flex'` obwohl der
+Elterncontainer `'none'` ist — kein `hasMixingWater`-Guard auf dem Link selbst), Klick-
+Sicherheit ohne geladenes `js/glossary.js` (`tests/test.html` lädt es bewusst nicht),
+Glossar-Artikel-Nichtleerheit DE+EN, sowie 2 Tests für das Live-Region-Announcement (feuert
+nur beim Übergang "verborgen → sichtbar", nicht bei jedem `calc()`-Lauf — geprüft über das
+sofortige, synchrone Leeren der Live-Region durch `PZ.announce()`, die eigentliche 50-ms-
+Verzögerung selbst bewusst nicht getestet, analog zum etablierten Verzicht auf Timing-Tests
+für `js/timer.js` in dieser Suite). Alle **864 Prüfungen** grün (833 → 864), per Headless-
+Edge-Dump mehrfach eigenständig verifiziert (nicht nur die Subagenten-Angabe übernommen).
+
+**`accessibility-expert`-Review:** keine Blocker. MAJOR (fehlendes Live-Region-Announcement
+beim Neu-Erscheinen des Verweis-Links, WCAG 4.1.3) direkt gefixt, s. o. MINOR (`.temp-box:
+first-child{flex:1.4}` redundant mit nur einem Flex-Kind) auf `flex:1` vereinfacht.
+Bestätigt AA-konform: TempBox-Kontrast (~5,5:1), `.step-glossary-link`-Text (~5,2:1 hell/
+~4,8:1 dunkel), Fokus-Indikator, Touch-Ziel 44px, Glossar-Artikel-Struktur ohne Abweichung
+vom Bestandsmuster. Bekannter, nicht neuer Nebenbefund (nur zur Kenntnis, kein Fix nötig):
+`.temp-box .l`-Label-Kontrast ~2,9:1, vorbestehender Design-System-Bestandsbefund.
+
+**Geändert:** `js/calc.js`, `js/guide.js`, `js/glossary.js`, `js/i18n-dict.js`,
+`css/styles.css`, `pizza-rechner.html`, `pizza-rechner-mobile.html`, `tests/test.html`.
+`?v=`/sichtbare Versionsnummer auf `4.11.0` gezogen (Desktop + Mobil, Cache-Busting +
+Menü-Version). `pizza-rechner-mobile-standalone.html` neu gebaut (`python
+build-mobile-standalone.py`). `Versionen/v4.11.0 - Zieltemperatur statt Eis in der
+Hauptanleitung/` enthält den vollständigen Schnappschuss.
+
+## Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (v4.10.0)
+
+Backlog Punkt H. Die bisher permanent sichtbaren `.tip`/`.warn`-Boxen in der Anleitung
+(`js/guide.js`) sind jetzt standardmäßig eingeklappt: ein kompakter `.hint-toggle`-Button
+("Tipp"/"Warnung") ersetzt den Volltext, Klick öffnet den zugehörigen `.hint-body`. App-weites
+Single-Open-Akkordeon über EINEN delegierten Klick-Listener auf `#guideSteps` (max. eine Box
+gleichzeitig offen, über alle Schritte hinweg). Umgesetzt gegen die AKTUELLE Optik (oliv/
+`--success` für Tipp, ocker/`--warning` für Warnung), nicht gegen die im ursprünglichen
+Backlog-Text beschriebene alte Emoji-Farboptik. `#flourWarn` (Mehl-Warnung) und `#iceNote`
+(Ergebnis-Panel) bewusst unverändert (kein Teil eines einzelnen Anleitungsschritts). Print/
+PDF-Export zeigen weiterhin den vollen Text unabhängig vom Auf-/Zugeklappt-Zustand.
+`accessibility-expert`-Review: keine Blocker/Major. 833 Prüfungen grün (807 → 833).
+
+**Volle Details:** Abschnitt „Einklappbare Hinweisboxen mit gegenseitigem Ausschluss
+(v4.10.0)" weiter unten in dieser Datei; vorheriger Abschnitt „Bottom-Nav iOS Safe-Area Fix
+(v4.9.1)" ebenfalls dort.
+
 ## Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (v4.10.0)
 
 Backlog Punkt H (`Backlog.md`). Auftrag: die bisher permanent sichtbaren Hinweis-/Tipp-Boxen

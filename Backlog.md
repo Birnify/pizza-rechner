@@ -41,7 +41,10 @@ Navigationsleiste rutscht hoch) ist seit v4.9.1 umgesetzt, aber NICHT auf echtem
 iOS-Gerät bestätigt** (s. `pizza-rechner-KONTEXT.md`, Abschnitt „Bottom-Nav iOS
 Safe-Area Fix (v4.9.1)"). **Punkt H unten (Einklappbare Hinweisboxen mit gegenseitigem
 Ausschluss) ist seit v4.10.0 ebenfalls erledigt** (s. `pizza-rechner-KONTEXT.md`,
-Abschnitt „Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (v4.10.0)").
+Abschnitt „Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (v4.10.0)"). **Punkt I
+unten (Zieltemperatur statt Eis in der Hauptanleitung) ist seit v4.11.0 ebenfalls erledigt**
+(s. `pizza-rechner-KONTEXT.md`, Abschnitt „Zieltemperatur statt Eis in der Hauptanleitung,
+Eis nur als Glossar-Fallback (v4.11.0)").
 
 ## Weitere Ideen (aus Backlog.txt, noch nicht in die Orchestrator-Warteschlange eingereiht)
 
@@ -316,7 +319,19 @@ Keine Änderung an Kernanleitung/Zahlenwerten/Schrittreihenfolge. Keine Persiste
 Auf-/Zugeklappt-Zustands über App-Neustart (rein sitzungsbezogen), sofern nicht anders
 gewünscht.
 
-### I. Zieltemperatur statt Eis in der Hauptanleitung, Eis nur als Glossar-Fallback
+### ~~I. Zieltemperatur statt Eis in der Hauptanleitung, Eis nur als Glossar-Fallback~~ — erledigt in v4.11.0
+
+Umgesetzt wie unten beschrieben: Ergebnis-Panel zeigt nur noch die reine Ziel-
+Wassertemperatur (eine `.temp-box`), "davon Eis"-Box + Anwärm-Hinweistext entfernt (Desktop
++ Mobil). Unter 15 °C/59 °F (intern immer Celsius verglichen) erscheint ein Verweis-Link zum
+neuen, generisch gehaltenen Glossar-Artikel "Eis-Methode". `js/guide.js`-Anleitungsschritte
+sprechen ebenfalls nur noch von der Zieltemperatur. `R.ice`/`R.note`/die Energiebilanz-
+Formel bleiben in `js/calc.js` technisch unverändert (nur nicht mehr angezeigt);
+Einkaufsliste (`js/print.js`) bewusst unangetastet (außerhalb des Scopes). Details:
+`pizza-rechner-KONTEXT.md`, Abschnitt „Zieltemperatur statt Eis in der Hauptanleitung, Eis
+nur als Glossar-Fallback (v4.11.0)".
+
+Ursprünglicher Auftragstext (zur Referenz):
 
 Idee: Die Hauptanleitung spricht ausschließlich von einer konkreten Ziel-Wassertemperatur
 (generisch "Temperatur", automatisch °C/°F je nach Nutzereinstellung), per Thermometer

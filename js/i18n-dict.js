@@ -150,11 +150,12 @@
     'Finger test: smells pleasantly of yeast/yogurt, not sharply of alcohol. It won\'t hold up much longer than ~24 h.');
 
   add('guide.step.waterTemp.title', 'Schüttwasser temperieren', 'Temper the mixing water');
-  add('guide.step.waterTemp.body', '<b>{mWater} Wasser</b> auf <b>{wT}</b> bringen{iceTxt}. Das ist das Restwasser für den Hauptteig.',
-    'Bring <b>{mWater} water</b> to <b>{wT}</b>{iceTxt}. This is the remaining water for the final dough.');
-  add('guide.step.waterTemp.tip', 'Eis vorher exakt abwiegen und auflösen, bis die Zieltemperatur steht.',
-    'Weigh the ice precisely beforehand and let it melt in until the target temperature is reached.');
-  add('guide.iceTxt', ' (davon <b>{ice} Eis</b>)', ' (of which <b>{ice} is ice</b>)');
+  // Backlog Punkt I (v4.11.0, "Zieltemperatur statt Eis in der Hauptanleitung"): kein
+  // {iceTxt}-Platzhalter mehr -- der Schritt spricht nur noch von der Zieltemperatur
+  // selbst. guide.iceTxt/guide.step.waterTemp.tip (bisherige Eis-Bausteine) entfernt,
+  // s. js/guide.js.
+  add('guide.step.waterTemp.body', '<b>{mWater} Wasser</b> auf <b>{wT}</b> bringen. Das ist das Restwasser für den Hauptteig.',
+    'Bring <b>{mWater} water</b> to <b>{wT}</b>. This is the remaining water for the final dough.');
 
   add('guide.pref.addWater', 'mit dem <b>{mWater} Wasser</b> lösen', 'dissolve it with the <b>{mWater} water</b>');
   add('guide.pref.addFlour', '<b>{mFlour} Mehl</b>{yeastPart}{sugarPart} zugeben', 'add <b>{mFlour} flour</b>{yeastPart}{sugarPart}');
@@ -202,10 +203,11 @@
   add('guide.weighIngredients.oilPart', ' · <b>{oil} Olivenöl</b>', ' · <b>{oil} olive oil</b>');
   add('guide.step.weighIngredients.tip', 'Für Hefe & Salz eine <b>0,1-g-Feinwaage</b> nutzen – bei diesen kleinen Mengen entscheidend.',
     'Use a <b>precision scale (0.1 g)</b> for yeast &amp; salt: essential at these small amounts.');
-  add('guide.step.waterTempDirect.body', 'Das <b>{water} Wasser</b> auf <b>{wT}</b> bringen{iceTxt}. So landet der Teig nach dem Kneten bei ~{ddt}.',
-    'Bring the <b>{water} water</b> to <b>{wT}</b>{iceTxt}. That way the dough lands at ~{ddt} after kneading.');
-  add('guide.step.waterTempDirect.tip', 'Eis abwiegen, im Wasser auflösen bis die Temperatur passt – dann erst loslegen.',
-    'Weigh the ice, let it melt in the water until the temperature is right: only then start.');
+  // Backlog Punkt I (v4.11.0): identisch, kein {iceTxt}-Platzhalter mehr, s. Kommentar bei
+  // guide.step.waterTemp.body oben. guide.step.waterTempDirect.tip (bisheriger Eis-Tipp)
+  // entfernt.
+  add('guide.step.waterTempDirect.body', 'Das <b>{water} Wasser</b> auf <b>{wT}</b> bringen. So landet der Teig nach dem Kneten bei ~{ddt}.',
+    'Bring the <b>{water} water</b> to <b>{wT}</b>. That way the dough lands at ~{ddt} after kneading.');
   add('guide.reserveWaterTip', 'Behalte <b>2–3 EL vom Schüttwasser</b> zurück, um danach die Hefe darin aufzulösen.',
     'Set aside <b>2–3 tbsp of the mixing water</b> to dissolve the yeast in afterwards.');
   add('guide.step.autolyse.title', 'Autolyse (empfohlen)', 'Autolyse (recommended)');
@@ -730,7 +732,17 @@
   add('result.mainDough', 'Hauptteig (am Backtag)', 'Final dough (on baking day)');
   add('result.waterTemp', 'Wassertemperatur', 'Water temperature');
   add('result.mixingWater', 'Schüttwasser', 'Mixing water');
-  add('result.ofWhichIce', 'davon Eis', 'of which ice');
+  // Backlog Punkt I (v4.11.0, "Zieltemperatur statt Eis in der Hauptanleitung"): ersetzt
+  // die bisherige "davon Eis"-Box (result.ofWhichIce, entfernt) -- bedingter Verweis-Link
+  // im Ergebnis-Panel (#waterTempGlossaryRef, js/calc.js), sichtbar sobald die interne
+  // Zielwassertemperatur unter 15 °C/59 °F liegt.
+  add('result.iceMethodLink', 'Temperatur mit Leitungswasser nicht erreichbar? Glossar: Eis-Methode',
+    'Can\'t reach this temperature with tap water? Glossary: ice method');
+  // Live-Region-Ansage (WCAG 4.1.3, accessibility-expert-Befund im Punkt-I-Review): wird
+  // per PZ.announce() NUR beim Neu-Erscheinen von #waterTempGlossaryRef ausgelöst (nicht
+  // bei jedem calc()-Lauf), s. js/calc.js.
+  add('result.iceMethodLinkAnnounce', 'Neuer Hinweis: Zieltemperatur mit Leitungswasser nicht erreichbar, Eis-Methode im Glossar verfügbar.',
+    'New notice: this target temperature can\'t be reached with tap water, the ice method is available in the glossary.');
   add('yeast.fresh', '(frisch)', '(fresh)');
   add('yeast.dry', '(trocken)', '(dry)');
   add('btn.save', 'Speichern', 'Save');
@@ -816,6 +828,22 @@
   add('glossary.hydration.body',
     '<p>Hydration ist der Wasseranteil im Teig, angegeben als Bäckerprozent (Wassermenge geteilt durch Mehlmenge). Niedrige Hydration (58–62 %) ergibt einen griffigen, leicht zu formenden Teig: ideal für Einsteiger.</p><p>Hohe Hydration (68–75 %+) ergibt einen offenporigeren, luftigeren Rand, ist aber klebriger in der Verarbeitung und verlangt oft Dehnen-und-Falten statt klassisches Kneten. Neapolitanische Pizza liegt meist bei 60–65 %, Teglia-/Blechpizza oft deutlich darüber.</p>',
     '<p>Hydration is the water content of the dough, expressed as a baker\'s percentage (water weight divided by flour weight). Low hydration (58–62%) gives a firm, easy-to-shape dough: great for beginners.</p><p>High hydration (68–75%+) produces a more open, airier crumb and crust rim, but is stickier to handle and often calls for stretch-and-fold instead of classic kneading. Neapolitan pizza usually sits around 60–65%, while pan/tray pizza (teglia) often goes noticeably higher.</p>');
+
+  // Neuer Eintrag (v4.11.0, Backlog Punkt I): bis v4.10.0 zeigte das Ergebnis-Panel
+  // Eismenge + Anwärm-Hinweistext direkt in einer eigenen "davon Eis"-Box -- seit v4.11.0
+  // nur noch bei Bedarf per Verweis-Link erreichbar (#waterTempGlossaryRef, js/calc.js,
+  // sichtbar unter 15 °C/59 °F). Bewusst GENERISCH gehalten (kein dynamisches Einbetten
+  // des aktuellen R.ice-Werts des gerade offenen Rezepts): js/glossary.js baut die
+  // gesamte Artikelliste bei jedem Sprachwechsel rein aus PZ.GLOSSARY_TOPICS + t()-Keys
+  // neu auf (kein Zugriff auf PZ.R), das Glossar ist außerdem auch direkt über das Menü
+  // erreichbar (nicht nur über den Verweis-Link) -- ein dort eingebetteter Live-Wert wäre
+  // in dem Fall entweder veraltet oder undefiniert. Ein genereller Artikel, der Formel/
+  // Vorgehen erklärt, passt außerdem zum Muster aller anderen Glossar-Einträge (auch
+  // "Kalte Gare"/"Einfrieren" verweisen nie auf Werte des aktuell offenen Rezepts).
+  add('glossary.eisMethode.title', 'Eis-Methode', 'Ice method');
+  add('glossary.eisMethode.body',
+    '<p><b>DDT</b> (aus dem Englischen „Desired Dough Temperature", Ziel-Teigtemperatur) ist die Temperatur, die der fertig geknetete Teig unmittelbar nach dem Mischen haben soll: sie steuert maßgeblich, wie schnell die Hefe danach arbeitet. Damit diese Zieltemperatur trotz unterschiedlicher Raum- und Mehltemperatur zuverlässig erreicht wird, wird gezielt die Temperatur des Schüttwassers angepasst (wärmer oder kälter als der Raum), errechnet aus DDT, Raumtemperatur, Mehltemperatur und der beim Kneten entstehenden Reibungswärme.</p><p>Leitungswasser hat dabei eine natürliche Untergrenze: in Deutschland je nach Jahreszeit meist zwischen ca. 8 und 15 °C+. Liegt die berechnete Ziel-Wassertemperatur unter dieser Grenze, reicht reines Mischen von kaltem und warmem Leitungswasser nicht mehr aus, um sie zu erreichen: Eis wird als Werkzeug gebraucht, um das Wasser weiter herunterzukühlen, als es der Wasserhahn allein könnte.</p><p>Die benötigte Eismenge wird über eine Energiebilanz berechnet: Eis braucht beim Schmelzen zusätzliche Energie (Schmelzwärme, ca. 334 Joule pro Gramm) und kühlt das übrige Wasser dadurch stärker ab, als dieselbe Menge bereits kaltes Wasser es könnte. Rechnerisch wird so viel vom Leitungswasser durch Eis ersetzt, dass die Mischung nach dem vollständigen Schmelzen genau die Zieltemperatur ergibt.</p><p><b>Praktisch:</b> Eis vorher exakt abwiegen (Küchenwaage), zum restlichen Leitungswasser geben und unter gelegentlichem Rühren komplett auflösen lassen, bis ein Thermometer die Zieltemperatur bestätigt: erst danach zum Mischen des Teigs verwenden. Ein einfaches Einstich- oder Küchenthermometer reicht dafür völlig aus.</p>',
+    '<p><b>DDT</b> ("Desired Dough Temperature", target dough temperature) is the temperature the finished, kneaded dough should have right after mixing: it largely controls how fast the yeast works afterward. To reliably hit this target despite varying room and flour temperatures, the mixing water\'s own temperature is adjusted (warmer or colder than the room), calculated from DDT, room temperature, flour temperature and the friction heat generated while kneading.</p><p>Tap water has a natural lower limit, though: in Germany it usually runs somewhere between about 8 and 15°C+ depending on the season. If the calculated target water temperature falls below that limit, simply mixing cold and warm tap water is no longer enough to reach it: ice is needed as a tool to cool the water down further than the tap alone could manage.</p><p>The required amount of ice is worked out via an energy balance: melting ice absorbs extra energy (latent heat of fusion, about 334 joules per gram), which cools the remaining water more than the same amount of already-cold water could. The calculation replaces just enough of the tap water with ice so that, once it has fully melted, the mixture lands exactly at the target temperature.</p><p><b>In practice:</b> weigh the ice precisely beforehand (kitchen scale), add it to the rest of the tap water and let it dissolve completely while stirring occasionally, until a thermometer confirms the target temperature: only then use it to mix the dough. A simple probe or kitchen thermometer is entirely sufficient for this.</p>');
 
   add('glossary.gluten.title', 'Gluten', 'Gluten');
   add('glossary.gluten.body',
@@ -1093,6 +1121,13 @@
   add('quickbar.partyNoneYet', 'Noch keine Pizza ausgewählt', 'No pizza selected yet');
 
   // ---- js/calc.js: Eiswasser-Hinweis (dynamisch berechneter Text) ----------------
+  // Seit Backlog Punkt I (v4.11.0): R.note (gebaut aus diesen 4 Keys) wird in
+  // calcCore() weiterhin berechnet (Energiebilanz-Formel technisch unverändert), aber
+  // NIRGENDS mehr angezeigt (weder Ergebnis-Panel #iceNote [entfernt] noch Anleitung) --
+  // das Ergebnis-Panel zeigt seither nur noch den reinen Zieltemperaturwert plus,
+  // unterhalb 15 °C, den neuen Glossar-Verweis-Link (result.iceMethodLink oben). Die
+  // Keys bleiben stehen, da tests/test.html Sektion 2 weiterhin R.note direkt (nicht
+  // mehr über das DOM) gegen calc.noMixingWaterNote prüft.
   add('calc.ice.note', 'Nimm <b>{tapWater} Leitungswasser (~{tapTemp})</b> + <b>{ice} Eis</b>, ergibt ~{wT} Schüttwasser. Eis vorher abwiegen.',
     'Use <b>{tapWater} tap water (~{tapTemp})</b> + <b>{ice} ice</b>, giving ~{wT} mixing water. Weigh the ice beforehand.');
   add('calc.warmNote', 'Schüttwasser leicht anwärmen auf ~{wT} (z.B. handwarm).', 'Warm the mixing water slightly to ~{wT} (e.g. lukewarm).');

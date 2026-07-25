@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-25 · Aktuelle Version: v4.10.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-25 · Aktuelle Version: v4.11.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -177,22 +177,23 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (v4.10.0) = aktueller Stand
+## Zieltemperatur statt Eis in der Hauptanleitung, Eis nur als Glossar-Fallback (v4.11.0) = aktueller Stand
 
-Backlog Punkt H. Die bisher permanent sichtbaren `.tip`/`.warn`-Boxen in der Anleitung
-(`js/guide.js`) sind jetzt standardmäßig eingeklappt: ein kompakter `.hint-toggle`-Button
-("Tipp"/"Warnung") ersetzt den Volltext, Klick öffnet den zugehörigen `.hint-body`. App-weites
-Single-Open-Akkordeon über EINEN delegierten Klick-Listener auf `#guideSteps` (max. eine Box
-gleichzeitig offen, über alle Schritte hinweg). Umgesetzt gegen die AKTUELLE Optik (oliv/
-`--success` für Tipp, ocker/`--warning` für Warnung), nicht gegen die im ursprünglichen
-Backlog-Text beschriebene alte Emoji-Farboptik. `#flourWarn` (Mehl-Warnung) und `#iceNote`
-(Ergebnis-Panel) bewusst unverändert (kein Teil eines einzelnen Anleitungsschritts). Print/
-PDF-Export zeigen weiterhin den vollen Text unabhängig vom Auf-/Zugeklappt-Zustand.
-`accessibility-expert`-Review: keine Blocker/Major. 833 Prüfungen grün (807 → 833).
+Backlog Punkt I. Ergebnis-Panel zeigt nur noch die reine Ziel-Wassertemperatur (eine
+`.temp-box`, Label „Schüttwasser"); die frühere „davon Eis"-Box + Anwärm-Hinweistext
+(`#iceAmt`/`#iceNote`) sind entfernt (Desktop + Mobil). Unter 15 °C/59 °F (intern immer
+Celsius verglichen, unabhängig vom Einheitensystem) erscheint stattdessen ein bedingter
+Verweis-Link (`#waterTempGlossaryRef`) zum neuen, generisch gehaltenen Glossar-Artikel
+„Eis-Methode" (DDT, Leitungswasser-Untergrenze, Energiebilanz-Formel, Praxis-Mischanleitung).
+`js/guide.js`-Anleitungsschritte sprechen ebenfalls nur noch von der Zieltemperatur, kein
+Eis-Text mehr. `R.ice`/`R.note`/die Energiebilanz-Formel bleiben in `js/calc.js` technisch
+unverändert (nur nicht mehr angezeigt); Einkaufsliste (`js/print.js`) bewusst unangetastet
+(außerhalb des Auftrags-Scope). `accessibility-expert`-Nachfix: Live-Region-Announcement
+beim Neu-Erscheinen des Links ergänzt (WCAG 4.1.3). 864 Prüfungen grün (833 → 864).
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Einklappbare
-Hinweisboxen mit gegenseitigem Ausschluss (v4.10.0)"; vorheriger Abschnitt „Bottom-Nav iOS
-Safe-Area Fix (v4.9.1)" ebenfalls dort.
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Zieltemperatur statt Eis
+in der Hauptanleitung, Eis nur als Glossar-Fallback (v4.11.0)"; vorheriger Abschnitt
+„Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (v4.10.0)" ebenfalls dort.
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
