@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-25 · Aktuelle Version: v4.12.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-25 · Aktuelle Version: v4.13.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -177,21 +177,22 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Fokus-Erhalt bei .collapse/.show-Feldern (v4.12.0) = aktueller Stand
+## Hintergrund-Farbverlauf (v4.13.0) = aktueller Stand
 
-Backlog Punkt J. Neuer gemeinsamer Helfer `PZ.moveFocusBeforeHide(containers, fallbackTarget)`
-+ `PZ.toggleCollapse(container, show, opts)` (`js/dom.js`): verschiebt den Fokus kontrolliert
-weg, BEVOR ein fokussiertes `.collapse`/`.show`-Feld verschwindet (WCAG 2.4.3, fällt nie
-kommentarlos auf `<body>`), inkl. optionaler Live-Region-Ansage beim Neu-Erscheinen (WCAG
-4.1.3). Eingebaut in `#sugarBlock` (`js/calc.js`, neue Live-Region `#sugarBlockLiveMsg`),
-`#prefBlock`/`#bigaHydBlock`/`#prefStageBlock` (`js/ui.js applyMethod()`, gegen gleichzeitig
-verschwindende Nachbar-Container gehärtet) und im „Neues Rezept anlegen"-Formular
-(`js/newrecipe.js`). MINOR mit erledigt: Zucker-Pills bekommen `aria-label`. 923 Prüfungen
-grün (864 → 923).
+Vom Nutzer per `/define-feature` strukturiert, Umsetzungsdetails (Richtung/Töne/Intensität)
+in einer Rückfrage-Runde geklärt. Der Seiten-Hintergrund (`body` Desktop, `html` Mobil, vorher
+reine Flächenfarbe `--bg`) hat jetzt einen dezenten vertikalen Verlauf: neuer Token
+`--bg-gradient` (`css/styles.css`, `:root`) = `linear-gradient(180deg,var(--card),var(--bg))`
+im Hellmodus, im Dunkelmodus-Block `linear-gradient(180deg,var(--surface-2),var(--bg))` (nur
+bestehende Tokens, kein neuer Farbwert). Nur der Hintergrund geändert, sonst nichts
+angefasst. `accessibility-expert`-Review ohne Befund, selbst gegen die WCAG-2.0-
+Luminanzformel nachgerechnet (Worst-Case-Endpunkt je Verlauf). 923 Prüfungen unverändert
+(reine CSS-Änderung, keine `js/*.js` angefasst; Testlauf in dieser Sitzung per Node+jsdom
+statt echtem Browser, identisches Ergebnis vor/nach der Änderung per `git stash` verifiziert).
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Fokus-Erhalt bei
-.collapse/.show-Feldern (v4.12.0)"; vorheriger Abschnitt „Zieltemperatur statt Eis in der
-Hauptanleitung, Eis nur als Glossar-Fallback (v4.11.0)" ebenfalls dort.
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Hintergrund-Farbverlauf
+(v4.13.0)"; vorheriger Abschnitt „Fokus-Erhalt bei .collapse/.show-Feldern (v4.12.0)"
+ebenfalls dort.
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -347,11 +348,11 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.12.0 -- seit
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.13.0 -- seit
                      v4.5.0 synchron mit Mobil, s. u.: Desktop lädt weiterhin ohne
                      css/fonts.css, das ist unabhängig von der Versionsnummer)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle,
-                     ?v=4.12.0)
+                     ?v=4.13.0)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
 index.html           Weiterleitung auf pizza-rechner.html
@@ -466,14 +467,14 @@ formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 **Cache-Busting:** CSS/JS werden mit `?v=X.Y.Z` geladen. **Bei jeder neuen Version mitziehen.**
 Zwischen v4.0.0 und v4.4.0 bewusst auseinandergelaufen (Design-Import-Zyklen waren
 mobile-only, Desktop-HTML wurde nicht angefasst) — **seit v4.5.0 wieder synchron**, beide
-HTML-Dateien stehen bei `?v=4.12.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
+HTML-Dateien stehen bei `?v=4.13.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
 erneut bewusst entscheiden, ob ein Auseinanderlaufen sinnvoll ist oder beide mitgezogen
 werden.
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien steht `<span class="nav-version"
 id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine JS-Logik dahinter. Seit v4.5.0
-wieder synchron (beide `v4.12.0`), analog zum Cache-Busting oben. **Bei jedem
+wieder synchron (beide `v4.13.0`), analog zum Cache-Busting oben. **Bei jedem
 Versionssprung von Hand mitziehen** (zusammen mit `?v=` und der Kontext-Datei — bei allen
 drei HTML-Dateien, also auch `pizza-rechner-mobile-standalone.html` nach dem Rebuild,
 gegenprüfen), sonst zeigt die Live-App die falsche Version an.

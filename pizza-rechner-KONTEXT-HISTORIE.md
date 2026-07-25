@@ -8,6 +8,81 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Hintergrund-Farbverlauf (v4.13.0)
+
+Vom Nutzer per `/define-feature` strukturiert (Name/Idee/Motivation/Scope/Abgrenzung
+feststehend), Umsetzungsdetails (Richtung, Töne, Intensität) in einer eigenen Rückfrage-Runde
+in Phase 1 geklärt: Variante A (vertikal, oben heller → unten Basisfarbe), bestehende
+Design-Tokens (`--card`/`--surface-2` → `--bg`, kein neuer Farbwert), sehr subtil.
+
+- **Neuer Token `--bg-gradient`** (`css/styles.css`, `:root`-Block, direkt nach
+  `--line-soft` definiert): `linear-gradient(180deg,var(--card),var(--bg))` im Hellmodus.
+  Im Dunkelmodus-Block (`:root[data-theme="dark"]`, direkt nach `--surface-inset`):
+  `linear-gradient(180deg,var(--surface-2),var(--bg))` — **bewusst `--surface-2` statt
+  `--card`** im Dunkelmodus, weil `--card` (`#201d1b`) dort zu nah an `--bg` (`#151312`)
+  liegt, um überhaupt wahrnehmbar zu sein; `--surface-2` (`#2a2622`) ergibt einen tatsächlich
+  sichtbaren, aber weiterhin dezenten Verlauf. Verlauf über die volle Element-Höhe (kein
+  fester Pixel-Stop) — body ist durch die lange Anleitung ohnehin meist deutlich höher als
+  der Viewport, dadurch bleibt der Farbwechsel pro sichtbarem Ausschnitt kaum wahrnehmbar.
+- **Eingebaut:** `body{background:...}` (`css/styles.css`) und `html{background:...}`
+  (`css/mobile.css`, dort bislang wegen des iOS-Rubber-Band-Weißblitz-Workarounds gesetzt)
+  nutzen jetzt `var(--bg-gradient)` statt `var(--bg)`. Sonst nichts angefasst — alle übrigen
+  `--bg`-Verwendungen (Hover-Flächen, deaktivierte Eingaben, Notiz-Hintergründe usw.) bleiben
+  unverändert reine Flächenfarbe, wie in der Abgrenzung des Feature-Auftrags festgelegt.
+- **Print-Regel unverändert:** `@media print{body{background:#fff}}` überschreibt den
+  Verlauf beim Drucken weiterhin vollständig (per `accessibility-expert`-Review bestätigt,
+  Kontrast dort 15,44:1).
+- **`pizza-rechner.html` lädt nur `css/styles.css`** (kein `css/mobile.css`), Desktop nutzt
+  also nur den `body`-Verlauf; `pizza-rechner-mobile.html`/-`-standalone.html` laden beide
+  Dateien, `html` UND `body` bekommen denselben Verlauf (deckungsgleich, da `--bg-gradient`
+  identisch definiert ist).
+
+**Härtung:** `accessibility-expert`-Review (Fokus: Kontrast von Text/Icons, die direkt auf
+dem Seitenhintergrund liegen statt auf `--card`/`--surface`-Flächen, über die gesamte
+Verlaufsbreite) ohne Befund — die meisten Elemente sitzen strukturell auf `--card`-Flächen,
+der Verlauf ist nur zwischen/unter den Karten sichtbar. Zur Absicherung selbst mit der
+Standard-WCAG-2.0-Luminanzformel gegengerechnet (Node-Skript, jeweils Worst-Case-Endpunkt
+des Verlaufs geprüft, da Text-auf-Fläche im schlechteren Fall gegen den jeweils helleren
+Endpunkt läuft): Ink hell vs. `--bg` 13,14:1, Ink dunkel vs. `--surface-2` 12,44:1, `--muted`
+dunkel vs. `--surface-2` 5,89:1, `--muted-soft` dunkel vs. `--surface-2` 3,35:1, `--muted-soft`
+hell vs. `--bg` 3,12:1 — alle Werte exakt bestätigt, alle über der jeweils einschlägigen
+AA-Schwelle (4,5:1 Fließtext bzw. 3:1 sekundärer/großer Text und UI-Komponentengrenzen).
+
+**Tests:** reine CSS-Änderung, keine `js/*.js`-Datei angefasst, `test-generator` daher nicht
+angefordert. `tests/test.html` in dieser Sitzung nicht per echtem Browser laufen lassen
+(Hintergrund-Subagent ohne Möglichkeit, einen Browser-Prozess zu starten — `msedge --headless`
+liefert hier durchgängig weder Output noch einen neuen Prozess, auch mit deaktiviertem
+Sandbox), stattdessen automatisiert per Node + jsdom (v24.1.3, lokal im Scratchpad installiert,
+nicht Teil des Repos): 915/923 grün, 8 rot. Alle 8 Fehlschläge betreffen ausschließlich die
+v4.12.0-Fokus-Tests (`moveFocusBeforeHide`/`toggleCollapse`) und sind ein reines
+jsdom-Artefakt (Fokus-/Tabbability-Simulation weicht von echten Browsern ab) — per `git
+stash` gegen den unveränderten Ausgangsstand verifiziert: identisches Fehlschlagsmuster
+bereits OHNE diese Änderung. Kein Rückschluss auf die eigentliche App möglich/nötig, da die
+zuletzt dokumentierten 923/923 (v4.12.0) auf einem echten Browser (Headless-Edge-Dump)
+beruhten, den diese Sitzung technisch nicht zur Verfügung hatte.
+
+**Geändert:** `css/styles.css`, `css/mobile.css`, `pizza-rechner.html`, `pizza-rechner-
+mobile.html` (nur `?v=`/Versionsnummer, kein Markup). `?v=` auf `4.13.0` gezogen (Desktop +
+Mobil). `pizza-rechner-mobile-standalone.html` neu gebaut (`python build-mobile-
+standalone.py`). `Versionen/v4.13.0 - Hintergrund-Farbverlauf/` enthält den vollständigen
+Schnappschuss.
+
+## Fokus-Erhalt bei .collapse/.show-Feldern (v4.12.0)
+
+Backlog Punkt J. Neuer gemeinsamer Helfer `PZ.moveFocusBeforeHide(containers, fallbackTarget)`
++ `PZ.toggleCollapse(container, show, opts)` (`js/dom.js`): verschiebt den Fokus kontrolliert
+weg, BEVOR ein fokussiertes `.collapse`/`.show`-Feld verschwindet (WCAG 2.4.3, fällt nie
+kommentarlos auf `<body>`), inkl. optionaler Live-Region-Ansage beim Neu-Erscheinen (WCAG
+4.1.3). Eingebaut in `#sugarBlock` (`js/calc.js`, neue Live-Region `#sugarBlockLiveMsg`),
+`#prefBlock`/`#bigaHydBlock`/`#prefStageBlock` (`js/ui.js applyMethod()`, gegen gleichzeitig
+verschwindende Nachbar-Container gehärtet) und im „Neues Rezept anlegen"-Formular
+(`js/newrecipe.js`). MINOR mit erledigt: Zucker-Pills bekommen `aria-label`. 923 Prüfungen
+grün (864 → 923).
+
+**Volle Details:** weiter unten in dieser Datei, Abschnitt „Fokus-Erhalt bei .collapse/.show-
+Feldern (v4.12.0)"; vorheriger Abschnitt „Zieltemperatur statt Eis in der Hauptanleitung, Eis
+nur als Glossar-Fallback (v4.11.0)" ebenfalls dort.
+
 ## Fokus-Erhalt bei .collapse/.show-Feldern (v4.12.0)
 
 Backlog Punkt J (`Backlog.md`). Nebenbefund aus dem `accessibility-expert`-Review zu Backlog

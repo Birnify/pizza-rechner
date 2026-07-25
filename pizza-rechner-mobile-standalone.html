@@ -112,6 +112,14 @@
   --line:#8c7b64;
   --line-soft:#ece4d6;        /* kaum sichtbarer innerer Trenner */
 
+  /* Seiten-Hintergrund-Verlauf (v4.13.0, Backlog "Hintergrund-Farbverlauf"): dezenter
+     vertikaler Verlauf statt reiner Flächenfarbe -- oben minimal heller (Richtung --card),
+     unten die bisherige Basisfarbe --bg. Nutzt bewusst NUR bestehende Oberflächen-Tokens
+     (kein neuer Farbwert), Verlauf über die volle Element-Höhe (body ist durch die lange
+     Anleitung ohnehin meist deutlich höher als der Viewport) -- dadurch bleibt der
+     Farbwechsel pro sichtbarem Ausschnitt kaum wahrnehmbar, wie vom Nutzer vorgegeben. */
+  --bg-gradient:linear-gradient(180deg,var(--card),var(--bg));
+
   /* --- Text (warmes Dunkelbraun, nie reines #000) --- */
   --ink:#2a2320;
   --ink-strong:#1b1512;       /* max. Betonung (kräftiger als --ink) */
@@ -276,6 +284,11 @@
     --card:#201d1b;
     --surface-2:#2a2622;
     --surface-inset:#1b1917;
+    /* Dunkelmodus-Verlauf (v4.13.0, s. Kommentar bei --bg-gradient im Hellmodus-:root
+       oben): --surface-2 statt --card als heller Ausgangston -- --card liegt im
+       Dunkelmodus zu nah an --bg (#201d1b vs. #151312), --surface-2 (#2a2622) ergibt
+       einen tatsächlich wahrnehmbaren, aber weiterhin dezenten Verlauf. */
+    --bg-gradient:linear-gradient(180deg,var(--surface-2),var(--bg));
     /* Kontrast-Fix, analog zum Hellmodus oben: #3a332e gegen --bg/--card lag nur bei
        ~1,35-1,56:1. Aufgehellt auf #7a6e5f -- rechnerisch ~3,90:1 gegen --bg,
        ~3,37:1 gegen --card. */
@@ -328,7 +341,7 @@
 }
 body{
   margin:0;font-family:var(--font-body);
-  background:var(--bg);color:var(--ink);line-height:1.5;
+  background:var(--bg-gradient);color:var(--ink);line-height:1.5;
   -webkit-font-smoothing:antialiased;
 }
 header{
@@ -1214,7 +1227,7 @@ footer{text-align:center;font-size:11.5px;color:var(--muted);padding:0 20px 30px
 
 /* iOS-Eigenheiten: Rubber-Band-Weißblitz abfangen, Doppeltipp-Zoom/300ms-Delay auf
    Bedienelementen killen, kein grauer Tap-Highlight. */
-html{background:var(--bg);}
+html{background:var(--bg-gradient);}
 /* Sicherheitsnetz gegen horizontalen Overflow auf sehr schmalen Viewports (z. B. iPhone SE/Mini):
    die App ist bewusst einspaltig, es gibt keinen legitimen Grund für horizontales Scrollen. */
 html,body{overflow-x:hidden;max-width:100%;}
@@ -2396,7 +2409,7 @@ header{position:relative;text-align:center;}
         <div class="nav-divider" role="separator"></div>
         <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.12.0</span>
+        <span class="nav-version" id="appVersion">v4.13.0</span>
 
       </div>
     </details>
