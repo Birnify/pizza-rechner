@@ -96,6 +96,31 @@ auftritt, meldet dir der Hauptagent das ebenfalls per `SUBAGENT-ERGEBNIS:` — d
 selbst simulieren, sondern in der jeweiligen Phasen-/Abschluss-Meldung transparent
 vermerken, dass der Schritt ausgefallen ist.
 
+### Sub-Agenten-Ergebnisse nie blind übernehmen (PFLICHT, aus wiederholten Vorfällen gelernt)
+In diesem Projekt haben sowohl `test-generator` als auch `accessibility-expert` wiederholt
+Ergebnisse geliefert, die sich bei eigener Nachprüfung als falsch herausstellten (behauptete
+"862/862 grün" bei tatsächlich 4 echten Fehlschlägen; Kontrast-"Blocker", die bei
+Nachrechnung tatsächlich AA-konform waren; Testfälle, die auf einer falschen Formel-Annahme
+beruhten). Deshalb, unabhängig davon, wie überzeugend eine `SUBAGENT-ERGEBNIS:`-Nachricht
+klingt:
+- **Testergebnisse:** Nach dem Einarbeiten gelieferter Testfälle IMMER selbst
+  `tests/test.html` per Headless-Lauf ausführen und die tatsächliche Grün/Rot-Zahl prüfen —
+  nie die vom Sub-Agenten behauptete Zahl in die Abschluss-Zusammenfassung übernehmen, ohne
+  sie selbst nachvollzogen zu haben. Bei Fehlschlägen die zugrunde liegende Annahme des
+  Testfalls (nicht nur den Erwartungswert) hinterfragen, bevor du ihn korrigierst.
+- **Kontrastbefunde:** Bei gemeldeten Blockern/Majors mit Kontrastbezug die exakten
+  Hex-Wertpaare anfordern (falls nicht schon mitgeliefert) und im Zweifel selbst mit der
+  Standard-WCAG-2.0-Luminanzformel gegenrechnen (per kurzem Skript, nicht Kopfrechnen),
+  bevor du deswegen Token-Werte änderst — besonders bei Werten nahe der Schwelle.
+- **Datei-/Repo-Zustand nach jeder Delegation:** Nach dem Zurückerhalten eines
+  `SUBAGENT-ERGEBNIS:` kurz `git status`/`git diff --stat` prüfen, falls der Spezialist
+  Schreibzugriff hatte — ein Sub-Agent könnte entgegen der Anweisung eigenmächtig committet
+  oder Dateien außerhalb seines Auftrags (z. B. `pizza-rechner-KONTEXT.md`, `Versionen/`)
+  angefasst haben. Falls ja: mit `git reset --soft HEAD~1` (bei einem unerwünschten, noch
+  nicht gepushten Commit) bzw. gezieltem Zurücksetzen der betroffenen Datei sauber
+  aufräumen, bevor du in Phase 5 selbst committest — niemals stillschweigend über einen
+  fremden Commit "drüberarbeiten".
+
 ## Erste Schritte (Pflicht)
 1. `git status` prüfen. Uncommittete Änderungen zuerst verstehen (Diff/Dateien lesen) — nichts überschreiben oder ungefragt löschen. Reste eines früheren Zyklus ggf. sauber abschließen, bevor ein neuer beginnt.
 2. Lies `pizza-rechner-KONTEXT.md` vollständig — Abschnitt „Mögliche nächste Schritte" ist das Backlog, das ist der Ausgangspunkt jedes Zyklus. Diese Datei enthält den **aktuellen Stand, die Domänenlogik und das Backlog**; historische Release-Details sind in `pizza-rechner-KONTEXT-HISTORIE.md` ausgelagert. Falls eine Frage zu einem konkreten, älteren Release auftaucht, nachschlagen ist erlaubt — aber nicht standardmäßig laden, um Kontextgröße zu sparen.
