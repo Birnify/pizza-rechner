@@ -8,6 +8,82 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Rezepte-Reiter fest aktivieren (v4.15.0)
+
+Vom Nutzer per `/define-feature` strukturiert (Name/Idee/Motivation/Scope/Abgrenzung
+feststehend): der Einstellungspunkt „Mehrere Rezepte" (Feature-Flag `multiRecipes`)
+entfällt, „Meine Rezepte" (`#recipesCard`) und der Rezepte-Nav-Reiter sind stattdessen
+dauerhaft sichtbar. Auslöser: der Schalter stand praktisch immer auf AN (Default),
+bot kaum echten Nutzen, machte die Einstellungen-Seite aber unnötig komplizierter.
+Zwei offene Umsetzungsdetails wurden in einer eigenen Phase-1-Rückfrage-Runde geklärt
+(beide „Variante A", analog zum etablierten Muster der vorherigen Flag-Entfernungen
+`share`/`shopping` v4.6.0, `newYorkStyle` v4.7.0, `freezeHint` v4.8.0):
+1. Ein alter, im `localStorage` gespeicherter `multiRecipes`-Wert wird NICHT aktiv
+   herausgefiltert/migriert, sondern bleibt als harmlose, nie mehr gelesene
+   Karteileiche im gemeinsamen `pizzaRechnerFeatureFlags`-Objekt stehen.
+2. Die komplette `.flag-item`-Checkbox-Zeile „Mehrere Rezepte" wird ersatzlos aus
+   beiden Einstellungen-Karten entfernt (nicht nur deaktiviert/ausgegraut), die
+   übrigen Zeilen bleiben in ihrer bisherigen Reihenfolge stehen.
+
+- **`js/settings.js`:** `multiRecipes` aus `DEFAULTS` und `CHECKBOX_MAP` entfernt.
+  `applyFlags()` fasst `#recipesCard`s und `.nav-item[data-goto="rezepte"]`s
+  `style.display` nicht mehr an — beide bleiben dadurch in ihrem normalen
+  Markup-Sichtbarkeitszustand (kein `display:none` mehr, unabhängig vom
+  Flag-Zustand). Nach dieser Änderung sind nur noch **3 Feature-Flags** übrig:
+  `timer`, `timerSystem`, `hints` (die Tabelle im vorherigen Abschnitt „Einstellungen-
+  Menü für Feature-Flags (v3.16.0)" listete ursprünglich 6, `share`/`shopping`/
+  `freezeHint`/`multiRecipes` sind über vier separate Zyklen (v4.6.0/v4.7.0/v4.8.0/
+  v4.15.0) inzwischen alle entfernt).
+- **`pizza-rechner.html`/`pizza-rechner-mobile.html`:** die `.flag-item`-Zeile für
+  `#flagMultiRecipes` (Checkbox + Info-Button/-Text bzw. Mobil-Hint) komplett entfernt,
+  identisches Muster auf beiden Seiten. Die verbleibenden Zeilen (Sprache, Darstellung,
+  Einheiten, Gärzeit-Timer, System-Wecker, Hinweistexte, Hefemenge/Verschwendung
+  anpassen) unverändert in ihrer bisherigen Reihenfolge — Desktop 8, Mobil 5
+  verbleibende `.flag-item`-Blöcke.
+- **`js/i18n-dict.js`:** die drei nun ungenutzten `flag.multiRecipes.name/.infoBtn/
+  .info`-Einträge entfernt.
+- **`js/state.js`/`js/storage.js` (Rezept-Datenmodell) bewusst NICHT angefasst**, wie
+  im Scope abgegrenzt: `{recipes:[...], activeId}` bleibt unverändert, die normale
+  „Speichern"-Logik funktioniert identisch wie vorher (mit sichtbarer Karte).
+
+**Tests** (`tests/test.html`, Sektion 18 „Feature-Flags / Einstellungen-Menü"):
+`multiRecipes` aus der „alles an"-Baseline sowie dem Default-Werte-Test entfernt, in
+die Liste der geprüften entfernten Flags aufgenommen (`PZ.FLAG_DEFAULTS` enthält es
+nicht mehr), der Merge-/Vorwärtskompatibilitäts-Test (`PZ._mergeFlags()`) und der
+`setFlag()`-Crash-Sicherheits-Test um den Legacy-Key erweitert (Karteileiche verursacht
+keinen Crash), und der Render-Effekt-Test für `#recipesCard` umgeschrieben: prüft jetzt
+(analog zu `#shareBlock`/`#shoppingRow` seit v4.6.0), dass `applyFlags()` die Karte
+immer sichtbar lässt — auch bei explizit gesetztem `multiRecipes:false`. Netto
+**923 → 922** Prüfungen (eine Zeile im Default-Werte-Test entfernt, eine im
+Merge-Test entfernt, eine im „entfernte Flags"-Test ergänzt: −1 gesamt). Alle 922
+Prüfungen grün, im Preview-Tool durch den Hauptagenten verifiziert (kein
+Headless-Automatisierungsversuch mehr nötig, s. Nebenbefund unten).
+
+**Accessibility-Nachaudit (gezielt, `accessibility-expert`-Agent):** keine Blocker/
+Major/Minor-Funde. Tab-Reihenfolge der verbleibenden `.flag-item`-Zeilen sauber, keine
+verwaisten `aria-describedby`-Referenzen (die entfernte Checkbox und ihr referenzierter
+Info-Text wurden gemeinsam entfernt), `.flag-item:last-child{border-bottom:none}`-CSS
+funktioniert weiterhin korrekt ohne Spacing-Bruch. `#recipesCard` und alle
+`.nav-item[data-goto="rezepte"]`-Reiter dauerhaft sichtbar ohne veraltete
+`hidden`/`aria-hidden`/`aria-disabled`-Reste. Stichprobenartig vom Orchestrator selbst
+nachgeprüft (nicht blind übernommen): `.flag-item`-Zeilenanzahl per `grep` bestätigt
+(Desktop 8, Mobil 5), CSS-Regel gegengelesen.
+
+**Nebenbefund/Prozess-Lernpunkt (kein App-Code, reine Arbeitsweise):** beim Versuch,
+`tests/test.html` selbst per Headless-Edge automatisiert zu verifizieren, führte ein
+zu pauschaler `taskkill /F /IM msedge.exe`-Befehl versehentlich zum Beenden echter,
+bereits laufender Edge-Fenster des Nutzers (kein Datenverlust, keine ungesicherte
+Arbeit betroffen). Der Hauptagent hat stattdessen selbst im kontrollierten
+Preview-Tool verifiziert. Für künftige Zyklen festgehalten: keine pauschalen
+`taskkill /F /IM <Prozessname>`-Befehle mehr — entweder gezielt nur selbst gestartete
+PIDs beenden, oder den Hauptagenten bitten, im Preview-Tool zu verifizieren.
+
+**Geändert:** `js/settings.js`, `pizza-rechner.html`, `pizza-rechner-mobile.html`,
+`js/i18n-dict.js`, `tests/test.html`. `?v=` auf `4.15.0` gezogen (Desktop + Mobil,
+Cache-Busting + Menü-Version). `pizza-rechner-mobile-standalone.html` neu gebaut
+(`python build-mobile-standalone.py`). `Versionen/v4.15.0 - Rezepte-Reiter fest
+aktivieren/` enthält den vollständigen Schnappschuss.
+
 ## Glossar-Gruppierung (v4.14.0)
 
 Vom Nutzer per `/define-feature` strukturiert (Name/Idee/Motivation/Scope/Abgrenzung

@@ -1070,9 +1070,6 @@
   add('flag.timerSystem.infoBtn', 'Erklärung zu „System-Wecker“ ein-/ausblenden', 'Show/hide explanation for "System alarm"');
   add('flag.timerSystem.info', 'Zusätzliche Links zum Android-Wecker oder Kalender, direkt beim Timer.',
     'Extra links to the Android alarm or calendar, right next to the timer.');
-  add('flag.multiRecipes.name', 'Mehrere Rezepte', 'Multiple recipes');
-  add('flag.multiRecipes.infoBtn', 'Erklärung zu „Mehrere Rezepte“ ein-/ausblenden', 'Show/hide explanation for "Multiple recipes"');
-  add('flag.multiRecipes.info', 'Mehrere benannte Rezepte speichern und verwalten statt nur eines.', 'Save and manage multiple named recipes instead of just one.');
   add('flag.hints.name', 'Hinweistexte', 'Hint texts');
   add('flag.hints.infoBtn', 'Erklärung zu „Hinweistexte“ ein-/ausblenden', 'Show/hide explanation for "Hint texts"');
   add('flag.hints.info', 'Erklärende Kurztexte bei Feldern & Buttons ein- oder ausblenden.', 'Turn short explanatory texts on fields & buttons on or off.');

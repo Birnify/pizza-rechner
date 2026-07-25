@@ -179,7 +179,7 @@
   // Render-Effekt der einzelnen Flags) wird weiter unten in einer eigenen Sektion geprüft,
   // die einzelne Flags gezielt aus- und wieder auf diese Baseline zurückschaltet.
   Object.assign(PZ.FLAGS, {
-    timer: true, timerSystem: true, multiRecipes: true, hints: true
+    timer: true, timerSystem: true, hints: true
   });
 
   // --- Globale Hefemengen-/Verschwendungs-Anpassung (js/settings.js, v3.64.0) ---
@@ -2061,7 +2061,6 @@
       renderBox('Default-Werte der Feature-Flags', [
         ['timer (Gärzeit-Timer/Wecker)', d.timer, true],
         ['timerSystem (System-Wecker/Kalender-Links)', d.timerSystem, false],
-        ['multiRecipes (Mehrere gespeicherte Rezepte)', d.multiRecipes, true],
         ['hints (Tooltip-/Hinweistexte)', d.hints, true]
       ].map(([label, actual, expected]) => ({ label, actual, expected, tol: null, ok: actual === expected })));
       // Backlog Punkt B (v4.6.0): "share"/"shopping" wurden ersatzlos entfernt — "Rezept
@@ -2070,12 +2069,15 @@
       // entfernt — der Zucker-Regler (#sugarBlock) ist seither wertbasiert (state.sugar > 0)
       // statt togglebasiert, s. Sektion 19 "Zucker" weiter unten. Backlog Punkt D (v4.8.0):
       // "freezeHint" ebenso entfernt — der Einfrier-Hinweis lebt jetzt als eigenständiger
-      // Glossar-Artikel weiter (s. Sektion 27 "Glossar-Verweise in der Anleitung").
-      renderBox('Entfernte Flags "share"/"shopping"/"newYorkStyle"/"freezeHint" tauchen nicht mehr auf', [
+      // Glossar-Artikel weiter (s. Sektion 27 "Glossar-Verweise in der Anleitung"). Seit
+      // v4.15.0 ebenso entfernt: "multiRecipes" — die "Meine Rezepte"-Card und der
+      // Rezepte-Nav-Reiter sind seither fest und immer sichtbar.
+      renderBox('Entfernte Flags "share"/"shopping"/"newYorkStyle"/"freezeHint"/"multiRecipes" tauchen nicht mehr auf', [
         { label: 'PZ.FLAG_DEFAULTS enthält kein "share"-Flag mehr', ok: !('share' in d), actual: ('share' in d), expected: false, tol: null },
         { label: 'PZ.FLAG_DEFAULTS enthält kein "shopping"-Flag mehr', ok: !('shopping' in d), actual: ('shopping' in d), expected: false, tol: null },
         { label: 'PZ.FLAG_DEFAULTS enthält kein "newYorkStyle"-Flag mehr (v4.7.0)', ok: !('newYorkStyle' in d), actual: ('newYorkStyle' in d), expected: false, tol: null },
-        { label: 'PZ.FLAG_DEFAULTS enthält kein "freezeHint"-Flag mehr (v4.8.0)', ok: !('freezeHint' in d), actual: ('freezeHint' in d), expected: false, tol: null }
+        { label: 'PZ.FLAG_DEFAULTS enthält kein "freezeHint"-Flag mehr (v4.8.0)', ok: !('freezeHint' in d), actual: ('freezeHint' in d), expected: false, tol: null },
+        { label: 'PZ.FLAG_DEFAULTS enthält kein "multiRecipes"-Flag mehr (v4.15.0)', ok: !('multiRecipes' in d), actual: ('multiRecipes' in d), expected: false, tol: null }
       ]);
     })();
 
@@ -2087,19 +2089,19 @@
       const junkStored = PZ._mergeFlags(null);
       // Regression-Anker: ein Flag-Stand, der noch die inzwischen entfernten Keys
       // "share"/"shopping" (v4.6.0, Backlog Punkt B), "newYorkStyle" (v4.7.0, Backlog
-      // Punkt C) UND "freezeHint" (v4.8.0, Backlog Punkt D) enthält, muss trotzdem sauber
-      // auf die aktuellen Defaults fallen, ohne zu crashen und ohne die noch gültigen
-      // alten Werte zu verlieren — die überflüssigen Keys werden einfach mitgeführt, aber
-      // von nichts mehr gelesen (s. js/settings.js).
+      // Punkt C), "freezeHint" (v4.8.0, Backlog Punkt D) UND "multiRecipes" (v4.15.0)
+      // enthält, muss trotzdem sauber auf die aktuellen Defaults fallen, ohne zu crashen
+      // und ohne die noch gültigen alten Werte zu verlieren — die überflüssigen Keys
+      // werden einfach mitgeführt (bewusst NICHT aktiv herausgefiltert), aber von nichts
+      // mehr gelesen (s. js/settings.js).
       const oldFlagsWithLegacyKeys = { timer: true, timerSystem: false, share: true, shopping: false, newYorkStyle: true, freezeHint: false, multiRecipes: true, hints: true };
       const mergedOld = PZ._mergeFlags(oldFlagsWithLegacyKeys);
       renderBox('Merge: gespeichertes Teilobjekt überschreibt nur seine eigenen Keys', [
         { label: 'Explizit gespeichertes timerSystem=true bleibt true', ok: merged.timerSystem === true, actual: merged.timerSystem, expected: true, tol: null },
         { label: 'Nicht gespeichertes timer bekommt weiterhin seinen Default (true)', ok: merged.timer === true, actual: merged.timer, expected: true, tol: null },
-        { label: 'Nicht gespeichertes multiRecipes bekommt weiterhin seinen Default (true)', ok: merged.multiRecipes === true, actual: merged.multiRecipes, expected: true, tol: null },
         { label: 'Leeres gespeichertes Objekt -> reine Defaults (timerSystem=false)', ok: emptyStored.timerSystem === false, actual: emptyStored.timerSystem, expected: false, tol: null },
         { label: 'Alter Flag-Stand: bereits vorhandene eigene Werte bleiben dabei erhalten (timer weiterhin true)', ok: mergedOld.timer === true, actual: mergedOld.timer, expected: true, tol: null },
-        { label: 'Alter Flag-Stand mit inzwischen entfernten Keys "share"/"shopping"/"newYorkStyle"/"freezeHint" crasht den Merge nicht', ok: mergedOld.multiRecipes === true, actual: mergedOld.multiRecipes, expected: true, tol: null },
+        { label: 'Alter Flag-Stand mit inzwischen entfernten Keys "share"/"shopping"/"newYorkStyle"/"freezeHint"/"multiRecipes" crasht den Merge nicht (überflüssiger Key bleibt als Karteileiche mitgeführt)', ok: mergedOld.multiRecipes === true && !('multiRecipes' in PZ.FLAG_DEFAULTS), actual: mergedOld.multiRecipes, expected: true, tol: null },
         { label: 'null als gespeicherter Wert crasht nicht -> reine Defaults', ok: junkStored.timerSystem === false, actual: junkStored.timerSystem, expected: false, tol: null }
       ]);
     })();
@@ -2120,7 +2122,7 @@
         // führt gespeicherte + aktuelle Defaults zusammen, s. js/settings.js); das ist
         // harmlos (wird von nichts mehr gelesen), aber kein Kriterium für "ignoriert".
         // Stattdessen nur: setFlag() auf den entfernten Keys crasht nicht.
-        { label: 'setFlag() auf den entfernten Keys "share"/"shopping"/"freezeHint" crasht nicht (werden wie unbekannte Keys behandelt)', ok: (function(){ let ok2=true; try { PZ.setFlag('share', true); PZ.setFlag('shopping', true); PZ.setFlag('freezeHint', true); } catch(e){ ok2=false; } return ok2; })(), actual: 'geprüft', expected: 'geprüft', tol: null }
+        { label: 'setFlag() auf den entfernten Keys "share"/"shopping"/"freezeHint"/"multiRecipes" crasht nicht (werden wie unbekannte Keys behandelt)', ok: (function(){ let ok2=true; try { PZ.setFlag('share', true); PZ.setFlag('shopping', true); PZ.setFlag('freezeHint', true); PZ.setFlag('multiRecipes', true); } catch(e){ ok2=false; } return ok2; })(), actual: 'geprüft', expected: 'geprüft', tol: null }
       ]);
     })();
 
@@ -2148,33 +2150,36 @@
       PZ.buildGuide();
     })();
 
-    // --- Render-Effekt: applyFlags() blendet #recipesCard per Flag aus/ein. #shareBlock/
-    // #shoppingRow sind seit v4.6.0 (Backlog Punkt B) NICHT mehr an ein Flag gekoppelt --
-    // "Rezept teilen" bleibt permanente sekundäre Aktion, "Einkaufsliste drucken" bleibt
-    // dauerhaft in "Weitere Optionen" -- applyFlags() darf ihr style.display nicht mehr
-    // anfassen, unabhängig vom sonstigen Flag-Zustand. ---
+    // --- Render-Effekt: #recipesCard/#shareBlock/#shoppingRow sind KEINEM Flag mehr
+    // gekoppelt -- applyFlags() darf ihr style.display nicht mehr anfassen, unabhängig
+    // vom sonstigen Flag-Zustand. #shareBlock/#shoppingRow bereits seit v4.6.0 (Backlog
+    // Punkt B); #recipesCard seit v4.15.0 (kein "multiRecipes"-Flag mehr, s. Kontext-
+    // Datei "Rezepte-Reiter fest aktivieren"). ---
     (function () {
       const recipesCard = document.getElementById('recipesCard');
       const shareBlock = document.getElementById('shareBlock');
       const shoppingRow = document.getElementById('shoppingRow');
 
-      Object.assign(PZ.FLAGS, { multiRecipes: false });
       PZ.applyFlags();
-      const recipesHiddenNow = recipesCard.style.display === 'none';
+      const recipesVisible1 = recipesCard.style.display !== 'none';
       const shareStillVisible1 = shareBlock.style.display !== 'none';
       const shoppingStillVisible1 = shoppingRow.style.display !== 'none';
 
-      Object.assign(PZ.FLAGS, { multiRecipes: true });
+      // Selbst ein (bewusst als Karteileiche mitgeführter) alter multiRecipes=false-Wert
+      // darf #recipesCard nicht mehr ausblenden -- applyFlags() liest das Flag gar nicht
+      // mehr aus.
+      Object.assign(PZ.FLAGS, { multiRecipes: false });
       PZ.applyFlags();
-      const recipesShownAgain = recipesCard.style.display !== 'none';
+      const recipesVisible2 = recipesCard.style.display !== 'none';
       const shareStillVisible2 = shareBlock.style.display !== 'none';
       const shoppingStillVisible2 = shoppingRow.style.display !== 'none';
+      delete PZ.FLAGS.multiRecipes; // Baseline wieder sauber
 
-      renderBox('applyFlags() blendet #recipesCard per Flag aus/ein; #shareBlock/#shoppingRow bleiben seit v4.6.0 immer sichtbar (kein Flag mehr)', [
-        { label: '#recipesCard bei multiRecipes=false per display:none ausgeblendet', ok: recipesHiddenNow, actual: recipesHiddenNow, expected: true, tol: null },
-        { label: '#recipesCard bei multiRecipes=true wieder sichtbar', ok: recipesShownAgain, actual: recipesShownAgain, expected: true, tol: null },
-        { label: '#shareBlock bleibt unabhängig von multiRecipes sichtbar (kein "share"-Flag mehr)', ok: shareStillVisible1 && shareStillVisible2, actual: shareStillVisible1 && shareStillVisible2, expected: true, tol: null },
-        { label: '#shoppingRow bleibt unabhängig von multiRecipes sichtbar (kein "shopping"-Flag mehr)', ok: shoppingStillVisible1 && shoppingStillVisible2, actual: shoppingStillVisible1 && shoppingStillVisible2, expected: true, tol: null }
+      renderBox('applyFlags() fasst #recipesCard/#shareBlock/#shoppingRow nicht mehr an -- alle drei bleiben immer sichtbar', [
+        { label: '#recipesCard sichtbar (applyFlags() normal aufgerufen)', ok: recipesVisible1, actual: recipesVisible1, expected: true, tol: null },
+        { label: '#recipesCard bleibt sichtbar, selbst bei gesetztem multiRecipes=false (Karteileiche wird nicht mehr gelesen)', ok: recipesVisible2, actual: recipesVisible2, expected: true, tol: null },
+        { label: '#shareBlock bleibt sichtbar (kein "share"-Flag mehr)', ok: shareStillVisible1 && shareStillVisible2, actual: shareStillVisible1 && shareStillVisible2, expected: true, tol: null },
+        { label: '#shoppingRow bleibt sichtbar (kein "shopping"-Flag mehr)', ok: shoppingStillVisible1 && shoppingStillVisible2, actual: shoppingStillVisible1 && shoppingStillVisible2, expected: true, tol: null }
       ]);
     })();
 

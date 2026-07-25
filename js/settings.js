@@ -25,11 +25,15 @@
   const DEFAULTS = {
     timer: true,          // Gärzeit-Timer/Wecker je Anleitungsschritt
     timerSystem: false,   // System-Wecker/Kalender-Links (Teil-Feature von timer)
-    multiRecipes: true,   // Mehrere gespeicherte Rezepte (sonst: Einzel-Slot-Verhalten)
     hints: true           // Tooltip-/Hinweistexte (erklärende .hint-Kurztexte). Default AN:
                            // reine Erklärhilfen sind für neue Nutzer wertvoll, erfahrene
                            // Nutzer können bewusst abschalten (anders als die übrigen, im
                            // Ausgangszustand unauffälligen Zusatzfunktionen oben).
+    // "multiRecipes" (Mehrere gespeicherte Rezepte) war bis v4.14.x hier ein Flag --
+    // seit v4.15.0 fest aktiv (Backlog-Punkt), analog zur Entfernung von "share"/
+    // "shopping" (v4.6.0), "newYorkStyle" (v4.7.0) und "freezeHint" (v4.8.0). Ein alter,
+    // gespeicherter multiRecipes-Wert im localStorage bleibt bewusst als harmlose,
+    // nie mehr gelesene Karteileiche stehen (keine aktive Bereinigung, s. Kontext-Datei).
   };
 
   function readFlags() {
@@ -72,18 +76,10 @@
   // buildGuide()-Lauf neu aus).
   function applyFlags() {
     const f = PZ.FLAGS;
-    const recipesCard = document.getElementById('recipesCard');
-    if (recipesCard) recipesCard.style.display = f.multiRecipes ? '' : 'none';
-    // Bereichs-Navigation (Desktop-Burgermenü UND seit v3.67.0 Mobil-Sekundärnavigation
-    // .calc-subnav, s. pizza-rechner.html / pizza-rechner-mobile.html): Menüpunkt
-    // "Rezepte" führt bei abgeschaltetem Flag nur zu einer leeren Ansicht — Punkt überall
-    // ausblenden. querySelectorAll statt querySelector (Bugfix v3.67.0): seit die
-    // Sekundär-Navigation auf Mobil identisch in allen drei Rechner-Unterbereichen
-    // eingebettet ist, gibt es dort bis zu drei `.nav-item[data-goto="rezepte"]`-Treffer
-    // statt nur einem — mit querySelector allein wären zwei davon fälschlich sichtbar
-    // geblieben, auch bei ausgeschaltetem Flag.
-    const recipesNavItems = document.querySelectorAll('.nav-item[data-goto="rezepte"]');
-    recipesNavItems.forEach(function (item) { item.style.display = f.multiRecipes ? '' : 'none'; });
+    // "Meine Rezepte"-Card (#recipesCard) und der Rezepte-Nav-Reiter/-Menüpunkt sind
+    // seit v4.15.0 fest und immer sichtbar (kein "multiRecipes"-Flag mehr, analog zur
+    // Entfernung von "share"/"shopping" (v4.6.0), "newYorkStyle" (v4.7.0) und
+    // "freezeHint" (v4.8.0)) — applyFlags() fasst ihr style.display nicht mehr an.
     // "Rezept teilen" (#shareBlock, primäre Aktionsleiste) und "Einkaufsliste drucken"/
     // "Anleitung drucken"/"Als PDF speichern" (#shoppingRow/#pdfGuideBlock, "Weitere
     // Optionen") sind seit v4.6.0 permanent sichtbar, unabhängig von einem globalen
@@ -122,7 +118,6 @@
   const CHECKBOX_MAP = {
     flagTimer: 'timer',
     flagTimerSystem: 'timerSystem',
-    flagMultiRecipes: 'multiRecipes',
     flagHints: 'hints'
   };
 
