@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-25 · Aktuelle Version: v4.13.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-25 · Aktuelle Version: v4.14.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -177,22 +177,23 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Hintergrund-Farbverlauf (v4.13.0) = aktueller Stand
+## Glossar-Gruppierung (v4.14.0) = aktueller Stand
 
-Vom Nutzer per `/define-feature` strukturiert, Umsetzungsdetails (Richtung/Töne/Intensität)
-in einer Rückfrage-Runde geklärt. Der Seiten-Hintergrund (`body` Desktop, `html` Mobil, vorher
-reine Flächenfarbe `--bg`) hat jetzt einen dezenten vertikalen Verlauf: neuer Token
-`--bg-gradient` (`css/styles.css`, `:root`) = `linear-gradient(180deg,var(--card),var(--bg))`
-im Hellmodus, im Dunkelmodus-Block `linear-gradient(180deg,var(--surface-2),var(--bg))` (nur
-bestehende Tokens, kein neuer Farbwert). Nur der Hintergrund geändert, sonst nichts
-angefasst. `accessibility-expert`-Review ohne Befund, selbst gegen die WCAG-2.0-
-Luminanzformel nachgerechnet (Worst-Case-Endpunkt je Verlauf). 923 Prüfungen unverändert
-(reine CSS-Änderung, keine `js/*.js` angefasst; Testlauf in dieser Sitzung per Node+jsdom
-statt echtem Browser, identisches Ergebnis vor/nach der Änderung per `git stash` verifiziert).
+Vom Nutzer per `/define-feature` strukturiert, plus drei Nachtrags-Anforderungen aus
+derselben Runde. Das Glossar (`js/glossary.js`) zeigt seine 38 Artikel jetzt in 7
+sichtbaren, alphabetisch sortierten, einzeln auf-/zuklappbaren Kategorien (je mit
+dezentem Icon) statt einer flachen Liste, plus ein Suchfeld (`#glossarySearch`), das
+Titel und Artikeltext filtert (leere Kategorien werden dabei ausgeblendet,
+`#glossaryNoResults` bei komplett leerem Ergebnis). `accessibility-expert`-Review fand
+1 Blocker (fehlende Live-Region-Ansage der Filterergebnisse, WCAG 4.1.3 — behoben:
+`#glossarySearchLiveMsg`) + 1 Minor (`:focus` statt `:focus-visible` am Suchfeld —
+behoben), Kontrastwerte selbst nachgerechnet (5,57:1/6,58:1, bestätigt). `tests/
+test.html` unverändert bei 915/923 (8 vorbestehende, jsdom-only Fokus-Test-
+Fehlschläge, `js/glossary.js` wird von der Suite nicht geladen).
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Hintergrund-Farbverlauf
-(v4.13.0)"; vorheriger Abschnitt „Fokus-Erhalt bei .collapse/.show-Feldern (v4.12.0)"
-ebenfalls dort.
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-Gruppierung
+(v4.14.0)" (inkl. eines dort dokumentierten, nicht behobenen Nebenbefunds); vorheriger
+Abschnitt „Hintergrund-Farbverlauf (v4.13.0)" ebenfalls dort.
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -348,11 +349,11 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.13.0 -- seit
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.14.0 -- seit
                      v4.5.0 synchron mit Mobil, s. u.: Desktop lädt weiterhin ohne
                      css/fonts.css, das ist unabhängig von der Versionsnummer)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle,
-                     ?v=4.13.0)
+                     ?v=4.14.0)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
 index.html           Weiterleitung auf pizza-rechner.html
@@ -429,7 +430,10 @@ js/party.js          Pizza-Party-Planer (v3.27.0) — eigenständiger Bereich, k
                      PZ.state/PZ.calc()
 js/glossary.js       Pizza-Glossar (v3.37.0) — eigenständiger Menü-Bereich, reine Anzeige-Funktion.
                      Seit v4.3.0: Single-Open-Akkordeon (Öffnen eines Artikels schließt den
-                     vorher offenen), identisch auf Desktop + Mobil
+                     vorher offenen), identisch auf Desktop + Mobil. Seit v4.14.0:
+                     PZ.GLOSSARY_CATEGORIES (7 auf-/zuklappbare, alphabetisch sortierte
+                     Kategorien mit Icon) + Suchfeld über Titel/Artikeltext, s.
+                     „= aktueller Stand" oben
 js/main.js           Start: Speichern-Button, Rezept-Auswahl/-Buttons, load(), applyMethod(), calc()
 js/nav.js            Gemeinsames Navigations-Modul (v3.54.0, vorher zwei/drei duplizierte
                      Inline-Scripts): openNav/closeNav/activateView/announceView/focusView/gotoView +
@@ -467,14 +471,14 @@ formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 **Cache-Busting:** CSS/JS werden mit `?v=X.Y.Z` geladen. **Bei jeder neuen Version mitziehen.**
 Zwischen v4.0.0 und v4.4.0 bewusst auseinandergelaufen (Design-Import-Zyklen waren
 mobile-only, Desktop-HTML wurde nicht angefasst) — **seit v4.5.0 wieder synchron**, beide
-HTML-Dateien stehen bei `?v=4.13.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
+HTML-Dateien stehen bei `?v=4.14.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
 erneut bewusst entscheiden, ob ein Auseinanderlaufen sinnvoll ist oder beide mitgezogen
 werden.
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien steht `<span class="nav-version"
 id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine JS-Logik dahinter. Seit v4.5.0
-wieder synchron (beide `v4.13.0`), analog zum Cache-Busting oben. **Bei jedem
+wieder synchron (beide `v4.14.0`), analog zum Cache-Busting oben. **Bei jedem
 Versionssprung von Hand mitziehen** (zusammen mit `?v=` und der Kontext-Datei — bei allen
 drei HTML-Dateien, also auch `pizza-rechner-mobile-standalone.html` nach dem Rebuild,
 gegenprüfen), sonst zeigt die Live-App die falsche Version an.
@@ -733,6 +737,18 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
+- **Nebenbefund aus dem v4.14.0-Testen (nicht behoben, außerhalb des Scopes, sehr
+  unwahrscheinlicher Real-World-Fall):** Single-Open-Akkordeon der Glossar-Artikel
+  (`js/glossary.js`, seit v4.3.0) hat eine latente Race Condition — ein asynchron
+  gequeuter `toggle`-Event einer ALTEN `<details>`-Instanz (aus einer vorherigen
+  `renderGlossary()`-Generation) kann, wenn ein Sprachwechsel praktisch synchron auf
+  einen Sprung via `gotoGlossaryEntry()` folgt, einen frisch gerenderten Artikel
+  gleichen Namens wieder schließen. Kein realistischer Nutzerpfad (nur in einem
+  synchronen Test-Skript ohne Verzögerung reproduzierbar), vom `accessibility-expert`
+  zur Kenntnis genommen (kein WCAG-Bezug). Kandidat für einen künftigen, gezielten
+  Fix (Listener beim Entfernen alter Elemente abmelden, oder Vergleich über
+  `dataset.id` statt Objektidentität). S. `pizza-rechner-KONTEXT-HISTORIE.md`,
+  Abschnitt „Glossar-Gruppierung (v4.14.0)".
 - ~~Backlog.md Punkt H: Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (Akkordeon)~~
   — **erledigt in v4.10.0**: `.tip`/`.warn`-Boxen in der Anleitung sind jetzt standardmäßig
   eingeklappt (kompakter `.hint-toggle`-Button statt Volltext), App-weites Single-Open-

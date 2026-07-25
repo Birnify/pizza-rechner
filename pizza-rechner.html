@@ -20,7 +20,7 @@
   } catch(e) {}
 })();
 </script>
-<link rel="stylesheet" href="css/styles.css?v=4.13.0">
+<link rel="stylesheet" href="css/styles.css?v=4.14.0">
 </head>
 <body>
 <header>
@@ -57,7 +57,7 @@
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navMobileLink" href="pizza-rechner-mobile.html" data-i18n="nav.toMobile">Zur Mobil-Ansicht</a>
-    <span class="nav-version" id="appVersion">v4.13.0</span>
+    <span class="nav-version" id="appVersion">v4.14.0</span>
   </div>
 </nav>
 
@@ -765,7 +765,13 @@
     <div class="card">
       <h2 data-i18n-attr="aria-label:card.glossary.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5c-1.6-1.3-3.6-2-6.5-2v12c2.9 0 4.9.7 6.5 2 1.6-1.3 3.6-2 6.5-2v-12c-2.9 0-4.9.7-6.5 2Z"/><path d="M12 6.5v12"/></svg></span><span data-i18n="card.glossary.title">Pizza-Glossar</span></h2>
       <div class="hint" style="margin-bottom:14px;" data-i18n="hint.glossary">Kurze Lexikon-Artikel zu Begriffen und Hintergrundwissen rund um Pizza: zum Nachlesen, unabhängig vom Rechner.</div>
+      <div class="field glossary-search">
+        <label for="glossarySearch" class="visually-hidden" data-i18n="label.glossarySearch">Glossar durchsuchen</label>
+        <input type="text" id="glossarySearch" class="selectbox" placeholder="Suchen, z. B. Hydration, Poolish…" data-i18n-attr="placeholder:placeholder.glossarySearch">
+      </div>
+      <div id="glossarySearchLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
       <div id="glossaryList"></div>
+      <div class="glossary-no-results" id="glossaryNoResults" data-i18n="glossary.noResults" hidden>Keine Treffer für diesen Suchbegriff.</div>
     </div>
   </div>
 </div>
@@ -950,33 +956,33 @@
 <footer aria-hidden="true"></footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=4.13.0"></script>
-<script src="js/state.js?v=4.13.0"></script>
-<script src="js/i18n-dict.js?v=4.13.0"></script>
-<script src="js/i18n.js?v=4.13.0"></script>
-<script src="js/settings.js?v=4.13.0"></script>
-<script src="js/theme.js?v=4.13.0"></script>
-<script src="js/units.js?v=4.13.0"></script>
-<script src="js/widgets.js?v=4.13.0"></script>
-<script src="js/flour.js?v=4.13.0"></script>
-<script src="js/calc.js?v=4.13.0"></script>
-<script src="js/schedule.js?v=4.13.0"></script>
-<script src="js/guide.js?v=4.13.0"></script>
-<script src="js/timer.js?v=4.13.0"></script>
-<script src="js/ui.js?v=4.13.0"></script>
-<script src="js/simplemode.js?v=4.13.0"></script>
-<script src="js/print.js?v=4.13.0"></script>
-<script src="js/pdf.js?v=4.13.0"></script>
-<script src="js/presets.js?v=4.13.0"></script>
-<script src="js/storage.js?v=4.13.0"></script>
-<script src="js/newrecipe.js?v=4.13.0"></script>
-<script src="js/share.js?v=4.13.0"></script>
-<script src="js/party.js?v=4.13.0"></script>
-<script src="js/glossary.js?v=4.13.0"></script>
-<script src="js/main.js?v=4.13.0"></script>
+<script src="js/dom.js?v=4.14.0"></script>
+<script src="js/state.js?v=4.14.0"></script>
+<script src="js/i18n-dict.js?v=4.14.0"></script>
+<script src="js/i18n.js?v=4.14.0"></script>
+<script src="js/settings.js?v=4.14.0"></script>
+<script src="js/theme.js?v=4.14.0"></script>
+<script src="js/units.js?v=4.14.0"></script>
+<script src="js/widgets.js?v=4.14.0"></script>
+<script src="js/flour.js?v=4.14.0"></script>
+<script src="js/calc.js?v=4.14.0"></script>
+<script src="js/schedule.js?v=4.14.0"></script>
+<script src="js/guide.js?v=4.14.0"></script>
+<script src="js/timer.js?v=4.14.0"></script>
+<script src="js/ui.js?v=4.14.0"></script>
+<script src="js/simplemode.js?v=4.14.0"></script>
+<script src="js/print.js?v=4.14.0"></script>
+<script src="js/pdf.js?v=4.14.0"></script>
+<script src="js/presets.js?v=4.14.0"></script>
+<script src="js/storage.js?v=4.14.0"></script>
+<script src="js/newrecipe.js?v=4.14.0"></script>
+<script src="js/share.js?v=4.14.0"></script>
+<script src="js/party.js?v=4.14.0"></script>
+<script src="js/glossary.js?v=4.14.0"></script>
+<script src="js/main.js?v=4.14.0"></script>
 <!-- Burger-Menü-Navigation (v3.26.0) war bis v3.53.0 eine eigenständige Inline-Kopie
      hier -- seit v3.54.0 gemeinsames Modul mit der Mobil-Seite, s. js/nav.js. -->
-<script src="js/nav.js?v=4.13.0"></script>
-<script src="js/onboarding.js?v=4.13.0"></script>
+<script src="js/nav.js?v=4.14.0"></script>
+<script src="js/onboarding.js?v=4.14.0"></script>
 </body>
 </html>

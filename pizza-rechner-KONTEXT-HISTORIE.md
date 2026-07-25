@@ -8,6 +8,120 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Glossar-Gruppierung (v4.14.0)
+
+Vom Nutzer per `/define-feature` strukturiert (Name/Idee/Motivation/Scope/Abgrenzung
+feststehend): sichtbare Kategorie-Zwischenüberschriften entlang der bereits intern
+bestehenden thematischen Reihenfolge (Mehl/Teig-Grundlagen → Techniken → Vorteig-/
+Gärmethoden → Werkzeuge & Ausrüstung → Zutaten → Pizzabeläge → Pizza-Stile) plus ein
+Suchfeld über alle Artikel. Umsetzungsdetails in einer eigenen Rückfrage-Runde in
+Phase 1 geklärt (nutzerfreundliche Kategorie-Labels statt interner Kommentar-
+Stichworte, Suchfeld filtert Titel UND Artikeltext, leere Kategorien werden beim
+Filtern komplett ausgeblendet). Während der Umsetzung kamen drei Nachtrags-
+Anforderungen aus derselben Runde dazu: Kategorien UND Artikel innerhalb jeder
+Kategorie alphabetisch (statt der bisherigen internen Reihenfolge) sortieren,
+Kategorien selbst auf-/zuklappbar machen, ein dezentes Icon je Kategorie.
+
+- **`js/glossary.js` grundlegend überarbeitet:** `PZ.GLOSSARY_CATEGORIES` (7 Kategorien,
+  je `{key, ids: [...]}`) ersetzt die vorherige flache `PZ.GLOSSARY_TOPICS`-Liste als
+  Quelle für die Zuordnung Artikel→Kategorie — bleibt fachlich-thematisch geordnet
+  (welche IDs zu welcher Kategorie gehören), ist aber NICHT mehr die Anzeige-
+  Reihenfolge. `PZ.GLOSSARY_TOPICS` bleibt als abgeleitete Flat-Liste
+  (`GLOSSARY_CATEGORIES.reduce(...)`) für etwaigen anderen Code erhalten.
+- **Live-alphabetische Sortierung:** `renderGlossary()` sortiert bei JEDEM Aufbau
+  (Erststart, Sprachwechsel) sowohl die Kategorien selbst als auch die Artikel
+  innerhalb jeder Kategorie per `localeCompare()` nach ihrem GERADE AKTIVEN,
+  sprachabhängigen Titel (nicht fest im Datenmodell verdrahtet) — DE und EN können
+  dadurch unterschiedliche Reihenfolgen ergeben, das ist beabsichtigt.
+- **Kategorien sind eigene `<details class="glossary-category">`-Elemente**
+  (Summary = `<summary class="glossary-cat-heading">`), VERSCHACHTELT um die
+  bestehenden Artikel-`<details class="glossary-item">`. Bewusst KEIN Single-Open
+  zwischen Kategorien (anders als zwischen den Artikeln, das bleibt unverändert
+  bestehen): mehrere Kategorien dürfen gleichzeitig offen sein, weil hier
+  "Überblick/Scannen" statt "eine Definition lesen" das Ziel ist. Default: alle
+  Kategorien starten offen (unverändertes Bild ggü. vorher, wo alles immer
+  sichtbar war). Auf-/Zu-Zustand jeder Kategorie bleibt über Sprachwechsel hinweg
+  erhalten, analog zum bereits bestehenden Mechanismus für offene Artikel.
+- **Icons je Kategorie** (`CAT_ICONS` in `js/glossary.js`): dezente, monochrome
+  14×14-Linien-Icons (`stroke="currentColor"`, gleicher Stil wie das bestehende
+  20×20-`.card-icon`-Muster vor Card-Titeln, nur kleiner), rein dekorativ
+  (`aria-hidden="true"` auf dem Wrapper-Span, verändert den Accessible Name der
+  Kategorie-Summary nicht) — je ein simples Symbol pro Thema (Getreidekorn,
+  Dehnen-Pfeile, Vorteig-Glas, Schraubenschlüssel, Blatt, Pizzastück mit Punkten,
+  ganze geviertelte Pizza).
+- **Suchfeld `#glossarySearch`** (`pizza-rechner.html`/`pizza-rechner-mobile.html`,
+  `<input type="text">` mit visuell verstecktem `<label>`, Klasse `.selectbox`)
+  filtert per `input`-Event Titel UND Artikeltext (Teilstring, case-insensitive,
+  `textContent` der `.glossary-body`, also ohne HTML-Tags). Kategorien ohne
+  verbleibenden Treffer werden per nativem `hidden`-Attribut komplett ausgeblendet;
+  ergeben ALLE Kategorien keinen Treffer, erscheint `#glossaryNoResults`. Während
+  eine Suche aktiv ist, werden alle Kategorien zwangsweise geöffnet (sonst blieben
+  Treffer in einer manuell zugeklappten Kategorie unsichtbar) — der manuelle
+  Auf-/Zu-Zustand wird per Snapshot (`catOpenSnapshot`) beim Leeren des Suchfelds
+  wiederhergestellt.
+- **`gotoGlossaryEntry()`** (Sprung aus einem Anleitungsschritt heraus) öffnet seit
+  v4.14.0 zusätzlich die umgebende Kategorie (sonst wäre der Artikel als Nachfahre
+  eines geschlossenen `<details>` weder sichtbar noch fokussierbar) und setzt ein
+  aktives Suchfeld zurück, bevor gesprungen wird (sonst könnte das Sprungziel per
+  `hidden` ausgeblendet sein).
+
+**Härtung:** `accessibility-expert`-Review ergab 1 BLOCKER + 1 MINOR, beide behoben:
+- **BLOCKER (WCAG 4.1.3 Status Messages):** das Ein-/Ausblenden von Kategorien/
+  Artikeln + `#glossaryNoResults` beim Filtern war rein visuell, ohne Ansage für
+  Screenreader-Nutzer. Fix: neue Live-Region `#glossarySearchLiveMsg`
+  (`aria-live="polite" role="status"`, beide HTML-Dateien, direkt bei
+  `#glossaryList`), `applyFilter()` ruft `PZ.announce()` mit „N Artikel gefunden."/
+  „Keine Treffer für diesen Suchbegriff." auf — nur solange eine Suche aktiv ist,
+  nicht beim bloßen Leeren des Suchfelds (2 neue i18n-Keys
+  `glossary.searchResultsOne`/`Many`).
+- **MINOR (Projekt-Konsistenz, kein WCAG-Verstoß):** `#glossarySearch` nutzte wie
+  alle `.selectbox`-Felder `:focus` (zeigt den Ring auch bei Maus-Klick); neuere
+  Formulare im Projekt (z. B. `.stepper input`) nutzen bereits `:focus-visible`.
+  Fix per ID-Selektor-Override NUR für dieses eine Feld — `.selectbox` selbst
+  bleibt für alle anderen ~15 Verwendungen (Presets-/Mehl-Dropdown, Namensfelder
+  usw.) unverändert, ein sitedweiter Wechsel wäre ein eigener, größerer Zyklus.
+- **Kontrastwerte selbst nachgerechnet** (WCAG-2.0-Luminanzformel, Node-Skript):
+  Kategorie-Überschrift (`var(--muted)` auf `var(--card)`) Hell 5,5652:1, Dunkel
+  6,5787:1 — beide bestätigt (Audit hatte 5,57/6,58 gemeldet), keine
+  Token-Änderung nötig.
+
+**Tests:** `tests/test.html` lädt `js/glossary.js` wie dokumentiert nicht (reine
+Anzeige-Funktion), daher unverändert bei 915/923 (8 vorbestehende, jsdom-only
+Fokus-Test-Fehlschläge, s. u.). Kein `test-generator` angefordert (reine UI-Logik,
+keine `js/calc.js`/`schedule.js`/`guide.js`-Änderung). Stattdessen eigene
+funktionale Verifikation per Node + jsdom über einen lokalen `python -m
+http.server 8137` (Desktop UND Mobil): Kategorie-/Artikelzahlen (7/38), alphabetische
+Sortierung (Kategorien + Artikel), Suchfilter (Treffer- und Nicht-Treffer-Fall inkl.
+Live-Region-Ansage), Zwangs-Öffnen/Wiederherstellen der Kategorien während/nach
+Suche, `gotoGlossaryEntry()`-Verhalten (Artikel + Kategorie öffnen) — alles korrekt.
+`tests/test.html` selbst per Node + jsdom (nicht echter Browser, gleiche
+Einschränkung wie beim v4.13.0-Zyklus) auf identisch 915/923 verifiziert, per `git
+stash`-Vergleich gegen den unveränderten Ausgangsstand bestätigt: identisches
+Fehlschlagsmuster (dieselben 8 `moveFocusBeforeHide`-Fokus-Tests) bereits OHNE diese
+Änderung — reines jsdom-Artefakt, kein durch diesen Zyklus verursachtes Problem.
+
+**Nebenbefund (nicht behoben, außerhalb des Scopes):** beim automatisierten Testen
+wurde eine seit v4.3.0 vorbestehende, sehr unwahrscheinliche Race Condition im
+Single-Open-Akkordeon der Artikel entdeckt — ein asynchron gequeuter `toggle`-Event
+einer ALTEN `<details>`-Instanz (aus einer vorherigen `renderGlossary()`-Generation)
+kann, wenn ein Sprachwechsel praktisch synchron auf einen programmatischen Sprung
+via `gotoGlossaryEntry()` folgt (kein realistischer Nutzerpfad, nur in einem
+synchronen Test-Skript ohne jede Verzögerung reproduzierbar), einen frisch
+gerenderten Artikel gleichen Namens wieder schließen. `listEl` ist über alle
+`renderGlossary()`-Aufrufe hinweg derselbe, persistente Container — der `toggle`-
+Handler-Closure der alten Instanz vergleicht `d !== details` gegen die NEUEN
+Kind-Elemente und schließt dabei fälschlich das neue, gleichnamige Element. Vom
+`accessibility-expert`-Review zur Kenntnis genommen (kein WCAG-Bezug, kein Blocker).
+Kandidat für einen künftigen, gezielten Fix (z. B. den Listener beim Entfernen der
+alten Elemente explizit abmelden, oder den Vergleich über `dataset.id` statt
+Objektidentität führen).
+
+**Geändert:** `js/glossary.js`, `js/i18n-dict.js`, `css/styles.css`,
+`pizza-rechner.html`, `pizza-rechner-mobile.html`. `?v=` auf `4.14.0` gezogen
+(Desktop + Mobil). `pizza-rechner-mobile-standalone.html` neu gebaut (`python
+build-mobile-standalone.py`). `Versionen/v4.14.0 - Glossar-Gruppierung/` enthält
+den vollständigen Schnappschuss.
+
 ## Hintergrund-Farbverlauf (v4.13.0)
 
 Vom Nutzer per `/define-feature` strukturiert (Name/Idee/Motivation/Scope/Abgrenzung

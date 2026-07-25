@@ -558,6 +558,50 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .glossary-body p{margin:0 0 8px;}
 .glossary-body p:last-child{margin-bottom:0;}
 
+/* Glossar-Gruppierung + Suche (v4.14.0, js/glossary.js) — sichtbare, auf-/
+   zuklappbare Kategorie-Zwischenüberschriften (eigenes, um die Artikel-<details>
+   VERSCHACHTELTES <details>, s. js/glossary.js-Kopfkommentar) entlang der
+   bereits bestehenden thematischen Zuordnung (PZ.GLOSSARY_CATEGORIES), plus
+   ein Suchfeld, das Titel + Artikeltext filtert. Kategorien ohne Treffer
+   werden per nativem [hidden]-Attribut ausgeblendet (kein zusätzliches CSS
+   dafür nötig). Anzeige-Reihenfolge von Kategorien UND Artikeln ist
+   alphabetisch (live sortiert in js/glossary.js, nicht hier). */
+.glossary-search{margin-bottom:16px;}
+.glossary-category:not(:first-child){border-top:1px solid var(--line);padding-top:2px;}
+.glossary-category summary.glossary-cat-heading{
+  cursor:pointer;list-style:none;padding:12px 22px 12px 0;position:relative;
+  margin:10px 0 2px;font-size:11.5px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:1.2px;-webkit-tap-highlight-color:transparent;
+  display:flex;align-items:center;gap:7px;
+}
+/* Nachtrag zur v4.14.0-Runde: dezentes, monochromes Icon je Kategorie (s.
+   CAT_ICONS in js/glossary.js) -- erbt die gedeckte Überschrift-Farbe über
+   `currentColor`, kein eigener Farbwert nötig. */
+.glossary-cat-icon{display:inline-flex;flex-shrink:0;color:inherit;}
+.glossary-cat-icon svg{display:block;}
+.glossary-category:first-child summary.glossary-cat-heading{margin-top:0;}
+.glossary-category summary.glossary-cat-heading::-webkit-details-marker{display:none;}
+.glossary-category summary.glossary-cat-heading::after{
+  /* Alt-Text-Syntax (leere Beschreibung) wie beim Artikel-Chevron oben --
+     verhindert, dass der generierte Pfeil in den Accessible Name der
+     Kategorie-Überschrift einfließt (identischer WCAG-4.1.2-Fix). */
+  content:'▾' / '';position:absolute;right:0;top:12px;color:var(--muted);
+  font-size:12px;transition:transform .15s;
+}
+.glossary-category[open] > summary.glossary-cat-heading::after{transform:rotate(180deg);}
+.glossary-category summary.glossary-cat-heading:hover{color:var(--tomato-text);}
+.glossary-category summary.glossary-cat-heading:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+/* accessibility-expert-Befund (v4.14.0, MINOR, Projekt-Konsistenz, kein WCAG-Verstoß):
+   .selectbox:focus (oben) zeigt den Ring bei JEDEM Fokus inkl. Maus-Klick; neuere
+   Formulare im Projekt (z. B. .stepper input) nutzen bereits :focus-visible (nur
+   Tastatur/AT). Bewusst NUR für dieses eine Feld per ID-Selektor überschrieben --
+   .selectbox selbst bleibt für alle anderen ~15 Verwendungen (Presets-Dropdown,
+   Mehl-Dropdown, Namensfelder usw.) unverändert, ein sitedweiter Wechsel wäre ein
+   eigener, größerer Zyklus. */
+#glossarySearch:focus{outline:none;}
+#glossarySearch:focus-visible{outline:2px solid var(--tomato);outline-offset:1px;}
+.glossary-no-results{font-size:13.5px;color:var(--muted);padding:6px 0 2px;}
+
 .card{
   background:var(--card);border-radius:var(--radius);padding:20px;
   border:1px solid var(--line);border-left:3px solid var(--tomato);

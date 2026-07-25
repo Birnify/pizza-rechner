@@ -813,12 +813,29 @@
   add('btn.now', 'Jetzt', 'Now');
 
   // -- Card: Pizza-Glossar (v3.37.0, js/glossary.js) -----------------------------------------
-  // Reihenfolge/Themenliste s. PZ.GLOSSARY_TOPICS in js/glossary.js. Jeder Artikel hat einen
+  // Reihenfolge/Themenliste s. PZ.GLOSSARY_CATEGORIES in js/glossary.js. Jeder Artikel hat einen
   // .title- und einen .body-Key; body darf HTML enthalten (hier: <p>), wird per innerHTML
   // gerendert.
   add('card.glossary.title', 'Pizza-Glossar', 'Pizza glossary');
   add('hint.glossary', 'Kurze Lexikon-Artikel zu Begriffen und Hintergrundwissen rund um Pizza: zum Nachlesen, unabhängig vom Rechner.',
     'Short reference articles on pizza-related terms and background knowledge: for reading, independent of the calculator.');
+
+  // Glossar-Gruppierung + Suche (v4.14.0): Kategorie-Zwischenüberschriften (eine je
+  // PZ.GLOSSARY_CATEGORIES-Eintrag) plus Suchfeld-Label/-Platzhalter/Leer-Text.
+  add('glossary.cat.basics.title', 'Mehl & Teig-Grundlagen', 'Flour & Dough Basics');
+  add('glossary.cat.techniques.title', 'Techniken', 'Techniques');
+  add('glossary.cat.preferments.title', 'Vorteig & Gärmethoden', 'Preferments & Fermentation Methods');
+  add('glossary.cat.tools.title', 'Werkzeuge & Ausrüstung', 'Tools & Equipment');
+  add('glossary.cat.ingredients.title', 'Zutaten', 'Ingredients');
+  add('glossary.cat.toppings.title', 'Pizzabeläge', 'Pizza Toppings');
+  add('glossary.cat.styles.title', 'Pizza-Stile', 'Pizza Styles');
+  add('label.glossarySearch', 'Glossar durchsuchen', 'Search glossary');
+  add('placeholder.glossarySearch', 'Suchen, z. B. Hydration, Poolish…', 'Search, e.g. hydration, poolish…');
+  add('glossary.noResults', 'Keine Treffer für diesen Suchbegriff.', 'No matches for this search term.');
+  // accessibility-expert-Befund (v4.14.0, BLOCKER, WCAG 4.1.3): Ansage-Texte für die
+  // neue Live-Region #glossarySearchLiveMsg (js/glossary.js applyFilter()).
+  add('glossary.searchResultsOne', '1 Artikel gefunden.', '1 article found.');
+  add('glossary.searchResultsMany', '{n} Artikel gefunden.', '{n} articles found.');
 
   add('glossary.wwert.title', 'W-Wert (Mehlstärke)', 'W-value (flour strength)');
   add('glossary.wwert.body',
