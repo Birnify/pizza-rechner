@@ -8,6 +8,18 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Schüttwasser-Anzeige entfernen (v4.16.0) [Kurzfassung, s. u. für die volle Fassung]
+
+Vom Nutzer per `/define-feature` strukturiert: die separate Wassertemperatur-/
+Schüttwasser-Anzeige im Ergebnis-Panel (unter „Weitere Optionen", inkl. bedingtem
+Glossar-Verweis-Link + Live-Region) ist ersatzlos entfernt — der Wert steht bereits
+in der Anleitung (seit v4.11.0). Die Berechnung selbst (`R.wT`/`R.ice`, DDT-/
+Energiebilanz-Formel in `js/calc.js` `calcCore()`) bleibt unverändert erhalten, nur
+die Anzeige im Ergebnis-Panel (Desktop + Mobil) sowie die zugehörigen DOM-Tests und
+verwaisten CSS-/i18n-Einträge entfielen. `accessibility-expert`-Review ohne Befund.
+`tests/test.html`: 922 → 893 (netto −29, entferntes DOM-Testcluster in Sektion 2
+„Wassertemperatur & Eismenge").
+
 ## Schüttwasser-Anzeige entfernen (v4.16.0)
 
 Vom Nutzer per `/define-feature` strukturiert (Name/Idee/Motivation/Scope/Abgrenzung

@@ -1402,26 +1402,6 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
    Grund rechnerisch geprüft: die effektive Mischfarbe liegt bei ~5,2:1 gegen den
    Bar-Hintergrund, über der 4,5:1-Schwelle für Fließtext (WCAG 1.4.3). */
 .quickbar .qb-jump small{font-weight:500;font-size:11px;margin-left:2px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:rgba(255,255,255,.85);}
-/* Kontrast-Fix ("Weiß auf --tomato-Text im Dunkelmodus", s. Sammelkommentar bei
-   .actions button.primary in css/styles.css): var(--tomato-dark) statt var(--tomato) --
-   die Bar selbst nutzt bereits --tomato-dark (s. .quickbar oben), der weiße 2px-Rahmen
-   + Schatten grenzen den Button weiterhin sichtbar von der Bar ab. :active jetzt per
-   Aufhellungsfilter (Basis ist bereits --tomato-dark, ein Wechsel zum selben Token hätte
-   keinen sichtbaren Press-Effekt mehr gehabt). */
-.quickbar .qb-save{
-  flex-shrink:0;min-height:44px;padding:0 22px;border:2px solid #fff;border-radius:999px;
-  background:var(--tomato-dark);color:#fff;font-size:14px;font-weight:700;
-  cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.3);
-}
-.quickbar .qb-save:active{filter:brightness(.85);}
-/* Eigener weißer Fokus-Ring (WCAG 2.4.7/1.4.11): der Button sitzt jetzt auf einer
-   ebenfalls terrakottafarbenen Bar -- ein evtl. browser-eigener (oft bläulicher)
-   Standard-Fokusring wäre gegen diese warme Farbkombination nicht zuverlässig
-   kontrastreich genug. Kein genereller Fokusring-Umbau (der ist bereits im
-   gebündelten Accessibility-Zyklus v3.42.0 für die unveränderten hellen/dunklen
-   Kontexte erledigt) -- nur dieses eine, durch die Farb-Korrektur neu betroffene
-   Element bekommt hier einen eigenen, garantiert sichtbaren Ring. */
-.quickbar .qb-save:focus-visible{outline:2px solid #fff;outline-offset:2px;}
 
 #result{scroll-margin-top:16px;}
 #partyResultSummary{scroll-margin-top:16px;}
@@ -2427,7 +2407,7 @@ header{position:relative;text-align:center;}
         <div class="nav-divider" role="separator"></div>
         <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.16.0</span>
+        <span class="nav-version" id="appVersion">v4.17.0</span>
 
       </div>
     </details>
@@ -2489,7 +2469,6 @@ header{position:relative;text-align:center;}
 
 <div class="quickbar" data-view="rechner">
   <a class="qb-jump" href="#result"><span class="visually-hidden" data-i18n="quickbar.jumpToResult">Zum Ergebnis springen: </span><span id="qbTotal">–</span><small>· <span id="qbBalls">–</span> <span data-i18n="quickbar.doughBalls">Teiglinge</span></small></a>
-  <button type="button" class="qb-save" id="qbSave" data-i18n="btn.save">Speichern</button>
 </div>
 
 <!-- Sticky Quick-Bar für die Pizza-Party-Ansicht (v3.35.0): kompakte Kennzahl
@@ -7263,8 +7242,10 @@ header{position:relative;text-align:center;}
   // --- Öffentliche API ---------------------------------------------------
 
   // Speichert unter dem aktuell aktiven Rezept (überschreibt); legt beim ersten
-  // Mal automatisch ein neues Rezept an. Bleibt die Basis für #saveBtn/#qbSave
-  // (Quick-Save ohne Dialog).
+  // Mal automatisch ein neues Rezept an. Bleibt die Basis für #saveBtn
+  // (Quick-Save ohne Dialog; der frühere Mobil-Quick-Bar-Button #qbSave rief
+  // denselben Handler auf und wurde in v4.17.0 ersatzlos entfernt, s.
+  // pizza-rechner-KONTEXT.md).
   function save() {
     const data = readStore();
     const id = data.activeId || makeId();
@@ -9313,7 +9294,7 @@ header{position:relative;text-align:center;}
 </script>
 <script>
   // Mobil-only UI-Glue (kein Eingriff in die PZ-Rechenmodule) -- Quick-Bar-Sync,
-  // Party-Quick-Bar, Quick-Save, Akkordeon-Auto-Scroll. Die frühere Sektion "4)
+  // Party-Quick-Bar, Akkordeon-Auto-Scroll. Die frühere Sektion "4)
   // Hamburger-Navigation" ist seit v3.54.0 ausgelagert, s. js/nav.js oben.
   (function(){
     // 1) Quick-Bar spiegelt live das Gesamtgewicht aus #totalW und die Teiglingszahl aus #ballsOut
@@ -9371,20 +9352,7 @@ header{position:relative;text-align:center;}
       });
     }
 
-    // 2) Speichern aus der Quick-Bar löst denselben Handler wie #saveBtn aus
-    //    (keine Logik dupliziert: nur der bestehende Klick wird weitergereicht)
-    var qs = document.getElementById('qbSave');
-    var real = document.getElementById('saveBtn');
-    if (qs && real) {
-      qs.addEventListener('click', function(){
-        real.click();
-        var orig = qs.textContent;
-        qs.textContent = (window.PZ && PZ.t) ? PZ.t('main.saved') : '✓ Gespeichert';
-        setTimeout(function(){ qs.textContent = orig; }, 1400);
-      });
-    }
-
-    // 3) Öffnet man eine Akkordeon-Card, deren Kopf gerade nicht oben steht,
+    // 2) Öffnet man eine Akkordeon-Card, deren Kopf gerade nicht oben steht,
     //    sanft zur Summary scrollen: sonst landet der Blick am Ende der vorigen Card.
     var cards = document.querySelectorAll('details.card');
     Array.prototype.forEach.call(cards, function(d){

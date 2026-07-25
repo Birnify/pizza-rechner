@@ -119,8 +119,10 @@
   // --- Öffentliche API ---------------------------------------------------
 
   // Speichert unter dem aktuell aktiven Rezept (überschreibt); legt beim ersten
-  // Mal automatisch ein neues Rezept an. Bleibt die Basis für #saveBtn/#qbSave
-  // (Quick-Save ohne Dialog).
+  // Mal automatisch ein neues Rezept an. Bleibt die Basis für #saveBtn
+  // (Quick-Save ohne Dialog; der frühere Mobil-Quick-Bar-Button #qbSave rief
+  // denselben Handler auf und wurde in v4.17.0 ersatzlos entfernt, s.
+  // pizza-rechner-KONTEXT.md).
   function save() {
     const data = readStore();
     const id = data.activeId || makeId();
