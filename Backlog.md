@@ -37,9 +37,9 @@ Abschnitt „Einfrier-Hinweis entfernt, Glossar-Artikel „Einfrieren" (v4.8.0)"
 unten (Inline-Verlinkung von Glossar-Begriffen im Anleitungstext) ist seit v4.9.0
 ebenfalls erledigt** (s. `pizza-rechner-KONTEXT.md`, Abschnitt „Inline-Verlinkung von
 Glossar-Begriffen im Anleitungstext (v4.9.0)"). **Punkt E unten (Bug: untere
-Navigationsleiste rutscht hoch) ist seit v4.9.1 umgesetzt, aber NICHT auf echtem
-iOS-Gerät bestätigt** (s. `pizza-rechner-KONTEXT.md`, Abschnitt „Bottom-Nav iOS
-Safe-Area Fix (v4.9.1)"). **Punkt H unten (Einklappbare Hinweisboxen mit gegenseitigem
+Navigationsleiste rutscht hoch) ist seit v4.9.1 umgesetzt und seit 2026-07-25 auch auf
+einem echten iOS-Gerät bestätigt** (s. `pizza-rechner-KONTEXT.md`, Abschnitt „Bottom-Nav
+iOS Safe-Area Fix (v4.9.1)"). **Punkt H unten (Einklappbare Hinweisboxen mit gegenseitigem
 Ausschluss) ist seit v4.10.0 ebenfalls erledigt** (s. `pizza-rechner-KONTEXT.md`,
 Abschnitt „Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (v4.10.0)"). **Punkt I
 unten (Zieltemperatur statt Eis in der Hauptanleitung) ist seit v4.11.0 ebenfalls erledigt**
@@ -179,7 +179,7 @@ Fingertest-Hinweis, Timer-Button, Kalte-Gare-Link), keine Änderung an anderen
 Einstellungen, kein genereller Glossar-Redesign, keine Migration alter Toggle-Werte
 (sofern nicht separat gewünscht).
 
-### ~~E. Bug: Untere Navigationsleiste rutscht hoch, Farblücke am Bildschirmrand~~ — umgesetzt in v4.9.1, NICHT bestätigt gelöst
+### ~~E. Bug: Untere Navigationsleiste rutscht hoch, Farblücke am Bildschirmrand~~ — erledigt in v4.9.1, auf echtem iOS-Gerät bestätigt
 
 Umgesetzt wie unten beschrieben: `viewport-fit=cover` war bereits vorhanden;
 `env(safe-area-inset-*)`-Fallbacks bei `.bottom-tabs`/`.quickbar` ergänzt;
@@ -189,12 +189,7 @@ Bildschirmrand bleibt); stattdessen ein Scroll-Nudge-Workaround in `js/nav.js`
 (`activateView()`) nach jedem Tab-Wechsel ergänzt. Details:
 `pizza-rechner-KONTEXT.md`, Abschnitt „Bottom-Nav iOS Safe-Area Fix (v4.9.1)".
 
-**WICHTIG:** Die Wirksamkeit konnte NICHT live auf einem echten iOS-Gerät verifiziert
-werden (kein iPhone/iPad in dieser Umgebung, Bug lässt sich in Headless-Chromium/Edge
-nicht reproduzieren). Dieser Punkt bleibt bis zu einer echten Geräteprüfung als
-"umgesetzt, nicht bestätigt gelöst" offen — bei erneutem Auftreten auf echtem iOS-Gerät
-bitte melden, dann weitere Diagnose (z. B. genaue iOS-Version, Standalone-PWA vs.
-Safari-Tab, Reproduktionsschritte).
+**Auf echtem iOS-Gerät bestätigt (2026-07-25).** Damit vollständig abgeschlossen.
 
 Ursprünglicher Auftragstext (zur Referenz):
 

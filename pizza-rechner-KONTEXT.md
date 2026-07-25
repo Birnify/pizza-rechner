@@ -745,8 +745,7 @@ Keine Code-Änderung durch den Audit nötig.
   Punkt G für die Live-Verifikation.
 - ~~Backlog.md Punkt E: Bug untere Navigationsleiste rutscht hoch (iOS Safari)~~ —
   **umgesetzt in v4.9.1** (env()-Fallbacks, sticky-vs-fixed-Evaluation, Scroll-Nudge-
-  Workaround in js/nav.js). **NICHT auf echtem iOS-Gerät verifiziert** — bleibt bis zu
-  einer echten Geräteprüfung als "umgesetzt, nicht bestätigt gelöst" markiert, s. Abschnitt
+  Workaround in js/nav.js), **seit 2026-07-25 auf echtem iOS-Gerät bestätigt**, s. Abschnitt
   „Bottom-Nav iOS Safe-Area Fix (v4.9.1)" oben und `Backlog.md` Punkt E.
 - ~~Design-System-Import Zyklus 5 von 5 (Einstellungen-Screen)~~ — **erledigt in v4.4.0**,
   letzter Schritt der mobilen Redesign-Reihe, damit **komplett abgeschlossen** (Zyklus 1 =
