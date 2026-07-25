@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-25 · Aktuelle Version: v4.9.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-25 · Aktuelle Version: v4.9.1 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -177,27 +177,22 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Inline-Verlinkung von Glossar-Begriffen im Anleitungstext (v4.9.0) = aktueller Stand
+## Bottom-Nav iOS Safe-Area Fix (v4.9.1) = aktueller Stand
 
-Backlog Punkt A. Statt eines separaten Zeilenlinks ("📖 Mehr zu … im Glossar") wird das
-erste wörtliche Vorkommen eines Glossar-Artikeltitels im generierten Schritt-Text (Titel
-oder Body) selbst zum klickbaren Inline-Link (`js/guide.js` `inlineGlossaryLink()`, neue
-CSS-Klasse `.inline-glossary-link`, gleicher `gotoGlossaryEntry()`-Sprungmechanismus wie
-bisher). Von 8 geprüften Begriffen (biga, poolish, autolyse, stretchFold, windowpane,
-kalteGare, einfrieren, ofenHeizarten) kommen 3 (Biga, Poolish, Autolyse) exakt im
-jeweiligen Schritt-Titel vor -> jetzt inline verlinkt, separater Zeilenlink dort entfernt.
-Die anderen 5 behalten den separaten Fallback-Link (Begriff kommt nicht wortgleich im
-generierten Text vor, z. B. „Fenstertest" statt „Windowpane-Test", „Kühlschrank"/
-„Kaltgare" statt „Kalte Gare"). Delegierter Klick-Handler generalisiert auf
-`[data-glossary-id]` (deckt beide Link-Varianten ab). `test-generator`- und
-`accessibility-expert`-Review durchgelaufen (keine Blocker; 2 optionale Minor-Hinweise
-ohne Handlungspflicht: fehlendes `aria-label`, Button strukturell in der `<h4>`-
-Überschrift statt eigener Zeile — beides bewusst so belassen) — 807 Prüfungen grün
-(vorher 746).
+Backlog Punkt E (Bugfix, Live-Reproduktion nicht möglich, s. `Backlog.md`). `css/mobile.css`:
+`env(safe-area-inset-*)`-Fallbacks (`, 0px`) bei `.bottom-tabs`/`.quickbar` ergänzt;
+`position:sticky` statt `fixed` geprüft und bewusst verworfen (kein `min-height:100dvh`-
+Flex-Shell-Layout in dieser App, Risiko dass die Leiste bei kurzem Inhalt nicht am
+Bildschirmrand bleibt). Stattdessen `js/nav.js`: `activateView()` löst nach jedem
+Tab-Wechsel einen minimalen Scroll-Nudge aus (erzwingt einen iOS-Reflow inkl.
+Safe-Area-Neuberechnung), nur wenn `.bottom-tabs` existiert (Mobil-only). `viewport-fit=
+cover` war bereits vorhanden. 807 Prüfungen unverändert grün (kein Logik-Eingriff).
+**WICHTIG: NICHT auf echtem iOS-Gerät verifiziert** — vor endgültigem "gelöst" auf
+echtem iPhone/iPad (Safari + PWA) gegenprüfen.
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Inline-Verlinkung von
-Glossar-Begriffen im Anleitungstext (v4.9.0)"; vorheriger Abschnitt „Einfrier-Hinweis
-entfernt, Glossar-Artikel 'Einfrieren' (v4.8.0)" ebenfalls dort.
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Bottom-Nav iOS
+Safe-Area Fix (v4.9.1)"; vorheriger Abschnitt „Inline-Verlinkung von Glossar-Begriffen im
+Anleitungstext (v4.9.0)" ebenfalls dort.
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -353,11 +348,11 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.9.0 -- seit
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.9.1 -- seit
                      v4.5.0 synchron mit Mobil, s. u.: Desktop lädt weiterhin ohne
                      css/fonts.css, das ist unabhängig von der Versionsnummer)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle,
-                     ?v=4.9.0)
+                     ?v=4.9.1)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
 index.html           Weiterleitung auf pizza-rechner.html
@@ -469,14 +464,14 @@ formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 **Cache-Busting:** CSS/JS werden mit `?v=X.Y.Z` geladen. **Bei jeder neuen Version mitziehen.**
 Zwischen v4.0.0 und v4.4.0 bewusst auseinandergelaufen (Design-Import-Zyklen waren
 mobile-only, Desktop-HTML wurde nicht angefasst) — **seit v4.5.0 wieder synchron**, beide
-HTML-Dateien stehen bei `?v=4.9.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
+HTML-Dateien stehen bei `?v=4.9.1`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
 erneut bewusst entscheiden, ob ein Auseinanderlaufen sinnvoll ist oder beide mitgezogen
 werden.
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien steht `<span class="nav-version"
 id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine JS-Logik dahinter. Seit v4.5.0
-wieder synchron (beide `v4.9.0`), analog zum Cache-Busting oben. **Bei jedem
+wieder synchron (beide `v4.9.1`), analog zum Cache-Busting oben. **Bei jedem
 Versionssprung von Hand mitziehen** (zusammen mit `?v=` und der Kontext-Datei — bei allen
 drei HTML-Dateien, also auch `pizza-rechner-mobile-standalone.html` nach dem Rebuild,
 gegenprüfen), sonst zeigt die Live-App die falsche Version an.
@@ -734,6 +729,11 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
+- ~~Backlog.md Punkt E: Bug untere Navigationsleiste rutscht hoch (iOS Safari)~~ —
+  **umgesetzt in v4.9.1** (env()-Fallbacks, sticky-vs-fixed-Evaluation, Scroll-Nudge-
+  Workaround in js/nav.js). **NICHT auf echtem iOS-Gerät verifiziert** — bleibt bis zu
+  einer echten Geräteprüfung als "umgesetzt, nicht bestätigt gelöst" markiert, s. Abschnitt
+  „Bottom-Nav iOS Safe-Area Fix (v4.9.1)" oben und `Backlog.md` Punkt E.
 - ~~Design-System-Import Zyklus 5 von 5 (Einstellungen-Screen)~~ — **erledigt in v4.4.0**,
   letzter Schritt der mobilen Redesign-Reihe, damit **komplett abgeschlossen** (Zyklus 1 =
   Tokens + Rechner, v4.0.0; Zyklus 2 = Anleitung/Zeitplan, v4.1.0; Zyklus 3 = Pizza Party,

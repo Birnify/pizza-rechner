@@ -103,11 +103,24 @@ input[type=number]{min-height:40px;font-size:16px;width:86px;}
    Kontrast-Fix weiter unten: var(--tomato-dark)), bekommt aber einen weißen
    Rahmen zur Abgrenzung von der jetzt ebenfalls terrakottafarbenen Bar (sonst
    würden beide Flächen ineinanderlaufen). */
+/* Backlog Punkt E (Bugfix, iOS-Safari-Viewport-Sprung): position:sticky wurde hier
+   geprüft und bewusst NICHT gewählt -- diese App hat kein `html,body{min-height:100dvh}`-
+   Flex-Shell-Layout, Views unterscheiden sich stark in ihrer Inhaltshöhe (z. B. Glossar/
+   Einstellungen bei komplett eingeklappten Akkordeon-Karten auf großen Displays potenziell
+   kürzer als der Viewport). Ein sticky-Element bleibt nur am unteren Rand kleben, solange
+   der umgebende Scroll-Container tatsächlich höher als der sichtbare Bereich ist -- bei
+   kurzem Inhalt würde die Leiste sonst direkt unter dem Inhalt "schweben" statt am
+   Bildschirmrand zu bleiben, ein dauerhaftes statt nur gelegentliches Problem. Deshalb
+   bleibt `position:fixed` + `env(safe-area-inset-bottom)` (bereits Apple-/WebKit-
+   dokumentierter Standardfix für genau dieses Problem) die Grundlage, ergänzt um den
+   Scroll-Nudge-Workaround in js/nav.js (activateView(), forciert nach jedem Tab-Wechsel
+   ein Reflow, falls iOS die Safe-Area-Werte zwischenzeitlich verworfen hat). Nicht auf
+   echtem iOS-Gerät verifiziert, s. pizza-rechner-KONTEXT.md. */
 .quickbar{
   position:fixed;left:0;right:0;z-index:20;
   /* Sitzt seit v3.67.0 direkt ÜBER der Bottom-Tab-Navigation statt ganz unten --
      58px = deren reservierte Inhaltshöhe (s. .bottom-tabs unten, muss synchron bleiben). */
-  bottom:calc(58px + env(safe-area-inset-bottom));
+  bottom:calc(58px + env(safe-area-inset-bottom, 0px));
   background:var(--tomato-dark)
     repeating-linear-gradient(-55deg,rgba(255,255,255,.06) 0 2px,transparent 2px 14px);
   color:#fff;
@@ -224,7 +237,7 @@ header{position:relative;text-align:center;}
 .bottom-tabs{
   position:fixed;left:0;right:0;bottom:0;z-index:30;
   display:flex;background:var(--card);border-top:1px solid var(--line);
-  padding:6px calc(4px + env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) calc(4px + env(safe-area-inset-left));
+  padding:6px calc(4px + env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) calc(4px + env(safe-area-inset-left, 0px));
   box-shadow:0 -4px 12px rgba(0,0,0,.08);
 }
 .bottom-tabs .nav-item{

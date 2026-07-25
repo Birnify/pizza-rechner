@@ -36,7 +36,10 @@ wertbasiert (v4.7.0)"). **Punkt D unten (Einfrier-Hinweis entfernen, Glossar-Art
 Abschnitt „Einfrier-Hinweis entfernt, Glossar-Artikel „Einfrieren" (v4.8.0)"). **Punkt A
 unten (Inline-Verlinkung von Glossar-Begriffen im Anleitungstext) ist seit v4.9.0
 ebenfalls erledigt** (s. `pizza-rechner-KONTEXT.md`, Abschnitt „Inline-Verlinkung von
-Glossar-Begriffen im Anleitungstext (v4.9.0)").
+Glossar-Begriffen im Anleitungstext (v4.9.0)"). **Punkt E unten (Bug: untere
+Navigationsleiste rutscht hoch) ist seit v4.9.1 umgesetzt, aber NICHT auf echtem
+iOS-Gerät bestätigt** (s. `pizza-rechner-KONTEXT.md`, Abschnitt „Bottom-Nav iOS
+Safe-Area Fix (v4.9.1)").
 
 ## Weitere Ideen (aus Backlog.txt, noch nicht in die Orchestrator-Warteschlange eingereiht)
 
@@ -169,7 +172,24 @@ Fingertest-Hinweis, Timer-Button, Kalte-Gare-Link), keine Änderung an anderen
 Einstellungen, kein genereller Glossar-Redesign, keine Migration alter Toggle-Werte
 (sofern nicht separat gewünscht).
 
-### E. Bug: Untere Navigationsleiste rutscht hoch, Farblücke am Bildschirmrand
+### ~~E. Bug: Untere Navigationsleiste rutscht hoch, Farblücke am Bildschirmrand~~ — umgesetzt in v4.9.1, NICHT bestätigt gelöst
+
+Umgesetzt wie unten beschrieben: `viewport-fit=cover` war bereits vorhanden;
+`env(safe-area-inset-*)`-Fallbacks bei `.bottom-tabs`/`.quickbar` ergänzt;
+`position:sticky` statt `fixed` geprüft und begründet verworfen (kein
+`min-height:100dvh`-Flex-Shell-Layout, Risiko dass die Leiste bei kurzem Inhalt nicht am
+Bildschirmrand bleibt); stattdessen ein Scroll-Nudge-Workaround in `js/nav.js`
+(`activateView()`) nach jedem Tab-Wechsel ergänzt. Details:
+`pizza-rechner-KONTEXT.md`, Abschnitt „Bottom-Nav iOS Safe-Area Fix (v4.9.1)".
+
+**WICHTIG:** Die Wirksamkeit konnte NICHT live auf einem echten iOS-Gerät verifiziert
+werden (kein iPhone/iPad in dieser Umgebung, Bug lässt sich in Headless-Chromium/Edge
+nicht reproduzieren). Dieser Punkt bleibt bis zu einer echten Geräteprüfung als
+"umgesetzt, nicht bestätigt gelöst" offen — bei erneutem Auftreten auf echtem iOS-Gerät
+bitte melden, dann weitere Diagnose (z. B. genaue iOS-Version, Standalone-PWA vs.
+Safari-Tab, Reproduktionsschritte).
+
+Ursprünglicher Auftragstext (zur Referenz):
 
 Beobachtung: Gelegentlich verschiebt sich die untere Menüleiste (Rechner/Pizza
 Party/Glossar/Einstellungen) nach oben, sodass darunter ein unbedeckter Farbstreifen bis

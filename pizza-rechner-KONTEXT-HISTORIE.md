@@ -8,6 +8,41 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Bottom-Nav iOS Safe-Area Fix (v4.9.1)
+
+Backlog Punkt E (`Backlog.md`). Beobachtung: die untere Bottom-Tab-Navigation (und die
+darüber sitzende Sticky-Quickbar) rutscht auf iOS Safari/PWA gelegentlich nach oben,
+darunter wird ein unbedeckter Farbstreifen bis zum echten Gerätrand sichtbar. Vermutete
+Ursache (nicht live auf echtem iOS-Gerät verifizierbar): iOS setzt die
+`env(safe-area-inset-bottom)`-Werte nach einer Adressleisten-Animation zwischenzeitlich
+zurück, `position:fixed`-Elemente werden nicht immer korrekt neu positioniert.
+
+- `viewport-fit=cover` war in `pizza-rechner-mobile.html`/-standalone bereits vorhanden
+  (nichts zu ändern).
+- `css/mobile.css`: `env(safe-area-inset-*)` bei `.bottom-tabs`/`.quickbar` bekommt jetzt
+  einen expliziten `, 0px`-Fallback (robuster gegen Browser ohne Unterstützung, wirkt sich
+  auf iOS/Android-Verhalten nicht aus).
+- `position:sticky` statt `fixed` geprüft und bewusst verworfen: die App hat kein
+  `min-height:100dvh`-Flex-Shell-Layout, Inhaltshöhe variiert stark je Ansicht/
+  Akkordeon-Zustand — sticky hätte riskiert, dass die Leiste bei kurzem Inhalt dauerhaft
+  (nicht nur gelegentlich) nicht am Bildschirmrand klebt.
+- Stattdessen `js/nav.js` (`activateView()`): neuer `nudgeIOSViewport()`-Helfer, ein
+  minimaler 1px-Scroll-Nudge (hin/zurück per `requestAnimationFrame`) nach jedem
+  Tab-Wechsel, nur wenn `.bottom-tabs` existiert (Mobil-only, No-op auf Desktop) — soll
+  iOS zu einem Reflow inkl. Neuberechnung der Safe-Area-Insets zwingen.
+- Kein Test in `tests/test.html` möglich (reines Browser-Rendering-Verhalten, `nav.js`
+  wird dort ohnehin nicht geladen) — 807 Prüfungen bleiben unverändert grün.
+
+**WICHTIG: Wirksamkeit NICHT live auf echtem iOS-Gerät verifiziert** (Live-Reproduktion
+war in dieser Umgebung nicht möglich, s. Auftragstext in `Backlog.md`). Empfehlung: nach
+diesem Fix auf einem echten iPhone/iPad (Safari + ggf. installierte PWA) gegenprüfen,
+bevor Backlog Punkt E endgültig als gelöst gilt.
+
+**Geändert:** `css/mobile.css`, `js/nav.js`, `pizza-rechner.html`, `pizza-rechner-mobile.html`
+(nur `?v=`/Versionsnummer, kein Markup-/Logik-Eingriff auf Desktop). `?v=` auf `4.9.1`
+gezogen. `pizza-rechner-mobile-standalone.html` neu gebaut.
+`Versionen/v4.9.1 - Bottom-Nav iOS Safe-Area Fix/` enthält den vollständigen Schnappschuss.
+
 ## Inline-Verlinkung von Glossar-Begriffen im Anleitungstext (v4.9.0)
 
 Backlog Punkt A (`Backlog.md`). Auftrag: statt eines separaten Zeilenlinks unterhalb der

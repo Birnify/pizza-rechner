@@ -117,6 +117,29 @@
       else b.removeAttribute('aria-current');
     });
     window.scrollTo(0, 0);
+    nudgeIOSViewport();
+  }
+
+  // Backlog Punkt E (Bugfix): iOS Safari verschiebt gelegentlich die untere
+  // Bottom-Tab-Leiste/Quick-Bar nach oben und lässt darunter einen unbedeckten
+  // Farbstreifen bis zum echten Gerätrand stehen -- vermutlich weil die
+  // `env(safe-area-inset-bottom)`-Werte zwischenzeitlich (z. B. nach einer
+  // Adressleisten-Animation) verworfen und nicht sauber neu berechnet werden.
+  // `position:sticky` statt `fixed` wurde geprüft und bewusst verworfen (s.
+  // Kommentar bei .quickbar/.bottom-tabs in css/mobile.css) -- stattdessen hier das
+  // etablierte Workaround-Muster: ein minimaler, für den Nutzer unsichtbarer
+  // Scroll-Nudge (1px hin und zurück) kurz nach jedem Tab-Wechsel, der iOS zu einem
+  // Reflow inkl. Neuberechnung der Safe-Area-Insets zwingt. Nur auf Mobil relevant
+  // (Bottom-Tab-Leiste existiert nur auf pizza-rechner-mobile.html) -- auf Desktop
+  // ohne `.bottom-tabs` ein No-op. NICHT auf echtem iOS-Gerät verifizierbar (s.
+  // pizza-rechner-KONTEXT.md), rein auf Basis der dokumentierten Ursachen-Analyse.
+  function nudgeIOSViewport() {
+    if (!document.querySelector('.bottom-tabs')) return;
+    if (!window.requestAnimationFrame) return;
+    requestAnimationFrame(function () {
+      window.scrollBy(0, 1);
+      requestAnimationFrame(function () { window.scrollBy(0, -1); });
+    });
   }
 
   // Nach einem Bereichswechsel bekommen Screenreader-Nutzer sonst keinerlei
