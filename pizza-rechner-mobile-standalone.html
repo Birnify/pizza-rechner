@@ -2280,6 +2280,19 @@ header{position:relative;text-align:center;}
 
 <div class="wrap view" data-view="einstellungen" hidden>
   <div class="controls-col" style="display:grid;gap:20px;">
+    <!-- Einführung-Karte (v4.18.0): eigenständige, prominente Karte ganz oben auf der
+         Einstellungen-Seite (Desktop + Mobil, s. pizza-rechner.html) -- vorher stand der
+         Button ganz unten in der "Funktionen"-Card zwischen den Hefemenge-/Verschwendung-
+         Feldern und der Versionsnummer und war dort kaum zu finden. Reine Verlagerung des
+         Einstiegspunkts, keine inhaltliche Änderung an js/onboarding.js/der Tour selbst --
+         #navOnboardingItem bleibt dieselbe ID, js/onboarding.js verdrahtet per
+         getElementById, Ort ist ihm egal. -->
+    <div class="card">
+      <h2 data-i18n-attr="aria-label:card.onboarding.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r=".6" fill="currentColor" stroke="none"/></svg></span><span data-i18n="card.onboarding.title">Einführung</span></h2>
+      <div class="hint" style="margin-bottom:14px;" data-i18n="hint.onboardingCard">Kurzer Rundgang durch die wichtigsten Funktionen der App: jederzeit hier erneut aufrufbar.</div>
+      <button type="button" class="nav-item" id="navOnboardingItem" style="width:100%;" data-i18n="nav.onboarding">Einführung</button>
+    </div>
+
     <!-- Design-System-Import Zyklus 5 (v4.4.0, EinstellungenScreen.jsx-Referenz): die
          bisher eine große "Einstellungen"-Karte teilt sich jetzt in zwei Cards ("Anzeige" /
          "Funktionen"), analog zur Referenz -- das Mockup zeigt zusätzlich eine "Standard-
@@ -2397,17 +2410,15 @@ header{position:relative;text-align:center;}
           <div class="hint" id="wasteAdjustInfo" data-i18n="flag.wasteAdjust.info">Erhöht das errechnete Gesamtgewicht um einen Puffer für Kneteverluste (Schüssel, Hände, Maschine): damit am Ende trotzdem die gewünschte Anzahl Teiglinge im Zielgewicht rauskommt.</div>
         </div>
 
-        <!-- "Einführung" + Desktop-Link + Versionsnummer (v3.68.0): zogen mit der
-             Bottom-Tab-Navigation hierher um, da es dafür kein Burgermenü mehr gibt
-             (s. pizza-rechner-KONTEXT.md, Abschnitt "Bottom-Tab-Navigation (Mobil)").
-             Unverändert dieselben Elemente/IDs wie zuvor im Burgermenü -- js/onboarding.js
-             verdrahtet #navOnboardingItem weiterhin per ID, keine JS-Änderung nötig. Bleiben
-             am Ende der "Funktionen"-Card (kein reiner Einstellungspunkt, aber die bisherige
-             Gesamt-Reihenfolge/Gruppierung bleibt erhalten, s. Kommentar oben). -->
+        <!-- Desktop-Link + Versionsnummer (v3.68.0): zogen mit der Bottom-Tab-Navigation
+             hierher um, da es dafür kein Burgermenü mehr gibt (s. pizza-rechner-KONTEXT.md,
+             Abschnitt "Bottom-Tab-Navigation (Mobil)"). Der frühere dritte Eintrag
+             ("Einführung") ist seit v4.18.0 in eine eigene, prominente Karte ganz oben auf
+             dieser Seite umgezogen (s. Kommentar bei der neuen Einführung-Karte oben) --
+             hier bewusst NICHT mehr dupliziert. -->
         <div class="nav-divider" role="separator"></div>
-        <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.17.0</span>
+        <span class="nav-version" id="appVersion">v4.18.0</span>
 
       </div>
     </details>
@@ -3717,6 +3728,13 @@ header{position:relative;text-align:center;}
   add('glossary.sfincione.body',
     '<p>Sfincione ist die traditionelle sizilianische Pizza: ein dicker, schwammig-luftiger Hefeteig, meist rechteckig in einem Blech gebacken, mit einer würzigen Sauce aus Tomaten, Zwiebeln, Anchovis und Oregano, oft ohne (oder nur mit wenig) geschmolzenem Käse: stattdessen häufig mit Semmelbröseln bestreut.</p><p>Der Name leitet sich vom lateinischen „spongia" (Schwamm) ab und verweist auf die charakteristisch lockere, poröse Krume: traditionell eher Streetfood-Snack als Hauptgericht.</p>',
     '<p>Sfincione is the traditional Sicilian pizza: a thick, spongy, airy yeasted dough, usually baked rectangular in a pan, topped with a savory sauce of tomatoes, onions, anchovies and oregano, often with little or no melted cheese: breadcrumbs are sprinkled on top instead.</p><p>The name derives from the Latin "spongia" (sponge), referring to its characteristically loose, porous crumb: traditionally eaten more as a street-food snack than a main course.</p>');
+
+  // -- Card: Einführung (v4.18.0, eigene prominente Karte ganz oben auf der
+  // Einstellungen-Seite, Desktop + Mobil, ersetzt den früheren Menüpunkt im Burgermenü
+  // bzw. am Ende der "Funktionen"-Karte) ----------------------------------------------------
+  add('card.onboarding.title', 'Einführung', 'Introduction');
+  add('hint.onboardingCard', 'Kurzer Rundgang durch die wichtigsten Funktionen der App: jederzeit hier erneut aufrufbar.',
+    'A short tour of the app\'s key features: available here again anytime.');
 
   // -- Card: Einstellungen ------------------------------------------------------------------
   add('card.settings.title', 'Einstellungen', 'Settings');

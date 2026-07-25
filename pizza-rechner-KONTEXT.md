@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-26 · Aktuelle Version: v4.17.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-26 · Aktuelle Version: v4.18.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -180,24 +180,25 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Quick-Bar-Speichern-Button entfernen (v4.17.0) = aktueller Stand
+## Einführung prominent platzieren (v4.18.0) = aktueller Stand
 
-Vom Nutzer per `/define-feature` strukturiert: der redundante Speichern-Button
-(`#qbSave`) in der mobilen Sticky-Quick-Bar ist ersatzlos entfernt — er löste
-exakt denselben Handler aus wie der bereits vorhandene `#saveBtn` in der
-Rezept-Card. Die Quick-Bar behält ihren `.qb-jump`-Link („Zum Ergebnis springen"
-mit Gewicht/Teiglinge-Anzeige) unverändert. Reine Mobil-Layout-Änderung
-(`pizza-rechner-mobile.html`, `css/mobile.css`) — Desktop hat keine Quick-Bar,
-`#saveBtn`/`js/storage.js` bleiben unangetastet (nur ein stale gewordener
-Kommentar in `js/storage.js` auf die neue Lage angepasst). `accessibility-expert`-
-Review ohne neue Befunde; ein vorbestehender MAJOR-Kontrast-Nebenbefund
-(`.qb-jump small` im Dark-Mode ~4,3:1, unter AA 4,5:1) neu ins Backlog
-aufgenommen. `tests/test.html`: unverändert **893** Prüfungen grün.
+Vom Nutzer per `/define-feature` strukturiert: „Einführung" bekommt eine eigene,
+prominente Karte ganz oben auf der Einstellungen-Seite (Desktop + Mobil), statt
+kaum auffindbar am Ende einer anderen Karte zu stecken. Abweichung von der
+Auftragsbeschreibung (Recherche ergab: nur Mobil hatte den Eintrag tatsächlich
+in der „Funktionen"-Karte; Desktop hatte ihn stattdessen im Burgermenü) —
+auf Desktop wurde die neue Karte ebenfalls ergänzt und der alte
+Burgermenü-Eintrag entfernt, statt doppelt vorzuhalten. `#navOnboardingItem`
+bleibt dieselbe ID (`js/onboarding.js` unverändert). Reine Markup-/i18n-Änderung
+(`pizza-rechner.html`, `pizza-rechner-mobile.html`, `js/i18n-dict.js`) — keine
+inhaltliche Änderung am Onboarding-Modal selbst. `accessibility-expert`-Review
+ohne Befunde (Kontrastwerte selbst nachgerechnet, exakt reproduziert).
+`tests/test.html`: unverändert **893** Prüfungen grün.
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Schüttwasser-
-Anzeige entfernen (v4.16.0)" (Kurzfassung ganz oben dort dokumentiert das
-Vorgänger-„= aktueller Stand"; vorheriger Abschnitt „Rezepte-Reiter fest
-aktivieren (v4.15.0)" ebenfalls dort).
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Quick-Bar-
+Speichern-Button entfernen (v4.17.0)" (Kurzfassung dort dokumentiert das
+Vorgänger-„= aktueller Stand"; vorheriger Abschnitt „Schüttwasser-Anzeige
+entfernen (v4.16.0)" ebenfalls dort).
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -353,11 +354,11 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.17.0 -- seit
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.18.0 -- seit
                      v4.5.0 synchron mit Mobil, s. u.: Desktop lädt weiterhin ohne
                      css/fonts.css, das ist unabhängig von der Versionsnummer)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle,
-                     ?v=4.17.0)
+                     ?v=4.18.0)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
 index.html           Weiterleitung auf pizza-rechner.html
@@ -451,7 +452,10 @@ js/nav.js            Gemeinsames Navigations-Modul (v3.54.0, vorher zwei/drei du
                      Bottom-Tab-Leiste + eingebettete Sekundär-Navigation (.calc-subnav)
 js/onboarding.js     Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay mit
                      eigenem Fokus-Trap, stellt 4 Kernfunktionen vor, automatisch beim Erststart
-                     + jederzeit über Burgermenü-Punkt "Einführung" aufrufbar, Persistenz via
+                     + jederzeit über die eigene "Einführung"-Karte ganz oben auf der
+                     Einstellungen-Seite aufrufbar (Desktop + Mobil, seit v4.18.0 -- vorher
+                     Burgermenü-Punkt auf Desktop bzw. Ende der "Funktionen"-Karte auf Mobil,
+                     s. "= aktueller Stand" oben), Persistenz via
                      localStorage-Key pizzaOnboardingDontShow. Läuft als letztes Script (nach nav.js)
 tests/test.html      893 Prüfungen in 31 Kategorien (Doppelklick, kein Server) — lädt 17 der 27
                      js/*-Module direkt (dom/state/i18n-dict/i18n/settings/theme/units/widgets/
@@ -475,16 +479,17 @@ formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 **Cache-Busting:** CSS/JS werden mit `?v=X.Y.Z` geladen. **Bei jeder neuen Version mitziehen.**
 Zwischen v4.0.0 und v4.4.0 bewusst auseinandergelaufen (Design-Import-Zyklen waren
 mobile-only, Desktop-HTML wurde nicht angefasst) — **seit v4.5.0 wieder synchron**, beide
-HTML-Dateien stehen bei `?v=4.17.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
+HTML-Dateien stehen bei `?v=4.18.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
 erneut bewusst entscheiden, ob ein Auseinanderlaufen sinnvoll ist oder beide mitgezogen
-werden (v4.17.0 selbst war rein mobil-inhaltlich, `?v=` wurde bewusst trotzdem auf beiden
-Seiten mitgezogen, um die Synchronität zu erhalten — s. Abschnitt „Quick-Bar-Speichern-
-Button entfernen (v4.17.0)" oben).
+werden (v4.17.0 war rein mobil-inhaltlich, `?v=` wurde bewusst trotzdem auf beiden Seiten
+mitgezogen, um die Synchronität zu erhalten — s. Abschnitt „Quick-Bar-Speichern-Button
+entfernen (v4.17.0)" in der HISTORIE-Datei; v4.18.0 selbst betraf inhaltlich wieder beide
+Seiten, s. „= aktueller Stand" oben).
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien steht `<span class="nav-version"
 id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine JS-Logik dahinter. Seit v4.5.0
-wieder synchron (beide `v4.17.0`), analog zum Cache-Busting oben. **Bei jedem
+wieder synchron (beide `v4.18.0`), analog zum Cache-Busting oben. **Bei jedem
 Versionssprung von Hand mitziehen** (zusammen mit `?v=` und der Kontext-Datei — bei allen
 drei HTML-Dateien, also auch `pizza-rechner-mobile-standalone.html` nach dem Rebuild,
 gegenprüfen), sonst zeigt die Live-App die falsche Version an.
@@ -743,6 +748,11 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
+- ~~Einführung prominent platzieren~~ — **erledigt in v4.18.0** (kein Backlog-Punkt im
+  engeren Sinne, direkter Nutzerauftrag per `/define-feature`; s. Abschnitt „Einführung
+  prominent platzieren (v4.18.0)" oben). Eigene Karte ganz oben auf der Einstellungen-
+  Seite (Desktop + Mobil), alter Eintrag (Burgermenü Desktop / Ende der „Funktionen"-
+  Karte Mobil) entfernt.
 - **Nebenbefund aus dem v4.17.0-`accessibility-expert`-Review (MAJOR, Dark-Mode, mobile
   Quick-Bar, vorbestehend, keine Regression):** `.quickbar .qb-jump small`
   (`rgba(255,255,255,.85)` auf `var(--tomato-dark)`) liegt im Dark-Mode bei ~4,3:1, knapp

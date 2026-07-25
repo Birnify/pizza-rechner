@@ -1041,6 +1041,13 @@
     '<p>Sfincione ist die traditionelle sizilianische Pizza: ein dicker, schwammig-luftiger Hefeteig, meist rechteckig in einem Blech gebacken, mit einer würzigen Sauce aus Tomaten, Zwiebeln, Anchovis und Oregano, oft ohne (oder nur mit wenig) geschmolzenem Käse: stattdessen häufig mit Semmelbröseln bestreut.</p><p>Der Name leitet sich vom lateinischen „spongia" (Schwamm) ab und verweist auf die charakteristisch lockere, poröse Krume: traditionell eher Streetfood-Snack als Hauptgericht.</p>',
     '<p>Sfincione is the traditional Sicilian pizza: a thick, spongy, airy yeasted dough, usually baked rectangular in a pan, topped with a savory sauce of tomatoes, onions, anchovies and oregano, often with little or no melted cheese: breadcrumbs are sprinkled on top instead.</p><p>The name derives from the Latin "spongia" (sponge), referring to its characteristically loose, porous crumb: traditionally eaten more as a street-food snack than a main course.</p>');
 
+  // -- Card: Einführung (v4.18.0, eigene prominente Karte ganz oben auf der
+  // Einstellungen-Seite, Desktop + Mobil, ersetzt den früheren Menüpunkt im Burgermenü
+  // bzw. am Ende der "Funktionen"-Karte) ----------------------------------------------------
+  add('card.onboarding.title', 'Einführung', 'Introduction');
+  add('hint.onboardingCard', 'Kurzer Rundgang durch die wichtigsten Funktionen der App: jederzeit hier erneut aufrufbar.',
+    'A short tour of the app\'s key features: available here again anytime.');
+
   // -- Card: Einstellungen ------------------------------------------------------------------
   add('card.settings.title', 'Einstellungen', 'Settings');
   add('hint.settings.desktop', 'Schalte einzelne Zusatzfunktionen ein oder aus: deine Wahl wird direkt im Browser gespeichert. Klick auf „i“ zeigt eine kurze Erklärung.',

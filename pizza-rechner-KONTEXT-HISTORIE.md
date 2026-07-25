@@ -8,6 +8,25 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Quick-Bar-Speichern-Button entfernen (v4.17.0)
+
+Vom Nutzer per `/define-feature` strukturiert: der redundante Speichern-Button
+(`#qbSave`) in der mobilen Sticky-Quick-Bar ist ersatzlos entfernt — er löste
+exakt denselben Handler aus wie der bereits vorhandene `#saveBtn` in der
+Rezept-Card. Die Quick-Bar behält ihren `.qb-jump`-Link („Zum Ergebnis springen"
+mit Gewicht/Teiglinge-Anzeige) unverändert. Reine Mobil-Layout-Änderung
+(`pizza-rechner-mobile.html`, `css/mobile.css`) — Desktop hat keine Quick-Bar,
+`#saveBtn`/`js/storage.js` bleiben unangetastet (nur ein stale gewordener
+Kommentar in `js/storage.js` auf die neue Lage angepasst). `accessibility-expert`-
+Review ohne neue Befunde; ein vorbestehender MAJOR-Kontrast-Nebenbefund
+(`.qb-jump small` im Dark-Mode ~4,3:1, unter AA 4,5:1) neu ins Backlog
+aufgenommen. `tests/test.html`: unverändert **893** Prüfungen grün.
+
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Schüttwasser-
+Anzeige entfernen (v4.16.0)" (Kurzfassung ganz oben dort dokumentiert das
+Vorgänger-„= aktueller Stand"; vorheriger Abschnitt „Rezepte-Reiter fest
+aktivieren (v4.15.0)" ebenfalls dort).
+
 ## Schüttwasser-Anzeige entfernen (v4.16.0) [Kurzfassung, s. u. für die volle Fassung]
 
 Vom Nutzer per `/define-feature` strukturiert: die separate Wassertemperatur-/
