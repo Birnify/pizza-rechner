@@ -1024,6 +1024,19 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .step-glossary-link:hover{opacity:.85;}
 .step-glossary-link:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;border-radius:1px;}
+/* Inline-Verlinkung von Glossar-Begriffen im Anleitungstext (Backlog Punkt A, v4.9.0,
+   js/guide.js inlineGlossaryLink()): ersetzt bei passendem Wortlaut das erste Vorkommen
+   des Glossar-Artikeltitels direkt im Schritt-Titel/-Text -- statt des separaten
+   Zeilenlinks (.step-glossary-link oben). Echter <button>, sieht aber wie ein
+   unterstrichenes Wort im Fließtext aus, analog zum bestehenden
+   .schedbar-goto-zeitplan-Muster. Bewusst IMMER unterstrichen (nicht erst bei :hover) --
+   Farbe allein würde WCAG 1.4.1 (Nicht nur durch Farbe unterscheidbar) nicht erfüllen. */
+.inline-glossary-link{
+  background:none;border:none;padding:0;margin:0;color:var(--tomato-text);font:inherit;
+  font-weight:700;text-decoration:underline;cursor:pointer;
+}
+.inline-glossary-link:hover{opacity:.85;}
+.inline-glossary-link:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;border-radius:1px;}
 /* Gärzeit-Timer/Wecker je Schritt (js/timer.js) */
 .timerwrap{
   margin-top:9px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;

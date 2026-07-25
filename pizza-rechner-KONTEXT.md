@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-24 · Aktuelle Version: v4.8.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-25 · Aktuelle Version: v4.9.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -177,21 +177,27 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Einfrier-Hinweis entfernt, Glossar-Artikel "Einfrieren" (v4.8.0) = aktueller Stand
+## Inline-Verlinkung von Glossar-Begriffen im Anleitungstext (v4.9.0) = aktueller Stand
 
-Backlog Punkt D. Die Einfrier-Hinweisbox (`.tip`-Textblock im Anleitungsschritt
-„Teiglinge formen") und der Einstellungspunkt „Einfrier-Hinweis" (`js/settings.js`-Flag
-`freezeHint` + Menüzeile, Desktop + Mobil) sind ersatzlos entfernt. Der Inhalt lebt jetzt
-als eigenständiger Glossar-Artikel „Einfrieren" weiter (`js/glossary.js`
-`PZ.GLOSSARY_TOPICS`, i18n-Keys `glossary.einfrieren.*`), vom Anleitungsschritt aus per
-Glossar-Verweis verlinkt (`glossaryId: 'einfrieren'`, analog zum bestehenden „Mehr zu
-Kalte Gare im Glossar"-Muster). `accessibility-expert`-Review (keine Blocker; ein
-optionaler Fokusring-Konsistenz-Fix ergänzt, `.glossary-item summary:focus-visible`) —
-746 Prüfungen grün (vorher 748, netto −2 durch Test-Umstrukturierung ohne Abdeckungsverlust).
+Backlog Punkt A. Statt eines separaten Zeilenlinks ("📖 Mehr zu … im Glossar") wird das
+erste wörtliche Vorkommen eines Glossar-Artikeltitels im generierten Schritt-Text (Titel
+oder Body) selbst zum klickbaren Inline-Link (`js/guide.js` `inlineGlossaryLink()`, neue
+CSS-Klasse `.inline-glossary-link`, gleicher `gotoGlossaryEntry()`-Sprungmechanismus wie
+bisher). Von 8 geprüften Begriffen (biga, poolish, autolyse, stretchFold, windowpane,
+kalteGare, einfrieren, ofenHeizarten) kommen 3 (Biga, Poolish, Autolyse) exakt im
+jeweiligen Schritt-Titel vor -> jetzt inline verlinkt, separater Zeilenlink dort entfernt.
+Die anderen 5 behalten den separaten Fallback-Link (Begriff kommt nicht wortgleich im
+generierten Text vor, z. B. „Fenstertest" statt „Windowpane-Test", „Kühlschrank"/
+„Kaltgare" statt „Kalte Gare"). Delegierter Klick-Handler generalisiert auf
+`[data-glossary-id]` (deckt beide Link-Varianten ab). `test-generator`- und
+`accessibility-expert`-Review durchgelaufen (keine Blocker; 2 optionale Minor-Hinweise
+ohne Handlungspflicht: fehlendes `aria-label`, Button strukturell in der `<h4>`-
+Überschrift statt eigener Zeile — beides bewusst so belassen) — 807 Prüfungen grün
+(vorher 746).
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Einfrier-Hinweis
-entfernt, Glossar-Artikel 'Einfrieren' (v4.8.0)"; vorheriger Abschnitt „'New York
-Style'-Einstellung entfernt, Zuckerfeld wertbasiert (v4.7.0)" ebenfalls dort.
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Inline-Verlinkung von
+Glossar-Begriffen im Anleitungstext (v4.9.0)"; vorheriger Abschnitt „Einfrier-Hinweis
+entfernt, Glossar-Artikel 'Einfrieren' (v4.8.0)" ebenfalls dort.
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -347,11 +353,11 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.8.0 -- seit
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.9.0 -- seit
                      v4.5.0 synchron mit Mobil, s. u.: Desktop lädt weiterhin ohne
                      css/fonts.css, das ist unabhängig von der Versionsnummer)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle,
-                     ?v=4.8.0)
+                     ?v=4.9.0)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
 index.html           Weiterleitung auf pizza-rechner.html
@@ -441,7 +447,7 @@ js/onboarding.js     Willkommens-Screen / Einführung (v3.63.0): eigenständiges
                      eigenem Fokus-Trap, stellt 4 Kernfunktionen vor, automatisch beim Erststart
                      + jederzeit über Burgermenü-Punkt "Einführung" aufrufbar, Persistenz via
                      localStorage-Key pizzaOnboardingDontShow. Läuft als letztes Script (nach nav.js)
-tests/test.html      746 Prüfungen in 28 Kategorien (Doppelklick, kein Server) — lädt 17 der 27
+tests/test.html      807 Prüfungen in 29 Kategorien (Doppelklick, kein Server) — lädt 17 der 27
                      js/*-Module direkt (dom/state/i18n-dict/i18n/settings/theme/units/widgets/
                      flour/schedule/guide/calc/print/pdf/storage/share/party); ui.js, timer.js,
                      presets.js, newrecipe.js, glossary.js, main.js, nav.js, simplemode.js,
@@ -463,14 +469,14 @@ formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 **Cache-Busting:** CSS/JS werden mit `?v=X.Y.Z` geladen. **Bei jeder neuen Version mitziehen.**
 Zwischen v4.0.0 und v4.4.0 bewusst auseinandergelaufen (Design-Import-Zyklen waren
 mobile-only, Desktop-HTML wurde nicht angefasst) — **seit v4.5.0 wieder synchron**, beide
-HTML-Dateien stehen bei `?v=4.8.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
+HTML-Dateien stehen bei `?v=4.9.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
 erneut bewusst entscheiden, ob ein Auseinanderlaufen sinnvoll ist oder beide mitgezogen
 werden.
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien steht `<span class="nav-version"
 id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine JS-Logik dahinter. Seit v4.5.0
-wieder synchron (beide `v4.8.0`), analog zum Cache-Busting oben. **Bei jedem
+wieder synchron (beide `v4.9.0`), analog zum Cache-Busting oben. **Bei jedem
 Versionssprung von Hand mitziehen** (zusammen mit `?v=` und der Kontext-Datei — bei allen
 drei HTML-Dateien, also auch `pizza-rechner-mobile-standalone.html` nach dem Rebuild,
 gegenprüfen), sonst zeigt die Live-App die falsche Version an.
@@ -523,14 +529,15 @@ gegenprüfen), sonst zeigt die Live-App die falsche Version an.
 - **Versionen-Workflow (Pflicht bei jeder Änderung):** kompletten lauffähigen Stand nach
   `Versionen/vX.Y.Z - [Beschreibung]/` kopieren (html, index, css/, js/, README; tests/ optional).
   SemVer: Patch=Fix, Minor=Feature, Major=Umbau. `?v=` in der HTML mitziehen.
-- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 746 Prüfungen in
-  28 Kategorien** (s. Dateistruktur oben): Bäckerprozente, DDT/Eis, Vorteig-Aufteilung, Trockenhefe,
+- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 807 Prüfungen in
+  29 Kategorien** (s. Dateistruktur oben): Bäckerprozente, DDT/Eis, Vorteig-Aufteilung, Trockenhefe,
   Schedule-Schwellen, Mehl-Warnung, Backzeit-Skalierung, Olivenöl (Masseerhaltung), Anleitungs-
   Hinweise, Randfälle/Edge Cases, Kombinationen, Zeitplan-Rückwärtsrechnung, Einkaufsliste,
   Speichern & Laden, Teilen-Link, Feature-Flags/Einstellungen, Zucker/New-York-Style,
   Rezepte-Backup, PDF-Export, Pizza-Party-Planer, Sprachversion DE/EN, Dunkelmodus,
   Hefemengen-/Verschwendungs-Anpassung, Einheitensystem Metrisch/Imperial,
-  Glossar-Verweise in der Anleitung, Foto der fertigen Pizza. Nach
+  Glossar-Verweise in der Anleitung, Foto der fertigen Pizza, Inline-Verlinkung von
+  Glossar-Begriffen im Anleitungstext. Nach
   Logik-Änderungen laufen lassen. `js/timer.js` (Notification/setInterval/Web-Audio-API) und
   `js/newrecipe.js` (reines DOM-Wiring) werden bewusst **nicht** in `tests/test.html` geladen —
   beide stattdessen manuell bzw. per isoliertem Headless-Aufbau verifiziert. Die Wachstums-
@@ -769,6 +776,11 @@ Keine Code-Änderung durch den Audit nötig.
   als neuer Glossar-Artikel „Einfrieren" weiter (per Glossar-Verweis vom Anleitungsschritt
   aus verlinkt). S. Abschnitt „Einfrier-Hinweis entfernt, Glossar-Artikel „Einfrieren"
   (v4.8.0)" oben.
+- ~~Backlog.md Punkt A: Inline-Verlinkung von Glossar-Begriffen im Anleitungstext~~ —
+  **erledigt in v4.9.0**: erstes wörtliches Vorkommen eines Glossar-Artikeltitels im
+  Schritt-Text wird jetzt zum Inline-Link (Biga/Poolish/Autolyse), separater Zeilenlink
+  bleibt Fallback für die restlichen 5 Begriffe ohne wörtliches Vorkommen. S. Abschnitt
+  „Inline-Verlinkung von Glossar-Begriffen im Anleitungstext (v4.9.0)" oben.
 - ~~Backlog.md Punkt 2 „Rahmen-Fix Komplexitätsschalter"~~ — **erledigt als Nebeneffekt
   von v4.0.0** (Design-System-Import Zyklus 1): `.seg` nutzt jetzt `--surface-2` +
   sichtbaren `1px solid var(--line)`-Rahmen statt der bisherigen, identisch zum

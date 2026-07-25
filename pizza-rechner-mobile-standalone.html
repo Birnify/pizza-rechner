@@ -1105,6 +1105,19 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .step-glossary-link:hover{opacity:.85;}
 .step-glossary-link:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;border-radius:1px;}
+/* Inline-Verlinkung von Glossar-Begriffen im Anleitungstext (Backlog Punkt A, v4.9.0,
+   js/guide.js inlineGlossaryLink()): ersetzt bei passendem Wortlaut das erste Vorkommen
+   des Glossar-Artikeltitels direkt im Schritt-Titel/-Text -- statt des separaten
+   Zeilenlinks (.step-glossary-link oben). Echter <button>, sieht aber wie ein
+   unterstrichenes Wort im Fließtext aus, analog zum bestehenden
+   .schedbar-goto-zeitplan-Muster. Bewusst IMMER unterstrichen (nicht erst bei :hover) --
+   Farbe allein würde WCAG 1.4.1 (Nicht nur durch Farbe unterscheidbar) nicht erfüllen. */
+.inline-glossary-link{
+  background:none;border:none;padding:0;margin:0;color:var(--tomato-text);font:inherit;
+  font-weight:700;text-decoration:underline;cursor:pointer;
+}
+.inline-glossary-link:hover{opacity:.85;}
+.inline-glossary-link:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;border-radius:1px;}
 /* Gärzeit-Timer/Wecker je Schritt (js/timer.js) */
 .timerwrap{
   margin-top:9px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
@@ -2330,7 +2343,7 @@ header{position:relative;text-align:center;}
         <div class="nav-divider" role="separator"></div>
         <button type="button" class="nav-item" id="navOnboardingItem" data-i18n="nav.onboarding">Einführung</button>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.8.0</span>
+        <span class="nav-version" id="appVersion">v4.9.0</span>
 
       </div>
     </details>
@@ -5259,6 +5272,42 @@ header{position:relative;text-align:center;}
     return `<div class="glossary-ref"><span aria-hidden="true">📖</span><button type="button" class="step-glossary-link" data-glossary-id="${id}">${label}</button></div>`;
   }
 
+  // Inline-Verlinkung von Glossar-Begriffen im Anleitungstext (v4.9.0, Backlog Punkt A):
+  // ersetzt -- statt eines zusätzlichen separaten Zeilenlinks (glossaryLinkHtml() oben) --
+  // das ERSTE wörtliche Vorkommen des exakten Glossar-Artikeltitels innerhalb eines
+  // übergebenen Textausschnitts (Schritt-Titel ODER -Textkörper) durch einen klickbaren
+  // Begriff, der denselben gotoGlossaryEntry()-Sprung auslöst wie der bisherige Zeilenlink
+  // (identisches `data-glossary-id`-Attribut, vom selben delegierten Klick-Listener weiter
+  // unten ausgelesen). Reine Textersetzung per `indexOf` -- bewusst KEIN Regex-/HTML-Parser:
+  // die Kandidatentexte hier (Schritt-Titel, kurze Body-Sätze) sind bekannt und enthalten
+  // an den fraglichen Stellen kein Markup, das den Treffer verschlucken könnte. Die
+  // Tag-Balance-Prüfung (`openTags !== closeTags`) ist eine defensive Zusatzsicherung,
+  // falls sich das doch mal ändert -- verhindert, dass mitten in ein `<b>`-Tag/-Attribut
+  // hineingeschrieben wird.
+  //
+  // Nutzt `_usedGlossaryIds` (s. o.) als GEMEINSAMEN Dedup-Speicher mit
+  // glossaryLinkHtml(): wird ein Begriff hier bereits inline verlinkt, markiert diese
+  // Funktion die ID sofort als "verbraucht" -- der Aufrufer lässt dann `glossaryId` beim
+  // zugehörigen st(...)-Aufruf weg (kein zusätzlicher Zeilenlink mehr). Kommt der exakte
+  // Titel nicht wörtlich vor, bleibt der Text unverändert und die ID unverbraucht -- der
+  // Aufrufer reicht `glossaryId` unverändert weiter, sodass glossaryLinkHtml() wie bisher
+  // den separaten Zeilenlink als Fallback rendert (Vorgabe: keine erzwungene Verlinkung
+  // ohne wörtlichen Vorkommen).
+  function inlineGlossaryLink(text, id) {
+    if (!id || _usedGlossaryIds.has(id)) return text;
+    const term = t('glossary.' + id + '.title');
+    if (!term) return text;
+    const idx = text.indexOf(term);
+    if (idx === -1) return text;
+    const before = text.slice(0, idx);
+    const openTags = (before.match(/</g) || []).length;
+    const closeTags = (before.match(/>/g) || []).length;
+    if (openTags !== closeTags) return text; // Treffer mitten in einem Tag -> nicht ersetzen
+    _usedGlossaryIds.add(id);
+    const linked = `<button type="button" class="inline-glossary-link" data-glossary-id="${id}">${term}</button>`;
+    return before + linked + text.slice(idx + term.length);
+  }
+
   function buildGuide() {
     const state = PZ.state;
     const R = PZ.R;
@@ -5325,20 +5374,20 @@ header{position:relative;text-align:center;}
           : state.prefMature <= 32
             ? t('guide.biga.temp.cooler')
             : t('guide.biga.temp.cold');
-        st(t('guide.step.bigaRest.title'), `${state.prefMature} ${t('guide.dur.h')}`,
+        st(inlineGlossaryLink(t('guide.step.bigaRest.title'), 'biga'), `${state.prefMature} ${t('guide.dur.h')}`,
           t('guide.step.bigaRest.body', { bigaTempTxt: bigaTempTxt }),
           tip(t('guide.step.bigaRest.tip')) + timerBox('biga-reifen', matureMin), matureMin,
-          { glossaryId: 'biga' });
+          { glossaryId: _usedGlossaryIds.has('biga') ? undefined : 'biga' });
       } else {
         st(t('guide.step.poolishMix.title'), t('guide.step.poolishMix.chip'),
           t('guide.step.poolishMix.body'), '', 10);
         const poolishTempTxt = state.prefMature <= 14
           ? t('guide.poolish.temp.warm')
           : t('guide.poolish.temp.cold');
-        st(t('guide.step.poolishRest.title'), `${state.prefMature} ${t('guide.dur.h')}`,
+        st(inlineGlossaryLink(t('guide.step.poolishRest.title'), 'poolish'), `${state.prefMature} ${t('guide.dur.h')}`,
           t('guide.step.poolishRest.body', { poolishTempTxt: poolishTempTxt }),
           tip(t('guide.step.poolishRest.tip')) + timerBox('poolish-reifen', matureMin), matureMin,
-          { glossaryId: 'poolish' });
+          { glossaryId: _usedGlossaryIds.has('poolish') ? undefined : 'poolish' });
       }
       sec(t('guide.sec.main'));
       const hasMW = R.mWater >= 1, hasMF = R.mFlour >= 1;
@@ -5389,10 +5438,10 @@ header{position:relative;text-align:center;}
         const reserveWaterTip = (state.yeastType !== 'dry' || tinyYeast)
           ? tip(t('guide.reserveWaterTip'))
           : '';
-        st(t('guide.step.autolyse.title'), t('guide.step.autolyse.chip'),
+        st(inlineGlossaryLink(t('guide.step.autolyse.title'), 'autolyse'), t('guide.step.autolyse.chip'),
           t('guide.step.autolyse.body'),
           warn(t('guide.step.autolyse.warn')) + reserveWaterTip + timerBox('autolyse', 30), 30,
-          { glossaryId: 'autolyse' });
+          { glossaryId: _usedGlossaryIds.has('autolyse') ? undefined : 'autolyse' });
         st(t('guide.step.addYeast.title'), t('guide.chip.2min'),
           tinyYeast
             ? t('guide.yeast.tinyBody', { yeast: g(R.yeast), yeastTypeName: state.yeastType === 'dry' ? t('guide.yeastType.dry') : t('guide.yeastType.fresh') })
@@ -5412,14 +5461,20 @@ header{position:relative;text-align:center;}
 
     // ===== GEMEINSAME SCHRITTE (Kneten → Backen) =====
     if (hi) {
-      st(t('guide.step.stretchFold.title'), t('guide.step.stretchFold.chip'),
-        t('guide.step.stretchFold.body', { hyd: state.hyd }),
+      let stretchFoldTitle = inlineGlossaryLink(t('guide.step.stretchFold.title'), 'stretchFold');
+      let stretchFoldBody = t('guide.step.stretchFold.body', { hyd: state.hyd });
+      if (!_usedGlossaryIds.has('stretchFold')) stretchFoldBody = inlineGlossaryLink(stretchFoldBody, 'stretchFold');
+      st(stretchFoldTitle, t('guide.step.stretchFold.chip'),
+        stretchFoldBody,
         tip(t('guide.step.stretchFold.tip')) + timerBox('stretch-fold', 120), 120,
-        { glossaryId: 'stretchFold' });
+        { glossaryId: _usedGlossaryIds.has('stretchFold') ? undefined : 'stretchFold' });
     } else {
-      st(t('guide.step.knead.title'), state.knead === '6' ? t('guide.step.knead.chipMachine') : t('guide.step.knead.chipHand'),
-        `${state.knead === '6' ? t('guide.knead.machineBody') : t('guide.knead.handBody')}${t('guide.step.knead.bodySuffix')}`, '', state.knead === '6' ? 10 : 13,
-        { glossaryId: 'windowpane' });
+      let kneadTitle = inlineGlossaryLink(t('guide.step.knead.title'), 'windowpane');
+      let kneadBody = `${state.knead === '6' ? t('guide.knead.machineBody') : t('guide.knead.handBody')}${t('guide.step.knead.bodySuffix')}`;
+      if (!_usedGlossaryIds.has('windowpane')) kneadBody = inlineGlossaryLink(kneadBody, 'windowpane');
+      st(kneadTitle, state.knead === '6' ? t('guide.step.knead.chipMachine') : t('guide.step.knead.chipHand'),
+        kneadBody, '', state.knead === '6' ? 10 : 13,
+        { glossaryId: _usedGlossaryIds.has('windowpane') ? undefined : 'windowpane' });
     }
     st(t('guide.step.checkTemp.title'), t('guide.step.checkTemp.chip'),
       t('guide.step.checkTemp.body', { ddt: gt(state.ddt) }), '', 2);
@@ -5433,37 +5488,52 @@ header{position:relative;text-align:center;}
     const bulkColdGlossary = f.cold && !ballsCold ? 'kalteGare' : undefined;
     const finalProofColdGlossary = ballsCold ? 'kalteGare' : undefined;
     sec(t('guide.sec.rise'));
-    st(t('guide.step.bulkRise.title'), f.cold && !ballsCold ? t('guide.step.bulkRise.chipColdBalls') : t('guide.step.bulkRise.chipDefault'),
-      t('guide.step.bulkRise.body', { bulk: f.bulk }), timerBox('stockgare', f.bulkMin), f.bulkMin,
-      { glossaryId: bulkColdGlossary });
+    let bulkRiseTitle = inlineGlossaryLink(t('guide.step.bulkRise.title'), bulkColdGlossary);
+    let bulkRiseBody = t('guide.step.bulkRise.body', { bulk: f.bulk });
+    if (bulkColdGlossary && !_usedGlossaryIds.has(bulkColdGlossary)) bulkRiseBody = inlineGlossaryLink(bulkRiseBody, bulkColdGlossary);
+    st(bulkRiseTitle, f.cold && !ballsCold ? t('guide.step.bulkRise.chipColdBalls') : t('guide.step.bulkRise.chipDefault'),
+      bulkRiseBody, timerBox('stockgare', f.bulkMin), f.bulkMin,
+      { glossaryId: (bulkColdGlossary && !_usedGlossaryIds.has(bulkColdGlossary)) ? bulkColdGlossary : undefined });
     // Einfrier-Hinweis (bis v4.7.0 hier als optionaler .tip-Textblock, Feature-Flag
     // "freezeHint"): seit v4.8.0 (Backlog Punkt D) ersatzlos entfernt -- Inhalt lebt jetzt
     // als eigenständiger Glossar-Artikel "Einfrieren" weiter (js/glossary.js), von hier aus
     // per Glossar-Verweis verlinkt, analog zum "Mehr zu Kalte Gare im Glossar"-Muster
     // weiter unten am Stückgare-Schritt.
-    st(t('guide.step.formBalls.title'), `${R.N} × ${g(R.W)}`,
-      t('guide.step.formBalls.body', { N: R.N, W: g(R.W), boxTxt: ballsCold ? t('guide.box.cold') : t('guide.box.normal') }),
+    let formBallsTitle = inlineGlossaryLink(t('guide.step.formBalls.title'), 'einfrieren');
+    let formBallsBody = t('guide.step.formBalls.body', { N: R.N, W: g(R.W), boxTxt: ballsCold ? t('guide.box.cold') : t('guide.box.normal') });
+    if (!_usedGlossaryIds.has('einfrieren')) formBallsBody = inlineGlossaryLink(formBallsBody, 'einfrieren');
+    st(formBallsTitle, `${R.N} × ${g(R.W)}`,
+      formBallsBody,
       tip(t('guide.step.formBalls.tip')), 10,
-      { glossaryId: 'einfrieren' });
-    st(t('guide.step.finalProof.title'), ballsCold ? t('guide.step.finalProof.chipCold') : t('guide.step.finalProof.chipDefault'),
-      t('guide.step.finalProof.body', { proof: f.proof }),
+      { glossaryId: _usedGlossaryIds.has('einfrieren') ? undefined : 'einfrieren' });
+    let finalProofTitle = inlineGlossaryLink(t('guide.step.finalProof.title'), finalProofColdGlossary);
+    let finalProofBody = t('guide.step.finalProof.body', { proof: f.proof });
+    if (finalProofColdGlossary && !_usedGlossaryIds.has(finalProofColdGlossary)) finalProofBody = inlineGlossaryLink(finalProofBody, finalProofColdGlossary);
+    st(finalProofTitle, ballsCold ? t('guide.step.finalProof.chipCold') : t('guide.step.finalProof.chipDefault'),
+      finalProofBody,
       (f.cold ? tip(t('guide.step.finalProof.tip')) : '') + timerBox('stueckgare', f.proofMin), f.proofMin,
-      { glossaryId: finalProofColdGlossary });
+      { glossaryId: (finalProofColdGlossary && !_usedGlossaryIds.has(finalProofColdGlossary)) ? finalProofColdGlossary : undefined });
 
     sec(t('guide.sec.bake'));
-    st(t('guide.step.preheat.title'), t('guide.step.preheat.chip'),
-      t('guide.step.preheat.body'),
+    let preheatTitle = inlineGlossaryLink(t('guide.step.preheat.title'), 'ofenHeizarten');
+    let preheatBody = t('guide.step.preheat.body');
+    if (!_usedGlossaryIds.has('ofenHeizarten')) preheatBody = inlineGlossaryLink(preheatBody, 'ofenHeizarten');
+    st(preheatTitle, t('guide.step.preheat.chip'),
+      preheatBody,
       tip(t('guide.step.preheat.tip')) + timerBox('ofen-vorheizen', 40), 0,
-      { back: 50, glossaryId: 'ofenHeizarten' });
+      { back: 50, glossaryId: _usedGlossaryIds.has('ofenHeizarten') ? undefined : 'ofenHeizarten' });
     st(t('guide.step.shape.title'), t('guide.step.shape.chip'),
       t('guide.step.shape.body'),
       warn(t('guide.step.shape.warn')), 5);
     const bakeTxt = state.ballw <= 260 ? t('guide.bake.small') : t('guide.bake.large');
     const bakeDur = Math.max(10, R.N * (state.ballw <= 260 ? 5 : 7));
-    st(t('guide.step.bakeTopping.title'), '',
-      t('guide.step.bakeTopping.body', { bakeTxt: bakeTxt }),
+    let bakeToppingTitle = inlineGlossaryLink(t('guide.step.bakeTopping.title'), 'ofenHeizarten');
+    let bakeToppingBody = t('guide.step.bakeTopping.body', { bakeTxt: bakeTxt });
+    if (!_usedGlossaryIds.has('ofenHeizarten')) bakeToppingBody = inlineGlossaryLink(bakeToppingBody, 'ofenHeizarten');
+    st(bakeToppingTitle, '',
+      bakeToppingBody,
       tip(t('guide.step.bakeTopping.tip')), bakeDur,
-      { glossaryId: 'ofenHeizarten' });
+      { glossaryId: _usedGlossaryIds.has('ofenHeizarten') ? undefined : 'ofenHeizarten' });
 
     // Foto der fertigen Pizza (v3.69.0): eigener, abschließender Schritt nach dem letzten
     // Backschritt, keine sichtbare Bildunterschrift zusätzlich zum Alt-Text (Accessibility).
@@ -5551,7 +5621,13 @@ header{position:relative;text-align:center;}
       // verloren gingen. PZ.gotoGlossaryEntry() wird von js/glossary.js bereitgestellt --
       // falls aus irgendeinem Grund nicht vorhanden (z. B. isolierte Testumgebung),
       // passiert einfach nichts (kein Crash).
-      const glossaryBtn = e.target.closest('.step-glossary-link');
+      // Seit v4.9.0 (Backlog Punkt A, Inline-Verlinkung): generisches `[data-glossary-id]`-
+      // Attribut-Selektor statt der festen `.step-glossary-link`-Klasse -- deckt sowohl den
+      // separaten Zeilenlink (`.step-glossary-link`, Fallback) als auch den neuen Inline-
+      // Link im Fließtext (`.inline-glossary-link`, s. inlineGlossaryLink() oben) mit einem
+      // einzigen Listener ab, statt die Selektorliste bei jeder neuen Link-Variante zu
+      // erweitern.
+      const glossaryBtn = e.target.closest('[data-glossary-id]');
       if (glossaryBtn && PZ.gotoGlossaryEntry) {
         PZ.gotoGlossaryEntry(glossaryBtn.getAttribute('data-glossary-id'));
       }

@@ -206,6 +206,25 @@
     renderBox(name, checks.map(([label, ok]) => ({ label, ok, actual: ok ? 'ja' : 'nein', expected: 'ja', tol: null })));
   }
 
+  // --- Sprachtest: wie testCase, aber mit Sprach-Umschaltung ---
+  function testCaseWithLang(name, lang, overrides, buildChecks) {
+    const savedLang = PZ.getLang();  // aktuelle Sprache merken
+    try {
+      PZ.setLang(lang);  // Sprache wechseln
+      const state = Object.assign({}, BASE, overrides);
+      Object.assign(PZ.state, state);
+      if (state.flour) setFlour(state.flour);
+      PZ.calc();
+      const checks = buildChecks(PZ.R);
+      renderBox(name, checks.map(([label, actual, expected, tol]) => {
+        const ok = (tol == null) ? actual === expected : Math.abs(actual - expected) <= tol;
+        return { label, actual, expected, tol, ok };
+      }));
+    } finally {
+      PZ.setLang(savedLang);  // Sprache zurückstellen
+    }
+  }
+
   function renderBox(name, checks) {
     const box = document.createElement('div');
     box.className = 'case';
@@ -3380,6 +3399,258 @@
     // Aufräumen: Stub-Select zurück auf leer, damit keine spätere (unwahrscheinliche)
     // Testreihenfolge-Änderung durch einen stehengebliebenen Wert beeinflusst wird.
     setActivePreset('');
+  })();
+
+  // ─────────────────────────────────────────────────────────────
+  heading('29 · Inline-Verlinkung von Glossar-Begriffen im Anleitungstext (js/guide.js, v4.9.0, Backlog Punkt A)');
+
+  // Backlog Punkt A: statt eines separaten Zeilenlinks wird -- wenn der exakte
+  // Glossar-Artikeltitel wörtlich im generierten Schritt-Text vorkommt -- das erste
+  // Vorkommen selbst zum klickbaren Link (js/guide.js inlineGlossaryLink()). Kommt der
+  // Titel nicht wörtlich vor, bleibt der bisherige separate Zeilenlink (.step-glossary-link,
+  // Sektion 27 oben) als Fallback erhalten. Wie in Sektion 27: js/glossary.js (PZ.
+  // gotoGlossaryEntry) wird hier bewusst NICHT geladen, geprüft wird nur das gerenderte
+  // Markup -- der eigentliche Sprung wurde per Headless-Edge-Verhaltenstest verifiziert.
+  (function () {
+    function html() { return document.getElementById('guideSteps').innerHTML; }
+    function inlineLinkText(h, id) {
+      const m = h.match(new RegExp('<button type="button" class="inline-glossary-link" data-glossary-id="' + id + '">([^<]*)</button>'));
+      return m ? m[1] : null;
+    }
+    function hasInlineLink(h, id) { return h.indexOf('class="inline-glossary-link" data-glossary-id="' + id + '"') !== -1; }
+    function hasFallbackLink(h, id) { return h.indexOf('class="step-glossary-link" data-glossary-id="' + id + '"') !== -1; }
+    function countOccurrences(h, needle) {
+      let n = 0, i = 0;
+      while ((i = h.indexOf(needle, i)) !== -1) { n++; i += needle.length; }
+      return n;
+    }
+
+    testCase('Biga: exakter Titel kommt im Schritt-Titel vor -> Inline-Link statt Zeilenlink', { method: 'biga' }, () => {
+      const h = html();
+      return [
+        ['Inline-Link mit data-glossary-id="biga" vorhanden', hasInlineLink(h, 'biga'), true],
+        ['Linktext entspricht exakt dem Glossar-Titel "Biga"', inlineLinkText(h, 'biga'), PZ.t('glossary.biga.title')],
+        ['separater Zeilenlink (.step-glossary-link) für "biga" entfernt', hasFallbackLink(h, 'biga'), false],
+      ];
+    });
+
+    testCase('Poolish: exakter Titel kommt im Schritt-Titel vor -> Inline-Link statt Zeilenlink', { method: 'poolish' }, () => {
+      const h = html();
+      return [
+        ['Inline-Link mit data-glossary-id="poolish" vorhanden', hasInlineLink(h, 'poolish'), true],
+        ['Linktext entspricht exakt dem Glossar-Titel "Poolish"', inlineLinkText(h, 'poolish'), PZ.t('glossary.poolish.title')],
+        ['separater Zeilenlink (.step-glossary-link) für "poolish" entfernt', hasFallbackLink(h, 'poolish'), false],
+      ];
+    });
+
+    testCase('Autolyse: exakter Titel kommt im Schritt-Titel vor -> Inline-Link, zweites (spätes) Vorkommen im Warnhinweis bleibt unverlinkter Text', { method: 'direct', yeast: 0.3 }, () => {
+      const h = html();
+      return [
+        ['Inline-Link mit data-glossary-id="autolyse" vorhanden', hasInlineLink(h, 'autolyse'), true],
+        ['Linktext entspricht exakt dem Glossar-Titel "Autolyse"', inlineLinkText(h, 'autolyse'), PZ.t('glossary.autolyse.title')],
+        ['separater Zeilenlink (.step-glossary-link) für "autolyse" entfernt', hasFallbackLink(h, 'autolyse'), false],
+        ['Wort "Autolyse" kommt insgesamt >= 2× vor (Titel verlinkt + Warnhinweis unverlinkt)', countOccurrences(h, 'Autolyse') >= 2, true],
+        ['genau EIN data-glossary-id="autolyse" (kein Doppel-Link trotz zweitem Textvorkommen)', countOccurrences(h, 'data-glossary-id="autolyse"'), 1, 0],
+      ];
+    });
+
+    testCase('Stretch & Fold: exakter Glossar-Titel ("Stretch & Fold (Dehnen und Falten)") kommt nicht wörtlich vor -> separater Zeilenlink bleibt Fallback', { hyd: 75 }, () => {
+      const h = html();
+      return [
+        ['kein Inline-Link für "stretchFold"', hasInlineLink(h, 'stretchFold'), false],
+        ['separater Zeilenlink (.step-glossary-link) für "stretchFold" weiterhin vorhanden', hasFallbackLink(h, 'stretchFold'), true],
+      ];
+    });
+
+    testCase('Windowpane-Test: exakter Glossar-Titel kommt nicht wörtlich vor (Anleitungstext sagt "Fenstertest") -> Fallback bleibt', { hyd: 62 }, () => {
+      const h = html();
+      return [
+        ['kein Inline-Link für "windowpane"', hasInlineLink(h, 'windowpane'), false],
+        ['separater Zeilenlink (.step-glossary-link) für "windowpane" weiterhin vorhanden', hasFallbackLink(h, 'windowpane'), true],
+      ];
+    });
+
+    testCase('Kalte Gare: exakter Glossar-Titel ("Kalte Gare") kommt nicht wörtlich vor (Anleitungstext sagt "Kühlschrank"/"Kaltgare") -> Fallback bleibt', { coldStage: 'balls' }, () => {
+      const h = html();
+      return [
+        ['kein Inline-Link für "kalteGare"', hasInlineLink(h, 'kalteGare'), false],
+        ['separater Zeilenlink (.step-glossary-link) für "kalteGare" weiterhin vorhanden', hasFallbackLink(h, 'kalteGare'), true],
+      ];
+    });
+
+    testCase('Einfrieren: exakter Glossar-Titel kommt im Schritt "Teiglinge formen" nicht wörtlich vor -> Fallback bleibt', { method: 'direct', yeast: 0.3 }, () => {
+      const h = html();
+      return [
+        ['kein Inline-Link für "einfrieren"', hasInlineLink(h, 'einfrieren'), false],
+        ['separater Zeilenlink (.step-glossary-link) für "einfrieren" weiterhin vorhanden', hasFallbackLink(h, 'einfrieren'), true],
+      ];
+    });
+
+    testCase('Ofen-Heizarten: exakter Glossar-Titel ("Ofen-Heizarten für Pizza") kommt nicht wörtlich vor -> Fallback bleibt', {}, () => {
+      const h = html();
+      return [
+        ['kein Inline-Link für "ofenHeizarten"', hasInlineLink(h, 'ofenHeizarten'), false],
+        ['separater Zeilenlink (.step-glossary-link) für "ofenHeizarten" weiterhin vorhanden', hasFallbackLink(h, 'ofenHeizarten'), true],
+      ];
+    });
+
+    testCase('Kombination: Biga + hohe Hydration (Stretch & Fold) -> beide Glossar-Begriffe unabhängig korrekt behandelt (einer inline, einer Fallback)', { method: 'biga', pref: 70, bhyd: 45, hyd: 75 }, () => {
+      const h = html();
+      return [
+        ['Biga weiterhin inline verlinkt', hasInlineLink(h, 'biga'), true],
+        ['Stretch & Fold weiterhin als Fallback-Zeilenlink', hasFallbackLink(h, 'stretchFold'), true],
+        ['kein Inline-Link für stretchFold', hasInlineLink(h, 'stretchFold'), false],
+      ];
+    });
+
+    testCase('Generischer Klick-Handler: [data-glossary-id] deckt sowohl Inline- als auch Fallback-Links ab (kein doppeltes data-glossary-id-Attribut je Link)', { method: 'biga' }, () => {
+      const h = html();
+      const totalAttrs = countOccurrences(h, 'data-glossary-id="');
+      const distinctIds = (h.match(/data-glossary-id="([a-zA-Z]+)"/g) || []);
+      return [
+        ['jedes data-glossary-id-Vorkommen ist Teil genau eines <button>-Tags (kein verwaistes Attribut)', h.match(/<button[^>]*data-glossary-id="[a-zA-Z]+"[^>]*>/g).length, totalAttrs, 0],
+      ];
+    });
+
+    // ===== Randfälle & Sprachumschaltung (v4.10.0, Backlog Punkt A erweitert) =====
+    testCaseWithLang('EN: Biga mit lowercase "biga" -> kein Inline-Link, fallback bleibt (Case-Sensitivity prüfung)', 'en', { method: 'biga' }, () => {
+      const h = html();
+      return [
+        ['kein Inline-Link für "biga" bei EN (Schritt-Titel "Let the biga rise" mit klein-b)', hasInlineLink(h, 'biga'), false],
+        ['separater Zeilenlink (.step-glossary-link) für "biga" bleibt bei EN als Fallback', hasFallbackLink(h, 'biga'), true],
+        ['DE-Glossar-Titel "Biga" (groß) kommt in DE vor, aber "biga" (klein) in EN title -> indexOf-Match unterschiedlich', inlineLinkText(h, 'biga'), null],
+      ];
+    });
+
+    testCaseWithLang('EN: Poolish mit lowercase "poolish" -> kein Inline-Link, fallback bleibt (Case-Sensitivity prüfung)', 'en', { method: 'poolish' }, () => {
+      const h = html();
+      return [
+        ['kein Inline-Link für "poolish" bei EN (Schritt-Titel "Let the poolish rise" mit klein-p)', hasInlineLink(h, 'poolish'), false],
+        ['separater Zeilenlink (.step-glossary-link) für "poolish" bleibt bei EN als Fallback', hasFallbackLink(h, 'poolish'), true],
+      ];
+    });
+
+    testCaseWithLang('EN: Autolyse mit großem A -> Inline-Link trotz EN (consistent mit DE)', 'en', { method: 'direct', yeast: 0.3 }, () => {
+      const h = html();
+      return [
+        ['Inline-Link mit data-glossary-id="autolyse" auch bei EN vorhanden (Titel "Autolyse (recommended)" mit groß-A)', hasInlineLink(h, 'autolyse'), true],
+        ['separater Zeilenlink (.step-glossary-link) für "autolyse" entfernt auch bei EN', hasFallbackLink(h, 'autolyse'), false],
+      ];
+    });
+
+    testCase('Mehrfaches Vorkommen: Autolyse-Schritt mit Warnhinweis -> nur ERSTES Vorkommen verlinkt, ZWEITES bleibt Plaintext', { method: 'direct', yeast: 0.3 }, () => {
+      const h = html();
+      // Im Autolyse-Schritt: Titel "Autolyse (empfohlen)" + Warntext "...Autolyse nicht über
+      // ~40-60 min ausdehnen...". indexOf() in inlineGlossaryLink() findet die ERSTE Position
+      // (Titel), das Replacement passiert dort. Die ZWEITE Position (Warntext) bleibt als
+      // ungelinkter Klartext stehen.
+      const autolyseButtonMatch = h.match(/<button[^>]*data-glossary-id="autolyse"[^>]*>Autolyse<\/button>/);
+      return [
+        ['genau ein <button>-Autolyse-Link vorhanden', autolyseButtonMatch !== null, true],
+        ['Wort "Autolyse" kommt >= 2× vor (im Titel und im Warnhinweis)', h.match(/Autolyse/g).length >= 2, true],
+        ['nur EIN data-glossary-id="autolyse"-Attribut im ganzen HTML', countOccurrences(h, 'data-glossary-id="autolyse"'), 1],
+      ];
+    });
+
+    // Korrektur (Nachbesserung des ursprünglichen test-generator-Vorschlags): "Kalte Gare"
+    // kommt -- anders als hier ursprünglich angenommen -- in keinem der beiden möglichen
+    // Schritte (Stockgare/Stückgare) wörtlich vor (die Texte sagen "Kühlschrank" bzw.
+    // "Kaltgare" als ein Wort, s. js/schedule.js), bleibt also in JEDER coldStage-Variante
+    // ein Fallback-Zeilenlink, nie ein Inline-Link. Die vier folgenden Tests wurden
+    // entsprechend berichtigt (ursprüngliche Fassung nahm fälschlich einen Inline-Treffer an
+    // und wäre rot gewesen).
+    // yeast: 0.15 (< 0.18) explizit ergänzt (im ursprünglichen Vorschlag gefehlt): bei
+    // Vorteig-Methoden (Biga/Poolish) ist die Hauptgare erst ab Hefe < 0,18 % überhaupt eine
+    // kalte Führung (s. js/schedule.js, prefVeryLong-Zweig) -- mit der BASE-Hefemenge (0,30 %)
+    // greift stattdessen der nicht-kalte "prefLong"-Zweig, wodurch gar kein Kaltgare-Verweis
+    // (weder inline noch Fallback) gerendert würde und der Test seine eigene Prämisse
+    // ("Kaltgare weiterhin Fallback") gar nicht prüfen könnte.
+    testCase('Kombination: Biga + hohe Hydration + Kaltgare (coldStage "im Stück") -> Biga inline, Stretch&Fold + Kaltgare weiterhin Fallback', { method: 'biga', pref: 70, bhyd: 45, hyd: 75, yeast: 0.15, coldStage: 'bulk' }, () => {
+      const h = html();
+      return [
+        ['Biga weiterhin inline verlinkt', hasInlineLink(h, 'biga'), true],
+        ['Stretch & Fold bleibt Fallback-Link (kein inline)', hasInlineLink(h, 'stretchFold'), false],
+        ['Stretch & Fold weiterhin als Fallback vorhanden', hasFallbackLink(h, 'stretchFold'), true],
+        ['Kalte Gare bleibt Fallback-Link bei coldStage "bulk" (kein wörtliches Vorkommen)', hasInlineLink(h, 'kalteGare'), false],
+        ['Kalte-Gare-Fallback bei coldStage "bulk" weiterhin vorhanden', hasFallbackLink(h, 'kalteGare'), true],
+      ];
+    });
+
+    testCase('Kombination: Poolish + Kaltgare (coldStage "als Teiglinge") -> Poolish inline, Kaltgare weiterhin Fallback', { method: 'poolish', pref: 70, yeast: 0.15, coldStage: 'balls' }, () => {
+      const h = html();
+      return [
+        ['Poolish inline verlinkt', hasInlineLink(h, 'poolish'), true],
+        ['Poolish-Fallback entfernt', hasFallbackLink(h, 'poolish'), false],
+        ['Kalte Gare bleibt Fallback-Link bei coldStage "balls" (kein wörtliches Vorkommen)', hasInlineLink(h, 'kalteGare'), false],
+        ['Kalte-Gare-Fallback bei coldStage "balls" weiterhin vorhanden', hasFallbackLink(h, 'kalteGare'), true],
+      ];
+    });
+
+    testCase('Kaltgare-Dedup: coldStage "im Stück" -> Kalte-Gare-Verweis genau 1×, an der Stockgare-Stelle, weiterhin als Fallback-Link', { method: 'direct', coldStage: 'bulk' }, () => {
+      const h = html();
+      return [
+        ['kein Inline-Link für kalteGare (kein wörtliches Vorkommen im Stockgare-Text)', hasInlineLink(h, 'kalteGare'), false],
+        ['genau EIN data-glossary-id="kalteGare" (keine Verdoppelung mit dem Stückgare-Schritt)', countOccurrences(h, 'data-glossary-id="kalteGare"'), 1],
+        ['Fallback-Zeilenlink für kalteGare vorhanden', hasFallbackLink(h, 'kalteGare'), true],
+      ];
+    });
+
+    testCase('Kaltgare-Dedup: coldStage "als Teiglinge" -> Kalte-Gare-Verweis genau 1×, an der Stückgare-Stelle, weiterhin als Fallback-Link', { method: 'direct', coldStage: 'balls' }, () => {
+      const h = html();
+      return [
+        ['kein Inline-Link für kalteGare (kein wörtliches Vorkommen im Stückgare-Text)', hasInlineLink(h, 'kalteGare'), false],
+        ['genau EIN data-glossary-id="kalteGare" (keine Verdoppelung mit dem Stockgare-Schritt)', countOccurrences(h, 'data-glossary-id="kalteGare"'), 1],
+        ['Fallback-Zeilenlink für kalteGare vorhanden', hasFallbackLink(h, 'kalteGare'), true],
+      ];
+    });
+
+    testCase('ofenHeizarten doppelt (preheat + bakeTopping) -> nur ERST verlinkt inline, ZWEITER als Fallback (Dedup-Set)', {}, () => {
+      const h = html();
+      return [
+        ['genau EIN data-glossary-id="ofenHeizarten" (nicht zweimal)', countOccurrences(h, 'data-glossary-id="ofenHeizarten"'), 1],
+        ['entweder Inline-Link bei preheat ODER bakeTopping, nicht beide',
+          (hasInlineLink(h, 'ofenHeizarten') && !hasFallbackLink(h, 'ofenHeizarten')) ||
+          (!hasInlineLink(h, 'ofenHeizarten') && hasFallbackLink(h, 'ofenHeizarten')), true],
+        ['mindestens einer der beiden Schritte verlinkt (inline oder fallback)',
+          hasInlineLink(h, 'ofenHeizarten') || hasFallbackLink(h, 'ofenHeizarten'), true],
+      ];
+    });
+
+    testCase('Stretch & Fold: Glossar-Titel "Stretch & Fold (Dehnen und Falten)" -> kein Match in DE-Title "Stretch & Fold statt Kneten" -> Fallback', { hyd: 75 }, () => {
+      const h = html();
+      return [
+        ['kein Inline-Link (Titel und Body enthalten nicht den vollständigen Glossar-Titel)', hasInlineLink(h, 'stretchFold'), false],
+        ['separater Zeilenlink bleibt als Fallback', hasFallbackLink(h, 'stretchFold'), true],
+      ];
+    });
+
+    testCase('Knead (Fenstertest): Glossar-Titel "Windowpane-Test" (mit Bindestrich) -> kein Match in DE "Fenstertest" (ein Wort) -> Fallback', { hyd: 62 }, () => {
+      const h = html();
+      return [
+        ['kein Inline-Link für windowpane', hasInlineLink(h, 'windowpane'), false],
+        ['separater Zeilenlink bleibt als Fallback', hasFallbackLink(h, 'windowpane'), true],
+      ];
+    });
+
+    testCase('Einfrieren: Glossar-Titel -> kein Match im formBalls-Titel "Teiglinge formen" oder Body -> Fallback', { method: 'direct', yeast: 0.3 }, () => {
+      const h = html();
+      return [
+        ['kein Inline-Link für einfrieren', hasInlineLink(h, 'einfrieren'), false],
+        ['separater Zeilenlink bleibt als Fallback', hasFallbackLink(h, 'einfrieren'), true],
+      ];
+    });
+
+    testCase('Gesamtprüfung: kein data-glossary-id ohne zugehörigen Link-Button (defensive HTML-Struktur)', { method: 'biga', hyd: 75, coldStage: 'balls' }, () => {
+      const h = html();
+      const allGlossaryIds = h.match(/data-glossary-id="([a-zA-Z]+)"/g) || [];
+      const allButtons = h.match(/<button[^>]*data-glossary-id="[a-zA-Z]+"[^>]*>/g) || [];
+      const allLinks = h.match(/<a[^>]*data-glossary-id="[a-zA-Z]+"[^>]*>/g) || [];
+      const totalLinkElements = allButtons.length + allLinks.length;
+      return [
+        ['alle data-glossary-id-Attribute sind in <button> oder <a> Elementen', allGlossaryIds.length, totalLinkElements],
+        ['keine verwaisten data-glossary-id-Attribute außerhalb von Links', allGlossaryIds.length > totalLinkElements, false],
+      ];
+    });
   })();
 
   // ─────────────────────────────────────────────────────────────

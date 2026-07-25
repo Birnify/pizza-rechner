@@ -33,7 +33,10 @@ entfernen, Zuckerfeld wertbasiert) ist seit v4.7.0 ebenfalls erledigt** (s.
 `pizza-rechner-KONTEXT.md`, Abschnitt „„New York Style"-Einstellung entfernt, Zuckerfeld
 wertbasiert (v4.7.0)"). **Punkt D unten (Einfrier-Hinweis entfernen, Glossar-Artikel
 "Einfrieren") ist seit v4.8.0 ebenfalls erledigt** (s. `pizza-rechner-KONTEXT.md`,
-Abschnitt „Einfrier-Hinweis entfernt, Glossar-Artikel „Einfrieren" (v4.8.0)").
+Abschnitt „Einfrier-Hinweis entfernt, Glossar-Artikel „Einfrieren" (v4.8.0)"). **Punkt A
+unten (Inline-Verlinkung von Glossar-Begriffen im Anleitungstext) ist seit v4.9.0
+ebenfalls erledigt** (s. `pizza-rechner-KONTEXT.md`, Abschnitt „Inline-Verlinkung von
+Glossar-Begriffen im Anleitungstext (v4.9.0)").
 
 ## Weitere Ideen (aus Backlog.txt, noch nicht in die Orchestrator-Warteschlange eingereiht)
 
@@ -41,7 +44,18 @@ Reihenfolge unter den 9 Punkten noch nicht final festgelegt. **Punkt B war an "E
 priorisieren" gekoppelt (referenziert dessen "Weitere Optionen"-Bereich) — diese
 Abhängigkeit ist seit v4.5.0 erfüllt, Punkt B ist damit nicht mehr blockiert.**
 
-### A. Inline-Verlinkung von Glossar-Begriffen im Anleitungstext
+### ~~A. Inline-Verlinkung von Glossar-Begriffen im Anleitungstext~~ — erledigt in v4.9.0
+
+Umgesetzt wie unten beschrieben: `js/guide.js` bekam einen neuen Helfer
+`inlineGlossaryLink()`, der das erste wörtliche Vorkommen eines Glossar-Artikeltitels im
+Schritt-Titel/-Text durch einen Inline-Link ersetzt (neue CSS-Klasse
+`.inline-glossary-link`). Von 8 geprüften Begriffen kommen 3 (Biga, Poolish, Autolyse)
+exakt im jeweiligen Schritt-Titel vor und wurden inline verlinkt; die anderen 5 behalten
+den separaten Fallback-Zeilenlink (Begriff kommt nicht wortgleich im generierten Text
+vor). Details: `pizza-rechner-KONTEXT.md`, Abschnitt „Inline-Verlinkung von
+Glossar-Begriffen im Anleitungstext (v4.9.0)".
+
+Ursprünglicher Auftragstext (zur Referenz):
 
 Idee: Statt eines separaten Zeilenlinks unterhalb der Anleitung ("📖 Mehr zu Kalte Gare
 im Glossar") wird das relevante Fachwort direkt im bestehenden Anleitungstext selbst zum

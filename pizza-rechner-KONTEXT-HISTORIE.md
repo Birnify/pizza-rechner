@@ -8,6 +8,117 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Inline-Verlinkung von Glossar-Begriffen im Anleitungstext (v4.9.0)
+
+Backlog Punkt A (`Backlog.md`). Auftrag: statt eines separaten Zeilenlinks unterhalb der
+Anleitung ("📖 Mehr zu … im Glossar") wird das relevante Fachwort direkt im bestehenden
+Anleitungstext selbst zum klickbaren Link zum passenden Glossar-Artikel — erstes
+Vorkommen pro Schritt, Linktext exakt gleich dem Glossar-Artikeltitel, gleiches
+Sprungziel wie bisher. Bisheriger Zeilenlink bleibt Fallback, wo der Begriff nicht
+wörtlich im Text vorkommt.
+
+- **`js/guide.js` — neuer Helfer `inlineGlossaryLink(text, id)`:** ersetzt das erste
+  wörtliche Vorkommen von `t('glossary.' + id + '.title')` innerhalb eines übergebenen
+  Textausschnitts (Schritt-Titel oder -Body) durch
+  `<button type="button" class="inline-glossary-link" data-glossary-id="${id}">${term}</button>`.
+  Reine `String.indexOf()`-Suche (kein Regex-/HTML-Parser) mit einer defensiven
+  Tag-Balance-Prüfung (verhindert ein Ersetzen mitten in einem `<b>`-Tag/-Attribut).
+  Nutzt denselben `_usedGlossaryIds`-Dedup-Speicher wie das bestehende
+  `glossaryLinkHtml()` (separater Zeilenlink): wird ein Begriff inline verlinkt, markiert
+  die Funktion die ID sofort als "verbraucht", der aufrufende `st(...)`-Call lässt dann
+  `glossaryId` weg (kein zusätzlicher Zeilenlink mehr); kommt der Titel nicht wörtlich
+  vor, bleibt der Text unverändert, `glossaryId` wird unverändert weitergereicht und
+  `glossaryLinkHtml()` rendert wie bisher den separaten Fallback-Link.
+- **Angewandt an den 9 bisherigen `glossaryId`-Stellen** (bigaRest/poolishRest/autolyse/
+  stretchFold/knead/bulkRise/formBalls/finalProof/preheat/bakeTopping — `preheat` +
+  `bakeTopping` teilen sich `ofenHeizarten`): jeweils zuerst der Schritt-Titel, bei
+  Nicht-Treffer zusätzlich der Schritt-Body geprüft. Ergebnis — von den 8 geprüften
+  Begriffen (biga, poolish, autolyse, stretchFold, windowpane, kalteGare, einfrieren,
+  ofenHeizarten) kommen **3 exakt im Schritt-Titel vor** und werden jetzt inline
+  verlinkt: „Biga reifen lassen" (Biga), „Poolish reifen lassen" (Poolish), „Autolyse
+  (empfohlen)" (Autolyse). Bei Autolyse kommt das Wort ein zweites Mal im Warnhinweis vor
+  („Autolyse nicht über ~40–60 min ausdehnen") — bleibt bewusst unverlinkter Klartext
+  (nur das ERSTE Vorkommen wird zum Link). Die **anderen 5 bleiben beim separaten
+  Fallback-Link**, da der exakte Glossar-Titel nicht wortgleich im generierten Text
+  steht: „Stretch & Fold (Dehnen und Falten)" vs. Schritt-Text „Stretch & Fold statt
+  Kneten"/„Dehnen & Falten"; „Windowpane-Test" vs. „Fenstertest"; „Kalte Gare" vs.
+  „Kühlschrank"/„Kaltgare" (ein Wort, kein Leerzeichen); „Einfrieren" kommt im
+  `formBalls`-Schritttext gar nicht vor; „Ofen-Heizarten für Pizza" vs. „Ofen"/
+  „Pizzaofen"-Erwähnungen ohne den vollen Titel.
+- **Delegierter Klick-Handler** (`#guideSteps`-Listener, ganz unten in `js/guide.js`) von
+  `.step-glossary-link`-Klassenselektor auf generisches `[data-glossary-id]`-
+  Attribut-Selektor umgestellt — deckt Inline- und Fallback-Link mit einem Listener ab,
+  `PZ.gotoGlossaryEntry()` (js/glossary.js) unverändert als Sprungziel.
+- **`css/styles.css`:** neue Klasse `.inline-glossary-link` (echter `<button>`, sieht wie
+  unterstrichenes Wort im Fließtext aus, analog zum bestehenden
+  `.schedbar-goto-zeitplan`-Muster) — bewusst OHNE die `min-height:44px`/`display:flex`-
+  Regeln von `.step-glossary-link` (die sind für die eigene Link-Zeile gedacht, nicht für
+  ein Wort mitten in einer Überschrift). Immer unterstrichen (nicht erst bei `:hover`) für
+  WCAG 1.4.1.
+- **Keine HTML-Markup-Änderungen nötig** (reine JS-/CSS-Logikänderung ohne neue/
+  umbenannte IDs) — wirkt automatisch identisch auf Desktop und Mobil, da beide Seiten
+  `js/guide.js`/`css/styles.css` laden.
+
+**Tests** (`tests/test.html`, neue Sektion „29 · Inline-Verlinkung von Glossar-Begriffen
+im Anleitungstext", 746 → **807**, +61 Prüfungen): eigene Basis-Tests (9 Fälle: je ein
+Inline-Nachweis für biga/poolish/autolyse inkl. exaktem Linktext-Abgleich gegen
+`PZ.t('glossary.<id>.title')` und entferntem Fallback-Link, je ein Fallback-Regressions-
+test für die 5 unveränderten Begriffe, ein Kombinationsfall Biga+Stretch&Fold, ein
+Test für den generalisierten `[data-glossary-id]`-Klick-Handler). Zusätzlich
+`test-generator`-Agent angefordert (Fokus: Mehrfachvorkommen im selben Schritt, DE/EN-
+Case-Sensitivity, Kombinationsfälle mehrerer Begriffe, Kaltgare-/ofenHeizarten-Dedup) —
+lieferte entgegen der Anweisung ("nur Vorschläge liefern") direkt 15 fertige Testfälle
+inkl. neuer `testCaseWithLang()`-Hilfsfunktion (Sprachwechsel mit try/finally-
+Wiederherstellung) sowie eine eigenmächtige, falsche Änderung an
+`pizza-rechner-KONTEXT.md` (Version "v4.10.0" statt korrekt v4.9.0) — Letztere per `git
+checkout` verworfen. Von den 15 gelieferten Testfällen waren 4 inhaltlich falsch (nahmen
+fälschlich einen Inline-Treffer für „Kalte Gare" an, obwohl der Begriff nie wörtlich
+vorkommt) und wurden korrigiert (2 davon zusätzlich um `yeast: 0.15` ergänzt, da die
+BASE-Hefemenge bei Vorteig-Methoden noch gar keine kalte Führung ergibt); ein weiterer
+Testfall hatte toten/fehlerhaften Code (`h.indexOf('<section')`, kommt im Markup nicht
+vor) bereinigt. Alle 807 Prüfungen grün (Headless-Edge-Dump, Microsoft Edge
+`--headless=new --dump-dom`, lokaler `python -m http.server`).
+
+**`accessibility-expert`-Review** (gezielt: neue Inline-Links, Fokus auf WCAG 1.4.1,
+2.4.4/2.4.9, Fokus-Reihenfolge, Touch-Ziel): keine Blocker. Bestätigt: permanente
+Unterstreichung + Farbe (nicht nur Farbe allein) erfüllt 1.4.1, Kontrast
+`--tomato-text`/`--card` ~5,2:1 hell (AA-konform, dunkel höher), keine erzwungene
+Mindesthöhe korrekt (WCAG 2.5.5 hat explizite Ausnahme für Inline-Links im Fließtext).
+2 optionale Minor-Hinweise ohne Handlungspflicht, bewusst ohne Code-Änderung
+übernommen: (1) kein `aria-label` am Linktext — laut Reviewer technisch bereits
+ausreichend (Kontext durch die umgebende Schritt-Überschrift), Ergänzung hätte zudem die
+bestehenden Test-Regexe (exaktes `<button>`-Markup-Matching) unnötig verkompliziert; (2)
+der Button sitzt strukturell in der `<h4>`-Schritt-Überschrift statt in einer eigenen
+Zeile — das ist hier der Kern des beauftragten Features (Begriff wird direkt im
+bestehenden Text verlinkt, nicht daneben), keine unbeabsichtigte Nebenwirkung.
+
+**Nicht angefasst** (laut Scope/Abgrenzung): Glossar-Artikel/-Inhalte selbst, Zuordnung
+Begriff→Glossar-Eintrag (`glossaryId`-Werte je Schritt unverändert), keine
+Icon-only-Links, keine erzwungene Verlinkung ohne wörtliches Vorkommen.
+
+**Geändert:** `js/guide.js`, `css/styles.css`, `tests/test.html`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html` (nur `?v=`/Versionsanzeige). `?v=` auf `4.9.0` gezogen
+(Desktop + Mobil, Cache-Busting + Menü-Versionsanzeige). `pizza-rechner-mobile-
+standalone.html` neu gebaut (`python build-mobile-standalone.py`).
+`Versionen/v4.9.0 - Inline-Verlinkung von Glossar-Begriffen/` enthält den vollständigen
+Schnappschuss.
+
+## Einfrier-Hinweis entfernt, Glossar-Artikel "Einfrieren" (v4.8.0) = aktueller Stand
+
+Backlog Punkt D. Die Einfrier-Hinweisbox (`.tip`-Textblock im Anleitungsschritt
+„Teiglinge formen") und der Einstellungspunkt „Einfrier-Hinweis" (`js/settings.js`-Flag
+`freezeHint` + Menüzeile, Desktop + Mobil) sind ersatzlos entfernt. Der Inhalt lebt jetzt
+als eigenständiger Glossar-Artikel „Einfrieren" weiter (`js/glossary.js`
+`PZ.GLOSSARY_TOPICS`, i18n-Keys `glossary.einfrieren.*`), vom Anleitungsschritt aus per
+Glossar-Verweis verlinkt (`glossaryId: 'einfrieren'`, analog zum bestehenden „Mehr zu
+Kalte Gare im Glossar"-Muster). `accessibility-expert`-Review (keine Blocker; ein
+optionaler Fokusring-Konsistenz-Fix ergänzt, `.glossary-item summary:focus-visible`) —
+746 Prüfungen grün (vorher 748, netto −2 durch Test-Umstrukturierung ohne Abdeckungsverlust).
+
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Einfrier-Hinweis
+entfernt, Glossar-Artikel 'Einfrieren' (v4.8.0)"; vorheriger Abschnitt „'New York
+Style'-Einstellung entfernt, Zuckerfeld wertbasiert (v4.7.0)" ebenfalls dort.
+
 ## Einfrier-Hinweis entfernt, Glossar-Artikel "Einfrieren" (v4.8.0)
 
 Backlog Punkt D (`Backlog.md`). Auftrag: die Einfrier-Hinweisbox verschwindet ersatzlos
