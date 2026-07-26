@@ -8,6 +8,24 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Hintergrund-Farbverlauf kräftiger/wärmer (v4.21.0)
+
+Vom Nutzer per `/define-feature` strukturiert: der `--bg-gradient`-Token
+(`css/styles.css`, Hell- **und** Dunkelmodus-Block) ist jetzt ein kräftigerer,
+warmtoniger **radialer** Lichtschein von oben (Tomate-Akzentfarbe mit `--bg`
+gemischt, Ellipse `90vw 65vh` knapp über dem Seitenanfang zentriert, fadet bis
+68 % zu flachem `--bg`) statt des vorherigen, kaum wahrnehmbaren linearen
+Card→Bg-Verlaufs (v4.13.0). Zwei Background-Layer (Verlauf über deckendem
+`var(--bg)`) für deterministisches Rendering ohne Canvas-Abhängigkeit.
+`css/mobile.css` unverändert (konsumiert den Token nur per `var()`).
+`accessibility-expert`-Review: kein Text/Icon sitzt direkt auf dem
+Seitenhintergrund (PASS, WCAG 1.4.3). Neuer Nebenbefund (kein Blocker, s.
+Backlog): `.card`-Rand (`--line`) gegen die stärkste Verlaufsstelle nur
+~2,0:1 (Hell) / ~2,2:1 (Dunkel), unter der 3:1-Schwelle (WCAG 1.4.11) — bewusst
+nicht behoben (Karte hat zusätzlich Schatten + 3px `--tomato`-Akzentrand,
+Scope dieses Zyklus war nur das Gradient-Token). `tests/test.html`:
+unverändert **893** Prüfungen grün (reine CSS-Änderung).
+
 ## Glossar-Verweis-Text kürzen (v4.20.0)
 
 Vom Nutzer per `/define-feature` strukturiert: der zentrale i18n-Key

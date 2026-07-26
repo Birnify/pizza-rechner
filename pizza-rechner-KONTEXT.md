@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-26 · Aktuelle Version: v4.21.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-26 · Aktuelle Version: v4.22.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -180,26 +180,37 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Hintergrund-Farbverlauf kräftiger/wärmer (v4.21.0) = aktueller Stand
+## Card-Design: Elevation statt Outline (v4.22.0) = aktueller Stand
 
-Vom Nutzer per `/define-feature` strukturiert: der `--bg-gradient`-Token
-(`css/styles.css`, Hell- **und** Dunkelmodus-Block) ist jetzt ein kräftigerer,
-warmtoniger **radialer** Lichtschein von oben (Tomate-Akzentfarbe mit `--bg`
-gemischt, Ellipse `90vw 65vh` knapp über dem Seitenanfang zentriert, fadet bis
-68 % zu flachem `--bg`) statt des vorherigen, kaum wahrnehmbaren linearen
-Card→Bg-Verlaufs (v4.13.0). Zwei Background-Layer (Verlauf über deckendem
-`var(--bg)`) für deterministisches Rendering ohne Canvas-Abhängigkeit.
-`css/mobile.css` unverändert (konsumiert den Token nur per `var()`).
-`accessibility-expert`-Review: kein Text/Icon sitzt direkt auf dem
-Seitenhintergrund (PASS, WCAG 1.4.3). Neuer Nebenbefund (kein Blocker, s.
-Backlog): `.card`-Rand (`--line`) gegen die stärkste Verlaufsstelle nur
-~2,0:1 (Hell) / ~2,2:1 (Dunkel), unter der 3:1-Schwelle (WCAG 1.4.11) — bewusst
-nicht behoben (Karte hat zusätzlich Schatten + 3px `--tomato`-Akzentrand,
-Scope dieses Zyklus war nur das Gradient-Token). `tests/test.html`:
-unverändert **893** Prüfungen grün (reine CSS-Änderung).
+Direkt im Hauptgespräch umgesetzt (kein `/define-feature`-Zyklus, kein
+Orchestrator) — Auslöser war eine vom Nutzer gezeigte Design-Analyse
+(Ooini-Vergleich), die als sofort umsetzbare Kleinigkeit "Filled Cards mit
+Schatten statt Outline-Boxen, Radius 16–20px" nannte. **Wichtig für künftige
+Sessions:** der Nutzer möchte solche Ideen grundsätzlich über `/define-feature`
+laufen lassen, auch wenn sie klein wirken — dieser inline-Weg war eine
+Ausnahme auf ausdrücklichen Wunsch und soll nicht wiederholt werden (s.
+Abschnitt „Arbeitsablauf" oben / `CLAUDE.md`).
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-
-Verweis-Text kürzen (v4.20.0)" (vorherige Abschnitte ebenfalls dort verkettet).
+`.card` (`css/styles.css`) hat jetzt `border-radius:18px` (kartenspezifisch,
+nicht das app-weite `--radius:14px`-Token, um Buttons/Inputs nicht
+mitzuverändern), keinen 1px-Umlaufrahmen (`border:1px solid var(--line)`)
+mehr, stattdessen `box-shadow:var(--shadow-lg)` (bereits vorhandenes, bisher
+ungenutztes Token) für einen "Filled Card"-/Elevation-Look. Der farbige 3px
+`--tomato`/`--basil`-Akzentrand links bleibt unverändert erhalten.
+`css/mobile.css` unverändert (übernimmt die Regel automatisch). Im Preview
+verifiziert (Desktop + Mobil, Hell + Dunkel). `tests/test.html`: unverändert
+**893** Prüfungen grün (reine CSS-Änderung).
+
+**Offen aus derselben Design-Analyse** (nicht umgesetzt, für einen künftigen
+`/define-feature`-Zyklus): Foto-Hintergründe für Rezeptkarten, größere
+Typografie-Hierarchie, mehr Whitespace zwischen Sektionen, gefüllter
+Farbchip statt reiner Textfarbe für den aktiven Nav-Tab — laut Nutzer-
+Analyse eher ein größerer, mehrschrittiger Umbau ("Visuelles Redesign:
+Foto-Hero + Card-Elevation").
+
+**Volle Details zu v4.21.0 und davor:** `pizza-rechner-KONTEXT-HISTORIE.md`,
+Abschnitt „Hintergrund-Farbverlauf kräftiger/wärmer (v4.21.0)" (vorherige
+Abschnitte ebenfalls dort verkettet).
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -752,6 +763,15 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
+- **Visuelles Redesign: Foto-Hero + Card-Elevation** (noch nicht spezifiziert,
+  aus einer vom Nutzer geteilten Design-Analyse/Ooini-Vergleich): eigene
+  Pizza-/Teig-Fotos als Hintergrund für Rezeptkarten, größere Typografie-
+  Hierarchie, mehr Whitespace zwischen Sektionen, aktiver Nav-Tab mit
+  gefülltem Farbchip statt reiner Textfarbe. Größerer, mehrschrittiger Umbau
+  (Bilder beschaffen/lizenzieren, Card-Komponente umbauen, Farbsystem
+  anpassen) — braucht eine eigene `/define-feature`-Runde, kein Sofort-Fix.
+  Die kleine Teilmaßnahme daraus (Card-Elevation) ist bereits erledigt, s.
+  „Card-Design: Elevation statt Outline (v4.22.0)" oben.
 - ~~Hintergrund-Farbverlauf kräftiger/wärmer~~ — **erledigt in v4.21.0** (kein
   Backlog-Punkt im engeren Sinne, direkter Nutzerauftrag per `/define-feature`;
   s. Abschnitt „Hintergrund-Farbverlauf kräftiger/wärmer (v4.21.0)" oben).
