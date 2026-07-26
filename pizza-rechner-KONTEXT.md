@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-26 · Aktuelle Version: v4.20.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-26 · Aktuelle Version: v4.21.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -180,20 +180,26 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Glossar-Verweis-Text kürzen (v4.20.0) = aktueller Stand
+## Hintergrund-Farbverlauf kräftiger/wärmer (v4.21.0) = aktueller Stand
 
-Vom Nutzer per `/define-feature` strukturiert: der zentrale i18n-Key
-`guide.glossaryLink.label` (`js/i18n-dict.js`) ist jetzt `"{term} im Glossar"` /
-`"{term} in the glossary"` statt `"Mehr zu {term} im Glossar"` / `"More on
-{term} in the glossary"` — wirkt automatisch überall in der Anleitung
-(`js/guide.js`), kein weiterer Code geändert. „im Glossar" bewusst behalten
-(nicht auf einen reinen Pfeil gekürzt): das vorangestellte 📖-Icon ist
-`aria-hidden`, der Linktext bleibt daher allein verantwortlich für den
-Accessible Name. `accessibility-expert`-Review ohne Befunde. `tests/test.html`:
-unverändert **893** Prüfungen grün (kein Test prüft den exakten Linktext).
+Vom Nutzer per `/define-feature` strukturiert: der `--bg-gradient`-Token
+(`css/styles.css`, Hell- **und** Dunkelmodus-Block) ist jetzt ein kräftigerer,
+warmtoniger **radialer** Lichtschein von oben (Tomate-Akzentfarbe mit `--bg`
+gemischt, Ellipse `90vw 65vh` knapp über dem Seitenanfang zentriert, fadet bis
+68 % zu flachem `--bg`) statt des vorherigen, kaum wahrnehmbaren linearen
+Card→Bg-Verlaufs (v4.13.0). Zwei Background-Layer (Verlauf über deckendem
+`var(--bg)`) für deterministisches Rendering ohne Canvas-Abhängigkeit.
+`css/mobile.css` unverändert (konsumiert den Token nur per `var()`).
+`accessibility-expert`-Review: kein Text/Icon sitzt direkt auf dem
+Seitenhintergrund (PASS, WCAG 1.4.3). Neuer Nebenbefund (kein Blocker, s.
+Backlog): `.card`-Rand (`--line`) gegen die stärkste Verlaufsstelle nur
+~2,0:1 (Hell) / ~2,2:1 (Dunkel), unter der 3:1-Schwelle (WCAG 1.4.11) — bewusst
+nicht behoben (Karte hat zusätzlich Schatten + 3px `--tomato`-Akzentrand,
+Scope dieses Zyklus war nur das Gradient-Token). `tests/test.html`:
+unverändert **893** Prüfungen grün (reine CSS-Änderung).
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Desktop-Logo
-auf SVG umstellen (v4.19.0)" (vorherige Abschnitte ebenfalls dort verkettet).
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-
+Verweis-Text kürzen (v4.20.0)" (vorherige Abschnitte ebenfalls dort verkettet).
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -349,11 +355,11 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.20.0 -- seit
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.21.0 -- seit
                      v4.5.0 synchron mit Mobil, s. u.: Desktop lädt weiterhin ohne
                      css/fonts.css, das ist unabhängig von der Versionsnummer)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle,
-                     ?v=4.20.0)
+                     ?v=4.21.0)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
 index.html           Weiterleitung auf pizza-rechner.html
@@ -475,19 +481,19 @@ formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 **Cache-Busting:** CSS/JS werden mit `?v=X.Y.Z` geladen. **Bei jeder neuen Version mitziehen.**
 Zwischen v4.0.0 und v4.4.0 bewusst auseinandergelaufen (Design-Import-Zyklen waren
 mobile-only, Desktop-HTML wurde nicht angefasst) — **seit v4.5.0 wieder synchron**, beide
-HTML-Dateien stehen bei `?v=4.20.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
+HTML-Dateien stehen bei `?v=4.21.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
 erneut bewusst entscheiden, ob ein Auseinanderlaufen sinnvoll ist oder beide mitgezogen
 werden (v4.17.0 war rein mobil-inhaltlich, `?v=` wurde bewusst trotzdem auf beiden Seiten
 mitgezogen, um die Synchronität zu erhalten — s. Abschnitt „Quick-Bar-Speichern-Button
 entfernen (v4.17.0)" in der HISTORIE-Datei; v4.18.0 betraf inhaltlich wieder beide Seiten;
-v4.19.0 war inhaltlich reines Desktop-Markup, v4.20.0 inhaltlich eine reine i18n-Textkürzung
-(betrifft beide Seiten gleichermaßen, da gemeinsamer JS-Modul-Text), `?v=` jeweils bewusst
-auf beiden Seiten mitgezogen).
+v4.19.0 war inhaltlich reines Desktop-Markup, v4.20.0 inhaltlich eine reine i18n-Textkürzung,
+v4.21.0 (`--bg-gradient`-Token in `css/styles.css`, gemeinsam für beide Seiten) ebenfalls
+beide Seiten gleichermaßen betreffend, `?v=` jeweils bewusst auf beiden Seiten mitgezogen).
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien steht `<span class="nav-version"
 id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine JS-Logik dahinter. Seit v4.5.0
-wieder synchron (beide `v4.20.0`), analog zum Cache-Busting oben. **Bei jedem
+wieder synchron (beide `v4.21.0`), analog zum Cache-Busting oben. **Bei jedem
 Versionssprung von Hand mitziehen** (zusammen mit `?v=` und der Kontext-Datei — bei allen
 drei HTML-Dateien, also auch `pizza-rechner-mobile-standalone.html` nach dem Rebuild,
 gegenprüfen), sonst zeigt die Live-App die falsche Version an.
@@ -746,6 +752,21 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
+- ~~Hintergrund-Farbverlauf kräftiger/wärmer~~ — **erledigt in v4.21.0** (kein
+  Backlog-Punkt im engeren Sinne, direkter Nutzerauftrag per `/define-feature`;
+  s. Abschnitt „Hintergrund-Farbverlauf kräftiger/wärmer (v4.21.0)" oben).
+  `--bg-gradient` ist jetzt ein kräftigerer, warmtoniger radialer Lichtschein
+  statt des kaum sichtbaren linearen v4.13.0-Verlaufs.
+- **Nebenbefund aus dem v4.21.0-`accessibility-expert`-Review (kein Blocker, Hell-
+  UND Dunkelmodus, app-weit, durch den kräftigeren Verlauf verstärkt sichtbar):**
+  `.card`-Rand (`--line`) gegen die stärkste Stelle des neuen Verlaufs liegt nur
+  bei ~2,0:1 (Hell, `--line #8c7b64` gegen `#dfa796`) bzw. ~2,2:1 (Dunkel,
+  `--line #7a6e5f` gegen `#642e24`), unter der 3:1-Schwelle für UI-Komponenten-
+  grenzen (WCAG 1.4.11). Bewusst nicht in diesem Zyklus behoben (Karte hat
+  zusätzlich `box-shadow` + 3px `--tomato`-Akzentrand als weitere, unabhängige
+  Abgrenzungshinweise; die meisten Karten sitzen ohnehin auf der flachen
+  `--bg`-Basis mit komfortablen 3,4-3,9:1). Kandidat für einen künftigen,
+  gezielten `--line`-Nachjustierungs-Zyklus, falls gewünscht.
 - ~~Glossar-Verweis-Text kürzen~~ — **erledigt in v4.20.0** (kein Backlog-Punkt im
   engeren Sinne, direkter Nutzerauftrag per `/define-feature`; s. Abschnitt
   „Glossar-Verweis-Text kürzen (v4.20.0)" oben). `guide.glossaryLink.label`

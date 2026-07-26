@@ -8,6 +8,18 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Glossar-Verweis-Text kürzen (v4.20.0)
+
+Vom Nutzer per `/define-feature` strukturiert: der zentrale i18n-Key
+`guide.glossaryLink.label` (`js/i18n-dict.js`) ist jetzt `"{term} im Glossar"` /
+`"{term} in the glossary"` statt `"Mehr zu {term} im Glossar"` / `"More on
+{term} in the glossary"` — wirkt automatisch überall in der Anleitung
+(`js/guide.js`), kein weiterer Code geändert. „im Glossar" bewusst behalten
+(nicht auf einen reinen Pfeil gekürzt): das vorangestellte 📖-Icon ist
+`aria-hidden`, der Linktext bleibt daher allein verantwortlich für den
+Accessible Name. `accessibility-expert`-Review ohne Befunde. `tests/test.html`:
+unverändert **893** Prüfungen grün (kein Test prüft den exakten Linktext).
+
 ## Desktop-Logo auf SVG umstellen (v4.19.0)
 
 Vom Nutzer per `/define-feature` strukturiert: der Header von `pizza-rechner.html`

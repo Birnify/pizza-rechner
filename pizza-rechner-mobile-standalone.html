@@ -112,13 +112,34 @@
   --line:#8c7b64;
   --line-soft:#ece4d6;        /* kaum sichtbarer innerer Trenner */
 
-  /* Seiten-Hintergrund-Verlauf (v4.13.0, Backlog "Hintergrund-Farbverlauf"): dezenter
-     vertikaler Verlauf statt reiner Flächenfarbe -- oben minimal heller (Richtung --card),
-     unten die bisherige Basisfarbe --bg. Nutzt bewusst NUR bestehende Oberflächen-Tokens
-     (kein neuer Farbwert), Verlauf über die volle Element-Höhe (body ist durch die lange
-     Anleitung ohnehin meist deutlich höher als der Viewport) -- dadurch bleibt der
-     Farbwechsel pro sichtbarem Ausschnitt kaum wahrnehmbar, wie vom Nutzer vorgegeben. */
-  --bg-gradient:linear-gradient(180deg,var(--card),var(--bg));
+  /* Seiten-Hintergrund-Verlauf (v4.21.0, ersetzt die v4.13.0-Fassung: der lineare
+     Card->Bg-Verlauf war im Live-Check praktisch nicht wahrnehmbar). Jetzt ein
+     kräftigerer, warmtoniger RADIALER Lichtschein, der optisch vom Header-Bereich
+     auszugehen scheint (Ellipse mittig über dem Seitenanfang zentriert, reicht bis
+     ca. zur oberen Bildschirmhälfte, danach flache Basisfarbe --bg für den Rest der
+     langen Anleitung) -- angelehnt an die Tomate-Akzentfarbe (--tomato/--tomato-dark
+     mit --bg/--card gemischt, kein neuer, unabhängiger Farbwert). Zwei Ebenen: die
+     radiale Verlaufsebene (opake Zwischenfarben, letzter Stop "transparent") LIEGT
+     auf einer zweiten, deckenden var(--bg)-Ebene -- so ist das Ergebnis überall
+     exakt definiert (kein Duchscheinen des Browser-Standardcanvas beim Overscroll/
+     iOS-Rubber-Band, s. css/mobile.css). vh-Einheiten für die Ellipsen-Größe (statt
+     %), damit der Verlauf unabhängig von der Body-Gesamthöhe (durch die lange
+     Anleitung oft mehrere Bildschirmhöhen) immer auf den sichtbaren Bereich nahe
+     dem Header bezogen bleibt.
+     AA-Kontrast (WCAG 1.4.3, Text/Icons DIREKT auf --bg-gradient, nicht auf
+     --card/--surface-2-Flächen): aktuell sitzt KEIN Text/Icon direkt auf dem
+     Seitenhintergrund (Prüfung per Markup-Durchsicht: alle Karten/.nav-panel/.seg
+     haben eigene deckende Oberflächenfarben) -- vom `accessibility-expert` gezielt
+     gegengeprüft, s. pizza-rechner-KONTEXT.md. Eigene Nebenrechnung (WCAG-2.0-
+     Luminanzformel): der 1px-Kartenrand (--line) gegen die stärkste Verlaufsstelle
+     liegt bei ~2,0:1 (Hell) / ~2,2:1 (Dunkel), unter der 3:1-UI-Komponenten-Schwelle
+     (WCAG 1.4.11) -- bewusst in Kauf genommen: die Karte hat zusätzlich Schatten
+     (--shadow) UND einen 3px farbigen --tomato-Akzentrand, die Kartengrenze ist also
+     nicht ALLEIN auf --line angewiesen; --line selbst nicht angefasst (Scope dieses
+     Zyklus ist ausschließlich das --bg-gradient-Token). */
+  --bg-gradient:
+    radial-gradient(90vw 65vh at 50% -8vh,#dfa796 0%,#eacec2 35%,transparent 68%),
+    var(--bg);
 
   /* --- Text (warmes Dunkelbraun, nie reines #000) --- */
   --ink:#2a2320;
@@ -284,11 +305,14 @@
     --card:#201d1b;
     --surface-2:#2a2622;
     --surface-inset:#1b1917;
-    /* Dunkelmodus-Verlauf (v4.13.0, s. Kommentar bei --bg-gradient im Hellmodus-:root
-       oben): --surface-2 statt --card als heller Ausgangston -- --card liegt im
-       Dunkelmodus zu nah an --bg (#201d1b vs. #151312), --surface-2 (#2a2622) ergibt
-       einen tatsächlich wahrnehmbaren, aber weiterhin dezenten Verlauf. */
-    --bg-gradient:linear-gradient(180deg,var(--surface-2),var(--bg));
+    /* Dunkelmodus-Verlauf (v4.21.0, s. ausführlicher Kommentar bei --bg-gradient im
+       Hellmodus-:root oben -- ersetzt die v4.13.0-Fassung, gleiches radiales
+       Lichtschein-Muster, hier mit dem dunkelmoduseigenen --tomato/--bg gemischt:
+       eine warme Glut/Ember-Anmutung von oben statt des kaum sichtbaren
+       Card->Bg-Verlaufs). */
+    --bg-gradient:
+      radial-gradient(90vw 65vh at 50% -8vh,#642e24 0%,#371f1a 35%,transparent 68%),
+      var(--bg);
     /* Kontrast-Fix, analog zum Hellmodus oben: #3a332e gegen --bg/--card lag nur bei
        ~1,35-1,56:1. Aufgehellt auf #7a6e5f -- rechnerisch ~3,90:1 gegen --bg,
        ~3,37:1 gegen --card. */
@@ -2420,7 +2444,7 @@ header{position:relative;text-align:center;}
              hier bewusst NICHT mehr dupliziert. -->
         <div class="nav-divider" role="separator"></div>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.20.0</span>
+        <span class="nav-version" id="appVersion">v4.21.0</span>
 
       </div>
     </details>
