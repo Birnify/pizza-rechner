@@ -8,6 +8,34 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Card-Design: Elevation statt Outline (v4.22.0)
+
+Direkt im Hauptgespräch umgesetzt (kein `/define-feature`-Zyklus, kein
+Orchestrator) — Auslöser war eine vom Nutzer gezeigte Design-Analyse
+(Ooini-Vergleich), die als sofort umsetzbare Kleinigkeit "Filled Cards mit
+Schatten statt Outline-Boxen, Radius 16–20px" nannte. **Wichtig für künftige
+Sessions:** der Nutzer möchte solche Ideen grundsätzlich über `/define-feature`
+laufen lassen, auch wenn sie klein wirken — dieser inline-Weg war eine
+Ausnahme auf ausdrücklichen Wunsch und soll nicht wiederholt werden (s.
+Abschnitt „Arbeitsablauf" oben / `CLAUDE.md`).
+
+`.card` (`css/styles.css`) hat jetzt `border-radius:18px` (kartenspezifisch,
+nicht das app-weite `--radius:14px`-Token, um Buttons/Inputs nicht
+mitzuverändern), keinen 1px-Umlaufrahmen (`border:1px solid var(--line)`)
+mehr, stattdessen `box-shadow:var(--shadow-lg)` (bereits vorhandenes, bisher
+ungenutztes Token) für einen "Filled Card"-/Elevation-Look. Der farbige 3px
+`--tomato`/`--basil`-Akzentrand links bleibt unverändert erhalten.
+`css/mobile.css` unverändert (übernimmt die Regel automatisch). Im Preview
+verifiziert (Desktop + Mobil, Hell + Dunkel). `tests/test.html`: unverändert
+**893** Prüfungen grün (reine CSS-Änderung).
+
+**Offen aus derselben Design-Analyse** (nicht umgesetzt, für einen künftigen
+`/define-feature`-Zyklus): Foto-Hintergründe für Rezeptkarten, größere
+Typografie-Hierarchie, mehr Whitespace zwischen Sektionen, gefüllter
+Farbchip statt reiner Textfarbe für den aktiven Nav-Tab — laut Nutzer-
+Analyse eher ein größerer, mehrschrittiger Umbau ("Visuelles Redesign:
+Foto-Hero + Card-Elevation").
+
 ## Hintergrund-Farbverlauf kräftiger/wärmer (v4.21.0)
 
 Vom Nutzer per `/define-feature` strukturiert: der `--bg-gradient`-Token

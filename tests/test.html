@@ -1851,12 +1851,18 @@
     const flagsBackup = Object.assign({}, PZ.FLAGS);
 
     // --- Default-Werte exakt wie vom Nutzer festgelegt ---
+    // Seit v4.23.0 sind timer/timerSystem plattformabhängig (Android vs. "alles andere":
+    // iOS/Desktop/Rest) -- der Test-Browser selbst ist nie Android, PZ.FLAG_DEFAULTS
+    // spiegelt hier also den Nicht-Android-Fallback-Zweig wider (identisch zu den
+    // bisherigen App-weiten Defaults). hints ist seit v4.23.0 plattformunabhängig auf
+    // AUS umgestellt (vorher AN). Der Android-Zweig selbst wird weiter unten separat
+    // über die dafür exponierten reinen Funktionen geprüft (kein echtes UA-Spoofing nötig).
     (function () {
       const d = PZ.FLAG_DEFAULTS;
-      renderBox('Default-Werte der Feature-Flags', [
+      renderBox('Default-Werte der Feature-Flags (Fallback-Zweig: Test-Browser ist nicht Android)', [
         ['timer (Gärzeit-Timer/Wecker)', d.timer, true],
         ['timerSystem (System-Wecker/Kalender-Links)', d.timerSystem, false],
-        ['hints (Tooltip-/Hinweistexte)', d.hints, true]
+        ['hints (Tooltip-/Hinweistexte, seit v4.23.0 plattformunabhängig AUS)', d.hints, false]
       ].map(([label, actual, expected]) => ({ label, actual, expected, tol: null, ok: actual === expected })));
       // Backlog Punkt B (v4.6.0): "share"/"shopping" wurden ersatzlos entfernt — "Rezept
       // teilen" und "Einkaufsliste drucken" sind seither permanent verfügbar statt über
@@ -1898,6 +1904,47 @@
         { label: 'Alter Flag-Stand: bereits vorhandene eigene Werte bleiben dabei erhalten (timer weiterhin true)', ok: mergedOld.timer === true, actual: mergedOld.timer, expected: true, tol: null },
         { label: 'Alter Flag-Stand mit inzwischen entfernten Keys "share"/"shopping"/"newYorkStyle"/"freezeHint"/"multiRecipes" crasht den Merge nicht (überflüssiger Key bleibt als Karteileiche mitgeführt)', ok: mergedOld.multiRecipes === true && !('multiRecipes' in PZ.FLAG_DEFAULTS), actual: mergedOld.multiRecipes, expected: true, tol: null },
         { label: 'null als gespeicherter Wert crasht nicht -> reine Defaults', ok: junkStored.timerSystem === false, actual: junkStored.timerSystem, expected: false, tol: null }
+      ]);
+    })();
+
+    // --- Plattformabhängige Defaults (v4.23.0): PZ._isAndroidPlatform / PZ._flagDefaultsForAndroid ---
+    // Reine Funktionen (kein localStorage/DOM/echtes navigator-Objekt nötig) -- für Tests
+    // exponiert, damit der Android-Zweig deterministisch geprüft werden kann, obwohl der
+    // Test-Browser selbst nie Android ist. iOS wird bewusst NICHT separat geprüft: iOS
+    // fällt (wie Desktop/Rest) in denselben "nicht Android"-Fallback, s. Kommentar in
+    // js/settings.js -- es gibt keinen eigenen iOS-Codepfad, der etwas anderes als der
+    // allgemeine Fallback-Test unten abdecken würde.
+    (function () {
+      const androidUAs = [
+        'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36',
+        'Mozilla/5.0 (Linux; U; Android 4.4.2; de-de; SM-G900F) AppleWebKit/537.36'
+      ];
+      const nonAndroidUAs = [
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+        // iPad im Desktop-Modus meldet sich seit iPadOS 13 als "Macintosh" -- der UA allein
+        // enthält weder "iPad" noch "Android"; die Unterscheidung zu echtem Desktop liegt
+        // in navigator.platform/maxTouchPoints, die für dieses Feature aber bewusst nicht
+        // ausgewertet werden (s. Kommentar js/settings.js) -- iPad landet also im selben
+        // Fallback-Zweig wie Desktop, was inhaltlich korrekt ist (identische Zielwerte).
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        ''
+      ];
+      const androidDetected = androidUAs.every(ua => PZ._isAndroidPlatform(ua) === true);
+      const nonAndroidDetected = nonAndroidUAs.every(ua => PZ._isAndroidPlatform(ua) === false);
+      const androidDefaults = PZ._flagDefaultsForAndroid(true);
+      const fallbackDefaults = PZ._flagDefaultsForAndroid(false);
+      renderBox('PZ._isAndroidPlatform() erkennt Android-User-Agents korrekt', [
+        { label: 'Alle Android-User-Agent-Beispiele werden als Android erkannt', ok: androidDetected, actual: androidDetected, expected: true, tol: null },
+        { label: 'iPhone/iPad(Desktop-Modus)/Windows-Desktop/leerer UA werden NICHT als Android erkannt', ok: nonAndroidDetected, actual: nonAndroidDetected, expected: true, tol: null }
+      ]);
+      renderBox('PZ._flagDefaultsForAndroid() liefert die vom Nutzer festgelegten Plattform-Zielwerte', [
+        { label: 'Android: timer=false (Aus)', ok: androidDefaults.timer === false, actual: androidDefaults.timer, expected: false, tol: null },
+        { label: 'Android: timerSystem=true (An)', ok: androidDefaults.timerSystem === true, actual: androidDefaults.timerSystem, expected: true, tol: null },
+        { label: 'Android: hints=false (Aus)', ok: androidDefaults.hints === false, actual: androidDefaults.hints, expected: false, tol: null },
+        { label: 'Fallback (iOS/Desktop/Rest): timer=true (An, unverändert zu vor v4.23.0)', ok: fallbackDefaults.timer === true, actual: fallbackDefaults.timer, expected: true, tol: null },
+        { label: 'Fallback (iOS/Desktop/Rest): timerSystem=false (Aus, unverändert zu vor v4.23.0)', ok: fallbackDefaults.timerSystem === false, actual: fallbackDefaults.timerSystem, expected: false, tol: null },
+        { label: 'Fallback (iOS/Desktop/Rest): hints=false (neu seit v4.23.0, vorher true)', ok: fallbackDefaults.hints === false, actual: fallbackDefaults.hints, expected: false, tol: null }
       ]);
     })();
 

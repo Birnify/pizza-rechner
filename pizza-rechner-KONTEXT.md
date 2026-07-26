@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-26 · Aktuelle Version: v4.22.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-26 · Aktuelle Version: v4.23.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -180,37 +180,30 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Card-Design: Elevation statt Outline (v4.22.0) = aktueller Stand
+## Plattformabhängige Feature-Flag-Defaults (v4.23.0) = aktueller Stand
 
-Direkt im Hauptgespräch umgesetzt (kein `/define-feature`-Zyklus, kein
-Orchestrator) — Auslöser war eine vom Nutzer gezeigte Design-Analyse
-(Ooini-Vergleich), die als sofort umsetzbare Kleinigkeit "Filled Cards mit
-Schatten statt Outline-Boxen, Radius 16–20px" nannte. **Wichtig für künftige
-Sessions:** der Nutzer möchte solche Ideen grundsätzlich über `/define-feature`
-laufen lassen, auch wenn sie klein wirken — dieser inline-Weg war eine
-Ausnahme auf ausdrücklichen Wunsch und soll nicht wiederholt werden (s.
-Abschnitt „Arbeitsablauf" oben / `CLAUDE.md`).
+Über `/define-feature` strukturiert, per Orchestrator umgesetzt. `js/settings.js`:
+`PZ.FLAG_DEFAULTS` wird jetzt plattformabhängig berechnet statt statisch definiert
+— neue reine Funktionen `PZ._isAndroidPlatform(ua)` (Regex auf `navigator.userAgent`)
+und `PZ._flagDefaultsForAndroid(isAndroid)` (für Tests exponiert, analog zu
+`PZ._mergeFlags`/`PZ._clampAdjust`). Android bekommt `timer:false, timerSystem:true`;
+**ein gemeinsamer Fallback-Zweig** ("alles außer Android": iOS, Desktop, Rest) bleibt bei
+`timer:true, timerSystem:false` (unverändert zu vorher) — bewusst **kein** eigener
+iOS-Erkennungszweig (z. B. über `navigator.platform === "MacIntel"` + Touch-Support für
+iPadOS im Desktop-Modus), weil iOS und die übrigen Plattformen hier identische Zielwerte
+haben; ein iPad landet damit automatisch (und inhaltlich korrekt) im Fallback. `hints`
+ist jetzt plattformunabhängig auf `false` umgestellt (vorher `true`). Nur die initialen
+Defaults sind betroffen, bereits gespeicherte Nutzerwerte bleiben durch den bestehenden
+Merge (`readFlags()`/`PZ._mergeFlags()`) unangetastet. Keine neue Plattform-UI, kein
+Hinweis auf die geänderten Defaults (wie beauftragt). `tests/test.html`: 893 → **901**
+Prüfungen grün (8 neue: Android-/iPhone-/iPad-Desktop-Modus-/Windows-UA-Beispiele gegen
+`PZ._isAndroidPlatform()`, Zielwerte beider Zweige gegen `PZ._flagDefaultsForAndroid()`).
+Kein `accessibility-expert`/`mobile-optimizer` nötig (reine JS-Default-Logik, keine
+Markup-/CSS-Änderung, mit dem Nutzer vorab bestätigt).
 
-`.card` (`css/styles.css`) hat jetzt `border-radius:18px` (kartenspezifisch,
-nicht das app-weite `--radius:14px`-Token, um Buttons/Inputs nicht
-mitzuverändern), keinen 1px-Umlaufrahmen (`border:1px solid var(--line)`)
-mehr, stattdessen `box-shadow:var(--shadow-lg)` (bereits vorhandenes, bisher
-ungenutztes Token) für einen "Filled Card"-/Elevation-Look. Der farbige 3px
-`--tomato`/`--basil`-Akzentrand links bleibt unverändert erhalten.
-`css/mobile.css` unverändert (übernimmt die Regel automatisch). Im Preview
-verifiziert (Desktop + Mobil, Hell + Dunkel). `tests/test.html`: unverändert
-**893** Prüfungen grün (reine CSS-Änderung).
-
-**Offen aus derselben Design-Analyse** (nicht umgesetzt, für einen künftigen
-`/define-feature`-Zyklus): Foto-Hintergründe für Rezeptkarten, größere
-Typografie-Hierarchie, mehr Whitespace zwischen Sektionen, gefüllter
-Farbchip statt reiner Textfarbe für den aktiven Nav-Tab — laut Nutzer-
-Analyse eher ein größerer, mehrschrittiger Umbau ("Visuelles Redesign:
-Foto-Hero + Card-Elevation").
-
-**Volle Details zu v4.21.0 und davor:** `pizza-rechner-KONTEXT-HISTORIE.md`,
-Abschnitt „Hintergrund-Farbverlauf kräftiger/wärmer (v4.21.0)" (vorherige
-Abschnitte ebenfalls dort verkettet).
+**Volle Details zu v4.22.0 und davor:** `pizza-rechner-KONTEXT-HISTORIE.md`,
+Abschnitt „Card-Design: Elevation statt Outline (v4.22.0)" (vorherige Abschnitte
+ebenfalls dort verkettet).
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -366,11 +359,11 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.21.0 -- seit
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.23.0 -- seit
                      v4.5.0 synchron mit Mobil, s. u.: Desktop lädt weiterhin ohne
                      css/fonts.css, das ist unabhängig von der Versionsnummer)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle,
-                     ?v=4.21.0)
+                     ?v=4.23.0)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
 index.html           Weiterleitung auf pizza-rechner.html
@@ -470,7 +463,7 @@ js/onboarding.js     Willkommens-Screen / Einführung (v3.63.0): eigenständiges
                      Burgermenü-Punkt auf Desktop bzw. Ende der "Funktionen"-Karte auf Mobil,
                      s. "= aktueller Stand" oben), Persistenz via
                      localStorage-Key pizzaOnboardingDontShow. Läuft als letztes Script (nach nav.js)
-tests/test.html      893 Prüfungen in 31 Kategorien (Doppelklick, kein Server) — lädt 17 der 27
+tests/test.html      901 Prüfungen in 31 Kategorien (Doppelklick, kein Server) — lädt 17 der 27
                      js/*-Module direkt (dom/state/i18n-dict/i18n/settings/theme/units/widgets/
                      flour/schedule/guide/calc/print/pdf/storage/share/party); ui.js, timer.js,
                      presets.js, newrecipe.js, glossary.js, main.js, nav.js, simplemode.js,
@@ -492,14 +485,16 @@ formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 **Cache-Busting:** CSS/JS werden mit `?v=X.Y.Z` geladen. **Bei jeder neuen Version mitziehen.**
 Zwischen v4.0.0 und v4.4.0 bewusst auseinandergelaufen (Design-Import-Zyklen waren
 mobile-only, Desktop-HTML wurde nicht angefasst) — **seit v4.5.0 wieder synchron**, beide
-HTML-Dateien stehen bei `?v=4.21.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
+HTML-Dateien stehen bei `?v=4.23.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
 erneut bewusst entscheiden, ob ein Auseinanderlaufen sinnvoll ist oder beide mitgezogen
 werden (v4.17.0 war rein mobil-inhaltlich, `?v=` wurde bewusst trotzdem auf beiden Seiten
 mitgezogen, um die Synchronität zu erhalten — s. Abschnitt „Quick-Bar-Speichern-Button
 entfernen (v4.17.0)" in der HISTORIE-Datei; v4.18.0 betraf inhaltlich wieder beide Seiten;
 v4.19.0 war inhaltlich reines Desktop-Markup, v4.20.0 inhaltlich eine reine i18n-Textkürzung,
-v4.21.0 (`--bg-gradient`-Token in `css/styles.css`, gemeinsam für beide Seiten) ebenfalls
-beide Seiten gleichermaßen betreffend, `?v=` jeweils bewusst auf beiden Seiten mitgezogen).
+v4.21.0 (`--bg-gradient`-Token in `css/styles.css`, gemeinsam für beide Seiten), v4.22.0
+(Card-Elevation, `css/styles.css`, ebenfalls beide Seiten) und v4.23.0 (plattformabhängige
+Feature-Flag-Defaults, `js/settings.js`, funktional nur auf Mobil relevant -- Desktop läuft
+faktisch immer im "Fallback"-Zweig -- `?v=` trotzdem bewusst auf beiden Seiten mitgezogen).
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien steht `<span class="nav-version"
@@ -557,7 +552,7 @@ gegenprüfen), sonst zeigt die Live-App die falsche Version an.
 - **Versionen-Workflow (Pflicht bei jeder Änderung):** kompletten lauffähigen Stand nach
   `Versionen/vX.Y.Z - [Beschreibung]/` kopieren (html, index, css/, js/, README; tests/ optional).
   SemVer: Patch=Fix, Minor=Feature, Major=Umbau. `?v=` in der HTML mitziehen.
-- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 893 Prüfungen in
+- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 901 Prüfungen in
   31 Kategorien** (s. Dateistruktur oben): Bäckerprozente, DDT/Eis, Vorteig-Aufteilung, Trockenhefe,
   Schedule-Schwellen, Mehl-Warnung, Backzeit-Skalierung, Olivenöl (Masseerhaltung), Anleitungs-
   Hinweise, Randfälle/Edge Cases, Kombinationen, Zeitplan-Rückwärtsrechnung, Einkaufsliste,

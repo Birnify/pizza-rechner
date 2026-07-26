@@ -2444,7 +2444,7 @@ header{position:relative;text-align:center;}
              hier bewusst NICHT mehr dupliziert. -->
         <div class="nav-divider" role="separator"></div>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.22.0</span>
+        <span class="nav-version" id="appVersion">v4.23.0</span>
 
       </div>
     </details>
@@ -4117,20 +4117,53 @@ header{position:relative;text-align:center;}
 
   const KEY = 'pizzaRechnerFeatureFlags';
 
-  // Default-Werte exakt wie vom Nutzer festgelegt.
-  const DEFAULTS = {
-    timer: true,          // Gärzeit-Timer/Wecker je Anleitungsschritt
-    timerSystem: false,   // System-Wecker/Kalender-Links (Teil-Feature von timer)
-    hints: true           // Tooltip-/Hinweistexte (erklärende .hint-Kurztexte). Default AN:
-                           // reine Erklärhilfen sind für neue Nutzer wertvoll, erfahrene
-                           // Nutzer können bewusst abschalten (anders als die übrigen, im
-                           // Ausgangszustand unauffälligen Zusatzfunktionen oben).
-    // "multiRecipes" (Mehrere gespeicherte Rezepte) war bis v4.14.x hier ein Flag --
-    // seit v4.15.0 fest aktiv (Backlog-Punkt), analog zur Entfernung von "share"/
-    // "shopping" (v4.6.0), "newYorkStyle" (v4.7.0) und "freezeHint" (v4.8.0). Ein alter,
-    // gespeicherter multiRecipes-Wert im localStorage bleibt bewusst als harmlose,
-    // nie mehr gelesene Karteileiche stehen (keine aktive Bereinigung, s. Kontext-Datei).
-  };
+  // Plattformabhängige Defaults (v4.23.0): Android bekommt andere Timer-/System-Wecker-
+  // Startwerte als "alles andere" (iOS, Desktop, Rest) -- Motivation: iOS/Android
+  // unterscheiden sich darin, wie zuverlässig Web-Push (in-App-Timer) bzw.
+  // System-Kalender-/Wecker-Links funktionieren, die jeweils verlässlichere Option soll
+  // vorausgewählt sein. Bewusst NUR ein "istAndroid"-Zweig, KEIN eigener "ios"-
+  // Erkennungszweig (z. B. über navigator.platform === "MacIntel" + Touch-Support, um
+  // iPadOS im Desktop-Modus von echtem Desktop zu unterscheiden): iOS und die übrigen
+  // Plattformen haben in diesem Feature identische Zielwerte, ein eigener Zweig dafür
+  // wäre Vorab-Aufwand für eine aktuell nicht existierende künftige Unterscheidung
+  // (Projekt-Prinzip: keine Spekulation auf mögliche künftige Bedürfnisse). Ein iPad
+  // fällt damit automatisch in den "alles außer Android"-Fallback -- inhaltlich
+  // identisch zu einer bewussten iOS-Einordnung, nur ohne eigenen Code-Zweig dafür.
+  // Nur die INITIALEN Defaults hängen von der Plattform ab, einmalig beim Laden dieses
+  // Moduls ausgewertet (analog zum einmaligen prefers-color-scheme-Read in js/theme.js,
+  // keine laufende Neubewertung) -- ein bereits gespeicherter Nutzerwert bleibt durch
+  // den bestehenden Merge (readFlags()/PZ._mergeFlags()) unangetastet, das betrifft nur
+  // neue/noch nicht gespeicherte Flags (s. Abgrenzung im Feature-Auftrag).
+  function isAndroidPlatform(ua) {
+    ua = ua != null ? ua : (navigator.userAgent || '');
+    return /Android/i.test(ua);
+  }
+  PZ._isAndroidPlatform = isAndroidPlatform; // für Tests exponiert (reine Funktion, kein State)
+
+  // Reine Funktion (kein navigator-Zugriff, kein State) -- für Tests exponiert, damit der
+  // Android- UND der Fallback-Zweig deterministisch geprüft werden können, ohne echtes
+  // User-Agent-Spoofing zu brauchen.
+  function flagDefaultsForAndroid(isAndroid) {
+    return {
+      timer: !isAndroid,        // iOS/Desktop/Rest: An -- Android: Aus
+      timerSystem: !!isAndroid, // iOS/Desktop/Rest: Aus -- Android: An
+      hints: false               // Tooltip-/Hinweistexte (erklärende .hint-Kurztexte),
+                                  // plattformunabhängig neuer Standard AUS (v4.23.0, vorher
+                                  // AN) -- reine Erklärhilfen sollen künftig standardmäßig
+                                  // nicht mehr aufgedrängt werden, erfahrene wie neue
+                                  // Nutzer können bewusst über das Einstellungen-Menü
+                                  // einschalten.
+    };
+  }
+  PZ._flagDefaultsForAndroid = flagDefaultsForAndroid; // für Tests exponiert
+
+  // Default-Werte: exakt wie vom Nutzer festgelegt, jetzt plattformabhängig berechnet.
+  // "multiRecipes" (Mehrere gespeicherte Rezepte) war bis v4.14.x hier ein Flag --
+  // seit v4.15.0 fest aktiv (Backlog-Punkt), analog zur Entfernung von "share"/
+  // "shopping" (v4.6.0), "newYorkStyle" (v4.7.0) und "freezeHint" (v4.8.0). Ein alter,
+  // gespeicherter multiRecipes-Wert im localStorage bleibt bewusst als harmlose,
+  // nie mehr gelesene Karteileiche stehen (keine aktive Bereinigung, s. Kontext-Datei).
+  const DEFAULTS = flagDefaultsForAndroid(isAndroidPlatform());
 
   function readFlags() {
     let stored = {};
