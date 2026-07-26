@@ -537,7 +537,7 @@
   add('nav.party', 'Pizza Party', 'Pizza Party');
   add('nav.glossar', 'Glossar', 'Glossary');
   add('nav.einstellungen', 'Einstellungen', 'Settings');
-  add('nav.onboarding', 'Einführung', 'Introduction');
+  add('nav.onboarding', 'Rundgang starten', 'Start tour');
   add('nav.group.dough', 'Teig-Rechner', 'Dough calculator');
   add('nav.group.party', 'Pizza Party', 'Pizza Party');
   add('nav.toMobile', 'Zur Mobil-Ansicht', 'Switch to mobile view');

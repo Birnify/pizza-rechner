@@ -8,6 +8,27 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Plattformabhängige Feature-Flag-Defaults (v4.23.0)
+
+Über `/define-feature` strukturiert, per Orchestrator umgesetzt. `js/settings.js`:
+`PZ.FLAG_DEFAULTS` wird jetzt plattformabhängig berechnet statt statisch definiert
+— neue reine Funktionen `PZ._isAndroidPlatform(ua)` (Regex auf `navigator.userAgent`)
+und `PZ._flagDefaultsForAndroid(isAndroid)` (für Tests exponiert, analog zu
+`PZ._mergeFlags`/`PZ._clampAdjust`). Android bekommt `timer:false, timerSystem:true`;
+**ein gemeinsamer Fallback-Zweig** ("alles außer Android": iOS, Desktop, Rest) bleibt bei
+`timer:true, timerSystem:false` (unverändert zu vorher) — bewusst **kein** eigener
+iOS-Erkennungszweig (z. B. über `navigator.platform === "MacIntel"` + Touch-Support für
+iPadOS im Desktop-Modus), weil iOS und die übrigen Plattformen hier identische Zielwerte
+haben; ein iPad landet damit automatisch (und inhaltlich korrekt) im Fallback. `hints`
+ist jetzt plattformunabhängig auf `false` umgestellt (vorher `true`). Nur die initialen
+Defaults sind betroffen, bereits gespeicherte Nutzerwerte bleiben durch den bestehenden
+Merge (`readFlags()`/`PZ._mergeFlags()`) unangetastet. Keine neue Plattform-UI, kein
+Hinweis auf die geänderten Defaults (wie beauftragt). `tests/test.html`: 893 → **901**
+Prüfungen grün (8 neue: Android-/iPhone-/iPad-Desktop-Modus-/Windows-UA-Beispiele gegen
+`PZ._isAndroidPlatform()`, Zielwerte beider Zweige gegen `PZ._flagDefaultsForAndroid()`).
+Kein `accessibility-expert`/`mobile-optimizer` nötig (reine JS-Default-Logik, keine
+Markup-/CSS-Änderung, mit dem Nutzer vorab bestätigt).
+
 ## Card-Design: Elevation statt Outline (v4.22.0)
 
 Direkt im Hauptgespräch umgesetzt (kein `/define-feature`-Zyklus, kein
