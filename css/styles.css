@@ -292,14 +292,16 @@ header{
 header h1{
   margin:0;font-family:var(--font-head);font-size:26px;font-weight:700;
   letter-spacing:.2px;text-shadow:0 1px 4px rgba(0,0,0,.35);
-  /* display:flex + gap (v4.0.0, Design-Import Zyklus 1): Platz für das neue Logo-<img>
-     vor dem Wordmark (bisher nur Mobil, s. pizza-rechner-mobile.html) -- mit nur einem
-     Text-Kind (Desktop, unverändert kein <img>) verhält sich das optisch identisch zu
-     vorher (weiterhin zentriert via header{text-align:center} + justify-content:center). */
+  /* display:flex + gap (v4.0.0, Design-Import Zyklus 1): Platz für das Logo-<img> vor
+     dem Wordmark. Bis v4.18.0 nur auf Mobil genutzt (Desktop hatte stattdessen das
+     🍕-Emoji als Text-Kind); seit v4.19.0 (Desktop-Logo auf SVG umgestellt) identisch
+     auf beiden Seiten -- diese Regel war schon vorher ungescoped (kein Media-Query,
+     styles.css ist gemeinsam), es fehlte nur das <img> im Desktop-Markup. */
   display:flex;align-items:center;justify-content:center;gap:10px;
 }
-/* Logo (v4.0.0, Design-Import Zyklus 1, nur Mobil -- s. Kommentar oben): 36×36px,
-   9px Radius, exakt wie design-import/guidelines/brand-header.card.html vorgibt. */
+/* Logo (v4.0.0, Design-Import Zyklus 1; seit v4.19.0 auch Desktop, s. Kommentar oben):
+   36×36px, 9px Radius, exakt wie design-import/guidelines/brand-header.card.html
+   vorgibt. Gemeinsame Regel für Desktop + Mobil. */
 header h1 .app-logo{width:36px;height:36px;border-radius:9px;flex-shrink:0;}
 header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .wrap{max-width:980px;margin:0 auto;padding:20px;display:grid;gap:20px;grid-template-columns:1fr;}

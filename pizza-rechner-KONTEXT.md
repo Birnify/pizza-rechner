@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-26 · Aktuelle Version: v4.18.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-26 · Aktuelle Version: v4.19.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -180,25 +180,24 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Einführung prominent platzieren (v4.18.0) = aktueller Stand
+## Desktop-Logo auf SVG umstellen (v4.19.0) = aktueller Stand
 
-Vom Nutzer per `/define-feature` strukturiert: „Einführung" bekommt eine eigene,
-prominente Karte ganz oben auf der Einstellungen-Seite (Desktop + Mobil), statt
-kaum auffindbar am Ende einer anderen Karte zu stecken. Abweichung von der
-Auftragsbeschreibung (Recherche ergab: nur Mobil hatte den Eintrag tatsächlich
-in der „Funktionen"-Karte; Desktop hatte ihn stattdessen im Burgermenü) —
-auf Desktop wurde die neue Karte ebenfalls ergänzt und der alte
-Burgermenü-Eintrag entfernt, statt doppelt vorzuhalten. `#navOnboardingItem`
-bleibt dieselbe ID (`js/onboarding.js` unverändert). Reine Markup-/i18n-Änderung
-(`pizza-rechner.html`, `pizza-rechner-mobile.html`, `js/i18n-dict.js`) — keine
-inhaltliche Änderung am Onboarding-Modal selbst. `accessibility-expert`-Review
-ohne Befunde (Kontrastwerte selbst nachgerechnet, exakt reproduziert).
-`tests/test.html`: unverändert **893** Prüfungen grün.
+Vom Nutzer per `/define-feature` strukturiert: der Header von `pizza-rechner.html`
+nutzt jetzt dasselbe SVG-Logo (`assets/logo.svg`, `<img class="app-logo">`) wie
+die Mobil-Seiten, statt des zuvor genutzten 🍕-Emojis (rendert je nach OS/Browser
+unterschiedlich/schlechter). Recherche ergab: die CSS-Regel `header h1 .app-logo`
+in `css/styles.css` war bereits ungescoped (gemeinsame Datei, kein Media-Query) —
+sie griff nur deshalb bisher nicht auf Desktop, weil dort kein `<img>` im Markup
+stand. Keine neue CSS-Regel nötig, nur irreführende „nur Mobil"-Kommentare an
+zwei Stellen korrigiert. Reine Markup-/CSS-Kommentar-Änderung
+(`pizza-rechner.html`, `css/styles.css`) — Mobil-Ansicht unverändert (Scope).
+`accessibility-expert`-Review ohne Befunde (dekoratives `alt=""`, Kontrast/
+Sichtbarkeit Hell- und Dunkelmodus geprüft). `tests/test.html`: unverändert
+**893** Prüfungen grün.
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Quick-Bar-
-Speichern-Button entfernen (v4.17.0)" (Kurzfassung dort dokumentiert das
-Vorgänger-„= aktueller Stand"; vorheriger Abschnitt „Schüttwasser-Anzeige
-entfernen (v4.16.0)" ebenfalls dort).
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Einführung
+prominent platzieren (v4.18.0)" (Kurzfassung dort dokumentiert das
+Vorgänger-„= aktueller Stand"; vorherige Abschnitte ebenfalls dort verkettet).
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -354,11 +353,11 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.18.0 -- seit
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.19.0 -- seit
                      v4.5.0 synchron mit Mobil, s. u.: Desktop lädt weiterhin ohne
                      css/fonts.css, das ist unabhängig von der Versionsnummer)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle,
-                     ?v=4.18.0)
+                     ?v=4.19.0)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
 index.html           Weiterleitung auf pizza-rechner.html
@@ -371,7 +370,8 @@ css/fonts.css        selbst gehostete Webfonts (Bitter + Hanken Grotesk, v4.0.0)
                      bei Georgia/System-Sans, s. Design-Import-Zyklus-1-Abschnitt oben
 fonts/               3 WOFF2-Dateien (Bitter normal/italic, Hanken Grotesk normal, je variabel
                      400-800), von css/fonts.css referenziert
-assets/logo.svg      App-Icon (v4.0.0, aus dem Design-Import), im Mobil-Header vor "Teigmeister"
+assets/logo.svg      App-Icon (v4.0.0, aus dem Design-Import), im Header vor "Teigmeister" --
+                     Mobil seit v4.0.0, Desktop seit v4.19.0 (vorher 🍕-Emoji)
 js/dom.js            $-Helfer, legt globalen Namespace window.PZ an + PZ.announce(elementId, text)
                      (v3.58.0, gemeinsamer Live-Region-Helfer — Clear-then-delayed-set mit
                      Generation-Zähler je Element-ID, ersetzt 7+ frühere Einzelkopien) + seit
@@ -479,17 +479,18 @@ formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 **Cache-Busting:** CSS/JS werden mit `?v=X.Y.Z` geladen. **Bei jeder neuen Version mitziehen.**
 Zwischen v4.0.0 und v4.4.0 bewusst auseinandergelaufen (Design-Import-Zyklen waren
 mobile-only, Desktop-HTML wurde nicht angefasst) — **seit v4.5.0 wieder synchron**, beide
-HTML-Dateien stehen bei `?v=4.18.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
+HTML-Dateien stehen bei `?v=4.19.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
 erneut bewusst entscheiden, ob ein Auseinanderlaufen sinnvoll ist oder beide mitgezogen
 werden (v4.17.0 war rein mobil-inhaltlich, `?v=` wurde bewusst trotzdem auf beiden Seiten
 mitgezogen, um die Synchronität zu erhalten — s. Abschnitt „Quick-Bar-Speichern-Button
-entfernen (v4.17.0)" in der HISTORIE-Datei; v4.18.0 selbst betraf inhaltlich wieder beide
-Seiten, s. „= aktueller Stand" oben).
+entfernen (v4.17.0)" in der HISTORIE-Datei; v4.18.0 betraf inhaltlich wieder beide Seiten;
+v4.19.0 war inhaltlich reines Desktop-Markup, `?v=` erneut bewusst auf beiden Seiten
+mitgezogen, s. „= aktueller Stand" oben).
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien steht `<span class="nav-version"
 id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine JS-Logik dahinter. Seit v4.5.0
-wieder synchron (beide `v4.18.0`), analog zum Cache-Busting oben. **Bei jedem
+wieder synchron (beide `v4.19.0`), analog zum Cache-Busting oben. **Bei jedem
 Versionssprung von Hand mitziehen** (zusammen mit `?v=` und der Kontext-Datei — bei allen
 drei HTML-Dateien, also auch `pizza-rechner-mobile-standalone.html` nach dem Rebuild,
 gegenprüfen), sonst zeigt die Live-App die falsche Version an.
@@ -748,6 +749,10 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
+- ~~Desktop-Logo auf SVG umstellen~~ — **erledigt in v4.19.0** (kein Backlog-Punkt im
+  engeren Sinne, direkter Nutzerauftrag per `/define-feature`; s. Abschnitt
+  „Desktop-Logo auf SVG umstellen (v4.19.0)" oben). `pizza-rechner.html`-Header nutzt
+  jetzt dasselbe `assets/logo.svg` wie Mobil statt des 🍕-Emojis.
 - ~~Einführung prominent platzieren~~ — **erledigt in v4.18.0** (kein Backlog-Punkt im
   engeren Sinne, direkter Nutzerauftrag per `/define-feature`; s. Abschnitt „Einführung
   prominent platzieren (v4.18.0)" oben). Eigene Karte ganz oben auf der Einstellungen-

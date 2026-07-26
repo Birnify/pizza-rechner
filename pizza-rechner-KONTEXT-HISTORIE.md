@@ -8,6 +8,26 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Einführung prominent platzieren (v4.18.0)
+
+Vom Nutzer per `/define-feature` strukturiert: „Einführung" bekommt eine eigene,
+prominente Karte ganz oben auf der Einstellungen-Seite (Desktop + Mobil), statt
+kaum auffindbar am Ende einer anderen Karte zu stecken. Abweichung von der
+Auftragsbeschreibung (Recherche ergab: nur Mobil hatte den Eintrag tatsächlich
+in der „Funktionen"-Karte; Desktop hatte ihn stattdessen im Burgermenü) —
+auf Desktop wurde die neue Karte ebenfalls ergänzt und der alte
+Burgermenü-Eintrag entfernt, statt doppelt vorzuhalten. `#navOnboardingItem`
+bleibt dieselbe ID (`js/onboarding.js` unverändert). Reine Markup-/i18n-Änderung
+(`pizza-rechner.html`, `pizza-rechner-mobile.html`, `js/i18n-dict.js`) — keine
+inhaltliche Änderung am Onboarding-Modal selbst. `accessibility-expert`-Review
+ohne Befunde (Kontrastwerte selbst nachgerechnet, exakt reproduziert).
+`tests/test.html`: unverändert **893** Prüfungen grün.
+
+**Volle Details zu vorherigen Releases:** Abschnitt „Quick-Bar-Speichern-Button
+entfernen (v4.17.0)" (Kurzfassung dort dokumentiert das Vorgänger-„= aktueller
+Stand"; vorheriger Abschnitt „Schüttwasser-Anzeige entfernen (v4.16.0)"
+ebenfalls dort).
+
 ## Quick-Bar-Speichern-Button entfernen (v4.17.0)
 
 Vom Nutzer per `/define-feature` strukturiert: der redundante Speichern-Button
