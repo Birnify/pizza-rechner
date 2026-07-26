@@ -8,6 +8,17 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Redundanten Button-Text in Einführung-Karte behoben (v4.23.1)
+
+Über `/define-feature` strukturiert, per Orchestrator umgesetzt. Button `#navOnboardingItem`
+in der „Einführung"-Karte (Einstellungen, Desktop + Mobil) sagte wortgleich dasselbe wie die
+Kartenüberschrift „EINFÜHRUNG". i18n-Key `nav.onboarding` (`js/i18n-dict.js`, einziger
+Verwendungsort) von „Einführung"/„Introduction" auf **„Rundgang starten"/„Start tour"**
+geändert (+ statische Fallback-Texte in `pizza-rechner.html`/`pizza-rechner-mobile.html`).
+Kartenüberschrift (`card.onboarding.title`) und Funktion des Buttons unverändert.
+`accessibility-expert`-Review: keine Befunde (Accessible Name eindeutig, kein Overflow-
+Risiko). `tests/test.html`: weiterhin **901** Prüfungen grün (reine i18n-Textänderung).
+
 ## Plattformabhängige Feature-Flag-Defaults (v4.23.0)
 
 Über `/define-feature` strukturiert, per Orchestrator umgesetzt. `js/settings.js`:

@@ -4,10 +4,9 @@
 <stop offset="0%" stop-color="#8f3d29"/>
 <stop offset="100%" stop-color="#ea9a6f"/>
 </linearGradient>
-<filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="9" stdDeviation="8" flood-color="#000" flood-opacity="0.28"/></filter>
 </defs>
 <rect width="512" height="512" rx="118" fill="url(#bgGrad)"/>
-<g transform="translate(238.01 281.93) rotate(12) scale(1.17) translate(-256 -279)" filter="url(#soft)">
+<g transform="translate(238.01 281.93) rotate(12) scale(1.17) translate(-256 -279)">
 <g fill="none" stroke="#f7f4f0" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
   <path d="M98 172 C160 112 352 112 414 172 L262 424 Q256 431 250 424 Z"/>
   <path d="M136 216 C196 178 316 178 376 216"/>

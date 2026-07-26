@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-26 · Aktuelle Version: v4.23.1 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-26 · Aktuelle Version: v4.23.2 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -180,20 +180,24 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Redundanten Button-Text in Einführung-Karte behoben (v4.23.1) = aktueller Stand
+## Logo-Schatten im Header entfernt (v4.23.2) = aktueller Stand
 
-Über `/define-feature` strukturiert, per Orchestrator umgesetzt. Button `#navOnboardingItem`
-in der „Einführung"-Karte (Einstellungen, Desktop + Mobil) sagte wortgleich dasselbe wie die
-Kartenüberschrift „EINFÜHRUNG". i18n-Key `nav.onboarding` (`js/i18n-dict.js`, einziger
-Verwendungsort) von „Einführung"/„Introduction" auf **„Rundgang starten"/„Start tour"**
-geändert (+ statische Fallback-Texte in `pizza-rechner.html`/`pizza-rechner-mobile.html`).
-Kartenüberschrift (`card.onboarding.title`) und Funktion des Buttons unverändert.
-`accessibility-expert`-Review: keine Befunde (Accessible Name eindeutig, kein Overflow-
-Risiko). `tests/test.html`: weiterhin **901** Prüfungen grün (reine i18n-Textänderung).
+Bugfix, bereits vom Hauptagenten live reproduziert (iPhone-Screenshot + Preview-Tool,
+Desktop + Mobil) und diagnostiziert, direkt an den Orchestrator übergeben (kein
+`/define-feature` nötig). `assets/logo.svg` enthielt einen `feDropShadow`-Filter
+(`id="soft"`, `stdDeviation="8"`, `dy="9"`), gedacht für große Darstellung — bei der
+tatsächlichen 36px-Header-Nutzung (Desktop + Mobil, einziger aktueller Verwendungsort,
+keine Favicon-/PWA-Referenz) ließ der Halo die dünnen weißen Pizza-Icon-Linien
+verwaschen wirken. Filter komplett aus der SVG entfernt (geringster Kollateralschaden,
+da aktuell nirgends groß dargestellt). Cache-Busting `?v=4.23.2` an der Logo-`<img>`
+ergänzt + alle `?v=`-Stellen/Menü-Versionsnummer von 4.23.1 auf 4.23.2 gezogen. Vom
+Hauptagenten per Vorher/Nachher-Vergleich (36px + 144px gezoomt) visuell bestätigt:
+Halo weg, Linien scharf. `tests/test.html`: weiterhin **901** Prüfungen grün (reine
+Asset-/Markup-Änderung, kein `test-generator`-/`accessibility-expert`-Lauf nötig).
 
-**Volle Details zu v4.23.0 und davor:** `pizza-rechner-KONTEXT-HISTORIE.md`,
-Abschnitt „Plattformabhängige Feature-Flag-Defaults (v4.23.0)" (vorherige Abschnitte
-ebenfalls dort verkettet).
+**Volle Details zu v4.23.1 und davor:** `pizza-rechner-KONTEXT-HISTORIE.md`,
+Abschnitt „Redundanten Button-Text in Einführung-Karte behoben (v4.23.1)" (vorherige
+Abschnitte ebenfalls dort verkettet).
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -349,11 +353,11 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.23.1 -- seit
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.23.2 -- seit
                      v4.5.0 synchron mit Mobil, s. u.: Desktop lädt weiterhin ohne
                      css/fonts.css, das ist unabhängig von der Versionsnummer)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle,
-                     ?v=4.23.1)
+                     ?v=4.23.2)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
 index.html           Weiterleitung auf pizza-rechner.html
@@ -475,7 +479,7 @@ formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 **Cache-Busting:** CSS/JS werden mit `?v=X.Y.Z` geladen. **Bei jeder neuen Version mitziehen.**
 Zwischen v4.0.0 und v4.4.0 bewusst auseinandergelaufen (Design-Import-Zyklen waren
 mobile-only, Desktop-HTML wurde nicht angefasst) — **seit v4.5.0 wieder synchron**, beide
-HTML-Dateien stehen bei `?v=4.23.1`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
+HTML-Dateien stehen bei `?v=4.23.2`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
 erneut bewusst entscheiden, ob ein Auseinanderlaufen sinnvoll ist oder beide mitgezogen
 werden (v4.17.0 war rein mobil-inhaltlich, `?v=` wurde bewusst trotzdem auf beiden Seiten
 mitgezogen, um die Synchronität zu erhalten — s. Abschnitt „Quick-Bar-Speichern-Button
@@ -484,8 +488,10 @@ v4.19.0 war inhaltlich reines Desktop-Markup, v4.20.0 inhaltlich eine reine i18n
 v4.21.0 (`--bg-gradient`-Token in `css/styles.css`, gemeinsam für beide Seiten), v4.22.0
 (Card-Elevation, `css/styles.css`, ebenfalls beide Seiten), v4.23.0 (plattformabhängige
 Feature-Flag-Defaults, `js/settings.js`, funktional nur auf Mobil relevant -- Desktop läuft
-faktisch immer im "Fallback"-Zweig -- `?v=` trotzdem bewusst auf beiden Seiten mitgezogen)
-und v4.23.1 (Button-Text `nav.onboarding`, `js/i18n-dict.js`, inhaltlich beide Seiten).
+faktisch immer im "Fallback"-Zweig -- `?v=` trotzdem bewusst auf beiden Seiten mitgezogen),
+v4.23.1 (Button-Text `nav.onboarding`, `js/i18n-dict.js`, inhaltlich beide Seiten) und
+v4.23.2 (Logo-Schatten `assets/logo.svg` entfernt, inhaltlich beide Seiten, zusätzlich
+eigenes `?v=4.23.2` an der Logo-`<img>` selbst ergänzt).
 
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien steht `<span class="nav-version"
