@@ -8,6 +8,25 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Desktop-Logo auf SVG umstellen (v4.19.0)
+
+Vom Nutzer per `/define-feature` strukturiert: der Header von `pizza-rechner.html`
+nutzt jetzt dasselbe SVG-Logo (`assets/logo.svg`, `<img class="app-logo">`) wie
+die Mobil-Seiten, statt des zuvor genutzten 🍕-Emojis (rendert je nach OS/Browser
+unterschiedlich/schlechter). Recherche ergab: die CSS-Regel `header h1 .app-logo`
+in `css/styles.css` war bereits ungescoped (gemeinsame Datei, kein Media-Query) —
+sie griff nur deshalb bisher nicht auf Desktop, weil dort kein `<img>` im Markup
+stand. Keine neue CSS-Regel nötig, nur irreführende „nur Mobil"-Kommentare an
+zwei Stellen korrigiert. Reine Markup-/CSS-Kommentar-Änderung
+(`pizza-rechner.html`, `css/styles.css`) — Mobil-Ansicht unverändert (Scope).
+`accessibility-expert`-Review ohne Befunde (dekoratives `alt=""`, Kontrast/
+Sichtbarkeit Hell- und Dunkelmodus geprüft). `tests/test.html`: unverändert
+**893** Prüfungen grün.
+
+**Volle Details zu vorherigen Releases:** Abschnitt „Einführung prominent
+platzieren (v4.18.0)" (Kurzfassung dort dokumentiert das Vorgänger-„=
+aktueller Stand"; vorherige Abschnitte ebenfalls dort verkettet).
+
 ## Einführung prominent platzieren (v4.18.0)
 
 Vom Nutzer per `/define-feature` strukturiert: „Einführung" bekommt eine eigene,

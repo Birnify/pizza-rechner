@@ -76,7 +76,12 @@
   // einem passenden Glossar-Eintrag, s. Kommentar bei buildGuide()/glossaryLinkHtml() in
   // js/guide.js und PZ.gotoGlossaryEntry() in js/glossary.js. {term} kommt aus dem
   // jeweiligen glossary.<id>.title-Eintrag, damit der Linktext immer zum Zieltitel passt.
-  add('guide.glossaryLink.label', 'Mehr zu {term} im Glossar', 'More on {term} in the glossary');
+  // Gekürzt in v4.20.0 (Nutzerauftrag, /define-feature "Glossar-Verweis-Text kürzen"):
+  // "Mehr zu " entfernt -- der Linktext beginnt jetzt direkt mit dem Begriff, "im Glossar"
+  // bleibt als kurzer Kontext-Anker erhalten (wichtig fürs Accessible Name, da das 📖-Icon
+  // davor aria-hidden ist, s. glossaryLinkHtml() in js/guide.js). Spart v. a. auf Mobil
+  // sichtbaren Platz, ohne die Bedeutung für Screenreader-Nutzer zu verlieren.
+  add('guide.glossaryLink.label', '{term} im Glossar', '{term} in the glossary');
   // Einklappbare Hinweisboxen (v4.10.0, Backlog Punkt H): sichtbarer Text des Toggle-
   // Buttons ist zugleich sein Accessible Name (kein zusätzliches aria-label nötig) --
   // Auf-/Zu-Zustand wird über aria-expanded angesagt, analog zum bestehenden .info-btn-Muster.
