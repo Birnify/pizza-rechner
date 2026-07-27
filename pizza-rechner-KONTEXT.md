@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-26 · Aktuelle Version: v4.23.2 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-27 · Aktuelle Version: v4.24.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -85,27 +85,44 @@ die anderen Mengen sinken nur minimal, weil das Öl seinen Gewichtsanteil bekomm
 
 ## Vorteig-Reife-Stufen (v3.2.0 — ersetzt den Slider aus v3.1.0)
 
-Reifezeit und Hefemenge hängen physikalisch zusammen (länger = weniger Hefe / kühler).
+Reifezeit und Hefemenge hängen physikalisch zusammen (länger = weniger Hefe / kühler bei
+gleicher Temperatur — kälter UND länger kann dagegen MEHR Hefe brauchen, s. Poolish unten).
 Deshalb **keine freien Regler**, sondern **diskrete Stufen**, die beides koppeln.
-Datenquelle: `PZ.PREF_STAGES` in `js/ui.js`:
-- **Biga:** `b16` (16 h · 0,4 %) · `b24` (24 h · 0,3 %, Default) · `b48` (48 h · 0,2 %)
-- **Poolish:** `p8` (8 h · 0,4 %) · `p14` (14 h · 0,2 %, Default) · `p24` (24 h · 0,18 %)
+Datenquelle: `PZ.PREF_STAGES` in `js/ui.js`. Jede Stufe hat seit v4.24.0 ein explizites
+`rel`-Feld, das die Bezugsgröße von `yeast` festlegt:
+- **Biga** (`rel:'total'`, % vom GESAMTMEHL, eigene Quellenrecherche noch offen — Backlog):
+  `b16` (16 h · 0,4 %) · `b24` (24 h · 0,3 %, Default) · `b48` (48 h · 0,2 %)
+- **Poolish** (`rel:'pref'`, % vom POOLISH-MEHL, aus 14 ausgewerteten Quellen abgeleitet,
+  s. HISTORIE v4.24.0): `p_warm` (10 h Raumtemp · 0,6 %) · `p_cold` (1 h Raumtemp + 24 h
+  Kühlschrank · 1,0 %, Default). `p_cold` hat bewusst MEHR Hefe als `p_warm`, weil „länger
+  = weniger Hefe" nur bei gleicher Temperatur gilt.
 
-`yeast` ist % vom Gesamtmehl (geht bei Vorteig komplett in den Vorteig). Alle Stufen-Hefewerte
-liegen bei ≥ 0,18 %, damit die Hauptteig-Gare (`schedule()`) im „Lange Hauptgare"-Rahmen (~8,5 h)
-bleibt — die Differenzierung steckt in der **Reifezeit**, nicht in der Hauptgare.
+`state.yeast` ist immer % vom GESAMTMEHL (geht bei Vorteig komplett in den Vorteig). Bei
+`rel:'total'`-Stufen (Biga) ist das identisch mit `stage.yeast`. Bei `rel:'pref'`-Stufen
+(Poolish) rechnet `PZ.makePrefStages().select()` (`js/widgets.js`) um:
+`state.yeast = stage.yeast × (prefEff / 100)`, wobei `prefEff` derselbe geklemmte
+Vorteig-Anteil ist, den auch `js/calc.js` verwendet (`PZ.calcCore(...).prefEff`, NICHT der
+rohe `state.pref` — sonst überhöhte Dosis, sobald die Hydration-Klemmung greift). Eine neue
+`resync(m)`-Funktion wiederholt diese Umrechnung, sobald sich der Vorteig-Anteil-Regler
+(`state.pref`) bei aktiver Poolish-Stufe ändert (Hook in `js/ui.js` UND `js/newrecipe.js`
+über den mitgegebenen Feld-Key in `cfg.onSet(key)`) — ohne diesen Nachzieh-Mechanismus
+würde die tatsächliche Poolish-Hefedosis mit dem Regler wegdriften.
 
 - State: `state.prefStage` (aktive Stufe) + `state.prefMature` (h, von der Stufe gesetzt).
 - `applyMethod()` (ui.js): rendert die Pills der Methode (`renderPrefStages`), blendet bei Vorteig
   die generischen Hefe-Pills (`#yeastPills`) aus, wählt eine gültige Stufe (`selectPrefStage`).
-- `selectPrefStage(m, key)` setzt `prefStage` + `prefMature` **und** `PZ.set.yeast(stage.yeast)`.
-  Nutzer-Klick auf eine Pill setzt zusätzlich `#preset` zurück auf „Eigene"; der **programmatische**
-  Aufruf (Load/Preset) nicht.
+- `selectPrefStage(m, key)` setzt `prefStage` + `prefMature` **und** die (ggf. umgerechnete,
+  s. o.) Hefemenge. Nutzer-Klick auf eine Pill setzt zusätzlich `#preset` zurück auf „Eigene";
+  der **programmatische** Aufruf (Load/Preset) nicht.
 - `buildGuide` nutzt `matureMin = prefMature × 60` als Dauer des „…reifen lassen"-Schritts,
   adaptiver Temperatur-Text (länger = kühler), schreibt `R.totalMin` / `R.matureMin`.
 - **Mehl-Warnung** zählt `prefMature` als Vorteig-Reife zur Gesamtgärzeit.
-- **Hintergrund:** die Hefe-Pills (72h+ etc.) steuern nur die Hauptteig-Gare; bei Vorteig dominiert
-  die Reifezeit — daher eigene, gekoppelte Stufen statt der (irreführenden) Zeit-Hefe-Trennung.
+- **`js/schedule.js` ist seit v4.24.0 von `state.yeast` entkoppelt:** jede Vorteig-Methode
+  (Biga UND Poolish) landet unabhängig von der Hefemenge immer im „Lange Hauptgare"-Zweig
+  (2–3 h Stockgare, 5–7 h Stückgare, Raumtemp, `cold: false`) — die Hefe-Pills (72h+ etc.)
+  steuern also nur noch die Hauptteig-Gare bei der DIREKTEN Methode, bei Vorteig dominiert
+  ausschließlich die Reifezeit der Stufe. Nebenwirkung: die Kaltgare-Umschaltung „als
+  Teiglinge/im Stück" (`coldStage`) ist bei Vorteig-Methoden dadurch wirkungslos.
 
 **CSS:** `.pills button.active` (tomatenrot gefüllt) zeigt die aktive Stufe.
 
@@ -158,15 +175,20 @@ Abschnitt „Zucker-Feld / New York Style" weiter unten. Bewusst nicht in dieser
 | Key | Methode | Hyd | Salz | Öl | Hefe | Mehl (empfohlen) |
 |-----|---------|-----|------|------|------|------------------|
 | `napoli_klassisch` | direct | 60 % | 2,8 % | 2 % | 0,2 % | caputo_pizzeria |
-| `napoli_65` | direct | 65 % | 2,8 % | 2 % | 0,3 % | caputo_pizzeria |
 | `napoli_kalt` | direct | **65 %** | 3,0 % | 2 % | 0,1 % | **caputo_cuoco** |
 | `schnell` | direct | 62 % | 2,5 % | 2 % | 1,5 % | caputo_pizzeria |
 | `napoli_biga` | biga (pref 100, bhyd 45) | 65 % | 2,8 % | 2 % | 0,3 % | caputo_cuoco |
-| `napoli_poolish` | poolish (pref 66) | 66 % | 2,5 % | 2 % | 0,2 % | **dallag_monica** |
+| `napoli_poolish_schnell` | poolish (pref 66, p_warm) | 66 % | 2,5 % | 2 % | 0,396 % | **dallag_monica** |
+| `napoli_poolish_kalt` | poolish (pref 66, p_cold) | 66 % | 2,5 % | 2 % | 0,66 % | **dallag_monica** |
 | `teglia` | direct (ballw 320) | 75 % | 2,5 % | **4 %** | 0,3 % | **caputo_nuvola_super** |
 
 (napoli_kalt war 62 % → auf 65 % angehoben, damit es zum Cuoco passt;
-poolish braucht hydMax ≥ 66 → Monica; teglia braucht hydMax ≥ 75 → Nuvola Super.)
+poolish braucht hydMax ≥ 66 → Monica; teglia braucht hydMax ≥ 75 → Nuvola Super. Hefe bei
+den beiden Poolish-Presets = effektiver Wert in `state.yeast`, also bereits umgerechnet auf
+% Gesamtmehl — s. „rel:'pref'" oben. Zeile „napoli_65" entfernt, v4.24.0 beim Aktualisieren
+dieser Tabelle bemerkt: der Preset-Key existierte in `js/presets.js` gar nicht (mind.
+seit v4.7.0 nicht mehr, unklar seit wann genau) — reiner Dokumentationsfehler, keine
+Code-Änderung nötig.)
 
 ## Mehl-Datenbank (js/flour.js, Quelle: pizza1.de/blog/pizzamehl-uebersicht/)
 
@@ -180,24 +202,204 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Logo-Schatten im Header entfernt (v4.23.2) = aktueller Stand
+## Poolish-Stufen aus Quellenrecherche (v4.24.0) = aktueller Stand
 
-Bugfix, bereits vom Hauptagenten live reproduziert (iPhone-Screenshot + Preview-Tool,
-Desktop + Mobil) und diagnostiziert, direkt an den Orchestrator übergeben (kein
-`/define-feature` nötig). `assets/logo.svg` enthielt einen `feDropShadow`-Filter
-(`id="soft"`, `stdDeviation="8"`, `dy="9"`), gedacht für große Darstellung — bei der
-tatsächlichen 36px-Header-Nutzung (Desktop + Mobil, einziger aktueller Verwendungsort,
-keine Favicon-/PWA-Referenz) ließ der Halo die dünnen weißen Pizza-Icon-Linien
-verwaschen wirken. Filter komplett aus der SVG entfernt (geringster Kollateralschaden,
-da aktuell nirgends groß dargestellt). Cache-Busting `?v=4.23.2` an der Logo-`<img>`
-ergänzt + alle `?v=`-Stellen/Menü-Versionsnummer von 4.23.1 auf 4.23.2 gezogen. Vom
-Hauptagenten per Vorher/Nachher-Vergleich (36px + 144px gezoomt) visuell bestätigt:
-Halo weg, Linien scharf. `tests/test.html`: weiterhin **901** Prüfungen grün (reine
-Asset-/Markup-Änderung, kein `test-generator`-/`accessibility-expert`-Lauf nötig).
+Aus 14 ausgewerteten Quellen abgeleitet (NICHT selbst gebacken/verifiziert): die
+Poolish-Reife-Stufen (`PZ.PREF_STAGES.poolish`, `js/ui.js`) heißen jetzt `p_warm` (10 h
+Raumtemp, 0,6 %) und `p_cold` (1 h Raumtemp + 24 h Kühlschrank, 1,0 %) statt der bisherigen
+drei unbelegten Stufen — beide mit neuem, explizitem `rel:'pref'` (Hefe bezogen aufs
+Poolish-Mehl, nicht mehr aufs Gesamtmehl wie bisher `rel:'total'`). Kernfix: die
+Umrechnung driftet nicht mehr mit dem Vorteig-Anteil-Regler (`PZ.makePrefStages().resync()`,
+`js/widgets.js`) und berücksichtigt seit einem `test-generator`-Review-Fund auch die
+`js/calc.js`-Klemmung (`prefEff`) statt des rohen Werts. `js/schedule.js`: Vorteig-Zweig
+komplett von `state.yeast` entkoppelt, liefert immer den bisherigen „prefLong"-Zweig.
+Presets: `napoli_poolish` → `napoli_poolish_schnell`/`_kalt` (gleiche 66/66-Geometrie, nur
+Gärregime unterschiedlich, ≈20 h/≈34 h). `tests/test.html`: 901 → **949** Prüfungen grün.
 
-**Volle Details zu v4.23.1 und davor:** `pizza-rechner-KONTEXT-HISTORIE.md`,
-Abschnitt „Redundanten Button-Text in Einführung-Karte behoben (v4.23.1)" (vorherige
-Abschnitte ebenfalls dort verkettet).
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Poolish-Stufen aus
+Quellenrecherche (v4.24.0)" (vorherige Abschnitte ebenfalls dort verkettet).
+
+## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
+
+Stand 2026-07-26, **nicht abgeschlossen**. Betrifft ausschließlich `assets/`, **kein
+App-Code geändert**, deshalb bleibt v4.23.2 der aktuelle App-Stand und es gibt keinen
+`Versionen/`-Schnappschuss dafür.
+
+**Was existiert (alles neu, noch nicht committet):**
+- `assets/BILD-PROMPTS.md` — **128** fertige Bild-Prompts in 12 Gruppen (Hero, Rezeptkarten,
+  Fertig-Fotos, Anleitungs-Schritte, Glossar-Banner, 38 Glossar-Artikelbilder, Onboarding,
+  Party, Leerzustände, Marketing, Texturen, Puffer). Jeder Block ist in sich geschlossen.
+  Die Zahl **38** Glossar-Artikel ist gegen `PZ.GLOSSARY_CATEGORIES` (`js/glossary.js`)
+  geprüft, eine ältere Fassung ging von 37 aus und kam auf 127 Blöcke.
+- `assets/generate_bilder.py` — liest die Datei, schickt jeden Block an die lokale
+  **ComfyUI-API** (`127.0.0.1:8188`), wartet, lädt das Bild und speichert es unter dem
+  Zieldateinamen. Aufruf: `python generate_bilder.py --blocks 1` bzw. `--blocks all`,
+  `--force` überschreibt, `--dry-run` prüft nur das Parsing.
+- `assets/comfyui_workflow_template.json` — aus der laufenden ComfyUI-Instanz ausgelesen.
+  Node-IDs: 8 Positiv, 9 Negativ, 10 Breite/Höhe, 11 KSampler/Seed, 13 Dateiname.
+
+**Vier harte Erkenntnisse (jeweils durch Fehlversuche belegt, stehen ausführlich im Kopf
+von `assets/BILD-PROMPTS.md`):**
+1. Der Workflow fährt **CFG 1.0** (distilliertes Turbo-Modell). Damit ist Classifier-Free
+   Guidance abgeschaltet und der **Negativ-Prompt völlig wirkungslos**. Alles Wichtige muss
+   in den Positiv-Teil, und zwar als Beschreibung dessen, was zu sehen sein SOLL.
+2. **Verneinungen im Positiv-Teil wirken nicht subtraktiv, sie bringen den Begriff erst
+   ins Bild.** „Keine Schrift…" stand in allen 128 Blöcken und erzeugte Schrift.
+3. Die Abschnitts-Marker `MOTIV:`/`BILDAUFBAU:` wurden vom Modell als Aufdruck auf eine
+   Küchenwaage gemalt. Sie bleiben im Dokument (Lesbarkeit), `generate_bilder.py` entfernt
+   sie vor dem Senden.
+4. Objekte müssen über **Form und Größe** beschrieben werden, nicht über ihren Namen, sonst
+   wird aus dem Teigschaber ein Küchenmesser und aus dem Pizzaschieber ein Tortenheber.
+   Ebenso reicht „fertig gebacken" nicht, der Backzustand muss ausformuliert werden, und
+   ein Untergrund muss **eindeutig** benannt sein (Alternativen mit „oder" führen zu
+   kreidigen Putzflächen).
+
+**Wo es steht:** Zwei komplette Durchläufe erzeugt (Blöcke 1–90 und 91–116), aber
+**noch mit den alten, fehlerhaften Prompts**. Danach wurden alle vier Punkte oben
+systematisch nachgezogen. Seither läuft auf Nutzerwunsch ein **sequenzieller
+Einzel-Durchlauf**: ein Bild erzeugen, ansehen, bei Mängeln den Prompt nacharbeiten und
+neu erzeugen, erst bei Zufriedenheit zum nächsten Block.
+
+**Stand 2026-07-26 (zweite Sitzung): die zwölf als „wirklich nötig" markierten Bilder
+sind alle erzeugt, gesichtet und abgenommen** — Block 1 (Header Desktop), 2 (Header
+Mobil), 8 (`card-napoli_klassisch`), 9 (`card-napoli_kalt`), 10 (`card-schnell`),
+11 (`card-napoli_biga`), 12 (`card-napoli_poolish`), 13 (`card-teglia`),
+14 (`card-newyork_style`), 19 (`pizza-final-neapolitanisch`), 20 (`pizza-final-teglia`),
+21 (`pizza-final-newyork`). Nachgearbeitet und neu erzeugt werden mussten dabei Block 9
+(einmal), 8 (einmal), 13 (einmal) und 20 (zweimal), Gründe s. u. Alles andere
+(Blöcke 3 bis 7, 15 bis 18, 22 bis 128) ist Ausbau und liegt weiterhin nur mit den
+**alten, fehlerhaften Prompts** im Ordner.
+
+**Vier Prompt-Fehlerklassen, die dabei gefunden und behoben wurden** (Details jeweils im
+Kopf von `assets/BILD-PROMPTS.md`):
+1. **Regel 1 war nur teilweise umgesetzt.** Im Positiv-Teil standen noch **151**
+   Verneinungen. Die schädlichen in den Pflicht-Blöcken sind behoben: „ausdrücklich kein
+   Blaustich" (Block 9) pflanzte Blau ein, „ausdrücklich ohne Leopardenflecken" (Block 14)
+   pflanzte genau die Flecken ein, die dem New-York-Style fehlen sollen, ebenso „ohne
+   lesbare Schilder" und „ohne jeden Aufdruck". Nach der bejahenden Umformulierung waren
+   beide Fehler weg. **Die restlichen Blöcke sind noch nicht durchgesehen**, s. „Was noch
+   offen ist" unten.
+2. **Auch der ROHE Teigzustand muss ausformuliert werden.** Block 9 lieferte sechs oben
+   goldbraun gebackene Brötchen statt kalt geführter Teiglinge. Mit dem Satz „ausdrücklich
+   roher, ungebackener Hefeteig: durchgehend blass cremeweiß bis elfenbeinfarben und matt,
+   …" kam sofort das Richtige. Derselbe Satz steht jetzt auch in 36, 37, 38, 60, 64, 65,
+   74, 115, 123.
+3. **Die Form der Pizza selbst muss in den Positiv-Teil.** Block 13 (Teglia) hatte nur das
+   *Blech* als rechteckig beschrieben, „runde Pizza" stand allein im wirkungslosen
+   Negativ-Teil: Ergebnis war eine runde Pizza mit Tortenstück auf einem rechteckigen
+   Blech. Mit „durchgehende rechteckige Teigplatte mit vier geraden Kanten und vier rechten
+   Winkeln, füllt das Blech randvoll bis in alle vier Ecken, in gleich große Rechtecke
+   geteilt" stimmte es. Block 20 wurde vorbeugend genauso nachgezogen.
+4. **Stückzahlen sind nicht steuerbar, die Anordnung schon.** „Genau zwei
+   Basilikumblätter" ergab fünf (Block 8), „ein einzelnes Blatt" ergab vier (Block 1). Das
+   ist bei CFG 1.0 nicht zu beheben. Das Rosetten-Muster dagegen verschwand mit „dicht
+   nebeneinander auf eine einzige Seite gelegt, sie berühren und überlappen sich, die
+   gegenüberliegende Hälfte zeigt nur Käse und Sauce". Also auf Verteilung zielen, nicht
+   auf die Zahl.
+
+Zusätzlich geprüft: die Untergründe sind inzwischen **überall eindeutig** (keine
+„A oder B"-Alternativen mehr), und von den Widersprüchen zwischen Stil-Vorspann und Motiv
+(Vorspann Marmor, Motiv Holztisch) war nur Block 19 echt betroffen, Block 20 nannte eine
+Steinfläche. Beide sind angeglichen.
+
+**Arbeitsweise dabei (Nutzer-Vorgabe):** nicht stapelweise durchlaufen lassen, sondern
+einzeln und mit Sichtprüfung. Immer nur **ein** ComfyUI-Job gleichzeitig, sonst fällt
+ComfyUI auf der **AMD RX 9070 XT** in den Low-VRAM-Modus (`lowvram patches` im Log) und
+wird rund 30-mal langsamer (1,9 s/it auf 55–67 s/it). Achtung: ein `TaskStop` auf das
+Python-Skript beendet **nicht** die bereits an ComfyUI übergebenen Jobs, die laufen in
+dessen eigener Queue weiter (`/queue` prüfen, `/interrupt` bzw. `{"clear":true}` an
+`/queue` posten).
+
+**Header-Blöcke immer am Zuschnitt beurteilen, nicht am Vollbild (2026-07-26 geklärt).**
+Der Desktop-Header ist live gemessen **1265 x 142 px** (`getBoundingClientRect()` an
+`pizza-rechner.html`, Viewport 1280 px), Verhältnis 8,9:1, und nutzt
+`background-size:cover` mit `background-position:center`. Von einem 21:9-Bild
+(2560 x 1100) sind dadurch nur **rund 25 % der Bildhöhe** sichtbar, ein mittlerer
+Streifen. Ein Hero-Bild als Vollbild zu bewerten führt deshalb in die Irre. Dafür gibt
+es jetzt `assets/sim_header_crop.py`: es rechnet `cover` + `center` nach und legt den
+tatsächlich sichtbaren Streifen zweifach vergrößert unter `assets/_sim/` ab
+(`python sim_header_crop.py header-margherita-desktop.jpg`). `_sim/` ist reine
+Prüfausgabe und gehört nicht ins Repo.
+
+**Block 1 ist damit abgenommen.** Eine frühere Sitzung hatte die Komposition verworfen
+(„im Zuschnitt bliebe nur Käsefläche") und empfohlen, die 21:9-Heros höher zu rendern
+(2560 x 1600) und den Mittelstreifen per Pillow herauszuschneiden. **Diese Empfehlung
+war falsch und ist verworfen:** höher rendern zoomt den sichtbaren Header-Streifen noch
+weiter in die Bildmitte hinein (bei 1600 px Höhe wären nur noch ~17 % sichtbar statt
+~25 %), also genau in die Käsefläche. Der Zuschnitt des vorhandenen Bildes wurde geprüft
+und zeigt tatsächlich links und rechts den leopardengefleckten Rand, dazwischen Käse,
+Sauce, Basilikum und in den Ecken bemehltes Holz. Das trägt einen Header. Auch die
+Prompt-Forderung „oberes und unteres Fünftel motivfrei lassen" ist damit gegenstandslos:
+gebraucht wird in der Bildmitte **Motiv**, nicht Leerfläche.
+
+**Stand 2026-07-26 (dritte Sitzung, autonom):**
+
+- **Verneinungen im Positiv-Teil vollständig abgearbeitet: von 151 auf 0.** 93
+  Ersetzungsregeln, ausschließlich innerhalb der ```-Blöcke und dort nur in Absätzen, die
+  nicht mit „Vermeide strikt:" beginnen. Jede Verneinung wurde bejahend umformuliert statt
+  gestrichen („keine Zahl lesbar" → „das Display bleibt eine reine dunkle Fläche", „kein
+  starkes Zentrum" → „alle Bildbereiche sind gleich stark gewichtet", „ohne Etikett" →
+  „aus blankem, rundum glattem Glas"). Der Prüfscan (Regex über alle Positiv-Absätze)
+  meldet jetzt 0 Treffer.
+- **Erzeugt, gesichtet und abgenommen:** Blöcke 3, 4, 5, 6, 7 (restliche Heros), 15 bis 18
+  (restliche Rezeptkarten), 22 bis 26 (restliche Fertig-Fotos), 27 bis 45 (komplette
+  Gruppe Anleitungs-Schritte). Block 2 wurde neu erzeugt, s. Mobil-Zuschnitt unten.
+  Nacharbeit nötig war dabei nur bei Block 3 (einmal), 4 (zweimal), 5 (einmal),
+  24 (zweimal) und 41 (zweimal); alle übrigen saßen im ersten Anlauf, was für die
+  Wirkung der Verneinungs-Bereinigung spricht.
+- **Sechste Fehlerklasse: ein genanntes geometrisches Muster landet im Bild, auch wenn
+  es nur eine Handbewegung meint** (Block 41). „Eine Kelle Tomate wird in der Mitte
+  abgesetzt und **in einer Spirale** nach außen verstrichen" ergab konzentrische
+  Sauce-Ringe als Dekor. Statt der Bewegung das Ergebnis beschreiben („die gesamte Mitte
+  ist lückenlos bedeckt, eine einzige durchgehende rote Fläche in gleichmäßiger Dicke").
+- **Der Mobil-Header ist 390 x 90 px** (live gemessen an `pizza-rechner-mobile.html`,
+  Viewport 390 x 844), Verhältnis 4,33:1, gleiche CSS-Regel wie Desktop (`header{}` ist
+  nicht nach Viewport gescoped). Von einem 4:5-Hochformat (1400 x 1750) sind dort nur
+  **19 % der Bildhöhe** sichtbar. `sim_header_crop.py` hat dafür jetzt ein `--mobile`.
+  Damit fiel auf, dass **Block 2 im echten Mobil-Header fast nur leeres Holz zeigte** (er
+  war in der zweiten Sitzung am Vollbild abgenommen worden, bevor die Mobil-Geometrie
+  bekannt war). Nachgearbeitet und neu erzeugt, sitzt jetzt.
+- **Neue Erkenntnis zum Bildaufbau von Headern:** „Motiv im mittleren Drittel halten"
+  wirkt nicht, der **Kamerastandpunkt** dagegen schon. Eine Kamera auf Hüfthöhe, die auf
+  eine Tischplatte blickt, legt das Motiv zwangsläufig ins untere Bilddrittel, also aus
+  dem Header-Streifen heraus (Block 4, zwei Fehlversuche). Erst der Wechsel auf **steile
+  Aufsicht, bei der die Arbeitsfläche das ganze Bild füllt**, brachte das Motiv in die
+  Bildmitte. Merksatz: die Bildposition über die Kameraposition steuern, nicht über eine
+  Positionsanweisung.
+- **Vierte Fehlerklasse gefunden: Bausteine, die dem Motiv widersprechen.** Der
+  Standard-Baustein „Die Pizza ist eindeutig fertig durchgebacken: … der Käse vollständig
+  zu einer blasigen Schicht verlaufen …" stand auch in den drei **käsefreien** Blöcken 24
+  und 80 (Marinara) und 90 (Sfincione) und erzeugte prompt Käseflecken auf der Marinara.
+  Dort steht jetzt eine käsefreie Variante desselben Bausteins. Lehre: beim Einsetzen
+  eines wiederverwendeten Textbausteins prüfen, ob er zum konkreten Motiv passt.
+- **Knoblauchscheiben brauchen Form ohne Binnenstruktur.** „dünne Knoblauchscheiben"
+  ergab Pilze und Tomatenscheiben; „flaches Oval mit hellerem Rand und Kern in der Mitte"
+  ergab Zitronen- und Gurkenscheiben (Ring plus Kern). Erst „winzige, unregelmäßig
+  geformte, flache Blättchen, kleiner als ein Fingernagel, durchgehend in einem einzigen
+  elfenbeinweißen Ton, die Fläche glatt und durchgehend einfarbig" ergab Knoblauch.
+
+**Was noch offen ist (Reihenfolge als Vorschlag):**
+1. **Blöcke ab 27** erzeugen und sichten (Anleitungs-Schritte, Glossar, Onboarding,
+   Party, Leerzustände, Marketing, Texturen, Puffer). Alles davon liegt derzeit nur mit
+   den **alten** Prompts im Ordner.
+2. **Bekannte, nicht behobene Schwäche:** „Fläche freilassen" ignoriert das Modell
+   zuverlässig. Viele Karten-Prompts reservieren eine ruhige Bildhälfte für Text; das
+   klappt bei den Marmor-Karten (8, 11, 12, 14) gut, bei formatfüllenden Motiven
+   (9, 10) nicht. Wenn eine Textzone zwingend gebraucht wird, ist sie im Layout
+   (Gradient-Overlay) verlässlicher als im Prompt.
+3. **Die Bilder sind noch nirgends eingebunden.** `css/styles.css` setzt
+   `--header-photo: url('../assets/header-pizza.jpg')`, also weiterhin das alte
+   Platzhalter-Foto; die Karten-, Schritt- und Glossarbilder referenziert bisher kein
+   Markup. Das Einbinden ist ein eigener, noch nicht begonnener Schritt (und dann ein
+   echtes App-Release mit Versionssprung, anders als die reine Asset-Arbeit hier).
+
+**Git-Stand:** alles noch **uncommittet**. Die drei bereits versionierten Platzhalter
+`assets/pizza-final-neapolitanisch.jpg`, `-newyork.jpg`, `-teglia.jpg` sind durch
+erzeugte Bilder **überschrieben** (das ist so gewollt, Block 19/20/21 ersetzen sie
+laut Dokument) und notfalls per `git checkout -- <datei>` zurückholbar. Alle übrigen
+Bilder sowie `BILD-PROMPTS.md`, `generate_bilder.py` und
+`comfyui_workflow_template.json` sind neu und untracked. `Brain.md` im Wurzelverzeichnis
+ist ein Transkript-Auszug einer früheren Sitzung, kein Projektartefakt.
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -549,8 +751,8 @@ gegenprüfen), sonst zeigt die Live-App die falsche Version an.
 - **Versionen-Workflow (Pflicht bei jeder Änderung):** kompletten lauffähigen Stand nach
   `Versionen/vX.Y.Z - [Beschreibung]/` kopieren (html, index, css/, js/, README; tests/ optional).
   SemVer: Patch=Fix, Minor=Feature, Major=Umbau. `?v=` in der HTML mitziehen.
-- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 901 Prüfungen in
-  31 Kategorien** (s. Dateistruktur oben): Bäckerprozente, DDT/Eis, Vorteig-Aufteilung, Trockenhefe,
+- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 949 Prüfungen in
+  32 Kategorien** (s. Dateistruktur oben): Bäckerprozente, DDT/Eis, Vorteig-Aufteilung, Trockenhefe,
   Schedule-Schwellen, Mehl-Warnung, Backzeit-Skalierung, Olivenöl (Masseerhaltung), Anleitungs-
   Hinweise, Randfälle/Edge Cases, Kombinationen, Zeitplan-Rückwärtsrechnung, Einkaufsliste,
   Speichern & Laden, Teilen-Link, Feature-Flags/Einstellungen, Zucker/New-York-Style,
@@ -558,7 +760,8 @@ gegenprüfen), sonst zeigt die Live-App die falsche Version an.
   Hefemengen-/Verschwendungs-Anpassung, Einheitensystem Metrisch/Imperial,
   Glossar-Verweise in der Anleitung, Foto der fertigen Pizza, Inline-Verlinkung von
   Glossar-Begriffen im Anleitungstext, Akkordeon-Verhalten der Hinweisboxen,
-  Fokus-Erhalt bei .collapse/.show-Feldern. Nach
+  Fokus-Erhalt bei .collapse/.show-Feldern, Poolish-Stufen rel:'pref'-Umrechnung +
+  Vorteig-Anteil-Drift-Fix. Nach
   Logik-Änderungen laufen lassen. `js/timer.js` (Notification/setInterval/Web-Audio-API) und
   `js/newrecipe.js` (reines DOM-Wiring) werden bewusst **nicht** in `tests/test.html` geladen —
   beide stattdessen manuell bzw. per isoliertem Headless-Aufbau verifiziert. Die Wachstums-
@@ -755,6 +958,30 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
+- **Biga-Stufenwerte aus Quellenrecherche ableiten** (neu, v4.24.0): die drei Biga-Stufen
+  (`b16`/`b24`/`b48`, 0,4/0,3/0,2 %) sind weiterhin die alten, nicht quellenbelegten Werte —
+  die für Poolish gemachte 14-Quellen-Recherche wurde bewusst nicht auf Biga ausgeweitet
+  (Scope-Grenze des v4.24.0-Zyklus). Analoger Aufwand/Nutzen wie die Poolish-Recherche.
+- **Temperaturabhängige Reifezeit statt fester Stundenzahl** (neu, v4.24.0, bewusst
+  verworfen für diesen Zyklus): in der Poolish-Quellenrecherche kam die Idee auf, Reifezeit
+  in Abhängigkeit von der tatsächlichen Umgebungstemperatur zu berechnen statt fixer
+  Stundenwerte je Stufe. Verworfen, weil nur eine dünne Quelle das stützt — wäre erfundene
+  Präzision ohne breite Beleglage. Kandidat nur, falls sich die Beleglage verbessert.
+  Geringer Aufwand für die Grundidee, aber hoher Rechercheaufwand für belastbare Werte.
+- **`PZ.formatWeightAuto()`-Dezimaltrennzeichen-Bug** (neu, v4.24.0 gefunden, nicht
+  behoben — Scope-Grenze): `toFixed(2)` erzeugt „1.20 g" mit Punkt statt Komma
+  (`js/units.js`), inkonsistent zum Rest der App (die anderen Formatierungen normieren auf
+  Komma, s. „Bugfix: inkonsistente Dezimaltrennzeichen bei Regler-Wertanzeigen (v3.32.0)"
+  weiter unten — dieselbe Fehlerklasse, aber eine andere, damals nicht mit erfasste
+  Funktion). Kleiner, klar umrissener Fix, ein Kandidat für „inline" statt Orchestrator.
+- **Type-ahead-Kette im `#preset`-Dropdown wird länger** (Nebenbefund aus dem
+  v4.24.0-`accessibility-expert`-Review, kein Blocker, keine Regression): alle
+  „Napoli …"-Optionen (`napoli_klassisch`, `napoli_kalt`, `napoli_biga`,
+  `napoli_poolish_schnell`, `napoli_poolish_kalt`) teilen sich denselben Anfangstext, native
+  `<select>`-Sprungnavigation per Tastatur (Type-ahead) kann deshalb nicht direkt auf eine
+  einzelne Option springen, sondern muss durchtabben. Bestand schon vorher (4 Optionen mit
+  „Napoli …"-Präfix), durch die Aufteilung von einer auf zwei Poolish-Optionen um einen
+  Eintrag länger geworden. Kein Handlungsbedarf, nur zur Kenntnis.
 - **Visuelles Redesign: Foto-Hero + Card-Elevation** (noch nicht spezifiziert,
   aus einer vom Nutzer geteilten Design-Analyse/Ooini-Vergleich): eigene
   Pizza-/Teig-Fotos als Hintergrund für Rezeptkarten, größere Typografie-

@@ -17,7 +17,20 @@
   // dieses Umbaus). `announceId` liefert eine Live-Region-Ansage bei +/- Klick (nicht
   // beim Tippen ins Zahlenfeld oder Klick auf eine Schnellwahl-Chip, da dort der neue
   // Wert ohnehin sofort sichtbar wird).
-  const stepper = PZ.makeStepper({ stateObj: state, onSet: PZ.calc, announceId: 'stepperLiveMsg' });
+  // Seit v4.24.0: onSet bekommt den geänderten Feld-Key mit -- wird gebraucht, um bei
+  // Änderungen am Vorteig-Anteil-Regler ("pref") die Hefemenge einer aktiven Poolish-
+  // Reife-Stufe mit rel:'pref' nachzuziehen (sonst driftet die Dosis mit dem Regler,
+  // s. Kommentar bei PZ.PREF_STAGES unten). `prefStages` wird erst weiter unten in
+  // dieser Datei zugewiesen -- unproblematisch, da diese Funktion erst bei einer
+  // späteren Nutzerinteraktion aufgerufen wird, nicht beim Definieren selbst.
+  const stepper = PZ.makeStepper({
+    stateObj: state,
+    onSet: function (key) {
+      if (key === 'pref' && state.method !== 'direct' && prefStages) prefStages.resync(state.method);
+      PZ.calc();
+    },
+    announceId: 'stepperLiveMsg'
+  });
 
   // Setter-Sammlung (von presets.js und storage.js genutzt)
   PZ.set = {
@@ -50,18 +63,35 @@
   document.querySelectorAll('[data-sugar]').forEach(b => b.onclick = () => PZ.set.sugar(b.dataset.sugar));
 
   // --- Vorteig-Reife-Stufen: koppeln Reifezeit + Hefemenge (physikalisch abhängig) ---
-  // yeast = % bezogen auf Gesamtmehl (geht bei Vorteig komplett in den Vorteig).
-  // Werte >= 0,18 % halten die Hauptteig-Gare in einem praktikablen Rahmen.
+  // Jede Stufe trägt seit v4.24.0 ein explizites `rel`-Feld, das die Bezugsgröße von
+  // `yeast` festlegt (keine stille Asymmetrie zwischen den Methoden):
+  //   rel: 'total' — % bezogen auf das GESAMT-Mehl (geht bei Vorteig komplett in den
+  //                  Vorteig). Bisheriges, unveränderliches Verhalten -- weiterhin für Biga.
+  //   rel: 'pref'  — % bezogen auf das POOLISH-Mehl selbst (alle 14 ausgewerteten Quellen
+  //                  geben Poolish-Hefe so an). PZ.makePrefStages() (js/widgets.js)
+  //                  rechnet bei rel:'pref' zur Anwendungszeit um: state.yeast (%
+  //                  Gesamtmehl) = stage.yeast * (state.pref / 100) -- und zieht das bei
+  //                  jeder Änderung des Vorteig-Anteil-Reglers automatisch nach (sonst
+  //                  würde die tatsächliche Poolish-Hefedosis mit dem Regler wegdriften,
+  //                  genau der Fehler, den diese Umstellung behebt).
+  // Biga-Werte unverändert (eigene Quellenrecherche für Biga steht noch aus, s. Backlog
+  // in pizza-rechner-KONTEXT.md). Poolish-Werte seit v4.24.0 aus 14 ausgewerteten Online-
+  // Quellen abgeleitet (Plötzblog, Manopasto, My Pizza Corner u. a., s. Kontextdatei) --
+  // NICHT selbst gebacken/verifiziert, nur quellenbasiert plausibilisiert.
   PZ.PREF_STAGES = {
     biga: [
-      { key: 'b16', label: '16 h · 0,4 %', mature: 16, yeast: 0.4 },
-      { key: 'b24', label: '24 h · 0,3 %', mature: 24, yeast: 0.3 },
-      { key: 'b48', label: '48 h · 0,2 %', mature: 48, yeast: 0.2 }
+      { key: 'b16', label: '16 h · 0,4 %', mature: 16, yeast: 0.4, rel: 'total' },
+      { key: 'b24', label: '24 h · 0,3 %', mature: 24, yeast: 0.3, rel: 'total' },
+      { key: 'b48', label: '48 h · 0,2 %', mature: 48, yeast: 0.2, rel: 'total' }
     ],
     poolish: [
-      { key: 'p8',  label: '8 h · 0,4 %',  mature: 8,  yeast: 0.4 },
-      { key: 'p14', label: '14 h · 0,2 %', mature: 14, yeast: 0.2 },
-      { key: 'p24', label: '24 h · 0,18 %', mature: 24, yeast: 0.18 }
+      // p_warm: 0,6 % Poolish-Mehl bei ~10 h Raumtemp (My Pizza Corner, zugleich Median
+      // der 5 ausgewerteten Warm-Quellen). p_cold: 1,0 % Poolish-Mehl bei 1 h Raumtemp
+      // + 24 h Kühlschrank (Manopasto + Plötzblog, unabhängig übereinstimmend) -- bewusst
+      // MEHR Hefe als die Warm-Stufe, weil "länger = weniger Hefe" nur bei gleicher
+      // Temperatur gilt, nicht wenn die längere Stufe zusätzlich kalt geführt wird.
+      { key: 'p_warm', label: '10 h · 0,6 %', mature: 10, yeast: 0.6, rel: 'pref' },
+      { key: 'p_cold', label: '24 h · 1,0 %', mature: 24, yeast: 1.0, rel: 'pref' }
     ]
   };
   // Seit v3.56.0: gemeinsame Fabrik PZ.makePrefStages() (js/widgets.js) statt eigener

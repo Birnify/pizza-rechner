@@ -102,7 +102,10 @@
         const disp = fmt(val);
         if (v) v.textContent = disp;
         if (unitKey) s.setAttribute('aria-valuetext', disp + ' ' + t(unitKey));
-        if (cfg.onSet) cfg.onSet();
+        // Seit v4.24.0: `key` wird mitgegeben (z. B. für den Poolish-Vorteig-Anteil-Drift-
+        // Fix, s. js/ui.js) -- bestehende cfg.onSet-Implementierungen ohne Parameter
+        // (z. B. js/newrecipe.js hat hier gar kein onSet konfiguriert) bleiben unberührt.
+        if (cfg.onSet) cfg.onSet(key);
       }
       if (unitKey) {
         s.setAttribute('aria-valuetext', fmt(parseFloat(s.value)) + ' ' + t(unitKey));
@@ -153,7 +156,10 @@
         const disp = fmt(val);
         if (v) v.textContent = disp;
         if (announce && cfg.announceId && unitKey) PZ.announce(cfg.announceId, disp + ' ' + t(unitKey));
-        if (cfg.onSet) cfg.onSet();
+        // Seit v4.24.0: `key` wird mitgegeben (z. B. für den Poolish-Vorteig-Anteil-Drift-
+        // Fix, s. js/ui.js) -- bestehende cfg.onSet-Implementierungen ohne Parameter
+        // ignorieren ihn einfach.
+        if (cfg.onSet) cfg.onSet(key);
       }
       n.addEventListener('input', () => set(n.value, false));
       if (minus) minus.addEventListener('click', () => set((parseFloat(n.value) || 0) - step, true));
@@ -202,7 +208,9 @@
   // Letzteres bündelt das bisher in applyMethod()/nrApplyMethod() duplizierte Muster
   // "aktuelle Stufe gültig? behalten : auf PREF_DEFAULT[m] zurückfallen".
   // ======================================================================
-  const PREF_DEFAULT = { biga: 'b24', poolish: 'p14' };
+  // Seit v4.24.0: 'p14' (entfernte, unbelegte Stufe) ersetzt durch 'p_warm' (10 h,
+  // Raumtemp) als zugänglicherer Standard-Poolish -- s. PZ.PREF_STAGES (js/ui.js).
+  const PREF_DEFAULT = { biga: 'b24', poolish: 'p_warm' };
 
   function makePrefStages(cfg) {
     function render(m) {
@@ -240,14 +248,45 @@
       cfg.stateObj.prefStage = s.key;
       cfg.stateObj.prefMature = s.mature;
       highlight(s.key);
-      cfg.setYeast(s.yeast);
+      // Seit v4.24.0: rel:'pref' (bisher nur Poolish) bezieht `yeast` auf das
+      // POOLISH-Mehl statt auf das Gesamtmehl -- state.yeast ist aber immer % vom
+      // Gesamtmehl, deshalb hier mit dem aktuellen Vorteig-Anteil umrechnen. rel:'total'
+      // (Biga) bleibt unverändert 1:1.
+      // Bugfix (Review-Fund test-generator, noch am selben Tag): NICHT den rohen
+      // cfg.stateObj.pref verwenden, sondern denselben Klemmwert wie js/calc.js
+      // (PZ.calcCore().prefEff) -- calc.js klemmt den Vorteig-Anteil bei Poolish auf
+      // maximal die Hydration (pf*pHyd darf das Gesamtwasser nie übersteigen, pHyd=1 bei
+      // Poolish). Ohne diese Klemmung hier würde die tatsächlich verwendete Poolish-
+      // Mehlmenge (prefEff) von der für die Hefe-Umrechnung angenommenen Menge (roh pref)
+      // abweichen, sobald ein Nutzer die Hydration senkt oder den Vorteig-Anteil über die
+      // Hydration hinaus anhebt -- exakt dieselbe Drift-Klasse, die diese ganze Umstellung
+      // beheben soll. calc.js lädt direkt nach widgets.js, PZ.calcCore ist zur Aufrufzeit
+      // von select() (immer erst nach einer Nutzer-/Preset-Interaktion) garantiert bereit;
+      // der Fallback auf den rohen Wert greift nur defensiv, falls das doch mal nicht so ist.
+      let y = s.yeast;
+      if (s.rel === 'pref') {
+        const effPref = PZ.calcCore
+          ? PZ.calcCore(Object.assign({}, cfg.stateObj, { method: m })).prefEff
+          : cfg.stateObj.pref;
+        y = s.yeast * (effPref / 100);
+      }
+      cfg.setYeast(y);
     }
     function selectValidOrDefault(m) {
       const stages = (PZ.PREF_STAGES && PZ.PREF_STAGES[m]) || [];
       const valid = stages.some(s => s.key === cfg.stateObj.prefStage);
       select(m, valid ? cfg.stateObj.prefStage : PREF_DEFAULT[m]);
     }
-    return { render: render, highlight: highlight, select: select, selectValidOrDefault: selectValidOrDefault };
+    // Seit v4.24.0: bei rel:'pref'-Stufen muss die Hefemenge nachgezogen werden, wenn
+    // sich der Vorteig-Anteil-Regler (state.pref) ändert -- sonst driftet die tatsächliche
+    // Poolish-Hefedosis genau wie im behobenen Bestandsfehler (Kontextdatei). Ruft select()
+    // erneut mit der bereits aktiven Stufe auf (idempotent bei rel:'total'/Biga -- select()
+    // rechnet dort exakt denselben Wert wie zuvor).
+    function resync(m) {
+      const stages = (PZ.PREF_STAGES && PZ.PREF_STAGES[m]) || [];
+      if (stages.some(s => s.key === cfg.stateObj.prefStage)) select(m, cfg.stateObj.prefStage);
+    }
+    return { render: render, highlight: highlight, select: select, selectValidOrDefault: selectValidOrDefault, resync: resync };
   }
   PZ.makePrefStages = makePrefStages;
 

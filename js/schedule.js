@@ -22,31 +22,24 @@
     const ballsCold = state.coldStage !== 'bulk';
 
     // --- Vorteig-Methoden: Stockgare ist kürzer (Reife steckt im Vorteig) ---
+    // Seit v4.24.0 (Poolish-Quellenrecherche, s. pizza-rechner-KONTEXT.md) entkoppelt von
+    // state.yeast: die alten Hefe-Schwellen (>=1,2/0,5/0,18/darunter) existierten nur, damit
+    // die früheren, unbelegten Poolish-Stufenwerte zufällig im "Lange Hauptgare"-Zweig
+    // landeten -- mit belegten Werten (0,6 % / 1,0 %, jeweils bezogen aufs Poolish-Mehl,
+    // nicht mehr aufs Gesamtmehl) hätte diese Ableitung aus state.yeast falsche Zweige
+    // getroffen. Der Hauptteig bleibt bei Vorteig-Methoden bewusst durchgehend bei
+    // Raumtemperatur (Ein-Phasen-Bauart, gedeckt durch My Pizza Corner/Electric Blue
+    // Food/Oonis Sofort-Variante) -- IMMER derselbe Zweig wie zuvor "prefLong"
+    // (Biga-Stufen 0,4/0,3/0,2 % und die alte Poolish-Voreinstellung lagen bereits alle
+    // hier, verhaltensneutral für den Bestand). Nebenwirkung (nicht behoben, dokumentiert):
+    // die Kaltgare-Umschaltung "als Teiglinge/im Stück" (coldStage) greift dadurch bei
+    // Vorteig nie (cold immer false) -- das war schon vorher der Fall für jede Kombination,
+    // die hier landete, keine Regression.
     if (state.method !== 'direct') {
-      if (y >= 1.2) return {
-        label: t('sched.prefFast.label', 'Vorteig · Schnelle Hauptgare'),
-        bulk: t('sched.prefFast.bulk', '<b>1–2 h</b> bei Raumtemp (Stockgare)'), bulkMin: 90,
-        proof: t('sched.prefFast.proof', '<b>2–3 h</b> bei Raumtemp · Fingertest'), proofMin: 150, cold: false
-      };
-      if (y >= 0.5) return {
-        label: t('sched.prefMedium.label', 'Vorteig · Mittlere Hauptgare'),
-        bulk: t('sched.prefMedium.bulk', '<b>2 h</b> bei Raumtemp (Stockgare)'), bulkMin: 120,
-        proof: t('sched.prefMedium.proof', '<b>3–5 h</b> bei Raumtemp · Fingertest'), proofMin: 240, cold: false
-      };
-      if (y >= 0.18) return {
+      return {
         label: t('sched.prefLong.label', 'Vorteig · Lange Hauptgare'),
         bulk: t('sched.prefLong.bulk', '<b>2–3 h</b> bei Raumtemp (Stockgare)'), bulkMin: 150,
         proof: t('sched.prefLong.proof', '<b>5–7 h</b> bei Raumtemp · Fingertest'), proofMin: 360, cold: false
-      };
-      if (ballsCold) return {
-        label: t('sched.prefVeryLong.label', 'Vorteig · Sehr lange Hauptgare'),
-        bulk: t('sched.prefVeryLongCold.bulk', '<b>2–3 h</b> bei Raumtemp (Stockgare)'), bulkMin: 150,
-        proof: t('sched.prefVeryLongCold.proof', 'Teiglinge <b>12–16 h</b> Kühlschrank (4 °C), am Backtag <b>4–5 h</b> temperieren'), proofMin: 1080, cold: true
-      };
-      return {
-        label: t('sched.prefVeryLong.label', 'Vorteig · Sehr lange Hauptgare'),
-        bulk: t('sched.prefVeryLongBulk.bulk', '<b>2–3 h</b> Raumtemp, dann <b>12–18 h</b> Kühlschrank'), bulkMin: 960,
-        proof: t('sched.prefVeryLongBulk.proof', 'Teiglinge <b>4–5 h</b> vor dem Backen temperieren'), proofMin: 270, cold: true
       };
     }
 

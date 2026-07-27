@@ -280,7 +280,9 @@
       if (hasMF) {
         const yeastPart = R.mYeast >= 0.05 ? t('guide.pref.addFlour.yeastPart', { mYeast: g(R.mYeast), yWord: R.yWord }) : '';
         const sugarPart = hasSugar ? t('guide.pref.addFlour.sugarPart', { sugar: g(R.sugar) }) : '';
-        addParts.push(t('guide.pref.addFlour', { mFlour: g(R.mFlour), yeastPart: yeastPart, sugarPart: sugarPart }));
+        // Bugfix v4.24.0: eigener Bindesatz (guide.pref.addFlourOnly), wenn kein Restwasser
+        // mehr übrig ist (hasMW false) -- s. Kommentar bei den i18n-Keys in js/i18n-dict.js.
+        addParts.push(t(hasMW ? 'guide.pref.addFlour' : 'guide.pref.addFlourOnly', { mFlour: g(R.mFlour), yeastPart: yeastPart, sugarPart: sugarPart }));
       }
       const titleSuffix = (hasMW ? t('guide.titleSuffix.water') : '') + (hasMF ? t('guide.titleSuffix.flour') : '') + (hasSugar ? t('guide.titleSuffix.sugar') : '');
       st(t('guide.prefGenericTitle') + titleSuffix, t('guide.chip.5min'),
@@ -355,8 +357,15 @@
         kneadBody, '', state.knead === '6' ? 10 : 13,
         { glossaryId: _usedGlossaryIds.has('windowpane') ? undefined : 'windowpane' });
     }
+    // Bugfix v4.24.0: bei Vorteig-Rezepten OHNE Hauptteig-Restwasser (R.hasMixingWater
+    // false, z. B. das 66/66-Poolish-Preset) gibt es keinen Schüttwasser-Stellhebel mehr,
+    // über den sich {ddt} noch gezielt ansteuern ließe -- die bisherige Formulierung
+    // "24 °C angepeilt" behauptete das trotzdem. Eigener, ehrlicherer Text für diesen Fall.
+    const checkTempBody = (pref && !R.hasMixingWater)
+      ? t('guide.step.checkTemp.bodyNoWater')
+      : t('guide.step.checkTemp.body', { ddt: gt(state.ddt) });
     st(t('guide.step.checkTemp.title'), t('guide.step.checkTemp.chip'),
-      t('guide.step.checkTemp.body', { ddt: gt(state.ddt) }), '', 2);
+      checkTempBody, '', 2);
 
     const ballsCold = f.cold && state.coldStage !== 'bulk';
     // Kaltgare-Glossarverweis (v3.68.0): nur an der Stelle, die für DIESES Rezept

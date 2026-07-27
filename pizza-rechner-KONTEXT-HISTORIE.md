@@ -8,6 +8,140 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Poolish-Stufen aus Quellenrecherche (v4.24.0)
+
+Der Nutzer beauftragte im Hauptgespräch eine Quellenrecherche zum Poolish (14 Quellen:
+Plötzblog, Teigformel.de, Speedelicious, Salamico, Jordo's Pizza Calculator, Pala Pizza,
+Ooni/Modernist Pizza, Vito Iacopelli, Waldis Pizza, Burnhard, a-modo-mio, My Pizza Corner,
+Electric Blue Food, Manopasto). Ergebnis: Anrührmethode, 1:1-Hydration, „alle Hefe in den
+Vorteig", „Salz/Öl nur in den Hauptteig" und die Reifekennzeichen waren korrekt. Falsch
+waren die Hefemengen der Stufen und ihre Bezugsgröße — die alten Werte (`p8`/`p14`/`p24`)
+stammten laut Kontextdatei nicht aus Backpraxis, sondern waren so gewählt, dass sie
+zufällig im „Lange Hauptgare"-Codezweig von `schedule()` landeten (alle ≥ 0,18 %).
+**Wichtig, ehrlich benannt:** die neuen Werte sind aus den 14 Quellen abgeleitet, aber
+NICHT selbst gebacken oder verifiziert — die Testsuite prüft Rechenwege, kein Backergebnis.
+
+**`PZ.PREF_STAGES.poolish` (js/ui.js): drei Stufen wurden zwei**, jede Stufe hat jetzt ein
+explizites `rel`-Feld (keine stille Asymmetrie mehr):
+- `p_warm`: 10 h Raumtemp, **0,6 %** Hefe (My Pizza Corner, zugleich Median der 5
+  ausgewerteten Warm-Quellen: 0,4/0,5/0,6/1,43/1,67 %)
+- `p_cold`: 1 h Raumtemp anspringen, dann 24 h Kühlschrank, **1,0 %** Hefe (zwei
+  unabhängige Quellen: Manopasto und Plötzblog decken sich exakt) — bewusst MEHR Hefe als
+  die Warm-Stufe, weil „länger = weniger Hefe" nur bei gleicher Temperatur gilt
+- Beide `rel: 'pref'` (Hefe bezogen aufs POOLISH-Mehl, wie in allen 14 Quellen), nicht mehr
+  `rel: 'total'` (Gesamtmehl) wie bisher. Die 3 Biga-Stufen (`b16`/`b24`/`b48`) bleiben
+  unverändert `rel: 'total'` — eigene Quellenrecherche für Biga steht noch aus (Backlog).
+
+**Kern-Bugfix — Drift beim Vorteig-Anteil-Regler:** bei `rel: 'total'` driftete die
+tatsächliche Poolish-Hefedosis, sobald der Vorteig-Anteil-Regler (`state.pref`) bewegt
+wurde (bei pref 66 % ergab die alte `p14` die gewollten 0,303 %, bei pref 30 % dagegen
+0,67 %, während die Pille weiter „14 h" behauptete). Fix: `PZ.makePrefStages()` (neu:
+`js/widgets.js`) rechnet bei `rel:'pref'` um (`yeast = stage.yeast * (pref/100)`) und
+bekam eine neue `resync(m)`-Funktion, die diese Umrechnung erneut anstößt, sobald sich
+`state.pref` bei aktiver Poolish-Stufe ändert. Dafür geben `PZ.makeStepper()`/`PZ.makeLink()`
+(`js/widgets.js`) den geänderten Feld-Key jetzt an `cfg.onSet(key)` mit; `js/ui.js` UND
+`js/newrecipe.js` (Mini-Formular „Neues Rezept anlegen") hören beide auf `key === 'pref'`
+und rufen `resync()` auf.
+
+**Zweiter Bugfix, aus dem `test-generator`-Review desselben Zyklus gefunden (kein
+Backlog-Punkt, direkt behoben):** `select()` rechnete zunächst mit dem ROHEN `state.pref`,
+`js/calc.js` klemmt den Vorteig-Anteil bei Poolish aber auf maximal die Hydration
+(`prefEff = min(100, hyd/pHyd*100)`, `pHyd=1` bei Poolish) — sobald diese Klemmung griff
+(Hydration gesenkt oder Vorteig-Anteil über die Hydration angehoben), wäre die Poolish-
+Hefedosis um den Faktor `pref/prefEff` zu hoch gewesen, exakt dieselbe Drift-Klasse, die
+dieser Zyklus beheben sollte. Fix: `select()` liest jetzt `PZ.calcCore(...).prefEff`
+(single source of truth) statt die Klemmformel ein zweites Mal zu duplizieren. Die beiden
+Presets selbst sind nicht betroffen (`pref` 66 = `hyd` 66, exakt an der Klemmgrenze, nicht
+geklemmt) — betrifft nur individuell abweichende Kombinationen.
+
+**`js/schedule.js`:** der Vorteig-Zweig ist jetzt komplett von `state.yeast` entkoppelt
+(die alte 0,18-%-Schwelle plus drei weitere Schwellen fielen weg, da sie nur existierten,
+damit die alten, unbelegten Stufenwerte zufällig in einen bestimmten Zweig fielen). Für
+JEDES `method !== 'direct'` liefert `schedule()` jetzt immer den bisherigen „prefLong"-
+Zweig (2–3 h Stockgare Raumtemp, 5–7 h Stückgare Raumtemp, `cold: false`) — verhaltens-
+neutral für den Bestand (die 3 Biga-Stufen und die alte Poolish-Voreinstellung lagen
+bereits alle in diesem Zweig). Nebenwirkung dokumentiert, nicht behoben: die Kaltgare-
+Umschaltung „als Teiglinge/im Stück" greift bei Vorteig dadurch nie mehr (`cold` immer
+`false`) — das war schon vorher der Fall für praktisch jede erreichbare Kombination, keine
+echte Regression. Der Hauptteig bleibt bei Vorteig bewusst durchgehend bei Raumtemperatur
+(Ein-Phasen-Bauart, gedeckt durch My Pizza Corner/Electric Blue Food/Oonis Sofort-Variante) —
+ausdrücklich NICHT auf eine zweite Kaltphase im Hauptteig umgebaut (vom Nutzer explizit
+abgelehnt).
+
+**`js/presets.js`: aus `napoli_poolish` wurden zwei Presets**, `napoli_poolish_schnell`
+(prefStage `p_warm`) und `napoli_poolish_kalt` (prefStage `p_cold`) — bewusst identische
+Geometrie (66/66, Manopasto-Aufbau: 500 g Poolish-Mehl von 755 g Gesamtmehl), unterscheiden
+sich NUR im Gärregime, damit der Unterschied verständlich bleibt. Reale Gesamtzeiten selbst
+per Headless-Edge nachgemessen (nicht geschätzt): **schnell ≈ 20 h, kalt ≈ 34 h**. Beide
+lösen weiterhin keine Mehl-Warnung aus (Monica: minH 12/maxH 72/hydMin 65/hydMax 70).
+
+**Textkorrekturen (`js/i18n-dict.js`, DE+EN), alle live an der App verifiziert:**
+`option.napoliPoolish` („24–48 h") → zwei neue Optionen mit den gemessenen Zeiten;
+`hint.method.poolish` („12–16 h") an die neuen Stufen angepasst; `hint.pref.poolish`
+(„meist 30–50 %") ergänzt um die 66-%-Bauart als bewusste Abweichung vom Mainstream
+(20–50 %); `guide.step.prefCombine.body` reparierte einen grammatisch kaputten Satz beim
+66/66-Preset (`mWater = 0` ließ „Den ganzen Poolish 203 g Mehl zugeben…" ohne Verbindung
+stehen) über einen neuen Bindesatz `guide.pref.addFlourOnly` (nur wenn kein Restwasser mehr
+übrig ist); `guide.poolish.temp.warm` beschreibt jetzt ein reines Raumtemperatur-Regime
+statt eines inhaltsleeren Satzes (Raumtemp-Default war schon 21 °C, „dann bei ~20 °C
+ausreifen" sagte also zweimal dasselbe); `guide.step.poolishRest.body` ergänzt „etwa
+verdoppeltes Volumen" als Reifekennzeichen (4 von 14 Quellen nennen das als primäres
+Sichtmerkmal); `glossary.poolish.body` beschreibt jetzt beide Regime statt nur „lange,
+kühle Fermentation"; der „Teigtemperatur prüfen"-Schritt behauptete bei `mWater = 0` einen
+nicht mehr vorhandenen Steuerungs-Stellhebel („24 °C angepeilt") — neuer, ehrlicherer
+Text `guide.step.checkTemp.bodyNoWater` greift, wenn `R.hasMixingWater` bei Vorteig
+`false` ist.
+
+**Bewusst NICHT in diesem Zyklus** (als Backlog-Punkte übernommen, s. u.): die Biga-
+Stufenwerte (eigene Quellenrecherche nötig), temperaturabhängige Reifezeit statt fester
+Stundenzahl (verworfen — nur eine dünne Quelle, wäre erfundene Präzision), die 2 % Olivenöl
+in den Napoli-Presets (projektweite Altentscheidung über alle Presets), der Dezimal-
+trennzeichen-Fehler in `PZ.formatWeightAuto()`, der 66-%-Vorteig-Anteil selbst.
+
+**Tests** (`tests/test.html`, 901 → **949**): eigene Sektion **„32 · Poolish-Stufen:
+rel:'pref'-Umrechnung + Vorteig-Anteil-Drift-Fix"** testet `PZ.makePrefStages()` direkt
+(Umrechnung, Drift-Szenario, Biga-Kontrollgruppe unberührt, Klemm-Regressionstest); Sektion
+5 (Schedule) um die Vorteig-Entkopplung erweitert (4 Hefemengen → identischer Zweig, plus
+Poolish-Variante, plus 4 coldStage-Wirkungslosigkeits-Fälle für Biga UND Poolish);
+`PRESET_STATES` um beide neuen Presets ergänzt; 2 neue `mWater=0`-Tests mit den echten
+Presets; ein neuer Zeitplan-Rückwärtsrechnung-Test mit der `p_cold`-Stufe (24 h). Ein
+`test-generator`-Durchlauf lieferte 7 Vorschläge, davon 3 direkt brauchbar + 1 mit
+korrigierter Assertion übernommen, 4 waren defekt (Zugriff auf nicht existierende
+R-Felder wie `R.pOil`/`R.pSugar`, ein Tippfehler `method:'poolisch'`, Tests ohne
+`select()`-Aufruf, tautologische Nachrechnungen) und wurden verworfen — die wichtigste
+Erkenntnis aus dem Review war nicht ein Testfall, sondern der oben beschriebene
+Klemm-Bugfix. Kein `mobile-optimizer`/`performance-profiler` nötig (keine neue Mobil-
+Markup-Struktur, kein Performance-Befund). `accessibility-expert`-Review der einzigen
+Markup-Änderung (eine `<option>` wurde zu zwei im `#preset`-`<select>`): keine Befunde
+(Type-ahead-Kette um einen Eintrag länger, aber keine Regression — bestehende Optionen
+haben dasselbe „Napoli …"-Präfix-Muster).
+
+**Geändert:** `js/ui.js`, `js/widgets.js`, `js/schedule.js`, `js/presets.js`,
+`js/guide.js`, `js/i18n-dict.js`, `js/newrecipe.js`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`, `tests/test.html`. `?v=` auf `4.24.0` gezogen (Desktop +
+Mobil, Cache-Busting + Footer-Version). `pizza-rechner-mobile-standalone.html` neu gebaut.
+`Versionen/v4.24.0 - Poolish-Stufen aus Quellenrecherche/` enthält den vollständigen
+Schnappschuss.
+
+## Logo-Schatten im Header entfernt (v4.23.2)
+
+Bugfix, bereits vom Hauptagenten live reproduziert (iPhone-Screenshot + Preview-Tool,
+Desktop + Mobil) und diagnostiziert, direkt an den Orchestrator übergeben (kein
+`/define-feature` nötig). `assets/logo.svg` enthielt einen `feDropShadow`-Filter
+(`id="soft"`, `stdDeviation="8"`, `dy="9"`), gedacht für große Darstellung — bei der
+tatsächlichen 36px-Header-Nutzung (Desktop + Mobil, einziger aktueller Verwendungsort,
+keine Favicon-/PWA-Referenz) ließ der Halo die dünnen weißen Pizza-Icon-Linien
+verwaschen wirken. Filter komplett aus der SVG entfernt (geringster Kollateralschaden,
+da aktuell nirgends groß dargestellt). Cache-Busting `?v=4.23.2` an der Logo-`<img>`
+ergänzt + alle `?v=`-Stellen/Menü-Versionsnummer von 4.23.1 auf 4.23.2 gezogen. Vom
+Hauptagenten per Vorher/Nachher-Vergleich (36px + 144px gezoomt) visuell bestätigt:
+Halo weg, Linien scharf. `tests/test.html`: weiterhin **901** Prüfungen grün (reine
+Asset-/Markup-Änderung, kein `test-generator`-/`accessibility-expert`-Lauf nötig).
+
+**Volle Details zu v4.23.1 und davor:** Abschnitt „Redundanten Button-Text in
+Einführung-Karte behoben (v4.23.1)" direkt darunter (vorherige Abschnitte ebenfalls
+hier verkettet).
+
 ## Redundanten Button-Text in Einführung-Karte behoben (v4.23.1)
 
 Über `/define-feature` strukturiert, per Orchestrator umgesetzt. Button `#navOnboardingItem`

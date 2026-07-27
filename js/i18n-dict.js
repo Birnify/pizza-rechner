@@ -33,21 +33,15 @@
     DICT.en[key] = en;
   }
 
-  // ---- js/schedule.js: Gärzeit-Fahrplan (13 Zweige × label/bulk/proof) -------------
-  add('sched.prefFast.label', 'Vorteig · Schnelle Hauptgare', 'Pre-ferment · Fast bulk rise');
-  add('sched.prefFast.bulk', '<b>1–2 h</b> bei Raumtemp (Stockgare)', '<b>1–2 h</b> at room temp (bulk rise)');
-  add('sched.prefFast.proof', '<b>2–3 h</b> bei Raumtemp · Fingertest', '<b>2–3 h</b> at room temp · finger test');
-  add('sched.prefMedium.label', 'Vorteig · Mittlere Hauptgare', 'Pre-ferment · Medium bulk rise');
-  add('sched.prefMedium.bulk', '<b>2 h</b> bei Raumtemp (Stockgare)', '<b>2 h</b> at room temp (bulk rise)');
-  add('sched.prefMedium.proof', '<b>3–5 h</b> bei Raumtemp · Fingertest', '<b>3–5 h</b> at room temp · finger test');
+  // ---- js/schedule.js: Gärzeit-Fahrplan -------------------------------------------
+  // Seit v4.24.0 (Poolish-Quellenrecherche, s. pizza-rechner-KONTEXT.md): der Vorteig-Zweig
+  // ist von state.yeast entkoppelt und liefert für method !== 'direct' IMMER "prefLong" --
+  // die früheren yeast-abhängigen Zweige sched.prefFast/prefMedium/prefVeryLong* sind
+  // dadurch unerreichbar geworden und wurden entfernt (s. js/schedule.js für die
+  // Begründung). sched.prefLong bleibt der einzige Vorteig-Zweig.
   add('sched.prefLong.label', 'Vorteig · Lange Hauptgare', 'Pre-ferment · Long bulk rise');
   add('sched.prefLong.bulk', '<b>2–3 h</b> bei Raumtemp (Stockgare)', '<b>2–3 h</b> at room temp (bulk rise)');
   add('sched.prefLong.proof', '<b>5–7 h</b> bei Raumtemp · Fingertest', '<b>5–7 h</b> at room temp · finger test');
-  add('sched.prefVeryLong.label', 'Vorteig · Sehr lange Hauptgare', 'Pre-ferment · Very long bulk rise');
-  add('sched.prefVeryLongCold.bulk', '<b>2–3 h</b> bei Raumtemp (Stockgare)', '<b>2–3 h</b> at room temp (bulk rise)');
-  add('sched.prefVeryLongCold.proof', 'Teiglinge <b>12–16 h</b> Kühlschrank (4 °C), am Backtag <b>4–5 h</b> temperieren', 'Dough balls <b>12–16 h</b> in the fridge (4 °C), let come to room temp <b>4–5 h</b> on baking day');
-  add('sched.prefVeryLongBulk.bulk', '<b>2–3 h</b> Raumtemp, dann <b>12–18 h</b> Kühlschrank', '<b>2–3 h</b> room temp, then <b>12–18 h</b> in the fridge');
-  add('sched.prefVeryLongBulk.proof', 'Teiglinge <b>4–5 h</b> vor dem Backen temperieren', 'Let dough balls come to room temp <b>4–5 h</b> before baking');
   add('sched.directFast.label', 'Schnellgare · gleicher Tag', 'Fast rise · same day');
   add('sched.directFast.bulk', '<b>1,5–2 h</b> bei warmer Raumtemp (24–26 °C)', '<b>1.5–2 h</b> at warm room temp (24–26 °C)');
   add('sched.directFast.proof', '<b>2–3 h</b> bei Raumtemp', '<b>2–3 h</b> at room temp');
@@ -144,13 +138,13 @@
   add('guide.step.poolishMix.chip', 'mit Löffel / Schneebesen', 'with a spoon / whisk');
   add('guide.step.poolishMix.body', 'Hefe im Wasser auflösen, dann Mehl einrühren – <b>mit einem Löffel oder Schneebesen ca. 2–3 min rühren</b>, bis ein <b>zäher, klumpenfreier Pfannkuchenteig</b> entsteht. Abdecken.',
     'Dissolve the yeast in the water, then stir in the flour: <b>stir with a spoon or whisk for about 2–3 min</b> until you get a <b>thick, lump-free pancake-batter consistency</b>. Cover.');
-  add('guide.poolish.temp.warm', '<b>1 h</b> bei Raumtemp anspringen lassen, dann bei <b>~20 °C</b> ausreifen.',
-    'Let it start for <b>1 h</b> at room temp, then let it fully rise at <b>~20 °C</b>.');
+  add('guide.poolish.temp.warm', 'Durchgehend bei <b>Raumtemperatur</b> ausreifen lassen, keine Kühlung nötig.',
+    'Let it rise throughout at <b>room temperature</b>, no cooling needed.');
   add('guide.poolish.temp.cold', '<b>1 h</b> bei Raumtemp anspringen lassen, dann <b>kühl stellen (Kühlschrank)</b> und langsam ausreifen.',
     'Let it start for <b>1 h</b> at room temp, then place it <b>in the fridge</b> to rise slowly.');
   add('guide.step.poolishRest.title', 'Poolish reifen lassen', 'Let the poolish rise');
-  add('guide.step.poolishRest.body', '{poolishTempTxt} Reif = Oberfläche <b>voller Blasen</b>, kurz bevor er wieder einfällt.',
-    '{poolishTempTxt} Ripe = surface <b>full of bubbles</b>, just before it starts to collapse again.');
+  add('guide.step.poolishRest.body', '{poolishTempTxt} Reif = <b>etwa verdoppeltes Volumen</b>, Oberfläche <b>voller Blasen</b>, kurz bevor er wieder einfällt.',
+    '{poolishTempTxt} Ripe = <b>roughly doubled in volume</b>, surface <b>full of bubbles</b>, just before it starts to collapse again.');
   add('guide.step.poolishRest.tip', 'Fingertest: riecht angenehm nach Hefe/Joghurt, nicht stechend nach Alkohol. Länger als ~24 h zieht er nicht durch.',
     'Finger test: smells pleasantly of yeast/yogurt, not sharply of alcohol. It won\'t hold up much longer than ~24 h.');
 
@@ -164,6 +158,13 @@
 
   add('guide.pref.addWater', 'mit dem <b>{mWater} Wasser</b> lösen', 'dissolve it with the <b>{mWater} water</b>');
   add('guide.pref.addFlour', '<b>{mFlour} Mehl</b>{yeastPart}{sugarPart} zugeben', 'add <b>{mFlour} flour</b>{yeastPart}{sugarPart}');
+  // Bugfix v4.24.0: eigene Formulierung, wenn die Mehlzugabe der EINZIGE addParts-Eintrag
+  // ist (kein Restwasser mehr übrig, hasMW false -- tritt beim 66/66-Poolish-Preset immer
+  // auf, 66 % Vorteig bei 66 % Hydration ergibt exakt 0 g Restwasser). Ohne eigenen
+  // Bindesatz ergab "Den ganzen {prefName} {addParts} und {mixPhrase}" den grammatisch
+  // kaputten Satz "Den ganzen Poolish 203 g Mehl zugeben und ...", weil guide.pref.addFlour
+  // nur als ANSCHLUSS nach "...lösen, dann" gedacht war, nicht als direktes Objekt.
+  add('guide.pref.addFlourOnly', 'sowie <b>{mFlour} Mehl</b>{yeastPart}{sugarPart} zugeben', 'and add <b>{mFlour} flour</b>{yeastPart}{sugarPart}');
   add('guide.pref.addFlour.yeastPart', ' und <b>{mYeast} Hefe {yWord}</b>', ' and <b>{mYeast} {yWord} yeast</b>');
   add('guide.pref.addFlour.sugarPart', ' und <b>{sugar} Zucker</b>', ' and <b>{sugar} sugar</b>');
   add('guide.pref.noAddParts', 'in die Schüssel geben', 'pour it into the bowl');
@@ -266,6 +267,11 @@
   add('guide.step.checkTemp.chip', 'Ziel 23–25 °C', 'Target 23–25 °C');
   add('guide.step.checkTemp.body', 'Thermometer in den Teig: <b>{ddt}</b> angepeilt. Wärmer → schnellere Gare, kälter → langsamer.',
     'Thermometer into the dough: targeting <b>{ddt}</b>. Warmer → faster rise, colder → slower.');
+  // Bugfix v4.24.0: Variante ohne Zieltemperatur-Behauptung für Vorteig-Rezepte ohne
+  // Hauptteig-Restwasser (kein Schüttwasser-Stellhebel mehr übrig, s. Kommentar in
+  // js/guide.js).
+  add('guide.step.checkTemp.bodyNoWater', 'Thermometer in den Teig: aktuelle Temperatur notieren. Es ist kein Schüttwasser mehr übrig, über das sich die Temperatur gezielt steuern ließe.',
+    'Thermometer into the dough: note the current temperature. There is no mixing water left here to steer the temperature with.');
 
   add('guide.step.bulkRise.title', 'Stockgare (im Stück)', 'Bulk rise (whole dough)');
   add('guide.step.bulkRise.chipColdBalls', 'Raumtemp + kühl', 'Room temp + cold');
@@ -447,14 +453,14 @@
 
   add('hint.method.direct', 'Direkt: alle Zutaten auf einmal. Einfachster Weg.', 'Direct: all ingredients at once. The simplest way.');
   add('hint.method.biga', 'Biga: steifer Vorteig (Vortag, 16–20 h bei ~18 °C). Mehr Aroma &amp; Struktur.', 'Biga: stiff pre-ferment (day before, 16–20 h at ~18 °C). More flavor &amp; structure.');
-  add('hint.method.poolish', 'Poolish: flüssiger Vorteig 1:1 (12–16 h). Milder, dehnbarer Teig.', 'Poolish: liquid 1:1 pre-ferment (12–16 h). Milder, more extensible dough.');
+  add('hint.method.poolish', 'Poolish: flüssiger Vorteig 1:1 (10 h warm oder 24 h kalt). Milder, dehnbarer Teig.', 'Poolish: liquid 1:1 pre-ferment (10 h warm or 24 h cold). Milder, more extensible dough.');
   add('hint.yeast.pref', 'Wird von der <b>Vorteig-Reife</b> oben gesetzt. Feintuning per Regler möglich.', 'Set by the <b>pre-ferment maturity</b> above. Fine-tune with the slider if needed.');
   add('hint.yeast.normal', 'Prozent bezogen auf Frischhefe. Lange/warme Gare = weniger.', 'Percent based on fresh yeast. Longer/warmer rise = less.');
   add('label.prefTitle.biga', 'Biga (Vortag)', 'Biga (day before)');
   add('label.prefTitle.poolish', 'Poolish (Vortag)', 'Poolish (day before)');
   add('hint.pref.biga', 'Biga klassisch: 70–100 % des Mehls.', 'Classic biga: 70–100 % of the flour.');
-  add('hint.pref.poolish', 'Poolish: meist 30–50 % des Mehls (Wasser 1:1 dazu). Mehr als die Hydration-% geht nicht: sonst wäre mehr Wasser im Poolish als im ganzen Teig.',
-    'Poolish: usually 30–50 % of the flour (water 1:1 with it). Can\'t go higher than the hydration %: otherwise the poolish would hold more water than the whole dough.');
+  add('hint.pref.poolish', 'Poolish: meist 20–50 % des Mehls (Wasser 1:1 dazu), unsere Rezepte nutzen bewusst 66 % (kompletter 100-%-Poolish-Aufbau). Mehr als die Hydration-% geht nicht: sonst wäre mehr Wasser im Poolish als im ganzen Teig.',
+    'Poolish: usually 20–50 % of the flour (water 1:1 with it), our recipes deliberately use 66 % (a full 100 % poolish build). Can\'t go higher than the hydration %: otherwise the poolish would hold more water than the whole dough.');
   add('label.timeMode.start', 'Startzeitpunkt', 'Start time');
   add('label.timeMode.target', 'Soll fertig sein um', 'Should be ready at');
   add('hint.timeMode.start', 'Die Anleitung rechnet vorwärts und zeigt, wann die Pizza fertig ist.', 'The guide calculates forward and shows when the pizza will be ready.');
@@ -487,8 +493,10 @@
   // steckte bereits im deutschen Original-String vor dieser Umstellung).
   add('preset.napoliBiga.desc', '100 % Biga (steifer Vorteig, 45 % Hydration). 24 h reifen lassen, dann Hauptteig mit Restwasser, Salz & 2 % Öl. Sehr offene Krume.',
     '100 % biga (stiff pre-ferment, 45 % hydration). Let it rise 24 h, then final dough with remaining water, salt & 2 % oil. Very open crumb.');
-  add('preset.napoliPoolish.desc', 'Poolish (flüssig 1:1) mit ~66 % des Mehls. 14 h reifen, dann Hauptteig (mit 2 % Öl): ~22 h Gesamtreife. Milder, luftiger Teig.',
-    'Poolish (liquid 1:1) with ~66 % of the flour. 14 h rise, then final dough (with 2 % oil): ~22 h total rise. Milder, airier dough.');
+  add('preset.napoliPoolishSchnell.desc', 'Poolish (flüssig 1:1) mit 66 % des Mehls, 10 h durchgehend bei Raumtemp. Dann Hauptteig (mit 2 % Öl): ~20 h Gesamtreife. Milder, luftiger Teig, die schnellere der beiden Poolish-Varianten.',
+    'Poolish (liquid 1:1) with 66 % of the flour, 10 h entirely at room temp. Then final dough (with 2 % oil): ~20 h total rise. Milder, airier dough, the faster of the two poolish variants.');
+  add('preset.napoliPoolishKalt.desc', 'Poolish (flüssig 1:1) mit 66 % des Mehls, 1 h Raumtemp anspringen, dann 24 h Kühlschrank. Dann Hauptteig (mit 2 % Öl): ~34 h Gesamtreife. Milder, luftiger Teig, mehr Aroma durch die kühlere Führung.',
+    'Poolish (liquid 1:1) with 66 % of the flour, 1 h at room temp to start, then 24 h in the fridge. Then final dough (with 2 % oil): ~34 h total rise. Milder, airier dough, more flavor from the cooler route.');
   add('preset.teglia.desc', 'Römische Blechpizza: 75 % Hydration, 4 % Olivenöl, sehr lockere Krume. Teig ist klebrig: mit Stretch & Fold statt langem Kneten arbeiten. 24 h kühl. Braucht sehr starkes Mehl (W330+).',
     'Roman pan pizza: 75 % hydration, 4 % olive oil, very airy crumb. The dough is sticky: work with stretch & fold instead of long kneading. 24 h cold. Needs a very strong flour (W330+).');
   add('preset.newyorkStyle.desc', 'New York Style: 62 % Hydration, 3 % Öl, 2 % Zucker (Bräunung & Hefeaktivität): größere, dünnere Teiglinge. ~26 h Kaltgare für Aroma & knusprig-zähe Kruste. Braucht ein mittelstarkes Mehl (W300+).',
@@ -592,7 +600,8 @@
   add('option.napoliKalt', 'Napoli Lange Kaltgare · 48–72 h', 'Napoli Long Cold Rise · 48–72 h');
   add('option.schnell', 'Schnell · 4–6 h', 'Quick · 4–6 h');
   add('option.napoliBiga', 'Napoli mit Biga · 16–24 h', 'Napoli with Biga · 16–24 h');
-  add('option.napoliPoolish', 'Napoli mit Poolish · 24–48 h', 'Napoli with Poolish · 24–48 h');
+  add('option.napoliPoolishSchnell', 'Napoli mit Poolish (schnell) · ~20 h', 'Napoli with Poolish (fast) · ~20 h');
+  add('option.napoliPoolishKalt', 'Napoli mit Poolish (kalt) · ~34 h', 'Napoli with Poolish (cold) · ~34 h');
   add('option.teglia', 'Teglia / Blech · 24 h', 'Teglia / Pan · 24 h');
   add('option.newyorkStyle', 'New York Style · ~26 h', 'New York Style · ~26 h');
 
@@ -892,8 +901,8 @@
 
   add('glossary.poolish.title', 'Poolish', 'Poolish');
   add('glossary.poolish.body',
-    '<p>Poolish ist ein flüssiger Vorteig aus gleichen Teilen Mehl und Wasser (100 % Hydration) mit einer winzigen Menge Hefe, der 8–24 Stunden lang reift. Durch die lange, kühle Fermentation entstehen milde Fruchtsäuren und Aromen, die dem fertigen Teig mehr Geschmack und eine offenere, luftigere Krume geben, als es direkte Teigführung könnte.</p><p>Nach der Reifezeit wird der Poolish komplett in den Hauptteig eingearbeitet, dort kommen dann auch Salz, Öl und der Rest des Mehls dazu.</p>',
-    '<p>Poolish is a liquid pre-ferment made of equal parts flour and water (100% hydration) with a tiny amount of yeast, left to mature for 8–24 hours. The long, cool fermentation develops mild fruity acids and aromas that give the finished dough more flavor and a more open, airier crumb than a same-day direct dough could achieve.</p><p>After maturing, the poolish is fully mixed into the main dough, where salt, oil and the remaining flour are then added.</p>');
+    '<p>Poolish ist ein flüssiger Vorteig aus gleichen Teilen Mehl und Wasser (100 % Hydration) mit einer kleinen Menge Hefe. Er reift entweder rund 10 Stunden durchgehend bei Raumtemperatur oder rund 24 Stunden mit kurzem Warm-Anspringen und anschließend deutlich langsamerer, kühler Fermentation im Kühlschrank (daher braucht die kühlere Führung mehr statt weniger Hefe). Beide Regime entwickeln milde Fruchtsäuren und Aromen, die dem fertigen Teig mehr Geschmack und eine offenere, luftigere Krume geben, als es direkte Teigführung könnte.</p><p>Nach der Reifezeit wird der Poolish komplett in den Hauptteig eingearbeitet, dort kommen dann auch Salz, Öl und der Rest des Mehls dazu.</p>',
+    '<p>Poolish is a liquid pre-ferment made of equal parts flour and water (100% hydration) with a small amount of yeast. It matures either for about 10 hours entirely at room temperature, or for about 24 hours with a brief warm start followed by much slower, cool fermentation in the fridge (which is why the cooler route needs more yeast, not less). Both regimes develop mild fruity acids and aromas that give the finished dough more flavor and a more open, airier crumb than a same-day direct dough could achieve.</p><p>After maturing, the poolish is fully mixed into the main dough, where salt, oil and the remaining flour are then added.</p>');
 
   add('glossary.biga.title', 'Biga', 'Biga');
   add('glossary.biga.body',

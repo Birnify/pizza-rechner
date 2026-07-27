@@ -34,9 +34,17 @@
       method: 'biga', hyd: 65, salt: 2.8, oil: 2, sugar: 0, pref: 100, bhyd: 45, prefStage: 'b24', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'caputo_cuoco',
       descKey: 'preset.napoliBiga.desc'
     },
-    napoli_poolish: {
-      method: 'poolish', hyd: 66, salt: 2.5, oil: 2, sugar: 0, pref: 66, prefStage: 'p14', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'dallag_monica',
-      descKey: 'preset.napoliPoolish.desc'
+    // Seit v4.24.0: "napoli_poolish" (eine Stufe, unbelegte Hefewerte) ersetzt durch zwei
+    // Presets, die sich bewusst NUR im Gärregime unterscheiden (Geometrie 66/66 identisch,
+    // Manopasto-Aufbau: 500 g Poolish-Mehl von 755 g Gesamtmehl) -- damit der Unterschied
+    // schnell/kalt verständlich bleibt, statt in einer dritten Stellschraube unterzugehen.
+    napoli_poolish_schnell: {
+      method: 'poolish', hyd: 66, salt: 2.5, oil: 2, sugar: 0, pref: 66, prefStage: 'p_warm', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'dallag_monica',
+      descKey: 'preset.napoliPoolishSchnell.desc'
+    },
+    napoli_poolish_kalt: {
+      method: 'poolish', hyd: 66, salt: 2.5, oil: 2, sugar: 0, pref: 66, prefStage: 'p_cold', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'dallag_monica',
+      descKey: 'preset.napoliPoolishKalt.desc'
     },
     teglia: {
       method: 'direct', hyd: 75, salt: 2.5, oil: 4, sugar: 0, yeastType: 'fresh', yeast: 0.3, ballw: 320, ddt: 24, flour: 'caputo_nuvola_super',

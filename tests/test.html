@@ -91,6 +91,11 @@
        Geschwister"-Zweig von PZ.moveFocusBeforeHide(). -->
   <div id="fmPrevOnlyBefore"><button type="button" id="fmPrevOnlyBeforeBtn">before-only</button></div>
   <div id="fmPrevOnly"><button type="button" id="fmPrevOnlyBtn">prevonly</button></div>
+  <!-- Sektion 32 (v4.24.0): eigener PZ.makePrefStages()-Stub, unabhängig von den echten
+       #prefStage/#prefStageVal-Elementen (ui.js ist hier nicht geladen, s. Kommentar
+       oben bei PZ.set) -- testet die rel:'pref'-Umrechnung + den Vorteig-Anteil-Drift-Fix
+       auf derselben Ebene, auf der js/ui.js und js/newrecipe.js sie auch nutzen. -->
+  <div id="testPrefStage"></div><span id="testPrefStageVal"></span>
 </div>
 
 <script src="../js/dom.js"></script>
@@ -424,7 +429,8 @@
     ];
   });
 
-  // --- Bugfix v3.48.0, Extremfall: Poolish-Preset "napoli_poolish" (pref 66 bei hyd 66):
+  // --- Bugfix v3.48.0, Extremfall: 66/66-Poolish-Aufbau (pref 66 bei hyd 66, seit v4.24.0
+  // die Geometrie beider "napoli_poolish_schnell/_kalt"-Presets, s. js/presets.js):
   // das gesamte Wasser steckt bereits im Poolish, mWater ist exakt 0. Seit Backlog Punkt I
   // (v4.11.0): R.note (die "Erklär-Notiz") landet nirgends mehr im DOM (#iceNote entfernt)
   // -- geprüft wird daher der berechnete Wert R.note direkt statt eines DOM-Texts. Seit
@@ -638,33 +644,58 @@
     ['Summe wie Teiglinge-Variante', f.bulkMin + f.proofMin, 120 + 4530, 0],
   ]);
 
-  testScheduleCase('Vorteig · Schnelle Hauptgare (y ≥ 1,2 %)', { method: 'biga', yeast: 1.5 }, f => [
-    ['label', f.label, 'Schnelle Hauptgare'],
-    ['bulkMin', f.bulkMin, 90, 0],
+  // Seit v4.24.0 (Poolish-Quellenrecherche, s. pizza-rechner-KONTEXT.md): schedule() für
+  // Vorteig-Methoden ist von state.yeast entkoppelt -- die alten Schwellen (>=1,2/0,5/0,18)
+  // existierten nur, damit die früheren, unbelegten Poolish-Stufenwerte zufällig im "Lange
+  // Hauptgare"-Zweig landeten. Jetzt liefert JEDE Hefemenge bei method !== 'direct' immer
+  // denselben Zweig (Hauptteig bleibt bewusst durchgehend bei Raumtemperatur, cold: false)
+  // -- die folgenden vier Fälle decken den früheren Wertebereich aller vier alten Zweige ab
+  // und zeigen, dass sie jetzt alle identisch landen. Getestet mit method 'biga' UND
+  // 'poolish' (unten), da die Entkopplung beide Methoden gleichermaßen betrifft.
+  [1.5, 0.5, 0.18, 0.05].forEach(yeastVal => {
+    testScheduleCase('Vorteig (Biga) · immer Lange Hauptgare, unabhängig von der Hefemenge (v4.24.0 entkoppelt) · yeast=' + yeastVal, { method: 'biga', yeast: yeastVal }, f => [
+      ['label', f.label, 'Lange Hauptgare'],
+      ['bulkMin', f.bulkMin, 150, 0],
+      ['proofMin', f.proofMin, 360, 0],
+      ['cold', f.cold, false],
+    ]);
+  });
+
+  // Nebenwirkung dokumentieren (nicht behoben, s. js/schedule.js-Kommentar): weil f.cold
+  // bei Vorteig jetzt immer false ist, hat die coldStage-Einstellung ("als Teiglinge" vs.
+  // "im Stück") hier keinerlei Auswirkung mehr -- beide liefern exakt denselben Fahrplan.
+  testScheduleCase('Vorteig (Biga) · coldStage ist bei Vorteig wirkungslos (cold immer false) · Teiglinge', { method: 'biga', yeast: 0.05, coldStage: 'balls' }, f => [
+    ['bulkMin', f.bulkMin, 150, 0],
+    ['proofMin', f.proofMin, 360, 0],
+    ['cold', f.cold, false],
+  ]);
+  testScheduleCase('Vorteig (Biga) · coldStage ist bei Vorteig wirkungslos (cold immer false) · im Stück', { method: 'biga', yeast: 0.05, coldStage: 'bulk' }, f => [
+    ['bulkMin', f.bulkMin, 150, 0],
+    ['proofMin', f.proofMin, 360, 0],
     ['cold', f.cold, false],
   ]);
 
-  testScheduleCase('Vorteig · Mittlere Hauptgare (0,5 % ≤ y < 1,2 %)', { method: 'biga', yeast: 0.5 }, f => [
-    ['label', f.label, 'Mittlere Hauptgare'],
-    ['bulkMin', f.bulkMin, 120, 0],
-  ]);
-
-  testScheduleCase('Vorteig · Lange Hauptgare (0,18 % ≤ y < 0,5 %)', { method: 'biga', yeast: 0.18 }, f => [
+  // Dieselbe Entkopplung gilt für Poolish (nicht nur Biga) -- s. js/schedule.js, der Zweig
+  // ist methodenunabhängig für jedes method !== 'direct'.
+  testScheduleCase('Vorteig (Poolish) · immer Lange Hauptgare, unabhängig von der Hefemenge (v4.24.0 entkoppelt)', { method: 'poolish', yeast: 0.66 }, f => [
     ['label', f.label, 'Lange Hauptgare'],
     ['bulkMin', f.bulkMin, 150, 0],
+    ['proofMin', f.proofMin, 360, 0],
+    ['cold', f.cold, false],
   ]);
 
-  testScheduleCase('Vorteig · Sehr lange Hauptgare · Teiglinge kalt', { method: 'biga', yeast: 0.05, coldStage: 'balls' }, f => [
-    ['label', f.label, 'Sehr lange Hauptgare'],
+  // Review-Fund (test-generator, v4.24.0, übernommen): coldStage-Wirkungslosigkeit war für
+  // Biga oben schon geprüft (Zeilen 662-670), fehlte aber für Poolish -- analoger Fall mit
+  // der neuen p_cold-Stufe (24 h, yeast 0,66 = 1,0 % × 0,66 Vorteig-Anteil).
+  testScheduleCase('Vorteig (Poolish, p_cold) · coldStage ist bei Vorteig wirkungslos (cold immer false) · Teiglinge', { method: 'poolish', pref: 66, hyd: 66, prefStage: 'p_cold', yeast: 0.66, coldStage: 'balls' }, f => [
     ['bulkMin', f.bulkMin, 150, 0],
-    ['proofMin', f.proofMin, 1080, 0],
-    ['cold', f.cold, true],
+    ['proofMin', f.proofMin, 360, 0],
+    ['cold', f.cold, false],
   ]);
-
-  testScheduleCase('Vorteig · Sehr lange Hauptgare · im Stück kalt', { method: 'biga', yeast: 0.05, coldStage: 'bulk' }, f => [
-    ['bulkMin', f.bulkMin, 960, 0],
-    ['proofMin', f.proofMin, 270, 0],
-    ['Summe wie Teiglinge-Variante', f.bulkMin + f.proofMin, 150 + 1080, 0],
+  testScheduleCase('Vorteig (Poolish, p_cold) · coldStage ist bei Vorteig wirkungslos (cold immer false) · im Stück', { method: 'poolish', pref: 66, hyd: 66, prefStage: 'p_cold', yeast: 0.66, coldStage: 'bulk' }, f => [
+    ['bulkMin', f.bulkMin, 150, 0],
+    ['proofMin', f.proofMin, 360, 0],
+    ['cold', f.cold, false],
   ]);
 
   // ─────────────────────────────────────────────────────────────
@@ -730,7 +761,13 @@
     'napoli_kalt':      { method: 'direct', hyd: 65, salt: 3.0, oil: 2, yeast: 0.1, flour: 'caputo_cuoco' },
     'schnell':          { method: 'direct', hyd: 62, salt: 2.5, oil: 2, yeast: 1.5, flour: 'caputo_pizzeria' },
     'napoli_biga':      { method: 'biga', hyd: 65, salt: 2.8, oil: 2, yeast: 0.3, pref: 100, bhyd: 45, prefMature: 24, flour: 'caputo_cuoco' },
-    'napoli_poolish':   { method: 'poolish', hyd: 66, salt: 2.5, oil: 2, yeast: 0.2, pref: 66, prefMature: 14, flour: 'dallag_monica' },
+    // Seit v4.24.0: "napoli_poolish" (eine Stufe) ersetzt durch zwei Presets, die sich nur
+    // im Gärregime unterscheiden (s. js/presets.js). yeast = stage.yeast * (pref/100), da
+    // die Poolish-Stufen seit v4.24.0 rel:'pref' sind (bezogen aufs Poolish-Mehl, nicht
+    // aufs Gesamtmehl, s. PZ.PREF_STAGES in js/ui.js): 0,6 % * 0,66 = 0,396 % (schnell/warm),
+    // 1,0 % * 0,66 = 0,66 % (kalt).
+    'napoli_poolish_schnell': { method: 'poolish', hyd: 66, salt: 2.5, oil: 2, yeast: 0.396, pref: 66, prefMature: 10, flour: 'dallag_monica' },
+    'napoli_poolish_kalt':    { method: 'poolish', hyd: 66, salt: 2.5, oil: 2, yeast: 0.66, pref: 66, prefMature: 24, flour: 'dallag_monica' },
     'teglia':           { method: 'direct', hyd: 75, salt: 2.5, oil: 4, ballw: 320, yeast: 0.3, flour: 'caputo_nuvola_super' },
     'newyork_style':    { method: 'direct', hyd: 62, salt: 2.5, oil: 3, sugar: 2, yeast: 0.2, ballw: 300, flour: 'dallag_napoletana' }
   };
@@ -738,6 +775,26 @@
     testFlourWarn('Preset „' + key + '" löst keine Mehl-Warnung aus', PRESET_STATES[key], html => [
       ['kein Warn-HTML', html.trim() === ''],
     ]);
+  });
+
+  // Review-Fund (test-generator, v4.24.0, übernommen): der generische mWater=0-Grenzfall
+  // (Zeile ~435, "Bugfix v3.48.0") war bisher nur mit BASE-Werten (pref 66/hyd 66) geprüft,
+  // nicht mit den tatsächlichen neuen Presets selbst -- deckt beide echten Presets ab.
+  ['napoli_poolish_schnell', 'napoli_poolish_kalt'].forEach(key => {
+    (function () {
+      Object.assign(PZ.state, BASE, PRESET_STATES[key]);
+      PZ.calc();
+      const R = PZ.R;
+      const expectedNote = PZ.t('calc.noMixingWaterNote');
+      renderBox('Preset „' + key + '" (66/66-Aufbau): mWater = 0 wird sauber abgefangen', [
+        { label: 'mWater ist exakt 0', ok: R.mWater === 0, actual: R.mWater, expected: 0, tol: null },
+        { label: 'ice bleibt 0', ok: R.ice === 0, actual: R.ice, expected: 0, tol: null },
+        { label: 'R.note ist die Erklär-Notiz statt einer Eismengen-Ansage', ok: R.note === expectedNote, actual: R.note, expected: expectedNote, tol: null },
+        { label: 'hasMixingWater ist false', ok: R.hasMixingWater === false, actual: R.hasMixingWater, expected: false, tol: null }
+      ]);
+      Object.assign(PZ.state, BASE);
+      PZ.calc();
+    })();
   });
 
   // Randfall: Hydration exakt an der oberen Grenze (hydMax) darf NICHT warnen (Code prüft >, nicht ≥).
@@ -965,11 +1022,15 @@
     ['Summe = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil, 1000, 0.01],
   ]);
 
-  testScheduleCase('Biga · Kaltgare im Stück (bulk): Gesamtdauer identisch zu balls-Variante', {
+  // Seit v4.24.0: schedule() für Vorteig ist von yeast entkoppelt und immer cold:false --
+  // "Gesamtdauer identisch zu balls-Variante" gilt jetzt trivial (coldStage wirkt bei
+  // Vorteig gar nicht mehr, s. js/schedule.js-Kommentar), Test bleibt als Regressionsanker
+  // für genau dieses (dokumentierte) Verhalten stehen statt gelöscht zu werden.
+  testScheduleCase('Biga · Öl 3 % · Kaltgare im Stück (bulk): schedule() bleibt bei Vorteig immer nicht-kalt', {
     method: 'biga', pref: 70, bhyd: 45, hyd: 65, oil: 3, coldStage: 'bulk', yeast: 0.05
   }, f => [
-    ['cold', f.cold, true],
-    ['Summe bulk+proof = 150+1080 (wie balls-Variante)', f.bulkMin + f.proofMin, 150 + 1080, 0],
+    ['cold', f.cold, false],
+    ['Summe bulk+proof = 150+360 (identisch zur balls-Variante, coldStage wirkungslos)', f.bulkMin + f.proofMin, 150 + 360, 0],
   ]);
 
   // Poolish + Öl + coldStage 'bulk' gleichzeitig
@@ -1087,6 +1148,23 @@
     ];
   });
 
+  // Review-Fund (test-generator, v4.24.0, mit korrigierter Assertion übernommen): Sektion
+  // 14 kannte bisher nur Direkt und Biga, kein Poolish mit der neuen, langen p_cold-Stufe
+  // (24 h) -- deckt ab, dass R.matureMin (NICHT R.prefMature, das liegt in state, s.
+  // js/guide.js) korrekt in die Rückwärtsrechnung einfließt.
+  testCase('Ziel-Modus bei Poolish (p_cold, 24 h): Reifezeit fließt in die Rückwärtsrechnung ein', {
+    method: 'poolish', pref: 66, hyd: 66, prefMature: 24, prefStage: 'p_cold', timeMode: 'target', timeISO: FIXED_ISO
+  }, R => {
+    const target = new Date(FIXED_ISO);
+    const computedStart = new Date(target.getTime() - R.totalMin * 60000);
+    const html = document.getElementById('guideSteps').innerHTML;
+    return [
+      ['matureMin = prefMature × 60 = 1440', R.matureMin, 1440, 0],
+      ['totalMin enthält die Vorteig-Reife (matureMin ⊂ totalMin)', R.totalMin >= R.matureMin, true],
+      ['errechneter Start-Zeitpunkt im Banner', html.includes(fmtClockTest(computedStart)), true],
+    ];
+  });
+
   // ─────────────────────────────────────────────────────────────
   heading('15 · Einkaufsliste (js/print.js)');
 
@@ -1177,7 +1255,7 @@
   });
 
   testCase('Poolish (Vorteig): auch hier Gesamtmengen statt Aufteilung', {
-    method: 'poolish', pref: 50, hyd: 66, prefMature: 14, prefStage: 'p14'
+    method: 'poolish', pref: 50, hyd: 66, prefMature: 10, prefStage: 'p_warm'
   }, R => {
     PZ.buildShoppingList();
     const html = document.getElementById('shoppingList').innerHTML;
@@ -3639,37 +3717,33 @@
       ];
     });
 
-    // Korrektur (Nachbesserung des ursprünglichen test-generator-Vorschlags): "Kalte Gare"
-    // kommt -- anders als hier ursprünglich angenommen -- in keinem der beiden möglichen
-    // Schritte (Stockgare/Stückgare) wörtlich vor (die Texte sagen "Kühlschrank" bzw.
-    // "Kaltgare" als ein Wort, s. js/schedule.js), bleibt also in JEDER coldStage-Variante
-    // ein Fallback-Zeilenlink, nie ein Inline-Link. Die vier folgenden Tests wurden
-    // entsprechend berichtigt (ursprüngliche Fassung nahm fälschlich einen Inline-Treffer an
-    // und wäre rot gewesen).
-    // yeast: 0.15 (< 0.18) explizit ergänzt (im ursprünglichen Vorschlag gefehlt): bei
-    // Vorteig-Methoden (Biga/Poolish) ist die Hauptgare erst ab Hefe < 0,18 % überhaupt eine
-    // kalte Führung (s. js/schedule.js, prefVeryLong-Zweig) -- mit der BASE-Hefemenge (0,30 %)
-    // greift stattdessen der nicht-kalte "prefLong"-Zweig, wodurch gar kein Kaltgare-Verweis
-    // (weder inline noch Fallback) gerendert würde und der Test seine eigene Prämisse
-    // ("Kaltgare weiterhin Fallback") gar nicht prüfen könnte.
-    testCase('Kombination: Biga + hohe Hydration + Kaltgare (coldStage "im Stück") -> Biga inline, Stretch&Fold + Kaltgare weiterhin Fallback', { method: 'biga', pref: 70, bhyd: 45, hyd: 75, yeast: 0.15, coldStage: 'bulk' }, () => {
+    // Seit v4.24.0 (Poolish-Quellenrecherche, s. pizza-rechner-KONTEXT.md): schedule() ist
+    // für Vorteig-Methoden von state.yeast entkoppelt und liefert IMMER den nicht-kalten
+    // "prefLong"-Zweig (cold: false) -- unabhängig von yeast/coldStage. Die beiden Tests
+    // unten testeten ursprünglich (bis v4.23.x), dass bei niedriger Hefemenge (< 0,18 %,
+    // damals der "prefVeryLong"-Schwellenwert) ein Kaltgare-Fallback-Link erscheint. Dieser
+    // Zweig existiert nicht mehr -- die Tests dokumentieren jetzt bewusst die dokumentierte
+    // Nebenwirkung (s. js/schedule.js-Kommentar): kein Kaltgare-Verweis mehr, weder inline
+    // noch als Fallback, bei KEINER Hefemenge/coldStage-Kombination, solange method !==
+    // 'direct' ist. yeast: 0.15 bleibt als Regressionsanker stehen (früherer Schwellenwert).
+    testCase('Kombination: Biga + hohe Hydration + Kaltgare (coldStage "im Stück") -> Biga inline, Stretch&Fold weiterhin Fallback, KEIN Kaltgare-Verweis (v4.24.0: Vorteig ist nie mehr kalt)', { method: 'biga', pref: 70, bhyd: 45, hyd: 75, yeast: 0.15, coldStage: 'bulk' }, () => {
       const h = html();
       return [
         ['Biga weiterhin inline verlinkt', hasInlineLink(h, 'biga'), true],
         ['Stretch & Fold bleibt Fallback-Link (kein inline)', hasInlineLink(h, 'stretchFold'), false],
         ['Stretch & Fold weiterhin als Fallback vorhanden', hasFallbackLink(h, 'stretchFold'), true],
-        ['Kalte Gare bleibt Fallback-Link bei coldStage "bulk" (kein wörtliches Vorkommen)', hasInlineLink(h, 'kalteGare'), false],
-        ['Kalte-Gare-Fallback bei coldStage "bulk" weiterhin vorhanden', hasFallbackLink(h, 'kalteGare'), true],
+        ['Kein Kaltgare-Inline-Link (Vorteig ist nie mehr kalt)', hasInlineLink(h, 'kalteGare'), false],
+        ['Auch kein Kaltgare-Fallback-Link mehr (Vorteig ist nie mehr kalt)', hasFallbackLink(h, 'kalteGare'), false],
       ];
     });
 
-    testCase('Kombination: Poolish + Kaltgare (coldStage "als Teiglinge") -> Poolish inline, Kaltgare weiterhin Fallback', { method: 'poolish', pref: 70, yeast: 0.15, coldStage: 'balls' }, () => {
+    testCase('Kombination: Poolish + Kaltgare (coldStage "als Teiglinge") -> Poolish inline, KEIN Kaltgare-Verweis (v4.24.0: Vorteig ist nie mehr kalt)', { method: 'poolish', pref: 70, yeast: 0.15, coldStage: 'balls' }, () => {
       const h = html();
       return [
         ['Poolish inline verlinkt', hasInlineLink(h, 'poolish'), true],
         ['Poolish-Fallback entfernt', hasFallbackLink(h, 'poolish'), false],
-        ['Kalte Gare bleibt Fallback-Link bei coldStage "balls" (kein wörtliches Vorkommen)', hasInlineLink(h, 'kalteGare'), false],
-        ['Kalte-Gare-Fallback bei coldStage "balls" weiterhin vorhanden', hasFallbackLink(h, 'kalteGare'), true],
+        ['Kein Kaltgare-Inline-Link (Vorteig ist nie mehr kalt)', hasInlineLink(h, 'kalteGare'), false],
+        ['Auch kein Kaltgare-Fallback-Link mehr (Vorteig ist nie mehr kalt)', hasFallbackLink(h, 'kalteGare'), false],
       ];
     });
 
@@ -4493,6 +4567,101 @@
     ]);
     Object.assign(PZ.state, BASE);
     PZ.calc();
+  })();
+
+  // ─────────────────────────────────────────────────────────────
+  heading("32 · Poolish-Stufen: rel:'pref'-Umrechnung + Vorteig-Anteil-Drift-Fix (v4.24.0)");
+  // js/ui.js ist hier nicht geladen (s. PZ.set-Stub oben) -- getestet wird deshalb direkt
+  // PZ.makePrefStages() (js/widgets.js), exakt dieselbe Fabrik, die js/ui.js und
+  // js/newrecipe.js verwenden. #testPrefStage/#testPrefStageVal sind eigene, unabhängige
+  // Stub-Elemente (s. #stubs oben).
+  (function () {
+    // PZ.PREF_STAGES selbst lebt in js/ui.js (hier nicht geladen, s. o.) -- lokale Kopie,
+    // 1:1 identisch zur echten Tabelle (Quelle: js/ui.js), damit PZ.makePrefStages() etwas
+    // zum Nachschlagen hat. Bei Änderungen an js/ui.js hier mitziehen.
+    PZ.PREF_STAGES = {
+      biga: [
+        { key: 'b16', label: '16 h · 0,4 %', mature: 16, yeast: 0.4, rel: 'total' },
+        { key: 'b24', label: '24 h · 0,3 %', mature: 24, yeast: 0.3, rel: 'total' },
+        { key: 'b48', label: '48 h · 0,2 %', mature: 48, yeast: 0.2, rel: 'total' }
+      ],
+      poolish: [
+        { key: 'p_warm', label: '10 h · 0,6 %', mature: 10, yeast: 0.6, rel: 'pref' },
+        { key: 'p_cold', label: '24 h · 1,0 %', mature: 24, yeast: 1.0, rel: 'pref' }
+      ]
+    };
+    const testState = { pref: 66 };
+    const stages = PZ.makePrefStages({
+      stateObj: testState,
+      wrapId: 'testPrefStage',
+      valId: 'testPrefStageVal',
+      setYeast: function (y) { testState.yeast = y; }
+    });
+
+    stages.select('poolish', 'p_warm');
+    const warmYeast = testState.yeast, warmMature = testState.prefMature, warmStage = testState.prefStage;
+
+    stages.select('poolish', 'p_cold');
+    const coldYeast = testState.yeast, coldMature = testState.prefMature;
+
+    // Drift-Fix: zurück zu p_warm, dann den Vorteig-Anteil ändern (simuliert den Regler)
+    // und resync() aufrufen -- genau das, was der neue onSet-Hook in js/ui.js/newrecipe.js
+    // bei jeder Änderung von state.pref auslöst, solange eine Poolish-Stufe aktiv ist.
+    stages.select('poolish', 'p_warm');
+    testState.pref = 40;
+    stages.resync('poolish');
+    const driftedYeast = testState.yeast;
+    const expectedDrifted = 0.6 * (40 / 100);
+
+    // Kontrollgruppe: rel:'total' (Biga) bleibt von Vorteig-Anteil-Änderungen unberührt.
+    const bigaState = { pref: 100 };
+    const bigaStages = PZ.makePrefStages({
+      stateObj: bigaState,
+      wrapId: 'testPrefStage',
+      valId: 'testPrefStageVal',
+      setYeast: function (y) { bigaState.yeast = y; }
+    });
+    bigaStages.select('biga', 'b24');
+    const bigaYeastBefore = bigaState.yeast;
+    bigaState.pref = 50;
+    bigaStages.resync('biga');
+    const bigaYeastAfter = bigaState.yeast;
+
+    // Review-Fund (test-generator, v4.24.0, ECHTER Restfehler, übernommen und behoben):
+    // select() rechnete ursprünglich mit dem ROHEN state.pref statt dem von js/calc.js
+    // geklemmten prefEff (calc.js klemmt den Vorteig-Anteil bei Poolish auf maximal die
+    // Hydration, pHyd=1) -- bei hyd 60/pref 66 klemmt calc.js intern auf prefEff=60,
+    // "select()" hätte aber weiterhin mit dem rohen 66 gerechnet und dadurch die Dosis um
+    // den Faktor 66/60 ≈ 1,1 überhöht. Voller State (nicht nur {pref}) nötig, damit
+    // PZ.calcCore() (das select() jetzt intern aufruft) realistisch rechnet.
+    const clampState = Object.assign({}, BASE, { method: 'poolish', hyd: 60, pref: 66 });
+    const clampStages = PZ.makePrefStages({
+      stateObj: clampState,
+      wrapId: 'testPrefStage',
+      valId: 'testPrefStageVal',
+      setYeast: function (y) { clampState.yeast = y; }
+    });
+    clampStages.select('poolish', 'p_cold');
+    const clampedYeast = clampState.yeast;
+    const clampedPrefEff = PZ.calcCore(Object.assign({}, clampState, { method: 'poolish' })).prefEff;
+    const expectedClamped = 1.0 * (60 / 100); // prefEff geklemmt auf 60 (= hyd), NICHT auf den rohen pref 66
+    const naiveUnclamped = 1.0 * (66 / 100);  // das wäre der (falsche) Wert vor dem Fix gewesen
+
+    renderBox("PZ.makePrefStages() · Poolish rel:'pref'-Umrechnung + Vorteig-Anteil-Drift-Fix", [
+      { label: 'p_warm bei pref=66: yeast = 0,6 % × 0,66 = 0,396 % (bezogen aufs Poolish-Mehl, nicht Gesamtmehl)', ok: Math.abs(warmYeast - 0.396) < 0.0001, actual: warmYeast, expected: 0.396, tol: 0.0001 },
+      { label: 'p_warm: prefMature = 10 h, prefStage = "p_warm"', ok: warmMature === 10 && warmStage === 'p_warm', actual: warmMature + '/' + warmStage, expected: '10/p_warm', tol: null },
+      { label: 'p_cold bei pref=66: yeast = 1,0 % × 0,66 = 0,66 % (MEHR Hefe als p_warm, nicht weniger)', ok: Math.abs(coldYeast - 0.66) < 0.0001, actual: coldYeast, expected: 0.66, tol: 0.0001 },
+      { label: 'p_cold: prefMature = 24 h', ok: coldMature === 24, actual: coldMature, expected: 24, tol: null },
+      { label: 'Kontrolle: p_cold hat MEHR Hefe als p_warm (länger UND kälter braucht hier mehr, nicht weniger -- s. Kontextdatei)', ok: coldYeast > warmYeast, actual: coldYeast, expected: '> ' + warmYeast, tol: null },
+      { label: 'Drift-Fix: resync() nach Vorteig-Anteil-Änderung (66 % → 40 %) rechnet yeast korrekt neu (0,6 % × 0,40 = 0,24 %)', ok: Math.abs(driftedYeast - expectedDrifted) < 0.0001, actual: driftedYeast, expected: expectedDrifted, tol: 0.0001 },
+      { label: 'Kontrolle: gedriftete Hefe unterscheidet sich tatsächlich vom alten Wert (Test misst wirklich etwas)', ok: driftedYeast !== warmYeast, actual: driftedYeast, expected: '≠ ' + warmYeast, tol: null },
+      { label: "Biga (rel:'total') bleibt von Vorteig-Anteil-Änderungen unberührt: yeast vor/nach pref-Änderung identisch", ok: bigaYeastBefore === bigaYeastAfter, actual: bigaYeastAfter, expected: bigaYeastBefore, tol: null },
+      { label: "PZ.PREF_STAGES.poolish hat genau 2 Stufen (p_warm, p_cold) mit rel:'pref', keine p8/p14/p24 mehr", ok: PZ.PREF_STAGES.poolish.length === 2 && PZ.PREF_STAGES.poolish.every(function (s) { return s.rel === 'pref'; }), actual: PZ.PREF_STAGES.poolish.map(function (s) { return s.key; }).join(','), expected: 'p_warm,p_cold', tol: null },
+      { label: "PZ.PREF_STAGES.biga hat weiterhin 3 unveränderte Stufen mit rel:'total'", ok: PZ.PREF_STAGES.biga.length === 3 && PZ.PREF_STAGES.biga.every(function (s) { return s.rel === 'total'; }), actual: PZ.PREF_STAGES.biga.map(function (s) { return s.key; }).join(','), expected: 'b16,b24,b48', tol: null },
+      { label: 'Klemmfall (hyd 60 < pref 66): PZ.calcCore().prefEff ist tatsächlich geklemmt auf 60', ok: clampedPrefEff === 60, actual: clampedPrefEff, expected: 60, tol: null },
+      { label: 'Klemmfall: select() nutzt prefEff (60), NICHT den rohen pref (66) -- yeast = 1,0 % × 0,60 = 0,60 %', ok: Math.abs(clampedYeast - expectedClamped) < 0.0001, actual: clampedYeast, expected: expectedClamped, tol: 0.0001 },
+      { label: 'Kontrolle: Klemmfall unterscheidet sich vom (falschen) unklemmten Wert 0,66 % -- Test hätte den Bugfix vor der Korrektur als rot erkannt', ok: Math.abs(clampedYeast - naiveUnclamped) > 0.0001, actual: clampedYeast, expected: '≠ ' + naiveUnclamped, tol: null }
+    ]);
   })();
 
   // ─────────────────────────────────────────────────────────────
