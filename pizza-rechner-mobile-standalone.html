@@ -1557,7 +1557,7 @@ header{position:relative;text-align:center;}
      daneben, ein zweiter Vorlese-Name wäre redundant (analog zum bestehenden
      .card-icon aria-hidden-Muster). -->
 <header>
-  <h1><img src="assets/logo.svg?v=4.24.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
+  <h1><img src="assets/logo.svg?v=4.24.1" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
 </header>
 
 <!-- Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay analog zum
@@ -2445,7 +2445,7 @@ header{position:relative;text-align:center;}
              hier bewusst NICHT mehr dupliziert. -->
         <div class="nav-divider" role="separator"></div>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.24.0</span>
+        <span class="nav-version" id="appVersion">v4.24.1</span>
 
       </div>
     </details>
@@ -6358,16 +6358,23 @@ header{position:relative;text-align:center;}
   // dieses Umbaus). `announceId` liefert eine Live-Region-Ansage bei +/- Klick (nicht
   // beim Tippen ins Zahlenfeld oder Klick auf eine Schnellwahl-Chip, da dort der neue
   // Wert ohnehin sofort sichtbar wird).
-  // Seit v4.24.0: onSet bekommt den geänderten Feld-Key mit -- wird gebraucht, um bei
-  // Änderungen am Vorteig-Anteil-Regler ("pref") die Hefemenge einer aktiven Poolish-
-  // Reife-Stufe mit rel:'pref' nachzuziehen (sonst driftet die Dosis mit dem Regler,
-  // s. Kommentar bei PZ.PREF_STAGES unten). `prefStages` wird erst weiter unten in
-  // dieser Datei zugewiesen -- unproblematisch, da diese Funktion erst bei einer
-  // späteren Nutzerinteraktion aufgerufen wird, nicht beim Definieren selbst.
+  // Seit v4.24.0: onSet bekommt den geänderten Feld-Key mit -- wird gebraucht, um die
+  // Hefemenge einer aktiven Poolish-Reife-Stufe mit rel:'pref' nachzuziehen (sonst
+  // driftet die Dosis, s. Kommentar bei PZ.PREF_STAGES unten).
+  // v4.24.1: NICHT nur bei "pref". select() rechnet mit dem in js/calc.js geklemmten
+  // prefEff = min(pref, hyd / pHyd), und dieser Klemmwert hängt genauso an "hyd" (und
+  // bei Biga über pHyd an "bhyd"). Wurde nur "pref" nachgezogen, blieb die Hefemenge
+  // nach einer reinen Hydration-Senkung stehen und war um den Klemmfaktor zu hoch
+  // (gemessen: Preset "Napoli mit Poolish (kalt)", Hydration 66 -> 60, Dosis 1,1 %
+  // statt 1,0 %). Der Resync ist bei rel:'total' (Biga) idempotent, deshalb ist die
+  // breitere Auslöserliste dort folgenlos.
+  // `prefStages` wird erst weiter unten in dieser Datei zugewiesen -- unproblematisch,
+  // da diese Funktion erst bei einer späteren Nutzerinteraktion aufgerufen wird.
+  const PREF_CLAMP_KEYS = ['pref', 'hyd', 'bhyd'];
   const stepper = PZ.makeStepper({
     stateObj: state,
     onSet: function (key) {
-      if (key === 'pref' && state.method !== 'direct' && prefStages) prefStages.resync(state.method);
+      if (PREF_CLAMP_KEYS.indexOf(key) !== -1 && state.method !== 'direct' && prefStages) prefStages.resync(state.method);
       PZ.calc();
     },
     announceId: 'stepperLiveMsg'
@@ -7710,17 +7717,20 @@ header{position:relative;text-align:center;}
   // clamp:true (Nutzerauftrag „Punkt 2" — Konsistenz mit js/ui.js) — vorher
   // clamp:false (dieses Formular hatte das Zahlenfeld-Clamping aus v3.51.0 nie
   // nachgezogen, s. Nebenbefund/Asymmetrie-Kommentar in js/widgets.js).
-  // Seit v4.24.0: onSet(key) zieht bei "pref" die Hefemenge einer aktiven Poolish-Stufe
-  // mit rel:'pref' nach (identischer Drift-Fix wie js/ui.js, s. dortigen Kommentar) --
+  // Seit v4.24.0: onSet(key) zieht die Hefemenge einer aktiven Poolish-Stufe mit
+  // rel:'pref' nach (identischer Drift-Fix wie js/ui.js, s. dortigen Kommentar) --
   // weiterhin KEIN PZ.calc()-Aufruf, nur der isolierte nrPrefStages-Resync.
+  // v4.24.1: Auslöser sind "pref", "hyd" UND "bhyd", nicht nur "pref" -- der von
+  // js/calc.js geklemmte prefEff hängt an allen dreien (volle Begründung in js/ui.js).
   // `nrPrefStages` wird erst weiter unten zugewiesen, unproblematisch (s. js/ui.js).
+  const NR_PREF_CLAMP_KEYS = ['pref', 'hyd', 'bhyd'];
   const nrUnitLinks = [];
   const nrLink = PZ.makeLink({
     stateObj: nrState,
     clamp: true,
     unitLinks: nrUnitLinks,
     onSet: function (key) {
-      if (key === 'pref' && nrState.method !== 'direct' && nrPrefStages) nrPrefStages.resync(nrState.method);
+      if (NR_PREF_CLAMP_KEYS.indexOf(key) !== -1 && nrState.method !== 'direct' && nrPrefStages) nrPrefStages.resync(nrState.method);
     }
   });
 

@@ -757,7 +757,10 @@
   // (Spiegelt js/presets.js wider: bei Preset-Änderungen hier mitziehen.)
   const PRESET_STATES = {
     'napoli_klassisch': { method: 'direct', hyd: 60, salt: 2.8, oil: 2, yeast: 0.2, flour: 'caputo_pizzeria' },
-    'napoli_65':        { method: 'direct', hyd: 65, salt: 2.8, oil: 2, yeast: 0.3, flour: 'caputo_pizzeria' },
+    // v4.24.1: 'napoli_65' hier entfernt -- der Key existiert in js/presets.js nicht (und
+    // hat dort nie existiert). Das Fixture prüfte ein Phantom-Preset: die Schleifen liefen
+    // grün, deckten aber nichts Reales ab. Die gleichlautende, ebenfalls stale Zeile in
+    // pizza-rechner-KONTEXT.md wurde bereits in v4.24.0 entfernt, dieses Fixture übersehen.
     'napoli_kalt':      { method: 'direct', hyd: 65, salt: 3.0, oil: 2, yeast: 0.1, flour: 'caputo_cuoco' },
     'schnell':          { method: 'direct', hyd: 62, salt: 2.5, oil: 2, yeast: 1.5, flour: 'caputo_pizzeria' },
     'napoli_biga':      { method: 'biga', hyd: 65, salt: 2.8, oil: 2, yeast: 0.3, pref: 100, bhyd: 45, prefMature: 24, flour: 'caputo_cuoco' },
@@ -4647,6 +4650,29 @@
     const expectedClamped = 1.0 * (60 / 100); // prefEff geklemmt auf 60 (= hyd), NICHT auf den rohen pref 66
     const naiveUnclamped = 1.0 * (66 / 100);  // das wäre der (falsche) Wert vor dem Fix gewesen
 
+    // v4.24.1: Der Klemm-Fix oben deckte nur den Fall ab, dass die Stufe BEI BEREITS
+    // geklemmter Hydration neu gewählt wird. Der zweite Weg dorthin blieb offen: erst bei
+    // ungeklemmter Hydration wählen (hyd 66 = pref 66, prefEff 66, yeast 0,66), DANN die
+    // Hydration senken. Dadurch klemmt calc.js neu auf prefEff 60, die Hefemenge blieb
+    // aber auf dem alten Wert stehen -> Dosis im Poolish 0,66/0,60 = 1,1 % statt 1,0 %
+    // (live an pizza-rechner.html nachgestellt). Ursache war der Auslöser, nicht die
+    // Formel: der onSet-Hook zog nur bei "pref" nach, nicht bei "hyd"/"bhyd".
+    // ACHTUNG zur Aussagekraft: dieser Test prüft die Fabrik-Seite (resync() rechnet nach
+    // einer Hydration-Änderung korrekt neu). Die Auslöser-Liste selbst lebt in js/ui.js /
+    // js/newrecipe.js, die hier bewusst nicht geladen sind -- sie ist live verifiziert.
+    const hydState = Object.assign({}, BASE, { method: 'poolish', hyd: 66, pref: 66 });
+    const hydStages = PZ.makePrefStages({
+      stateObj: hydState,
+      wrapId: 'testPrefStage',
+      valId: 'testPrefStageVal',
+      setYeast: function (y) { hydState.yeast = y; }
+    });
+    hydStages.select('poolish', 'p_cold');
+    const hydYeastBefore = hydState.yeast;       // 1,0 % × 0,66 = 0,66 (ungeklemmt)
+    hydState.hyd = 60;                           // simuliert den Hydration-Regler
+    hydStages.resync('poolish');
+    const hydYeastAfter = hydState.yeast;        // muss auf 1,0 % × 0,60 = 0,60 fallen
+
     renderBox("PZ.makePrefStages() · Poolish rel:'pref'-Umrechnung + Vorteig-Anteil-Drift-Fix", [
       { label: 'p_warm bei pref=66: yeast = 0,6 % × 0,66 = 0,396 % (bezogen aufs Poolish-Mehl, nicht Gesamtmehl)', ok: Math.abs(warmYeast - 0.396) < 0.0001, actual: warmYeast, expected: 0.396, tol: 0.0001 },
       { label: 'p_warm: prefMature = 10 h, prefStage = "p_warm"', ok: warmMature === 10 && warmStage === 'p_warm', actual: warmMature + '/' + warmStage, expected: '10/p_warm', tol: null },
@@ -4660,7 +4686,10 @@
       { label: "PZ.PREF_STAGES.biga hat weiterhin 3 unveränderte Stufen mit rel:'total'", ok: PZ.PREF_STAGES.biga.length === 3 && PZ.PREF_STAGES.biga.every(function (s) { return s.rel === 'total'; }), actual: PZ.PREF_STAGES.biga.map(function (s) { return s.key; }).join(','), expected: 'b16,b24,b48', tol: null },
       { label: 'Klemmfall (hyd 60 < pref 66): PZ.calcCore().prefEff ist tatsächlich geklemmt auf 60', ok: clampedPrefEff === 60, actual: clampedPrefEff, expected: 60, tol: null },
       { label: 'Klemmfall: select() nutzt prefEff (60), NICHT den rohen pref (66) -- yeast = 1,0 % × 0,60 = 0,60 %', ok: Math.abs(clampedYeast - expectedClamped) < 0.0001, actual: clampedYeast, expected: expectedClamped, tol: 0.0001 },
-      { label: 'Kontrolle: Klemmfall unterscheidet sich vom (falschen) unklemmten Wert 0,66 % -- Test hätte den Bugfix vor der Korrektur als rot erkannt', ok: Math.abs(clampedYeast - naiveUnclamped) > 0.0001, actual: clampedYeast, expected: '≠ ' + naiveUnclamped, tol: null }
+      { label: 'Kontrolle: Klemmfall unterscheidet sich vom (falschen) unklemmten Wert 0,66 % -- Test hätte den Bugfix vor der Korrektur als rot erkannt', ok: Math.abs(clampedYeast - naiveUnclamped) > 0.0001, actual: clampedYeast, expected: '≠ ' + naiveUnclamped, tol: null },
+      { label: 'v4.24.1 Ausgangslage: bei hyd 66 = pref 66 wird NICHT geklemmt, yeast = 1,0 % × 0,66 = 0,66 %', ok: Math.abs(hydYeastBefore - 0.66) < 0.0001, actual: hydYeastBefore, expected: 0.66, tol: 0.0001 },
+      { label: 'v4.24.1 Nachzug-Fix: resync() nach reiner Hydration-Senkung (66 % → 60 %) rechnet yeast auf 1,0 % × 0,60 = 0,60 % neu', ok: Math.abs(hydYeastAfter - 0.60) < 0.0001, actual: hydYeastAfter, expected: 0.60, tol: 0.0001 },
+      { label: 'Kontrolle: der Wert hat sich durch die Hydration-Änderung wirklich bewegt (sonst prüfte der Test nichts)', ok: hydYeastAfter !== hydYeastBefore, actual: hydYeastAfter, expected: '≠ ' + hydYeastBefore, tol: null }
     ]);
   })();
 

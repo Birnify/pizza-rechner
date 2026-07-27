@@ -17,16 +17,23 @@
   // dieses Umbaus). `announceId` liefert eine Live-Region-Ansage bei +/- Klick (nicht
   // beim Tippen ins Zahlenfeld oder Klick auf eine Schnellwahl-Chip, da dort der neue
   // Wert ohnehin sofort sichtbar wird).
-  // Seit v4.24.0: onSet bekommt den geänderten Feld-Key mit -- wird gebraucht, um bei
-  // Änderungen am Vorteig-Anteil-Regler ("pref") die Hefemenge einer aktiven Poolish-
-  // Reife-Stufe mit rel:'pref' nachzuziehen (sonst driftet die Dosis mit dem Regler,
-  // s. Kommentar bei PZ.PREF_STAGES unten). `prefStages` wird erst weiter unten in
-  // dieser Datei zugewiesen -- unproblematisch, da diese Funktion erst bei einer
-  // späteren Nutzerinteraktion aufgerufen wird, nicht beim Definieren selbst.
+  // Seit v4.24.0: onSet bekommt den geänderten Feld-Key mit -- wird gebraucht, um die
+  // Hefemenge einer aktiven Poolish-Reife-Stufe mit rel:'pref' nachzuziehen (sonst
+  // driftet die Dosis, s. Kommentar bei PZ.PREF_STAGES unten).
+  // v4.24.1: NICHT nur bei "pref". select() rechnet mit dem in js/calc.js geklemmten
+  // prefEff = min(pref, hyd / pHyd), und dieser Klemmwert hängt genauso an "hyd" (und
+  // bei Biga über pHyd an "bhyd"). Wurde nur "pref" nachgezogen, blieb die Hefemenge
+  // nach einer reinen Hydration-Senkung stehen und war um den Klemmfaktor zu hoch
+  // (gemessen: Preset "Napoli mit Poolish (kalt)", Hydration 66 -> 60, Dosis 1,1 %
+  // statt 1,0 %). Der Resync ist bei rel:'total' (Biga) idempotent, deshalb ist die
+  // breitere Auslöserliste dort folgenlos.
+  // `prefStages` wird erst weiter unten in dieser Datei zugewiesen -- unproblematisch,
+  // da diese Funktion erst bei einer späteren Nutzerinteraktion aufgerufen wird.
+  const PREF_CLAMP_KEYS = ['pref', 'hyd', 'bhyd'];
   const stepper = PZ.makeStepper({
     stateObj: state,
     onSet: function (key) {
-      if (key === 'pref' && state.method !== 'direct' && prefStages) prefStages.resync(state.method);
+      if (PREF_CLAMP_KEYS.indexOf(key) !== -1 && state.method !== 'direct' && prefStages) prefStages.resync(state.method);
       PZ.calc();
     },
     announceId: 'stepperLiveMsg'

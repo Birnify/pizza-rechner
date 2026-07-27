@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-27 · Aktuelle Version: v4.24.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-28 · Aktuelle Version: v4.24.1 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -202,27 +202,30 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Poolish-Stufen aus Quellenrecherche (v4.24.0) = aktueller Stand
+## Poolish aus Quellenrecherche (v4.24.0) + Hydration-Nachzug (v4.24.1) = aktueller Stand
 
-Aus 14 ausgewerteten Quellen abgeleitet (NICHT selbst gebacken/verifiziert): die
+Aus 14 ausgewerteten Quellen abgeleitet (**NICHT selbst gebacken/verifiziert**): die
 Poolish-Reife-Stufen (`PZ.PREF_STAGES.poolish`, `js/ui.js`) heißen jetzt `p_warm` (10 h
 Raumtemp, 0,6 %) und `p_cold` (1 h Raumtemp + 24 h Kühlschrank, 1,0 %) statt der bisherigen
-drei unbelegten Stufen — beide mit neuem, explizitem `rel:'pref'` (Hefe bezogen aufs
-Poolish-Mehl, nicht mehr aufs Gesamtmehl wie bisher `rel:'total'`). Kernfix: die
-Umrechnung driftet nicht mehr mit dem Vorteig-Anteil-Regler (`PZ.makePrefStages().resync()`,
-`js/widgets.js`) und berücksichtigt seit einem `test-generator`-Review-Fund auch die
-`js/calc.js`-Klemmung (`prefEff`) statt des rohen Werts. `js/schedule.js`: Vorteig-Zweig
-komplett von `state.yeast` entkoppelt, liefert immer den bisherigen „prefLong"-Zweig.
-Presets: `napoli_poolish` → `napoli_poolish_schnell`/`_kalt` (gleiche 66/66-Geometrie, nur
-Gärregime unterschiedlich, ≈20 h/≈34 h). `tests/test.html`: 901 → **949** Prüfungen grün.
+drei unbelegten Stufen, beide mit explizitem `rel:'pref'` (Hefe bezogen aufs Poolish-Mehl
+statt aufs Gesamtmehl; Biga bleibt bewusst bei `rel:'total'`). Die Umrechnung
+(`PZ.makePrefStages().select()`/`resync()`, `js/widgets.js`) nutzt den in `js/calc.js`
+geklemmten `prefEff` und wird bei Änderungen an **`pref`, `hyd` und `bhyd`** nachgezogen
+(v4.24.1: bis dahin nur `pref`, wodurch eine reine Hydration-Senkung die Hefemenge stehen
+ließ, gemessen 1,1 % statt 1,0 %). `js/schedule.js`: Vorteig-Zweig komplett von
+`state.yeast` entkoppelt, liefert immer den „prefLong"-Zweig. Presets: `napoli_poolish` →
+`napoli_poolish_schnell`/`_kalt` (gleiche 66/66-Geometrie, nur Gärregime unterschiedlich,
+≈20 h/≈34 h). `tests/test.html`: 901 → **948** Prüfungen grün.
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Poolish-Stufen aus
-Quellenrecherche (v4.24.0)" (vorherige Abschnitte ebenfalls dort verkettet).
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitte „Poolish-Hefe-Nachzug bei
+Hydration-Änderung (v4.24.1)" und „Poolish-Stufen aus Quellenrecherche (v4.24.0)"
+(vorherige Abschnitte ebenfalls dort verkettet).
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
 Stand 2026-07-26, **nicht abgeschlossen**. Betrifft ausschließlich `assets/`, **kein
-App-Code geändert**, deshalb bleibt v4.23.2 der aktuelle App-Stand und es gibt keinen
+App-Code geändert**, deshalb hat diese Asset-Arbeit selbst nie einen Versionssprung ausgelöst (die
+seither erschienenen App-Releases bis v4.24.1 sind davon unabhängig) und es gibt keinen
 `Versionen/`-Schnappschuss dafür.
 
 **Was existiert (alles neu, noch nicht committet):**
@@ -555,11 +558,11 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.23.2 -- seit
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.24.1 -- seit
                      v4.5.0 synchron mit Mobil, s. u.: Desktop lädt weiterhin ohne
                      css/fonts.css, das ist unabhängig von der Versionsnummer)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle,
-                     ?v=4.23.2)
+                     ?v=4.24.1)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
 index.html           Weiterleitung auf pizza-rechner.html
@@ -659,7 +662,7 @@ js/onboarding.js     Willkommens-Screen / Einführung (v3.63.0): eigenständiges
                      Burgermenü-Punkt auf Desktop bzw. Ende der "Funktionen"-Karte auf Mobil,
                      s. "= aktueller Stand" oben), Persistenz via
                      localStorage-Key pizzaOnboardingDontShow. Läuft als letztes Script (nach nav.js)
-tests/test.html      901 Prüfungen in 31 Kategorien (Doppelklick, kein Server) — lädt 17 der 27
+tests/test.html      948 Prüfungen in 32 Kategorien (Doppelklick, kein Server) — lädt 17 der 27
                      js/*-Module direkt (dom/state/i18n-dict/i18n/settings/theme/units/widgets/
                      flour/schedule/guide/calc/print/pdf/storage/share/party); ui.js, timer.js,
                      presets.js, newrecipe.js, glossary.js, main.js, nav.js, simplemode.js,
@@ -681,7 +684,7 @@ formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 **Cache-Busting:** CSS/JS werden mit `?v=X.Y.Z` geladen. **Bei jeder neuen Version mitziehen.**
 Zwischen v4.0.0 und v4.4.0 bewusst auseinandergelaufen (Design-Import-Zyklen waren
 mobile-only, Desktop-HTML wurde nicht angefasst) — **seit v4.5.0 wieder synchron**, beide
-HTML-Dateien stehen bei `?v=4.23.2`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
+HTML-Dateien stehen bei `?v=4.24.1`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
 erneut bewusst entscheiden, ob ein Auseinanderlaufen sinnvoll ist oder beide mitgezogen
 werden (v4.17.0 war rein mobil-inhaltlich, `?v=` wurde bewusst trotzdem auf beiden Seiten
 mitgezogen, um die Synchronität zu erhalten — s. Abschnitt „Quick-Bar-Speichern-Button
@@ -751,7 +754,7 @@ gegenprüfen), sonst zeigt die Live-App die falsche Version an.
 - **Versionen-Workflow (Pflicht bei jeder Änderung):** kompletten lauffähigen Stand nach
   `Versionen/vX.Y.Z - [Beschreibung]/` kopieren (html, index, css/, js/, README; tests/ optional).
   SemVer: Patch=Fix, Minor=Feature, Major=Umbau. `?v=` in der HTML mitziehen.
-- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 949 Prüfungen in
+- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 948 Prüfungen in
   32 Kategorien** (s. Dateistruktur oben): Bäckerprozente, DDT/Eis, Vorteig-Aufteilung, Trockenhefe,
   Schedule-Schwellen, Mehl-Warnung, Backzeit-Skalierung, Olivenöl (Masseerhaltung), Anleitungs-
   Hinweise, Randfälle/Edge Cases, Kombinationen, Zeitplan-Rückwärtsrechnung, Einkaufsliste,

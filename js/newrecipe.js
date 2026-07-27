@@ -48,17 +48,20 @@
   // clamp:true (Nutzerauftrag „Punkt 2" — Konsistenz mit js/ui.js) — vorher
   // clamp:false (dieses Formular hatte das Zahlenfeld-Clamping aus v3.51.0 nie
   // nachgezogen, s. Nebenbefund/Asymmetrie-Kommentar in js/widgets.js).
-  // Seit v4.24.0: onSet(key) zieht bei "pref" die Hefemenge einer aktiven Poolish-Stufe
-  // mit rel:'pref' nach (identischer Drift-Fix wie js/ui.js, s. dortigen Kommentar) --
+  // Seit v4.24.0: onSet(key) zieht die Hefemenge einer aktiven Poolish-Stufe mit
+  // rel:'pref' nach (identischer Drift-Fix wie js/ui.js, s. dortigen Kommentar) --
   // weiterhin KEIN PZ.calc()-Aufruf, nur der isolierte nrPrefStages-Resync.
+  // v4.24.1: Auslöser sind "pref", "hyd" UND "bhyd", nicht nur "pref" -- der von
+  // js/calc.js geklemmte prefEff hängt an allen dreien (volle Begründung in js/ui.js).
   // `nrPrefStages` wird erst weiter unten zugewiesen, unproblematisch (s. js/ui.js).
+  const NR_PREF_CLAMP_KEYS = ['pref', 'hyd', 'bhyd'];
   const nrUnitLinks = [];
   const nrLink = PZ.makeLink({
     stateObj: nrState,
     clamp: true,
     unitLinks: nrUnitLinks,
     onSet: function (key) {
-      if (key === 'pref' && nrState.method !== 'direct' && nrPrefStages) nrPrefStages.resync(nrState.method);
+      if (NR_PREF_CLAMP_KEYS.indexOf(key) !== -1 && nrState.method !== 'direct' && nrPrefStages) nrPrefStages.resync(nrState.method);
     }
   });
 

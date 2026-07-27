@@ -8,6 +8,49 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Poolish-Hefe-Nachzug bei Hydration-Änderung (v4.24.1)
+
+Direkt anschließender Bugfix zu v4.24.0, vom Hauptagenten bei der Abnahme des Zyklus
+live an `pizza-rechner.html` gefunden und **inline** umgesetzt (kein Orchestrator, auf
+ausdrücklichen Nutzerwunsch — reine Verdrahtungskorrektur).
+
+**Der Fehler.** v4.24.0 hatte die Klemmung zwar in die *Formel* geholt
+(`select()` rechnet mit `PZ.calcCore().prefEff` statt mit dem rohen `state.pref`), aber
+nur einen von zwei *Auslösern* verdrahtet: der `onSet`-Hook rief `resync()` allein bei
+`key === 'pref'` auf. Der geklemmte Wert `prefEff = min(pref, hyd / pHyd)` hängt jedoch
+genauso an `hyd` (und bei Biga über `pHyd` an `bhyd`). Senkte ein Nutzer nur die
+Hydration, klemmte `js/calc.js` neu, die Hefemenge blieb aber auf dem alten Stand stehen.
+Gemessen am Preset „Napoli mit Poolish (kalt)": Hydration 66 → 60 ergab **1,1 % statt
+1,0 %** Hefe im Poolish, also genau die Drift-Klasse, die v4.24.0 beseitigen sollte.
+Ein Antippen des Vorteig-Anteil-Reglers korrigierte den Wert wieder — das war der Beleg,
+dass `resync()` selbst korrekt arbeitet und nur der Auslöser fehlte.
+
+**Der Fix.** `js/ui.js` und `js/newrecipe.js`: statt `key === 'pref'` jetzt eine benannte
+Liste `['pref', 'hyd', 'bhyd']`. `resync()` ist bei `rel:'total'` (Biga) idempotent,
+deshalb ist die breitere Auslöserliste dort folgenlos (live gegengeprüft: Biga-Hefemenge
+vor/nach einer Hydration-Änderung identisch 0,3 %).
+
+**Mitgenommen:** das Fixture `'napoli_65'` in `PRESET_STATES` (`tests/test.html`) entfernt.
+Der Key existiert in `js/presets.js` nicht und hat dort nie existiert — die Schleifen über
+`PRESET_STATES` liefen darüber grün, deckten aber ein Phantom ab. Die gleichlautende stale
+Zeile in `pizza-rechner-KONTEXT.md` war bereits in v4.24.0 entfernt worden, dieses Fixture
+dabei übersehen.
+
+**Tests:** 949 → **948** grün (drei neue Prüfungen in Sektion 32 für den Hydration-Weg,
+vier Prüfungen durch das entfernte Phantom-Fixture weggefallen). Einschränkung bewusst im
+Test dokumentiert: geprüft wird die Fabrik-Seite (`resync()` rechnet nach einer
+Hydration-Änderung korrekt neu); die Auslöser-Liste selbst liegt in `js/ui.js` /
+`js/newrecipe.js`, die `tests/test.html` bewusst nicht lädt, und ist **live** verifiziert
+(Hydration 66 → 60 → 55 bleibt stabil bei 1,0 %; beide Presets unverändert bei 0,606 % /
+19,7 h bzw. 1,0 % / 33,7 h).
+
+**Weiterhin gilt:** nichts davon ist gebacken. Die Zahlen sind aus Quellen abgeleitet, die
+Testsuite belegt Rechenwege, kein Gärverhalten.
+
+**Geändert:** `js/ui.js`, `js/newrecipe.js`, `tests/test.html`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`, `pizza-rechner-mobile-standalone.html` (neu gebaut),
+`pizza-rechner-KONTEXT.md`, diese Datei. `?v=` und Menü-Versionsnummer auf 4.24.1.
+
 ## Poolish-Stufen aus Quellenrecherche (v4.24.0)
 
 Der Nutzer beauftragte im Hauptgespräch eine Quellenrecherche zum Poolish (14 Quellen:
