@@ -75,16 +75,13 @@ bekommen. Etablierter Ablauf:
 5. Auto-Push nach jedem Commit ist für den Orchestrator in diesem Projekt standardmäßig
    erlaubt, keine Rückfrage pro Push nötig. Das gilt nur für die automatisierten Commits
    des Orchestrators in diesem Projekt, keine pauschale Push-Erlaubnis darüber hinaus.
-6. Bei Sitzungslimit-/API-Fehlern des Hintergrund-Agenten: nicht sofort neu versuchen.
-   Die im Fehlertext genannte Reset-Zeit gegen die aktuelle Uhrzeit prüfen (z. B. `date`
-   per Bash) und erst danach fortsetzen.
-7. Falls eine `SendMessage` an eine vermeintlich laufende Instanz mit "kein Transkript
+6. Falls eine `SendMessage` an eine vermeintlich laufende Instanz mit "kein Transkript
    gefunden" fehlschlägt: Repo-Stand prüfen (`git status`/`git log`), meist ist nichts
    verloren, dann einfach einen frischen Orchestrator mit vollem Kontext zur aktuellen
    Warteschlange starten (wie in Punkt 2 beschrieben).
-8. Wenn der Orchestrator meldet "Warteschlange leer, neuer Zyklus?": auf die nächste
+7. Wenn der Orchestrator meldet "Warteschlange leer, neuer Zyklus?": auf die nächste
    Nutzeranweisung warten, nicht selbst neue Arbeit erfinden.
-9. **Spezialisten-Anforderungen des Orchestrators bedienen (Sub-Agenten-Relay):** Der
+8. **Spezialisten-Anforderungen des Orchestrators bedienen (Sub-Agenten-Relay):** Der
    Orchestrator läuft als Hintergrund-Subagent und kann selbst **keine** weiteren
    Sub-Agenten spawnen (verschachteltes Spawnen ist in dieser Umgebung gesperrt, ein
    Subagent hat kein nutzbares `Agent`-Tool). Damit die echten Spezialisten
