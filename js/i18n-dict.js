@@ -487,10 +487,19 @@
   // ---- js/presets.js: Preset-Beschreibungen + Ladehinweis ------------------------
   add('preset.defaultDesc', 'Wähle ein erprobtes Rezept: alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.',
     'Choose a proven recipe: all values are set automatically. You can fine-tune anytime afterwards.');
-  add('preset.napoliKlassisch.desc', 'AVPN-Standard: 60 % Hydration, Tipo 00, 2 % Olivenöl. ~24 h Gesamtgare. Wenig Hefe, klassischer Geschmack.',
-    'AVPN standard: 60 % hydration, Tipo 00, 2 % olive oil. ~24 h total rise. Little yeast, classic flavor.');
-  add('preset.napoliKalt.desc', 'Lange Kaltgare ~48 h im Kühlschrank (4 °C), 2 % Olivenöl. Sehr wenig Hefe, maximales Aroma. Braucht ein starkes Mehl (W300+).',
-    'Long cold rise ~48 h in the fridge (4 °C), 2 % olive oil. Very little yeast, maximum flavor. Needs a strong flour (W300+).');
+  // v4.25.1: AVPN-Aussage entschärft (Nutzer-Quellenprüfung gegen das offizielle
+  // Disciplinare: nur Mehl/Wasser/Salz/Hefe, kein Öl) und die Gesamtgare-Angabe aus der
+  // laufenden App nachgemessen (headless, PZ.calc() auf den echten Preset-Werten:
+  // 27,62 h → ~28 h) statt der bisherigen geschätzten "~24 h". Öl bleibt im Rezept
+  // unverändert, nur die Beschreibung ist jetzt korrekt: das Öl ist eine Abweichung von
+  // der AVPN-Zutatenliste, nicht Teil davon. S. pizza-rechner-KONTEXT.md.
+  add('preset.napoliKlassisch.desc', 'An den AVPN-Standard angelehnt: 60 % Hydration, Tipo 00. Das Olivenöl (2 %) ist eine bewusste Abweichung: die offizielle AVPN-Zutatenliste kennt nur Mehl, Wasser, Salz und Hefe (mehr dazu im Glossar „Echte neapolitanische Pizza (AVPN)“). ~28 h Gesamtgare, wenig Hefe, klassischer Geschmack.',
+    'Inspired by the AVPN standard: 60 % hydration, Tipo 00. The olive oil (2 %) is a deliberate deviation: the official AVPN ingredient list only includes flour, water, salt and yeast (more in the glossary entry “True Neapolitan pizza (AVPN)”). ~28 h total rise, little yeast, classic flavor.');
+  // v4.25.1: Gesamtgare aus der Berechnung nachgemessen (44,62 h → ~45 h) statt der
+  // bisherigen geschätzten "~48 h" -- das lag sogar UNTER dem im Options-Label
+  // versprochenen Minimum von 48 h. Teigwerte unverändert.
+  add('preset.napoliKalt.desc', 'Lange Kaltgare: ~45 h insgesamt, der Großteil davon im Kühlschrank (4 °C), 2 % Olivenöl. Sehr wenig Hefe, maximales Aroma. Braucht ein starkes Mehl (W300+).',
+    'Long cold rise: ~45 h in total, most of it in the fridge (4 °C), 2 % olive oil. Very little yeast, maximum flavor. Needs a strong flour (W300+).');
   add('preset.schnell.desc', 'Gleicher Tag: ~2 h Stockgare + 2–3 h Stückgare bei warmer Raumtemp (24–26 °C), 2 % Olivenöl. Mehr Hefe, weniger Aroma: aber spontan.',
     'Same day: ~2 h bulk rise + 2–3 h final proof at warm room temp (24–26 °C), 2 % olive oil. More yeast, less flavor: but spontaneous.');
   // Bewusst PLAIN "&" (nicht "&amp;") in allen drei descKey-Einträgen unten:
@@ -506,10 +515,16 @@
     'Poolish (liquid 1:1) with 66 % of the flour, 10 h entirely at room temp. Then final dough (with 2 % oil): ~20 h total rise. Milder, airier dough, the faster of the two poolish variants.');
   add('preset.napoliPoolishKalt.desc', 'Poolish (flüssig 1:1) mit 66 % des Mehls, 1 h Raumtemp anspringen, dann 24 h Kühlschrank. Dann Hauptteig (mit 2 % Öl): ~34 h Gesamtreife. Milder, luftiger Teig, mehr Aroma durch die kühlere Führung.',
     'Poolish (liquid 1:1) with 66 % of the flour, 1 h at room temp to start, then 24 h in the fridge. Then final dough (with 2 % oil): ~34 h total rise. Milder, airier dough, more flavor from the cooler route.');
-  add('preset.teglia.desc', 'Römische Blechpizza: 75 % Hydration, 4 % Olivenöl, sehr lockere Krume. Teig ist klebrig: mit Stretch & Fold statt langem Kneten arbeiten. 24 h kühl. Braucht sehr starkes Mehl (W330+).',
-    'Roman pan pizza: 75 % hydration, 4 % olive oil, very airy crumb. The dough is sticky: work with stretch & fold instead of long kneading. 24 h cold. Needs a very strong flour (W330+).');
-  add('preset.newyorkStyle.desc', 'New York Style: 62 % Hydration, 3 % Öl, 2 % Zucker (Bräunung & Hefeaktivität): größere, dünnere Teiglinge. ~26 h Kaltgare für Aroma & knusprig-zähe Kruste. Braucht ein mittelstarkes Mehl (W300+).',
-    'New York style: 62 % hydration, 3 % oil, 2 % sugar (browning & yeast activity): larger, thinner dough balls. ~26 h cold rise for flavor & a crispy-chewy crust. Needs a medium-strong flour (W300+).');
+  // v4.25.1: Gesamtgare aus der Berechnung nachgemessen (29,53 h → ~30 h) statt der
+  // bisherigen geschätzten "24 h". Teigwerte unverändert (Öl-Korrektur auf 2,5 % folgt in
+  // einem eigenen späteren Zyklus, s. pizza-rechner-KONTEXT.md).
+  add('preset.teglia.desc', 'Römische Blechpizza: 75 % Hydration, 4 % Olivenöl, sehr lockere Krume. Teig ist klebrig: mit Stretch & Fold statt langem Kneten arbeiten. ~30 h kühl. Braucht sehr starkes Mehl (W330+).',
+    'Roman pan pizza: 75 % hydration, 4 % olive oil, very airy crumb. The dough is sticky: work with stretch & fold instead of long kneading. ~30 h cold. Needs a very strong flour (W330+).');
+  // v4.25.1: Gesamtgare aus der Berechnung nachgemessen (27,75 h → ~28 h) statt der
+  // bisherigen geschätzten "~26 h". Teigwerte unverändert (Zucker-/Öl-Korrektur folgt in
+  // einem eigenen späteren Zyklus).
+  add('preset.newyorkStyle.desc', 'New York Style: 62 % Hydration, 3 % Öl, 2 % Zucker (Bräunung & Hefeaktivität): größere, dünnere Teiglinge. ~28 h Kaltgare für Aroma & knusprig-zähe Kruste. Braucht ein mittelstarkes Mehl (W300+).',
+    'New York style: 62 % hydration, 3 % oil, 2 % sugar (browning & yeast activity): larger, thinner dough balls. ~28 h cold rise for flavor & a crispy-chewy crust. Needs a medium-strong flour (W300+).');
   add('preset.customRecipeLoaded', 'Eigenes Rezept „{name}“ geladen: Werte wurden übernommen.', 'Custom recipe "{name}" loaded: values have been applied.');
 
   // ---- js/newrecipe.js: Live-Meldung nach dem Anlegen ----------------------------
@@ -605,15 +620,24 @@
   // "teglia" hatte statt einer Dauer eine Hydrationsangabe. Jetzt durchgängig nur noch
   // die Gärzeit (die Besonderheiten stehen weiterhin ausführlich in presetDesc/
   // *.desc-Keys, hier geht es nur um die kurze Dropdown-Beschriftung).
-  add('option.napoliKlassisch', 'Napoli Klassisch (AVPN) · 24 h', 'Napoli Classic (AVPN) · 24 h');
-  add('option.napoliKalt', 'Napoli Lange Kaltgare · 48–72 h', 'Napoli Long Cold Rise · 48–72 h');
+  // v4.25.1: "(AVPN)" aus dem kurzen Dropdown-Label entfernt -- das Preset behält 2 % Öl,
+  // das offizielle AVPN-Disciplinare kennt aber kein Öl, ein nacktes "(AVPN)" wäre hier
+  // eine nicht haltbare Konformitätsbehauptung ohne Platz für die nötige Nuance (die steht
+  // jetzt in preset.napoliKlassisch.desc). Beide Gärzeiten aus der Berechnung nachgemessen
+  // (27,62 h → ~28 h; 44,62 h → ~45 h, lag vorher sogar UNTER dem versprochenen
+  // 48-h-Minimum) statt der bisherigen geschätzten Werte. Teigwerte unverändert.
+  add('option.napoliKlassisch', 'Napoli Klassisch · ~28 h', 'Napoli Classic · ~28 h');
+  add('option.napoliKalt', 'Napoli Lange Kaltgare · ~45 h', 'Napoli Long Cold Rise · ~45 h');
+  // schnell: real gemessen 5,37 h liegt bereits innerhalb "4–6 h", keine Änderung nötig.
   add('option.schnell', 'Schnell · 4–6 h', 'Quick · 4–6 h');
   add('option.napoliBigaKlassisch', 'Napoli mit Biga (klassisch) · ~29 h', 'Napoli with Biga (classic) · ~29 h');
   add('option.napoliBigaKalt', 'Napoli mit Biga (kalt) · ~60 h', 'Napoli with Biga (cold) · ~60 h');
   add('option.napoliPoolishSchnell', 'Napoli mit Poolish (schnell) · ~20 h', 'Napoli with Poolish (fast) · ~20 h');
   add('option.napoliPoolishKalt', 'Napoli mit Poolish (kalt) · ~34 h', 'Napoli with Poolish (cold) · ~34 h');
-  add('option.teglia', 'Teglia / Blech · 24 h', 'Teglia / Pan · 24 h');
-  add('option.newyorkStyle', 'New York Style · ~26 h', 'New York Style · ~26 h');
+  // v4.25.1: beide Gärzeiten aus der Berechnung nachgemessen (29,53 h → ~30 h;
+  // 27,75 h → ~28 h) statt der bisherigen geschätzten Werte. Teigwerte unverändert.
+  add('option.teglia', 'Teglia / Blech · ~30 h', 'Teglia / Pan · ~30 h');
+  add('option.newyorkStyle', 'New York Style · ~28 h', 'New York Style · ~28 h');
 
   // Drei Empfehlungskarten (v3.71.0, "Rezeptwahl führen"): Schnell/Klassisch/Lang zeigen
   // Name, Gärzeit und eine kurze Eignung, bevor die volle Preset-Liste (jetzt hinter
@@ -628,16 +652,22 @@
   // selben Tag") -- eigene aria-label-Texte mit Doppelpunkt/Komma-Struktur ergänzt.
   add('preset.recommend.schnell.ariaLabel', 'Schnell: 4–6 h Gärzeit, für spontane Pizza am selben Tag',
     'Quick: 4–6 h rise time, for spontaneous pizza the same day');
+  // v4.25.1: "(AVPN)" als nackte Konformitätsbehauptung entschärft (das Preset behält
+  // 2 % Öl, das AVPN-Disciplinare kennt kein Öl) und die Gärzeit aus der Berechnung
+  // nachgemessen (27,62 h → ~28 h statt der bisherigen geschätzten "24 h"). Teigwerte
+  // unverändert, s. preset.napoliKlassisch.desc oben für die ausführliche Erklärung.
   add('preset.recommend.klassisch.name', 'Klassisch', 'Classic');
-  add('preset.recommend.klassisch.time', '24 h', '24 h');
-  add('preset.recommend.klassisch.fit', 'Bewährter neapolitanischer Standard (AVPN)', 'Proven Neapolitan standard (AVPN)');
-  add('preset.recommend.klassisch.ariaLabel', 'Klassisch: 24 h Gärzeit, bewährter neapolitanischer Standard (AVPN)',
-    'Classic: 24 h rise time, proven Neapolitan standard (AVPN)');
+  add('preset.recommend.klassisch.time', '~28 h', '~28 h');
+  add('preset.recommend.klassisch.fit', 'An den AVPN-Standard angelehnter neapolitanischer Klassiker', 'Neapolitan classic, inspired by the AVPN standard');
+  add('preset.recommend.klassisch.ariaLabel', 'Klassisch: ~28 h Gärzeit, an den AVPN-Standard angelehnter neapolitanischer Klassiker',
+    'Classic: ~28 h rise time, Neapolitan classic inspired by the AVPN standard');
+  // v4.25.1: Gärzeit aus der Berechnung nachgemessen (44,62 h → ~45 h) statt der
+  // bisherigen geschätzten "48–72 h" -- die lag sogar UNTER dem versprochenen Minimum.
   add('preset.recommend.lang.name', 'Lang', 'Long');
-  add('preset.recommend.lang.time', '48–72 h', '48–72 h');
+  add('preset.recommend.lang.time', '~45 h', '~45 h');
   add('preset.recommend.lang.fit', 'Maximales Aroma, braucht starkes Mehl (W300+)', 'Maximum flavor, needs a strong flour (W300+)');
-  add('preset.recommend.lang.ariaLabel', 'Lang: 48–72 h Gärzeit, maximales Aroma, braucht starkes Mehl (W300+)',
-    'Long: 48–72 h rise time, maximum flavor, needs a strong flour (W300+)');
+  add('preset.recommend.lang.ariaLabel', 'Lang: ~45 h Gärzeit, maximales Aroma, braucht starkes Mehl (W300+)',
+    'Long: ~45 h rise time, maximum flavor, needs a strong flour (W300+)');
   add('preset.allRecipes', 'Alle Rezepte', 'All recipes');
 
   // -- Card: Einfacher Modus (v3.62.0) -------------------------------------------------

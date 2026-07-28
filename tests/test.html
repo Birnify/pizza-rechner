@@ -4765,6 +4765,48 @@
   })();
 
   // ─────────────────────────────────────────────────────────────
+  heading('33 · Label-Kopplung: Optionslabel-Gärzeit vs. tatsächlich berechnete Gesamtdauer (v4.25.1)');
+  // Derselbe Fehler ("Label nennt eine Zahl, die App-Rechnung eine andere") trat in drei
+  // aufeinanderfolgenden Zyklen unabhängig auf: Poolish (v4.24.0), Biga (v4.25.0), die
+  // übrigen fünf Presets (napoli_klassisch/napoli_kalt/schnell/teglia/newyork_style,
+  // v4.25.1) -- jedes Mal, weil nichts das sichtbare Options-Label gegen die echte
+  // Berechnung hielt. Dieser Block schließt die Lücke: PRESET_LABEL_HOURS spiegelt die in
+  // js/i18n-dict.js sichtbaren "option.*"-Kurzlabels 1:1 wider (einzelner Stundenwert für
+  // ein "~X h"-Label, ODER [min, max] für eine Spanne wie "4–6 h"). Bei jeder künftigen
+  // Preset- ODER Label-Änderung HIER mitziehen -- analog zum bereits etablierten Muster
+  // von PRESET_STATES weiter oben (Sektion 6/13). Bewusst KEINE Laufzeit-Kopplung an den
+  // echten i18n-Text (z. B. per Regex aus dem Label geparst): das wäre eine invasive
+  // dynamische Label-Erzeugung, die für diesen Patch explizit nicht gewollt war.
+  const PRESET_LABEL_HOURS = {
+    'napoli_klassisch': 28,            // option.napoliKlassisch "Napoli Klassisch · ~28 h"
+    'napoli_kalt': 45,                 // option.napoliKalt "Napoli Lange Kaltgare · ~45 h"
+    'schnell': [4, 6],                 // option.schnell "Schnell · 4–6 h" (Spanne, kein Einzelwert)
+    'napoli_biga_klassisch': 29,       // option.napoliBigaKlassisch "… · ~29 h"
+    'napoli_biga_kalt': 60,            // option.napoliBigaKalt "… · ~60 h"
+    'napoli_poolish_schnell': 20,      // option.napoliPoolishSchnell "… · ~20 h"
+    'napoli_poolish_kalt': 34,         // option.napoliPoolishKalt "… · ~34 h"
+    'teglia': 30,                      // option.teglia "Teglia / Blech · ~30 h"
+    'newyork_style': 28                // option.newyorkStyle "New York Style · ~28 h"
+  };
+  const LABEL_TOL_PCT = 0.10; // ±10 % (s. Auftrag) -- alle neun Presets liegen real < 2 % daneben
+
+  Object.keys(PRESET_LABEL_HOURS).forEach(key => {
+    testCase('Preset „' + key + '": Label-Gärzeit passt zur tatsächlich berechneten Gesamtdauer (R.totalMin)', PRESET_STATES[key], R => {
+      const realH = R.totalMin / 60;
+      const spec = PRESET_LABEL_HOURS[key];
+      if (Array.isArray(spec)) {
+        const [lo, hi] = spec;
+        return [
+          ['reale Dauer ' + realH.toFixed(2) + ' h liegt innerhalb der Label-Spanne [' + lo + ', ' + hi + '] h', (realH >= lo && realH <= hi), true],
+        ];
+      }
+      return [
+        ['reale Dauer (h) liegt binnen ±10 % am Label "~' + spec + ' h"', realH, spec, spec * LABEL_TOL_PCT],
+      ];
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────
   const s = document.getElementById('summary');
   s.textContent = failed === 0
     ? '✓ Alle ' + passed + ' Prüfungen bestanden'

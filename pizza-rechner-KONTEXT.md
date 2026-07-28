@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-28 · Aktuelle Version: v4.25.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-29 · Aktuelle Version: v4.25.1 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -213,22 +213,22 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Biga aus Quellenrecherche (v4.25.0) = aktueller Stand
+## AVPN-Aussage entschärft + Preset-Zeitangaben korrigiert (v4.25.1) = aktueller Stand
 
-Direkter Zwilling zum Poolish-Zyklus (v4.24.0/v4.24.1), aus **12 ausgewerteten Quellen**
-abgeleitet (**NICHT selbst gebacken/verifiziert**). `PZ.PREF_STAGES.biga` (`js/ui.js`):
-drei unbelegte Stufen (`b16`/`b24`/`b48`, 0,4/0,3/0,2 %, `rel:'total'`) ersetzt durch
-`b_klassisch` (17 h bei 16–18 °C) und `b_kalt` (2 h anspringen + 48 h Kühlschrank), **beide
-1,0 % bezogen aufs Biga-Mehl** (`rel:'pref'`, aus zwei unabhängigen Quellen, kein
-Copy-Paste — die Kaltstufe kompensiert über die dreifache Dauer, nicht über mehr Hefe).
-Presets: `napoli_biga` → `napoli_biga_klassisch`/`_kalt` (Geometrie ebenfalls angehoben,
-Nutzer-freigegeben: bhyd 45 %→50 %, Gesamthydration 65 %→70 %, sitzt exakt auf
-`caputo_cuoco` hydMax 70). `guide.step.prefWeigh.tip` jetzt methodenspezifisch (Poolish
-weiter zimmerwarm, Biga jetzt bewusst kühl). `tests/test.html`: 948 → **964** Prüfungen grün.
+Übrige fünf Presets (napoli_klassisch/napoli_kalt/schnell/teglia/newyork_style) gegen
+Quellen geprüft: die AVPN-Konformitätsbehauptung bei „Napoli Klassisch" war falsch (Öl ist
+nicht Teil des AVPN-Disciplinare, bleibt aber im Preset — nur die Beschreibung wurde
+entschärft) und alle fünf Zeitangaben-Labels stimmten nicht mit `PZ.calc()`/`PZ.schedule()`
+überein (nie nachgerechnet, offenbar geschätzt). Reine Text-/Test-Korrektur, **keine
+Teigwerte geändert**. Neue Sektion 33 in `tests/test.html` koppelt künftig jedes
+Options-Label gegen die echte Gesamtdauer (±10 %), nachdem derselbe Drift-Fehler in drei
+Zyklen in Folge unabhängig auftrat (Poolish v4.24.0, Biga v4.25.0, hier). `tests/test.html`:
+964 → **973** Prüfungen grün.
 
-**Volle Details (Quellenlage je Stufe, Ehrlichkeitsgebot, Klemm-/Drift-Tests):**
-`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Biga aus Quellenrecherche (v4.25.0)"
-(vorherige Abschnitte ebenfalls dort verkettet).
+**Volle Details (genaue Vorher/Nachher-Werte je Preset, AVPN-Grenzwert-Abgleich,
+`accessibility-expert`-Review):** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt
+„AVPN-Aussage entschärft + Preset-Zeitangaben korrigiert (v4.25.1)" (vorherige Abschnitte
+ebenfalls dort verkettet).
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -970,6 +970,27 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
+- **Teglia- und New-York-Style-Teigwerte an Quellen korrigieren** (neu, v4.25.1, bewusst
+  NICHT in diesem Zyklus behoben): bei der Quellenprüfung der übrigen fünf Presets fielen
+  zwei Werte auf, die den ausgewerteten Quellen widersprechen: Teglia-Öl 4 % gegen
+  empfohlene 2,5 %; New-York-Style-Zucker 2 % gegen empfohlene 0,5–1 % und Öl 3 % gegen
+  empfohlene 1,5 %. Beide Presets sind Direktführungen, deren Hefe-Pills weiterhin an
+  `js/schedule.js` gekoppelt sind (nur Vorteig-Methoden sind seit v4.24.0 entkoppelt) — eine
+  Hefemengen-/Gärzeit-Anpassung an geänderte Werte bräuchte deshalb eine eigene
+  Nutzerentscheidung, kein reiner Zahlentausch. Eigener, späterer Zyklus.
+- **Preset-Beschreibung: unverlinkter Glossar-Verweis** (Nebenbefund,
+  `accessibility-expert`-Review v4.25.1, MINOR, kein WCAG-Verstoß):
+  `preset.napoliKlassisch.desc` erwähnt jetzt textlich das Glossar „Echte neapolitanische
+  Pizza (AVPN)", aber
+  `presetDesc` wird bewusst per `textContent` gesetzt (`js/presets.js`, damit ein
+  Sprachwechsel den Text live nachzieht) — kein klickbarer Link möglich, ohne auf `innerHTML`
+  umzustellen (eigene Escaping-Frage). Optionale spätere Verbesserung, kein Mangel; könnte
+  sich am bestehenden `inlineGlossaryLink()`-Muster (`js/guide.js`) orientieren.
+- ~~AVPN-Aussage entschärft + Preset-Zeitangaben korrigiert~~ — **erledigt in v4.25.1** (kein
+  Backlog-Punkt im engeren Sinne, direkter Nutzerauftrag mit fertiger Quellenprüfung; s.
+  „= aktueller Stand" oben). `preset.napoliKlassisch.desc` behauptet nicht mehr, das Öl sei
+  Teil des AVPN-Standards; alle fünf Zeitangaben-Labels sind jetzt aus `PZ.calc()`
+  nachgemessen statt geschätzt.
 - ~~Biga-Stufenwerte aus Quellenrecherche ableiten~~ — **erledigt in v4.25.0** (kein
   Backlog-Punkt im engeren Sinne mehr, direkter Nutzerauftrag mit fertiger Quellenrecherche;
   s. „= aktueller Stand" oben). `b16`/`b24`/`b48` (0,4/0,3/0,2 %, `rel:'total'`) ersetzt

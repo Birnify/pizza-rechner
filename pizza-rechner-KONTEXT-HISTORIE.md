@@ -8,6 +8,73 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## AVPN-Aussage entschärft + Preset-Zeitangaben korrigiert (v4.25.1)
+
+Nutzer-Quellenprüfung im Hauptgespräch der übrigen fünf Presets (napoli_klassisch,
+napoli_kalt, schnell, teglia, newyork_style — Poolish und Biga waren bereits in v4.24.0/
+v4.25.0 geprüft). Zwei projektübergreifende Befunde, reine Text-/Test-Korrektur, **keine
+Teigwerte geändert**.
+
+**1. Die AVPN-Aussage war falsch.** `preset.napoliKlassisch.desc` behauptete wörtlich
+„AVPN-Standard: … 2 % Olivenöl" — das offizielle AVPN-Disciplinare
+(pizzanapoletana.org/en/ricetta_pizza_napoletana) kennt aber nur vier Zutaten (Mehl,
+Wasser, Salz, Hefe), **kein Öl**. Nutzer-Entscheidung: das Öl bleibt im Preset (2 %,
+unverändert), nur die Behauptung wurde korrigiert. Drei Stellen in `js/i18n-dict.js`
+(DE+EN) entschärft: `preset.napoliKlassisch.desc` (jetzt „an den AVPN-Standard angelehnt",
+nennt das Öl explizit als Abweichung, mit textlichem Verweis auf den bereits vorhandenen,
+ausgewogenen Glossar-Artikel „Echte neapolitanische Pizza (AVPN)"), `option.napoliKlassisch`
+(das nackte „(AVPN)" aus dem kurzen Dropdown-Label entfernt, dort ist kein Platz für die
+nötige Nuance), `preset.recommend.klassisch.fit`/`.ariaLabel` (Empfehlungskarte). Zur
+Vollständigkeit dokumentiert (keine Änderung nötig): gegen die AVPN-Grenzwerte (in
+Bäckerprozente umgerechnet: 1600–1800 g Mehl je Liter Wasser) passt das Preset sonst gut —
+Hydration 60 % liegt im Band 55,6–62,5 %, Salz 2,8 % im Band 2,22–3,75 %, Teigling 250 g im
+Band 200–280 g, Caputo Pizzeria W270 entspricht der AVPN-Empfehlung W260–270. Zwei Werte
+liegen minimal darüber (mit der entschärften Formulierung unproblematisch): Frischhefe
+0,2 % gegen ein AVPN-Maximum von ~0,19 %, reale Gesamtdauer 27,6 h gegen ein AVPN-Maximum
+von 24 h (s. Punkt 2).
+
+**2. Alle fünf Zeitangaben stimmten nicht mit der tatsächlichen Berechnung überein** (nie
+aus `PZ.calc()`/`PZ.schedule()` abgeleitet, offenbar beim Anlegen geschätzt). Per eigenem
+Headless-Edge-Harness nachgemessen (`PZ.calc()` auf den echten Preset-Werten, identische
+Module wie die laufende App: `js/calc.js`+`js/schedule.js`+`js/guide.js`, `R.totalMin`):
+
+| Preset | Label vorher | Real gemessen | Label jetzt |
+|---|---|---|---|
+| `napoli_klassisch` | 24 h | 27,62 h | ~28 h |
+| `napoli_kalt` | 48–72 h | 44,62 h (**unter dem versprochenen Minimum!**) | ~45 h |
+| `schnell` | 4–6 h | 5,37 h | unverändert (passt bereits) |
+| `teglia` | 24 h | 29,53 h | ~30 h |
+| `newyork_style` | ~26 h | 27,75 h | ~28 h |
+
+Geändert: `option.napoliKlassisch`/`.napoliKalt`/`.teglia`/`.newyorkStyle`,
+`preset.napoliKlassisch.desc`/`.napoliKalt.desc`/`.teglia.desc`/`.newyorkStyle.desc`,
+`preset.recommend.klassisch.time`/`.lang.time` + zugehörige `.ariaLabel`s (alle
+`js/i18n-dict.js`, DE+EN), plus die identischen hartkodierten Fallback-Texte in
+`pizza-rechner.html`/`pizza-rechner-mobile.html` (vor dem ersten `i18n`-Render sichtbar).
+
+**3. Test-Kopplung gegen künftiges Auseinanderdriften** (der eigentliche Kern hinter Punkt
+2 — derselbe Fehler war in drei aufeinanderfolgenden Zyklen unabhängig aufgetreten: Poolish
+v4.24.0, Biga v4.25.0, jetzt hier). Neue Sektion 33 in `tests/test.html`:
+`PRESET_LABEL_HOURS` (dokumentierte, manuell mit den `option.*`-Labels synchron zu
+haltende Konstante, analog zum etablierten `PRESET_STATES`-Muster, bewusst KEINE
+Laufzeit-Kopplung an den i18n-Text) prüft für **alle neun** Presets (auch die bereits
+korrekten Poolish-/Biga-Presets) `R.totalMin/60` gegen den Label-Wert: Einzelwert ±10 %,
+oder Spanne (`schnell`, [4,6]) als Bereichsprüfung. Alle neun liegen real unter 2 % neben
+ihrem Label.
+
+**`accessibility-expert`-Review** (aria-label der Empfehlungskarten, Dropdown-Optionstexte,
+Preset-Beschreibungen): 0 Blocker, 0 Major, 1 Minor (Glossar-Verweis in
+`preset.napoliKlassisch.desc` ist reiner Text ohne Link, da `presetDesc` bewusst per
+`textContent` gesetzt wird — s. Backlog). Kontrastwerte selbst nachgerechnet (WCAG-2.0-
+Formel, Hell- und Dunkelmodus), alle > 5,5:1.
+
+**Tests:** 964 → **973** Prüfungen grün (9 neue Label-Kopplungs-Prüfungen, Sektion 33).
+
+**Geändert:** `js/i18n-dict.js`, `pizza-rechner.html`, `pizza-rechner-mobile.html`,
+`pizza-rechner-mobile-standalone.html` (neu gebaut), `tests/test.html`,
+`pizza-rechner-KONTEXT.md`, diese Datei. `?v=` und Menü-Versionsnummer auf 4.25.1. Keine
+Teigwerte (Hydration/Salz/Öl/Zucker/Hefe/Mehl/Teiglingsgewicht) geändert.
+
 ## Biga aus Quellenrecherche (v4.25.0)
 
 Direkter Zwilling zum Poolish-Zyklus (v4.24.0/v4.24.1). Damals wurde als Backlog-Punkt
