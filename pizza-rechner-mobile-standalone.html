@@ -1557,7 +1557,7 @@ header{position:relative;text-align:center;}
      daneben, ein zweiter Vorlese-Name wäre redundant (analog zum bestehenden
      .card-icon aria-hidden-Muster). -->
 <header>
-  <h1><img src="assets/logo.svg?v=4.24.1" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
+  <h1><img src="assets/logo.svg?v=4.25.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
 </header>
 
 <!-- Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay analog zum
@@ -1678,7 +1678,8 @@ header{position:relative;text-align:center;}
                 <option value="schnell" data-i18n="option.schnell">Schnell · 4–6 h</option>
               </optgroup>
               <optgroup label="Neapolitanisch · Vorteig" data-i18n-attr="label:optgroup.napoliPref">
-                <option value="napoli_biga" data-i18n="option.napoliBiga">Napoli mit Biga · 16–24 h</option>
+                <option value="napoli_biga_klassisch" data-i18n="option.napoliBigaKlassisch">Napoli mit Biga (klassisch) · ~29 h</option>
+                <option value="napoli_biga_kalt" data-i18n="option.napoliBigaKalt">Napoli mit Biga (kalt) · ~60 h</option>
                 <option value="napoli_poolish_schnell" data-i18n="option.napoliPoolishSchnell">Napoli mit Poolish (schnell) · ~20 h</option>
                 <option value="napoli_poolish_kalt" data-i18n="option.napoliPoolishKalt">Napoli mit Poolish (kalt) · ~34 h</option>
               </optgroup>
@@ -2445,7 +2446,7 @@ header{position:relative;text-align:center;}
              hier bewusst NICHT mehr dupliziert. -->
         <div class="nav-divider" role="separator"></div>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.24.1</span>
+        <span class="nav-version" id="appVersion">v4.25.0</span>
 
       </div>
     </details>
@@ -2830,6 +2831,12 @@ header{position:relative;text-align:center;}
     'The pre-ferment share was automatically capped at <b>{prefEff} %</b>: at {hyd} % hydration, the {prefType} can\'t hold more water than the whole dough contains.');
   add('guide.step.prefWeigh.tip', 'Wasser hier <b>zimmerwarm</b> (nicht eisgekühlt) – der Vorteig soll ja in Ruhe arbeiten.',
     'Use <b>room-temperature</b> water here (not ice-cold): the pre-ferment should work slowly and calmly.');
+  // Seit v4.25.0: eigener Tipp für Biga statt des Poolish-Bausteins oben -- die Quellen
+  // widersprechen sich hier bewusst (Salamico rechnet mit der "Regola del 55", Speedelicious
+  // nutzt ausdrücklich eiskaltes Wasser, Zieltemperatur der fertigen Biga 18–20 °C). Die
+  // Regola-del-55-Formel selbst ist NICHT eingebaut (eigenes Feature), nur die Anweisung.
+  add('guide.step.prefWeigh.tipBiga', 'Wasser hier bewusst <b>kühl</b> ansetzen, nicht zimmerwarm: die feste, wenig Hefe enthaltende Biga reift ohnehin langsam, kühles Schüttwasser hält ihre Starttemperatur niedrig (Zielwert ca. 18–20 °C) und verhindert ein zu schnelles Anspringen.',
+    'Use deliberately <b>cool</b> water here, not room temperature: this firm, low-yeast pre-ferment already matures slowly, and cool water keeps its starting temperature low (roughly 18–20 °C) to avoid it taking off too fast.');
 
   add('guide.step.bigaMix.title', 'Biga grob mischen', 'Roughly mix the biga');
   add('guide.step.bigaMix.chip', 'mit der Hand', 'by hand');
@@ -2837,15 +2844,16 @@ header{position:relative;text-align:center;}
     'Dissolve the yeast in the water, pour over the flour and <b>mix roughly by hand only</b>: about <b>1–2 min</b>, until there are no dry flour pockets left. The biga stays crumbly and lumpy, <b>do not knead it smooth</b>. (Don\'t use a machine here: kneading it too firm destroys the structure.)');
   add('guide.step.bigaMix.warn', 'Es soll aussehen wie nasse Brösel oder grober Streusel, nicht wie ein normaler Teig.',
     'It should look like wet breadcrumbs or coarse crumble, not like a normal dough.');
-  add('guide.biga.temp.cool', 'Abgedeckt bei <b>ca. 18 °C</b> reifen lassen (Keller, Speisekammer, Kühlschranktür).',
-    'Let it rise covered at <b>about 18 °C</b> (cellar, pantry, fridge door).');
-  add('guide.biga.temp.cooler', 'Abgedeckt <b>kühl bei ~14–16 °C</b> reifen lassen (kühler Keller / Kühlschranktür).',
-    'Let it rise covered at a <b>cool ~14–16 °C</b> (cool cellar / fridge door).');
+  // Seit v4.25.0: zwei statt drei Stufen (b_klassisch/b_kalt, s. PZ.PREF_STAGES in
+  // js/ui.js) -- guide.biga.temp.cooler (die erfundenen "14–16 °C" ohne Quellenbeleg)
+  // ersatzlos entfernt.
+  add('guide.biga.temp.cool', 'Abgedeckt bei <b>16–18 °C</b> reifen lassen (Keller, Speisekammer, Kühlschranktür).',
+    'Let it rise covered at <b>16–18 °C</b> (cellar, pantry, fridge door).');
   add('guide.biga.temp.cold', '<b>2 h</b> bei Raumtemp anspringen lassen, dann in den <b>Kühlschrank (4–6 °C)</b>.',
     'Let it start for <b>2 h</b> at room temp, then into the <b>fridge (4–6 °C)</b>.');
   add('guide.step.bigaRest.title', 'Biga reifen lassen', 'Let the biga rise');
-  add('guide.step.bigaRest.body', '{bigaTempTxt} Sie lockert sich auf und duftet säuerlich-hefig.',
-    '{bigaTempTxt} It loosens up and smells tangy-yeasty.');
+  add('guide.step.bigaRest.body', '{bigaTempTxt} Reif = <b>etwa verdoppeltes Volumen</b>, sie lockert sich auf und duftet säuerlich-hefig.',
+    '{bigaTempTxt} Ready = <b>roughly doubled in volume</b>, it loosens up and smells tangy-yeasty.');
   add('guide.step.bigaRest.tip', 'Längere Reife braucht <b>weniger Hefe</b> im Vorteig und/oder <b>kühlere</b> Lagerung. Fertig = luftig-schwammig, gerade eben eingefallen.',
     'A longer rise needs <b>less yeast</b> in the pre-ferment and/or <b>cooler</b> storage. Ready = airy and spongy, just barely starting to collapse.');
 
@@ -3167,7 +3175,7 @@ header{position:relative;text-align:center;}
   add('unit.celsiusFlourTemp', 'Grad Celsius Mehltemperatur', 'degrees Celsius flour temperature');
 
   add('hint.method.direct', 'Direkt: alle Zutaten auf einmal. Einfachster Weg.', 'Direct: all ingredients at once. The simplest way.');
-  add('hint.method.biga', 'Biga: steifer Vorteig (Vortag, 16–20 h bei ~18 °C). Mehr Aroma &amp; Struktur.', 'Biga: stiff pre-ferment (day before, 16–20 h at ~18 °C). More flavor &amp; structure.');
+  add('hint.method.biga', 'Biga: steifer Vorteig (17 h bei 16–18 °C oder 48 h kalt). Mehr Aroma &amp; Struktur.', 'Biga: stiff pre-ferment (17 h at 16–18 °C or 48 h cold). More flavor &amp; structure.');
   add('hint.method.poolish', 'Poolish: flüssiger Vorteig 1:1 (10 h warm oder 24 h kalt). Milder, dehnbarer Teig.', 'Poolish: liquid 1:1 pre-ferment (10 h warm or 24 h cold). Milder, more extensible dough.');
   add('hint.yeast.pref', 'Wird von der <b>Vorteig-Reife</b> oben gesetzt. Feintuning per Regler möglich.', 'Set by the <b>pre-ferment maturity</b> above. Fine-tune with the slider if needed.');
   add('hint.yeast.normal', 'Prozent bezogen auf Frischhefe. Lange/warme Gare = weniger.', 'Percent based on fresh yeast. Longer/warmer rise = less.');
@@ -3206,8 +3214,10 @@ header{position:relative;text-align:center;}
   // dekodiert KEINE HTML-Entities, ein "&amp;" würde also buchstäblich als
   // "&amp;" auf dem Bildschirm erscheinen (Nebenbefund-Fix: derselbe Fehler
   // steckte bereits im deutschen Original-String vor dieser Umstellung).
-  add('preset.napoliBiga.desc', '100 % Biga (steifer Vorteig, 45 % Hydration). 24 h reifen lassen, dann Hauptteig mit Restwasser, Salz & 2 % Öl. Sehr offene Krume.',
-    '100 % biga (stiff pre-ferment, 45 % hydration). Let it rise 24 h, then final dough with remaining water, salt & 2 % oil. Very open crumb.');
+  add('preset.napoliBigaKlassisch.desc', '100 % Biga (steifer Vorteig, 50 % Hydration), 17 h bei 16–18 °C reifen lassen. Dann Hauptteig mit Restwasser, Salz & 2 % Öl: ~29 h Gesamtreife. Kräftige, nussige Röstaromen, sehr offene Krume.',
+    '100 % biga (stiff pre-ferment, 50 % hydration), let it rise 17 h at 16–18 °C. Then final dough with remaining water, salt & 2 % oil: ~29 h total rise. Rich, nutty roasted flavor, very open crumb.');
+  add('preset.napoliBigaKalt.desc', '100 % Biga (steifer Vorteig, 50 % Hydration), 2 h anspringen lassen, dann 48 h im Kühlschrank. Dann Hauptteig mit Restwasser, Salz & 2 % Öl: ~60 h Gesamtreife. Noch mehr Aroma durch die kühlere, längere Führung.',
+    '100 % biga (stiff pre-ferment, 50 % hydration), let it start for 2 h, then 48 h in the fridge. Then final dough with remaining water, salt & 2 % oil: ~60 h total rise. Even more flavor from the cooler, longer route.');
   add('preset.napoliPoolishSchnell.desc', 'Poolish (flüssig 1:1) mit 66 % des Mehls, 10 h durchgehend bei Raumtemp. Dann Hauptteig (mit 2 % Öl): ~20 h Gesamtreife. Milder, luftiger Teig, die schnellere der beiden Poolish-Varianten.',
     'Poolish (liquid 1:1) with 66 % of the flour, 10 h entirely at room temp. Then final dough (with 2 % oil): ~20 h total rise. Milder, airier dough, the faster of the two poolish variants.');
   add('preset.napoliPoolishKalt.desc', 'Poolish (flüssig 1:1) mit 66 % des Mehls, 1 h Raumtemp anspringen, dann 24 h Kühlschrank. Dann Hauptteig (mit 2 % Öl): ~34 h Gesamtreife. Milder, luftiger Teig, mehr Aroma durch die kühlere Führung.',
@@ -3314,7 +3324,8 @@ header{position:relative;text-align:center;}
   add('option.napoliKlassisch', 'Napoli Klassisch (AVPN) · 24 h', 'Napoli Classic (AVPN) · 24 h');
   add('option.napoliKalt', 'Napoli Lange Kaltgare · 48–72 h', 'Napoli Long Cold Rise · 48–72 h');
   add('option.schnell', 'Schnell · 4–6 h', 'Quick · 4–6 h');
-  add('option.napoliBiga', 'Napoli mit Biga · 16–24 h', 'Napoli with Biga · 16–24 h');
+  add('option.napoliBigaKlassisch', 'Napoli mit Biga (klassisch) · ~29 h', 'Napoli with Biga (classic) · ~29 h');
+  add('option.napoliBigaKalt', 'Napoli mit Biga (kalt) · ~60 h', 'Napoli with Biga (cold) · ~60 h');
   add('option.napoliPoolishSchnell', 'Napoli mit Poolish (schnell) · ~20 h', 'Napoli with Poolish (fast) · ~20 h');
   add('option.napoliPoolishKalt', 'Napoli mit Poolish (kalt) · ~34 h', 'Napoli with Poolish (cold) · ~34 h');
   add('option.teglia', 'Teglia / Blech · 24 h', 'Teglia / Pan · 24 h');
@@ -3413,7 +3424,7 @@ header{position:relative;text-align:center;}
   add('seg.poolish', 'Poolish', 'Poolish');
   add('label.pref', 'Anteil Mehl im Vorteig', 'Flour share in pre-ferment');
   add('label.bhyd', 'Biga-Hydration', 'Biga hydration');
-  add('hint.bhyd', 'Steife Biga: 44–48 %. Poolish ist fix 100 % (1:1).', 'Stiff biga: 44–48%. Poolish is fixed at 100% (1:1).');
+  add('hint.bhyd', 'Steife Biga: 44–54 %, meist 45–50 %. Poolish ist fix 100 % (1:1).', 'Stiff biga: 44–54%, mostly 45–50%. Poolish is fixed at 100% (1:1).');
   add('label.prefStage', 'Vorteig-Reife', 'Pre-ferment maturity');
   add('hint.prefStage', 'Reifezeit und Hefemenge hängen zusammen: die Stufe setzt beides passend. Längere Reife = weniger Hefe + kühler stellen (steht in der Anleitung).',
     'Maturity time and yeast amount are linked: the stage sets both to match. Longer maturity = less yeast + cooler storage (explained in the guide).');
@@ -3621,8 +3632,8 @@ header{position:relative;text-align:center;}
 
   add('glossary.biga.title', 'Biga', 'Biga');
   add('glossary.biga.body',
-    '<p>Biga ist ein fester, trockener Vorteig (Hydration meist 44–48 %) mit sehr wenig Hefe, der 16–48 Stunden im Kühlen reift. Die geringe Wassermenge verlangsamt die Fermentation zusätzlich zur Kälte und sorgt für ein besonders stabiles Glutennetzwerk sowie kräftige, nussige Röstaromen.</p><p>Biga wird traditionell in vielen norditalienischen Brot- und Pizzarezepten verwendet und gilt als etwas anspruchsvoller in der Verarbeitung als Poolish, da der feste Teig von Hand aufgebrochen und eingearbeitet werden muss.</p>',
-    '<p>Biga is a firm, dry pre-ferment (hydration usually 44–48%) with very little yeast, left to mature in the fridge for 16–48 hours. The low water content slows fermentation even further on top of the cold temperature, producing an especially stable gluten network and rich, nutty roasted flavors.</p><p>Biga is traditionally used in many northern Italian bread and pizza recipes and is considered somewhat trickier to handle than poolish, since the firm dough has to be broken up and worked in by hand.</p>');
+    '<p>Biga ist ein fester, trockener Vorteig (Hydration meist 45–50 %) mit wenig Hefe, der 17–48 Stunden kühl reift: entweder durchgehend bei 16–18 °C oder mit kurzem Anspringen und anschließend deutlich langsamerer, kälterer Fermentation im Kühlschrank. Die geringe Wassermenge verlangsamt die Fermentation zusätzlich zur Kälte und sorgt für ein besonders stabiles Glutennetzwerk sowie kräftige, nussige Röstaromen.</p><p>Biga wird traditionell in vielen norditalienischen Brot- und Pizzarezepten verwendet und gilt als etwas anspruchsvoller in der Verarbeitung als Poolish, da der feste Teig von Hand aufgebrochen und eingearbeitet werden muss.</p>',
+    '<p>Biga is a firm, dry pre-ferment (hydration usually 45–50%) with little yeast, left to mature cool for 17–48 hours: either entirely at 16–18 °C, or with a brief start followed by much slower, colder fermentation in the fridge. The low water content slows fermentation even further on top of the cold temperature, producing an especially stable gluten network and rich, nutty roasted flavors.</p><p>Biga is traditionally used in many northern Italian bread and pizza recipes and is considered somewhat trickier to handle than poolish, since the firm dough has to be broken up and worked in by hand.</p>');
 
   add('glossary.kalteGare.title', 'Kalte Gare', 'Cold fermentation');
   add('glossary.kalteGare.body',
@@ -4966,7 +4977,9 @@ header{position:relative;text-align:center;}
   // ======================================================================
   // Seit v4.24.0: 'p14' (entfernte, unbelegte Stufe) ersetzt durch 'p_warm' (10 h,
   // Raumtemp) als zugänglicherer Standard-Poolish -- s. PZ.PREF_STAGES (js/ui.js).
-  const PREF_DEFAULT = { biga: 'b24', poolish: 'p_warm' };
+  // Seit v4.25.0: 'b24' (entfernte, unbelegte Stufe) ersetzt durch 'b_klassisch'
+  // (17 h, 16-18 °C) als Standard-Biga.
+  const PREF_DEFAULT = { biga: 'b_klassisch', poolish: 'p_warm' };
 
   function makePrefStages(cfg) {
     function render(m) {
@@ -5723,16 +5736,17 @@ header{position:relative;text-align:center;}
           hydTxt: isBiga ? state.bhyd + '%' : t('guide.pref.poolishRatio'),
           pYeast: g(R.pYeast), yWord: R.yWord
         }),
-        clampNote + tip(t('guide.step.prefWeigh.tip')), 5);
+        clampNote + tip(t(isBiga ? 'guide.step.prefWeigh.tipBiga' : 'guide.step.prefWeigh.tip')), 5);
       if (isBiga) {
         st(t('guide.step.bigaMix.title'), t('guide.step.bigaMix.chip'),
           t('guide.step.bigaMix.body'),
           warn(t('guide.step.bigaMix.warn')), 10);
-        const bigaTempTxt = state.prefMature <= 20
+        // Seit v4.25.0: nur noch zwei Stufen (b_klassisch 17 h / b_kalt 48 h, s.
+        // PZ.PREF_STAGES in js/ui.js) statt vorher drei -- Schwelle 30 h liegt mittig
+        // zwischen beiden und ist unkritisch, solange nur diese zwei Werte gewählt werden.
+        const bigaTempTxt = state.prefMature <= 30
           ? t('guide.biga.temp.cool')
-          : state.prefMature <= 32
-            ? t('guide.biga.temp.cooler')
-            : t('guide.biga.temp.cold');
+          : t('guide.biga.temp.cold');
         st(inlineGlossaryLink(t('guide.step.bigaRest.title'), 'biga'), `${state.prefMature} ${t('guide.dur.h')}`,
           t('guide.step.bigaRest.body', { bigaTempTxt: bigaTempTxt }),
           tip(t('guide.step.bigaRest.tip')) + timerBox('biga-reifen', matureMin), matureMin,
@@ -6427,10 +6441,24 @@ header{position:relative;text-align:center;}
   // Quellen abgeleitet (Plötzblog, Manopasto, My Pizza Corner u. a., s. Kontextdatei) --
   // NICHT selbst gebacken/verifiziert, nur quellenbasiert plausibilisiert.
   PZ.PREF_STAGES = {
+    // Seit v4.25.0: aus 12 ausgewerteten Quellen abgeleitet (NICHT selbst gebacken/
+    // verifiziert, s. pizza-rechner-KONTEXT.md) -- ersetzt die drei alten, unbelegten
+    // Stufen (0,4/0,3/0,2 %). Jetzt rel:'pref' (Hefe bezogen aufs BIGA-Mehl, wie beim
+    // Poolish), vorher rel:'total'. Beide Stufen landen bei 1,0 % Hefe -- das ist KEIN
+    // Copy-Paste, sondern kommt aus zwei unabhängigen Quellen: b_klassisch aus drei
+    // Quellen, die die Hefeart eindeutig als FRISCH benennen -- PizzaBlab (einzige
+    // Regelquelle: "0,3 % Trockenhefe oder 1 % Frischhefe bezogen aufs Biga-Mehl" bei
+    // 16-20 h/~20 °C), Salamico (klassische Formel 100-44-1, "10 g frische Hefe") und
+    // Pala Pizza ("2 g instant dry yeast" = 0,4 % Trockenhefe, x3 = 1,2 % Frischhefe-
+    // Äquivalent). Gozney (Nutzerquelle, 1 %, 16-18 h bei 16-18 °C) nennt den Wert
+    // konsistent, aber OHNE Angabe der Hefeart -- deshalb hier nicht als vierter Beleg
+    // gezählt (s. pizza-rechner-KONTEXT.md fuer die volle Einordnung). b_kalt aus
+    // Burnhard (Nutzerquelle, exakt 48 h im Kühlschrank, ebenfalls 1 %). Die Kaltstufe
+    // kompensiert die Kälte über die DREIFACHE DAUER (48 h statt 17 h), nicht über
+    // mehr Hefe.
     biga: [
-      { key: 'b16', label: '16 h · 0,4 %', mature: 16, yeast: 0.4, rel: 'total' },
-      { key: 'b24', label: '24 h · 0,3 %', mature: 24, yeast: 0.3, rel: 'total' },
-      { key: 'b48', label: '48 h · 0,2 %', mature: 48, yeast: 0.2, rel: 'total' }
+      { key: 'b_klassisch', label: '17 h · 1,0 %', mature: 17, yeast: 1.0, rel: 'pref' },
+      { key: 'b_kalt', label: '48 h · 1,0 %', mature: 48, yeast: 1.0, rel: 'pref' }
     ],
     poolish: [
       // p_warm: 0,6 % Poolish-Mehl bei ~10 h Raumtemp (My Pizza Corner, zugleich Median
@@ -7154,9 +7182,19 @@ header{position:relative;text-align:center;}
       method: 'direct', hyd: 62, salt: 2.5, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 1.5, ballw: 250, ddt: 25, flour: 'caputo_pizzeria',
       descKey: 'preset.schnell.desc'
     },
-    napoli_biga: {
-      method: 'biga', hyd: 65, salt: 2.8, oil: 2, sugar: 0, pref: 100, bhyd: 45, prefStage: 'b24', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'caputo_cuoco',
-      descKey: 'preset.napoliBiga.desc'
+    // Seit v4.25.0: "napoli_biga" (eine Stufe, unbelegte Hefewerte) ersetzt durch zwei
+    // Presets, die sich bewusst NUR im Gärregime unterscheiden (analoge Design-
+    // Entscheidung zum Poolish, s. pizza-rechner-KONTEXT.md). Geometrie gegenüber dem
+    // Vorgänger geändert (Nutzer ausdrücklich freigegeben): Biga-Hydration 45 % -> 50 %
+    // (7 von 12 Quellen bei 50 %), Gesamthydration 65 % -> 70 % (sitzt exakt auf
+    // caputo_cuoco hydMax 70, keine Warnung, aber kein Spielraum nach oben).
+    napoli_biga_klassisch: {
+      method: 'biga', hyd: 70, salt: 2.8, oil: 2, sugar: 0, pref: 100, bhyd: 50, prefStage: 'b_klassisch', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'caputo_cuoco',
+      descKey: 'preset.napoliBigaKlassisch.desc'
+    },
+    napoli_biga_kalt: {
+      method: 'biga', hyd: 70, salt: 2.8, oil: 2, sugar: 0, pref: 100, bhyd: 50, prefStage: 'b_kalt', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'caputo_cuoco',
+      descKey: 'preset.napoliBigaKalt.desc'
     },
     // Seit v4.24.0: "napoli_poolish" (eine Stufe, unbelegte Hefewerte) ersetzt durch zwei
     // Presets, die sich bewusst NUR im Gärregime unterscheiden (Geometrie 66/66 identisch,

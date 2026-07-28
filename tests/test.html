@@ -144,7 +144,7 @@
   // Basis-Zustand für alle Tests
   const BASE = {
     balls: 4, ballw: 250, hyd: 62, salt: 2.8, oil: 0, sugar: 0,
-    method: 'direct', pref: 70, bhyd: 45, prefMature: 24, prefStage: 'b24',
+    method: 'direct', pref: 70, bhyd: 45, prefMature: 24, prefStage: 'b_klassisch',
     yeastType: 'fresh', yeast: 0.30,
     ddt: 24, room: 21, flourTemp: 21, knead: '3',
     timeMode: 'start', timeISO: '',
@@ -763,7 +763,12 @@
     // pizza-rechner-KONTEXT.md wurde bereits in v4.24.0 entfernt, dieses Fixture übersehen.
     'napoli_kalt':      { method: 'direct', hyd: 65, salt: 3.0, oil: 2, yeast: 0.1, flour: 'caputo_cuoco' },
     'schnell':          { method: 'direct', hyd: 62, salt: 2.5, oil: 2, yeast: 1.5, flour: 'caputo_pizzeria' },
-    'napoli_biga':      { method: 'biga', hyd: 65, salt: 2.8, oil: 2, yeast: 0.3, pref: 100, bhyd: 45, prefMature: 24, flour: 'caputo_cuoco' },
+    // Seit v4.25.0: "napoli_biga" (eine Stufe, unbelegte Hefewerte) ersetzt durch zwei
+    // Presets, die sich nur im Gärregime unterscheiden (s. js/presets.js). Beide Stufen
+    // sind rel:'pref' mit 1,0 % (bezogen aufs Biga-Mehl), bei pref 100 % ungeklemmt
+    // (prefEff 100) also state.yeast = 1,0 % * 100/100 = 1,0 % für beide.
+    'napoli_biga_klassisch': { method: 'biga', hyd: 70, salt: 2.8, oil: 2, yeast: 1.0, pref: 100, bhyd: 50, prefMature: 17, flour: 'caputo_cuoco' },
+    'napoli_biga_kalt':      { method: 'biga', hyd: 70, salt: 2.8, oil: 2, yeast: 1.0, pref: 100, bhyd: 50, prefMature: 48, flour: 'caputo_cuoco' },
     // Seit v4.24.0: "napoli_poolish" (eine Stufe) ersetzt durch zwei Presets, die sich nur
     // im Gärregime unterscheiden (s. js/presets.js). yeast = stage.yeast * (pref/100), da
     // die Poolish-Stufen seit v4.24.0 rel:'pref' sind (bezogen aufs Poolish-Mehl, nicht
@@ -2616,7 +2621,7 @@
   });
 
   testCase('Biga (Vorteig): Tagesabschnitte und Vorteig-Schritte im PDF enthalten', {
-    method: 'biga', pref: 70, bhyd: 45, hyd: 65, prefMature: 24, prefStage: 'b24'
+    method: 'biga', pref: 70, bhyd: 45, hyd: 65, prefMature: 24, prefStage: 'b_klassisch'
   }, R => {
     const bytes = PZ.buildGuidePdfBytes();
     const str = bytesToStr(bytes);
@@ -4573,7 +4578,7 @@
   })();
 
   // ─────────────────────────────────────────────────────────────
-  heading("32 · Poolish-Stufen: rel:'pref'-Umrechnung + Vorteig-Anteil-Drift-Fix (v4.24.0)");
+  heading("32 · Vorteig-Stufen (Poolish v4.24.0 + Biga v4.25.0): rel:'pref'-Umrechnung + Klemm-/Drift-Fix");
   // js/ui.js ist hier nicht geladen (s. PZ.set-Stub oben) -- getestet wird deshalb direkt
   // PZ.makePrefStages() (js/widgets.js), exakt dieselbe Fabrik, die js/ui.js und
   // js/newrecipe.js verwenden. #testPrefStage/#testPrefStageVal sind eigene, unabhängige
@@ -4582,11 +4587,13 @@
     // PZ.PREF_STAGES selbst lebt in js/ui.js (hier nicht geladen, s. o.) -- lokale Kopie,
     // 1:1 identisch zur echten Tabelle (Quelle: js/ui.js), damit PZ.makePrefStages() etwas
     // zum Nachschlagen hat. Bei Änderungen an js/ui.js hier mitziehen.
+    // Seit v4.25.0: Biga jetzt ebenfalls rel:'pref' (vorher rel:'total'), aus 12
+    // Quellen abgeleitete Werte (s. pizza-rechner-KONTEXT.md) -- die alte Kontrollgruppe
+    // "Biga bleibt von Vorteig-Anteil-Änderungen unberührt" ist damit hinfällig, s. u.
     PZ.PREF_STAGES = {
       biga: [
-        { key: 'b16', label: '16 h · 0,4 %', mature: 16, yeast: 0.4, rel: 'total' },
-        { key: 'b24', label: '24 h · 0,3 %', mature: 24, yeast: 0.3, rel: 'total' },
-        { key: 'b48', label: '48 h · 0,2 %', mature: 48, yeast: 0.2, rel: 'total' }
+        { key: 'b_klassisch', label: '17 h · 1,0 %', mature: 17, yeast: 1.0, rel: 'pref' },
+        { key: 'b_kalt', label: '48 h · 1,0 %', mature: 48, yeast: 1.0, rel: 'pref' }
       ],
       poolish: [
         { key: 'p_warm', label: '10 h · 0,6 %', mature: 10, yeast: 0.6, rel: 'pref' },
@@ -4616,19 +4623,23 @@
     const driftedYeast = testState.yeast;
     const expectedDrifted = 0.6 * (40 / 100);
 
-    // Kontrollgruppe: rel:'total' (Biga) bleibt von Vorteig-Anteil-Änderungen unberührt.
-    const bigaState = { pref: 100 };
-    const bigaStages = PZ.makePrefStages({
-      stateObj: bigaState,
+    // Seit v4.25.0: Biga-Drift-Test (Ersatz für die alte "Kontrollgruppe" -- Biga ist
+    // jetzt rel:'pref' und driftet genau wie Poolish, wenn der Vorteig-Anteil sich
+    // ändert, ohne dass gleichzeitig geklemmt wird: hyd 70/bhyd 50 -> pHyd 0,5, maxPref
+    // = min(100, 70/50*100) = 100, bei pref 100 also NICHT geklemmt).
+    const bigaDriftState = Object.assign({}, BASE, { method: 'biga', hyd: 70, bhyd: 50, pref: 100 });
+    const bigaDriftStages = PZ.makePrefStages({
+      stateObj: bigaDriftState,
       wrapId: 'testPrefStage',
       valId: 'testPrefStageVal',
-      setYeast: function (y) { bigaState.yeast = y; }
+      setYeast: function (y) { bigaDriftState.yeast = y; }
     });
-    bigaStages.select('biga', 'b24');
-    const bigaYeastBefore = bigaState.yeast;
-    bigaState.pref = 50;
-    bigaStages.resync('biga');
-    const bigaYeastAfter = bigaState.yeast;
+    bigaDriftStages.select('biga', 'b_klassisch');
+    const bigaYeastBefore = bigaDriftState.yeast; // 1,0 % * (100/100) = 1,0 %
+    bigaDriftState.pref = 50;
+    bigaDriftStages.resync('biga');
+    const bigaYeastAfter = bigaDriftState.yeast;  // 1,0 % * (50/100) = 0,5 %
+    const expectedBigaDrifted = 1.0 * (50 / 100);
 
     // Review-Fund (test-generator, v4.24.0, ECHTER Restfehler, übernommen und behoben):
     // select() rechnete ursprünglich mit dem ROHEN state.pref statt dem von js/calc.js
@@ -4673,7 +4684,57 @@
     hydStages.resync('poolish');
     const hydYeastAfter = hydState.yeast;        // muss auf 1,0 % × 0,60 = 0,60 fallen
 
-    renderBox("PZ.makePrefStages() · Poolish rel:'pref'-Umrechnung + Vorteig-Anteil-Drift-Fix", [
+    // Seit v4.25.0: Biga-Klemm-/Drift-Fälle, analog zu den Poolish-Fällen oben, aber mit
+    // pHyd = bhyd/100 statt fix 1 (calc.js: state.method === 'poolish' ? 1 : state.bhyd/100)
+    // -- prüft, dass der Biga-Pfad die Klemmung korrekt durchreicht (in v4.24.1 war genau
+    // das beim Poolish-Pendant der Bug: nur "pref" löste einen Nachzug aus, nicht "hyd").
+    // Fall A: initiale Klemmung bei select() (hyd 40 % / bhyd 50 % -> pHyd 0,5, maxPref =
+    // min(100, 40/50*100) = 80 % < pref 90 % -> geklemmt auf 80).
+    const bigaClampState = Object.assign({}, BASE, { method: 'biga', hyd: 40, bhyd: 50, pref: 90 });
+    const bigaClampStages = PZ.makePrefStages({
+      stateObj: bigaClampState,
+      wrapId: 'testPrefStage',
+      valId: 'testPrefStageVal',
+      setYeast: function (y) { bigaClampState.yeast = y; }
+    });
+    bigaClampStages.select('biga', 'b_kalt');
+    const bigaClampedYeast = bigaClampState.yeast;
+    const bigaClampedPrefEff = PZ.calcCore(Object.assign({}, bigaClampState, { method: 'biga' })).prefEff;
+    const expectedBigaClamped = 1.0 * (80 / 100); // prefEff geklemmt auf 80, NICHT auf den rohen pref 90
+    const naiveBigaUnclamped = 1.0 * (90 / 100);  // das wäre der (falsche) Wert ohne Klemmung
+
+    // Fall B: Nachzug nach einer Hydration-SENKUNG (hyd 70->40 bei fester bhyd 50), exakt
+    // das v4.24.1-Muster (erst ungeklemmt wählen, dann klemmend nachziehen).
+    const bigaHydState = Object.assign({}, BASE, { method: 'biga', hyd: 70, bhyd: 50, pref: 100 });
+    const bigaHydStages = PZ.makePrefStages({
+      stateObj: bigaHydState,
+      wrapId: 'testPrefStage',
+      valId: 'testPrefStageVal',
+      setYeast: function (y) { bigaHydState.yeast = y; }
+    });
+    bigaHydStages.select('biga', 'b_kalt');
+    const bigaHydYeastBefore = bigaHydState.yeast; // 1,0 % * 100/100 = 1,0 (ungeklemmt)
+    bigaHydState.hyd = 40;
+    bigaHydStages.resync('biga');
+    const bigaHydYeastAfter = bigaHydState.yeast;  // muss auf 1,0 % * 80/100 = 0,80 fallen
+
+    // Fall C: Nachzug nach einer BHYD-Änderung bei fester hyd -- Biga-spezifischer Auslöser
+    // (Poolish hat kein bhyd, pHyd ist dort fix 1). bhyd 100->50 bei fester hyd 40:
+    // pHyd 1 -> maxPref 40 (geklemmt) -> pHyd 0,5 -> maxPref 80 (geklemmt).
+    const bigaBhydState = Object.assign({}, BASE, { method: 'biga', hyd: 40, bhyd: 100, pref: 90 });
+    const bigaBhydStages = PZ.makePrefStages({
+      stateObj: bigaBhydState,
+      wrapId: 'testPrefStage',
+      valId: 'testPrefStageVal',
+      setYeast: function (y) { bigaBhydState.yeast = y; }
+    });
+    bigaBhydStages.select('biga', 'b_kalt');
+    const bigaBhydYeastBefore = bigaBhydState.yeast; // 1,0 % * 40/100 = 0,40 (geklemmt auf 40)
+    bigaBhydState.bhyd = 50;
+    bigaBhydStages.resync('biga');
+    const bigaBhydYeastAfter = bigaBhydState.yeast;  // muss auf 1,0 % * 80/100 = 0,80 steigen
+
+    renderBox("PZ.makePrefStages() · Poolish + Biga rel:'pref'-Umrechnung + Klemm-/Drift-Fix", [
       { label: 'p_warm bei pref=66: yeast = 0,6 % × 0,66 = 0,396 % (bezogen aufs Poolish-Mehl, nicht Gesamtmehl)', ok: Math.abs(warmYeast - 0.396) < 0.0001, actual: warmYeast, expected: 0.396, tol: 0.0001 },
       { label: 'p_warm: prefMature = 10 h, prefStage = "p_warm"', ok: warmMature === 10 && warmStage === 'p_warm', actual: warmMature + '/' + warmStage, expected: '10/p_warm', tol: null },
       { label: 'p_cold bei pref=66: yeast = 1,0 % × 0,66 = 0,66 % (MEHR Hefe als p_warm, nicht weniger)', ok: Math.abs(coldYeast - 0.66) < 0.0001, actual: coldYeast, expected: 0.66, tol: 0.0001 },
@@ -4681,15 +4742,25 @@
       { label: 'Kontrolle: p_cold hat MEHR Hefe als p_warm (länger UND kälter braucht hier mehr, nicht weniger -- s. Kontextdatei)', ok: coldYeast > warmYeast, actual: coldYeast, expected: '> ' + warmYeast, tol: null },
       { label: 'Drift-Fix: resync() nach Vorteig-Anteil-Änderung (66 % → 40 %) rechnet yeast korrekt neu (0,6 % × 0,40 = 0,24 %)', ok: Math.abs(driftedYeast - expectedDrifted) < 0.0001, actual: driftedYeast, expected: expectedDrifted, tol: 0.0001 },
       { label: 'Kontrolle: gedriftete Hefe unterscheidet sich tatsächlich vom alten Wert (Test misst wirklich etwas)', ok: driftedYeast !== warmYeast, actual: driftedYeast, expected: '≠ ' + warmYeast, tol: null },
-      { label: "Biga (rel:'total') bleibt von Vorteig-Anteil-Änderungen unberührt: yeast vor/nach pref-Änderung identisch", ok: bigaYeastBefore === bigaYeastAfter, actual: bigaYeastAfter, expected: bigaYeastBefore, tol: null },
       { label: "PZ.PREF_STAGES.poolish hat genau 2 Stufen (p_warm, p_cold) mit rel:'pref', keine p8/p14/p24 mehr", ok: PZ.PREF_STAGES.poolish.length === 2 && PZ.PREF_STAGES.poolish.every(function (s) { return s.rel === 'pref'; }), actual: PZ.PREF_STAGES.poolish.map(function (s) { return s.key; }).join(','), expected: 'p_warm,p_cold', tol: null },
-      { label: "PZ.PREF_STAGES.biga hat weiterhin 3 unveränderte Stufen mit rel:'total'", ok: PZ.PREF_STAGES.biga.length === 3 && PZ.PREF_STAGES.biga.every(function (s) { return s.rel === 'total'; }), actual: PZ.PREF_STAGES.biga.map(function (s) { return s.key; }).join(','), expected: 'b16,b24,b48', tol: null },
       { label: 'Klemmfall (hyd 60 < pref 66): PZ.calcCore().prefEff ist tatsächlich geklemmt auf 60', ok: clampedPrefEff === 60, actual: clampedPrefEff, expected: 60, tol: null },
       { label: 'Klemmfall: select() nutzt prefEff (60), NICHT den rohen pref (66) -- yeast = 1,0 % × 0,60 = 0,60 %', ok: Math.abs(clampedYeast - expectedClamped) < 0.0001, actual: clampedYeast, expected: expectedClamped, tol: 0.0001 },
       { label: 'Kontrolle: Klemmfall unterscheidet sich vom (falschen) unklemmten Wert 0,66 % -- Test hätte den Bugfix vor der Korrektur als rot erkannt', ok: Math.abs(clampedYeast - naiveUnclamped) > 0.0001, actual: clampedYeast, expected: '≠ ' + naiveUnclamped, tol: null },
       { label: 'v4.24.1 Ausgangslage: bei hyd 66 = pref 66 wird NICHT geklemmt, yeast = 1,0 % × 0,66 = 0,66 %', ok: Math.abs(hydYeastBefore - 0.66) < 0.0001, actual: hydYeastBefore, expected: 0.66, tol: 0.0001 },
       { label: 'v4.24.1 Nachzug-Fix: resync() nach reiner Hydration-Senkung (66 % → 60 %) rechnet yeast auf 1,0 % × 0,60 = 0,60 % neu', ok: Math.abs(hydYeastAfter - 0.60) < 0.0001, actual: hydYeastAfter, expected: 0.60, tol: 0.0001 },
-      { label: 'Kontrolle: der Wert hat sich durch die Hydration-Änderung wirklich bewegt (sonst prüfte der Test nichts)', ok: hydYeastAfter !== hydYeastBefore, actual: hydYeastAfter, expected: '≠ ' + hydYeastBefore, tol: null }
+      { label: 'Kontrolle: der Wert hat sich durch die Hydration-Änderung wirklich bewegt (sonst prüfte der Test nichts)', ok: hydYeastAfter !== hydYeastBefore, actual: hydYeastAfter, expected: '≠ ' + hydYeastBefore, tol: null },
+      { label: "PZ.PREF_STAGES.biga hat seit v4.25.0 genau 2 Stufen (b_klassisch, b_kalt) mit rel:'pref', keine b16/b24/b48 mehr", ok: PZ.PREF_STAGES.biga.length === 2 && PZ.PREF_STAGES.biga.every(function (s) { return s.rel === 'pref'; }), actual: PZ.PREF_STAGES.biga.map(function (s) { return s.key; }).join(','), expected: 'b_klassisch,b_kalt', tol: null },
+      { label: "Biga b_klassisch bei pref=100/hyd 70/bhyd 50 (ungeklemmt): yeast = 1,0 % × 100/100 = 1,0 %", ok: Math.abs(bigaYeastBefore - 1.0) < 0.0001, actual: bigaYeastBefore, expected: 1.0, tol: 0.0001 },
+      { label: 'Biga-Drift-Fix: resync() nach Vorteig-Anteil-Änderung (100 % → 50 %) rechnet yeast korrekt neu (1,0 % × 0,50 = 0,50 %)', ok: Math.abs(bigaYeastAfter - expectedBigaDrifted) < 0.0001, actual: bigaYeastAfter, expected: expectedBigaDrifted, tol: 0.0001 },
+      { label: 'Kontrolle: Bigas gedriftete Hefe unterscheidet sich tatsächlich vom alten Wert (Biga ist NICHT mehr rel:\'total\')', ok: bigaYeastAfter !== bigaYeastBefore, actual: bigaYeastAfter, expected: '≠ ' + bigaYeastBefore, tol: null },
+      { label: 'Biga-Klemmfall (hyd 40 / bhyd 50 -> pHyd 0,5, maxPref 80 < pref 90): PZ.calcCore().prefEff geklemmt auf 80', ok: bigaClampedPrefEff === 80, actual: bigaClampedPrefEff, expected: 80, tol: null },
+      { label: 'Biga-Klemmfall: select() nutzt prefEff (80), NICHT den rohen pref (90) -- yeast = 1,0 % × 0,80 = 0,80 %', ok: Math.abs(bigaClampedYeast - expectedBigaClamped) < 0.0001, actual: bigaClampedYeast, expected: expectedBigaClamped, tol: 0.0001 },
+      { label: 'Kontrolle: Biga-Klemmfall unterscheidet sich vom (falschen) unklemmten Wert 0,90 %', ok: Math.abs(bigaClampedYeast - naiveBigaUnclamped) > 0.0001, actual: bigaClampedYeast, expected: '≠ ' + naiveBigaUnclamped, tol: null },
+      { label: 'Biga-Hydration-Nachzug Ausgangslage: bei hyd 70/bhyd 50/pref 100 wird NICHT geklemmt, yeast = 1,0 % × 1,00 = 1,0 %', ok: Math.abs(bigaHydYeastBefore - 1.0) < 0.0001, actual: bigaHydYeastBefore, expected: 1.0, tol: 0.0001 },
+      { label: 'Biga-Hydration-Nachzug-Fix: resync() nach Hydration-Senkung (70 % → 40 %, bhyd fix 50) rechnet yeast auf 1,0 % × 0,80 = 0,80 % neu', ok: Math.abs(bigaHydYeastAfter - 0.80) < 0.0001, actual: bigaHydYeastAfter, expected: 0.80, tol: 0.0001 },
+      { label: 'Biga-BHYD-Nachzug Ausgangslage: bei hyd 40/bhyd 100/pref 90 geklemmt auf 40, yeast = 1,0 % × 0,40 = 0,40 %', ok: Math.abs(bigaBhydYeastBefore - 0.40) < 0.0001, actual: bigaBhydYeastBefore, expected: 0.40, tol: 0.0001 },
+      { label: 'Biga-BHYD-Nachzug-Fix (Biga-spezifischer Auslöser, Poolish hat kein bhyd): resync() nach BHYD-Änderung (100 % → 50 %, hyd fix 40) rechnet yeast auf 1,0 % × 0,80 = 0,80 % neu', ok: Math.abs(bigaBhydYeastAfter - 0.80) < 0.0001, actual: bigaBhydYeastAfter, expected: 0.80, tol: 0.0001 },
+      { label: 'Kontrolle: die BHYD-Nachzug-Hefe hat sich tatsächlich bewegt (sonst prüfte der Test nichts)', ok: bigaBhydYeastAfter !== bigaBhydYeastBefore, actual: bigaBhydYeastAfter, expected: '≠ ' + bigaBhydYeastBefore, tol: null }
     ]);
   })();
 

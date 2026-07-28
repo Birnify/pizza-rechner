@@ -86,10 +86,24 @@
   // Quellen abgeleitet (Plötzblog, Manopasto, My Pizza Corner u. a., s. Kontextdatei) --
   // NICHT selbst gebacken/verifiziert, nur quellenbasiert plausibilisiert.
   PZ.PREF_STAGES = {
+    // Seit v4.25.0: aus 12 ausgewerteten Quellen abgeleitet (NICHT selbst gebacken/
+    // verifiziert, s. pizza-rechner-KONTEXT.md) -- ersetzt die drei alten, unbelegten
+    // Stufen (0,4/0,3/0,2 %). Jetzt rel:'pref' (Hefe bezogen aufs BIGA-Mehl, wie beim
+    // Poolish), vorher rel:'total'. Beide Stufen landen bei 1,0 % Hefe -- das ist KEIN
+    // Copy-Paste, sondern kommt aus zwei unabhängigen Quellen: b_klassisch aus drei
+    // Quellen, die die Hefeart eindeutig als FRISCH benennen -- PizzaBlab (einzige
+    // Regelquelle: "0,3 % Trockenhefe oder 1 % Frischhefe bezogen aufs Biga-Mehl" bei
+    // 16-20 h/~20 °C), Salamico (klassische Formel 100-44-1, "10 g frische Hefe") und
+    // Pala Pizza ("2 g instant dry yeast" = 0,4 % Trockenhefe, x3 = 1,2 % Frischhefe-
+    // Äquivalent). Gozney (Nutzerquelle, 1 %, 16-18 h bei 16-18 °C) nennt den Wert
+    // konsistent, aber OHNE Angabe der Hefeart -- deshalb hier nicht als vierter Beleg
+    // gezählt (s. pizza-rechner-KONTEXT.md fuer die volle Einordnung). b_kalt aus
+    // Burnhard (Nutzerquelle, exakt 48 h im Kühlschrank, ebenfalls 1 %). Die Kaltstufe
+    // kompensiert die Kälte über die DREIFACHE DAUER (48 h statt 17 h), nicht über
+    // mehr Hefe.
     biga: [
-      { key: 'b16', label: '16 h · 0,4 %', mature: 16, yeast: 0.4, rel: 'total' },
-      { key: 'b24', label: '24 h · 0,3 %', mature: 24, yeast: 0.3, rel: 'total' },
-      { key: 'b48', label: '48 h · 0,2 %', mature: 48, yeast: 0.2, rel: 'total' }
+      { key: 'b_klassisch', label: '17 h · 1,0 %', mature: 17, yeast: 1.0, rel: 'pref' },
+      { key: 'b_kalt', label: '48 h · 1,0 %', mature: 48, yeast: 1.0, rel: 'pref' }
     ],
     poolish: [
       // p_warm: 0,6 % Poolish-Mehl bei ~10 h Raumtemp (My Pizza Corner, zugleich Median

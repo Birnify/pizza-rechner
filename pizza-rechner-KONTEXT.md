@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-28 · Aktuelle Version: v4.24.1 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-28 · Aktuelle Version: v4.25.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -89,24 +89,30 @@ Reifezeit und Hefemenge hängen physikalisch zusammen (länger = weniger Hefe / 
 gleicher Temperatur — kälter UND länger kann dagegen MEHR Hefe brauchen, s. Poolish unten).
 Deshalb **keine freien Regler**, sondern **diskrete Stufen**, die beides koppeln.
 Datenquelle: `PZ.PREF_STAGES` in `js/ui.js`. Jede Stufe hat seit v4.24.0 ein explizites
-`rel`-Feld, das die Bezugsgröße von `yeast` festlegt:
-- **Biga** (`rel:'total'`, % vom GESAMTMEHL, eigene Quellenrecherche noch offen — Backlog):
-  `b16` (16 h · 0,4 %) · `b24` (24 h · 0,3 %, Default) · `b48` (48 h · 0,2 %)
-- **Poolish** (`rel:'pref'`, % vom POOLISH-MEHL, aus 14 ausgewerteten Quellen abgeleitet,
+`rel`-Feld, das die Bezugsgröße von `yeast` festlegt — seit v4.25.0 sind **beide**
+Vorteig-Methoden `rel:'pref'` (kein `rel:'total'` mehr in der App):
+- **Biga** (% vom BIGA-Mehl, aus 12 ausgewerteten Quellen abgeleitet, s. HISTORIE v4.25.0):
+  `b_klassisch` (17 h bei 16–18 °C · 1,0 %, Default) · `b_kalt` (2 h anspringen + 48 h
+  Kühlschrank · 1,0 %). Beide Stufen landen bei 1,0 %, aber aus zwei unabhängigen
+  Quellen (nicht kopiert) — die Kaltstufe kompensiert die Kälte über die dreifache Dauer,
+  nicht über mehr Hefe.
+- **Poolish** (% vom POOLISH-MEHL, aus 14 ausgewerteten Quellen abgeleitet,
   s. HISTORIE v4.24.0): `p_warm` (10 h Raumtemp · 0,6 %) · `p_cold` (1 h Raumtemp + 24 h
   Kühlschrank · 1,0 %, Default). `p_cold` hat bewusst MEHR Hefe als `p_warm`, weil „länger
   = weniger Hefe" nur bei gleicher Temperatur gilt.
 
-`state.yeast` ist immer % vom GESAMTMEHL (geht bei Vorteig komplett in den Vorteig). Bei
-`rel:'total'`-Stufen (Biga) ist das identisch mit `stage.yeast`. Bei `rel:'pref'`-Stufen
-(Poolish) rechnet `PZ.makePrefStages().select()` (`js/widgets.js`) um:
-`state.yeast = stage.yeast × (prefEff / 100)`, wobei `prefEff` derselbe geklemmte
-Vorteig-Anteil ist, den auch `js/calc.js` verwendet (`PZ.calcCore(...).prefEff`, NICHT der
-rohe `state.pref` — sonst überhöhte Dosis, sobald die Hydration-Klemmung greift). Eine neue
-`resync(m)`-Funktion wiederholt diese Umrechnung, sobald sich der Vorteig-Anteil-Regler
-(`state.pref`) bei aktiver Poolish-Stufe ändert (Hook in `js/ui.js` UND `js/newrecipe.js`
-über den mitgegebenen Feld-Key in `cfg.onSet(key)`) — ohne diesen Nachzieh-Mechanismus
-würde die tatsächliche Poolish-Hefedosis mit dem Regler wegdriften.
+`state.yeast` ist immer % vom GESAMTMEHL (geht bei Vorteig komplett in den Vorteig). Seit
+v4.25.0 sind beide Vorteig-Methoden `rel:'pref'`, `PZ.makePrefStages().select()`
+(`js/widgets.js`) rechnet dafür immer um: `state.yeast = stage.yeast × (prefEff / 100)`,
+wobei `prefEff` derselbe geklemmte Vorteig-Anteil ist, den auch `js/calc.js` verwendet
+(`PZ.calcCore(...).prefEff`, NICHT der rohe `state.pref` — sonst überhöhte Dosis, sobald
+die Hydration-Klemmung greift; bei Biga ist die Klemmgrenze `hyd / bhyd × 100`, bei Poolish
+`hyd` direkt, da `pHyd` dort fix 1 ist). Eine `resync(m)`-Funktion wiederholt diese
+Umrechnung, sobald sich der Vorteig-Anteil-Regler (`state.pref`) **oder** `state.hyd`
+**oder** `state.bhyd` bei aktiver Stufe ändert (Hook in `js/ui.js` UND `js/newrecipe.js`
+über den mitgegebenen Feld-Key in `cfg.onSet(key)`, Auslöserliste `['pref','hyd','bhyd']`
+seit v4.24.1) — ohne diesen Nachzieh-Mechanismus würde die tatsächliche Vorteig-Hefedosis
+mit dem Regler wegdriften.
 
 - State: `state.prefStage` (aktive Stufe) + `state.prefMature` (h, von der Stufe gesetzt).
 - `applyMethod()` (ui.js): rendert die Pills der Methode (`renderPrefStages`), blendet bei Vorteig
@@ -167,9 +173,9 @@ In `js/guide.js`, im Autolyse-Zweig (`state.yeast < 1,2 %`, nur Direkt-Methode):
 - Die **Gesamtdauer (bulkMin + proofMin) ist in beiden Varianten identisch** —
   darauf verlassen sich die Mehl-Warnung und die Tests.
 
-## Die 7 Kern-Presets (alle gegen die Mehl-Warnung geprüft — keine löst eine Warnung aus)
+## Die 8 Kern-Presets (alle gegen die Mehl-Warnung geprüft — keine löst eine Warnung aus)
 
-Daneben gibt es ein 8. Preset, „New York Style" (einziges Preset mit Zucker > 0), s.
+Daneben gibt es ein 9. Preset, „New York Style" (einziges Preset mit Zucker > 0), s.
 Abschnitt „Zucker-Feld / New York Style" weiter unten. Bewusst nicht in dieser Tabelle.
 
 | Key | Methode | Hyd | Salz | Öl | Hefe | Mehl (empfohlen) |
@@ -177,17 +183,22 @@ Abschnitt „Zucker-Feld / New York Style" weiter unten. Bewusst nicht in dieser
 | `napoli_klassisch` | direct | 60 % | 2,8 % | 2 % | 0,2 % | caputo_pizzeria |
 | `napoli_kalt` | direct | **65 %** | 3,0 % | 2 % | 0,1 % | **caputo_cuoco** |
 | `schnell` | direct | 62 % | 2,5 % | 2 % | 1,5 % | caputo_pizzeria |
-| `napoli_biga` | biga (pref 100, bhyd 45) | 65 % | 2,8 % | 2 % | 0,3 % | caputo_cuoco |
+| `napoli_biga_klassisch` | biga (pref 100, bhyd **50**, b_klassisch) | **70 %** | 2,8 % | 2 % | 1,0 % | caputo_cuoco |
+| `napoli_biga_kalt` | biga (pref 100, bhyd **50**, b_kalt) | **70 %** | 2,8 % | 2 % | 1,0 % | caputo_cuoco |
 | `napoli_poolish_schnell` | poolish (pref 66, p_warm) | 66 % | 2,5 % | 2 % | 0,396 % | **dallag_monica** |
 | `napoli_poolish_kalt` | poolish (pref 66, p_cold) | 66 % | 2,5 % | 2 % | 0,66 % | **dallag_monica** |
 | `teglia` | direct (ballw 320) | 75 % | 2,5 % | **4 %** | 0,3 % | **caputo_nuvola_super** |
 
-(napoli_kalt war 62 % → auf 65 % angehoben, damit es zum Cuoco passt;
-poolish braucht hydMax ≥ 66 → Monica; teglia braucht hydMax ≥ 75 → Nuvola Super. Hefe bei
-den beiden Poolish-Presets = effektiver Wert in `state.yeast`, also bereits umgerechnet auf
-% Gesamtmehl — s. „rel:'pref'" oben. Zeile „napoli_65" entfernt, v4.24.0 beim Aktualisieren
-dieser Tabelle bemerkt: der Preset-Key existierte in `js/presets.js` gar nicht (mind.
-seit v4.7.0 nicht mehr, unklar seit wann genau) — reiner Dokumentationsfehler, keine
+(napoli_kalt war 62 % → auf 65 % angehoben, damit es zum Cuoco passt; die beiden Biga-Presets
+seit v4.25.0 (s. „= aktueller Stand" oben): bhyd 45 % → 50 %, Gesamthydration 65 % → 70 %
+(sitzt exakt auf caputo_cuoco hydMax 70, keine Warnung, aber kein Spielraum nach oben) und
+Hefe 0,3 % → 1,0 % (state.yeast, bereits umgerechnet — beide Presets haben pref 100, also
+prefEff 100, ungeklemmt); poolish braucht hydMax ≥ 66 → Monica; teglia braucht hydMax ≥ 75 →
+Nuvola Super. Hefe bei den beiden Poolish-Presets = effektiver Wert in `state.yeast`, also
+bereits umgerechnet auf % Gesamtmehl — s. „rel:'pref'" oben. Zeile „napoli_65" entfernt,
+v4.24.0 beim Aktualisieren dieser Tabelle bemerkt: der Preset-Key existierte in
+`js/presets.js` gar nicht (mind. seit v4.7.0 nicht mehr, unklar seit wann genau) — reiner
+Dokumentationsfehler, keine
 Code-Änderung nötig.)
 
 ## Mehl-Datenbank (js/flour.js, Quelle: pizza1.de/blog/pizzamehl-uebersicht/)
@@ -202,30 +213,28 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Poolish aus Quellenrecherche (v4.24.0) + Hydration-Nachzug (v4.24.1) = aktueller Stand
+## Biga aus Quellenrecherche (v4.25.0) = aktueller Stand
 
-Aus 14 ausgewerteten Quellen abgeleitet (**NICHT selbst gebacken/verifiziert**): die
-Poolish-Reife-Stufen (`PZ.PREF_STAGES.poolish`, `js/ui.js`) heißen jetzt `p_warm` (10 h
-Raumtemp, 0,6 %) und `p_cold` (1 h Raumtemp + 24 h Kühlschrank, 1,0 %) statt der bisherigen
-drei unbelegten Stufen, beide mit explizitem `rel:'pref'` (Hefe bezogen aufs Poolish-Mehl
-statt aufs Gesamtmehl; Biga bleibt bewusst bei `rel:'total'`). Die Umrechnung
-(`PZ.makePrefStages().select()`/`resync()`, `js/widgets.js`) nutzt den in `js/calc.js`
-geklemmten `prefEff` und wird bei Änderungen an **`pref`, `hyd` und `bhyd`** nachgezogen
-(v4.24.1: bis dahin nur `pref`, wodurch eine reine Hydration-Senkung die Hefemenge stehen
-ließ, gemessen 1,1 % statt 1,0 %). `js/schedule.js`: Vorteig-Zweig komplett von
-`state.yeast` entkoppelt, liefert immer den „prefLong"-Zweig. Presets: `napoli_poolish` →
-`napoli_poolish_schnell`/`_kalt` (gleiche 66/66-Geometrie, nur Gärregime unterschiedlich,
-≈20 h/≈34 h). `tests/test.html`: 901 → **948** Prüfungen grün.
+Direkter Zwilling zum Poolish-Zyklus (v4.24.0/v4.24.1), aus **12 ausgewerteten Quellen**
+abgeleitet (**NICHT selbst gebacken/verifiziert**). `PZ.PREF_STAGES.biga` (`js/ui.js`):
+drei unbelegte Stufen (`b16`/`b24`/`b48`, 0,4/0,3/0,2 %, `rel:'total'`) ersetzt durch
+`b_klassisch` (17 h bei 16–18 °C) und `b_kalt` (2 h anspringen + 48 h Kühlschrank), **beide
+1,0 % bezogen aufs Biga-Mehl** (`rel:'pref'`, aus zwei unabhängigen Quellen, kein
+Copy-Paste — die Kaltstufe kompensiert über die dreifache Dauer, nicht über mehr Hefe).
+Presets: `napoli_biga` → `napoli_biga_klassisch`/`_kalt` (Geometrie ebenfalls angehoben,
+Nutzer-freigegeben: bhyd 45 %→50 %, Gesamthydration 65 %→70 %, sitzt exakt auf
+`caputo_cuoco` hydMax 70). `guide.step.prefWeigh.tip` jetzt methodenspezifisch (Poolish
+weiter zimmerwarm, Biga jetzt bewusst kühl). `tests/test.html`: 948 → **964** Prüfungen grün.
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitte „Poolish-Hefe-Nachzug bei
-Hydration-Änderung (v4.24.1)" und „Poolish-Stufen aus Quellenrecherche (v4.24.0)"
+**Volle Details (Quellenlage je Stufe, Ehrlichkeitsgebot, Klemm-/Drift-Tests):**
+`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Biga aus Quellenrecherche (v4.25.0)"
 (vorherige Abschnitte ebenfalls dort verkettet).
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
 Stand 2026-07-26, **nicht abgeschlossen**. Betrifft ausschließlich `assets/`, **kein
 App-Code geändert**, deshalb hat diese Asset-Arbeit selbst nie einen Versionssprung ausgelöst (die
-seither erschienenen App-Releases bis v4.24.1 sind davon unabhängig) und es gibt keinen
+seither erschienenen App-Releases bis v4.25.0 sind davon unabhängig) und es gibt keinen
 `Versionen/`-Schnappschuss dafür.
 
 **Was existiert (alles neu, noch nicht committet):**
@@ -558,11 +567,11 @@ im gerenderten Anleitungstext), Flag-Persistenz beim Zurückwechseln auf „Eige
 ## Dateistruktur (modular)
 
 ```
-pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.24.1 -- seit
+pizza-rechner.html   Markup + Einbindung von CSS und allen JS-Modulen (?v=4.25.0 -- seit
                      v4.5.0 synchron mit Mobil, s. u.: Desktop lädt weiterhin ohne
                      css/fonts.css, das ist unabhängig von der Versionsnummer)
 pizza-rechner-mobile.html  Mobil-Ansicht (Akkordeon), nutzt dieselben JS-Module + IDs (Quelle,
-                     ?v=4.24.1)
+                     ?v=4.25.0)
 pizza-rechner-mobile-standalone.html  Build-Ergebnis (alles inline) — DIESE Datei geht aufs iPhone
 build-mobile-standalone.py  Python-Skript, das die Standalone-Datei erzeugt (Aufruf s. o.)
 index.html           Weiterleitung auf pizza-rechner.html
@@ -662,7 +671,7 @@ js/onboarding.js     Willkommens-Screen / Einführung (v3.63.0): eigenständiges
                      Burgermenü-Punkt auf Desktop bzw. Ende der "Funktionen"-Karte auf Mobil,
                      s. "= aktueller Stand" oben), Persistenz via
                      localStorage-Key pizzaOnboardingDontShow. Läuft als letztes Script (nach nav.js)
-tests/test.html      948 Prüfungen in 32 Kategorien (Doppelklick, kein Server) — lädt 17 der 27
+tests/test.html      964 Prüfungen in 32 Kategorien (Doppelklick, kein Server) — lädt 17 der 27
                      js/*-Module direkt (dom/state/i18n-dict/i18n/settings/theme/units/widgets/
                      flour/schedule/guide/calc/print/pdf/storage/share/party); ui.js, timer.js,
                      presets.js, newrecipe.js, glossary.js, main.js, nav.js, simplemode.js,
@@ -684,7 +693,7 @@ formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 **Cache-Busting:** CSS/JS werden mit `?v=X.Y.Z` geladen. **Bei jeder neuen Version mitziehen.**
 Zwischen v4.0.0 und v4.4.0 bewusst auseinandergelaufen (Design-Import-Zyklen waren
 mobile-only, Desktop-HTML wurde nicht angefasst) — **seit v4.5.0 wieder synchron**, beide
-HTML-Dateien stehen bei `?v=4.24.1`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
+HTML-Dateien stehen bei `?v=4.25.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
 erneut bewusst entscheiden, ob ein Auseinanderlaufen sinnvoll ist oder beide mitgezogen
 werden (v4.17.0 war rein mobil-inhaltlich, `?v=` wurde bewusst trotzdem auf beiden Seiten
 mitgezogen, um die Synchronität zu erhalten — s. Abschnitt „Quick-Bar-Speichern-Button
@@ -701,7 +710,7 @@ eigenes `?v=4.23.2` an der Logo-`<img>` selbst ergänzt).
 **Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
 Burgermenü (`.nav-panel`) beider HTML-Dateien steht `<span class="nav-version"
 id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine JS-Logik dahinter. Seit v4.5.0
-wieder synchron (beide `v4.21.0`), analog zum Cache-Busting oben. **Bei jedem
+wieder synchron (beide `v4.25.0`), analog zum Cache-Busting oben. **Bei jedem
 Versionssprung von Hand mitziehen** (zusammen mit `?v=` und der Kontext-Datei — bei allen
 drei HTML-Dateien, also auch `pizza-rechner-mobile-standalone.html` nach dem Rebuild,
 gegenprüfen), sonst zeigt die Live-App die falsche Version an.
@@ -754,7 +763,7 @@ gegenprüfen), sonst zeigt die Live-App die falsche Version an.
 - **Versionen-Workflow (Pflicht bei jeder Änderung):** kompletten lauffähigen Stand nach
   `Versionen/vX.Y.Z - [Beschreibung]/` kopieren (html, index, css/, js/, README; tests/ optional).
   SemVer: Patch=Fix, Minor=Feature, Major=Umbau. `?v=` in der HTML mitziehen.
-- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 948 Prüfungen in
+- **Tests:** `tests/test.html` per Doppelklick — grün = OK. **Aktueller Stand: 964 Prüfungen in
   32 Kategorien** (s. Dateistruktur oben): Bäckerprozente, DDT/Eis, Vorteig-Aufteilung, Trockenhefe,
   Schedule-Schwellen, Mehl-Warnung, Backzeit-Skalierung, Olivenöl (Masseerhaltung), Anleitungs-
   Hinweise, Randfälle/Edge Cases, Kombinationen, Zeitplan-Rückwärtsrechnung, Einkaufsliste,
@@ -763,8 +772,8 @@ gegenprüfen), sonst zeigt die Live-App die falsche Version an.
   Hefemengen-/Verschwendungs-Anpassung, Einheitensystem Metrisch/Imperial,
   Glossar-Verweise in der Anleitung, Foto der fertigen Pizza, Inline-Verlinkung von
   Glossar-Begriffen im Anleitungstext, Akkordeon-Verhalten der Hinweisboxen,
-  Fokus-Erhalt bei .collapse/.show-Feldern, Poolish-Stufen rel:'pref'-Umrechnung +
-  Vorteig-Anteil-Drift-Fix. Nach
+  Fokus-Erhalt bei .collapse/.show-Feldern, Vorteig-Stufen (Biga + Poolish) rel:'pref'-
+  Umrechnung + Klemm-/Vorteig-Anteil-Drift-Fix. Nach
   Logik-Änderungen laufen lassen. `js/timer.js` (Notification/setInterval/Web-Audio-API) und
   `js/newrecipe.js` (reines DOM-Wiring) werden bewusst **nicht** in `tests/test.html` geladen —
   beide stattdessen manuell bzw. per isoliertem Headless-Aufbau verifiziert. Die Wachstums-
@@ -961,10 +970,10 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
-- **Biga-Stufenwerte aus Quellenrecherche ableiten** (neu, v4.24.0): die drei Biga-Stufen
-  (`b16`/`b24`/`b48`, 0,4/0,3/0,2 %) sind weiterhin die alten, nicht quellenbelegten Werte —
-  die für Poolish gemachte 14-Quellen-Recherche wurde bewusst nicht auf Biga ausgeweitet
-  (Scope-Grenze des v4.24.0-Zyklus). Analoger Aufwand/Nutzen wie die Poolish-Recherche.
+- ~~Biga-Stufenwerte aus Quellenrecherche ableiten~~ — **erledigt in v4.25.0** (kein
+  Backlog-Punkt im engeren Sinne mehr, direkter Nutzerauftrag mit fertiger Quellenrecherche;
+  s. „= aktueller Stand" oben). `b16`/`b24`/`b48` (0,4/0,3/0,2 %, `rel:'total'`) ersetzt
+  durch `b_klassisch`/`b_kalt` (je 1,0 %, `rel:'pref'`, aus 12 Quellen abgeleitet).
 - **Temperaturabhängige Reifezeit statt fester Stundenzahl** (neu, v4.24.0, bewusst
   verworfen für diesen Zyklus): in der Poolish-Quellenrecherche kam die Idee auf, Reifezeit
   in Abhängigkeit von der tatsächlichen Umgebungstemperatur zu berechnen statt fixer
@@ -978,13 +987,15 @@ Keine Code-Änderung durch den Audit nötig.
   weiter unten — dieselbe Fehlerklasse, aber eine andere, damals nicht mit erfasste
   Funktion). Kleiner, klar umrissener Fix, ein Kandidat für „inline" statt Orchestrator.
 - **Type-ahead-Kette im `#preset`-Dropdown wird länger** (Nebenbefund aus dem
-  v4.24.0-`accessibility-expert`-Review, kein Blocker, keine Regression): alle
-  „Napoli …"-Optionen (`napoli_klassisch`, `napoli_kalt`, `napoli_biga`,
+  v4.24.0-`accessibility-expert`-Review, kein Blocker, keine Regression; seit v4.25.0 durch
+  die Biga-Aufteilung um einen weiteren Eintrag gewachsen): alle „Napoli …"-Optionen
+  (`napoli_klassisch`, `napoli_kalt`, `napoli_biga_klassisch`, `napoli_biga_kalt`,
   `napoli_poolish_schnell`, `napoli_poolish_kalt`) teilen sich denselben Anfangstext, native
   `<select>`-Sprungnavigation per Tastatur (Type-ahead) kann deshalb nicht direkt auf eine
   einzelne Option springen, sondern muss durchtabben. Bestand schon vorher (4 Optionen mit
-  „Napoli …"-Präfix), durch die Aufteilung von einer auf zwei Poolish-Optionen um einen
-  Eintrag länger geworden. Kein Handlungsbedarf, nur zur Kenntnis.
+  „Napoli …"-Präfix), durch die Aufteilung von je einer auf zwei Poolish- (v4.24.0) und
+  Biga-Optionen (v4.25.0) auf inzwischen 6 Einträge gewachsen. Kein Handlungsbedarf, nur zur
+  Kenntnis.
 - **Visuelles Redesign: Foto-Hero + Card-Elevation** (noch nicht spezifiziert,
   aus einer vom Nutzer geteilten Design-Analyse/Ooini-Vergleich): eigene
   Pizza-/Teig-Fotos als Hintergrund für Rezeptkarten, größere Typografie-

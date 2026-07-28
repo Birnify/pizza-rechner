@@ -210,7 +210,9 @@
   // ======================================================================
   // Seit v4.24.0: 'p14' (entfernte, unbelegte Stufe) ersetzt durch 'p_warm' (10 h,
   // Raumtemp) als zugänglicherer Standard-Poolish -- s. PZ.PREF_STAGES (js/ui.js).
-  const PREF_DEFAULT = { biga: 'b24', poolish: 'p_warm' };
+  // Seit v4.25.0: 'b24' (entfernte, unbelegte Stufe) ersetzt durch 'b_klassisch'
+  // (17 h, 16-18 °C) als Standard-Biga.
+  const PREF_DEFAULT = { biga: 'b_klassisch', poolish: 'p_warm' };
 
   function makePrefStages(cfg) {
     function render(m) {

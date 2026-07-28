@@ -30,9 +30,19 @@
       method: 'direct', hyd: 62, salt: 2.5, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 1.5, ballw: 250, ddt: 25, flour: 'caputo_pizzeria',
       descKey: 'preset.schnell.desc'
     },
-    napoli_biga: {
-      method: 'biga', hyd: 65, salt: 2.8, oil: 2, sugar: 0, pref: 100, bhyd: 45, prefStage: 'b24', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'caputo_cuoco',
-      descKey: 'preset.napoliBiga.desc'
+    // Seit v4.25.0: "napoli_biga" (eine Stufe, unbelegte Hefewerte) ersetzt durch zwei
+    // Presets, die sich bewusst NUR im Gärregime unterscheiden (analoge Design-
+    // Entscheidung zum Poolish, s. pizza-rechner-KONTEXT.md). Geometrie gegenüber dem
+    // Vorgänger geändert (Nutzer ausdrücklich freigegeben): Biga-Hydration 45 % -> 50 %
+    // (7 von 12 Quellen bei 50 %), Gesamthydration 65 % -> 70 % (sitzt exakt auf
+    // caputo_cuoco hydMax 70, keine Warnung, aber kein Spielraum nach oben).
+    napoli_biga_klassisch: {
+      method: 'biga', hyd: 70, salt: 2.8, oil: 2, sugar: 0, pref: 100, bhyd: 50, prefStage: 'b_klassisch', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'caputo_cuoco',
+      descKey: 'preset.napoliBigaKlassisch.desc'
+    },
+    napoli_biga_kalt: {
+      method: 'biga', hyd: 70, salt: 2.8, oil: 2, sugar: 0, pref: 100, bhyd: 50, prefStage: 'b_kalt', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'caputo_cuoco',
+      descKey: 'preset.napoliBigaKalt.desc'
     },
     // Seit v4.24.0: "napoli_poolish" (eine Stufe, unbelegte Hefewerte) ersetzt durch zwei
     // Presets, die sich bewusst NUR im Gärregime unterscheiden (Geometrie 66/66 identisch,

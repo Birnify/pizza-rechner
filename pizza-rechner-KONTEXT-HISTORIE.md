@@ -8,6 +8,137 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Biga aus Quellenrecherche (v4.25.0)
+
+Direkter Zwilling zum Poolish-Zyklus (v4.24.0/v4.24.1). Damals wurde als Backlog-Punkt
+festgehalten, dass die Biga-Stufen dieselbe Quellenrecherche noch vor sich haben — jetzt
+gemacht: **12 Quellen** ausgewertet (PizzaBlab, Salamico, Gozney, Pala Pizza, Burnhard,
+Ooni, Waldis Pizza, Manopasto, foodbyjos, Speedelicious, ChainBaker, bakingwiththeory).
+Vier davon (Gozney, Burnhard, Ooni, Waldis) hatte der Nutzer selbst als vertrauenswürdig
+benannt. Was schon vorher stimmte und unangetastet blieb: die Mischart (grob vermengen,
+krümelig-stückig, nicht glatt kneten, keine Maschine), „100 % der Hefe in den Vorteig" und
+„Salz/Öl nur in den Hauptteig".
+
+**`PZ.PREF_STAGES.biga` (`js/ui.js`): drei Stufen werden zwei, beide `rel:'pref'`.**
+`b_klassisch` (17 h, 1,0 % bezogen aufs Biga-Mehl, 16–18 °C) und `b_kalt` (48 h, 1,0 %,
+2 h Raumtemp anspringen dann Kühlschrank). Vorher: `b16`/`b24`/`b48` mit `rel:'total'`
+(0,4/0,3/0,2 %, nicht quellenbelegt). Drei konkrete Befunde zu den alten Werten: **b16**
+mischte zwei Systeme (0,4 % ist Oonis Raumtemp-Dosis, die „~18 °C" im Text stammten aber
+von Gozneys Bedingung, der dafür 1,0 % nimmt); **b48** lag mit 0,2 % unter jeder
+Einzelquelle (Burnhard nimmt für dieselbe Dauer 1,0 %); die „~14–16 °C" bei **b24** standen
+in keiner der 12 Quellen (Konsensband 16–18 °C oder ~20 °C) und wurden ersatzlos
+gestrichen.
+
+**Quellenlage zur 1,0-%-Dosis (Ehrlichkeitsgebot: diese Änderung ändert den tatsächlichen
+Teig erheblich — Hefemenge mehr als verdreifacht, Hydration in beiden Stufen angehoben —
+und ist quellengestützt, aber NICHT gebacken).** Drei Quellen benennen die Hefeart für
+`b_klassisch` eindeutig als Frischhefe: PizzaBlab (einzige Regelquelle: „0,3 % Trockenhefe
+oder 1 % Frischhefe bezogen aufs Biga-Mehl" bei 16–20 h/~20 °C), Salamico (klassische
+Formel 100-44-1, „10 g frische Hefe" auf 1000 g) und Pala Pizza („2 g instant dry yeast" =
+0,4 % Trockenhefe auf 500 g Mehl, ×3 = 1,2 % Frischhefe-Äquivalent). **Gozney**
+(Nutzerquelle, ebenfalls 1 %, 16–18 h bei 16–18 °C) nennt den Wert konsistent, aber **ohne
+Angabe der Hefeart** — deshalb bewusst nicht als vierter Beleg mitgezählt (Zusatzargument,
+als Schlussfolgerung und nicht als Quellenaussage kenntlich: 10 g Trockenhefe auf 1 kg Mehl
+wäre mit ~3 % Frischhefe-Äquivalent ein Ausreißer, den keine der zwölf Quellen erreicht).
+**Waldis** (ebenfalls Nutzerquelle) dosiert mit 0,3 % bei fast gleicher Zeit deutlich
+niedriger als Gozney — die vier vom Nutzer benannten Quellen widersprechen sich also
+untereinander (Gozney 1,0 % gegen Waldis 0,3 % bei fast gleicher Zeit); gefolgt wurde dem
+Wert, den die einzige Regelquelle plus zwei Rezeptquellen (Salamico, Pala Pizza) teilen.
+`b_kalt` (48 h) stammt von **Burnhard** (Nutzerquelle, exakt diese Dauer und dieses Medium,
+ebenfalls 1 %) — die Kaltstufe kompensiert die Kälte über die **dreifache Dauer** (48 h
+statt 17 h), nicht über mehr Hefe. Rest der Tabelle einzeln nachgeprüft: Burnhard, Waldis,
+foodbyjos, Speedelicious und Salamico schreiben ausdrücklich „frisch"; Ooni, Manopasto,
+PizzaBlab und ChainBaker nennen Frisch- und Trockenmengen nebeneinander; bei Pala wurde von
+Trocken auf Frisch umgerechnet. Nur Gozney ist offen, ChainBaker beziffert seine „zwei
+Prisen" gar nicht. **Nebenbefund:** Ooni und ChainBaker bestätigen unabhängig voneinander
+den bestehenden `PZ.FRESH_TO_DRY = 1/3`-Umrechnungsfaktor (Ooni: 4 g frisch = 1,3 g
+Instant; ChainBaker: 3 g frisch = 1 g Instant) — keine Code-Änderung nötig.
+
+**Bezugsgröße: Biga-Stufen von `rel:'total'` auf `rel:'pref'`.** Löst die in v4.24.0
+eingeführte Asymmetrie auf, alle Vorteig-Stufen rechnen jetzt gleich (Mechanik existierte
+bereits vollständig in `PZ.makePrefStages().select()`/`resync()`, `js/widgets.js`, nur der
+Feldwert war umzustellen). Bei Vorteig-Anteil 100 % (beide Presets) ändert das rechnerisch
+nichts, behebt aber die Drift bei kleineren Anteilen (App-Hinweis empfiehlt 70–100 %; bei
+70 % würde aus 0,3 % real 0,43 % im Vorteig, während die Pille weiter 0,3 % behauptet
+hätte). Klemmung gegengeprüft: `select()` nutzt `PZ.calcCore().prefEff`; bei Biga ist
+`pHyd = bhyd/100`, Klemmgrenze `hyd / bhyd × 100`. Mit den neuen Presetwerten (hyd 70,
+bhyd 50) ergibt das 140 % → nie geklemmt, deshalb `tests/test.html` Sektion 32 zusätzlich
+mit synthetischen Klemm-/Drift-Fällen (Biga bei hyd 40/bhyd 50/pref 90 → geklemmt auf 80)
+abgesichert — analog zum v4.24.1-Bug beim Poolish (dort löste nur `pref`, nicht `hyd`/
+`bhyd`, den Nachzug aus; die Auslöserliste `['pref','hyd','bhyd']` deckt Biga von Anfang an
+mit ab).
+
+**`js/presets.js`: aus einem Biga-Preset werden zwei.** `napoli_biga` →
+`napoli_biga_klassisch`/`_kalt` (identische Design-Entscheidung wie beim Poolish: nur das
+Gärregime unterscheidet sich). Beide: `method: 'biga'`, `hyd: 70`, `salt: 2.8`, `oil: 2`,
+`sugar: 0`, `pref: 100`, `bhyd: 50`, `yeastType: 'fresh'`, `ballw: 250`, `ddt: 24`,
+`flour: 'caputo_cuoco'`, nur `prefStage` unterscheidet sich (`b_klassisch`/`b_kalt`). Zwei
+vom Nutzer ausdrücklich freigegebene Geometrie-Änderungen: Biga-Hydration 45 %→50 % (7 von
+12 Quellen bei 50 %, Ooni sogar 54 %, nur Salamico/Gozney lagen bei 44/45 %) und
+Gesamthydration 65 %→70 % (Waldis, Manopasto, Burnhard exakt auf 70 %, foodbyjos 68,5 %,
+Gozney 66 %). Live nachgemessen (headless, `pizza-rechner.html`-Module direkt geladen):
+beide Varianten Biga 580,20 g Mehl + 290,10 g Wasser + 5,80 g Frischhefe, Hauptteig 0 g
+Mehl, 116,04 g Wasser, 16,25 g Salz, 11,60 g Öl; `prefClamped` false, `prefEff` 100, keine
+Mehl-Warnung; Gesamtdauer (volle Anleitung inkl. Vorbereitung/Kneten/Gare/Backen)
+**28,58 h** (klassisch) bzw. **59,58 h** (kalt), in Presetbeschreibung/Dropdown-Label auf
+„~29 h"/„~60 h" gerundet. `caputo_cuoco` hat hydMin 65/hydMax 70: die 70 % sitzen **exakt
+auf der Obergrenze** — keine Warnung, aber null Spielraum nach oben (bekannte Enge, analog
+zur 66/66-Grenzlage beim Poolish).
+
+**Textkorrekturen (`js/i18n-dict.js`, DE+EN):** `option.napoliBiga` („16–24 h", real
+33,8 h) → zwei neue Optionen mit den selbst nachgemessenen Zeiten; `hint.method.biga`
+(„16–20 h bei ~18 °C") an die zwei Stufen angepasst; `hint.bhyd` („Steife Biga: 44–48 %")
+auf 44–54 %/Schwerpunkt 45–50 % erweitert (schloss sonst den eigenen neuen Presetwert
+50 % aus); `guide.biga.temp.cool/.cooler/.cold` (dreistufige Verzweigung über
+`prefMature <= 20/32/else`) auf zwei Regime reduziert (Schwelle 30 h in `js/guide.js`),
+die erfundenen 14–16 °C entfallen; `glossary.biga.body` („Hydration meist 44–48 %") auf
+45–50 % angeglichen; `preset.napoliBiga.desc` → zwei neue Beschreibungen.
+**`guide.step.prefWeigh.tip` war beim Biga fachlich falsch** (gemeinsamer Baustein mit
+Poolish, „Wasser hier zimmerwarm" — stimmt für Poolish, aber die Biga-Quellen sagen das
+Gegenteil: Salamico rechnet mit der „Regola del 55" [Wassertemperatur = 55 − Raum- −
+Mehltemperatur], Speedelicious nutzt ausdrücklich eiskaltes Wasser, Zieltemperatur der
+fertigen Biga 18–20 °C). Jetzt methodenspezifisch getrennt: neuer Key
+`guide.step.prefWeigh.tipBiga` mit kühler Schüttwasser-Anweisung (Regola-del-55-Formel
+selbst bewusst NICHT eingebaut, nur die Anweisung samt kurzer Begründung).
+`guide.step.bigaRest.body`: „etwa verdoppeltes Volumen" als Reifezeichen ergänzt (Salamico
+„verdoppelt", Pala „doubled in size") — identische Ergänzung wie beim Poolish in v4.24.0,
+die bisherigen Kennzeichen (lockert sich auf, säuerlich-hefig) bleiben. Der Hauptteig-Mix-
+Schritt bei `pref: 100` (0 g Hauptteig-Mehl) wurde gegengeprüft und bleibt grammatisch/
+inhaltlich intakt (unverändert seit dem alten Einzelstufen-Preset, das ebenfalls pref 100
+nutzte).
+
+**Nicht angefasst (Scope):** Salz 2,8 % (Quellenfeld 2,0–2,8 %), die 2 % Olivenöl
+(projektweite Altentscheidung), Mehlsorte `caputo_cuoco`, die Regola del 55 als Berechnung,
+`PZ.formatWeightAuto()`-Dezimaltrennzeichen-Bug (Backlog-Punkt bleibt offen).
+
+**Tests:** `tests/test.html` 948 → **964** grün (Headless-Edge-Dump). `PRESET_STATES`:
+`napoli_biga` (1 Eintrag) → `napoli_biga_klassisch`/`_kalt` (2 Einträge, +1 netto). Sektion
+32 umbenannt („Vorteig-Stufen (Poolish v4.24.0 + Biga v4.25.0)"), lokale
+`PZ.PREF_STAGES`-Kopie aktualisiert, die alte Kontrollgruppe „Biga bleibt bei `rel:'total'`
+unberührt" ersetzt durch vier neue Biga-Fälle (Drift bei Vorteig-Anteil-Änderung,
+Klemmfall, Hydration-Nachzug, BHYD-Nachzug — Letzterer Biga-spezifisch, da Poolish kein
+`bhyd` hat). Alle Zahlen unabhängig gegen einen minimalen Headless-Harness (lädt dieselben
+`js/*`-Module direkt, ohne `tests/test.html`) gegengerechnet, keine Abweichung.
+
+## Poolish aus Quellenrecherche (v4.24.0) + Hydration-Nachzug (v4.24.1)
+
+Aus 14 ausgewerteten Quellen abgeleitet (**NICHT selbst gebacken/verifiziert**): die
+Poolish-Reife-Stufen (`PZ.PREF_STAGES.poolish`, `js/ui.js`) heißen jetzt `p_warm` (10 h
+Raumtemp, 0,6 %) und `p_cold` (1 h Raumtemp + 24 h Kühlschrank, 1,0 %) statt der bisherigen
+drei unbelegten Stufen, beide mit explizitem `rel:'pref'` (Hefe bezogen aufs Poolish-Mehl
+statt aufs Gesamtmehl; Biga bleibt bewusst bei `rel:'total'`). Die Umrechnung
+(`PZ.makePrefStages().select()`/`resync()`, `js/widgets.js`) nutzt den in `js/calc.js`
+geklemmten `prefEff` und wird bei Änderungen an **`pref`, `hyd` und `bhyd`** nachgezogen
+(v4.24.1: bis dahin nur `pref`, wodurch eine reine Hydration-Senkung die Hefemenge stehen
+ließ, gemessen 1,1 % statt 1,0 %). `js/schedule.js`: Vorteig-Zweig komplett von
+`state.yeast` entkoppelt, liefert immer den „prefLong"-Zweig. Presets: `napoli_poolish` →
+`napoli_poolish_schnell`/`_kalt` (gleiche 66/66-Geometrie, nur Gärregime unterschiedlich,
+≈20 h/≈34 h). `tests/test.html`: 901 → **948** Prüfungen grün.
+
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitte „Poolish-Hefe-Nachzug bei
+Hydration-Änderung (v4.24.1)" und „Poolish-Stufen aus Quellenrecherche (v4.24.0)"
+(vorherige Abschnitte ebenfalls dort verkettet).
+
 ## Poolish-Hefe-Nachzug bei Hydration-Änderung (v4.24.1)
 
 Direkt anschließender Bugfix zu v4.24.0, vom Hauptagenten bei der Abnahme des Zyklus

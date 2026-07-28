@@ -243,16 +243,17 @@
           hydTxt: isBiga ? state.bhyd + '%' : t('guide.pref.poolishRatio'),
           pYeast: g(R.pYeast), yWord: R.yWord
         }),
-        clampNote + tip(t('guide.step.prefWeigh.tip')), 5);
+        clampNote + tip(t(isBiga ? 'guide.step.prefWeigh.tipBiga' : 'guide.step.prefWeigh.tip')), 5);
       if (isBiga) {
         st(t('guide.step.bigaMix.title'), t('guide.step.bigaMix.chip'),
           t('guide.step.bigaMix.body'),
           warn(t('guide.step.bigaMix.warn')), 10);
-        const bigaTempTxt = state.prefMature <= 20
+        // Seit v4.25.0: nur noch zwei Stufen (b_klassisch 17 h / b_kalt 48 h, s.
+        // PZ.PREF_STAGES in js/ui.js) statt vorher drei -- Schwelle 30 h liegt mittig
+        // zwischen beiden und ist unkritisch, solange nur diese zwei Werte gewählt werden.
+        const bigaTempTxt = state.prefMature <= 30
           ? t('guide.biga.temp.cool')
-          : state.prefMature <= 32
-            ? t('guide.biga.temp.cooler')
-            : t('guide.biga.temp.cold');
+          : t('guide.biga.temp.cold');
         st(inlineGlossaryLink(t('guide.step.bigaRest.title'), 'biga'), `${state.prefMature} ${t('guide.dur.h')}`,
           t('guide.step.bigaRest.body', { bigaTempTxt: bigaTempTxt }),
           tip(t('guide.step.bigaRest.tip')) + timerBox('biga-reifen', matureMin), matureMin,
