@@ -8,6 +8,83 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Teglia-/New-York-Style-Öl & -Zucker aus Quellen abgeleitet (v4.26.0)
+
+Letzter Teil der Preset-Quellenprüfung, direkter Nutzerauftrag mit fertiger
+Quellenrecherche aus dem Hauptgespräch (kein `/define-feature`, Brainstorming entfiel).
+In v4.25.1 wurden nur Aussagen/Zeitangaben korrigiert, **keine** Teigwerte. Dieser Zyklus
+zieht die Teigwerte nach, aber nur die eindeutig belegten, ohne Nebenwirkungen.
+
+**Drei geänderte Werte:**
+1. `teglia`: Olivenöl **4 % → 2,5 %**. Die 4 % finden sich in keiner ausgewerteten Quelle.
+   Drei unabhängige Quellen bei 2,5 %: Manopasto
+   (manopasto.com/2020/06/22/rezept-fuer-pizza-in-teglia-alla-romana-mit-80-wasseranteil,
+   14 g Öl / 550 g Mehl), Salamico
+   (salamico.de/index.php/de/rezepte/97-grundrezept-blechpizza-pizza-in-teglia-alla-romana,
+   identisch 14 g/550 g), eine dritte Bonci-Variante (37,5 g/1500 g).
+2. `newyork_style`: Zucker **2 % → 1 %**. Quellen nennen 0,5–1 % ("sugar optional at
+   0.5–1 % for browning"), Feeling Foodish
+   (feelingfoodish.com/the-best-new-york-style-pizza-dough) fährt exakt 1 %. Die
+   bisherigen 2 % waren das Doppelte des oberen Richtwerts.
+3. `newyork_style`: Olivenöl **3 % → 1,5 %**. Quellen nennen 1–3 % mit 1,5 % als
+   Empfehlung, Feeling Foodish fährt exakt 1,5 %. Die bisherigen 3 % lagen am oberen Rand.
+
+Sonst an beiden Presets nichts geändert: Hydration, Salz, Hefe, Mehlsorte,
+Teiglingsgewicht, DDT bleiben exakt wie sie waren.
+
+**Bewusst NICHT geändert (strukturelle Kopplung, eigene Nutzerentscheidung nötig, jetzt
+Backlog-Punkt in der Hauptdatei):** `newyork_style`-Hefe (Feeling Foodish nennt 0,4 %
+Instant-Trockenhefe, umgerechnet ~1,2 % Frischhefe gegenüber unseren 0,2 % — ein Anheben
+würde bei Direktführung den `js/schedule.js`-Zweig `y >= 0.5` auslösen und die Kaltgare
+verlieren, das definierende Merkmal des Stils); `teglia`-Gärzeit (Quellen fahren 48–72 h
+kalt gegen unsere ~30 h, aber mit MEHR Hefe als wir, nicht weniger — Zeit und Hefemenge
+sind bei uns aneinandergekettet, in den Quellen nicht); `teglia`-Teiglingsgewicht (320 g
+entspricht keinem gängigen Blech, Referenzwert der Quellen ist 500 g für 35×28 cm — Teglia
+wird nach Blechfläche dosiert, nicht nach Kugelgewicht, ein Modellbruch, kein Zahlenfehler);
+`teglia`-Hydration 75 % (unterer Rand des Bands 75–85 %, nicht falsch, nur ausbaufähig);
+`newyork_style`-Mehl (dallag_napoletana/W310 statt eines High-Gluten-Brotmehls, in der
+Stärke vergleichbar, im Charakter nicht).
+
+**Texte:** `preset.teglia.desc`/`preset.newyorkStyle.desc` (DE+EN, `js/i18n-dict.js`) auf
+die neuen Prozentwerte gezogen. Keine hartkodierten Fallback-Texte in
+`pizza-rechner.html`/`pizza-rechner-mobile.html` betroffen (dort steht bei `#presetDesc`
+nur der generische Default-Text, keine Preset-spezifischen Prozentangaben). Zeitangaben-
+Labels (`option.teglia`/`option.newyorkStyle`, ~30 h/~28 h) unverändert, da Öl/Zucker nicht
+in `js/schedule.js` einfließen — Sektion 33 in `tests/test.html` bestätigt das automatisch
+(reale Dauer weiterhin innerhalb ±10 % der Labels).
+
+**Tests:** `PRESET_STATES` (Sektion 6/13) und die generische Formel-Testbeschreibung in
+Sektion 19 (Kommentar korrigiert, war fälschlich als "New-York-Style-Preset-Werte"
+beschriftet) mitgezogen. `tests/test.html`: **973 → 973** Prüfungen (reine Wertänderung,
+kein neuer Testfall — Masseerhaltungs- und Label-Kopplungstests aus v4.25.1 greifen
+automatisch mit den neuen Werten), alle grün (Headless-Edge-Dump). Parse-Check (`new
+Function`) über `js/presets.js` und `js/i18n-dict.js` grün. Echter Ladetest (Headless-Edge,
+Konsole geprüft) für `pizza-rechner.html`, `pizza-rechner-mobile.html` und die neu
+gebaute `pizza-rechner-mobile-standalone.html`: keine Fehler, `appVersion` zeigt v4.26.0.
+
+**Ehrlichkeitsgebot:** diese Änderung ist quellengestützt, aber nicht gebacken/verifiziert
+am realen Backergebnis — die Testsuite belegt nur die Rechenwege (Masseerhaltung,
+Zeitangaben-Kopplung), nicht die Backqualität.
+
+**Geändert:** `js/presets.js`, `js/i18n-dict.js`, `tests/test.html`. `?v=` + Menü-Version
+auf 4.26.0 (Desktop + Mobil), `pizza-rechner-mobile-standalone.html` neu gebaut.
+`Versionen/v4.26.0 - Teglia-New-York-Style-Oel-Zucker-aus-Quellen/` enthält den
+vollständigen Schnappschuss.
+
+## AVPN-Aussage entschärft + Preset-Zeitangaben korrigiert (v4.25.1) — Kurzfassung (wie zuletzt in der Hauptdatei)
+
+Übrige fünf Presets (napoli_klassisch/napoli_kalt/schnell/teglia/newyork_style) gegen
+Quellen geprüft: die AVPN-Konformitätsbehauptung bei „Napoli Klassisch" war falsch (Öl ist
+nicht Teil des AVPN-Disciplinare, bleibt aber im Preset — nur die Beschreibung wurde
+entschärft) und alle fünf Zeitangaben-Labels stimmten nicht mit `PZ.calc()`/`PZ.schedule()`
+überein (nie nachgerechnet, offenbar geschätzt). Reine Text-/Test-Korrektur, **keine
+Teigwerte geändert**. Neue Sektion 33 in `tests/test.html` koppelt künftig jedes
+Options-Label gegen die echte Gesamtdauer (±10 %), nachdem derselbe Drift-Fehler in drei
+Zyklen in Folge unabhängig auftrat (Poolish v4.24.0, Biga v4.25.0, hier). `tests/test.html`:
+964 → 973 Prüfungen grün.
+
+(Volle Details direkt im nächsten Abschnitt unten.)
+
 ## AVPN-Aussage entschärft + Preset-Zeitangaben korrigiert (v4.25.1)
 
 Nutzer-Quellenprüfung im Hauptgespräch der übrigen fünf Presets (napoli_klassisch,

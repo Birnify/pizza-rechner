@@ -776,8 +776,11 @@
     // 1,0 % * 0,66 = 0,66 % (kalt).
     'napoli_poolish_schnell': { method: 'poolish', hyd: 66, salt: 2.5, oil: 2, yeast: 0.396, pref: 66, prefMature: 10, flour: 'dallag_monica' },
     'napoli_poolish_kalt':    { method: 'poolish', hyd: 66, salt: 2.5, oil: 2, yeast: 0.66, pref: 66, prefMature: 24, flour: 'dallag_monica' },
-    'teglia':           { method: 'direct', hyd: 75, salt: 2.5, oil: 4, ballw: 320, yeast: 0.3, flour: 'caputo_nuvola_super' },
-    'newyork_style':    { method: 'direct', hyd: 62, salt: 2.5, oil: 3, sugar: 2, yeast: 0.2, ballw: 300, flour: 'dallag_napoletana' }
+    // v4.26.0: teglia oil 4 -> 2,5; newyork_style oil 3 -> 1,5 und sugar 2 -> 1 (aus
+    // Quellen abgeleitet, s. pizza-rechner-KONTEXT.md). Mitgezogen, sonst prüft die
+    // Suite veraltete Zahlen.
+    'teglia':           { method: 'direct', hyd: 75, salt: 2.5, oil: 2.5, ballw: 320, yeast: 0.3, flour: 'caputo_nuvola_super' },
+    'newyork_style':    { method: 'direct', hyd: 62, salt: 2.5, oil: 1.5, sugar: 1, yeast: 0.2, ballw: 300, flour: 'dallag_napoletana' }
   };
   Object.keys(PRESET_STATES).forEach(key => {
     testFlourWarn('Preset „' + key + '" löst keine Mehl-Warnung aus', PRESET_STATES[key], html => [
@@ -2158,8 +2161,10 @@
 
   // Zucker ist ein Bäckerprozent wie Öl: flour = total/(1+h+s+y+o+su), sugar = flour*su.
   // Wichtig: flour+water+salt+yeast(frisch)+oil+sugar MUSS exakt das Gesamtgewicht ergeben.
-  // Werte hier entsprechen dem neuen "New York Style"-Preset (oil 3 %, sugar 2 %, ballw 300).
-  testCase('Direkt · 62 % Hyd, 3 % Öl, 2 % Zucker (New-York-Style-Preset-Werte): Mehl sinkt, Masse bleibt N×W', {
+  // Generischer Formel-Check mit runden Testwerten (oil 3 %, sugar 2 %) -- seit v4.26.0
+  // NICHT mehr identisch zum "New York Style"-Preset (dort jetzt oil 1,5 %, sugar 1 %,
+  // s. pizza-rechner-KONTEXT.md), die Formel selbst ist davon unabhängig korrekt.
+  testCase('Direkt · 62 % Hyd, 3 % Öl, 2 % Zucker (genereller Formel-Check): Mehl sinkt, Masse bleibt N×W', {
     oil: 3, sugar: 2, salt: 2.5, yeast: 0.2, ballw: 300
   }, R => {
     const total = 1200; // 4 × 300 g

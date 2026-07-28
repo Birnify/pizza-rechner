@@ -515,16 +515,16 @@
     'Poolish (liquid 1:1) with 66 % of the flour, 10 h entirely at room temp. Then final dough (with 2 % oil): ~20 h total rise. Milder, airier dough, the faster of the two poolish variants.');
   add('preset.napoliPoolishKalt.desc', 'Poolish (flüssig 1:1) mit 66 % des Mehls, 1 h Raumtemp anspringen, dann 24 h Kühlschrank. Dann Hauptteig (mit 2 % Öl): ~34 h Gesamtreife. Milder, luftiger Teig, mehr Aroma durch die kühlere Führung.',
     'Poolish (liquid 1:1) with 66 % of the flour, 1 h at room temp to start, then 24 h in the fridge. Then final dough (with 2 % oil): ~34 h total rise. Milder, airier dough, more flavor from the cooler route.');
-  // v4.25.1: Gesamtgare aus der Berechnung nachgemessen (29,53 h → ~30 h) statt der
-  // bisherigen geschätzten "24 h". Teigwerte unverändert (Öl-Korrektur auf 2,5 % folgt in
-  // einem eigenen späteren Zyklus, s. pizza-rechner-KONTEXT.md).
-  add('preset.teglia.desc', 'Römische Blechpizza: 75 % Hydration, 4 % Olivenöl, sehr lockere Krume. Teig ist klebrig: mit Stretch & Fold statt langem Kneten arbeiten. ~30 h kühl. Braucht sehr starkes Mehl (W330+).',
-    'Roman pan pizza: 75 % hydration, 4 % olive oil, very airy crumb. The dough is sticky: work with stretch & fold instead of long kneading. ~30 h cold. Needs a very strong flour (W330+).');
-  // v4.25.1: Gesamtgare aus der Berechnung nachgemessen (27,75 h → ~28 h) statt der
-  // bisherigen geschätzten "~26 h". Teigwerte unverändert (Zucker-/Öl-Korrektur folgt in
-  // einem eigenen späteren Zyklus).
-  add('preset.newyorkStyle.desc', 'New York Style: 62 % Hydration, 3 % Öl, 2 % Zucker (Bräunung & Hefeaktivität): größere, dünnere Teiglinge. ~28 h Kaltgare für Aroma & knusprig-zähe Kruste. Braucht ein mittelstarkes Mehl (W300+).',
-    'New York style: 62 % hydration, 3 % oil, 2 % sugar (browning & yeast activity): larger, thinner dough balls. ~28 h cold rise for flavor & a crispy-chewy crust. Needs a medium-strong flour (W300+).');
+  // v4.26.0: Öl 4 % -> 2,5 % (drei unabhängige Quellen bei 2,5 %, keine bei 4 %, aus
+  // Quellen abgeleitet, s. pizza-rechner-KONTEXT.md). Gesamtgare-Zeitangabe (~30 h)
+  // unverändert, sie hängt an Hefe/Methode, nicht an Öl.
+  add('preset.teglia.desc', 'Römische Blechpizza: 75 % Hydration, 2,5 % Olivenöl, sehr lockere Krume. Teig ist klebrig: mit Stretch & Fold statt langem Kneten arbeiten. ~30 h kühl. Braucht sehr starkes Mehl (W330+).',
+    'Roman pan pizza: 75 % hydration, 2.5 % olive oil, very airy crumb. The dough is sticky: work with stretch & fold instead of long kneading. ~30 h cold. Needs a very strong flour (W330+).');
+  // v4.26.0: Öl 3 % -> 1,5 % und Zucker 2 % -> 1 % (Feeling Foodish fährt exakt diese
+  // Werte, aus Quellen abgeleitet, s. pizza-rechner-KONTEXT.md). Gesamtgare-Zeitangabe
+  // (~28 h) unverändert, sie hängt an Hefe/Methode, nicht an Öl/Zucker.
+  add('preset.newyorkStyle.desc', 'New York Style: 62 % Hydration, 1,5 % Öl, 1 % Zucker (Bräunung & Hefeaktivität): größere, dünnere Teiglinge. ~28 h Kaltgare für Aroma & knusprig-zähe Kruste. Braucht ein mittelstarkes Mehl (W300+).',
+    'New York style: 62 % hydration, 1.5 % oil, 1 % sugar (browning & yeast activity): larger, thinner dough balls. ~28 h cold rise for flavor & a crispy-chewy crust. Needs a medium-strong flour (W300+).');
   add('preset.customRecipeLoaded', 'Eigenes Rezept „{name}“ geladen: Werte wurden übernommen.', 'Custom recipe "{name}" loaded: values have been applied.');
 
   // ---- js/newrecipe.js: Live-Meldung nach dem Anlegen ----------------------------

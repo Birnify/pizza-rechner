@@ -56,12 +56,17 @@
       method: 'poolish', hyd: 66, salt: 2.5, oil: 2, sugar: 0, pref: 66, prefStage: 'p_cold', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'dallag_monica',
       descKey: 'preset.napoliPoolishKalt.desc'
     },
+    // v4.26.0: Öl 4 % -> 2,5 % (drei unabhängige Quellen bei 2,5 %, keine bei 4 %,
+    // s. pizza-rechner-KONTEXT.md). Sonst unverändert.
     teglia: {
-      method: 'direct', hyd: 75, salt: 2.5, oil: 4, sugar: 0, yeastType: 'fresh', yeast: 0.3, ballw: 320, ddt: 24, flour: 'caputo_nuvola_super',
+      method: 'direct', hyd: 75, salt: 2.5, oil: 2.5, sugar: 0, yeastType: 'fresh', yeast: 0.3, ballw: 320, ddt: 24, flour: 'caputo_nuvola_super',
       descKey: 'preset.teglia.desc'
     },
+    // v4.26.0: Öl 3 % -> 1,5 % und Zucker 2 % -> 1 % (Feeling Foodish fährt exakt diese
+    // Werte, Quellenband 1-3 % Öl / 0,5-1 % Zucker, s. pizza-rechner-KONTEXT.md). Sonst
+    // unverändert.
     newyork_style: {
-      method: 'direct', hyd: 62, salt: 2.5, oil: 3, sugar: 2, yeastType: 'fresh', yeast: 0.2, ballw: 300, ddt: 24, flour: 'dallag_napoletana',
+      method: 'direct', hyd: 62, salt: 2.5, oil: 1.5, sugar: 1, yeastType: 'fresh', yeast: 0.2, ballw: 300, ddt: 24, flour: 'dallag_napoletana',
       descKey: 'preset.newyorkStyle.desc'
     }
   };

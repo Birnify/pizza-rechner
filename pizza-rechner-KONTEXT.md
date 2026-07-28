@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-29 · Aktuelle Version: v4.25.1 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-29 · Aktuelle Version: v4.26.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -160,9 +160,10 @@ In `js/guide.js`, im Autolyse-Zweig (`state.yeast < 1,2 %`, nur Direkt-Methode):
 - **Bei Vorteig geht das Öl komplett in den Hauptteig**, nie in Biga/Poolish (analog wie Salz).
   Result-Panel: `#gOilRow` (Gesamtmengen) + `#mOilRow` (Hauptteig), beide bei 0 % ausgeblendet.
 - Öl beeinflusst **nicht** die Eis-/DDT-Rechnung (`M = water` bleibt) — kleine Masse, Raumtemp.
-- Alle 7 Presets haben Öl: neapolitanisch je **2 %**, Teglia/Blech **4 %**. Zucker bewusst
-  **nicht** (explizit `sugar: 0`) — außer beim 8. Preset „New York Style" (2 % Zucker), s.
-  Abschnitt „Zucker-Feld / New York Style" weiter oben.
+- Alle 7 Presets haben Öl: neapolitanisch je **2 %**, Teglia/Blech **2,5 %** (bis v4.25.1:
+  4 %, s. „= aktueller Stand" oben). Zucker bewusst **nicht** (explizit `sugar: 0`) — außer
+  beim 8. Preset „New York Style" (**1 %** Zucker, bis v4.25.1: 2 %), s. Abschnitt
+  „Zucker-Feld / New York Style" weiter oben.
 
 ## Kaltgare-Stufe (v3.0.0)
 
@@ -187,10 +188,10 @@ Abschnitt „Zucker-Feld / New York Style" weiter unten. Bewusst nicht in dieser
 | `napoli_biga_kalt` | biga (pref 100, bhyd **50**, b_kalt) | **70 %** | 2,8 % | 2 % | 1,0 % | caputo_cuoco |
 | `napoli_poolish_schnell` | poolish (pref 66, p_warm) | 66 % | 2,5 % | 2 % | 0,396 % | **dallag_monica** |
 | `napoli_poolish_kalt` | poolish (pref 66, p_cold) | 66 % | 2,5 % | 2 % | 0,66 % | **dallag_monica** |
-| `teglia` | direct (ballw 320) | 75 % | 2,5 % | **4 %** | 0,3 % | **caputo_nuvola_super** |
+| `teglia` | direct (ballw 320) | 75 % | 2,5 % | **2,5 %** | 0,3 % | **caputo_nuvola_super** |
 
 (napoli_kalt war 62 % → auf 65 % angehoben, damit es zum Cuoco passt; die beiden Biga-Presets
-seit v4.25.0 (s. „= aktueller Stand" oben): bhyd 45 % → 50 %, Gesamthydration 65 % → 70 %
+seit v4.25.0 (s. Historie): bhyd 45 % → 50 %, Gesamthydration 65 % → 70 %
 (sitzt exakt auf caputo_cuoco hydMax 70, keine Warnung, aber kein Spielraum nach oben) und
 Hefe 0,3 % → 1,0 % (state.yeast, bereits umgerechnet — beide Presets haben pref 100, also
 prefEff 100, ungeklemmt); poolish braucht hydMax ≥ 66 → Monica; teglia braucht hydMax ≥ 75 →
@@ -198,8 +199,8 @@ Nuvola Super. Hefe bei den beiden Poolish-Presets = effektiver Wert in `state.ye
 bereits umgerechnet auf % Gesamtmehl — s. „rel:'pref'" oben. Zeile „napoli_65" entfernt,
 v4.24.0 beim Aktualisieren dieser Tabelle bemerkt: der Preset-Key existierte in
 `js/presets.js` gar nicht (mind. seit v4.7.0 nicht mehr, unklar seit wann genau) — reiner
-Dokumentationsfehler, keine
-Code-Änderung nötig.)
+Dokumentationsfehler, keine Code-Änderung nötig. `teglia`-Öl seit v4.26.0 4 % → 2,5 %,
+aus Quellen abgeleitet — s. „= aktueller Stand" oben.)
 
 ## Mehl-Datenbank (js/flour.js, Quelle: pizza1.de/blog/pizzamehl-uebersicht/)
 
@@ -213,22 +214,22 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## AVPN-Aussage entschärft + Preset-Zeitangaben korrigiert (v4.25.1) = aktueller Stand
+## Teglia-/New-York-Style-Öl & -Zucker aus Quellen abgeleitet (v4.26.0) = aktueller Stand
 
-Übrige fünf Presets (napoli_klassisch/napoli_kalt/schnell/teglia/newyork_style) gegen
-Quellen geprüft: die AVPN-Konformitätsbehauptung bei „Napoli Klassisch" war falsch (Öl ist
-nicht Teil des AVPN-Disciplinare, bleibt aber im Preset — nur die Beschreibung wurde
-entschärft) und alle fünf Zeitangaben-Labels stimmten nicht mit `PZ.calc()`/`PZ.schedule()`
-überein (nie nachgerechnet, offenbar geschätzt). Reine Text-/Test-Korrektur, **keine
-Teigwerte geändert**. Neue Sektion 33 in `tests/test.html` koppelt künftig jedes
-Options-Label gegen die echte Gesamtdauer (±10 %), nachdem derselbe Drift-Fehler in drei
-Zyklen in Folge unabhängig auftrat (Poolish v4.24.0, Biga v4.25.0, hier). `tests/test.html`:
-964 → **973** Prüfungen grün.
+Letzter Teil der Preset-Quellenprüfung (nach v4.25.1, die nur Aussagen/Zeitangaben
+korrigierte): drei echte Teigwerte geändert, quellengestützt, aber **nicht gebacken**.
+`teglia`-Öl 4 % → **2,5 %** (drei unabhängige Quellen bei 2,5 %, keine bei 4 %).
+`newyork_style`-Öl 3 % → **1,5 %** und Zucker 2 % → **1 %** (Feeling Foodish fährt exakt
+diese Werte). Sonst an beiden Presets **nichts** geändert (Hydration, Salz, Hefe, Mehl,
+Teiglingsgewicht, DDT unverändert) — Zeitangaben-Labels bleiben gültig (hängen an
+Hefe/Methode, nicht an Öl/Zucker), Sektion 33 bestätigt das automatisch. Bewusst **nicht**
+angefasst: `newyork_style`-Hefe, `teglia`-Gärzeit/-Teiglingsgewicht — kollidieren mit der
+Hefe/Gärzeit-Kopplung bei Direktführung, s. Backlog-Punkt unten. `tests/test.html`:
+973 Prüfungen unverändert grün (reine Wertänderung, kein neuer Testfall nötig).
 
-**Volle Details (genaue Vorher/Nachher-Werte je Preset, AVPN-Grenzwert-Abgleich,
-`accessibility-expert`-Review):** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt
-„AVPN-Aussage entschärft + Preset-Zeitangaben korrigiert (v4.25.1)" (vorherige Abschnitte
-ebenfalls dort verkettet).
+**Volle Details (Quellenbelege, Textänderungen DE/EN):** `pizza-rechner-KONTEXT-HISTORIE.md`,
+Abschnitt „Teglia-/New-York-Style-Öl & -Zucker aus Quellen abgeleitet (v4.26.0)" (vorherige
+Abschnitte ebenfalls dort verkettet).
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -525,13 +526,15 @@ existiert nicht mehr.
   `pizza-rechner-KONTEXT-HISTORIE.md`). Seit v4.7.0 (Backlog Punkt C) ersatzlos entfernt —
   die Sichtbarkeit hängt nur noch vom aktuellen `state.sugar`-Wert ab (s. Bullet oben).
 - **Preset „New York Style"** (`js/presets.js`, `newyork_style`): `direct`, 62 % Hydration,
-  2,5 % Salz, 3 % Öl, **2 % Zucker**, 0,2 % Hefe (frisch), 300 g/Teigling, 24 °C DDT, Mehl
-  `dallag_napoletana` (W310, hydMin 60/hydMax 65, minH 16/maxH 48) — ergibt „Lange Gare ·
-  ~24 h"-Stufe (real ~26 h: 2 h Stockgare + 24 h Kühlschrank/Temperieren), löst keine
-  Mehl-Warnung aus (per Headless-CDP verifiziert: `#flourWarn` bleibt leer, Massesumme =
-  Gesamtgewicht bis auf Rundung). Bewusst **nicht** Teil der „7 Kern-Presets"-Tabelle
-  weiter oben (die bleibt unverändert). Seit v4.7.0 kein `flag`-Gate mehr (alle 7
-  Kern-Presets + dieses setzen `sugar` jetzt gleichrangig explizit, 0 bzw. 2).
+  2,5 % Salz, **1,5 % Öl**, **1 % Zucker** (seit v4.26.0, aus Quellen abgeleitet — bis
+  v4.25.1: 3 % Öl / 2 % Zucker, s. „= aktueller Stand" oben), 0,2 % Hefe (frisch),
+  300 g/Teigling, 24 °C DDT, Mehl `dallag_napoletana` (W310, hydMin 60/hydMax 65, minH
+  16/maxH 48) — ergibt „Lange Gare · ~28 h"-Stufe (Zeitangabe unverändert, hängt an Hefe/
+  Methode, nicht an Öl/Zucker), löst keine Mehl-Warnung aus (per Headless-CDP verifiziert:
+  `#flourWarn` bleibt leer, Massesumme = Gesamtgewicht bis auf Rundung). Bewusst **nicht**
+  Teil der „7 Kern-Presets"-Tabelle weiter oben (die bleibt unverändert). Seit v4.7.0 kein
+  `flag`-Gate mehr (alle 7
+  Kern-Presets + dieses setzen `sugar` jetzt gleichrangig explizit, 0 bzw. 1).
 - **`js/guide.js` — Zucker kommt anders als Öl FRÜH in den Teig** (mit Mehl/Wasser/Hefe,
   nicht erst nach dem Salz): unterstützt die Hefeaktivität statt das Glutennetz zu stören.
   `hasSugar = R.sugar >= 0.05`. Direkt-Methode: taucht in der „Zutaten abwiegen"-Zeile
@@ -970,14 +973,37 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
-- **Teglia- und New-York-Style-Teigwerte an Quellen korrigieren** (neu, v4.25.1, bewusst
-  NICHT in diesem Zyklus behoben): bei der Quellenprüfung der übrigen fünf Presets fielen
-  zwei Werte auf, die den ausgewerteten Quellen widersprechen: Teglia-Öl 4 % gegen
-  empfohlene 2,5 %; New-York-Style-Zucker 2 % gegen empfohlene 0,5–1 % und Öl 3 % gegen
-  empfohlene 1,5 %. Beide Presets sind Direktführungen, deren Hefe-Pills weiterhin an
-  `js/schedule.js` gekoppelt sind (nur Vorteig-Methoden sind seit v4.24.0 entkoppelt) — eine
-  Hefemengen-/Gärzeit-Anpassung an geänderte Werte bräuchte deshalb eine eigene
-  Nutzerentscheidung, kein reiner Zahlentausch. Eigener, späterer Zyklus.
+- ~~Teglia- und New-York-Style-Teigwerte an Quellen korrigieren~~ — **Öl/Zucker-Teil
+  erledigt in v4.26.0** (kein Backlog-Punkt im engeren Sinne mehr, direkter Nutzerauftrag
+  mit fertiger Quellenprüfung; s. „= aktueller Stand" oben). `teglia`-Öl 4 % → 2,5 %,
+  `newyork_style`-Öl 3 % → 1,5 % und Zucker 2 % → 1 %. Die **strukturelle Restfrage**
+  bleibt offen, s. den eigenen Backlog-Punkt „Hefe-/Gärzeit-Kopplung bei Direktführung
+  entkoppeln" direkt unten.
+- **Hefe-/Gärzeit-Kopplung bei Direktführung entkoppeln** (neu, v4.26.0, aus der
+  abgeschlossenen Preset-Quellenprüfung — bewusst NICHT mitbehoben, braucht eine eigene
+  Architektur-Entscheidung): bei der Quellenprüfung fielen drei weitere Abweichungen auf,
+  die alle an derselben strukturellen Kopplung hängen und deshalb bewusst offen bleiben.
+  - `newyork_style`-Hefe: Feeling Foodish nennt ausdrücklich 0,4 % Instant-Trockenhefe,
+    umgerechnet mit `PZ.FRESH_TO_DRY = 1/3` rund **1,2 % Frischhefe** — wir liegen mit
+    0,2 % etwa beim Sechsfachen darunter. Warum nicht einfach anheben: `js/schedule.js`
+    leitet bei `method === 'direct'` den Fahrplan weiterhin aus `state.yeast` ab. Bei
+    1,2 % greift der Zweig `y >= 0.5` („Mittlere Gare", `cold: false`) — das Preset
+    verlöre die Kaltgare, genau das definierende Merkmal des New-York-Stils. Bräuchte
+    dieselbe Entkopplung, die für Vorteige bereits in v4.24.0 erfolgt ist.
+  - `teglia`-Gärzeit: Quellen fahren durchweg 48–72 h kalt (Manopasto 72 h gesamt,
+    Salamico 48+24 h) gegen unsere ~30 h. Warum nicht einfach verlängern: dieselbe
+    Kopplung in der Gegenrichtung — um in den 48-h-Zweig zu kommen, müsste die Hefe unter
+    0,18 % fallen, während die Quellen für 48–72 h sogar MEHR Hefe nehmen als wir (0,45 %
+    gegen unsere 0,3 %). Zeit und Hefemenge sind bei uns aneinandergekettet, in den
+    Quellen nicht.
+  - `teglia`-Teiglingsgewicht 320 g: Teglia wird nach Blechfläche dosiert, nicht nach
+    Kugel — Referenzwert beider Quellen ist 500 g für ein Blech von 35×28 cm. Kein
+    falscher Zahlenwert, sondern ein Modellbruch (das Preset nutzt das Teigling-Modell
+    für einen Stil, der so nicht gerechnet wird).
+  - Nachrichtlich, nicht Teil der Kopplung: `teglia`-Hydration 75 % liegt am unteren Rand
+    des Quellenbands (75–85 %) — kein Fehler, nur ausbaufähig.
+  - Aufwand: mittel bis hoch (eigene Architektur-Entscheidung zur Entkopplung nötig,
+    analog v4.24.0), Nutzen: schließt die letzte offene Lücke der Preset-Quellenprüfung.
 - **Preset-Beschreibung: unverlinkter Glossar-Verweis** (Nebenbefund,
   `accessibility-expert`-Review v4.25.1, MINOR, kein WCAG-Verstoß):
   `preset.napoliKlassisch.desc` erwähnt jetzt textlich das Glossar „Echte neapolitanische
