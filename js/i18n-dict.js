@@ -63,6 +63,17 @@
   add('sched.directExtremeCold.proof', 'Teiglinge <b>68–72 h</b> Kühlschrank (4 °C), am Backtag <b>5 h</b> temperieren', 'Dough balls <b>68–72 h</b> in the fridge (4 °C), let come to room temp <b>5 h</b> on baking day');
   add('sched.directExtremeBulk.bulk', '<b>1–2 h</b> Raumtemp, dann <b>48–72 h</b> Kühlschrank (4 °C)', '<b>1–2 h</b> room temp, then <b>48–72 h</b> in the fridge (4 °C)');
   add('sched.directExtremeBulk.proof', 'Teiglinge <b>5–6 h</b> vor dem Backen temperieren', 'Let dough balls come to room temp <b>5–6 h</b> before baking');
+  // v4.28.0: Preset-Override-Fahrpläne für "teglia"/"newyork_style" (js/schedule.js,
+  // js/presets.js) -- die Zeiten passen zu keinem der obigen generischen Zweige, s.
+  // pizza-rechner-KONTEXT.md für die Quellenherleitung. Bewusst EIN flacher Fahrplan pro
+  // Preset (keine Cold/Bulk-Variante wie oben), coldStage ist dadurch für diese zwei
+  // Presets wirkungslos, analog zur Vorteig-Nebenwirkung weiter oben in schedule.js.
+  add('sched.tegliaOverride.label', 'Teglia-Kaltgare · ~76 h', 'Teglia cold rise · ~76 h');
+  add('sched.tegliaOverride.bulk', '<b>1 h</b> bei Raumtemp, dann <b>48 h</b> Kühlschrank (4 °C) im Ganzen', '<b>1 h</b> at room temp, then <b>48 h</b> in the fridge (4 °C) as one piece');
+  add('sched.tegliaOverride.proof', 'Nach dem Portionieren nochmal <b>24 h</b> Kühlschrank (4 °C), am Backtag <b>3 h</b> temperieren', 'After portioning another <b>24 h</b> in the fridge (4 °C), let come to room temp <b>3 h</b> on baking day');
+  add('sched.nyOverride.label', 'New-York-Style-Kaltgare · ~44 h', 'New York style cold rise · ~44 h');
+  add('sched.nyOverride.bulk', '<b>2 h</b> bei Raumtemp (Stockgare)', '<b>2 h</b> at room temp (bulk rise)');
+  add('sched.nyOverride.proof', 'Teiglinge <b>38 h</b> Kühlschrank (4 °C), am Backtag <b>4 h</b> temperieren', 'Dough balls <b>38 h</b> in the fridge (4 °C), let come to room temp <b>4 h</b> on baking day');
 
   // ---- js/guide.js: Schritt-für-Schritt-Anleitung (dynamisch, mit {platzhaltern}) ---
   add('guide.title', 'Schritt-für-Schritt-Anleitung', 'Step-by-step guide');
@@ -534,15 +545,19 @@
   add('preset.napoliPoolishKalt.desc', 'Poolish (flüssig 1:1) mit 66 % des Mehls, 1 h Raumtemp anspringen, dann 24 h Kühlschrank. Dann Hauptteig (mit 2 % Öl): ~34 h Gesamtreife. Milder, luftiger Teig, mehr Aroma durch die kühlere Führung.',
     'Poolish (liquid 1:1) with 66 % of the flour, 1 h at room temp to start, then 24 h in the fridge. Then final dough (with 2 % oil): ~34 h total rise. Milder, airier dough, more flavor from the cooler route.');
   // v4.26.0: Öl 4 % -> 2,5 % (drei unabhängige Quellen bei 2,5 %, keine bei 4 %, aus
-  // Quellen abgeleitet, s. pizza-rechner-KONTEXT.md). Gesamtgare-Zeitangabe (~30 h)
-  // unverändert, sie hängt an Hefe/Methode, nicht an Öl.
-  add('preset.teglia.desc', 'Römische Blechpizza: 75 % Hydration, 2,5 % Olivenöl, sehr lockere Krume. Teig ist klebrig: mit Stretch & Fold statt langem Kneten arbeiten. ~30 h kühl. Braucht sehr starkes Mehl (W330+).',
-    'Roman pan pizza: 75 % hydration, 2.5 % olive oil, very airy crumb. The dough is sticky: work with stretch & fold instead of long kneading. ~30 h cold. Needs a very strong flour (W330+).');
+  // Quellen abgeleitet, s. pizza-rechner-KONTEXT.md). v4.28.0: Hefe 0,3 % -> 0,45 % +
+  // scheduleOverride, Gesamtgare-Zeitangabe ~30 h -> ~76 h (aus Quellen abgeleitet, mit
+  // dem Hinweis dass zwei der drei Quellen möglicherweise gemeinsamen Ursprungs sind,
+  // s. pizza-rechner-KONTEXT.md).
+  add('preset.teglia.desc', 'Römische Blechpizza: 75 % Hydration, 2,5 % Olivenöl, sehr lockere Krume. Teig ist klebrig: mit Stretch & Fold statt langem Kneten arbeiten. ~76 h kühl. Braucht sehr starkes Mehl (W330+).',
+    'Roman pan pizza: 75 % hydration, 2.5 % olive oil, very airy crumb. The dough is sticky: work with stretch & fold instead of long kneading. ~76 h cold. Needs a very strong flour (W330+).');
   // v4.26.0: Öl 3 % -> 1,5 % und Zucker 2 % -> 1 % (Feeling Foodish fährt exakt diese
-  // Werte, aus Quellen abgeleitet, s. pizza-rechner-KONTEXT.md). Gesamtgare-Zeitangabe
-  // (~28 h) unverändert, sie hängt an Hefe/Methode, nicht an Öl/Zucker.
-  add('preset.newyorkStyle.desc', 'New York Style: 62 % Hydration, 1,5 % Öl, 1 % Zucker (Bräunung & Hefeaktivität): größere, dünnere Teiglinge. ~28 h Kaltgare für Aroma & knusprig-zähe Kruste. Braucht ein mittelstarkes Mehl (W300+).',
-    'New York style: 62 % hydration, 1.5 % oil, 1 % sugar (browning & yeast activity): larger, thinner dough balls. ~28 h cold rise for flavor & a crispy-chewy crust. Needs a medium-strong flour (W300+).');
+  // Werte, aus Quellen abgeleitet, s. pizza-rechner-KONTEXT.md). v4.28.0: Hefe 0,2 % ->
+  // 1,2 % + scheduleOverride, Gesamtgare-Zeitangabe ~28 h -> ~44 h (Hefemenge durch
+  // Feeling Foodish belegt, die konkrete Gesamtdauer ist eine bewusste Wahl aus einer
+  // breiten Quellenspanne, s. pizza-rechner-KONTEXT.md).
+  add('preset.newyorkStyle.desc', 'New York Style: 62 % Hydration, 1,5 % Öl, 1 % Zucker (Bräunung & Hefeaktivität): größere, dünnere Teiglinge. ~44 h Kaltgare für Aroma & knusprig-zähe Kruste. Braucht ein mittelstarkes Mehl (W300+).',
+    'New York style: 62 % hydration, 1.5 % oil, 1 % sugar (browning & yeast activity): larger, thinner dough balls. ~44 h cold rise for flavor & a crispy-chewy crust. Needs a medium-strong flour (W300+).');
   add('preset.customRecipeLoaded', 'Eigenes Rezept „{name}“ geladen: Werte wurden übernommen.', 'Custom recipe "{name}" loaded: values have been applied.');
 
   // ---- js/newrecipe.js: Live-Meldung nach dem Anlegen ----------------------------
@@ -654,8 +669,8 @@
   add('option.napoliPoolishKalt', 'Napoli mit Poolish (kalt) · ~34 h', 'Napoli with Poolish (cold) · ~34 h');
   // v4.25.1: beide Gärzeiten aus der Berechnung nachgemessen (29,53 h → ~30 h;
   // 27,75 h → ~28 h) statt der bisherigen geschätzten Werte. Teigwerte unverändert.
-  add('option.teglia', 'Teglia / Blech · ~30 h', 'Teglia / Pan · ~30 h');
-  add('option.newyorkStyle', 'New York Style · ~28 h', 'New York Style · ~28 h');
+  add('option.teglia', 'Teglia / Blech · ~76 h', 'Teglia / Pan · ~76 h');
+  add('option.newyorkStyle', 'New York Style · ~44 h', 'New York Style · ~44 h');
 
   // Drei Empfehlungskarten (v3.71.0, "Rezeptwahl führen"): Schnell/Klassisch/Lang zeigen
   // Name, Gärzeit und eine kurze Eignung, bevor die volle Preset-Liste (jetzt hinter

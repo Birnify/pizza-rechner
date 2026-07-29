@@ -168,6 +168,14 @@
     // sonst calc.js (parseFloat, typtolerant) korrekt als Maschine erkennen, aber
     // guide.js weiterhin fälschlich "Hand" anzeigen (String-Vergleich schlägt fehl).
     if (state.knead != null) state.knead = String(state.knead);
+    // v4.28.0: scheduleOverride ist eine reine Preset-Marker-Eigenschaft (nur
+    // js/presets.js setzt sie, für "teglia"/"newyork_style"). Object.assign() oben
+    // kopiert nur Schlüssel, die tatsächlich in "o" vorkommen -- ein VOR v4.28.0
+    // gespeichertes Rezept (oder eines, das während eines manuell überschriebenen
+    // Presets gespeichert wurde) hat dieses Feld gar nicht, ließe also sonst einen in
+    // DERSELBEN Sitzung zuvor gesetzten Override (z. B. von einem vorher geladenen
+    // Teglia-Preset) unverändert auf PZ.state stehen, statt ihn zurückzusetzen.
+    state.scheduleOverride = o.scheduleOverride || null;
     set.balls(state.balls); set.ballw(state.ballw); set.hyd(state.hyd); set.salt(state.salt);
     // Legacy-Fallback für Rezepte ohne oil/sugar-Feld (vor v3.3.0 bzw. v3.19.2) entfernt
     // (v3.53.0, Nutzerauftrag): keine real existierenden alten Rezepte mehr, die diesen

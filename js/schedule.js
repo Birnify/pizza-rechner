@@ -45,7 +45,37 @@
 
     // --- Direkte Führung (Basiswerte unverändert wie bisher) ---
     let r;
-    if (y >= 1.2) {
+    // --- Preset-Override (v4.28.0) -------------------------------------------------
+    // Letzte offene Lücke aus der Preset-Quellenprüfung (v4.24.0-v4.27.0): die vier
+    // Hefemenge-Schwellen unten unterstellen "mehr Hefe = kürzer/wärmer". Das stimmt bei
+    // "newyork_style" (0,4 % Trockenhefe laut Feeling Foodish, trotzdem 24-72 h Kaltgare)
+    // und "teglia" (0,45 % laut Manopasto/Salamico -- Verdacht auf gemeinsamen Ursprung,
+    // gestützt durch eine unschärfere dritte Quelle -- trotzdem 72 h+) NICHT: beide
+    // brauchen MEHR Hefe UND eine LÄNGERE Gare als die Kaskade unten liefern würde. Ein
+    // komplettes Stufensystem (analog PZ.PREF_STAGES bei Biga/Poolish) wurde geprüft und
+    // bewusst verworfen (s. pizza-rechner-KONTEXT.md): bei Direktführung ist die Hefemenge
+    // seit jeher der freie, stufenlose Regler, die Pills sind nur Schnellwahl-Sprünge
+    // darauf, die Zeit ist reine Anzeige -- ein Stufensystem hätte das Bedienparadigma für
+    // die GESAMTE Direktführung umgedreht. Stattdessen: state.scheduleOverride wird NUR
+    // von js/presets.js für genau diese zwei Presets gesetzt (kein neuer Regler, keine
+    // UI) -- jeder freie Hefe-Regler/jede Pill/jedes manuelle Rezept lässt es bei null,
+    // die Kaskade unten bleibt für sie unverändert. Das Override-Objekt speichert i18n-
+    // KEYS + Default-Text (nicht schon aufgelöste Strings), damit ein späterer
+    // Sprachwechsel (js/calc.js ruft calc() bei jedem i18nOnChange erneut auf) hier
+    // genauso live neu übersetzt wie bei jedem anderen Zweig -- s. t()-Aufrufe unten.
+    // Bewusst EIN flacher, feststehender Fahrplan pro Preset (keine ballsCold-Variante
+    // wie bei den generischen Zweigen unten): die Kaltgare-Umschaltung "als Teiglinge/im
+    // Stück" (coldStage) ist für diese zwei Presets dadurch wirkungslos, analog zur
+    // bereits bestehenden Nebenwirkung bei Vorteig-Methoden weiter oben in dieser Datei.
+    if (state.scheduleOverride) {
+      const o = state.scheduleOverride;
+      r = {
+        label: t(o.labelKey, o.labelDefault),
+        bulk: t(o.bulkKey, o.bulkDefault), bulkMin: o.bulkMin,
+        proof: t(o.proofKey, o.proofDefault), proofMin: o.proofMin,
+        cold: !!o.cold
+      };
+    } else if (y >= 1.2) {
       r = {
         label: t('sched.directFast.label', 'Schnellgare · gleicher Tag'),
         bulk: t('sched.directFast.bulk', '<b>1,5–2 h</b> bei warmer Raumtemp (24–26 °C)'), bulkMin: 105,

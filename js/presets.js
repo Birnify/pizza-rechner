@@ -57,16 +57,50 @@
       descKey: 'preset.napoliPoolishKalt.desc'
     },
     // v4.26.0: Öl 4 % -> 2,5 % (drei unabhängige Quellen bei 2,5 %, keine bei 4 %,
-    // s. pizza-rechner-KONTEXT.md). Sonst unverändert.
+    // s. pizza-rechner-KONTEXT.md). v4.28.0: Hefe 0,3 % -> 0,45 % + scheduleOverride
+    // (72 h+ statt der generischen ~30 h) -- Manopasto und Salamico nennen 2,5 g
+    // Frischhefe auf 550 g Mehl (0,45 %), 72 h Gesamtdauer (1 h Raumtemp, 48 h
+    // Kühlschrank im Ganzen, nach dem Portionieren nochmal 24 h Kühlschrank, 2-4 h
+    // temperieren) -- BEIDE Quellen mit identischer Mehl-/Hefemenge, Verdacht auf
+    // gemeinsamen Ursprung, nicht als zwei unabhängige Datenpunkte zu werten. Eine dritte,
+    // unschärfere Quelle (Bonci-Aggregation, 0,3-0,9 % Frischhefe-Äquivalent für 24-48 h)
+    // stützt zumindest die Größenordnung. s. js/schedule.js für den Override-Mechanismus,
+    // pizza-rechner-KONTEXT.md für die volle Herleitung.
     teglia: {
-      method: 'direct', hyd: 75, salt: 2.5, oil: 2.5, sugar: 0, yeastType: 'fresh', yeast: 0.3, ballw: 320, ddt: 24, flour: 'caputo_nuvola_super',
+      method: 'direct', hyd: 75, salt: 2.5, oil: 2.5, sugar: 0, yeastType: 'fresh', yeast: 0.45, ballw: 320, ddt: 24, flour: 'caputo_nuvola_super',
+      scheduleOverride: {
+        labelKey: 'sched.tegliaOverride.label', labelDefault: 'Teglia-Kaltgare · ~76 h',
+        bulkKey: 'sched.tegliaOverride.bulk',
+        bulkDefault: '<b>1 h</b> bei Raumtemp, dann <b>48 h</b> Kühlschrank (4 °C) im Ganzen',
+        bulkMin: 2940,
+        proofKey: 'sched.tegliaOverride.proof',
+        proofDefault: 'Nach dem Portionieren nochmal <b>24 h</b> Kühlschrank (4 °C), am Backtag <b>3 h</b> temperieren',
+        proofMin: 1620,
+        cold: true
+      },
       descKey: 'preset.teglia.desc'
     },
     // v4.26.0: Öl 3 % -> 1,5 % und Zucker 2 % -> 1 % (Feeling Foodish fährt exakt diese
-    // Werte, Quellenband 1-3 % Öl / 0,5-1 % Zucker, s. pizza-rechner-KONTEXT.md). Sonst
-    // unverändert.
+    // Werte, Quellenband 1-3 % Öl / 0,5-1 % Zucker, s. pizza-rechner-KONTEXT.md). v4.28.0:
+    // Hefe 0,2 % -> 1,2 % + scheduleOverride (~44 h statt der generischen Schnellgare-
+    // Schwelle bei 1,2 %) -- Feeling Foodish nennt 0,4 % Instant-Trockenhefe, umgerechnet
+    // mit PZ.FRESH_TO_DRY (1/3) ~1,2 % Frischhefe, UND TROTZDEM 24-72 h Kaltgare
+    // ("optimal 72", aber das ist die obere Grenze für Enthusiasten). ~44 h ist eine
+    // bewusste Wahl von der unteren Mitte dieser Spanne, KEINE exakt zitierte Einzelzahl
+    // -- ursprünglich war ~48 h (rechnerische Bandmitte) vorgesehen, aber das liegt exakt
+    // auf der maxH-Obergrenze (48 h) von dallag_napoletana und wäre je nach
+    // Raumtemperatur-Skalierung (v4.27.0) riskant nah an einer Mehl-Warnung -- nach unten
+    // auf 44 h korrigiert (im Auftrag als Fallback vorgesehen), 4 h Sicherheitsabstand.
     newyork_style: {
-      method: 'direct', hyd: 62, salt: 2.5, oil: 1.5, sugar: 1, yeastType: 'fresh', yeast: 0.2, ballw: 300, ddt: 24, flour: 'dallag_napoletana',
+      method: 'direct', hyd: 62, salt: 2.5, oil: 1.5, sugar: 1, yeastType: 'fresh', yeast: 1.2, ballw: 300, ddt: 24, flour: 'dallag_napoletana',
+      scheduleOverride: {
+        labelKey: 'sched.nyOverride.label', labelDefault: 'New-York-Style-Kaltgare · ~44 h',
+        bulkKey: 'sched.nyOverride.bulk', bulkDefault: '<b>2 h</b> bei Raumtemp (Stockgare)', bulkMin: 120,
+        proofKey: 'sched.nyOverride.proof',
+        proofDefault: 'Teiglinge <b>38 h</b> Kühlschrank (4 °C), am Backtag <b>4 h</b> temperieren',
+        proofMin: 2520,
+        cold: true
+      },
       descKey: 'preset.newyorkStyle.desc'
     }
   };
@@ -108,6 +142,13 @@
     if (p.flour) { state.flour = p.flour; const fs = $('flour'); if (fs) fs.value = p.flour; }
     // Vorteig-Reife-Stufe setzt Reifezeit + Hefe passend (nach applyMethod, das die Pills rendert)
     if (p.prefStage && PZ.selectPrefStage) PZ.selectPrefStage(state.method, p.prefStage);
+    // v4.28.0: IMMER explizit setzen (nicht nur bei p.scheduleOverride vorhanden), analog
+    // zu "sugar" oben -- sonst würde ein zuvor über teglia/newyork_style gesetzter
+    // Override beim Wechsel auf ein anderes Preset stehen bleiben (Object.assign-artiges
+    // Verhalten der einzelnen set.*-Aufrufe oben löscht nur Felder, die sie selbst
+    // kennen). Reihenfolge wichtig: NACH set.yeast() oben, damit der korrekte,
+    // preset-eigene Wert zuletzt gilt.
+    state.scheduleOverride = p.scheduleOverride || null;
     // Kein applyFlags()-Aufruf mehr nötig: der Zucker-Regler (#sugarBlock) war der einzige
     // preset-abhängige Sichtbarkeits-Effekt darin, und ist seit v4.7.0 rein wertbasiert
     // (set.sugar() oben löst über PZ.calc() -> renderResult() bereits die passende
@@ -157,13 +198,22 @@
   // Chip-Klicks (data-ballw/-yeast/-hyd/...) taten das schon VOR v3.70.0 nicht (rufen
   // PZ.set.* direkt auf, nicht über ein 'input'-Event) -- unverändert, kein neues
   // Verhalten, s. Nebenbefund in pizza-rechner-KONTEXT.md.
+  // v4.28.0: dieselbe Stelle löscht jetzt zusätzlich state.scheduleOverride, sobald der
+  // Nutzer manuell an einem der Regler dreht -- sonst würde nach dem Laden von "teglia"/
+  // "newyork_style" ein anschließend manuell geänderter Regler (z. B. Hefemenge) den
+  // Override-Fahrplan unverändert weiterlaufen lassen, obwohl die Werte längst nicht mehr
+  // zum Preset passen. Die #yeastPills-Schnellwahl-Chips (data-yeast, js/ui.js) und der
+  // Methode-Segmentschalter (applyMethod(), ebenfalls js/ui.js) setzen zwar bewusst NICHT
+  // #preset zurück (dokumentierter, akzeptierter Bestandsschutz seit vor v3.70.0), löschen
+  // scheduleOverride aber JEWEILS selbst an ihrer eigenen Stelle -- ein stehen gebliebener
+  // Override-Fahrplan wäre deutlich irreführender als die rein kosmetische #preset-Altlast.
   const stepperFields = ['balls', 'ballw', 'hyd', 'salt', 'oil', 'sugar', 'pref', 'bhyd', 'yeast', 'ddt', 'room', 'flourTemp'];
   stepperFields.forEach(f => {
     const n = $(f + 'N');
-    if (n) n.addEventListener('input', () => { $('preset').value = ''; });
+    if (n) n.addEventListener('input', () => { $('preset').value = ''; PZ.state.scheduleOverride = null; });
     ['Dec', 'Inc'].forEach(suffix => {
       const btn = $(f + suffix);
-      if (btn) btn.addEventListener('click', () => { $('preset').value = ''; });
+      if (btn) btn.addEventListener('click', () => { $('preset').value = ''; PZ.state.scheduleOverride = null; });
     });
   });
 

@@ -1557,7 +1557,7 @@ header{position:relative;text-align:center;}
      daneben, ein zweiter Vorlese-Name wäre redundant (analog zum bestehenden
      .card-icon aria-hidden-Muster). -->
 <header>
-  <h1><img src="assets/logo.svg?v=4.27.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
+  <h1><img src="assets/logo.svg?v=4.28.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
 </header>
 
 <!-- Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay analog zum
@@ -2447,7 +2447,7 @@ header{position:relative;text-align:center;}
              hier bewusst NICHT mehr dupliziert. -->
         <div class="nav-divider" role="separator"></div>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.27.0</span>
+        <span class="nav-version" id="appVersion">v4.28.0</span>
 
       </div>
     </details>
@@ -2691,7 +2691,14 @@ header{position:relative;text-align:center;}
     ddt: 24, room: 21, flourTemp: 21, knead: '3',
     timeMode: 'start', timeISO: '',
     flour: 'caputo_pizzeria',
-    coldStage: 'balls'   // Kühlschrank-Phase: 'balls' = als Teiglinge (praktisch), 'bulk' = im Stück (klassisch)
+    coldStage: 'balls',  // Kühlschrank-Phase: 'balls' = als Teiglinge (praktisch), 'bulk' = im Stück (klassisch)
+    // v4.28.0: NUR js/presets.js setzt dieses Feld, und zwar NUR für die Presets
+    // "teglia"/"newyork_style" (s. js/schedule.js) -- jeder freie Hefe-Regler, jede Pill
+    // und jedes manuell eingestellte Rezept lässt es bei null, das generische
+    // Hefemenge-Schwellen-Verhalten in js/schedule.js bleibt für alle anderen Fälle exakt
+    // wie bisher. Explizit hier deklariert (statt nur implizit undefined), damit der
+    // Zweck an zentraler Stelle dokumentiert ist -- s. pizza-rechner-KONTEXT.md.
+    scheduleOverride: null
   };
 
   // PZ.looksLikeState(o) — gemeinsame State-Plausibilisierung (v3.59.0, vorher
@@ -2780,6 +2787,17 @@ header{position:relative;text-align:center;}
   add('sched.directExtremeCold.proof', 'Teiglinge <b>68–72 h</b> Kühlschrank (4 °C), am Backtag <b>5 h</b> temperieren', 'Dough balls <b>68–72 h</b> in the fridge (4 °C), let come to room temp <b>5 h</b> on baking day');
   add('sched.directExtremeBulk.bulk', '<b>1–2 h</b> Raumtemp, dann <b>48–72 h</b> Kühlschrank (4 °C)', '<b>1–2 h</b> room temp, then <b>48–72 h</b> in the fridge (4 °C)');
   add('sched.directExtremeBulk.proof', 'Teiglinge <b>5–6 h</b> vor dem Backen temperieren', 'Let dough balls come to room temp <b>5–6 h</b> before baking');
+  // v4.28.0: Preset-Override-Fahrpläne für "teglia"/"newyork_style" (js/schedule.js,
+  // js/presets.js) -- die Zeiten passen zu keinem der obigen generischen Zweige, s.
+  // pizza-rechner-KONTEXT.md für die Quellenherleitung. Bewusst EIN flacher Fahrplan pro
+  // Preset (keine Cold/Bulk-Variante wie oben), coldStage ist dadurch für diese zwei
+  // Presets wirkungslos, analog zur Vorteig-Nebenwirkung weiter oben in schedule.js.
+  add('sched.tegliaOverride.label', 'Teglia-Kaltgare · ~76 h', 'Teglia cold rise · ~76 h');
+  add('sched.tegliaOverride.bulk', '<b>1 h</b> bei Raumtemp, dann <b>48 h</b> Kühlschrank (4 °C) im Ganzen', '<b>1 h</b> at room temp, then <b>48 h</b> in the fridge (4 °C) as one piece');
+  add('sched.tegliaOverride.proof', 'Nach dem Portionieren nochmal <b>24 h</b> Kühlschrank (4 °C), am Backtag <b>3 h</b> temperieren', 'After portioning another <b>24 h</b> in the fridge (4 °C), let come to room temp <b>3 h</b> on baking day');
+  add('sched.nyOverride.label', 'New-York-Style-Kaltgare · ~44 h', 'New York style cold rise · ~44 h');
+  add('sched.nyOverride.bulk', '<b>2 h</b> bei Raumtemp (Stockgare)', '<b>2 h</b> at room temp (bulk rise)');
+  add('sched.nyOverride.proof', 'Teiglinge <b>38 h</b> Kühlschrank (4 °C), am Backtag <b>4 h</b> temperieren', 'Dough balls <b>38 h</b> in the fridge (4 °C), let come to room temp <b>4 h</b> on baking day');
 
   // ---- js/guide.js: Schritt-für-Schritt-Anleitung (dynamisch, mit {platzhaltern}) ---
   add('guide.title', 'Schritt-für-Schritt-Anleitung', 'Step-by-step guide');
@@ -3251,15 +3269,19 @@ header{position:relative;text-align:center;}
   add('preset.napoliPoolishKalt.desc', 'Poolish (flüssig 1:1) mit 66 % des Mehls, 1 h Raumtemp anspringen, dann 24 h Kühlschrank. Dann Hauptteig (mit 2 % Öl): ~34 h Gesamtreife. Milder, luftiger Teig, mehr Aroma durch die kühlere Führung.',
     'Poolish (liquid 1:1) with 66 % of the flour, 1 h at room temp to start, then 24 h in the fridge. Then final dough (with 2 % oil): ~34 h total rise. Milder, airier dough, more flavor from the cooler route.');
   // v4.26.0: Öl 4 % -> 2,5 % (drei unabhängige Quellen bei 2,5 %, keine bei 4 %, aus
-  // Quellen abgeleitet, s. pizza-rechner-KONTEXT.md). Gesamtgare-Zeitangabe (~30 h)
-  // unverändert, sie hängt an Hefe/Methode, nicht an Öl.
-  add('preset.teglia.desc', 'Römische Blechpizza: 75 % Hydration, 2,5 % Olivenöl, sehr lockere Krume. Teig ist klebrig: mit Stretch & Fold statt langem Kneten arbeiten. ~30 h kühl. Braucht sehr starkes Mehl (W330+).',
-    'Roman pan pizza: 75 % hydration, 2.5 % olive oil, very airy crumb. The dough is sticky: work with stretch & fold instead of long kneading. ~30 h cold. Needs a very strong flour (W330+).');
+  // Quellen abgeleitet, s. pizza-rechner-KONTEXT.md). v4.28.0: Hefe 0,3 % -> 0,45 % +
+  // scheduleOverride, Gesamtgare-Zeitangabe ~30 h -> ~76 h (aus Quellen abgeleitet, mit
+  // dem Hinweis dass zwei der drei Quellen möglicherweise gemeinsamen Ursprungs sind,
+  // s. pizza-rechner-KONTEXT.md).
+  add('preset.teglia.desc', 'Römische Blechpizza: 75 % Hydration, 2,5 % Olivenöl, sehr lockere Krume. Teig ist klebrig: mit Stretch & Fold statt langem Kneten arbeiten. ~76 h kühl. Braucht sehr starkes Mehl (W330+).',
+    'Roman pan pizza: 75 % hydration, 2.5 % olive oil, very airy crumb. The dough is sticky: work with stretch & fold instead of long kneading. ~76 h cold. Needs a very strong flour (W330+).');
   // v4.26.0: Öl 3 % -> 1,5 % und Zucker 2 % -> 1 % (Feeling Foodish fährt exakt diese
-  // Werte, aus Quellen abgeleitet, s. pizza-rechner-KONTEXT.md). Gesamtgare-Zeitangabe
-  // (~28 h) unverändert, sie hängt an Hefe/Methode, nicht an Öl/Zucker.
-  add('preset.newyorkStyle.desc', 'New York Style: 62 % Hydration, 1,5 % Öl, 1 % Zucker (Bräunung & Hefeaktivität): größere, dünnere Teiglinge. ~28 h Kaltgare für Aroma & knusprig-zähe Kruste. Braucht ein mittelstarkes Mehl (W300+).',
-    'New York style: 62 % hydration, 1.5 % oil, 1 % sugar (browning & yeast activity): larger, thinner dough balls. ~28 h cold rise for flavor & a crispy-chewy crust. Needs a medium-strong flour (W300+).');
+  // Werte, aus Quellen abgeleitet, s. pizza-rechner-KONTEXT.md). v4.28.0: Hefe 0,2 % ->
+  // 1,2 % + scheduleOverride, Gesamtgare-Zeitangabe ~28 h -> ~44 h (Hefemenge durch
+  // Feeling Foodish belegt, die konkrete Gesamtdauer ist eine bewusste Wahl aus einer
+  // breiten Quellenspanne, s. pizza-rechner-KONTEXT.md).
+  add('preset.newyorkStyle.desc', 'New York Style: 62 % Hydration, 1,5 % Öl, 1 % Zucker (Bräunung & Hefeaktivität): größere, dünnere Teiglinge. ~44 h Kaltgare für Aroma & knusprig-zähe Kruste. Braucht ein mittelstarkes Mehl (W300+).',
+    'New York style: 62 % hydration, 1.5 % oil, 1 % sugar (browning & yeast activity): larger, thinner dough balls. ~44 h cold rise for flavor & a crispy-chewy crust. Needs a medium-strong flour (W300+).');
   add('preset.customRecipeLoaded', 'Eigenes Rezept „{name}“ geladen: Werte wurden übernommen.', 'Custom recipe "{name}" loaded: values have been applied.');
 
   // ---- js/newrecipe.js: Live-Meldung nach dem Anlegen ----------------------------
@@ -3371,8 +3393,8 @@ header{position:relative;text-align:center;}
   add('option.napoliPoolishKalt', 'Napoli mit Poolish (kalt) · ~34 h', 'Napoli with Poolish (cold) · ~34 h');
   // v4.25.1: beide Gärzeiten aus der Berechnung nachgemessen (29,53 h → ~30 h;
   // 27,75 h → ~28 h) statt der bisherigen geschätzten Werte. Teigwerte unverändert.
-  add('option.teglia', 'Teglia / Blech · ~30 h', 'Teglia / Pan · ~30 h');
-  add('option.newyorkStyle', 'New York Style · ~28 h', 'New York Style · ~28 h');
+  add('option.teglia', 'Teglia / Blech · ~76 h', 'Teglia / Pan · ~76 h');
+  add('option.newyorkStyle', 'New York Style · ~44 h', 'New York Style · ~44 h');
 
   // Drei Empfehlungskarten (v3.71.0, "Rezeptwahl führen"): Schnell/Klassisch/Lang zeigen
   // Name, Gärzeit und eine kurze Eignung, bevor die volle Preset-Liste (jetzt hinter
@@ -5490,7 +5512,37 @@ header{position:relative;text-align:center;}
 
     // --- Direkte Führung (Basiswerte unverändert wie bisher) ---
     let r;
-    if (y >= 1.2) {
+    // --- Preset-Override (v4.28.0) -------------------------------------------------
+    // Letzte offene Lücke aus der Preset-Quellenprüfung (v4.24.0-v4.27.0): die vier
+    // Hefemenge-Schwellen unten unterstellen "mehr Hefe = kürzer/wärmer". Das stimmt bei
+    // "newyork_style" (0,4 % Trockenhefe laut Feeling Foodish, trotzdem 24-72 h Kaltgare)
+    // und "teglia" (0,45 % laut Manopasto/Salamico -- Verdacht auf gemeinsamen Ursprung,
+    // gestützt durch eine unschärfere dritte Quelle -- trotzdem 72 h+) NICHT: beide
+    // brauchen MEHR Hefe UND eine LÄNGERE Gare als die Kaskade unten liefern würde. Ein
+    // komplettes Stufensystem (analog PZ.PREF_STAGES bei Biga/Poolish) wurde geprüft und
+    // bewusst verworfen (s. pizza-rechner-KONTEXT.md): bei Direktführung ist die Hefemenge
+    // seit jeher der freie, stufenlose Regler, die Pills sind nur Schnellwahl-Sprünge
+    // darauf, die Zeit ist reine Anzeige -- ein Stufensystem hätte das Bedienparadigma für
+    // die GESAMTE Direktführung umgedreht. Stattdessen: state.scheduleOverride wird NUR
+    // von js/presets.js für genau diese zwei Presets gesetzt (kein neuer Regler, keine
+    // UI) -- jeder freie Hefe-Regler/jede Pill/jedes manuelle Rezept lässt es bei null,
+    // die Kaskade unten bleibt für sie unverändert. Das Override-Objekt speichert i18n-
+    // KEYS + Default-Text (nicht schon aufgelöste Strings), damit ein späterer
+    // Sprachwechsel (js/calc.js ruft calc() bei jedem i18nOnChange erneut auf) hier
+    // genauso live neu übersetzt wie bei jedem anderen Zweig -- s. t()-Aufrufe unten.
+    // Bewusst EIN flacher, feststehender Fahrplan pro Preset (keine ballsCold-Variante
+    // wie bei den generischen Zweigen unten): die Kaltgare-Umschaltung "als Teiglinge/im
+    // Stück" (coldStage) ist für diese zwei Presets dadurch wirkungslos, analog zur
+    // bereits bestehenden Nebenwirkung bei Vorteig-Methoden weiter oben in dieser Datei.
+    if (state.scheduleOverride) {
+      const o = state.scheduleOverride;
+      r = {
+        label: t(o.labelKey, o.labelDefault),
+        bulk: t(o.bulkKey, o.bulkDefault), bulkMin: o.bulkMin,
+        proof: t(o.proofKey, o.proofDefault), proofMin: o.proofMin,
+        cold: !!o.cold
+      };
+    } else if (y >= 1.2) {
       r = {
         label: t('sched.directFast.label', 'Schnellgare · gleicher Tag'),
         bulk: t('sched.directFast.bulk', '<b>1,5–2 h</b> bei warmer Raumtemp (24–26 °C)'), bulkMin: 105,
@@ -6530,7 +6582,13 @@ header{position:relative;text-align:center;}
 
   // --- Quick-Pills ---
   document.querySelectorAll('[data-ballw]').forEach(b => b.onclick = () => PZ.set.ballw(b.dataset.ballw));
-  document.querySelectorAll('[data-yeast]').forEach(b => b.onclick = () => PZ.set.yeast(b.dataset.yeast));
+  // v4.28.0: ein Pill-Klick setzt state.scheduleOverride explizit zurück (auch wenn
+  // #preset selbst dabei bewusst NICHT zurückgesetzt wird, s. Kommentar in js/presets.js)
+  // -- sonst würde nach dem Laden von "teglia"/"newyork_style" ein Klick auf eine der
+  // generischen Hefe-Pills die tatsächliche Hefemenge ändern, aber der alte Override-
+  // Fahrplan (z. B. "Teglia-Kaltgare · ~76 h") bliebe trotzdem sichtbar -- deutlich
+  // irreführender als die rein kosmetische #preset-Altlast.
+  document.querySelectorAll('[data-yeast]').forEach(b => b.onclick = () => { PZ.state.scheduleOverride = null; PZ.set.yeast(b.dataset.yeast); });
   // Mengensteuerung vereinfachen (v3.70.0): permanent sichtbare Schnellwahl-Chips für
   // die 5 neuen Stepper-Felder (Gewicht/Teigling hatte diese Chips bereits vorher, s. o.).
   // Vorteig-Anteil/Biga-Hydration/DDT/Raumtemperatur/Mehltemperatur bekommen bewusst
@@ -6675,7 +6733,17 @@ header{position:relative;text-align:center;}
     $('timeHint').textContent = isTarget ? t('hint.timeMode.target') : t('hint.timeMode.start');
   }
 
-  seg('method', 'm', 'method', applyMethod);
+  // v4.28.0: state.scheduleOverride NUR hier zurücksetzen, nicht innerhalb applyMethod()
+  // selbst -- applyMethod() wird nämlich auch NICHT-nutzerinitiiert aufgerufen (aus
+  // applyPreset()/applyState() nach dem Setzen von state.method, UND bei jedem
+  // Sprachwechsel über PZ.i18nOnChange() weiter unten in dieser Datei). Ein Reset
+  // innerhalb applyMethod() selbst hatte genau diese beiden Aufrufer kaputt gemacht: ein
+  // Sprachwechsel und ein Rezept-Laden während eines aktiven Overrides löschten ihn
+  // fälschlich (per echtem Headless-Test gefunden, s. pizza-rechner-KONTEXT.md). Dieser
+  // Wrapper läuft dagegen AUSSCHLIESSLICH innerhalb des seg()-onclick-Handlers
+  // (js/widgets.js makeSeg), also nur bei einem echten Nutzer-Klick auf das
+  // Methode-Segment.
+  seg('method', 'm', 'method', function () { state.scheduleOverride = null; applyMethod(); });
   seg('yeastType', 'y', 'yeastType');
   seg('knead', 'k', 'knead');
   seg('coldStage', 'cs', 'coldStage');
@@ -7327,16 +7395,50 @@ header{position:relative;text-align:center;}
       descKey: 'preset.napoliPoolishKalt.desc'
     },
     // v4.26.0: Öl 4 % -> 2,5 % (drei unabhängige Quellen bei 2,5 %, keine bei 4 %,
-    // s. pizza-rechner-KONTEXT.md). Sonst unverändert.
+    // s. pizza-rechner-KONTEXT.md). v4.28.0: Hefe 0,3 % -> 0,45 % + scheduleOverride
+    // (72 h+ statt der generischen ~30 h) -- Manopasto und Salamico nennen 2,5 g
+    // Frischhefe auf 550 g Mehl (0,45 %), 72 h Gesamtdauer (1 h Raumtemp, 48 h
+    // Kühlschrank im Ganzen, nach dem Portionieren nochmal 24 h Kühlschrank, 2-4 h
+    // temperieren) -- BEIDE Quellen mit identischer Mehl-/Hefemenge, Verdacht auf
+    // gemeinsamen Ursprung, nicht als zwei unabhängige Datenpunkte zu werten. Eine dritte,
+    // unschärfere Quelle (Bonci-Aggregation, 0,3-0,9 % Frischhefe-Äquivalent für 24-48 h)
+    // stützt zumindest die Größenordnung. s. js/schedule.js für den Override-Mechanismus,
+    // pizza-rechner-KONTEXT.md für die volle Herleitung.
     teglia: {
-      method: 'direct', hyd: 75, salt: 2.5, oil: 2.5, sugar: 0, yeastType: 'fresh', yeast: 0.3, ballw: 320, ddt: 24, flour: 'caputo_nuvola_super',
+      method: 'direct', hyd: 75, salt: 2.5, oil: 2.5, sugar: 0, yeastType: 'fresh', yeast: 0.45, ballw: 320, ddt: 24, flour: 'caputo_nuvola_super',
+      scheduleOverride: {
+        labelKey: 'sched.tegliaOverride.label', labelDefault: 'Teglia-Kaltgare · ~76 h',
+        bulkKey: 'sched.tegliaOverride.bulk',
+        bulkDefault: '<b>1 h</b> bei Raumtemp, dann <b>48 h</b> Kühlschrank (4 °C) im Ganzen',
+        bulkMin: 2940,
+        proofKey: 'sched.tegliaOverride.proof',
+        proofDefault: 'Nach dem Portionieren nochmal <b>24 h</b> Kühlschrank (4 °C), am Backtag <b>3 h</b> temperieren',
+        proofMin: 1620,
+        cold: true
+      },
       descKey: 'preset.teglia.desc'
     },
     // v4.26.0: Öl 3 % -> 1,5 % und Zucker 2 % -> 1 % (Feeling Foodish fährt exakt diese
-    // Werte, Quellenband 1-3 % Öl / 0,5-1 % Zucker, s. pizza-rechner-KONTEXT.md). Sonst
-    // unverändert.
+    // Werte, Quellenband 1-3 % Öl / 0,5-1 % Zucker, s. pizza-rechner-KONTEXT.md). v4.28.0:
+    // Hefe 0,2 % -> 1,2 % + scheduleOverride (~44 h statt der generischen Schnellgare-
+    // Schwelle bei 1,2 %) -- Feeling Foodish nennt 0,4 % Instant-Trockenhefe, umgerechnet
+    // mit PZ.FRESH_TO_DRY (1/3) ~1,2 % Frischhefe, UND TROTZDEM 24-72 h Kaltgare
+    // ("optimal 72", aber das ist die obere Grenze für Enthusiasten). ~44 h ist eine
+    // bewusste Wahl von der unteren Mitte dieser Spanne, KEINE exakt zitierte Einzelzahl
+    // -- ursprünglich war ~48 h (rechnerische Bandmitte) vorgesehen, aber das liegt exakt
+    // auf der maxH-Obergrenze (48 h) von dallag_napoletana und wäre je nach
+    // Raumtemperatur-Skalierung (v4.27.0) riskant nah an einer Mehl-Warnung -- nach unten
+    // auf 44 h korrigiert (im Auftrag als Fallback vorgesehen), 4 h Sicherheitsabstand.
     newyork_style: {
-      method: 'direct', hyd: 62, salt: 2.5, oil: 1.5, sugar: 1, yeastType: 'fresh', yeast: 0.2, ballw: 300, ddt: 24, flour: 'dallag_napoletana',
+      method: 'direct', hyd: 62, salt: 2.5, oil: 1.5, sugar: 1, yeastType: 'fresh', yeast: 1.2, ballw: 300, ddt: 24, flour: 'dallag_napoletana',
+      scheduleOverride: {
+        labelKey: 'sched.nyOverride.label', labelDefault: 'New-York-Style-Kaltgare · ~44 h',
+        bulkKey: 'sched.nyOverride.bulk', bulkDefault: '<b>2 h</b> bei Raumtemp (Stockgare)', bulkMin: 120,
+        proofKey: 'sched.nyOverride.proof',
+        proofDefault: 'Teiglinge <b>38 h</b> Kühlschrank (4 °C), am Backtag <b>4 h</b> temperieren',
+        proofMin: 2520,
+        cold: true
+      },
       descKey: 'preset.newyorkStyle.desc'
     }
   };
@@ -7378,6 +7480,13 @@ header{position:relative;text-align:center;}
     if (p.flour) { state.flour = p.flour; const fs = $('flour'); if (fs) fs.value = p.flour; }
     // Vorteig-Reife-Stufe setzt Reifezeit + Hefe passend (nach applyMethod, das die Pills rendert)
     if (p.prefStage && PZ.selectPrefStage) PZ.selectPrefStage(state.method, p.prefStage);
+    // v4.28.0: IMMER explizit setzen (nicht nur bei p.scheduleOverride vorhanden), analog
+    // zu "sugar" oben -- sonst würde ein zuvor über teglia/newyork_style gesetzter
+    // Override beim Wechsel auf ein anderes Preset stehen bleiben (Object.assign-artiges
+    // Verhalten der einzelnen set.*-Aufrufe oben löscht nur Felder, die sie selbst
+    // kennen). Reihenfolge wichtig: NACH set.yeast() oben, damit der korrekte,
+    // preset-eigene Wert zuletzt gilt.
+    state.scheduleOverride = p.scheduleOverride || null;
     // Kein applyFlags()-Aufruf mehr nötig: der Zucker-Regler (#sugarBlock) war der einzige
     // preset-abhängige Sichtbarkeits-Effekt darin, und ist seit v4.7.0 rein wertbasiert
     // (set.sugar() oben löst über PZ.calc() -> renderResult() bereits die passende
@@ -7427,13 +7536,22 @@ header{position:relative;text-align:center;}
   // Chip-Klicks (data-ballw/-yeast/-hyd/...) taten das schon VOR v3.70.0 nicht (rufen
   // PZ.set.* direkt auf, nicht über ein 'input'-Event) -- unverändert, kein neues
   // Verhalten, s. Nebenbefund in pizza-rechner-KONTEXT.md.
+  // v4.28.0: dieselbe Stelle löscht jetzt zusätzlich state.scheduleOverride, sobald der
+  // Nutzer manuell an einem der Regler dreht -- sonst würde nach dem Laden von "teglia"/
+  // "newyork_style" ein anschließend manuell geänderter Regler (z. B. Hefemenge) den
+  // Override-Fahrplan unverändert weiterlaufen lassen, obwohl die Werte längst nicht mehr
+  // zum Preset passen. Die #yeastPills-Schnellwahl-Chips (data-yeast, js/ui.js) und der
+  // Methode-Segmentschalter (applyMethod(), ebenfalls js/ui.js) setzen zwar bewusst NICHT
+  // #preset zurück (dokumentierter, akzeptierter Bestandsschutz seit vor v3.70.0), löschen
+  // scheduleOverride aber JEWEILS selbst an ihrer eigenen Stelle -- ein stehen gebliebener
+  // Override-Fahrplan wäre deutlich irreführender als die rein kosmetische #preset-Altlast.
   const stepperFields = ['balls', 'ballw', 'hyd', 'salt', 'oil', 'sugar', 'pref', 'bhyd', 'yeast', 'ddt', 'room', 'flourTemp'];
   stepperFields.forEach(f => {
     const n = $(f + 'N');
-    if (n) n.addEventListener('input', () => { $('preset').value = ''; });
+    if (n) n.addEventListener('input', () => { $('preset').value = ''; PZ.state.scheduleOverride = null; });
     ['Dec', 'Inc'].forEach(suffix => {
       const btn = $(f + suffix);
-      if (btn) btn.addEventListener('click', () => { $('preset').value = ''; });
+      if (btn) btn.addEventListener('click', () => { $('preset').value = ''; PZ.state.scheduleOverride = null; });
     });
   });
 
@@ -7630,6 +7748,14 @@ header{position:relative;text-align:center;}
     // sonst calc.js (parseFloat, typtolerant) korrekt als Maschine erkennen, aber
     // guide.js weiterhin fälschlich "Hand" anzeigen (String-Vergleich schlägt fehl).
     if (state.knead != null) state.knead = String(state.knead);
+    // v4.28.0: scheduleOverride ist eine reine Preset-Marker-Eigenschaft (nur
+    // js/presets.js setzt sie, für "teglia"/"newyork_style"). Object.assign() oben
+    // kopiert nur Schlüssel, die tatsächlich in "o" vorkommen -- ein VOR v4.28.0
+    // gespeichertes Rezept (oder eines, das während eines manuell überschriebenen
+    // Presets gespeichert wurde) hat dieses Feld gar nicht, ließe also sonst einen in
+    // DERSELBEN Sitzung zuvor gesetzten Override (z. B. von einem vorher geladenen
+    // Teglia-Preset) unverändert auf PZ.state stehen, statt ihn zurückzusetzen.
+    state.scheduleOverride = o.scheduleOverride || null;
     set.balls(state.balls); set.ballw(state.ballw); set.hyd(state.hyd); set.salt(state.salt);
     // Legacy-Fallback für Rezepte ohne oil/sugar-Feld (vor v3.3.0 bzw. v3.19.2) entfernt
     // (v3.53.0, Nutzerauftrag): keine real existierenden alten Rezepte mehr, die diesen

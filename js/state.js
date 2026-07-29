@@ -14,7 +14,14 @@
     ddt: 24, room: 21, flourTemp: 21, knead: '3',
     timeMode: 'start', timeISO: '',
     flour: 'caputo_pizzeria',
-    coldStage: 'balls'   // Kühlschrank-Phase: 'balls' = als Teiglinge (praktisch), 'bulk' = im Stück (klassisch)
+    coldStage: 'balls',  // Kühlschrank-Phase: 'balls' = als Teiglinge (praktisch), 'bulk' = im Stück (klassisch)
+    // v4.28.0: NUR js/presets.js setzt dieses Feld, und zwar NUR für die Presets
+    // "teglia"/"newyork_style" (s. js/schedule.js) -- jeder freie Hefe-Regler, jede Pill
+    // und jedes manuell eingestellte Rezept lässt es bei null, das generische
+    // Hefemenge-Schwellen-Verhalten in js/schedule.js bleibt für alle anderen Fälle exakt
+    // wie bisher. Explizit hier deklariert (statt nur implizit undefined), damit der
+    // Zweck an zentraler Stelle dokumentiert ist -- s. pizza-rechner-KONTEXT.md.
+    scheduleOverride: null
   };
 
   // PZ.looksLikeState(o) — gemeinsame State-Plausibilisierung (v3.59.0, vorher

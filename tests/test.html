@@ -149,7 +149,12 @@
     ddt: 24, room: 21, flourTemp: 21, knead: '3',
     timeMode: 'start', timeISO: '',
     flour: 'caputo_pizzeria',
-    coldStage: 'balls'
+    coldStage: 'balls',
+    // v4.28.0: explizit null, sonst würde Object.assign(PZ.state, BASE, overrides) einen
+    // von einem FRÜHEREN Testfall (z. B. Sektion "scheduleOverride") gesetzten Wert
+    // stehen lassen, weil Object.assign nur vorhandene Schlüssel überschreibt, keine
+    // fehlenden löscht -- BASE ist der etablierte Reset-Anker für jeden Testfall.
+    scheduleOverride: null
   };
 
   function round(x) { return typeof x === 'number' ? Math.round(x * 1000) / 1000 : x; }
@@ -778,9 +783,35 @@
     'napoli_poolish_kalt':    { method: 'poolish', hyd: 66, salt: 2.5, oil: 2, yeast: 0.66, pref: 66, prefMature: 24, flour: 'dallag_monica' },
     // v4.26.0: teglia oil 4 -> 2,5; newyork_style oil 3 -> 1,5 und sugar 2 -> 1 (aus
     // Quellen abgeleitet, s. pizza-rechner-KONTEXT.md). Mitgezogen, sonst prüft die
-    // Suite veraltete Zahlen.
-    'teglia':           { method: 'direct', hyd: 75, salt: 2.5, oil: 2.5, ballw: 320, yeast: 0.3, flour: 'caputo_nuvola_super' },
-    'newyork_style':    { method: 'direct', hyd: 62, salt: 2.5, oil: 1.5, sugar: 1, yeast: 0.2, ballw: 300, flour: 'dallag_napoletana' }
+    // Suite veraltete Zahlen. v4.28.0: teglia yeast 0,3 -> 0,45, newyork_style yeast
+    // 0,2 -> 1,2, beide + scheduleOverride (1:1-Kopie der Objekte aus js/presets.js --
+    // dieses Fixture bildet applyPreset()-Ergebnisse bewusst per Hand nach statt
+    // dynamisch aus PZ.PRESETS zu lesen, s. Kommentar oben "Bewusst KEINE Laufzeit-
+    // Kopplung").
+    'teglia': {
+      method: 'direct', hyd: 75, salt: 2.5, oil: 2.5, ballw: 320, yeast: 0.45, flour: 'caputo_nuvola_super',
+      scheduleOverride: {
+        labelKey: 'sched.tegliaOverride.label', labelDefault: 'Teglia-Kaltgare · ~76 h',
+        bulkKey: 'sched.tegliaOverride.bulk',
+        bulkDefault: '<b>1 h</b> bei Raumtemp, dann <b>48 h</b> Kühlschrank (4 °C) im Ganzen',
+        bulkMin: 2940,
+        proofKey: 'sched.tegliaOverride.proof',
+        proofDefault: 'Nach dem Portionieren nochmal <b>24 h</b> Kühlschrank (4 °C), am Backtag <b>3 h</b> temperieren',
+        proofMin: 1620,
+        cold: true
+      }
+    },
+    'newyork_style': {
+      method: 'direct', hyd: 62, salt: 2.5, oil: 1.5, sugar: 1, yeast: 1.2, ballw: 300, flour: 'dallag_napoletana',
+      scheduleOverride: {
+        labelKey: 'sched.nyOverride.label', labelDefault: 'New-York-Style-Kaltgare · ~44 h',
+        bulkKey: 'sched.nyOverride.bulk', bulkDefault: '<b>2 h</b> bei Raumtemp (Stockgare)', bulkMin: 120,
+        proofKey: 'sched.nyOverride.proof',
+        proofDefault: 'Teiglinge <b>38 h</b> Kühlschrank (4 °C), am Backtag <b>4 h</b> temperieren',
+        proofMin: 2520,
+        cold: true
+      }
+    }
   };
   Object.keys(PRESET_STATES).forEach(key => {
     testFlourWarn('Preset „' + key + '" löst keine Mehl-Warnung aus', PRESET_STATES[key], html => [
@@ -4790,8 +4821,8 @@
     'napoli_biga_kalt': 60,            // option.napoliBigaKalt "… · ~60 h"
     'napoli_poolish_schnell': 20,      // option.napoliPoolishSchnell "… · ~20 h"
     'napoli_poolish_kalt': 34,         // option.napoliPoolishKalt "… · ~34 h"
-    'teglia': 30,                      // option.teglia "Teglia / Blech · ~30 h"
-    'newyork_style': 28                // option.newyorkStyle "New York Style · ~28 h"
+    'teglia': 76,                      // option.teglia "Teglia / Blech · ~76 h" (v4.28.0)
+    'newyork_style': 44                // option.newyorkStyle "New York Style · ~44 h" (v4.28.0)
   };
   const LABEL_TOL_PCT = 0.10; // ±10 % (s. Auftrag) -- alle neun Presets liegen real < 2 % daneben
 
@@ -5013,6 +5044,224 @@
       { label: '30 °C (wärmer) dauert kürzer als 21 °C', ok: t30 < t21, actual: t30, expected: '< ' + t21, tol: null },
     ]);
   })();
+
+  // ─────────────────────────────────────────────────────────────
+  heading('35 · scheduleOverride: Preset-Fahrplan-Override für teglia/newyork_style (v4.28.0)');
+  // Letzte offene Lücke aus der Preset-Quellenprüfung: die generische Hefemenge-
+  // Schwellen-Kaskade unterstellt "mehr Hefe = kürzer/wärmer", was bei diesen zwei
+  // Presets laut Quellenlage nicht stimmt. s. js/schedule.js/js/presets.js für den
+  // Mechanismus, pizza-rechner-KONTEXT.md für die volle Herleitung.
+
+  // --- Priorisierung: scheduleOverride sticht auch dann, wenn die Hefemenge allein
+  //     eine ANDERE Schwelle träfe (hier: 1,2 % würde ohne Override die Schnellgare-
+  //     Schwelle treffen, y >= 1.2 -> bulkMin 105/proofMin 150) ---
+  testScheduleCase('scheduleOverride wird priorisiert, auch wenn yeast=1,2 % (>= Schnellgare-Schwelle) gesetzt ist', {
+    method: 'direct', yeast: 1.2, scheduleOverride: {
+      labelKey: 'sched.nyOverride.label', labelDefault: 'New-York-Style-Kaltgare · ~44 h',
+      bulkKey: 'sched.nyOverride.bulk', bulkDefault: '<b>2 h</b> bei Raumtemp (Stockgare)', bulkMin: 120,
+      proofKey: 'sched.nyOverride.proof', proofDefault: 'Teiglinge <b>38 h</b> Kühlschrank (4 °C), am Backtag <b>4 h</b> temperieren', proofMin: 2520,
+      cold: true
+    }
+  }, f => [
+    ['bulkMin = 120 (Override, NICHT 105 der Schnellgare-Schwelle)', f.bulkMin, 120, 0],
+    ['proofMin = 2520 (Override, NICHT 150 der Schnellgare-Schwelle)', f.proofMin, 2520, 0],
+    ['cold = true (Override, NICHT false wie bei der Schnellgare-Schwelle)', f.cold, true],
+    ['label enthält "New-York-Style"', f.label, 'New-York-Style'],
+  ]);
+
+  // --- Override-Ergebnis läuft korrekt durch die v4.27.0-Temperaturskalierung:
+  //     cold:true + Standard-coldStage ('balls') -> NUR bulkMin (reine Raumtemp-
+  //     Stockgare-Phase) skaliert, proofMin (Mischwert Kühlschrank+Temperieren)
+  //     bleibt unverändert -- exakt dieselbe Regel wie bei jedem generischen Zweig. ---
+  testScheduleCase('scheduleOverride · room=31 (wärmer, Faktor 0,5) -> NUR bulkMin halbiert', {
+    method: 'direct', room: 31, scheduleOverride: {
+      labelKey: 'sched.nyOverride.label', labelDefault: 'New-York-Style-Kaltgare · ~44 h',
+      bulkKey: 'sched.nyOverride.bulk', bulkDefault: '<b>2 h</b> bei Raumtemp (Stockgare)', bulkMin: 120,
+      proofKey: 'sched.nyOverride.proof', proofDefault: 'Teiglinge <b>38 h</b> Kühlschrank (4 °C), am Backtag <b>4 h</b> temperieren', proofMin: 2520,
+      cold: true
+    }
+  }, f => [
+    ['tempFactor = 0,5', f.tempFactor, 0.5, 0.0001],
+    ['bulkMin = 60 (120×0,5)', f.bulkMin, 60, 0],
+    ['proofMin unverändert (2520, Mischwert Kühlschrank+Temperieren)', f.proofMin, 2520, 0],
+    ['bulkScaled = true', f.bulkScaled, true],
+    ['proofScaled = false', f.proofScaled, false],
+  ]);
+  testScheduleCase('scheduleOverride · room=21 (Referenz) -> Faktor 1, keine Verhaltensänderung', {
+    method: 'direct', room: 21, scheduleOverride: {
+      labelKey: 'sched.tegliaOverride.label', labelDefault: 'Teglia-Kaltgare · ~76 h',
+      bulkKey: 'sched.tegliaOverride.bulk', bulkDefault: '<b>1 h</b> bei Raumtemp, dann <b>48 h</b> Kühlschrank (4 °C) im Ganzen', bulkMin: 2940,
+      proofKey: 'sched.tegliaOverride.proof', proofDefault: 'Nach dem Portionieren nochmal <b>24 h</b> Kühlschrank (4 °C), am Backtag <b>3 h</b> temperieren', proofMin: 1620,
+      cold: true
+    }
+  }, f => [
+    ['tempFactor = 1', f.tempFactor, 1, 0.0001],
+    ['bulkMin unverändert (2940)', f.bulkMin, 2940, 0],
+    ['proofMin unverändert (1620)', f.proofMin, 1620, 0],
+  ]);
+
+  // --- Masseerhaltung bei den neuen Hefemengen (teglia 0,45 %, newyork_style 1,2 %) ---
+  ['teglia', 'newyork_style'].forEach(key => {
+    testCase('Preset „' + key + '": Masseerhaltung bei der neuen Hefemenge (flour+water+salt+yeast+oil+sugar = total)', PRESET_STATES[key], R => [
+      ['Summe = total', round(R.flour + R.water + R.salt + R.yeast + R.oil + R.sugar), round(R.total), 0.01],
+    ]);
+  });
+
+  // --- test-generator-Review (Haiku, per Hauptagent-Relay): 4 Vorschläge live gegen den
+  //     echten Code nachgemessen (nicht blind übernommen, s. pizza-rechner-KONTEXT.md).
+  //     2 von 4 stimmten in der Kernaussage nicht (falsche totalMin-Annahme bzw. falsche
+  //     Kappungsgrenze), aber der Kappungs-Testfall enthielt einen echten, wertvollen
+  //     Nebenbefund (Kappungs-Asymmetrie). Beim eigenen Nachmessen zusätzlich einen ECHTEN
+  //     Regressions-Bug in der eigenen v4.28.0-Vorabversion gefunden (s. u.) und in
+  //     js/ui.js korrigiert, bevor diese Tests grün wurden.
+
+  // Test 1 (korrigiert): keine geratene Summe hart erwarten (R.totalMin zählt ALLE
+  // Anleitungsschritte, nicht nur bulkMin+proofMin -- 4772 vs. 4560 bei Teglia, s.
+  // js/guide.js) -- stattdessen wie im bestehenden Muster (Sektion 34) den aus R.totalMin
+  // rückwärts berechneten Start-Zeitpunkt im Banner prüfen.
+  (function () {
+    const FIXED_ISO = '2026-09-01T18:00';
+    Object.assign(PZ.state, BASE, PRESET_STATES.teglia, { timeMode: 'target', timeISO: FIXED_ISO });
+    PZ.calc();
+    const target = new Date(FIXED_ISO);
+    const computedStart = new Date(target.getTime() - PZ.R.totalMin * 60000);
+    const html = document.getElementById('guideSteps').innerHTML;
+    renderBox('scheduleOverride (teglia) · Ziel-Modus: Start-Zeitpunkt im Banner nutzt das tatsächliche R.totalMin', [
+      { label: 'errechneter Start-Zeitpunkt im Banner entspricht Zielzeit − R.totalMin', ok: html.includes(fmtClockTest(computedStart)), actual: html.includes(fmtClockTest(computedStart)) ? 'ja' : 'nein', expected: 'ja', tol: null },
+    ]);
+    Object.assign(PZ.state, BASE);
+    PZ.calc();
+  })();
+
+  // Test 2 (korrigiert + Nebenbefund): room=32 liegt NICHT an einer Kappungsgrenze
+  // (Faktor ≈ 0,4665). Die beiden Kappungsgrenzen sind über die reguläre
+  // Bedienoberfläche (#roomN, min=0/max=40) UNTERSCHIEDLICH erreichbar: room=0 (regulär
+  // einstellbar) kappt bereits auf 4 (roh wären es 4,287), die untere Kappung 0,25
+  // bräuchte room>40 und ist über die UI gar nicht erreichbar (nur State-Direktzuweisung/
+  // Teilen-Link/Backup-Import) -- dokumentiert jetzt auch in pizza-rechner-KONTEXT.md.
+  testScheduleCase('scheduleOverride · room=0 (real über #roomN erreichbare obere Kappung) -> Faktor 4, bulkMin gekappt skaliert', {
+    method: 'direct', room: 0, scheduleOverride: {
+      labelKey: 'sched.nyOverride.label', labelDefault: 'New-York-Style-Kaltgare · ~44 h',
+      bulkKey: 'sched.nyOverride.bulk', bulkDefault: '<b>2 h</b> bei Raumtemp (Stockgare)', bulkMin: 120,
+      proofKey: 'sched.nyOverride.proof', proofDefault: 'Teiglinge <b>38 h</b> Kühlschrank (4 °C), am Backtag <b>4 h</b> temperieren', proofMin: 2520,
+      cold: true
+    }
+  }, f => [
+    ['tempFactor = 4 (gekappt, roh wären es 2^2,1≈4,287)', f.tempFactor, 4, 0.0001],
+    ['bulkMin = 480 (120×4)', f.bulkMin, 480, 0],
+    ['proofMin unverändert (2520, Mischwert)', f.proofMin, 2520, 0],
+  ]);
+  (function () {
+    // Untere Kappung nur über State-Direktzuweisung erreichbar (room>40, PZ.set.room
+    // klemmt selbst schon auf 40) -- defensive Grenze, kein Nutzerfall über die UI.
+    Object.assign(PZ.state, BASE, {
+      method: 'direct', room: 45, scheduleOverride: {
+        labelKey: 'sched.tegliaOverride.label', labelDefault: 'Teglia-Kaltgare · ~76 h',
+        bulkKey: 'sched.tegliaOverride.bulk', bulkDefault: '<b>1 h</b> bei Raumtemp, dann <b>48 h</b> Kühlschrank (4 °C) im Ganzen', bulkMin: 2940,
+        proofKey: 'sched.tegliaOverride.proof', proofDefault: 'Nach dem Portionieren nochmal <b>24 h</b> Kühlschrank (4 °C), am Backtag <b>3 h</b> temperieren', proofMin: 1620,
+        cold: true
+      }
+    });
+    const f = PZ.schedule();
+    renderBox('scheduleOverride · room=45 (nur per State-Direktzuweisung erreichbare untere Kappung, NICHT über #roomN) -> Faktor 0,25', [
+      { label: 'tempFactor = 0,25 (gekappt)', ok: Math.abs(f.tempFactor - 0.25) <= 0.0001, actual: f.tempFactor, expected: 0.25, tol: null },
+      { label: 'bulkMin = 735 (2940×0,25)', ok: f.bulkMin === 735, actual: f.bulkMin, expected: 735, tol: null },
+    ]);
+    Object.assign(PZ.state, BASE);
+    PZ.calc();
+  })();
+
+  // Test 3 (bestätigt, aber mit den ECHTEN PZ.saveAsNew()/PZ.loadRecipe()-Funktionen statt
+  // einem selbst gebauten localStorage-Objekt, analog zum Muster in Sektion 16). Deckt
+  // dabei einen echten Regressions-Bug ab, der beim eigenen Nachmessen in einer
+  // Vorabversion dieses Zyklus auftrat: applyState() (js/storage.js) ruft am Ende
+  // PZ.applyMethod() auf, und eine erste Fassung des Methode-Segment-Fixes (s. Test bei
+  // "Regression: Methodenwechsel" weiter unten -- dieser Teil ist nur über echte
+  // UI-Klick-Events prüfbar, s. pizza-rechner-KONTEXT.md) hatte state.scheduleOverride
+  // GLOBAL innerhalb applyMethod() gelöscht, was einen gerade wiederhergestellten
+  // Override sofort wieder zerstörte. Jetzt korrekt nur beim echten Methode-Segment-Klick.
+  (function () {
+    const STORAGE_KEY = 'pizzaRechner';
+    const backup = localStorage.getItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY);
+    try {
+      Object.assign(PZ.state, BASE, PRESET_STATES.teglia);
+      PZ.calc();
+      const beforeSave = JSON.parse(JSON.stringify(PZ.state.scheduleOverride));
+      const rec = PZ.saveAsNew('Test scheduleOverride Rundtrip');
+      Object.assign(PZ.state, BASE, PRESET_STATES.napoli_klassisch);
+      PZ.calc();
+      const overrideAfterOtherState = PZ.state.scheduleOverride;
+      PZ.loadRecipe(rec.id);
+      const overrideAfterLoad = PZ.state.scheduleOverride;
+      const f = PZ.schedule();
+      renderBox('scheduleOverride übersteht einen echten PZ.saveAsNew()/PZ.loadRecipe()-Zyklus unverändert', [
+        { label: 'zwischenzeitlich (anderes Preset ohne Override) korrekt null', ok: overrideAfterOtherState === null, actual: overrideAfterOtherState, expected: null, tol: null },
+        { label: 'nach PZ.loadRecipe(): Override 1:1 wiederhergestellt (JSON-Vergleich)', ok: JSON.stringify(overrideAfterLoad) === JSON.stringify(beforeSave), actual: JSON.stringify(overrideAfterLoad), expected: JSON.stringify(beforeSave), tol: null },
+        { label: 'bulkMin nach dem Laden korrekt (2940)', ok: f.bulkMin === 2940, actual: f.bulkMin, expected: 2940, tol: null },
+        { label: 'proofMin nach dem Laden korrekt (1620)', ok: f.proofMin === 1620, actual: f.proofMin, expected: 1620, tol: null },
+      ]);
+    } finally {
+      localStorage.removeItem(STORAGE_KEY);
+      if (backup !== null) localStorage.setItem(STORAGE_KEY, backup);
+      Object.assign(PZ.state, BASE);
+      PZ.calc();
+    }
+  })();
+
+  // Test 4 (bestätigt, mit den live gemessenen exakten Strings statt nur weichen
+  // Teilstring-Prüfungen): ein Sprachwechsel während ein Override aktiv ist übersetzt
+  // Label/Bulk/Proof live neu (Override speichert i18n-KEYS, keine fertigen Strings, s.
+  // js/schedule.js) UND der Override selbst bleibt über den Wechsel hinweg aktiv (auch
+  // hiervon betroffen war derselbe applyMethod()-Regressions-Bug wie bei Test 3, da
+  // js/ui.js bei jedem Sprachwechsel ebenfalls applyMethod() aufruft).
+  (function () {
+    const savedLang = PZ.getLang();
+    try {
+      Object.assign(PZ.state, BASE, PRESET_STATES.newyork_style);
+      PZ.calc();
+      PZ.setLang('de');
+      const labelDE = PZ.schedule().label;
+      const overrideActiveDE = !!PZ.state.scheduleOverride;
+      PZ.setLang('en');
+      const labelEN = PZ.schedule().label;
+      const overrideActiveEN = !!PZ.state.scheduleOverride;
+      renderBox('scheduleOverride (newyork_style) · Sprachwechsel übersetzt live neu, Override bleibt aktiv', [
+        { label: 'DE-Label exakt', ok: labelDE === 'New-York-Style-Kaltgare · ~44 h', actual: labelDE, expected: 'New-York-Style-Kaltgare · ~44 h', tol: null },
+        { label: 'EN-Label exakt', ok: labelEN === 'New York style cold rise · ~44 h', actual: labelEN, expected: 'New York style cold rise · ~44 h', tol: null },
+        { label: 'Override bleibt nach de->en aktiv', ok: overrideActiveDE && overrideActiveEN, actual: overrideActiveDE + '/' + overrideActiveEN, expected: 'true/true', tol: null },
+      ]);
+    } finally {
+      PZ.setLang(savedLang);
+      Object.assign(PZ.state, BASE);
+      PZ.calc();
+    }
+  })();
+
+  // --- Regression: der freie Hefe-Regler und alle fünf Pills bleiben unangetastet.
+  //     scheduleOverride bleibt undefined/null, identisches state.yeast-Setzen liefert
+  //     weiterhin EXAKT das alte Schwellen-Verhalten (BASE.scheduleOverride: null, s. o.,
+  //     kein Preset in diesem Testfall beteiligt). ---
+  [
+    { yeast: 1.5, expBulk: 105, expProof: 150, expCold: false, label: 'Schnellgare (y=1,5, >= 1,2)' },
+    { yeast: 0.7, expBulk: 120, expProof: 300, expCold: false, label: 'Mittlere Gare (y=0,7, >= 0,5)' },
+    { yeast: 0.45, expBulk: 120, expProof: 1440, expCold: true, label: 'Lange Gare (y=0,45, >= 0,18) -- absichtlich derselbe Zahlenwert wie das neue Teglia-Preset, OHNE scheduleOverride' },
+    { yeast: 0.1, expBulk: 120, expProof: 2460, expCold: true, label: 'Sehr lange Kaltgare (y=0,1, >= 0,08)' },
+    { yeast: 0.05, expBulk: 120, expProof: 4530, expCold: true, label: 'Extrem lange Kaltgare (y=0,05, < 0,08)' },
+  ].forEach(c => {
+    testScheduleCase('Regression: ' + c.label + ' -- ohne scheduleOverride unverändert wie vor v4.28.0', {
+      method: 'direct', yeast: c.yeast, room: 21
+    }, f => [
+      ['bulkMin unverändert', f.bulkMin, c.expBulk, 0],
+      ['proofMin unverändert', f.proofMin, c.expProof, 0],
+      ['cold unverändert', f.cold, c.expCold],
+    ]);
+  });
+  testCase('Regression: state.scheduleOverride bleibt null ohne Preset-Anwendung (freier Hefe-Regler)', {
+    method: 'direct', yeast: 0.45
+  }, () => [
+    ['PZ.state.scheduleOverride ist null', PZ.state.scheduleOverride, null],
+  ]);
 
   // ─────────────────────────────────────────────────────────────
   const s = document.getElementById('summary');

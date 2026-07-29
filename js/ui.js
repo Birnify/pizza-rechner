@@ -57,7 +57,13 @@
 
   // --- Quick-Pills ---
   document.querySelectorAll('[data-ballw]').forEach(b => b.onclick = () => PZ.set.ballw(b.dataset.ballw));
-  document.querySelectorAll('[data-yeast]').forEach(b => b.onclick = () => PZ.set.yeast(b.dataset.yeast));
+  // v4.28.0: ein Pill-Klick setzt state.scheduleOverride explizit zurück (auch wenn
+  // #preset selbst dabei bewusst NICHT zurückgesetzt wird, s. Kommentar in js/presets.js)
+  // -- sonst würde nach dem Laden von "teglia"/"newyork_style" ein Klick auf eine der
+  // generischen Hefe-Pills die tatsächliche Hefemenge ändern, aber der alte Override-
+  // Fahrplan (z. B. "Teglia-Kaltgare · ~76 h") bliebe trotzdem sichtbar -- deutlich
+  // irreführender als die rein kosmetische #preset-Altlast.
+  document.querySelectorAll('[data-yeast]').forEach(b => b.onclick = () => { PZ.state.scheduleOverride = null; PZ.set.yeast(b.dataset.yeast); });
   // Mengensteuerung vereinfachen (v3.70.0): permanent sichtbare Schnellwahl-Chips für
   // die 5 neuen Stepper-Felder (Gewicht/Teigling hatte diese Chips bereits vorher, s. o.).
   // Vorteig-Anteil/Biga-Hydration/DDT/Raumtemperatur/Mehltemperatur bekommen bewusst
@@ -202,7 +208,17 @@
     $('timeHint').textContent = isTarget ? t('hint.timeMode.target') : t('hint.timeMode.start');
   }
 
-  seg('method', 'm', 'method', applyMethod);
+  // v4.28.0: state.scheduleOverride NUR hier zurücksetzen, nicht innerhalb applyMethod()
+  // selbst -- applyMethod() wird nämlich auch NICHT-nutzerinitiiert aufgerufen (aus
+  // applyPreset()/applyState() nach dem Setzen von state.method, UND bei jedem
+  // Sprachwechsel über PZ.i18nOnChange() weiter unten in dieser Datei). Ein Reset
+  // innerhalb applyMethod() selbst hatte genau diese beiden Aufrufer kaputt gemacht: ein
+  // Sprachwechsel und ein Rezept-Laden während eines aktiven Overrides löschten ihn
+  // fälschlich (per echtem Headless-Test gefunden, s. pizza-rechner-KONTEXT.md). Dieser
+  // Wrapper läuft dagegen AUSSCHLIESSLICH innerhalb des seg()-onclick-Handlers
+  // (js/widgets.js makeSeg), also nur bei einem echten Nutzer-Klick auf das
+  // Methode-Segment.
+  seg('method', 'm', 'method', function () { state.scheduleOverride = null; applyMethod(); });
   seg('yeastType', 'y', 'yeastType');
   seg('knead', 'k', 'knead');
   seg('coldStage', 'cs', 'coldStage');

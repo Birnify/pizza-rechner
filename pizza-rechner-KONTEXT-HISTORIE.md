@@ -8,6 +8,149 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Preset-Fahrplan-Override für teglia/newyork_style (v4.28.0)
+
+Direkter Nutzerauftrag, Konzept/Architekturentscheidung/Quellenlage im Hauptgespräch
+vollständig erarbeitet und bestätigt, kein `/define-feature`, kein Brainstorming nötig.
+Letzte offene Lücke aus der Preset-Quellenprüfung (v4.24.0–v4.27.0, s. u. sowie den
+Backlog-Punkt „Hefe-/Gärzeit-Kopplung bei Direktführung entkoppeln" in
+`pizza-rechner-KONTEXT.md`): `js/schedule.js` leitet bei Direktführung den Gärzeit-Fahrplan
+ausschließlich aus vier festen `state.yeast`-Schwellen ab (≥1,2 % Schnell, ≥0,5 % Mittel,
+≥0,18 % Lang ~24 h, ≥0,08 % Sehr lang ~48 h, sonst Extrem 72 h+) und unterstellt dabei „mehr
+Hefe = kürzer und wärmer". Diese Annahme stimmt bei zwei Presets laut Quellen nicht:
+**New York Style** braucht laut Feeling Foodish (feelingfoodish.com/the-best-new-york-style-
+pizza-dough/) 0,4 % Instant-Trockenhefe (≈1,2 % Frischhefe mit `PZ.FRESH_TO_DRY = 1/3`), UND
+TROTZDEM 24–72 h Kaltgare — bei uns hätte 1,2 % automatisch die Schnellgare-Schwelle
+(Raumtemp, 4 h) getroffen, das Gegenteil. **Teglia** braucht laut Manopasto
+(manopasto.com/2020/06/22/rezept-fuer-pizza-in-teglia-alla-romana-mit-80-wasseranteil/) und
+Salamico (salamico.de/index.php/de/rezepte/97-grundrezept-blechpizza-pizza-in-teglia-alla-
+romana) 0,45 % Frischhefe (2,5 g auf 550 g Mehl) bei 72 h Gesamtdauer — MEHR Hefe als das
+alte 0,3-%-Preset, aber trotzdem eine viel längere statt kürzere Gare. **Wichtiger
+Quellenhinweis:** Manopasto und Salamico nennen exakt dieselbe Mehl- und Hefegrammzahl — das
+deutet auf gemeinsame Herkunft hin, nicht auf zwei wirklich unabhängige Datenpunkte. Eine
+dritte, unschärfere Quelle (Bonci-Rezept-Aggregation, 1–3 g Trockenhefe auf 1000 g Mehl =
+0,3–0,9 % Frischhefe-Äquivalent für 24–48 h) stützt zumindest die Größenordnung. Deshalb
+bewusst NICHT als „mehrfach unabhängig bestätigt" behandelt, sondern als „aus Quellen
+abgeleitet, mit Hinweis auf möglicherweise gemeinsamen Ursprung".
+
+**Verworfene Alternative:** ein komplettes Stufensystem analog `PZ.PREF_STAGES`
+(Biga/Poolish, v4.24.0/v4.25.0) wurde geprüft und bewusst verworfen. Bei Poolish/Biga war die
+Reifezeit schon vor der Stufen-Umstellung das primäre Bedienelement, Hefemenge war immer die
+abgeleitete Größe. Bei Direktführung ist es strukturell umgekehrt: die Hefemenge ist seit
+jeher ein freier, stufenlos verstellbarer Regler (`PZ.set.yeast`), die fünf Pills
+(`#yeastPills`) sind nur Schnellwahl-Sprünge darauf, die Zeit ist reine Anzeige, niemals
+Eingabe. Ein Stufensystem hätte dieses Bedienparadigma für die GESAMTE Direktführung
+umgedreht — ein deutlich größerer Eingriff als bei Poolish/Biga.
+
+**Umgesetzter Mechanismus** (`js/schedule.js`): ein neuer Check `if (state.scheduleOverride)`
+sitzt VOR der bestehenden Hefemenge-Schwellen-Kaskade (nach dem frühen `return` für
+Vorteig-Methoden, die von diesem Mechanismus unberührt bleiben). `state.scheduleOverride`
+speichert i18n-KEYS + Default-Text (`labelKey`/`labelDefault`/`bulkKey`/`bulkDefault`/
+`proofKey`/`proofDefault`/`bulkMin`/`proofMin`/`cold`) statt schon fertig aufgelöster
+Strings — genau wie jeder generische Zweig löst `schedule()` sie bei JEDEM Aufruf frisch per
+`t()` auf, damit ein späterer Sprachwechsel (calc.js ruft `calc()` bei jedem `i18nOnChange`
+erneut auf) auch den Override-Text live nachzieht. Das Ergebnis-Objekt `r` hat exakt dieselbe
+Form wie jeder reguläre Zweig und durchläuft danach UNVERÄNDERT dieselbe
+Post-Processing-Pipeline (die v4.27.0-Temperaturskalierung) wie jeder andere Zweig — keine
+Sonderbehandlung. Bewusst EIN flacher, feststehender Fahrplan pro Preset (keine
+`coldStage`-Variante wie bei den generischen Zweigen): die Kaltgare-Umschaltung „als
+Teiglinge/im Stück" ist für diese zwei Presets dadurch wirkungslos, analog zur bereits
+bestehenden Nebenwirkung bei Vorteig-Methoden. **`state.scheduleOverride` wird
+AUSSCHLIESSLICH von `js/presets.js` gesetzt**, für genau `teglia` und `newyork_style` — der
+freie Hefe-Regler, alle fünf Pills und jedes manuell eingestellte/geladene Rezept lassen es
+bei `null`, exakt wie vor v4.28.0.
+
+**Konkrete Werte:**
+- `newyork_style`: `yeast: 0,2 → 1,2`. Override ~44 h (Standard-„balls"-Struktur: 2 h
+  Raumtemp-Stockgare, dann 38 h Kühlschrank, dann 4 h temperieren). Ursprünglich im Auftrag
+  als Zielband-Mitte ~48 h vorgesehen (Mitte der Feeling-Foodish-Spanne 24–72 h) — beim
+  Nachmessen der Mehl-Warnung (`dallag_napoletana`, maxH 48 h) hätte das exakt auf der
+  Warngrenze gesessen (48 > 48 ist zwar `false`, aber ohne jeden Sicherheitsabstand,
+  zusätzlich bei kälteren Raumtemperaturen durch die v4.27.0-Skalierung leicht
+  überschreitbar) — deshalb bewusst auf ~44 h korrigiert (im Auftrag als Fallback
+  vorgesehen: „Gesamtdauer im Zielband etwas nach unten korrigieren, z. B. Richtung
+  40–44 h"), 4 h Sicherheitsabstand zur Warngrenze. Die Hefemenge selbst ist durch Feeling
+  Foodish exakt belegt, die konkrete Gesamtdauer ist eine bewusste Wahl, keine exakt
+  zitierte Einzelzahl.
+- `teglia`: `yeast: 0,3 → 0,45`. Override ~76 h (Standard-„balls"-Struktur, an der
+  Manopasto/Salamico-Beschreibung orientiert: 1 h Raumtemp + 48 h Kühlschrank UNGETEILT
+  = `bulkMin`, danach — passend zum realen Rezept, das nach dieser ersten Kältephase
+  portioniert — nochmal 24 h Kühlschrank + 3 h temperieren = `proofMin`). Task-Ziel war
+  „~72 h", real ergibt die Summe der einzeln quellenbelegten Phasen (1 h + 48 h + 24 h +
+  2–4 h) eher ~75–78 h — bewusst NICHT künstlich auf 72 h heruntergerechnet (das hätte eine
+  der zitierten Phasenlängen unterschreiten müssen), stattdessen ehrlich der faithful
+  gerechnete Wert (76 h) verwendet. `caputo_nuvola_super` (maxH 168 h) hat dafür reichlich
+  Spielraum, keine Warnung möglich.
+- Live gemessen (Headless-Edge, echte `#preset`-Dropdown-Interaktion, nicht nur
+  gegengerechnet): beide Presets laden ohne Mehl-Warnung; `R.totalMin` (zählt ALLE
+  Anleitungsschritte, nicht nur `bulkMin+proofMin`) liegt bei Teglia bei 4772 min (79,5 h)
+  und bei New York Style bei 45,25 h — die reine Gärzeit-Summe (`bulkMin+proofMin`, das ist
+  die für die Mehl-Warnung relevante Zahl) liegt bei 4560 min (76 h) bzw. 2640 min (44 h),
+  exakt wie oben angegeben.
+
+**Drei echte Bugs beim Härten gefunden und gefixt** (Delegations-Review durch
+`test-generator` + eigene Nachprüfung, keine der Behauptungen des Sub-Agenten blind
+übernommen — 2 von 4 seiner Kernbehauptungen stimmten beim Nachmessen nicht, s. u.):
+1. Ein Klick auf eine Hefe-Pill (`#yeastPills`, `data-yeast`) oder ein Klick auf das
+   Methode-Segment nach dem Laden von `teglia`/`newyork_style` ließ `state.scheduleOverride`
+   ursprünglich unverändert stehen, obwohl sich die tatsächliche Hefemenge/Methode geändert
+   hatte — der alte Override-Fahrplan blieb sichtbar, obwohl er nicht mehr zu den
+   angezeigten Werten passte. Gefunden per echtem Klick-Event in einer temporären,
+   ungecommitteten Verify-Harness (Kopie von `pizza-rechner.html`). Gefixt: `state.
+   scheduleOverride = null` jetzt zusätzlich an drei Stellen (manuelle Stepper-Eingabe in
+   `js/presets.js`, Pill-Klick + Methode-Segment-Klick in `js/ui.js`) — bewusst NICHT an
+   der `#preset`-Dropdown-Rücksetzung selbst gekoppelt (die bleibt bei Pill-/Chip-Klicks
+   absichtlich stehen, dokumentierter Bestandsschutz seit vor v3.70.0), sondern zusätzlich
+   und unabhängig davon, weil ein stehen gebliebener Override-Fahrplan deutlich
+   irreführender wäre als die rein kosmetische `#preset`-Altlast.
+2. Eine erste Fassung des Methode-Segment-Fixes (Punkt 1) saß direkt IN `applyMethod()`
+   selbst (`js/ui.js`) statt nur im Klick-Handler. `applyMethod()` wird aber auch
+   NICHT-nutzerinitiiert aufgerufen — aus `applyPreset()`/`applyState()` nach dem Setzen von
+   `state.method`, UND bei JEDEM Sprachwechsel (`PZ.i18nOnChange`-Hook, ebenfalls
+   `js/ui.js`). Ein globaler Reset dort zerstörte deshalb einen gerade aus einem geladenen
+   Rezept wiederhergestellten Override sofort wieder (`applyState()` ruft `applyMethod()`
+   am Ende auf) UND löschte den Override bei jedem Sprachwechsel. Gefunden beim eigenen
+   Nachbauen von Testfall 3 des `test-generator`-Vorschlags mit den ECHTEN
+   `PZ.saveAsNew()`/`PZ.loadRecipe()`-Funktionen statt dessen selbst gebautem
+   localStorage-Objekt — der Testfall fiel durch und deckte damit einen echten,
+   selbstverursachten Regressionsbug auf, nicht nur einen falschen Testfall. Gefixt: der
+   Reset sitzt jetzt ausschließlich im `seg('method', 'm', 'method', …)`-onclick-Wrapper
+   (läuft nur bei einem echten Klick auf den Methode-Button, s. `js/widgets.js
+   makeSeg()`), `applyMethod()` selbst blieb unverändert. Alle sechs Szenarien (Preset-
+   Wechsel, Pill-Klick, Stepper-Eingabe, Methode-Klick, Rezept-Laden, Sprachwechsel) per
+   echten Klick-/Change-Events erneut verifiziert.
+3. `js/storage.js` (`applyState()`) brauchte einen expliziten
+   `state.scheduleOverride = o.scheduleOverride || null` — `Object.assign(state, o)` kopiert
+   nur Schlüssel, die im geladenen Objekt `o` tatsächlich vorkommen; ein vor v4.28.0
+   gespeichertes Rezept (oder eines aus einem zwischenzeitlich manuell überschriebenen
+   Override) hat dieses Feld gar nicht und hätte sonst einen in DERSELBEN Sitzung zuvor
+   gesetzten Override unverändert stehen lassen.
+
+**`test-generator`-Review, live nachgemessen statt blind übernommen (Delegations-Review über
+den Hauptagenten):** von vier Testvorschlägen stimmten zwei Kernbehauptungen nicht (Test 1:
+`R.totalMin` ist NICHT `bulkMin+proofMin`, s. o.; Test 2: `room=32` liegt nicht an einer
+Kappungsgrenze). Test 2 enthielt aber einen echten, wertvollen Nebenbefund: die beiden
+v4.27.0-Kappungsgrenzen des Temperaturfaktors (`[0,25; 4]`) sind über die reguläre
+Bedienoberfläche (`#roomN`, `min="0" max="40"`) UNTERSCHIEDLICH erreichbar — `room=0` (real
+über das Zahlenfeld einstellbar) kappt bereits auf Faktor 4 (roh wären es ≈4,287), während
+die untere Kappung 0,25 `room>40` bräuchte und über die UI gar nicht erreichbar ist (nur über
+direkte State-Manipulation, Teilen-Link oder Backup-Import). Kein Bug, aber eine bisher nicht
+dokumentierte Asymmetrie aus v4.27.0. Test 3 (Speichern/Laden) und Test 4 (Sprachwechsel)
+waren in der Kernaussage korrekt, wurden aber mit den echten Storage-Funktionen bzw. exakt
+gemessenen Strings statt der vorgeschlagenen Annäherungen übernommen.
+
+**Geändert:** `js/schedule.js` (Override-Mechanismus), `js/presets.js` (Preset-Werte +
+Override-Definitionen + drei Reset-Stellen), `js/ui.js` (Pill-Klick + Methode-Segment-Klick
+löschen den Override), `js/storage.js` (defensiver Reset beim Laden), `js/i18n-dict.js` (6
+neue `sched.*`-Keys DE+EN, Preset-Beschreibungen/Options-Label auf ~76 h/~44 h nachgezogen),
+`js/state.js` (Default-Deklaration), `tests/test.html` (`BASE.scheduleOverride: null` als
+Test-Isolations-Fix, Sektion 35 mit 17 neuen Prüfungen: Priorisierung, Temperaturskalierungs-
+Interaktion, Masseerhaltung, Regression der 5 Hefemenge-Schwellen, die 4 korrigierten
+test-generator-Testfälle). `tests/test.html`: 1034 → **1077** Prüfungen, alle grün
+(Headless-Edge-Dump). Kein `accessibility-expert`/`mobile-optimizer`-Lauf nötig (keine
+HTML/CSS-Änderung in diesem Zyklus). `?v=` auf `4.28.0` gezogen (Desktop + Mobil),
+`pizza-rechner-mobile-standalone.html` neu gebaut.
+
 ## Temperaturskalierung der Gärzeit nach Raumtemperatur (v4.27.0)
 
 Direkter Nutzerauftrag, Konzept/Quellenlage/Design im Hauptgespräch vollständig erarbeitet
