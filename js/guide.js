@@ -376,12 +376,29 @@
     // Schritte den Verweis.
     const bulkColdGlossary = f.cold && !ballsCold ? 'kalteGare' : undefined;
     const finalProofColdGlossary = ballsCold ? 'kalteGare' : undefined;
+    // Temperaturskalierung (v4.27.0, js/schedule.js): bei abweichender Raumtemperatur
+    // (state.room != 21 °C) skaliert schedule() bulkMin/proofMin, ABER f.bulk/f.proof
+    // bleiben statische, an der ursprünglichen Zeitspanne hängende Textbausteine -- ohne
+    // diesen Schritt würde die Anzeige eine andere Zahl behaupten als der Timer/die
+    // Zeitplan-Rückwärtsrechnung tatsächlich verwendet (genau der Etiketten-Fehler, der
+    // in den letzten Zyklen bei den Presets behoben wurde). f.bulkScaled/f.proofScaled
+    // sind nur dann true, wenn sich die jeweilige Minutenzahl durch die Skalierung
+    // TATSÄCHLICH geändert hat (bei room===21 ist der Faktor exakt 1 -> unverändert,
+    // identischer Text wie vor v4.27.0).
+    const bulkText = f.bulkScaled ? t('guide.tempScaled.bulk', { h: fmtDur(f.bulkMin) }) : f.bulk;
+    const proofText = f.proofScaled ? t('guide.tempScaled.proof', { h: fmtDur(f.proofMin) }) : f.proof;
+    // Eigene tip()-Aufrufe je Schritt (nicht einen HTML-String wiederverwenden!): tip()/
+    // hintBox() vergibt bei jedem Aufruf eine neue, eindeutige ID (_hintSeq) für
+    // aria-controls -- bei cold:false-Zweigen sind bulkScaled UND proofScaled oft
+    // gleichzeitig true (beide Phasen sind reine Raumtemp), ein wiederverwendeter String
+    // hätte in zwei Schritten dieselbe id/aria-controls erzeugt.
+    function tempScaledTip() { return tip(t('guide.tempScaled.tip', { room: state.room })); }
     sec(t('guide.sec.rise'));
     let bulkRiseTitle = inlineGlossaryLink(t('guide.step.bulkRise.title'), bulkColdGlossary);
-    let bulkRiseBody = t('guide.step.bulkRise.body', { bulk: f.bulk });
+    let bulkRiseBody = t('guide.step.bulkRise.body', { bulk: bulkText });
     if (bulkColdGlossary && !_usedGlossaryIds.has(bulkColdGlossary)) bulkRiseBody = inlineGlossaryLink(bulkRiseBody, bulkColdGlossary);
     st(bulkRiseTitle, f.cold && !ballsCold ? t('guide.step.bulkRise.chipColdBalls') : t('guide.step.bulkRise.chipDefault'),
-      bulkRiseBody, timerBox('stockgare', f.bulkMin), f.bulkMin,
+      bulkRiseBody, (f.bulkScaled ? tempScaledTip() : '') + timerBox('stockgare', f.bulkMin), f.bulkMin,
       { glossaryId: (bulkColdGlossary && !_usedGlossaryIds.has(bulkColdGlossary)) ? bulkColdGlossary : undefined });
     // Einfrier-Hinweis (bis v4.7.0 hier als optionaler .tip-Textblock, Feature-Flag
     // "freezeHint"): seit v4.8.0 (Backlog Punkt D) ersatzlos entfernt -- Inhalt lebt jetzt
@@ -396,11 +413,11 @@
       tip(t('guide.step.formBalls.tip')), 10,
       { glossaryId: _usedGlossaryIds.has('einfrieren') ? undefined : 'einfrieren' });
     let finalProofTitle = inlineGlossaryLink(t('guide.step.finalProof.title'), finalProofColdGlossary);
-    let finalProofBody = t('guide.step.finalProof.body', { proof: f.proof });
+    let finalProofBody = t('guide.step.finalProof.body', { proof: proofText });
     if (finalProofColdGlossary && !_usedGlossaryIds.has(finalProofColdGlossary)) finalProofBody = inlineGlossaryLink(finalProofBody, finalProofColdGlossary);
     st(finalProofTitle, ballsCold ? t('guide.step.finalProof.chipCold') : t('guide.step.finalProof.chipDefault'),
       finalProofBody,
-      (f.cold ? tip(t('guide.step.finalProof.tip')) : '') + timerBox('stueckgare', f.proofMin), f.proofMin,
+      (f.proofScaled ? tempScaledTip() : '') + (f.cold ? tip(t('guide.step.finalProof.tip')) : '') + timerBox('stueckgare', f.proofMin), f.proofMin,
       { glossaryId: (finalProofColdGlossary && !_usedGlossaryIds.has(finalProofColdGlossary)) ? finalProofColdGlossary : undefined });
 
     sec(t('guide.sec.bake'));

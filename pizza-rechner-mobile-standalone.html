@@ -1557,7 +1557,7 @@ header{position:relative;text-align:center;}
      daneben, ein zweiter Vorlese-Name wäre redundant (analog zum bestehenden
      .card-icon aria-hidden-Muster). -->
 <header>
-  <h1><img src="assets/logo.svg?v=4.26.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
+  <h1><img src="assets/logo.svg?v=4.27.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
 </header>
 
 <!-- Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay analog zum
@@ -1692,6 +1692,7 @@ header{position:relative;text-align:center;}
           </div>
         </details>
         <div class="hint" id="presetDesc" style="margin-top:8px;" data-i18n="preset.defaultDesc">Wähle ein erprobtes Rezept: alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.</div>
+        <div class="hint" id="presetTempNote" style="margin-top:4px;" data-i18n="preset.tempNote">Die „~X h"-Zeitangaben oben gelten für 21 °C Raumtemperatur. Bei anderer Raumtemperatur passt die Schritt-für-Schritt-Anleitung die tatsächlichen Zeiten automatisch an.</div>
       </div>
     </details>
 
@@ -2446,7 +2447,7 @@ header{position:relative;text-align:center;}
              hier bewusst NICHT mehr dupliziert. -->
         <div class="nav-divider" role="separator"></div>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.26.0</span>
+        <span class="nav-version" id="appVersion">v4.27.0</span>
 
       </div>
     </details>
@@ -3016,6 +3017,17 @@ header{position:relative;text-align:center;}
   add('guide.step.finalProof.tip', 'Teiglinge vor dem Backen wirklich auf Raumtemperatur kommen lassen – kalter Teig reißt beim Ausziehen.',
     'Really let the dough balls come to room temperature before baking: cold dough tears when stretched.');
 
+  // Temperaturskalierung (v4.27.0, js/schedule.js): ersetzt bei abweichender
+  // Raumtemperatur (state.room != 21 °C) den statischen {bulk}/{proof}-Textbaustein durch
+  // eine aus der tatsächlich skalierten Minutenzahl berechnete Anzeige (s. js/guide.js,
+  // fmtDur()) -- verhindert einen Etiketten-Fehler (Text nennt eine andere Zahl als Timer/
+  // Zeitplan). "Ca." markiert bewusst, dass es sich um einen an die Raumtemperatur
+  // angepassten Richtwert handelt, keine erneut exakt vermessene Zeit.
+  add('guide.tempScaled.bulk', 'Ca. <b>{h}</b> bei Raumtemp (Stockgare)', 'Approx. <b>{h}</b> at room temp (bulk rise)');
+  add('guide.tempScaled.proof', 'Ca. <b>{h}</b> bei Raumtemp', 'Approx. <b>{h}</b> at room temp');
+  add('guide.tempScaled.tip', 'Diese Zeit wurde an deine eingestellte Raumtemperatur ({room} °C) angepasst. Bezugswert dieser App ist 21 °C: wärmer lässt den Teig schneller reifen, kühler langsamer (Mechanismus durch Fachquellen belegt, die genaue Verdopplungsdistanz ist ein bewusst konservativ gewählter Richtwert).',
+    'This time was adapted to your set room temperature ({room} °C). This app\'s reference value is 21 °C: warmer speeds up fermentation, cooler slows it down (the mechanism is backed by baking sources, the exact doubling distance is a deliberately conservative estimate).');
+
   add('guide.step.preheat.title', 'Ofen vorheizen', 'Preheat the oven');
   add('guide.step.preheat.chip', '30–45 min', '30–45 min');
   add('guide.step.preheat.body', 'Pizzastein/-stahl auf <b>höchste Stufe</b> vorheizen. Pizzaofen (Gas/Holz) <b>430–480 °C</b>; Haushaltsofen Maximum (250–300 °C) + Grill, Stein ganz oben.',
@@ -3203,6 +3215,13 @@ header{position:relative;text-align:center;}
   // ---- js/presets.js: Preset-Beschreibungen + Ladehinweis ------------------------
   add('preset.defaultDesc', 'Wähle ein erprobtes Rezept: alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.',
     'Choose a proven recipe: all values are set automatically. You can fine-tune anytime afterwards.');
+  // v4.27.0 (Temperaturskalierung der Gärzeit, s. pizza-rechner-KONTEXT.md): die "~X h"-
+  // Zeitangaben in den Dropdown-Labels (option.napoliKlassisch usw.) sind an der
+  // Referenz-Raumtemperatur 21 °C gemessen (s. Sektion 33 in tests/test.html). Bei
+  // anderer eingestellter Raumtemperatur passt die Schritt-für-Schritt-Anleitung unten
+  // die tatsächliche Zeit automatisch an -- das Label selbst bleibt der ~21-°C-Richtwert.
+  add('preset.tempNote', 'Die „~X h"-Zeitangaben oben gelten für 21 °C Raumtemperatur. Bei anderer Raumtemperatur passt die Schritt-für-Schritt-Anleitung die tatsächlichen Zeiten automatisch an.',
+    'The "~X h" times above apply at 21 °C room temperature. At a different room temperature, the step-by-step guide automatically adapts the actual times.');
   // v4.25.1: AVPN-Aussage entschärft (Nutzer-Quellenprüfung gegen das offizielle
   // Disciplinare: nur Mehl/Wasser/Salz/Hefe, kein Öl) und die Gesamtgare-Angabe aus der
   // laufenden App nachgemessen (headless, PZ.calc() auf den echten Preset-Werten:
@@ -5469,51 +5488,103 @@ header{position:relative;text-align:center;}
       };
     }
 
-    // --- Direkte Führung ---
-    if (y >= 1.2) return {
-      label: t('sched.directFast.label', 'Schnellgare · gleicher Tag'),
-      bulk: t('sched.directFast.bulk', '<b>1,5–2 h</b> bei warmer Raumtemp (24–26 °C)'), bulkMin: 105,
-      proof: t('sched.directFast.proof', '<b>2–3 h</b> bei Raumtemp'), proofMin: 150, cold: false
-    };
-    if (y >= 0.5) return {
-      label: t('sched.directMedium.label', 'Mittlere Gare'),
-      bulk: t('sched.directMedium.bulk', '<b>2 h</b> bei Raumtemp'), bulkMin: 120,
-      proof: t('sched.directMedium.proof', '<b>4–6 h</b> bei Raumtemp'), proofMin: 300, cold: false
-    };
-    if (y >= 0.18) {
-      if (ballsCold) return {
+    // --- Direkte Führung (Basiswerte unverändert wie bisher) ---
+    let r;
+    if (y >= 1.2) {
+      r = {
+        label: t('sched.directFast.label', 'Schnellgare · gleicher Tag'),
+        bulk: t('sched.directFast.bulk', '<b>1,5–2 h</b> bei warmer Raumtemp (24–26 °C)'), bulkMin: 105,
+        proof: t('sched.directFast.proof', '<b>2–3 h</b> bei Raumtemp'), proofMin: 150, cold: false
+      };
+    } else if (y >= 0.5) {
+      r = {
+        label: t('sched.directMedium.label', 'Mittlere Gare'),
+        bulk: t('sched.directMedium.bulk', '<b>2 h</b> bei Raumtemp'), bulkMin: 120,
+        proof: t('sched.directMedium.proof', '<b>4–6 h</b> bei Raumtemp'), proofMin: 300, cold: false
+      };
+    } else if (y >= 0.18) {
+      r = ballsCold ? {
         label: t('sched.directLong.label', 'Lange Gare · ~24 h'),
         bulk: t('sched.directLongCold.bulk', '<b>2 h</b> bei Raumtemp (Stockgare)'), bulkMin: 120,
         proof: t('sched.directLongCold.proof', 'Teiglinge <b>18–20 h</b> Kühlschrank (4–6 °C), am Backtag <b>4–5 h</b> temperieren'), proofMin: 1440, cold: true
-      };
-      return {
+      } : {
         label: t('sched.directLong.label', 'Lange Gare · ~24 h'),
         bulk: t('sched.directLongBulk.bulk', '<b>2 h</b> Raumtemp, dann <b>18–20 h</b> Kühlschrank (4–6 °C)'), bulkMin: 1260,
         proof: t('sched.directLongBulk.proof', 'Teiglinge <b>4–6 h</b> bei Raumtemp akklimatisieren'), proofMin: 300, cold: true
       };
-    }
-    if (y >= 0.08) {
-      if (ballsCold) return {
+    } else if (y >= 0.08) {
+      r = ballsCold ? {
         label: t('sched.directVeryLong.label', 'Sehr lange Kaltgare · ~48 h'),
         bulk: t('sched.directVeryLongCold.bulk', '<b>2 h</b> bei Raumtemp (Stockgare)'), bulkMin: 120,
         proof: t('sched.directVeryLongCold.proof', 'Teiglinge <b>36–40 h</b> Kühlschrank (4 °C), am Backtag <b>5 h</b> temperieren'), proofMin: 2460, cold: true
-      };
-      return {
+      } : {
         label: t('sched.directVeryLong.label', 'Sehr lange Kaltgare · ~48 h'),
         bulk: t('sched.directVeryLongBulk.bulk', '<b>1–2 h</b> Raumtemp, dann <b>24–48 h</b> Kühlschrank (4 °C)'), bulkMin: 2250,
         proof: t('sched.directVeryLongBulk.proof', 'Teiglinge <b>5–6 h</b> vor dem Backen temperieren'), proofMin: 330, cold: true
       };
+    } else {
+      r = ballsCold ? {
+        label: t('sched.directExtreme.label', 'Extrem lange Kaltgare · 72 h+'),
+        bulk: t('sched.directExtremeCold.bulk', '<b>2 h</b> bei Raumtemp (Stockgare)'), bulkMin: 120,
+        proof: t('sched.directExtremeCold.proof', 'Teiglinge <b>68–72 h</b> Kühlschrank (4 °C), am Backtag <b>5 h</b> temperieren'), proofMin: 4530, cold: true
+      } : {
+        label: t('sched.directExtreme.label', 'Extrem lange Kaltgare · 72 h+'),
+        bulk: t('sched.directExtremeBulk.bulk', '<b>1–2 h</b> Raumtemp, dann <b>48–72 h</b> Kühlschrank (4 °C)'), bulkMin: 4320,
+        proof: t('sched.directExtremeBulk.proof', 'Teiglinge <b>5–6 h</b> vor dem Backen temperieren'), proofMin: 330, cold: true
+      };
     }
-    if (ballsCold) return {
-      label: t('sched.directExtreme.label', 'Extrem lange Kaltgare · 72 h+'),
-      bulk: t('sched.directExtremeCold.bulk', '<b>2 h</b> bei Raumtemp (Stockgare)'), bulkMin: 120,
-      proof: t('sched.directExtremeCold.proof', 'Teiglinge <b>68–72 h</b> Kühlschrank (4 °C), am Backtag <b>5 h</b> temperieren'), proofMin: 4530, cold: true
-    };
-    return {
-      label: t('sched.directExtreme.label', 'Extrem lange Kaltgare · 72 h+'),
-      bulk: t('sched.directExtremeBulk.bulk', '<b>1–2 h</b> Raumtemp, dann <b>48–72 h</b> Kühlschrank (4 °C)'), bulkMin: 4320,
-      proof: t('sched.directExtremeBulk.proof', 'Teiglinge <b>5–6 h</b> vor dem Backen temperieren'), proofMin: 330, cold: true
-    };
+
+    // --- Raumtemperatur-Skalierung (v4.27.0) -----------------------------------------
+    // MECHANISMUS quellenbelegt durch zwei unabhängige, fachlich anerkannte Quellen
+    // (s. pizza-rechner-KONTEXT.md, Abschnitt "Wichtige Berechnungs-Details"): Weekend
+    // Bakery ("bei 21 °C/70 °F hat sich die Hefeaktivität gegenüber ~27 °C ungefähr
+    // halbiert, die Gare dauert doppelt so lange" -- rund 6 °C Differenz für Faktor 2) und
+    // PizzaPlan ("alle 8-10 °C mehr verdoppelt sich die Gärgeschwindigkeit ungefähr")
+    // bracketieren die Verdopplungsdistanz zwischen ~6 und ~10 °C. Die konkrete Zahl
+    // 10 °C ist daraus bewusst konservativ gewählt (der größere, weniger aggressive Wert
+    // der Bandbreite) -- eine Design-Entscheidung, KEINE exakt zitierte Einzelzahl einer
+    // Quelle. Referenz 21 °C = bestehender state.room-Default (deckt sich mit Crust
+    // Kingdom, das 21 °C explizit als Bezugstemperatur nennt).
+    const room = state.room;
+    let tempFactor = Math.pow(2, (21 - room) / 10);
+    // Sicherheitsgrenze (nicht aus einer Quelle abgeleitet, reiner Schutz gegen absurde
+    // Zeitangaben an extremen Reglerwerten): Faktor auf [0,25; 4] gekappt.
+    tempFactor = Math.min(4, Math.max(0.25, tempFactor));
+    function scaled(min) { return Math.round(min * tempFactor); }
+
+    // Welche der beiden Phasen (bulkMin/proofMin) für DIESEN Zweig tatsächlich eine reine
+    // Raumtemperatur-Dauer ist, hängt nicht nur von r.cold ab, sondern -- bei kalten
+    // Zweigen -- zusätzlich von coldStage:
+    //  - r.cold === false (Schnell-/Mittlere Gare): beide Phasen sind reine Raumtemp
+    //    -> beide skalieren.
+    //  - r.cold === true UND ballsCold (Standard "als Teiglinge"): bulkMin ist die reine
+    //    Raumtemp-Stockgare, proofMin mischt Kühlschrankzeit + Temperieren in einer Zahl
+    //    -> NUR bulkMin skalieren, proofMin unverändert lassen (erfundene Genauigkeit
+    //    vermeiden, s. Auftrag).
+    //  - r.cold === true UND NICHT ballsCold (coldStage "im Stück"): hier ist es
+    //    strukturell umgekehrt -- bulkMin mischt Raumtemp-Start + Kühlschrank ("2 h
+    //    Raumtemp, dann 18-20 h Kühlschrank"), proofMin ist dort die reine Temperier-/
+    //    Stückgare-Phase am Backtag ("Teiglinge X h bei Raumtemp akklimatisieren").
+    //    Skaliert wird deshalb NUR proofMin, bulkMin bleibt unverändert. Bewusste
+    //    Verallgemeinerung des im Auftrag für den Standardfall genannten Prinzips
+    //    ("Mischwerte nicht aufteilen, das wäre erfundene Genauigkeit") auf diesen
+    //    spiegelbildlichen Fall -- im Auftrag selbst nur für coldStage "als Teiglinge"
+    //    explizit benannt, dort aber nicht bedacht, dass sich bei coldStage "im Stück"
+    //    die Rollen von bulkMin/proofMin genau umkehren (s. pizza-rechner-KONTEXT.md für
+    //    die ausführliche Begründung dieser bewussten Abweichung von der wörtlichen
+    //    Formulierung "bulkMin wird IMMER skaliert").
+    const scaleBulk = !r.cold || ballsCold;
+    const scaleProof = !r.cold || !ballsCold;
+    const rawBulkMin = r.bulkMin, rawProofMin = r.proofMin;
+    if (scaleBulk) r.bulkMin = scaled(rawBulkMin);
+    if (scaleProof) r.proofMin = scaled(rawProofMin);
+    // Nur bei tatsächlicher Zahlenänderung als "skaliert" markieren (bei room===21 ist
+    // tempFactor exakt 1, Math.round liefert wieder den Ausgangswert -> keine
+    // Verhaltensänderung, guide.js zeigt weiterhin den identischen statischen Text).
+    r.bulkScaled = scaleBulk && r.bulkMin !== rawBulkMin;
+    r.proofScaled = scaleProof && r.proofMin !== rawProofMin;
+    r.tempFactor = tempFactor;
+    return r;
   }
 
   PZ.schedule = schedule;
@@ -5899,12 +5970,29 @@ header{position:relative;text-align:center;}
     // Schritte den Verweis.
     const bulkColdGlossary = f.cold && !ballsCold ? 'kalteGare' : undefined;
     const finalProofColdGlossary = ballsCold ? 'kalteGare' : undefined;
+    // Temperaturskalierung (v4.27.0, js/schedule.js): bei abweichender Raumtemperatur
+    // (state.room != 21 °C) skaliert schedule() bulkMin/proofMin, ABER f.bulk/f.proof
+    // bleiben statische, an der ursprünglichen Zeitspanne hängende Textbausteine -- ohne
+    // diesen Schritt würde die Anzeige eine andere Zahl behaupten als der Timer/die
+    // Zeitplan-Rückwärtsrechnung tatsächlich verwendet (genau der Etiketten-Fehler, der
+    // in den letzten Zyklen bei den Presets behoben wurde). f.bulkScaled/f.proofScaled
+    // sind nur dann true, wenn sich die jeweilige Minutenzahl durch die Skalierung
+    // TATSÄCHLICH geändert hat (bei room===21 ist der Faktor exakt 1 -> unverändert,
+    // identischer Text wie vor v4.27.0).
+    const bulkText = f.bulkScaled ? t('guide.tempScaled.bulk', { h: fmtDur(f.bulkMin) }) : f.bulk;
+    const proofText = f.proofScaled ? t('guide.tempScaled.proof', { h: fmtDur(f.proofMin) }) : f.proof;
+    // Eigene tip()-Aufrufe je Schritt (nicht einen HTML-String wiederverwenden!): tip()/
+    // hintBox() vergibt bei jedem Aufruf eine neue, eindeutige ID (_hintSeq) für
+    // aria-controls -- bei cold:false-Zweigen sind bulkScaled UND proofScaled oft
+    // gleichzeitig true (beide Phasen sind reine Raumtemp), ein wiederverwendeter String
+    // hätte in zwei Schritten dieselbe id/aria-controls erzeugt.
+    function tempScaledTip() { return tip(t('guide.tempScaled.tip', { room: state.room })); }
     sec(t('guide.sec.rise'));
     let bulkRiseTitle = inlineGlossaryLink(t('guide.step.bulkRise.title'), bulkColdGlossary);
-    let bulkRiseBody = t('guide.step.bulkRise.body', { bulk: f.bulk });
+    let bulkRiseBody = t('guide.step.bulkRise.body', { bulk: bulkText });
     if (bulkColdGlossary && !_usedGlossaryIds.has(bulkColdGlossary)) bulkRiseBody = inlineGlossaryLink(bulkRiseBody, bulkColdGlossary);
     st(bulkRiseTitle, f.cold && !ballsCold ? t('guide.step.bulkRise.chipColdBalls') : t('guide.step.bulkRise.chipDefault'),
-      bulkRiseBody, timerBox('stockgare', f.bulkMin), f.bulkMin,
+      bulkRiseBody, (f.bulkScaled ? tempScaledTip() : '') + timerBox('stockgare', f.bulkMin), f.bulkMin,
       { glossaryId: (bulkColdGlossary && !_usedGlossaryIds.has(bulkColdGlossary)) ? bulkColdGlossary : undefined });
     // Einfrier-Hinweis (bis v4.7.0 hier als optionaler .tip-Textblock, Feature-Flag
     // "freezeHint"): seit v4.8.0 (Backlog Punkt D) ersatzlos entfernt -- Inhalt lebt jetzt
@@ -5919,11 +6007,11 @@ header{position:relative;text-align:center;}
       tip(t('guide.step.formBalls.tip')), 10,
       { glossaryId: _usedGlossaryIds.has('einfrieren') ? undefined : 'einfrieren' });
     let finalProofTitle = inlineGlossaryLink(t('guide.step.finalProof.title'), finalProofColdGlossary);
-    let finalProofBody = t('guide.step.finalProof.body', { proof: f.proof });
+    let finalProofBody = t('guide.step.finalProof.body', { proof: proofText });
     if (finalProofColdGlossary && !_usedGlossaryIds.has(finalProofColdGlossary)) finalProofBody = inlineGlossaryLink(finalProofBody, finalProofColdGlossary);
     st(finalProofTitle, ballsCold ? t('guide.step.finalProof.chipCold') : t('guide.step.finalProof.chipDefault'),
       finalProofBody,
-      (f.cold ? tip(t('guide.step.finalProof.tip')) : '') + timerBox('stueckgare', f.proofMin), f.proofMin,
+      (f.proofScaled ? tempScaledTip() : '') + (f.cold ? tip(t('guide.step.finalProof.tip')) : '') + timerBox('stueckgare', f.proofMin), f.proofMin,
       { glossaryId: (finalProofColdGlossary && !_usedGlossaryIds.has(finalProofColdGlossary)) ? finalProofColdGlossary : undefined });
 
     sec(t('guide.sec.bake'));

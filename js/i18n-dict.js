@@ -300,6 +300,17 @@
   add('guide.step.finalProof.tip', 'Teiglinge vor dem Backen wirklich auf Raumtemperatur kommen lassen – kalter Teig reißt beim Ausziehen.',
     'Really let the dough balls come to room temperature before baking: cold dough tears when stretched.');
 
+  // Temperaturskalierung (v4.27.0, js/schedule.js): ersetzt bei abweichender
+  // Raumtemperatur (state.room != 21 °C) den statischen {bulk}/{proof}-Textbaustein durch
+  // eine aus der tatsächlich skalierten Minutenzahl berechnete Anzeige (s. js/guide.js,
+  // fmtDur()) -- verhindert einen Etiketten-Fehler (Text nennt eine andere Zahl als Timer/
+  // Zeitplan). "Ca." markiert bewusst, dass es sich um einen an die Raumtemperatur
+  // angepassten Richtwert handelt, keine erneut exakt vermessene Zeit.
+  add('guide.tempScaled.bulk', 'Ca. <b>{h}</b> bei Raumtemp (Stockgare)', 'Approx. <b>{h}</b> at room temp (bulk rise)');
+  add('guide.tempScaled.proof', 'Ca. <b>{h}</b> bei Raumtemp', 'Approx. <b>{h}</b> at room temp');
+  add('guide.tempScaled.tip', 'Diese Zeit wurde an deine eingestellte Raumtemperatur ({room} °C) angepasst. Bezugswert dieser App ist 21 °C: wärmer lässt den Teig schneller reifen, kühler langsamer (Mechanismus durch Fachquellen belegt, die genaue Verdopplungsdistanz ist ein bewusst konservativ gewählter Richtwert).',
+    'This time was adapted to your set room temperature ({room} °C). This app\'s reference value is 21 °C: warmer speeds up fermentation, cooler slows it down (the mechanism is backed by baking sources, the exact doubling distance is a deliberately conservative estimate).');
+
   add('guide.step.preheat.title', 'Ofen vorheizen', 'Preheat the oven');
   add('guide.step.preheat.chip', '30–45 min', '30–45 min');
   add('guide.step.preheat.body', 'Pizzastein/-stahl auf <b>höchste Stufe</b> vorheizen. Pizzaofen (Gas/Holz) <b>430–480 °C</b>; Haushaltsofen Maximum (250–300 °C) + Grill, Stein ganz oben.',
@@ -487,6 +498,13 @@
   // ---- js/presets.js: Preset-Beschreibungen + Ladehinweis ------------------------
   add('preset.defaultDesc', 'Wähle ein erprobtes Rezept: alle Werte werden automatisch gesetzt. Danach kannst du jederzeit feinjustieren.',
     'Choose a proven recipe: all values are set automatically. You can fine-tune anytime afterwards.');
+  // v4.27.0 (Temperaturskalierung der Gärzeit, s. pizza-rechner-KONTEXT.md): die "~X h"-
+  // Zeitangaben in den Dropdown-Labels (option.napoliKlassisch usw.) sind an der
+  // Referenz-Raumtemperatur 21 °C gemessen (s. Sektion 33 in tests/test.html). Bei
+  // anderer eingestellter Raumtemperatur passt die Schritt-für-Schritt-Anleitung unten
+  // die tatsächliche Zeit automatisch an -- das Label selbst bleibt der ~21-°C-Richtwert.
+  add('preset.tempNote', 'Die „~X h"-Zeitangaben oben gelten für 21 °C Raumtemperatur. Bei anderer Raumtemperatur passt die Schritt-für-Schritt-Anleitung die tatsächlichen Zeiten automatisch an.',
+    'The "~X h" times above apply at 21 °C room temperature. At a different room temperature, the step-by-step guide automatically adapts the actual times.');
   // v4.25.1: AVPN-Aussage entschärft (Nutzer-Quellenprüfung gegen das offizielle
   // Disciplinare: nur Mehl/Wasser/Salz/Hefe, kein Öl) und die Gesamtgare-Angabe aus der
   // laufenden App nachgemessen (headless, PZ.calc() auf den echten Preset-Werten:

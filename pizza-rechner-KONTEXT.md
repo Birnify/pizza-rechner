@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-29 · Aktuelle Version: v4.26.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-29 · Aktuelle Version: v4.27.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -214,22 +214,25 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Teglia-/New-York-Style-Öl & -Zucker aus Quellen abgeleitet (v4.26.0) = aktueller Stand
+## Temperaturskalierung der Gärzeit nach Raumtemperatur (v4.27.0) = aktueller Stand
 
-Letzter Teil der Preset-Quellenprüfung (nach v4.25.1, die nur Aussagen/Zeitangaben
-korrigierte): drei echte Teigwerte geändert, quellengestützt, aber **nicht gebacken**.
-`teglia`-Öl 4 % → **2,5 %** (drei unabhängige Quellen bei 2,5 %, keine bei 4 %).
-`newyork_style`-Öl 3 % → **1,5 %** und Zucker 2 % → **1 %** (Feeling Foodish fährt exakt
-diese Werte). Sonst an beiden Presets **nichts** geändert (Hydration, Salz, Hefe, Mehl,
-Teiglingsgewicht, DDT unverändert) — Zeitangaben-Labels bleiben gültig (hängen an
-Hefe/Methode, nicht an Öl/Zucker), Sektion 33 bestätigt das automatisch. Bewusst **nicht**
-angefasst: `newyork_style`-Hefe, `teglia`-Gärzeit/-Teiglingsgewicht — kollidieren mit der
-Hefe/Gärzeit-Kopplung bei Direktführung, s. Backlog-Punkt unten. `tests/test.html`:
-973 Prüfungen unverändert grün (reine Wertänderung, kein neuer Testfall nötig).
+Bei Direktführung fließt `state.room` jetzt in `js/schedule.js` ein: `factor =
+2^((21-room)/10)`, gekappt auf [0,25; 4]. Mechanismus durch zwei unabhängige Fachquellen
+belegt (Weekend Bakery, PizzaPlan), die 10-°C-Verdopplungsdistanz ist eine bewusst
+konservative Wahl innerhalb der quellenbelegten 6-10-°C-Bandbreite, keine Einzelzahl aus
+einer Quelle. `bulkMin`/`proofMin` werden abhängig von `coldStage` asymmetrisch skaliert
+(nur die jeweils reine Raumtemp-Phase, nie ein Mischwert aus Kühlschrank+Raumtemp — bei
+`coldStage 'bulk'` ist das spiegelverkehrt zu `coldStage 'balls'`, s. HISTORIE für die
+genaue Begründung dieser bewussten Abweichung von der ursprünglichen Auftragsformulierung).
+`js/guide.js` zeigt bei abweichender Raumtemperatur die tatsächlich skalierte Zeit statt
+der bisherigen statischen Textspanne (Text-Zahlen-Konsistenz), plus einen erklärenden
+`.tip`-Hinweis. Bei `room===21` (Referenz) ist alles byte-identisch zum bisherigen
+Verhalten. `tests/test.html`: 973 → **1034** Prüfungen, alle grün.
 
-**Volle Details (Quellenbelege, Textänderungen DE/EN):** `pizza-rechner-KONTEXT-HISTORIE.md`,
-Abschnitt „Teglia-/New-York-Style-Öl & -Zucker aus Quellen abgeleitet (v4.26.0)" (vorherige
-Abschnitte ebenfalls dort verkettet).
+**Volle Details (Formel-Herleitung, die asymmetrische Skalierungs-Entscheidung,
+Text-Bausteine, Accessibility-Review):** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt
+„Temperaturskalierung der Gärzeit nach Raumtemperatur (v4.27.0)" (vorherige Abschnitte
+ebenfalls dort verkettet).
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -726,6 +729,16 @@ gegenprüfen), sonst zeigt die Live-App die falsche Version an.
   v3.20.0 ein eigener Regler, Default = Raumtemp, danach unabhängig änderbar)
 - Eis: Energiebilanz `x = M·c·(Ttap−wT) / (Lf + c·wT + c·(Ttap−wT))`, c=4,18, Lf=334
 - Schedule-Schwellen (yeast %): ≥1,2 Schnell · ≥0,5 Mittel · ≥0,18 ~24 h · ≥0,08 ~48 h · sonst 72 h+
+- Temperaturskalierung (v4.27.0, nur `method==='direct'`): `factor = 2^((21-room)/10)`,
+  gekappt [0,25; 4]. Mechanismus quellenbelegt (Weekend Bakery, PizzaPlan), 10 °C bewusst
+  konservativ aus der belegten 6-10-°C-Bandbreite gewählt. `bulkMin` skaliert außer bei
+  `coldStage 'bulk'` (dort mischt es Raumtemp+Kühlschrank); `proofMin` skaliert nur bei
+  `coldStage 'bulk'` oder `cold===false` (sonst mischt es Kühlschrank+Temperieren) — s.
+  HISTORIE für die genaue Begründung.
+- DDT-Reibungskonstanten (3 °C Hand / 6 °C Maschine) quellengeprüft (v4.27.0, gegen King
+  Arthur Baking und Dolf Starrevelds Referenzseite), keine Änderung nötig.
+- Backzeit-Formel (`max(10, N × 5 oder 7)`) quellenlos, aber intern konsistent mit den
+  Anleitungstexten geprüft (v4.27.0) und für in Ordnung befunden, keine Änderung.
 - Zeitplan: `totalMin` = Summe Step-Dauern; Ziel-Modus rechnet rückwärts; `back:50` beim Vorheizen
 
 ## Entwicklungsweise / Mitarbeit
@@ -1021,12 +1034,22 @@ Keine Code-Änderung durch den Audit nötig.
   Backlog-Punkt im engeren Sinne mehr, direkter Nutzerauftrag mit fertiger Quellenrecherche;
   s. „= aktueller Stand" oben). `b16`/`b24`/`b48` (0,4/0,3/0,2 %, `rel:'total'`) ersetzt
   durch `b_klassisch`/`b_kalt` (je 1,0 %, `rel:'pref'`, aus 12 Quellen abgeleitet).
-- **Temperaturabhängige Reifezeit statt fester Stundenzahl** (neu, v4.24.0, bewusst
-  verworfen für diesen Zyklus): in der Poolish-Quellenrecherche kam die Idee auf, Reifezeit
-  in Abhängigkeit von der tatsächlichen Umgebungstemperatur zu berechnen statt fixer
-  Stundenwerte je Stufe. Verworfen, weil nur eine dünne Quelle das stützt — wäre erfundene
-  Präzision ohne breite Beleglage. Kandidat nur, falls sich die Beleglage verbessert.
-  Geringer Aufwand für die Grundidee, aber hoher Rechercheaufwand für belastbare Werte.
+- ~~Temperaturabhängige Reifezeit statt fester Stundenzahl~~ — **erledigt in v4.27.0** (kein
+  Backlog-Punkt im engeren Sinne mehr, direkter Nutzerauftrag mit fertiger Quellenlage;
+  s. „= aktueller Stand" oben). In v4.24.0 noch verworfen (nur eine dünne Quelle), seither
+  bessere Beleglage gefunden (Weekend Bakery + PizzaPlan, unabhängig übereinstimmend) —
+  betrifft aber nur die Raumtemperatur-Skalierung bei Direktführung, NICHT die vier
+  Hefemenge-Schwellen selbst (die bleiben unbelegt-aber-unverändert) und NICHT die
+  Vorteig-Reifestufen (Biga/Poolish bleiben komplett unangetastet).
+- **Nebenbefund aus dem v4.27.0-`accessibility-expert`-Review** (MINOR, kein Blocker, kein
+  neues Problem — app-weites Bestandsverhalten): `#guideSteps` wird bei JEDER
+  Reglerbewegung (Hydration, Salz, Hefe, Raumtemperatur, alles) komplett per `innerHTML`
+  neu gerendert, ohne Live-Region-Ankündigung (WCAG 4.1.3), dass sich der Inhalt geändert
+  hat. Reviewer-Vorschlag: über die bereits vorhandene `#flourWarn`-Live-Region
+  mitlösen ("Anleitung aktualisiert") statt `#guideSteps` selbst live zu schalten (würde
+  bei über 20 Absätzen zu viel Lärm erzeugen). Bewusst nicht im v4.27.0-Zyklus behoben —
+  betrifft die ganze App, nicht nur die Temperaturskalierung, und ist eine eigene
+  Entscheidung wert (soll jede Reglerbewegung angesagt werden, oder nur bestimmte?).
 - **`PZ.formatWeightAuto()`-Dezimaltrennzeichen-Bug** (neu, v4.24.0 gefunden, nicht
   behoben — Scope-Grenze): `toFixed(2)` erzeugt „1.20 g" mit Punkt statt Komma
   (`js/units.js`), inkonsistent zum Rest der App (die anderen Formatierungen normieren auf

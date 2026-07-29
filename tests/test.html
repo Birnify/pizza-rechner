@@ -4812,6 +4812,209 @@
   });
 
   // ─────────────────────────────────────────────────────────────
+  heading('34 · Temperaturskalierung der Gärzeit nach Raumtemperatur (v4.27.0)');
+  // Mechanismus quellenbelegt (Weekend Bakery + PizzaPlan, s. js/schedule.js-Kommentar/
+  // pizza-rechner-KONTEXT.md), Verdopplungsdistanz 10 °C bewusst konservativ gewählt.
+  // Referenzpunkt PRAKTISCH GEPRÜFT ZUERST (Auftrag): BASE.room = 21 -> tempFactor
+  // MUSS exakt 1 sein, sonst wäre jeder bisherige bulkMin/proofMin-Testfall oben
+  // (Sektion 5, alle mit BASE.room=21) ein stiller Regressionsbruch.
+  testScheduleCase('Regressionsanker: room=21 (BASE-Default) -> Faktor 1, keine Verhaltensänderung', {
+    method: 'direct', yeast: 1.2, room: 21
+  }, f => [
+    ['tempFactor = 1', f.tempFactor, 1, 0.0001],
+    ['bulkMin unverändert (105)', f.bulkMin, 105, 0],
+    ['proofMin unverändert (150)', f.proofMin, 150, 0],
+    ['bulkScaled = false (keine echte Zahlenänderung)', f.bulkScaled, false],
+    ['proofScaled = false', f.proofScaled, false],
+  ]);
+
+  // --- cold:false (beide Phasen reine Raumtemp -> beide skalieren) ---
+  testScheduleCase('cold:false · room=31 (wärmer) -> Faktor 0,5, beide Phasen halbiert', {
+    method: 'direct', yeast: 0.5, room: 31
+  }, f => [
+    ['tempFactor = 0,5', f.tempFactor, 0.5, 0.0001],
+    ['bulkMin = 60 (120×0,5)', f.bulkMin, 60, 0],
+    ['proofMin = 150 (300×0,5)', f.proofMin, 150, 0],
+    ['bulkScaled = true', f.bulkScaled, true],
+    ['proofScaled = true', f.proofScaled, true],
+  ]);
+  testScheduleCase('cold:false · room=11 (kälter) -> Faktor 2, beide Phasen verdoppelt', {
+    method: 'direct', yeast: 1.2, room: 11
+  }, f => [
+    ['tempFactor = 2', f.tempFactor, 2, 0.0001],
+    ['bulkMin = 210 (105×2)', f.bulkMin, 210, 0],
+    ['proofMin = 300 (150×2)', f.proofMin, 300, 0],
+    ['bulkScaled = true', f.bulkScaled, true],
+    ['proofScaled = true', f.proofScaled, true],
+  ]);
+
+  // --- cold:true, coldStage 'balls' (Standard): NUR bulkMin ist reine Raumtemp
+  //     (Stockgare), proofMin mischt Kühlschrank+Temperieren -> bleibt unverändert. ---
+  testScheduleCase('cold:true · coldStage balls · room=31 -> NUR bulkMin skaliert', {
+    method: 'direct', yeast: 0.18, coldStage: 'balls', room: 31
+  }, f => [
+    ['tempFactor = 0,5', f.tempFactor, 0.5, 0.0001],
+    ['bulkMin = 60 (120×0,5)', f.bulkMin, 60, 0],
+    ['proofMin unverändert (1440, Mischwert Kühlschrank+Temperieren)', f.proofMin, 1440, 0],
+    ['bulkScaled = true', f.bulkScaled, true],
+    ['proofScaled = false', f.proofScaled, false],
+  ]);
+  testScheduleCase('cold:true · coldStage balls · room=11 -> NUR bulkMin skaliert', {
+    method: 'direct', yeast: 0.08, coldStage: 'balls', room: 11
+  }, f => [
+    ['tempFactor = 2', f.tempFactor, 2, 0.0001],
+    ['bulkMin = 240 (120×2)', f.bulkMin, 240, 0],
+    ['proofMin unverändert (2460)', f.proofMin, 2460, 0],
+    ['bulkScaled = true', f.bulkScaled, true],
+    ['proofScaled = false', f.proofScaled, false],
+  ]);
+
+  // --- cold:true, coldStage 'bulk' (klassisch): hier ist es umgekehrt -- bulkMin
+  //     mischt Raumtemp-Start+Kühlschrank, proofMin ist die reine Temperier-Phase am
+  //     Backtag -> NUR proofMin skaliert (bewusste Verallgemeinerung, s. js/schedule.js). ---
+  testScheduleCase('cold:true · coldStage bulk · room=31 -> NUR proofMin skaliert (Rollen vertauscht)', {
+    method: 'direct', yeast: 0.18, coldStage: 'bulk', room: 31
+  }, f => [
+    ['tempFactor = 0,5', f.tempFactor, 0.5, 0.0001],
+    ['bulkMin unverändert (1260, Mischwert Raumtemp+Kühlschrank)', f.bulkMin, 1260, 0],
+    ['proofMin = 150 (300×0,5)', f.proofMin, 150, 0],
+    ['bulkScaled = false', f.bulkScaled, false],
+    ['proofScaled = true', f.proofScaled, true],
+  ]);
+  testScheduleCase('cold:true · coldStage bulk · room=11 -> NUR proofMin skaliert (Rollen vertauscht)', {
+    method: 'direct', yeast: 0.08, coldStage: 'bulk', room: 11
+  }, f => [
+    ['tempFactor = 2', f.tempFactor, 2, 0.0001],
+    ['bulkMin unverändert (2250)', f.bulkMin, 2250, 0],
+    ['proofMin = 660 (330×2)', f.proofMin, 660, 0],
+    ['bulkScaled = false', f.bulkScaled, false],
+    ['proofScaled = true', f.proofScaled, true],
+  ]);
+
+  // --- Reglergrenzen (Auftrag: room=4 und room=32 explizit prüfen) ---
+  // Bei diesen beiden Werten greift die Kappung selbst noch NICHT (Faktor bleibt
+  // innerhalb [0,25; 4]) -- geprüft wird hier die korrekte Formelanwendung an den
+  // Rändern des im Auftrag genannten Bereichs.
+  testScheduleCase('Reglergrenze room=4 -> Faktor 2^1,7 ≈ 3,249 (noch unterhalb der Kappung)', {
+    method: 'direct', yeast: 1.2, room: 4
+  }, f => [
+    ['tempFactor ≈ 3,249', f.tempFactor, Math.pow(2, 1.7), 0.001],
+    ['tempFactor < Kappungs-Maximum 4', f.tempFactor < 4, true],
+    ['bulkMin = round(105×Faktor)', f.bulkMin, Math.round(105 * Math.pow(2, 1.7)), 0],
+  ]);
+  testScheduleCase('Reglergrenze room=32 -> Faktor 2^-1,1 ≈ 0,467 (noch oberhalb der Kappung)', {
+    method: 'direct', yeast: 1.2, room: 32
+  }, f => [
+    ['tempFactor ≈ 0,467', f.tempFactor, Math.pow(2, -1.1), 0.001],
+    ['tempFactor > Kappungs-Minimum 0,25', f.tempFactor > 0.25, true],
+    ['bulkMin = round(105×Faktor)', f.bulkMin, Math.round(105 * Math.pow(2, -1.1)), 0],
+  ]);
+  // Echte Kappung: nur mit extremeren, per UI nicht erreichbaren Werten reproduzierbar
+  // (Reglerbereich #roomN ist min=0/max=40) -- hier direkt über PZ.state gesetzt, um die
+  // defensive Sicherheitsgrenze selbst zu verifizieren.
+  testScheduleCase('Kappung Maximum: room=0 -> Faktor würde 2^2,1≈4,287 ergeben, gekappt auf 4', {
+    method: 'direct', yeast: 1.2, room: 0
+  }, f => [
+    ['tempFactor = 4 (gekappt)', f.tempFactor, 4, 0.0001],
+    ['bulkMin = 420 (105×4)', f.bulkMin, 420, 0],
+  ]);
+  testScheduleCase('Kappung Minimum: room=60 -> Faktor würde 2^-3,9≈0,067 ergeben, gekappt auf 0,25', {
+    method: 'direct', yeast: 1.2, room: 60
+  }, f => [
+    ['tempFactor = 0,25 (gekappt)', f.tempFactor, 0.25, 0.0001],
+    ['bulkMin = 26 (round(105×0,25))', f.bulkMin, Math.round(105 * 0.25), 0],
+  ]);
+
+  // --- Vorteig bleibt unangetastet (Auftrag: NUR method === 'direct') ---
+  testScheduleCase('Vorteig (Biga) bleibt bei jeder Raumtemperatur unskaliert', {
+    method: 'biga', yeast: 0.3, room: 11
+  }, f => [
+    ['bulkMin unverändert (150)', f.bulkMin, 150, 0],
+    ['proofMin unverändert (360)', f.proofMin, 360, 0],
+    ['tempFactor nicht gesetzt (Zweig kehrt vor der Skalierung zurück)', f.tempFactor, undefined],
+  ]);
+
+  // --- Text-Zahlen-Konsistenz (js/guide.js): das gerenderte #guideSteps-HTML muss die
+  //     tatsächlich skalierte Zeit zeigen, nicht die statische Ursprungsspanne. ---
+  // fmtDur-Nachbau (aus js/guide.js, analog zu fmtClockTest oben): nur zum Prüfen des
+  // gerenderten Anleitungstexts, dupliziert keine Rechenlogik.
+  function fmtDurTest(min) {
+    min = Math.round(min);
+    if (min < 60) return min + ' ' + PZ.t('guide.dur.min');
+    const h = Math.round(min / 60);
+    if (h < 24) return h + ' ' + PZ.t('guide.dur.h');
+    const d = Math.floor(h / 24), r = h % 24;
+    return d + ' ' + PZ.t('guide.dur.day') + (r ? ' ' + r + ' ' + PZ.t('guide.dur.h') : '');
+  }
+
+  testCase('Text-Konsistenz: room=21 zeigt weiterhin den unveränderten statischen Anleitungstext', {
+    method: 'direct', yeast: 0.5, room: 21
+  }, R => {
+    const html = document.getElementById('guideSteps').innerHTML;
+    return [
+      ['statischer Bulk-Text "2 h bei Raumtemp" vorhanden (unverändert)', html.includes('2 h</b> bei Raumtemp'), true],
+      ['kein Temperatur-Anpassungshinweis bei Referenztemperatur', html.includes('Bezugswert dieser App ist 21'), false],
+    ];
+  });
+
+  (function () {
+    Object.assign(PZ.state, BASE, { method: 'direct', yeast: 0.5, room: 31 });
+    PZ.calc();
+    const f = PZ.schedule();
+    const html = document.getElementById('guideSteps').innerHTML;
+    const expectBulkTxt = fmtDurTest(f.bulkMin);   // erwartet "1 h" (60 min bei Faktor 0,5)
+    const expectProofTxt = fmtDurTest(f.proofMin); // erwartet "3 h" (150 min)
+    renderBox('Text-Konsistenz: room=31 -- gerenderter Bulk-/Stückgare-Text nennt die skalierte Zeit, nicht die statische "2 h"/"4-6 h"-Spanne', [
+      { label: 'skalierter Bulk-Wert (' + expectBulkTxt + ') steht im Anleitungstext', ok: html.includes(expectBulkTxt), actual: html.includes(expectBulkTxt) ? 'ja' : 'nein', expected: 'ja', tol: null },
+      { label: 'skalierter Stückgare-Wert (' + expectProofTxt + ') steht im Anleitungstext', ok: html.includes(expectProofTxt), actual: html.includes(expectProofTxt) ? 'ja' : 'nein', expected: 'ja', tol: null },
+      { label: 'statische "2 h"-Spanne für die Stockgare NICHT mehr im Text', ok: !html.includes('2 h</b> bei Raumtemp'), actual: !html.includes('2 h</b> bei Raumtemp') ? 'ja' : 'nein', expected: 'ja', tol: null },
+      { label: 'Temperatur-Anpassungshinweis ist enthalten (room in °C genannt)', ok: html.includes('Bezugswert dieser App ist 21'), actual: html.includes('Bezugswert dieser App ist 21') ? 'ja' : 'nein', expected: 'ja', tol: null },
+    ]);
+  })();
+
+  // --- Mehl-Warnung: kann durch kalten Raum NEU ausgelöst werden (erwünscht) ---
+  testFlourWarn('Mehl-Warnung bei room=21 (Referenz): Sofia (maxH 24) + Mittlere Gare (7 h) -> keine Warnung', {
+    flour: 'dallag_sofia', method: 'direct', yeast: 0.5, hyd: 62, room: 21
+  }, html => [
+    ['kein Warn-HTML', html.trim() === ''],
+  ]);
+  testFlourWarn('Mehl-Warnung wird durch sehr kalten Raum NEU ausgelöst (room=1, Faktor 4 -> 28 h > maxH 24)', {
+    flour: 'dallag_sofia', method: 'direct', yeast: 0.5, hyd: 62, room: 1
+  }, html => [
+    ['"zu lang" in Warnung', html.includes('zu lang')],
+  ]);
+
+  // --- Zeitplan-Rückwärtsrechnung: skalierte totalMin muss korrekt einfließen ---
+  const TEMPSCALE_FIXED_ISO = '2026-08-01T18:00';
+  [15, 21, 30].forEach(function (roomVal) {
+    testCase('Ziel-Modus bei room=' + roomVal + ' °C: errechnete Start-Zeit nutzt die (skalierte) R.totalMin', {
+      method: 'direct', yeast: 0.5, room: roomVal, timeMode: 'target', timeISO: TEMPSCALE_FIXED_ISO
+    }, R => {
+      const target = new Date(TEMPSCALE_FIXED_ISO);
+      const computedStart = new Date(target.getTime() - R.totalMin * 60000);
+      const html = document.getElementById('guideSteps').innerHTML;
+      return [
+        ['errechneter Start-Zeitpunkt im Banner entspricht Zielzeit − R.totalMin', html.includes(fmtClockTest(computedStart)), true],
+      ];
+    });
+  });
+  (function () {
+    Object.assign(PZ.state, BASE, { method: 'direct', yeast: 0.5, room: 21 });
+    PZ.calc();
+    const t21 = PZ.R.totalMin;
+    Object.assign(PZ.state, BASE, { method: 'direct', yeast: 0.5, room: 15 });
+    PZ.calc();
+    const t15 = PZ.R.totalMin;
+    Object.assign(PZ.state, BASE, { method: 'direct', yeast: 0.5, room: 30 });
+    PZ.calc();
+    const t30 = PZ.R.totalMin;
+    renderBox('Raumtemperatur verändert R.totalMin bei identischem Rezept (15 °C > 21 °C > 30 °C)', [
+      { label: '15 °C (kälter) dauert länger als 21 °C', ok: t15 > t21, actual: t15, expected: '> ' + t21, tol: null },
+      { label: '30 °C (wärmer) dauert kürzer als 21 °C', ok: t30 < t21, actual: t30, expected: '< ' + t21, tol: null },
+    ]);
+  })();
+
+  // ─────────────────────────────────────────────────────────────
   const s = document.getElementById('summary');
   s.textContent = failed === 0
     ? '✓ Alle ' + passed + ' Prüfungen bestanden'

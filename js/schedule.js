@@ -43,51 +43,103 @@
       };
     }
 
-    // --- Direkte Führung ---
-    if (y >= 1.2) return {
-      label: t('sched.directFast.label', 'Schnellgare · gleicher Tag'),
-      bulk: t('sched.directFast.bulk', '<b>1,5–2 h</b> bei warmer Raumtemp (24–26 °C)'), bulkMin: 105,
-      proof: t('sched.directFast.proof', '<b>2–3 h</b> bei Raumtemp'), proofMin: 150, cold: false
-    };
-    if (y >= 0.5) return {
-      label: t('sched.directMedium.label', 'Mittlere Gare'),
-      bulk: t('sched.directMedium.bulk', '<b>2 h</b> bei Raumtemp'), bulkMin: 120,
-      proof: t('sched.directMedium.proof', '<b>4–6 h</b> bei Raumtemp'), proofMin: 300, cold: false
-    };
-    if (y >= 0.18) {
-      if (ballsCold) return {
+    // --- Direkte Führung (Basiswerte unverändert wie bisher) ---
+    let r;
+    if (y >= 1.2) {
+      r = {
+        label: t('sched.directFast.label', 'Schnellgare · gleicher Tag'),
+        bulk: t('sched.directFast.bulk', '<b>1,5–2 h</b> bei warmer Raumtemp (24–26 °C)'), bulkMin: 105,
+        proof: t('sched.directFast.proof', '<b>2–3 h</b> bei Raumtemp'), proofMin: 150, cold: false
+      };
+    } else if (y >= 0.5) {
+      r = {
+        label: t('sched.directMedium.label', 'Mittlere Gare'),
+        bulk: t('sched.directMedium.bulk', '<b>2 h</b> bei Raumtemp'), bulkMin: 120,
+        proof: t('sched.directMedium.proof', '<b>4–6 h</b> bei Raumtemp'), proofMin: 300, cold: false
+      };
+    } else if (y >= 0.18) {
+      r = ballsCold ? {
         label: t('sched.directLong.label', 'Lange Gare · ~24 h'),
         bulk: t('sched.directLongCold.bulk', '<b>2 h</b> bei Raumtemp (Stockgare)'), bulkMin: 120,
         proof: t('sched.directLongCold.proof', 'Teiglinge <b>18–20 h</b> Kühlschrank (4–6 °C), am Backtag <b>4–5 h</b> temperieren'), proofMin: 1440, cold: true
-      };
-      return {
+      } : {
         label: t('sched.directLong.label', 'Lange Gare · ~24 h'),
         bulk: t('sched.directLongBulk.bulk', '<b>2 h</b> Raumtemp, dann <b>18–20 h</b> Kühlschrank (4–6 °C)'), bulkMin: 1260,
         proof: t('sched.directLongBulk.proof', 'Teiglinge <b>4–6 h</b> bei Raumtemp akklimatisieren'), proofMin: 300, cold: true
       };
-    }
-    if (y >= 0.08) {
-      if (ballsCold) return {
+    } else if (y >= 0.08) {
+      r = ballsCold ? {
         label: t('sched.directVeryLong.label', 'Sehr lange Kaltgare · ~48 h'),
         bulk: t('sched.directVeryLongCold.bulk', '<b>2 h</b> bei Raumtemp (Stockgare)'), bulkMin: 120,
         proof: t('sched.directVeryLongCold.proof', 'Teiglinge <b>36–40 h</b> Kühlschrank (4 °C), am Backtag <b>5 h</b> temperieren'), proofMin: 2460, cold: true
-      };
-      return {
+      } : {
         label: t('sched.directVeryLong.label', 'Sehr lange Kaltgare · ~48 h'),
         bulk: t('sched.directVeryLongBulk.bulk', '<b>1–2 h</b> Raumtemp, dann <b>24–48 h</b> Kühlschrank (4 °C)'), bulkMin: 2250,
         proof: t('sched.directVeryLongBulk.proof', 'Teiglinge <b>5–6 h</b> vor dem Backen temperieren'), proofMin: 330, cold: true
       };
+    } else {
+      r = ballsCold ? {
+        label: t('sched.directExtreme.label', 'Extrem lange Kaltgare · 72 h+'),
+        bulk: t('sched.directExtremeCold.bulk', '<b>2 h</b> bei Raumtemp (Stockgare)'), bulkMin: 120,
+        proof: t('sched.directExtremeCold.proof', 'Teiglinge <b>68–72 h</b> Kühlschrank (4 °C), am Backtag <b>5 h</b> temperieren'), proofMin: 4530, cold: true
+      } : {
+        label: t('sched.directExtreme.label', 'Extrem lange Kaltgare · 72 h+'),
+        bulk: t('sched.directExtremeBulk.bulk', '<b>1–2 h</b> Raumtemp, dann <b>48–72 h</b> Kühlschrank (4 °C)'), bulkMin: 4320,
+        proof: t('sched.directExtremeBulk.proof', 'Teiglinge <b>5–6 h</b> vor dem Backen temperieren'), proofMin: 330, cold: true
+      };
     }
-    if (ballsCold) return {
-      label: t('sched.directExtreme.label', 'Extrem lange Kaltgare · 72 h+'),
-      bulk: t('sched.directExtremeCold.bulk', '<b>2 h</b> bei Raumtemp (Stockgare)'), bulkMin: 120,
-      proof: t('sched.directExtremeCold.proof', 'Teiglinge <b>68–72 h</b> Kühlschrank (4 °C), am Backtag <b>5 h</b> temperieren'), proofMin: 4530, cold: true
-    };
-    return {
-      label: t('sched.directExtreme.label', 'Extrem lange Kaltgare · 72 h+'),
-      bulk: t('sched.directExtremeBulk.bulk', '<b>1–2 h</b> Raumtemp, dann <b>48–72 h</b> Kühlschrank (4 °C)'), bulkMin: 4320,
-      proof: t('sched.directExtremeBulk.proof', 'Teiglinge <b>5–6 h</b> vor dem Backen temperieren'), proofMin: 330, cold: true
-    };
+
+    // --- Raumtemperatur-Skalierung (v4.27.0) -----------------------------------------
+    // MECHANISMUS quellenbelegt durch zwei unabhängige, fachlich anerkannte Quellen
+    // (s. pizza-rechner-KONTEXT.md, Abschnitt "Wichtige Berechnungs-Details"): Weekend
+    // Bakery ("bei 21 °C/70 °F hat sich die Hefeaktivität gegenüber ~27 °C ungefähr
+    // halbiert, die Gare dauert doppelt so lange" -- rund 6 °C Differenz für Faktor 2) und
+    // PizzaPlan ("alle 8-10 °C mehr verdoppelt sich die Gärgeschwindigkeit ungefähr")
+    // bracketieren die Verdopplungsdistanz zwischen ~6 und ~10 °C. Die konkrete Zahl
+    // 10 °C ist daraus bewusst konservativ gewählt (der größere, weniger aggressive Wert
+    // der Bandbreite) -- eine Design-Entscheidung, KEINE exakt zitierte Einzelzahl einer
+    // Quelle. Referenz 21 °C = bestehender state.room-Default (deckt sich mit Crust
+    // Kingdom, das 21 °C explizit als Bezugstemperatur nennt).
+    const room = state.room;
+    let tempFactor = Math.pow(2, (21 - room) / 10);
+    // Sicherheitsgrenze (nicht aus einer Quelle abgeleitet, reiner Schutz gegen absurde
+    // Zeitangaben an extremen Reglerwerten): Faktor auf [0,25; 4] gekappt.
+    tempFactor = Math.min(4, Math.max(0.25, tempFactor));
+    function scaled(min) { return Math.round(min * tempFactor); }
+
+    // Welche der beiden Phasen (bulkMin/proofMin) für DIESEN Zweig tatsächlich eine reine
+    // Raumtemperatur-Dauer ist, hängt nicht nur von r.cold ab, sondern -- bei kalten
+    // Zweigen -- zusätzlich von coldStage:
+    //  - r.cold === false (Schnell-/Mittlere Gare): beide Phasen sind reine Raumtemp
+    //    -> beide skalieren.
+    //  - r.cold === true UND ballsCold (Standard "als Teiglinge"): bulkMin ist die reine
+    //    Raumtemp-Stockgare, proofMin mischt Kühlschrankzeit + Temperieren in einer Zahl
+    //    -> NUR bulkMin skalieren, proofMin unverändert lassen (erfundene Genauigkeit
+    //    vermeiden, s. Auftrag).
+    //  - r.cold === true UND NICHT ballsCold (coldStage "im Stück"): hier ist es
+    //    strukturell umgekehrt -- bulkMin mischt Raumtemp-Start + Kühlschrank ("2 h
+    //    Raumtemp, dann 18-20 h Kühlschrank"), proofMin ist dort die reine Temperier-/
+    //    Stückgare-Phase am Backtag ("Teiglinge X h bei Raumtemp akklimatisieren").
+    //    Skaliert wird deshalb NUR proofMin, bulkMin bleibt unverändert. Bewusste
+    //    Verallgemeinerung des im Auftrag für den Standardfall genannten Prinzips
+    //    ("Mischwerte nicht aufteilen, das wäre erfundene Genauigkeit") auf diesen
+    //    spiegelbildlichen Fall -- im Auftrag selbst nur für coldStage "als Teiglinge"
+    //    explizit benannt, dort aber nicht bedacht, dass sich bei coldStage "im Stück"
+    //    die Rollen von bulkMin/proofMin genau umkehren (s. pizza-rechner-KONTEXT.md für
+    //    die ausführliche Begründung dieser bewussten Abweichung von der wörtlichen
+    //    Formulierung "bulkMin wird IMMER skaliert").
+    const scaleBulk = !r.cold || ballsCold;
+    const scaleProof = !r.cold || !ballsCold;
+    const rawBulkMin = r.bulkMin, rawProofMin = r.proofMin;
+    if (scaleBulk) r.bulkMin = scaled(rawBulkMin);
+    if (scaleProof) r.proofMin = scaled(rawProofMin);
+    // Nur bei tatsächlicher Zahlenänderung als "skaliert" markieren (bei room===21 ist
+    // tempFactor exakt 1, Math.round liefert wieder den Ausgangswert -> keine
+    // Verhaltensänderung, guide.js zeigt weiterhin den identischen statischen Text).
+    r.bulkScaled = scaleBulk && r.bulkMin !== rawBulkMin;
+    r.proofScaled = scaleProof && r.proofMin !== rawProofMin;
+    r.tempFactor = tempFactor;
+    return r;
   }
 
   PZ.schedule = schedule;

@@ -8,6 +8,154 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Temperaturskalierung der Gärzeit nach Raumtemperatur (v4.27.0)
+
+Direkter Nutzerauftrag, Konzept/Quellenlage/Design im Hauptgespräch vollständig erarbeitet
+und bestätigt, kein `/define-feature`, kein Brainstorming nötig. Bisher bestimmte
+`js/schedule.js` bei Direktführung den Gärzeit-Fahrplan ausschließlich aus `state.yeast`
+(vier Schwellen), `state.room` floss dort nie ein, obwohl der Regler längst existiert
+(DDT-/Eiswasser-Rechnung nutzt ihn schon lange).
+
+**Zwei sehr unterschiedlich sichere Quellen-Ergebnisse:** die absoluten "X % Hefe = Y
+Stunden"-Tabellen verschiedener Quellen (PizzaPlan, Jordo's Pizza Calculator, dough.school,
+Crust Kingdom, Baking Steel) widersprechen sich um bis zu Faktor 25 für vergleichbare
+Zeitfenster — zu unsicher, um die vier bestehenden Hefemenge-Schwellen (1,2/0,5/0,18/
+0,08 %) zu ersetzen; sie bleiben **unverändert**. Gut belegt ist dagegen, WIE STARK sich
+die Gärzeit mit der Temperatur bei GLEICHER Hefemenge verschiebt: Weekend Bakery
+(weekendbakery.com/posts/a-few-tips-on-dough-temperature, wörtlich "bei 21 °C/70 °F hat
+sich die Hefeaktivität gegenüber ~27 °C etwa halbiert, die Gare dauert doppelt so lange" —
+rund 6 °C Differenz für Faktor 2) und PizzaPlan (pizzaplan.app/en/room-temperature-
+fermentation, "alle 8-10 °C mehr verdoppelt sich die Gärgeschwindigkeit ungefähr")
+bracketieren die Verdopplungsdistanz zwischen ~6 und ~10 °C, unabhängig voneinander.
+
+**Formel** (`js/schedule.js`, nur bei `method === 'direct'`): `factor = 2^((21-room)/10)`,
+Referenz 21 °C = bestehender `state.room`-Default (deckt sich mit Crust Kingdom, das 21 °C
+explizit als Bezug nennt). Die konkrete Zahl **10 °C** ist bewusst konservativ aus der
+6-10-°C-Bandbreite gewählt (der größere, weniger aggressive Wert) — eine Design-
+Entscheidung, KEINE exakt zitierte Einzelzahl. Faktor gekappt auf **[0,25; 4]** (reiner
+Schutz gegen absurde Werte an Reglerextremen, nicht aus einer Quelle abgeleitet — bei den
+im Auftrag genannten "Reglergrenzen 4-32 °C" greift die Kappung noch gar nicht, Faktor
+bleibt dort bei ~3,25 bzw. ~0,47; echte Kappung erst außerhalb, z. B. `room:0` → 4 oder
+`room:60` → 0,25, per Test verifiziert).
+
+**Asymmetrische Anwendung, wichtigste Abweichung von der wörtlichen Auftragsformulierung:**
+der Auftrag sagte "`bulkMin` wird IMMER skaliert, `proofMin` nur wenn `cold===false`" mit
+der Begründung, `bulkMin` sei "in jedem Zweig laut Anleitungstext bei Raumtemperatur". Das
+stimmt für `coldStage 'balls'` (Standard: kurze Stockgare bei Raumtemp, dann Teiglinge in
+den Kühlschrank — `bulkMin` ist rein Raumtemp, `proofMin` mischt Kühlschrank+Temperieren in
+einer Zahl), aber NICHT für `coldStage 'bulk'` (klassisch, "im Stück": hier ist es
+strukturell umgekehrt — `bulkMin` mischt Raumtemp-Start+Kühlschrank ("2 h Raumtemp, dann
+18-20 h Kühlschrank"), `proofMin` ist dort die reine Temperier-/Stückgare-Phase am Backtag
+("Teiglinge X h bei Raumtemp akklimatisieren")). Statt die Vorgabe wörtlich umzusetzen (was
+bei `coldStage 'bulk'` einen Mischwert mitskaliert und einen reinen Raumtemp-Wert
+unskaliert gelassen hätte — spiegelverkehrt zur eigentlichen Absicht), wurde das im Auftrag
+selbst für den Standardfall genannte Prinzip ("Mischwerte nicht aufteilen, das wäre
+erfundene Genauigkeit") konsistent auf beide `coldStage`-Varianten angewendet: bei
+`coldStage 'bulk'` wird stattdessen NUR `proofMin` skaliert, `bulkMin` bleibt unverändert.
+Boolesche Umsetzung in `js/schedule.js`: `scaleBulk = !r.cold || ballsCold`,
+`scaleProof = !r.cold || !ballsCold`. Bei `cold===false` (Schnell-/Mittlere Gare) sind
+ohnehin beide Phasen reine Raumtemp, dort skalieren beide unverändert wie beauftragt.
+
+**Text-Zahlen-Konsistenz (`js/guide.js`), wichtigster Teil des Auftrags:** die Anleitungs-
+texte `guide.step.bulkRise.body`/`guide.step.finalProof.body` bezogen `{bulk}`/`{proof}`
+bisher direkt aus den statischen, fest übersetzten `f.bulk`/`f.proof`-Strings aus
+`js/schedule.js` (z. B. "<b>2 h</b> bei Raumtemp") — unabhängig von den tatsächlichen,
+jetzt skalierten `bulkMin`/`proofMin`-Minutenwerten, die Timer/Zeitplan/Mehl-Warnung
+verwenden. Ohne Gegenmaßnahme wäre das genau der Etiketten-Fehler entstanden, der in den
+letzten drei Zyklen bei den Presets behoben wurde (Label nennt eine Zahl, die Rechnung eine
+andere). Lösung: `schedule()` liefert zusätzlich `bulkScaled`/`proofScaled` (nur `true`,
+wenn sich die jeweilige Minutenzahl durch die Skalierung TATSÄCHLICH geändert hat — bei
+`room===21` ist der Faktor exakt 1, `Math.round` liefert wieder den Ausgangswert, also
+`false`, identischer Text wie vor v4.27.0) sowie `tempFactor`. `js/guide.js` ersetzt bei
+`true` den statischen Text durch eine aus `fmtDur(bulkMin/proofMin)` berechnete Anzeige
+(neue i18n-Keys `guide.tempScaled.bulk`/`.proof`, "Ca. <b>{h}</b> bei Raumtemp …") und
+ergänzt einen `.tip`-Hinweis (`guide.tempScaled.tip`) mit der eingestellten Raumtemperatur,
+damit der Unterschied zum "Normalfall" 21 °C nachvollziehbar bleibt statt wie ein Fehler zu
+wirken. Eigener `tempScaledTip()`-Helper (statt eines einmal vorab gebauten HTML-Strings):
+`tip()`/`hintBox()` vergibt bei jedem Aufruf eine neue, eindeutige `aria-controls`-ID — bei
+`cold:false`-Zweigen sind `bulkScaled` UND `proofScaled` oft gleichzeitig `true`, ein
+wiederverwendeter String hätte in zwei Schritten dieselbe ID erzeugt (Bug in einem frühen
+Entwurf, vor dem Testlauf selbst gefunden und behoben).
+
+**Preset-Dropdown-Labels** (z. B. "Napoli Klassisch · ~28 h") bleiben bei `room===21`
+(Referenzbedingung) weiterhin korrekt (Faktor 1). Bei anderer Raumtemperatur zeigen sie
+bewusst einen anderen Wert als die tatsächlich berechnete Anleitung (Label = Circa-Angabe
+bei Referenzbedingungen, korrektes Verhalten, kein Bug) — neuer, immer sichtbarer Hinweis
+`#presetTempNote` (`.hint`-Baustein direkt unter dem Preset-Dropdown, Desktop + Mobil,
+i18n-Key `preset.tempNote`) stellt das einmal klar, statt es an jedem einzelnen Preset zu
+wiederholen.
+
+**Mehl-Warnung/Zeitplan-Rückwärtsrechnung laufen automatisch korrekt mit**, da beide direkt
+`f.bulkMin`/`f.proofMin`/`R.totalMin` verwenden (keine eigene Änderung nötig) — gezielt
+gegengeprüft: ein sehr kalter Raum (`room:1`, Faktor 4) löst bei einem Preset mit knapper
+Gärzeit (Dallagiovanna Sofia, maxH 24 h) jetzt korrekt eine NEUE Mehl-Warnung aus, die bei
+`room:21` nicht erscheint (erwünschtes Verhalten). Zeitplan-Rückwärtsrechnung bei 15 °C/
+21 °C/30 °C, gleiche Zieluhrzeit: unterschiedliche errechnete Startzeiten, passend zur
+jeweils skalierten `R.totalMin`.
+
+**Vorteig (Biga/Poolish) bleibt komplett unangetastet** (`js/schedule.js`s
+`if (state.method !== 'direct') {...}`-Zweig unverändert) — deren Reifezeiten wurden in
+den letzten beiden Zyklen gerade erst auf feste, quellenbelegte Stundenwerte justiert,
+diese Werte werden durch die neue Skalierung nicht verändert.
+
+**Tests:** `tests/test.html` **973 → 1034** Prüfungen (neue Sektion "34 · Temperaturskalierung
+der Gärzeit nach Raumtemperatur"): Regressionsanker `room:21` (Faktor 1, unverändertes
+Verhalten), `room:31`/`room:11` je für `cold:false` und beide `coldStage`-Varianten
+(`balls`/`bulk`), Kappungsgrenzen (`room:4`/`room:32` noch unterhalb der Kappung, `room:0`/
+`room:60` mit tatsächlich gekapptem Faktor), Vorteig bleibt unskaliert, Text-Konsistenz-
+Prüfung direkt gegen das gerenderte `#guideSteps`-HTML, Mehl-Warnung-Interaktion, Zeitplan-
+Rückwärtsrechnung bei drei Raumtemperaturen. Alle 1034 grün (Headless-Edge-Dump, 0 Fails).
+Sektion 33 (Label-Kopplung, v4.25.1) vorab verifiziert und weiterhin grün: `BASE.room=21`,
+kein `PRESET_STATES`-Eintrag überschreibt `room`, Faktor bleibt dort 1. Parse-Check
+(`new Function`) über `js/schedule.js`/`js/guide.js`/`js/i18n-dict.js` grün. Echter Ladetest
+(Headless-Edge, Konsole geprüft) für alle drei HTML-Dateien: fehlerfrei, `appVersion` zeigt
+v4.27.0.
+
+**`accessibility-expert`-Review (gezielt, neue `.tip`-Bausteine + neuer statischer
+Hinweis):** 0 Blocker, 0 Major, 3 Minor. (1) Räumliche Metapher "Anleitung unten" in
+`preset.tempNote` für nicht-sehende Nutzer unklar — **behoben**, Text jetzt "die
+Schritt-für-Schritt-Anleitung passt die tatsächlichen Zeiten automatisch an" (DE+EN,
+`js/i18n-dict.js` + beide HTML-Fallback-Texte). (2) Typografische Anführungszeichen um
+"~X h" werden von Screenreadern nicht mitgelesen, aber durch Kontext verständlich — als
+sehr Minor eingestuft, bewusst übersprungen. (3) Keine Live-Region-Ankündigung, dass
+`#guideSteps` nach einer Reglerbewegung komplett neu gerendert wurde (WCAG 4.1.3) — kein
+neues Problem von v4.27.0, sondern app-weites Bestandsverhalten (JEDE Reglerbewegung
+rendert `#guideSteps` neu, nie mit Live-Region-Ankündigung, nicht spezifisch für die
+Temperaturskalierung); bewusst NICHT in diesem Zyklus behoben (würde den Scope sprengen und
+eine app-weite Verhaltensfrage beiläufig entscheiden), stattdessen als eigener Backlog-Punkt
+in der Hauptdatei vermerkt.
+
+**Ehrlichkeitsgebot:** dies ist die bisher am wenigsten quellenscharfe Änderung der ganzen
+Zyklusreihe. Der Skalierungs-MECHANISMUS (Temperatur beeinflusst Gärzeit exponentiell) ist
+durch zwei unabhängige Fachquellen belegt. Die konkrete Verdopplungsdistanz (10 °C) ist eine
+bewusst konservative Wahl innerhalb der von den Quellen aufgespannten Bandbreite (6-10 °C),
+keine exakt zitierte Einzelzahl — "Mechanismus quellenbelegt, Parameter konservativ
+gewählt", nicht "aus Quellen abgeleitet" wie bei den reinen Preset-Übernahmen zuvor. Die
+Testsuite prüft nur die Rechenlogik, nicht das tatsächliche Gärverhalten am realen Teig.
+
+**Geändert:** `js/schedule.js`, `js/guide.js`, `js/i18n-dict.js`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`, `tests/test.html`. `?v=` + Menü-Version auf 4.27.0 (Desktop +
+Mobil), `pizza-rechner-mobile-standalone.html` neu gebaut.
+`Versionen/v4.27.0 - Temperaturskalierung-der-Gaerzeit/` enthält den vollständigen
+Schnappschuss.
+
+## Teglia-/New-York-Style-Öl & -Zucker aus Quellen abgeleitet (v4.26.0) — Kurzfassung (wie zuletzt in der Hauptdatei)
+
+Letzter Teil der Preset-Quellenprüfung (nach v4.25.1, die nur Aussagen/Zeitangaben
+korrigierte): drei echte Teigwerte geändert, quellengestützt, aber **nicht gebacken**.
+`teglia`-Öl 4 % → **2,5 %** (drei unabhängige Quellen bei 2,5 %, keine bei 4 %).
+`newyork_style`-Öl 3 % → **1,5 %** und Zucker 2 % → **1 %** (Feeling Foodish fährt exakt
+diese Werte). Sonst an beiden Presets **nichts** geändert (Hydration, Salz, Hefe, Mehl,
+Teiglingsgewicht, DDT unverändert) — Zeitangaben-Labels bleiben gültig (hängen an
+Hefe/Methode, nicht an Öl/Zucker), Sektion 33 bestätigt das automatisch. Bewusst **nicht**
+angefasst: `newyork_style`-Hefe, `teglia`-Gärzeit/-Teiglingsgewicht — kollidieren mit der
+Hefe/Gärzeit-Kopplung bei Direktführung, s. Backlog-Punkt unten. `tests/test.html`:
+973 Prüfungen unverändert grün (reine Wertänderung, kein neuer Testfall nötig).
+
+**Volle Details (Quellenbelege, Textänderungen DE/EN):** `pizza-rechner-KONTEXT-HISTORIE.md`,
+Abschnitt „Teglia-/New-York-Style-Öl & -Zucker aus Quellen abgeleitet (v4.26.0)" (vorherige
+Abschnitte ebenfalls dort verkettet).
+
 ## Teglia-/New-York-Style-Öl & -Zucker aus Quellen abgeleitet (v4.26.0)
 
 Letzter Teil der Preset-Quellenprüfung, direkter Nutzerauftrag mit fertiger
