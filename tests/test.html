@@ -5390,6 +5390,55 @@
   })();
 
   // ─────────────────────────────────────────────────────────────
+  heading('37 · Regressionsschutz v4.29.1: HTML-`max`-Attribut von #ballwN/#nrBallwN vs. höchster Preset-ballw');
+  // Bug-Hergang (v4.29.0 → v4.29.1): js/presets.js setzte teglia.ballw = 600, aber
+  // #ballwN/#nrBallwN hatten in allen drei HTML-Dateien noch max="500" (Altlast aus der
+  // Zeit vor der Blechflächendosierung). js/widgets.js (stepper()/link(), clampTo())
+  // liest n.max direkt vom HTML-Attribut und kappt jeden per PZ.set.ballw(...) gesetzten
+  // Wert lautlos darauf -- PZ.state.ballw landete real bei 500 statt 600, ohne
+  // Fehlermeldung. Live per Headless-Edge-Verifikation gefunden (nicht durch diese
+  // Suite), weil KEINER der bisherigen 1106 Tests den HTML-Clamp-Pfad überhaupt
+  // durchläuft: s. u.
+  //
+  // Warum das kein automatischer, vollwertiger Test wird (Architektur-Grenze dieser
+  // Suite, bewusste Abwägung statt Auslassung):
+  // 1) tests/test.html lädt weder js/presets.js noch js/ui.js (s. PZ.set-Stub-Kommentar
+  //    weiter oben) und hat kein echtes #ballwN-<input> im Stub-Markup (nur ein Stub-
+  //    #preset) -- der reale Clamp-Pfad (stepper()/link() aus js/widgets.js gegen ein
+  //    tatsächliches DOM-Element mit min/max-Attributen) wird hier folglich nirgends
+  //    ausgeführt. Ihn vollständig nachzubauen (echtes #ballwN + js/ui.js + js/presets.js
+  //    im Stub) wäre ein deutlich größerer Umbau der Test-Architektur, als für einen
+  //    Bugfix dieses Umfangs gerechtfertigt.
+  // 2) Die naheliegende Alternative -- die drei ausgelieferten HTML-Dateien per
+  //    fetch()/XHR als Text laden und das max-Attribut herausparsen -- wurde geprüft und
+  //    verworfen: eine synchrone XHR-Anfrage von einer file://-Seite auf eine
+  //    benachbarte file://-Datei schlägt in Chromium/Edge zuverlässig fehl
+  //    ("Failed to load ... Cross origin requests are only supported for HTTP"), per
+  //    Headless-Edge-Dump empirisch bestätigt. Die App läuft laut Konzept aber
+  //    ausdrücklich PER DOPPELKLICK OHNE SERVER (s. Kopf dieser Datei) -- ein
+  //    fetch-basierter Test würde für den normalen Nutzungsweg also selbst fehlschlagen,
+  //    nicht nur das eigentliche Feature testen.
+  // Stattdessen: ein einfacher Trip-Wire-Regressionstest. HTML_MAX_BALLW unten muss von
+  // Hand mit dem tatsächlichen max-Attribut in den drei HTML-Dateien in Sync gehalten
+  // werden (aktuell 1000, s. v4.29.1) -- schlägt aber sofort fehl, sobald ein künftiges
+  // Preset einen ballw-Wert nahe oder über diesem Wert bekommt, und erinnert so aktiv
+  // daran, auch die sechs HTML-max-Attribute (#ballwN + #nrBallwN je Datei) anzuheben,
+  // statt dass der Fehler erst live im Browser auffällt.
+  (function () {
+    const HTML_MAX_BALLW = 1000; // pizza-rechner.html, pizza-rechner-mobile.html, pizza-rechner-mobile-standalone.html: #ballwN UND #nrBallwN max="1000"
+    const maxPresetBallw = Math.max.apply(null, Object.keys(PRESET_STATES).map(k => PRESET_STATES[k].ballw || 0));
+    renderBox('Höchster Preset-ballw-Wert bleibt unter dem HTML-max-Attribut von #ballwN/#nrBallwN', [
+      {
+        label: 'höchster Preset-ballw (aktuell teglia=600) < HTML_MAX_BALLW (' + HTML_MAX_BALLW + ')',
+        actual: maxPresetBallw < HTML_MAX_BALLW,
+        expected: true,
+        tol: null,
+        ok: (maxPresetBallw < HTML_MAX_BALLW) === true
+      }
+    ]);
+  })();
+
+  // ─────────────────────────────────────────────────────────────
   const s = document.getElementById('summary');
   s.textContent = failed === 0
     ? '✓ Alle ' + passed + ' Prüfungen bestanden'

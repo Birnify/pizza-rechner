@@ -8,6 +8,45 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Teglia-Blechflächendosierung: HTML-max-Attribut-Bugfix (v4.29.1)
+
+**Bug (in v4.29.0 eingeführt, noch am selben Tag gefunden und behoben):** `js/presets.js`
+setzt für `teglia` seit v4.29.0 `ballw: 600`, aber `#ballwN` (Stepper-Feld) hatte in allen
+drei HTML-Dateien (`pizza-rechner.html`, `pizza-rechner-mobile.html`,
+`pizza-rechner-mobile-standalone.html`) noch `max="500"` (Relikt aus der Zeit vor der
+Blechflächendosierung, als das schwerste Teglia-`ballw` 320 g war). `js/widgets.js`
+(`stepper()`/`clampTo()`) liest `n.max` direkt vom HTML-Attribut und kappt jeden per
+`PZ.set.ballw(...)` gesetzten Wert lautlos darauf — `PZ.state.ballw` landete nach Auswahl
+des Presets real bei 500 statt 600, ohne Fehlermeldung, während `preset.teglia.desc`
+weiter "≈600 g Teig gesamt" versprach. Live per Headless-Edge-Verifikation gefunden und
+bestätigt (`PZ.state.ballw === 500` trotz aktivem Teglia-Preset), nicht durch die 1106
+bestehenden Tests: keiner davon durchläuft den echten HTML-Clamp-Pfad (`tests/test.html`
+lädt weder `js/presets.js` noch `js/ui.js` und hat kein echtes `#ballwN`-Element im Stub).
+
+**Fix:** `max="500"` → `max="1000"` bei `#ballwN` UND `#nrBallwN` in allen drei
+HTML-Dateien (Puffer für größere Bleche als die 30×40-cm-Referenz). Standalone-Datei per
+`python build-mobile-standalone.py` neu gebaut, nicht manuell dupliziert. Live erneut
+verifiziert: `PZ.state.ballw === 600`, Ergebnis-Panel zeigt "612 g" (600 × 1,02
+Verschwendungspuffer), `#ballwN.max === "1000"`.
+
+**Test-Nacharbeit:** Sektion 37 ergänzt (Trip-Wire-Regressionstest: höchster
+Preset-`ballw`-Wert < manuell in Sync gehaltene `HTML_MAX_BALLW`-Konstante). Ein
+vollwertiger DOM-Clamp-Test (echtes `#ballwN` + `js/ui.js` + `js/presets.js` im Stub) oder
+ein fetch-basierter Live-Check der drei HTML-Dateien wurden geprüft und verworfen: eine
+synchrone XHR-Anfrage von einer `file://`-Seite auf eine benachbarte `file://`-Datei
+schlägt in Chromium/Edge zuverlässig fehl ("Cross origin requests are only supported for
+HTTP"), empirisch per Headless-Edge bestätigt — die App läuft aber laut Konzept
+ausdrücklich per Doppelklick ohne Server, ein fetch-basierter Test würde also für den
+normalen Nutzungsweg selbst fehlschlagen. `tests/test.html`: 1106 → **1107** Prüfungen,
+alle grün (Headless-Edge-Dump). Kein Spezialisten-Audit angefordert (reine
+max-Attribut-Erhöhung an drei bestehenden Feldern, kein neues Markup/Layout, analog zum
+bereits geprüften `flourTemp`-Präzedenzfall aus v3.20.0).
+
+**Geändert:** `pizza-rechner.html`, `pizza-rechner-mobile.html`,
+`pizza-rechner-mobile-standalone.html` (neu gebaut), `tests/test.html`. `?v=` auf
+`4.29.1` gezogen. `Versionen/v4.29.1 - Teglia-max-Attribut-Bugfix/` enthält den
+vollständigen Schnappschuss.
+
 ## Teglia-Blechflächendosierung (v4.29.0)
 
 Direkter Nutzerauftrag (Konzept in einer früheren Sitzung unter anderem Account bereits

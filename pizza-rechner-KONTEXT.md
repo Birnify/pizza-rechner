@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-29 · Aktuelle Version: v4.28.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-07-30 · Aktuelle Version: v4.29.1 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -215,22 +215,20 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Teglia-Blechflächendosierung (v4.29.0) = aktueller Stand
+## Teglia-max-Attribut-Bugfix (v4.29.1) = aktueller Stand
 
-Teglia/Blechpizza wird jetzt nach Blechfläche dosiert statt nach „N Teiglinge à Gewicht":
-`js/presets.js` setzt `teglia` auf `balls: 1, ballw: 600` (30×40-cm-Referenzblech ×
-0,5 g/cm², drei unabhängige Quellen), alle 8 Presets setzen jetzt explizit `balls` (vorher
-implizit über den App-Default). `js/guide.js` (`isTegliaPreset()`, analog zu `finalPhoto()`)
-zeigt bei aktivem Teglia-Preset eigene Anleitungstexte für „Teig ins Blech ziehen" (statt
-rundpizza-spezifischer Formulierungen) und eine feste Backzeit von 15 min für das ganze
-Blech (statt der generischen, auf N Einzelpizzen ausgelegten Formel). Kein Spezialisten-
-Audit nötig (reiner i18n-Text-Tausch im bereits auditierten Rendering-Pfad). `tests/
-test.html`: 1077 → **1106** Prüfungen, alle grün.
+v4.29.0 hatte einen Bug: `js/presets.js` wollte für `teglia` `ballw: 600` setzen, aber
+`#ballwN`/`#nrBallwN` hatten in allen drei HTML-Dateien noch `max="500"` (Altlast). Der
+HTML-Clamp in `js/widgets.js` kappte den Wert lautlos auf 500 — `PZ.state.ballw` stimmte
+nicht mit dem im Preset-Text versprochenen Gewicht überein. Die Testsuite fing das nicht,
+weil `tests/test.html` weder `js/presets.js`/`js/ui.js` noch ein echtes `#ballwN`-Element
+lädt (Clamp-Pfad wird dort nie durchlaufen). Fix: `max` auf `1000` erhöht (alle drei
+HTML-Dateien, beide Felder), live neu verifiziert (`ballw`/`totalW` jetzt korrekt 600/612 g).
+`tests/test.html`: 1106 → **1107** Prüfungen (neuer Trip-Wire-Regressionstest), alle grün.
 
-**Volle Details (Quellenherleitung, zwei beim Testen gefundene/korrigierte Fehler im
-test-generator-Vorschlag, PRESET_STATES-Fixture-Update):**
-`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Teglia-Blechflächendosierung (v4.29.0)"
-(vorherige Abschnitte ebenfalls dort verkettet).
+**Volle Details (Bug-Diagnose, Testarchitektur-Begründung, warum kein fetch-basierter
+Live-Test):** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Teglia-Blechflächendosierung:
+HTML-max-Attribut-Bugfix (v4.29.1)" (vorherige Abschnitte ebenfalls dort verkettet).
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -1047,6 +1045,9 @@ Keine Code-Änderung durch den Audit nötig.
     0,5 g/cm², drei Quellen), Anleitungstexte + Backzeit preset-gebunden umgeschaltet.
     Nachrichtlich, weiterhin offen: `teglia`-Hydration 75 % liegt am unteren Rand des
     Quellenbands (75–85 %) — kein Fehler, nur ausbaufähig.
+    - **Bugfix v4.29.1** (noch am selben Tag gefunden): das neue `ballw: 600` wurde durch
+      ein veraltetes `max="500"` an `#ballwN`/`#nrBallwN` in allen drei HTML-Dateien
+      lautlos auf 500 gekappt (s. „= aktueller Stand" oben). Behoben, `max` jetzt `1000`.
   - **Neue Backlog-Idee aus v4.28.0:** `state.scheduleOverride` könnte künftig als
     optionaler manueller Umschalter exponiert werden (eigener Regler/Toggle in der UI),
     falls der Nutzer auch außerhalb dieser zwei Presets einen festen statt einen aus der
