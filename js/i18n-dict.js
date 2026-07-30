@@ -303,6 +303,14 @@
   add('guide.box.normal', 'Box', 'container');
   add('guide.step.formBalls.tip', 'Straff geformte Kugeln = runde Pizzen mit gleichmäßigem Rand (Cornicione).',
     'Tightly shaped balls = round pizzas with an even rim (cornicione).');
+  // Teglia-Variante (v4.29.0): Zuordnung ausschließlich über den #preset-DOM-Wert
+  // (js/guide.js, isTegliaPreset() -- gleiches Muster wie finalPhoto(), kein
+  // state.preset). Nur der Tipp-Text ändert sich, Titel/Body des Schritts bleiben
+  // gleich -- das Rundwirken zu einer glatten Kugel ist auch bei Teglia ein sinnvoller
+  // Zwischenschritt (bevor der Teig direkt ins Blech gedrückt wird), nur die Aussage
+  // über das ERGEBNIS ("runde Pizzen mit Cornicione") stimmt für Teglia nicht.
+  add('guide.step.formBalls.tipTeglia', 'Bei Teglia dient das Rundwirken nur der glatten, spannungsfreien Oberfläche, bevor der Teig direkt ins geölte Blech gedrückt wird — kein runder Rand (Cornicione), die Form entsteht erst beim Ausziehen im Blech.',
+    'For teglia, shaping into a ball is only to get a smooth, tension-free surface before pressing the dough straight into the oiled pan — no round rim (cornicione), the shape only takes form once it is stretched out in the pan.');
   add('guide.step.finalProof.title', 'Stückgare (Teiglinge)', 'Final proof (dough balls)');
   add('guide.step.finalProof.chipCold', 'kühl · Fingertest', 'cold · finger test');
   add('guide.step.finalProof.chipDefault', 'Fingertest', 'finger test');
@@ -334,10 +342,45 @@
     'Bed the dough ball in flour/semolina, <b>flatten from the center with your fingertips</b>, leave the rim (~1.5 cm) untouched, stretch to size over the backs of your hands.');
   add('guide.step.shape.warn', 'Nie ein Nudelholz – das drückt die Luft aus dem Rand. Der Cornicione lebt von der Gärblase.',
     'Never use a rolling pin: it presses the air out of the rim. The cornicione lives off that trapped gas.');
+  // Teglia-Variante (v4.29.0, "Pizza ausziehen" -> eigener Schritt "Teig ins Blech
+  // ziehen"): die Napoli-Technik (Handformen zu einer runden Scheibe mit stehen
+  // gelassenem Rand) passt nicht -- Teglia-Teig wird direkt in eine geölte rechteckige
+  // Form gedrückt/gezogen. Zwei unabhängig recherchierte Quellen (massimodesantis.com,
+  // bereits als Quelle für die Grammatura oben genutzt; pizzaelievitati.com, eigener
+  // Artikel "Come stendere la pizza in teglia") beschreiben übereinstimmend: Blech
+  // ölen, Teigling mit geölten/bemehlten Händen von der Mitte nach außen drücken
+  // (nicht zu fest pressen), springt der Teig zurück bevor er die Ecken erreicht:
+  // abdecken und ruhen lassen, danach lässt er sich spürbar leichter bis in die Ecken
+  // ziehen. Die konkrete Ruhezeit schwankt je nach Quelle (1 Stunde bzw. 10 Minuten
+  // in einer schwächeren, generischeren Quelle zum selben Grundprinzip) -- bewusst als
+  // breite Spanne "15-60 min" formuliert statt einer erfundenen Einzelzahl (s.
+  // pizza-rechner-KONTEXT.md, "Wenn die Quellenlage nicht ausreicht").
+  add('guide.step.shapeTeglia.title', 'Teig ins Blech ziehen', 'Stretch the dough into the pan');
+  add('guide.step.shapeTeglia.chip', 'kein Nudelholz!', 'no rolling pin!');
+  add('guide.step.shapeTeglia.body', 'Blech gut ölen. Teigling mit geölten/bemehlten Händen von der Mitte nach außen <b>vorsichtig in die Form drücken</b>, nicht zu fest pressen. Springt der Teig zurück, bevor er die Ecken erreicht: mit einem Tuch abdecken und <b>15–60 min ruhen</b> lassen, danach weiterziehen.',
+    'Oil the pan well. With oiled/floured hands, <b>gently press the dough</b> from the center outward to fill the pan, without pressing too hard. If it springs back before reaching the corners: cover with a cloth and let it <b>rest 15–60 min</b>, then continue stretching.');
+  add('guide.step.shapeTeglia.warn', 'Nie ein Nudelholz – das drückt die Gärgase aus dem Teig. Die luftig-offenporige Krume ist gerade das Kennzeichen von Teglia/Pizza al taglio.',
+    'Never use a rolling pin: it presses the fermentation gases out of the dough. That light, open, airy crumb is exactly what defines teglia/pizza al taglio.');
   add('guide.bake.small', 'Pizzaofen bei ~450 °C: <b>60–90 Sekunden</b> (einmal drehen). Haushaltsofen: <b>5–8 min</b> unter dem Grill.',
     'Pizza oven at ~450 °C: <b>60–90 seconds</b> (turn once). Home oven: <b>5–8 min</b> under the grill/broiler.');
   add('guide.bake.large', 'Größere Teiglinge: Pizzaofen <b>~2 min</b>, Haushaltsofen <b>8–12 min</b>.',
     'Larger dough balls: pizza oven <b>~2 min</b>, home oven <b>8–12 min</b>.');
+  // Teglia-Backzeit (v4.29.0): das generische N x 5/7-Modell unterstellt N runde
+  // Einzelpizzen nacheinander -- mit balls:1 ergäbe das nur max(10, 1x7)=10 min für ein
+  // GANZES Blech, deutlich zu kurz. Eigener, preset-gebundener Override (js/guide.js,
+  // isTegliaPreset(), analog zum scheduleOverride-Mechanismus aus v4.28.0, s.
+  // pizza-rechner-KONTEXT.md), NICHT die generische Formel selbst angefasst. 15 min
+  // stammt aus drei konvergierenden Quellen für "pizza in teglia" im Haushaltsofen:
+  // Manopasto/Salamico (bereits für die Hefemenge genutzt, "~15 min bei 250 °C"),
+  // massimodesantis.com (eigenes, mehrstufiges Rezept: 3+4+5-6 min = ~12-13 min
+  // gesamt) und pizzaelievitati.com ("12-15 min bei 220-240 °C", schwächere Quelle,
+  // eher listicle-artig). Die im Auftrag erwähnte, vagere "18-25 min"-Quelle für
+  // "Pizza Romana allgemein" bezieht sich vermutlich auf die dünne, runde römische
+  // Pizza-Variante (nicht Teglia im Blech) und wurde deshalb NICHT gleich gewichtet.
+  // 15 min ist der obere, gut belegte Rand der 12-15-min-Bandbreite -- keine als
+  // "getestet" behauptete Zahl, reines Rechenwege-Backing (s. Ehrlichkeitsgebot).
+  add('guide.bake.teglia', 'Ganzes Blech auf einmal: Haushaltsofen bei <b>220–250 °C</b>, unterer Rost/Ober-Unterhitze, ca. <b>15 min</b> (je nach Ofen 12–18 min – Kruste im Auge behalten).',
+    'Whole pan at once: home oven at <b>220–250 °C</b> (430–480 °F), lower rack/top-bottom heat, approx. <b>15 min</b> (12–18 min depending on your oven – keep an eye on the crust).');
   add('guide.step.bakeTopping.title', 'Belegen & Backen', 'Top & bake');
   add('guide.step.bakeTopping.body', 'Zügig belegen (wenig Sauce, gut abgetropfter Mozzarella), sofort einschießen. {bakeTxt} Fertig beim <b>aufgegangenen, gefleckten Rand</b> (Leoparding).',
     'Top quickly (little sauce, well-drained mozzarella), launch immediately. {bakeTxt} Done when the rim is <b>puffed up and leopard-spotted</b>.');
@@ -548,9 +591,12 @@
   // Quellen abgeleitet, s. pizza-rechner-KONTEXT.md). v4.28.0: Hefe 0,3 % -> 0,45 % +
   // scheduleOverride, Gesamtgare-Zeitangabe ~30 h -> ~76 h (aus Quellen abgeleitet, mit
   // dem Hinweis dass zwei der drei Quellen möglicherweise gemeinsamen Ursprungs sind,
-  // s. pizza-rechner-KONTEXT.md).
-  add('preset.teglia.desc', 'Römische Blechpizza: 75 % Hydration, 2,5 % Olivenöl, sehr lockere Krume. Teig ist klebrig: mit Stretch & Fold statt langem Kneten arbeiten. ~76 h kühl. Braucht sehr starkes Mehl (W330+).',
-    'Roman pan pizza: 75 % hydration, 2.5 % olive oil, very airy crumb. The dough is sticky: work with stretch & fold instead of long kneading. ~76 h cold. Needs a very strong flour (W330+).');
+  // s. pizza-rechner-KONTEXT.md). v4.29.0: nennt jetzt die neue Referenzgröße (30x40 cm,
+  // 600 g Gesamtteig, balls:1/ballw:600 statt balls:4/ballw:320) + einen Hinweis zum
+  // proportionalen Hochskalieren bei einem anderen Blech -- ohne konkrete Rechenformel/
+  // Flächen-Eingabe (bewusst kein Modellumbau, s. pizza-rechner-KONTEXT.md).
+  add('preset.teglia.desc', 'Römische Blechpizza für ein 30×40-cm-Blech (≈600 g Teig gesamt): 75 % Hydration, 2,5 % Olivenöl, sehr lockere Krume. Anderes Blech? Anzahl/Gewicht proportional zur Fläche hochskalieren. Teig ist klebrig: mit Stretch & Fold statt langem Kneten arbeiten. ~76 h kühl. Braucht sehr starkes Mehl (W330+).',
+    'Roman pan pizza for a 30×40 cm (12×16 in) baking sheet (≈600 g dough total): 75 % hydration, 2.5 % olive oil, very airy crumb. Different pan size? Scale the count/weight proportionally to the pan area. The dough is sticky: work with stretch & fold instead of long kneading. ~76 h cold. Needs a very strong flour (W330+).');
   // v4.26.0: Öl 3 % -> 1,5 % und Zucker 2 % -> 1 % (Feeling Foodish fährt exakt diese
   // Werte, aus Quellen abgeleitet, s. pizza-rechner-KONTEXT.md). v4.28.0: Hefe 0,2 % ->
   // 1,2 % + scheduleOverride, Gesamtgare-Zeitangabe ~28 h -> ~44 h (Hefemenge durch

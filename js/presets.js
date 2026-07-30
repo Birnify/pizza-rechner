@@ -17,17 +17,26 @@
   // unten); die explizite 0 hier sorgt dafür, dass ein zuvor über "New York Style"
   // gesetzter Zucker-Wert beim Wechsel auf ein anderes Preset zuverlässig verschwindet
   // (analog zu "oil", das ebenfalls jedes Preset explizit setzt).
+  // v4.29.0: ALLE Presets setzen jetzt zusätzlich "balls" explizit (vorher setzte KEIN
+  // Preset "balls" -- die Anzahl blieb einfach, was zuvor im Regler stand, App-Default
+  // 4, s. js/state.js). Nötig geworden, weil "teglia" jetzt bewusst balls:1 braucht
+  // (Blechflächen-Modell statt Teigling-Modell, s. u.) -- ohne diese Ergänzung würde
+  // "balls" nach dem Verlassen von "teglia" bei JEDEM danach gewählten Preset bei 1
+  // hängen bleiben (kein Preset hätte es je zurückgesetzt), exakt die Art von Preset-
+  // Altlast, die "sugar" oben schon einmal absichtlich verhindert. balls:4 ist bei den
+  // 7 Nicht-Teglia-Presets keine inhaltliche Änderung (identisch zum bisherigen
+  // Default), nur die bisher implizite Annahme jetzt explizit gemacht.
   const PRESETS = {
     napoli_klassisch: {
-      method: 'direct', hyd: 60, salt: 2.8, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 0.2, ballw: 250, ddt: 24, flour: 'caputo_pizzeria',
+      method: 'direct', hyd: 60, salt: 2.8, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 0.2, balls: 4, ballw: 250, ddt: 24, flour: 'caputo_pizzeria',
       descKey: 'preset.napoliKlassisch.desc'
     },
     napoli_kalt: {
-      method: 'direct', hyd: 65, salt: 3.0, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 0.1, ballw: 250, ddt: 23, flour: 'caputo_cuoco',
+      method: 'direct', hyd: 65, salt: 3.0, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 0.1, balls: 4, ballw: 250, ddt: 23, flour: 'caputo_cuoco',
       descKey: 'preset.napoliKalt.desc'
     },
     schnell: {
-      method: 'direct', hyd: 62, salt: 2.5, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 1.5, ballw: 250, ddt: 25, flour: 'caputo_pizzeria',
+      method: 'direct', hyd: 62, salt: 2.5, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 1.5, balls: 4, ballw: 250, ddt: 25, flour: 'caputo_pizzeria',
       descKey: 'preset.schnell.desc'
     },
     // Seit v4.25.0: "napoli_biga" (eine Stufe, unbelegte Hefewerte) ersetzt durch zwei
@@ -37,11 +46,11 @@
     // (7 von 12 Quellen bei 50 %), Gesamthydration 65 % -> 70 % (sitzt exakt auf
     // caputo_cuoco hydMax 70, keine Warnung, aber kein Spielraum nach oben).
     napoli_biga_klassisch: {
-      method: 'biga', hyd: 70, salt: 2.8, oil: 2, sugar: 0, pref: 100, bhyd: 50, prefStage: 'b_klassisch', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'caputo_cuoco',
+      method: 'biga', hyd: 70, salt: 2.8, oil: 2, sugar: 0, pref: 100, bhyd: 50, prefStage: 'b_klassisch', yeastType: 'fresh', balls: 4, ballw: 250, ddt: 24, flour: 'caputo_cuoco',
       descKey: 'preset.napoliBigaKlassisch.desc'
     },
     napoli_biga_kalt: {
-      method: 'biga', hyd: 70, salt: 2.8, oil: 2, sugar: 0, pref: 100, bhyd: 50, prefStage: 'b_kalt', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'caputo_cuoco',
+      method: 'biga', hyd: 70, salt: 2.8, oil: 2, sugar: 0, pref: 100, bhyd: 50, prefStage: 'b_kalt', yeastType: 'fresh', balls: 4, ballw: 250, ddt: 24, flour: 'caputo_cuoco',
       descKey: 'preset.napoliBigaKalt.desc'
     },
     // Seit v4.24.0: "napoli_poolish" (eine Stufe, unbelegte Hefewerte) ersetzt durch zwei
@@ -49,11 +58,11 @@
     // Manopasto-Aufbau: 500 g Poolish-Mehl von 755 g Gesamtmehl) -- damit der Unterschied
     // schnell/kalt verständlich bleibt, statt in einer dritten Stellschraube unterzugehen.
     napoli_poolish_schnell: {
-      method: 'poolish', hyd: 66, salt: 2.5, oil: 2, sugar: 0, pref: 66, prefStage: 'p_warm', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'dallag_monica',
+      method: 'poolish', hyd: 66, salt: 2.5, oil: 2, sugar: 0, pref: 66, prefStage: 'p_warm', yeastType: 'fresh', balls: 4, ballw: 250, ddt: 24, flour: 'dallag_monica',
       descKey: 'preset.napoliPoolishSchnell.desc'
     },
     napoli_poolish_kalt: {
-      method: 'poolish', hyd: 66, salt: 2.5, oil: 2, sugar: 0, pref: 66, prefStage: 'p_cold', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'dallag_monica',
+      method: 'poolish', hyd: 66, salt: 2.5, oil: 2, sugar: 0, pref: 66, prefStage: 'p_cold', yeastType: 'fresh', balls: 4, ballw: 250, ddt: 24, flour: 'dallag_monica',
       descKey: 'preset.napoliPoolishKalt.desc'
     },
     // v4.26.0: Öl 4 % -> 2,5 % (drei unabhängige Quellen bei 2,5 %, keine bei 4 %,
@@ -66,8 +75,18 @@
     // unschärfere Quelle (Bonci-Aggregation, 0,3-0,9 % Frischhefe-Äquivalent für 24-48 h)
     // stützt zumindest die Größenordnung. s. js/schedule.js für den Override-Mechanismus,
     // pizza-rechner-KONTEXT.md für die volle Herleitung.
+    // v4.29.0: balls 4 -> 1, ballw 320 -> 600 (bewusste Verkleinerung des Gesamtteigs
+    // 1280 g -> 600 g, KEIN Tippfehler). Teglia/Pizza Romana wird traditionell nicht als
+    // N Teiglinge dosiert, sondern nach Blechfläche ("grammatura"): drei unabhängige
+    // Quellen (lievitonaturale.org, massimodesantis.com, eine weitere englischsprachige
+    // Quelle) landen bei 0,5-0,6 g Teig je cm² Blechfläche. Referenz 30x40 cm (=1200 cm²)
+    // x 0,5 g/cm² = 600 g, direkt so vorgerechnet bei einer der Quellen (nicht selbst
+    // interpoliert). balls:1/ballw:600 bildet "ein 30x40-cm-Blech" ab -- ein größeres/
+    // kleineres Blech skaliert der Nutzer proportional über die bestehenden Regler
+    // (Anzahl/Gewicht), s. preset.teglia.desc. js/guide.js bekommt dafür einen eigenen
+    // Teglia-Zweig für Formen-/Ausziehen-Text und Backzeit (s. dort).
     teglia: {
-      method: 'direct', hyd: 75, salt: 2.5, oil: 2.5, sugar: 0, yeastType: 'fresh', yeast: 0.45, ballw: 320, ddt: 24, flour: 'caputo_nuvola_super',
+      method: 'direct', hyd: 75, salt: 2.5, oil: 2.5, sugar: 0, yeastType: 'fresh', yeast: 0.45, balls: 1, ballw: 600, ddt: 24, flour: 'caputo_nuvola_super',
       scheduleOverride: {
         labelKey: 'sched.tegliaOverride.label', labelDefault: 'Teglia-Kaltgare · ~76 h',
         bulkKey: 'sched.tegliaOverride.bulk',
@@ -92,7 +111,7 @@
     // Raumtemperatur-Skalierung (v4.27.0) riskant nah an einer Mehl-Warnung -- nach unten
     // auf 44 h korrigiert (im Auftrag als Fallback vorgesehen), 4 h Sicherheitsabstand.
     newyork_style: {
-      method: 'direct', hyd: 62, salt: 2.5, oil: 1.5, sugar: 1, yeastType: 'fresh', yeast: 1.2, ballw: 300, ddt: 24, flour: 'dallag_napoletana',
+      method: 'direct', hyd: 62, salt: 2.5, oil: 1.5, sugar: 1, yeastType: 'fresh', yeast: 1.2, balls: 4, ballw: 300, ddt: 24, flour: 'dallag_napoletana',
       scheduleOverride: {
         labelKey: 'sched.nyOverride.label', labelDefault: 'New-York-Style-Kaltgare · ~44 h',
         bulkKey: 'sched.nyOverride.bulk', bulkDefault: '<b>2 h</b> bei Raumtemp (Stockgare)', bulkMin: 120,
@@ -128,6 +147,9 @@
     if (p.method) { state.method = p.method; PZ.selectSeg('method', 'm', p.method); PZ.applyMethod(); }
     if (p.yeastType) { state.yeastType = p.yeastType; PZ.selectSeg('yeastType', 'y', p.yeastType); }
     if (p.knead != null) { state.knead = String(p.knead); PZ.selectSeg('knead', 'k', p.knead); }
+    // v4.29.0: neu -- bisher setzte kein Preset "balls" (s. Kommentar oben bei PRESETS),
+    // jetzt setzen alle acht es explizit (Teglia braucht balls:1).
+    if (p.balls != null) set.balls(p.balls);
     if (p.ballw != null) set.ballw(p.ballw);
     if (p.hyd != null)   set.hyd(p.hyd);
     if (p.salt != null)  set.salt(p.salt);

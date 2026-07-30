@@ -788,8 +788,10 @@
     // dieses Fixture bildet applyPreset()-Ergebnisse bewusst per Hand nach statt
     // dynamisch aus PZ.PRESETS zu lesen, s. Kommentar oben "Bewusst KEINE Laufzeit-
     // Kopplung").
+    // v4.29.0: balls 4 (BASE) -> 1, ballw 320 -> 600 (Blechflächendosierung, s.
+    // js/presets.js -- explizit mitgezogen, sonst prüft dieses Fixture veraltete Zahlen).
     'teglia': {
-      method: 'direct', hyd: 75, salt: 2.5, oil: 2.5, ballw: 320, yeast: 0.45, flour: 'caputo_nuvola_super',
+      method: 'direct', hyd: 75, salt: 2.5, oil: 2.5, balls: 1, ballw: 600, yeast: 0.45, flour: 'caputo_nuvola_super',
       scheduleOverride: {
         labelKey: 'sched.tegliaOverride.label', labelDefault: 'Teglia-Kaltgare · ~76 h',
         bulkKey: 'sched.tegliaOverride.bulk',
@@ -5262,6 +5264,130 @@
   }, () => [
     ['PZ.state.scheduleOverride ist null', PZ.state.scheduleOverride, null],
   ]);
+
+  // ─────────────────────────────────────────────────────────────
+  heading('36 · Teglia-Blechflächendosierung: balls/ballw-Neuinterpretation + Guide-Texte + Backzeit (v4.29.0)');
+  // test-generator-Review (Haiku, per Hauptagent-Relay): Vorschlag live gegen den echten
+  // Code nachgemessen (nicht blind übernommen, s. pizza-rechner-KONTEXT.md). Zwei echte
+  // Probleme gefunden und korrigiert, bevor diese Sektion grün wurde:
+  // 1) Der Vorschlag rief PZ.applyPreset()/PZ.set.* direkt auf -- js/ui.js UND
+  //    js/presets.js werden in tests/test.html gar nicht geladen (s. Script-Liste oben),
+  //    ein solcher Aufruf hätte mit "PZ.applyPreset is not a function" die GESAMTE Suite
+  //    ab dieser Stelle abgebrochen. Stattdessen wie im etablierten Foto-Test-Muster
+  //    (Sektion 28) nur #preset direkt am Stub-<select> manipuliert (setActivePreset())
+  //    und PZ.buildGuide() manuell aufgerufen -- exakt das Muster, das js/guide.js
+  //    (isTegliaPreset(), analog zu finalPhoto()) selbst auch nutzt.
+  // 2) Zwei der vorgeschlagenen Text-Assertions wären mit falschem Ergebnis grün/rot
+  //    gelaufen: a) 'Teiglinge formen' ist der Titel des FRÜHEREN Schritts formBalls, NICHT
+  //    von guide.step.shape.title ("Pizza ausziehen") -- der Vorschlag hätte den generischen
+  //    "Pizza ausziehen"-Schritt gar nicht geprüft, weil formBalls.title so oder so immer im
+  //    HTML steht. b) 'Nie ein Nudelholz' ist der gemeinsame Anfang von SOWOHL
+  //    guide.step.shape.warn ALS AUCH guide.step.shapeTeglia.warn (s. js/i18n-dict.js) --
+  //    als "nur bei Teglia"-Abgrenzungskriterium hätte das bei jedem Nicht-Teglia-Preset
+  //    fälschlich fehlgeschlagen. Beide durch eindeutig unterscheidende Teilstrings ersetzt
+  //    (Titel bzw. der jeweils preset-spezifische Rest des Warnsatzes).
+  //    Außerdem enthielt der Vorschlag beim formBalls.tipTeglia-Text einen wörtlichen
+  //    Fehler (Kasus: "glatte, spannungsfreie Oberfläche" statt "glatten, spannungsfreien
+  //    Oberfläche", s. js/i18n-dict.js) -- korrigiert.
+  (function () {
+    function setActivePreset(value) { document.getElementById('preset').value = value; }
+    function guideHtml() { return document.getElementById('guideSteps').innerHTML; }
+
+    // (a) PRESET_STATES-Fixture (s. Sektion 6/13/33-Kommentare, "spiegelt js/presets.js
+    // wider"): teglia jetzt mit balls:1/ballw:600 -- prüft, dass das Fixture selbst korrekt
+    // aktualisiert wurde und R.N/R.W/R.total daraus konsistent berechnet werden.
+    testCase('PRESET_STATES.teglia (balls:1, ballw:600): R.N/R.W/R.total korrekt', PRESET_STATES.teglia, R => [
+      ['R.N = 1', R.N, 1, 0],
+      ['R.W = 600', R.W, 600, 0],
+      ['R.total = 600 (1 × 600, kein Puffer bei wasteAdjust=0)', R.total, 600, 0.001],
+    ]);
+    testCase('Masseerhaltung bleibt bei balls:1/ballw:600 exakt erfüllt (flour+water+salt+yeast+oil = total)', PRESET_STATES.teglia, R => [
+      ['Summe = total', round(R.flour + R.water + R.salt + R.yeast + R.oil), round(R.total), 0.01],
+    ]);
+
+    // (b) Teglia-Preset aktiv (#preset='teglia'): shapeTeglia-Texte statt generischer shape-Texte
+    testCase('Teglia-Preset aktiv: "Teig ins Blech ziehen" (shapeTeglia) statt "Pizza ausziehen" (shape)', {}, () => {
+      setActivePreset('teglia');
+      PZ.buildGuide();
+      const html = guideHtml();
+      return [
+        ['Titel "Teig ins Blech ziehen" im HTML', html.includes('Teig ins Blech ziehen'), true],
+        ['generischer Titel "Pizza ausziehen" NICHT im HTML', html.includes('Pizza ausziehen'), false],
+        ['shapeTeglia.body ("vorsichtig in die Form drücken")', html.includes('vorsichtig in die Form drücken'), true],
+        ['shapeTeglia.warn-spezifischer Teil ("Gärgase aus dem Teig")', html.includes('Gärgase aus dem Teig'), true],
+        ['generischer shape.warn-spezifischer Teil ("Luft aus dem Rand") NICHT im HTML', html.includes('Luft aus dem Rand'), false],
+      ];
+    });
+    testCase('Teglia-Preset aktiv: formBalls.tipTeglia-Text im "Teiglinge formen"-Schritt', {}, () => {
+      setActivePreset('teglia');
+      PZ.buildGuide();
+      const html = guideHtml();
+      return [
+        ['tipTeglia nennt "glatten, spannungsfreien Oberfläche"', html.includes('glatten, spannungsfreien Oberfläche'), true],
+        ['tipTeglia nennt "ins geölte Blech gedrückt"', html.includes('ins geölte Blech gedrückt'), true],
+      ];
+    });
+
+    // (c) Andere Presets + "Eigene Einstellung": generische shape-Texte, KEINE Teglia-Texte
+    ['napoli_klassisch', 'newyork_style', ''].forEach(key => {
+      testCase('Preset "' + (key || 'Eigene Einstellung') + '": generische shape-Texte, keine Teglia-Texte', {}, () => {
+        setActivePreset(key);
+        PZ.buildGuide();
+        const html = guideHtml();
+        return [
+          ['Titel "Pizza ausziehen" im HTML', html.includes('Pizza ausziehen'), true],
+          ['Titel "Teig ins Blech ziehen" NICHT im HTML', html.includes('Teig ins Blech ziehen'), false],
+          ['formBalls.tipTeglia NICHT im HTML', html.includes('glatten, spannungsfreien Oberfläche'), false],
+        ];
+      });
+    });
+
+    // (d) Teglia-Preset aktiv: Backzeit-Text ist guide.bake.teglia ("~15 min"), nicht die generische Formel
+    testCase('Teglia-Preset aktiv: Backzeit-Text "Ganzes Blech auf einmal … ~15 min" (guide.bake.teglia)', {}, () => {
+      setActivePreset('teglia');
+      PZ.buildGuide();
+      const html = guideHtml();
+      return [
+        ['Text "Ganzes Blech auf einmal" im HTML', html.includes('Ganzes Blech auf einmal'), true],
+        ['Text "15 min" im HTML', html.includes('15 min'), true],
+        ['generischer Kurz-Backzeit-Text ("unter dem Grill") NICHT im HTML', html.includes('unter dem Grill'), false],
+      ];
+    });
+    testCase('Preset "napoli_klassisch": weiterhin generischer Backzeit-Text (kein guide.bake.teglia)', {}, () => {
+      setActivePreset('napoli_klassisch');
+      PZ.buildGuide();
+      const html = guideHtml();
+      return [
+        ['Text "Ganzes Blech auf einmal" NICHT im HTML', html.includes('Ganzes Blech auf einmal'), false],
+      ];
+    });
+
+    // (e) Abgrenzung: isTegliaPreset() hängt NUR am #preset-DOM-Wert, nicht an state.balls
+    testCase('Manuell balls:1 bei Preset "napoli_klassisch": Guide bleibt generisch (kein Teglia-Text)', { balls: 1 }, () => {
+      setActivePreset('napoli_klassisch');
+      PZ.buildGuide();
+      const html = guideHtml();
+      return [
+        ['Titel "Pizza ausziehen" (generisch) im HTML', html.includes('Pizza ausziehen'), true],
+        ['Titel "Teig ins Blech ziehen" NICHT im HTML', html.includes('Teig ins Blech ziehen'), false],
+        ['Text "Ganzes Blech auf einmal" NICHT im HTML', html.includes('Ganzes Blech auf einmal'), false],
+      ];
+    });
+    testCase('#preset leer + state.balls:1/ballw:600: trotzdem generischer Guide-Text (kein Teglia-Preset aktiv)', { balls: 1, ballw: 600 }, () => {
+      setActivePreset('');
+      PZ.buildGuide();
+      const html = guideHtml();
+      return [
+        ['Titel "Pizza ausziehen" (generisch) im HTML', html.includes('Pizza ausziehen'), true],
+        ['Titel "Teig ins Blech ziehen" NICHT im HTML', html.includes('Teig ins Blech ziehen'), false],
+      ];
+    });
+
+    // Aufräumen: Stub-Select zurück auf leer (analog Sektion 28), State zurück auf BASE.
+    setActivePreset('');
+    Object.assign(PZ.state, BASE);
+    PZ.calc();
+  })();
 
   // ─────────────────────────────────────────────────────────────
   const s = document.getElementById('summary');

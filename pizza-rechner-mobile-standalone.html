@@ -1557,7 +1557,7 @@ header{position:relative;text-align:center;}
      daneben, ein zweiter Vorlese-Name wäre redundant (analog zum bestehenden
      .card-icon aria-hidden-Muster). -->
 <header>
-  <h1><img src="assets/logo.svg?v=4.28.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
+  <h1><img src="assets/logo.svg?v=4.29.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
 </header>
 
 <!-- Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay analog zum
@@ -3027,6 +3027,14 @@ header{position:relative;text-align:center;}
   add('guide.box.normal', 'Box', 'container');
   add('guide.step.formBalls.tip', 'Straff geformte Kugeln = runde Pizzen mit gleichmäßigem Rand (Cornicione).',
     'Tightly shaped balls = round pizzas with an even rim (cornicione).');
+  // Teglia-Variante (v4.29.0): Zuordnung ausschließlich über den #preset-DOM-Wert
+  // (js/guide.js, isTegliaPreset() -- gleiches Muster wie finalPhoto(), kein
+  // state.preset). Nur der Tipp-Text ändert sich, Titel/Body des Schritts bleiben
+  // gleich -- das Rundwirken zu einer glatten Kugel ist auch bei Teglia ein sinnvoller
+  // Zwischenschritt (bevor der Teig direkt ins Blech gedrückt wird), nur die Aussage
+  // über das ERGEBNIS ("runde Pizzen mit Cornicione") stimmt für Teglia nicht.
+  add('guide.step.formBalls.tipTeglia', 'Bei Teglia dient das Rundwirken nur der glatten, spannungsfreien Oberfläche, bevor der Teig direkt ins geölte Blech gedrückt wird — kein runder Rand (Cornicione), die Form entsteht erst beim Ausziehen im Blech.',
+    'For teglia, shaping into a ball is only to get a smooth, tension-free surface before pressing the dough straight into the oiled pan — no round rim (cornicione), the shape only takes form once it is stretched out in the pan.');
   add('guide.step.finalProof.title', 'Stückgare (Teiglinge)', 'Final proof (dough balls)');
   add('guide.step.finalProof.chipCold', 'kühl · Fingertest', 'cold · finger test');
   add('guide.step.finalProof.chipDefault', 'Fingertest', 'finger test');
@@ -3058,10 +3066,45 @@ header{position:relative;text-align:center;}
     'Bed the dough ball in flour/semolina, <b>flatten from the center with your fingertips</b>, leave the rim (~1.5 cm) untouched, stretch to size over the backs of your hands.');
   add('guide.step.shape.warn', 'Nie ein Nudelholz – das drückt die Luft aus dem Rand. Der Cornicione lebt von der Gärblase.',
     'Never use a rolling pin: it presses the air out of the rim. The cornicione lives off that trapped gas.');
+  // Teglia-Variante (v4.29.0, "Pizza ausziehen" -> eigener Schritt "Teig ins Blech
+  // ziehen"): die Napoli-Technik (Handformen zu einer runden Scheibe mit stehen
+  // gelassenem Rand) passt nicht -- Teglia-Teig wird direkt in eine geölte rechteckige
+  // Form gedrückt/gezogen. Zwei unabhängig recherchierte Quellen (massimodesantis.com,
+  // bereits als Quelle für die Grammatura oben genutzt; pizzaelievitati.com, eigener
+  // Artikel "Come stendere la pizza in teglia") beschreiben übereinstimmend: Blech
+  // ölen, Teigling mit geölten/bemehlten Händen von der Mitte nach außen drücken
+  // (nicht zu fest pressen), springt der Teig zurück bevor er die Ecken erreicht:
+  // abdecken und ruhen lassen, danach lässt er sich spürbar leichter bis in die Ecken
+  // ziehen. Die konkrete Ruhezeit schwankt je nach Quelle (1 Stunde bzw. 10 Minuten
+  // in einer schwächeren, generischeren Quelle zum selben Grundprinzip) -- bewusst als
+  // breite Spanne "15-60 min" formuliert statt einer erfundenen Einzelzahl (s.
+  // pizza-rechner-KONTEXT.md, "Wenn die Quellenlage nicht ausreicht").
+  add('guide.step.shapeTeglia.title', 'Teig ins Blech ziehen', 'Stretch the dough into the pan');
+  add('guide.step.shapeTeglia.chip', 'kein Nudelholz!', 'no rolling pin!');
+  add('guide.step.shapeTeglia.body', 'Blech gut ölen. Teigling mit geölten/bemehlten Händen von der Mitte nach außen <b>vorsichtig in die Form drücken</b>, nicht zu fest pressen. Springt der Teig zurück, bevor er die Ecken erreicht: mit einem Tuch abdecken und <b>15–60 min ruhen</b> lassen, danach weiterziehen.',
+    'Oil the pan well. With oiled/floured hands, <b>gently press the dough</b> from the center outward to fill the pan, without pressing too hard. If it springs back before reaching the corners: cover with a cloth and let it <b>rest 15–60 min</b>, then continue stretching.');
+  add('guide.step.shapeTeglia.warn', 'Nie ein Nudelholz – das drückt die Gärgase aus dem Teig. Die luftig-offenporige Krume ist gerade das Kennzeichen von Teglia/Pizza al taglio.',
+    'Never use a rolling pin: it presses the fermentation gases out of the dough. That light, open, airy crumb is exactly what defines teglia/pizza al taglio.');
   add('guide.bake.small', 'Pizzaofen bei ~450 °C: <b>60–90 Sekunden</b> (einmal drehen). Haushaltsofen: <b>5–8 min</b> unter dem Grill.',
     'Pizza oven at ~450 °C: <b>60–90 seconds</b> (turn once). Home oven: <b>5–8 min</b> under the grill/broiler.');
   add('guide.bake.large', 'Größere Teiglinge: Pizzaofen <b>~2 min</b>, Haushaltsofen <b>8–12 min</b>.',
     'Larger dough balls: pizza oven <b>~2 min</b>, home oven <b>8–12 min</b>.');
+  // Teglia-Backzeit (v4.29.0): das generische N x 5/7-Modell unterstellt N runde
+  // Einzelpizzen nacheinander -- mit balls:1 ergäbe das nur max(10, 1x7)=10 min für ein
+  // GANZES Blech, deutlich zu kurz. Eigener, preset-gebundener Override (js/guide.js,
+  // isTegliaPreset(), analog zum scheduleOverride-Mechanismus aus v4.28.0, s.
+  // pizza-rechner-KONTEXT.md), NICHT die generische Formel selbst angefasst. 15 min
+  // stammt aus drei konvergierenden Quellen für "pizza in teglia" im Haushaltsofen:
+  // Manopasto/Salamico (bereits für die Hefemenge genutzt, "~15 min bei 250 °C"),
+  // massimodesantis.com (eigenes, mehrstufiges Rezept: 3+4+5-6 min = ~12-13 min
+  // gesamt) und pizzaelievitati.com ("12-15 min bei 220-240 °C", schwächere Quelle,
+  // eher listicle-artig). Die im Auftrag erwähnte, vagere "18-25 min"-Quelle für
+  // "Pizza Romana allgemein" bezieht sich vermutlich auf die dünne, runde römische
+  // Pizza-Variante (nicht Teglia im Blech) und wurde deshalb NICHT gleich gewichtet.
+  // 15 min ist der obere, gut belegte Rand der 12-15-min-Bandbreite -- keine als
+  // "getestet" behauptete Zahl, reines Rechenwege-Backing (s. Ehrlichkeitsgebot).
+  add('guide.bake.teglia', 'Ganzes Blech auf einmal: Haushaltsofen bei <b>220–250 °C</b>, unterer Rost/Ober-Unterhitze, ca. <b>15 min</b> (je nach Ofen 12–18 min – Kruste im Auge behalten).',
+    'Whole pan at once: home oven at <b>220–250 °C</b> (430–480 °F), lower rack/top-bottom heat, approx. <b>15 min</b> (12–18 min depending on your oven – keep an eye on the crust).');
   add('guide.step.bakeTopping.title', 'Belegen & Backen', 'Top & bake');
   add('guide.step.bakeTopping.body', 'Zügig belegen (wenig Sauce, gut abgetropfter Mozzarella), sofort einschießen. {bakeTxt} Fertig beim <b>aufgegangenen, gefleckten Rand</b> (Leoparding).',
     'Top quickly (little sauce, well-drained mozzarella), launch immediately. {bakeTxt} Done when the rim is <b>puffed up and leopard-spotted</b>.');
@@ -3272,9 +3315,12 @@ header{position:relative;text-align:center;}
   // Quellen abgeleitet, s. pizza-rechner-KONTEXT.md). v4.28.0: Hefe 0,3 % -> 0,45 % +
   // scheduleOverride, Gesamtgare-Zeitangabe ~30 h -> ~76 h (aus Quellen abgeleitet, mit
   // dem Hinweis dass zwei der drei Quellen möglicherweise gemeinsamen Ursprungs sind,
-  // s. pizza-rechner-KONTEXT.md).
-  add('preset.teglia.desc', 'Römische Blechpizza: 75 % Hydration, 2,5 % Olivenöl, sehr lockere Krume. Teig ist klebrig: mit Stretch & Fold statt langem Kneten arbeiten. ~76 h kühl. Braucht sehr starkes Mehl (W330+).',
-    'Roman pan pizza: 75 % hydration, 2.5 % olive oil, very airy crumb. The dough is sticky: work with stretch & fold instead of long kneading. ~76 h cold. Needs a very strong flour (W330+).');
+  // s. pizza-rechner-KONTEXT.md). v4.29.0: nennt jetzt die neue Referenzgröße (30x40 cm,
+  // 600 g Gesamtteig, balls:1/ballw:600 statt balls:4/ballw:320) + einen Hinweis zum
+  // proportionalen Hochskalieren bei einem anderen Blech -- ohne konkrete Rechenformel/
+  // Flächen-Eingabe (bewusst kein Modellumbau, s. pizza-rechner-KONTEXT.md).
+  add('preset.teglia.desc', 'Römische Blechpizza für ein 30×40-cm-Blech (≈600 g Teig gesamt): 75 % Hydration, 2,5 % Olivenöl, sehr lockere Krume. Anderes Blech? Anzahl/Gewicht proportional zur Fläche hochskalieren. Teig ist klebrig: mit Stretch & Fold statt langem Kneten arbeiten. ~76 h kühl. Braucht sehr starkes Mehl (W330+).',
+    'Roman pan pizza for a 30×40 cm (12×16 in) baking sheet (≈600 g dough total): 75 % hydration, 2.5 % olive oil, very airy crumb. Different pan size? Scale the count/weight proportionally to the pan area. The dough is sticky: work with stretch & fold instead of long kneading. ~76 h cold. Needs a very strong flour (W330+).');
   // v4.26.0: Öl 3 % -> 1,5 % und Zucker 2 % -> 1 % (Feeling Foodish fährt exakt diese
   // Werte, aus Quellen abgeleitet, s. pizza-rechner-KONTEXT.md). v4.28.0: Hefe 0,2 % ->
   // 1,2 % + scheduleOverride, Gesamtgare-Zeitangabe ~28 h -> ~44 h (Hefemenge durch
@@ -5761,6 +5807,17 @@ header{position:relative;text-align:center;}
     return FINAL_PHOTO[key] || { src: 'assets/pizza-final-neapolitanisch.jpg', altKey: 'guide.step.finalPhoto.alt.napoli' };
   }
 
+  // Teglia-spezifische Anleitungstexte (v4.29.0, "Formen"-Tipp/"Ausziehen"-Schritt/
+  // Backzeit): identisches Zuordnungsmuster wie FINAL_PHOTO/finalPhoto() oben -- reiner
+  // #preset-DOM-Wert, kein state.preset (Begründung s. Kommentar dort). Bewusst NICHT
+  // über state.balls===1 o.ä. ausgelöst: ein manuell auf 1 Teigling reduziertes
+  // NICHT-Teglia-Rezept soll weiterhin die generischen runden Formulierungen/Formel
+  // bekommen -- nur das Preset "teglia" selbst schaltet auf die Blech-Variante um.
+  function isTegliaPreset() {
+    const presetEl = $('preset');
+    return !!presetEl && presetEl.value === 'teglia';
+  }
+
   // Glossar-Verweis (v3.68.0, "Glossar-Verweise in der Anleitung"): kleiner klickbarer
   // Sprung-Link am Ende eines Anleitungsschritts zu einem passenden, bereits bestehenden
   // Glossar-Eintrag (z. B. Autolyse, Poolish, Biga, Kaltgare, Ofen-Heizarten). Reiner
@@ -6056,7 +6113,7 @@ header{position:relative;text-align:center;}
     if (!_usedGlossaryIds.has('einfrieren')) formBallsBody = inlineGlossaryLink(formBallsBody, 'einfrieren');
     st(formBallsTitle, `${R.N} × ${g(R.W)}`,
       formBallsBody,
-      tip(t('guide.step.formBalls.tip')), 10,
+      tip(isTegliaPreset() ? t('guide.step.formBalls.tipTeglia') : t('guide.step.formBalls.tip')), 10,
       { glossaryId: _usedGlossaryIds.has('einfrieren') ? undefined : 'einfrieren' });
     let finalProofTitle = inlineGlossaryLink(t('guide.step.finalProof.title'), finalProofColdGlossary);
     let finalProofBody = t('guide.step.finalProof.body', { proof: proofText });
@@ -6074,11 +6131,16 @@ header{position:relative;text-align:center;}
       preheatBody,
       tip(t('guide.step.preheat.tip')) + timerBox('ofen-vorheizen', 40), 0,
       { back: 50, glossaryId: _usedGlossaryIds.has('ofenHeizarten') ? undefined : 'ofenHeizarten' });
-    st(t('guide.step.shape.title'), t('guide.step.shape.chip'),
-      t('guide.step.shape.body'),
-      warn(t('guide.step.shape.warn')), 5);
-    const bakeTxt = state.ballw <= 260 ? t('guide.bake.small') : t('guide.bake.large');
-    const bakeDur = Math.max(10, R.N * (state.ballw <= 260 ? 5 : 7));
+    const teglia = isTegliaPreset();
+    st(t(teglia ? 'guide.step.shapeTeglia.title' : 'guide.step.shape.title'), t(teglia ? 'guide.step.shapeTeglia.chip' : 'guide.step.shape.chip'),
+      t(teglia ? 'guide.step.shapeTeglia.body' : 'guide.step.shape.body'),
+      warn(t(teglia ? 'guide.step.shapeTeglia.warn' : 'guide.step.shape.warn')), 5);
+    // Teglia-Backzeit (v4.29.0): eigener, preset-gebundener Override statt der
+    // generischen N x 5/7-Formel (s. Kommentar bei guide.bake.teglia in
+    // js/i18n-dict.js) -- ein ganzes Blech wird EINMAL gebacken, nicht N Einzelpizzen
+    // nacheinander, die generische Formel würde mit balls:1 nur 10 min ergeben.
+    const bakeTxt = teglia ? t('guide.bake.teglia') : (state.ballw <= 260 ? t('guide.bake.small') : t('guide.bake.large'));
+    const bakeDur = teglia ? 15 : Math.max(10, R.N * (state.ballw <= 260 ? 5 : 7));
     let bakeToppingTitle = inlineGlossaryLink(t('guide.step.bakeTopping.title'), 'ofenHeizarten');
     let bakeToppingBody = t('guide.step.bakeTopping.body', { bakeTxt: bakeTxt });
     if (!_usedGlossaryIds.has('ofenHeizarten')) bakeToppingBody = inlineGlossaryLink(bakeToppingBody, 'ofenHeizarten');
@@ -7355,17 +7417,26 @@ header{position:relative;text-align:center;}
   // unten); die explizite 0 hier sorgt dafür, dass ein zuvor über "New York Style"
   // gesetzter Zucker-Wert beim Wechsel auf ein anderes Preset zuverlässig verschwindet
   // (analog zu "oil", das ebenfalls jedes Preset explizit setzt).
+  // v4.29.0: ALLE Presets setzen jetzt zusätzlich "balls" explizit (vorher setzte KEIN
+  // Preset "balls" -- die Anzahl blieb einfach, was zuvor im Regler stand, App-Default
+  // 4, s. js/state.js). Nötig geworden, weil "teglia" jetzt bewusst balls:1 braucht
+  // (Blechflächen-Modell statt Teigling-Modell, s. u.) -- ohne diese Ergänzung würde
+  // "balls" nach dem Verlassen von "teglia" bei JEDEM danach gewählten Preset bei 1
+  // hängen bleiben (kein Preset hätte es je zurückgesetzt), exakt die Art von Preset-
+  // Altlast, die "sugar" oben schon einmal absichtlich verhindert. balls:4 ist bei den
+  // 7 Nicht-Teglia-Presets keine inhaltliche Änderung (identisch zum bisherigen
+  // Default), nur die bisher implizite Annahme jetzt explizit gemacht.
   const PRESETS = {
     napoli_klassisch: {
-      method: 'direct', hyd: 60, salt: 2.8, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 0.2, ballw: 250, ddt: 24, flour: 'caputo_pizzeria',
+      method: 'direct', hyd: 60, salt: 2.8, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 0.2, balls: 4, ballw: 250, ddt: 24, flour: 'caputo_pizzeria',
       descKey: 'preset.napoliKlassisch.desc'
     },
     napoli_kalt: {
-      method: 'direct', hyd: 65, salt: 3.0, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 0.1, ballw: 250, ddt: 23, flour: 'caputo_cuoco',
+      method: 'direct', hyd: 65, salt: 3.0, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 0.1, balls: 4, ballw: 250, ddt: 23, flour: 'caputo_cuoco',
       descKey: 'preset.napoliKalt.desc'
     },
     schnell: {
-      method: 'direct', hyd: 62, salt: 2.5, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 1.5, ballw: 250, ddt: 25, flour: 'caputo_pizzeria',
+      method: 'direct', hyd: 62, salt: 2.5, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 1.5, balls: 4, ballw: 250, ddt: 25, flour: 'caputo_pizzeria',
       descKey: 'preset.schnell.desc'
     },
     // Seit v4.25.0: "napoli_biga" (eine Stufe, unbelegte Hefewerte) ersetzt durch zwei
@@ -7375,11 +7446,11 @@ header{position:relative;text-align:center;}
     // (7 von 12 Quellen bei 50 %), Gesamthydration 65 % -> 70 % (sitzt exakt auf
     // caputo_cuoco hydMax 70, keine Warnung, aber kein Spielraum nach oben).
     napoli_biga_klassisch: {
-      method: 'biga', hyd: 70, salt: 2.8, oil: 2, sugar: 0, pref: 100, bhyd: 50, prefStage: 'b_klassisch', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'caputo_cuoco',
+      method: 'biga', hyd: 70, salt: 2.8, oil: 2, sugar: 0, pref: 100, bhyd: 50, prefStage: 'b_klassisch', yeastType: 'fresh', balls: 4, ballw: 250, ddt: 24, flour: 'caputo_cuoco',
       descKey: 'preset.napoliBigaKlassisch.desc'
     },
     napoli_biga_kalt: {
-      method: 'biga', hyd: 70, salt: 2.8, oil: 2, sugar: 0, pref: 100, bhyd: 50, prefStage: 'b_kalt', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'caputo_cuoco',
+      method: 'biga', hyd: 70, salt: 2.8, oil: 2, sugar: 0, pref: 100, bhyd: 50, prefStage: 'b_kalt', yeastType: 'fresh', balls: 4, ballw: 250, ddt: 24, flour: 'caputo_cuoco',
       descKey: 'preset.napoliBigaKalt.desc'
     },
     // Seit v4.24.0: "napoli_poolish" (eine Stufe, unbelegte Hefewerte) ersetzt durch zwei
@@ -7387,11 +7458,11 @@ header{position:relative;text-align:center;}
     // Manopasto-Aufbau: 500 g Poolish-Mehl von 755 g Gesamtmehl) -- damit der Unterschied
     // schnell/kalt verständlich bleibt, statt in einer dritten Stellschraube unterzugehen.
     napoli_poolish_schnell: {
-      method: 'poolish', hyd: 66, salt: 2.5, oil: 2, sugar: 0, pref: 66, prefStage: 'p_warm', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'dallag_monica',
+      method: 'poolish', hyd: 66, salt: 2.5, oil: 2, sugar: 0, pref: 66, prefStage: 'p_warm', yeastType: 'fresh', balls: 4, ballw: 250, ddt: 24, flour: 'dallag_monica',
       descKey: 'preset.napoliPoolishSchnell.desc'
     },
     napoli_poolish_kalt: {
-      method: 'poolish', hyd: 66, salt: 2.5, oil: 2, sugar: 0, pref: 66, prefStage: 'p_cold', yeastType: 'fresh', ballw: 250, ddt: 24, flour: 'dallag_monica',
+      method: 'poolish', hyd: 66, salt: 2.5, oil: 2, sugar: 0, pref: 66, prefStage: 'p_cold', yeastType: 'fresh', balls: 4, ballw: 250, ddt: 24, flour: 'dallag_monica',
       descKey: 'preset.napoliPoolishKalt.desc'
     },
     // v4.26.0: Öl 4 % -> 2,5 % (drei unabhängige Quellen bei 2,5 %, keine bei 4 %,
@@ -7404,8 +7475,18 @@ header{position:relative;text-align:center;}
     // unschärfere Quelle (Bonci-Aggregation, 0,3-0,9 % Frischhefe-Äquivalent für 24-48 h)
     // stützt zumindest die Größenordnung. s. js/schedule.js für den Override-Mechanismus,
     // pizza-rechner-KONTEXT.md für die volle Herleitung.
+    // v4.29.0: balls 4 -> 1, ballw 320 -> 600 (bewusste Verkleinerung des Gesamtteigs
+    // 1280 g -> 600 g, KEIN Tippfehler). Teglia/Pizza Romana wird traditionell nicht als
+    // N Teiglinge dosiert, sondern nach Blechfläche ("grammatura"): drei unabhängige
+    // Quellen (lievitonaturale.org, massimodesantis.com, eine weitere englischsprachige
+    // Quelle) landen bei 0,5-0,6 g Teig je cm² Blechfläche. Referenz 30x40 cm (=1200 cm²)
+    // x 0,5 g/cm² = 600 g, direkt so vorgerechnet bei einer der Quellen (nicht selbst
+    // interpoliert). balls:1/ballw:600 bildet "ein 30x40-cm-Blech" ab -- ein größeres/
+    // kleineres Blech skaliert der Nutzer proportional über die bestehenden Regler
+    // (Anzahl/Gewicht), s. preset.teglia.desc. js/guide.js bekommt dafür einen eigenen
+    // Teglia-Zweig für Formen-/Ausziehen-Text und Backzeit (s. dort).
     teglia: {
-      method: 'direct', hyd: 75, salt: 2.5, oil: 2.5, sugar: 0, yeastType: 'fresh', yeast: 0.45, ballw: 320, ddt: 24, flour: 'caputo_nuvola_super',
+      method: 'direct', hyd: 75, salt: 2.5, oil: 2.5, sugar: 0, yeastType: 'fresh', yeast: 0.45, balls: 1, ballw: 600, ddt: 24, flour: 'caputo_nuvola_super',
       scheduleOverride: {
         labelKey: 'sched.tegliaOverride.label', labelDefault: 'Teglia-Kaltgare · ~76 h',
         bulkKey: 'sched.tegliaOverride.bulk',
@@ -7430,7 +7511,7 @@ header{position:relative;text-align:center;}
     // Raumtemperatur-Skalierung (v4.27.0) riskant nah an einer Mehl-Warnung -- nach unten
     // auf 44 h korrigiert (im Auftrag als Fallback vorgesehen), 4 h Sicherheitsabstand.
     newyork_style: {
-      method: 'direct', hyd: 62, salt: 2.5, oil: 1.5, sugar: 1, yeastType: 'fresh', yeast: 1.2, ballw: 300, ddt: 24, flour: 'dallag_napoletana',
+      method: 'direct', hyd: 62, salt: 2.5, oil: 1.5, sugar: 1, yeastType: 'fresh', yeast: 1.2, balls: 4, ballw: 300, ddt: 24, flour: 'dallag_napoletana',
       scheduleOverride: {
         labelKey: 'sched.nyOverride.label', labelDefault: 'New-York-Style-Kaltgare · ~44 h',
         bulkKey: 'sched.nyOverride.bulk', bulkDefault: '<b>2 h</b> bei Raumtemp (Stockgare)', bulkMin: 120,
@@ -7466,6 +7547,9 @@ header{position:relative;text-align:center;}
     if (p.method) { state.method = p.method; PZ.selectSeg('method', 'm', p.method); PZ.applyMethod(); }
     if (p.yeastType) { state.yeastType = p.yeastType; PZ.selectSeg('yeastType', 'y', p.yeastType); }
     if (p.knead != null) { state.knead = String(p.knead); PZ.selectSeg('knead', 'k', p.knead); }
+    // v4.29.0: neu -- bisher setzte kein Preset "balls" (s. Kommentar oben bei PRESETS),
+    // jetzt setzen alle acht es explizit (Teglia braucht balls:1).
+    if (p.balls != null) set.balls(p.balls);
     if (p.ballw != null) set.ballw(p.ballw);
     if (p.hyd != null)   set.hyd(p.hyd);
     if (p.salt != null)  set.salt(p.salt);

@@ -8,6 +8,91 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Teglia-Blechflächendosierung (v4.29.0)
+
+Direkter Nutzerauftrag (Konzept in einer früheren Sitzung unter anderem Account bereits
+bestätigt, Implementierung dort begonnen aber durch Sitzungslimit unterbrochen; dieser
+Zyklus hat den begonnenen, uncommitteten Code-Stand fertiggestellt, getestet, gehärtet und
+versioniert, nicht neu konzipiert). Ausgangsproblem: Teglia/Blechpizza wird traditionell
+nicht wie die übrigen Presets über „N Teiglinge à Gewicht" dosiert, sondern über die
+Blechfläche (italienisch „grammatura"). Zusätzlich benutzte die Anleitung bei Teglia
+fälschlich rundpizza-spezifische Formulierungen (Cornicione-Hinweis beim Formen,
+Handrücken-Ausziehen) und eine Backzeit-Formel, die von N nacheinander gebackenen
+Einzelpizzen ausgeht statt von einem ganzen, auf einmal gebackenen Blech.
+
+**Quellenlage:**
+- Grammatura-Verhältnis: 0,5–0,6 g Teig pro cm² Blechfläche, aus drei unabhängigen Quellen
+  (lievitonaturale.org, massimodesantis.com, eine weitere englischsprachige Quelle, die
+  exakt 0,5 g/cm² nennt). Referenzblech 30×40 cm (1200 cm²) × 0,5 g/cm² = 600 g, so auch bei
+  einer der Quellen direkt vorgerechnet.
+- Ausziehen/Formen bei Teglia: massimodesantis.com (bereits als Quelle für die Grammatura
+  genutzt) und pizzaelievitati.com („Come stendere la pizza in teglia") beschreiben
+  übereinstimmend: Blech ölen, Teigling mit geölten/bemehlten Händen von der Mitte nach
+  außen drücken, springt der Teig vor Erreichen der Ecken zurück: abdecken und 15–60 min
+  ruhen lassen (Ruhezeit bewusst als Spanne, da Quellen zwischen 10 min und 1 h schwanken),
+  dann weiterziehen.
+- Backzeit: drei konvergierende Quellen für „pizza in teglia" im Haushaltsofen bei
+  220–250 °C: Manopasto/Salamico (bereits für die Hefemenge genutzt, „~15 min bei 250 °C"),
+  massimodesantis.com (mehrstufiges Rezept, ~12–13 min gesamt), pizzaelievitati.com
+  (12–15 min bei 220–240 °C, schwächere/listicle-artige Quelle). 15 min als oberer, gut
+  belegter Rand gewählt, nicht als „getestet" behauptet (reines Rechenwege-Backing).
+
+**Umgesetzt:**
+- `js/presets.js`: `teglia`-Preset jetzt `balls: 1, ballw: 600` (vorher implizit `balls: 4`
+  vom App-Default, `ballw: 320`). Bei dieser Gelegenheit setzen jetzt ALLE 8 Presets
+  explizit `balls` (vorher setzte keins es) — ohne diese Ergänzung wäre `balls` nach dem
+  Verlassen von „teglia" bei jedem danach gewählten Preset bei 1 hängen geblieben (kein
+  Preset hätte es je zurückgesetzt), analog zur bereits bestehenden `sugar`-Absicherung.
+  Für die 7 Nicht-Teglia-Presets ist `balls: 4` inhaltlich keine Änderung (identisch zum
+  bisherigen impliziten Default), nur jetzt explizit statt implizit.
+- `js/guide.js`: neue Hilfsfunktion `isTegliaPreset()` (identisches Zuordnungsmuster wie das
+  seit v3.69.0 bestehende `finalPhoto()`/`FINAL_PHOTO` — reiner `#preset`-DOM-Wert, kein
+  `state.preset`, das es nicht gibt). Zwei Stellen umgeschaltet: der „Pizza
+  ausziehen"-Schritt zeigt bei aktivem Teglia-Preset `guide.step.shapeTeglia.title/.chip/
+  .body/.warn` statt der generischen `guide.step.shape.*`-Texte; der Back-Schritt nutzt bei
+  Teglia einen festen Override (`bakeDur = 15`, `bakeTxt = guide.bake.teglia`) statt der
+  generischen `Math.max(10, R.N * (ballw≤260?5:7))`-Formel (die hätte bei `balls:1` nur
+  10 min für ein ganzes Blech ergeben). Bewusst NICHT an `state.balls===1` gekoppelt: ein
+  manuell auf 1 Teigling reduziertes Nicht-Teglia-Rezept bleibt bei den generischen Texten,
+  nur das Preset „teglia" selbst schaltet um (mehrfach regressionsgetestet, s. u.).
+  `guide.step.formBalls.tipTeglia` (Formen-Tipp-Variante) war bereits vor diesem Zyklus
+  verdrahtet.
+- `js/i18n-dict.js`: neue Keys `guide.step.shapeTeglia.title/.chip/.body/.warn`,
+  `guide.bake.teglia`, DE+EN. `preset.teglia.desc` nennt jetzt die 30×40 cm/600 g-Referenz
+  und den Hinweis zum proportionalen Hochskalieren bei anderem Blech.
+
+**Testen (Delegations-Review, nicht blind übernommen):** `test-generator`-Vorschlag geprüft,
+zwei echte Probleme gefunden und korrigiert, bevor er übernommen wurde: (1) der Vorschlag
+rief `PZ.applyPreset()`/`PZ.set.*` direkt auf, obwohl weder `js/ui.js` noch `js/presets.js`
+in `tests/test.html` geladen werden — das hätte die gesamte Suite ab dieser Stelle mit einer
+Exception abgebrochen; stattdessen wie im etablierten Foto-Test-Muster (Sektion 28,
+`finalPhoto()`) nur der `#preset`-Stub direkt manipuliert und `PZ.buildGuide()` aufgerufen.
+(2) zwei Text-Assertions hätten mit falschem Ergebnis gelaufen: `guide.step.formBalls.title`
+(„Teiglinge formen", ein früherer, immer vorhandener Schritt) wurde fälschlich als Vergleich
+für den generischen `guide.step.shape.title` benutzt, und „Nie ein Nudelholz" ist der
+gemeinsame Anfangssatz von SOWOHL `guide.step.shape.warn` ALS AUCH `guide.step.shapeTeglia.
+warn` — als Abgrenzungskriterium wäre das bei jedem Preset falsch gelaufen. Beide durch
+eindeutig unterscheidende Teilstrings ersetzt, dazu ein wörtlicher Fehler im erwarteten
+`formBalls.tipTeglia`-Text (falscher Kasus) korrigiert. Zusätzlich `PRESET_STATES.teglia`
+in `tests/test.html` auf `balls:1, ballw:600` aktualisiert (war sonst veraltet, „spiegelt
+js/presets.js wider"-Konvention). Neue Sektion 36 deckt ab: alle 8 Presets liefern
+korrektes `balls`/`ballw`; Teglia aktiv zeigt Blech-Texte + „~15 min"-Backzeit, andere
+Presets/„Eigene Einstellung" weiterhin generisch; manuelles `balls:1` bei einem
+Nicht-Teglia-Preset bleibt generisch (Abgrenzungstest); Masseerhaltung bei `ballw:600`
+weiterhin exakt erfüllt. `tests/test.html`: 1077 → **1106** Prüfungen (29 neu), alle grün
+(Headless-Edge-Dump, `msedge --headless=new --dump-dom`).
+
+**Härten:** kein Spezialisten-Audit angefordert (bewusst gezielt statt routinemäßig) — die
+Änderung tauscht nur AUS, welcher bereits bestehende, unverändert gerenderte i18n-Text in
+ein bereits bestehendes Anleitungs-Schritt-Template (`st()`/`tip()`/`warn()`) eingesetzt
+wird, exakt das Rendering-Muster des seit v3.69.0 etablierten und bereits auditierten
+`finalPhoto()`-Mechanismus — keine neue Markup-/ARIA-Struktur, kein neues Mobil-Markup,
+kein Performance-relevanter Pfad.
+
+**Geändert:** `js/presets.js`, `js/i18n-dict.js`, `js/guide.js`, `tests/test.html`. `?v=`
+auf `4.29.0` gezogen (Desktop + Mobil), `pizza-rechner-mobile-standalone.html` neu gebaut
+(reiner Versionssprung, kein inhaltlicher Mobil-Unterschied).
+
 ## Preset-Fahrplan-Override für teglia/newyork_style (v4.28.0)
 
 Direkter Nutzerauftrag, Konzept/Architekturentscheidung/Quellenlage im Hauptgespräch

@@ -115,6 +115,17 @@
     return FINAL_PHOTO[key] || { src: 'assets/pizza-final-neapolitanisch.jpg', altKey: 'guide.step.finalPhoto.alt.napoli' };
   }
 
+  // Teglia-spezifische Anleitungstexte (v4.29.0, "Formen"-Tipp/"Ausziehen"-Schritt/
+  // Backzeit): identisches Zuordnungsmuster wie FINAL_PHOTO/finalPhoto() oben -- reiner
+  // #preset-DOM-Wert, kein state.preset (Begründung s. Kommentar dort). Bewusst NICHT
+  // über state.balls===1 o.ä. ausgelöst: ein manuell auf 1 Teigling reduziertes
+  // NICHT-Teglia-Rezept soll weiterhin die generischen runden Formulierungen/Formel
+  // bekommen -- nur das Preset "teglia" selbst schaltet auf die Blech-Variante um.
+  function isTegliaPreset() {
+    const presetEl = $('preset');
+    return !!presetEl && presetEl.value === 'teglia';
+  }
+
   // Glossar-Verweis (v3.68.0, "Glossar-Verweise in der Anleitung"): kleiner klickbarer
   // Sprung-Link am Ende eines Anleitungsschritts zu einem passenden, bereits bestehenden
   // Glossar-Eintrag (z. B. Autolyse, Poolish, Biga, Kaltgare, Ofen-Heizarten). Reiner
@@ -410,7 +421,7 @@
     if (!_usedGlossaryIds.has('einfrieren')) formBallsBody = inlineGlossaryLink(formBallsBody, 'einfrieren');
     st(formBallsTitle, `${R.N} × ${g(R.W)}`,
       formBallsBody,
-      tip(t('guide.step.formBalls.tip')), 10,
+      tip(isTegliaPreset() ? t('guide.step.formBalls.tipTeglia') : t('guide.step.formBalls.tip')), 10,
       { glossaryId: _usedGlossaryIds.has('einfrieren') ? undefined : 'einfrieren' });
     let finalProofTitle = inlineGlossaryLink(t('guide.step.finalProof.title'), finalProofColdGlossary);
     let finalProofBody = t('guide.step.finalProof.body', { proof: proofText });
@@ -428,11 +439,16 @@
       preheatBody,
       tip(t('guide.step.preheat.tip')) + timerBox('ofen-vorheizen', 40), 0,
       { back: 50, glossaryId: _usedGlossaryIds.has('ofenHeizarten') ? undefined : 'ofenHeizarten' });
-    st(t('guide.step.shape.title'), t('guide.step.shape.chip'),
-      t('guide.step.shape.body'),
-      warn(t('guide.step.shape.warn')), 5);
-    const bakeTxt = state.ballw <= 260 ? t('guide.bake.small') : t('guide.bake.large');
-    const bakeDur = Math.max(10, R.N * (state.ballw <= 260 ? 5 : 7));
+    const teglia = isTegliaPreset();
+    st(t(teglia ? 'guide.step.shapeTeglia.title' : 'guide.step.shape.title'), t(teglia ? 'guide.step.shapeTeglia.chip' : 'guide.step.shape.chip'),
+      t(teglia ? 'guide.step.shapeTeglia.body' : 'guide.step.shape.body'),
+      warn(t(teglia ? 'guide.step.shapeTeglia.warn' : 'guide.step.shape.warn')), 5);
+    // Teglia-Backzeit (v4.29.0): eigener, preset-gebundener Override statt der
+    // generischen N x 5/7-Formel (s. Kommentar bei guide.bake.teglia in
+    // js/i18n-dict.js) -- ein ganzes Blech wird EINMAL gebacken, nicht N Einzelpizzen
+    // nacheinander, die generische Formel würde mit balls:1 nur 10 min ergeben.
+    const bakeTxt = teglia ? t('guide.bake.teglia') : (state.ballw <= 260 ? t('guide.bake.small') : t('guide.bake.large'));
+    const bakeDur = teglia ? 15 : Math.max(10, R.N * (state.ballw <= 260 ? 5 : 7));
     let bakeToppingTitle = inlineGlossaryLink(t('guide.step.bakeTopping.title'), 'ofenHeizarten');
     let bakeToppingBody = t('guide.step.bakeTopping.body', { bakeTxt: bakeTxt });
     if (!_usedGlossaryIds.has('ofenHeizarten')) bakeToppingBody = inlineGlossaryLink(bakeToppingBody, 'ofenHeizarten');

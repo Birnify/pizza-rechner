@@ -188,7 +188,7 @@ Abschnitt „Zucker-Feld / New York Style" weiter unten. Bewusst nicht in dieser
 | `napoli_biga_kalt` | biga (pref 100, bhyd **50**, b_kalt) | **70 %** | 2,8 % | 2 % | 1,0 % | caputo_cuoco |
 | `napoli_poolish_schnell` | poolish (pref 66, p_warm) | 66 % | 2,5 % | 2 % | 0,396 % | **dallag_monica** |
 | `napoli_poolish_kalt` | poolish (pref 66, p_cold) | 66 % | 2,5 % | 2 % | 0,66 % | **dallag_monica** |
-| `teglia` | direct (ballw 320) | 75 % | 2,5 % | **2,5 %** | **0,45 %** | **caputo_nuvola_super** |
+| `teglia` | direct (balls 1, ballw 600 — Blechfläche, s. „= aktueller Stand" oben) | 75 % | 2,5 % | **2,5 %** | **0,45 %** | **caputo_nuvola_super** |
 
 (napoli_kalt war 62 % → auf 65 % angehoben, damit es zum Cuoco passt; die beiden Biga-Presets
 seit v4.25.0 (s. Historie): bhyd 45 % → 50 %, Gesamthydration 65 % → 70 %
@@ -215,30 +215,22 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Preset-Fahrplan-Override für teglia/newyork_style (v4.28.0) = aktueller Stand
+## Teglia-Blechflächendosierung (v4.29.0) = aktueller Stand
 
-Letzte offene Lücke der Preset-Quellenprüfung (v4.24.0–v4.27.0) geschlossen: `js/schedule.js`
-bekommt einen neuen `state.scheduleOverride`-Mechanismus, der bei Direktführung VOR die
-generische Hefemenge-Schwellen-Kaskade greift (die unterstellt „mehr Hefe = kürzer/wärmer",
-was bei diesen zwei Presets laut Quellen nicht stimmt) und danach dieselbe v4.27.0-
-Temperaturskalierung durchläuft wie jeder reguläre Zweig. **Nur `js/presets.js` setzt es**,
-ausschließlich für `teglia` (Hefe 0,3 % → 0,45 %, ~76 h — Manopasto/Salamico, Verdacht auf
-gemeinsamen Ursprung, gestützt durch eine schwächere dritte Quelle) und `newyork_style`
-(Hefe 0,2 % → 1,2 %, ~44 h — Feeling Foodish für die Hefemenge belegt, Zeit bewusst unter das
-rechnerische Bandmittel von ~48 h korrigiert, um der `dallag_napoletana`-maxH-Grenze von 48 h
-nicht zu nahe zu kommen). Freier Hefe-Regler, alle fünf Pills und jedes manuelle Rezept bleiben
-unverändert an die vier generischen Schwellen gekoppelt (mehrfach per Regression getestet).
-Ein komplettes Stufensystem (analog Biga/Poolish) wurde geprüft und bewusst verworfen. Beim
-Härten drei echte Bugs gefunden und gefixt (Delegations-Review + eigene Nachprüfung, s.
-HISTORIE): ein Preset-Wechsel/manueller Regler-Eingriff/Pill-Klick/Methode-Wechsel löscht den
-Override jetzt korrekt, ein Rezept-Laden bzw. Sprachwechsel dagegen NICHT (ursprüngliche
-Fassung des Fixes hatte das verwechselt). `tests/test.html`: 1034 → **1077** Prüfungen, alle
-grün.
+Teglia/Blechpizza wird jetzt nach Blechfläche dosiert statt nach „N Teiglinge à Gewicht":
+`js/presets.js` setzt `teglia` auf `balls: 1, ballw: 600` (30×40-cm-Referenzblech ×
+0,5 g/cm², drei unabhängige Quellen), alle 8 Presets setzen jetzt explizit `balls` (vorher
+implizit über den App-Default). `js/guide.js` (`isTegliaPreset()`, analog zu `finalPhoto()`)
+zeigt bei aktivem Teglia-Preset eigene Anleitungstexte für „Teig ins Blech ziehen" (statt
+rundpizza-spezifischer Formulierungen) und eine feste Backzeit von 15 min für das ganze
+Blech (statt der generischen, auf N Einzelpizzen ausgelegten Formel). Kein Spezialisten-
+Audit nötig (reiner i18n-Text-Tausch im bereits auditierten Rendering-Pfad). `tests/
+test.html`: 1077 → **1106** Prüfungen, alle grün.
 
-**Volle Details (Override-Mechanismus, Quellenherleitung, die drei gefundenen/gefixten
-Reset-Bugs, ein Kappungs-Asymmetrie-Nebenbefund aus der Temperaturskalierung v4.27.0):**
-`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Preset-Fahrplan-Override für
-teglia/newyork_style (v4.28.0)" (vorherige Abschnitte ebenfalls dort verkettet).
+**Volle Details (Quellenherleitung, zwei beim Testen gefundene/korrigierte Fehler im
+test-generator-Vorschlag, PRESET_STATES-Fixture-Update):**
+`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Teglia-Blechflächendosierung (v4.29.0)"
+(vorherige Abschnitte ebenfalls dort verkettet).
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -400,10 +392,45 @@ gebraucht wird in der Bildmitte **Motiv**, nicht Leerfläche.
   geformte, flache Blättchen, kleiner als ein Fingernagel, durchgehend in einem einzigen
   elfenbeinweißen Ton, die Fläche glatt und durchgehend einfarbig" ergab Knoblauch.
 
-**Was noch offen ist (Reihenfolge als Vorschlag):**
-1. **Blöcke ab 27** erzeugen und sichten (Anleitungs-Schritte, Glossar, Onboarding,
-   Party, Leerzustände, Marketing, Texturen, Puffer). Alles davon liegt derzeit nur mit
-   den **alten** Prompts im Ordner.
+**Stand 2026-07-26/27 (vierte Sitzung, Hauptagent direkt + eine weitere autonome
+Zwischen-Sitzung, per Datei-Abgleich statt Prosa verifiziert — die Zahlen oben sind
+bereits veraltet):** **103 von 128 Blöcken sind in `assets/_final/` abgenommen**
+(Block-Nummer → Dateiname per Skript gegen `BILD-PROMPTS.md` abgeglichen, nicht nur
+behauptet). **25 offen**, alle noch mit alten Prompts in `assets/` (Root):
+77 (`glossar-fiorDiLatte`), 82–84 (`glossar-belagDiavola/QuattroFormaggi/NachDemBacken`),
+90 (`glossar-sfincione`), 92–94 (`onboarding-presets/advanced/schedule`),
+96–100 (`onboarding-party`, `party-hero/auswahl/zutatenliste/eigene-pizza`),
+107/109 (`marketing-social-square/poster`), 115/116 (`texture-teighaut/kruste`),
+117–120 (`alt-header-margherita-desktop/teig-desktop`, `alt-card-napoli_klassisch/teglia`),
+122–124 (`alt-step-knead-maschine/bulkRise`, `alt-glossar-hydration`), 126 (`detail-hefe`).
+Workflow bewährt: Block generieren → **immer mit Zoom in die Problemzone prüfen**, nicht
+nur das Vollbild ansehen (sonst werden Fehler übersehen, s. Nutzer-Feedback) → bei Mangel
+Prompt gezielt nacharbeiten → neu erzeugen → erneut zoomen.
+
+**Zwei neue Werkzeuge, von einer Zwischen-Sitzung gebaut, noch nicht selbst genutzt:**
+- `assets/qa_check_bild.py <Blocknummer> <Bildpfad>` — automatischer erster Filter per
+  lokalem Vision-Modell über **Ollama** (`127.0.0.1:11434`, Default-Modell
+  `huihui_ai/qwen3-vl-abliterated:8b-instruct`). Ersetzt laut eigenem Docstring
+  **nicht** die eigene Sichtprüfung, ist aber ein guter Vorfilter für den großen Rest.
+  **Ollama lief beim Check (2026-07-27) nicht** — vor Nutzung erst starten.
+  Läuft ComfyUI parallel, wird die Auswertung durch GPU-Konkurrenz erheblich langsamer.
+- `assets/edit_bild.py <Bild> "<Anweisung>" --output <Ziel> --force` — gezielte
+  Nachbearbeitung eines bereits erzeugten Bildes per Textanweisung (z. B. „Kruste
+  dunkler"), über einen lokalen Krea-2-Identity-Edit-Pfad (`comfyui-krea2edit`,
+  eigenes Workflow-Template `comfyui_edit_workflow_template.json`), **ohne** das ganze
+  Bild neu zu würfeln. Braucht den custom_node `comfyui-krea2edit` plus
+  `krea2_turbo_fp8_scaled.safetensors` + `krea2_identity_edit_v1_2.safetensors`.
+  **Für hartnäckige Einzelmängel (z. B. das nie gelöste Block-14-Problem: neapolitanische
+  statt New-York-Randblasen trotz drei Voll-Neugenerierungen) vermutlich der bessere
+  Weg als wiederholtes komplettes Neu-Erzeugen**, weil dabei nicht bei jedem Versuch
+  eine neue zufällige Komposition mit neuen Zufallsfehlern entsteht. Noch nicht
+  ausprobiert, s. `comfyui_inpaint_workflow_template.json` und
+  `comfyui_workflow_template_pizzalora.json` als zwei weitere, noch unbekannte
+  Zusatz-Templates derselben Zwischen-Sitzung.
+
+**Was noch offen ist:**
+1. Die 25 oben aufgelisteten Blöcke: erzeugen (mit dem aktuellen, bereinigten
+   Prompt-Stand) und mit Zoom-Sichtprüfung abnehmen.
 2. **Bekannte, nicht behobene Schwäche:** „Fläche freilassen" ignoriert das Modell
    zuverlässig. Viele Karten-Prompts reservieren eine ruhige Bildhälfte für Text; das
    klappt bei den Marmor-Karten (8, 11, 12, 14) gut, bei formatfüllenden Motiven
@@ -414,6 +441,11 @@ gebraucht wird in der Bildmitte **Motiv**, nicht Leerfläche.
    Platzhalter-Foto; die Karten-, Schritt- und Glossarbilder referenziert bisher kein
    Markup. Das Einbinden ist ein eigener, noch nicht begonnener Schritt (und dann ein
    echtes App-Release mit Versionssprung, anders als die reine Asset-Arbeit hier).
+4. **Git-Falle beim Einbinden beachten:** die drei versionierten Platzhalter
+   (`pizza-final-neapolitanisch/-newyork/-teglia.jpg`) stehen aktuell als **gelöscht**
+   in `git status` (nicht „geändert"), weil die freigegebenen Ersatzbilder unter
+   `assets/_final/` liegen, nicht mehr am ursprünglichen Pfad. Beim Einbinden entweder
+   `_final`-Dateien an den Originalpfad kopieren oder Markup auf `_final/` umbiegen.
 
 **Git-Stand:** alles noch **uncommittet**. Die drei bereits versionierten Platzhalter
 `assets/pizza-final-neapolitanisch.jpg`, `-newyork.jpg`, `-teglia.jpg` sind durch
@@ -1010,15 +1042,11 @@ Keine Code-Änderung durch den Audit nötig.
   Schnellgare-Schwelle) und `teglia` (Hefe 0,3 % → 0,45 %, laut Manopasto/Salamico, jetzt
   ~76 h statt ~30 h). Der freie Hefe-Regler, alle fünf Pills und jedes manuelle Rezept
   bleiben unverändert an die vier generischen Schwellen gekoppelt.
-  - **Weiterhin offen, NICHT Teil von v4.28.0:** `teglia`-Teiglingsgewicht 320 g — Teglia
-    wird nach Blechfläche dosiert, nicht nach Kugel, Referenzwert beider Quellen ist 500 g
-    für ein Blech von 35×28 cm. Kein falscher Zahlenwert, sondern ein Modellbruch (das
-    Preset nutzt das Teigling-Modell für einen Stil, der so nicht gerechnet wird).
-    Nachrichtlich, ebenfalls offen: `teglia`-Hydration 75 % liegt am unteren Rand des
-    Quellenbands (75–85 %) — kein Fehler, nur ausbaufähig. Aufwand: eher hoch (eigene
-    Architektur-Frage, ob/wie Teglia auf ein Blechflächen-Modell statt Teigling-Modell
-    umgestellt werden sollte), Nutzen: schließt die letzte Detailfrage der ursprünglichen
-    Preset-Quellenprüfung.
+  - ~~`teglia`-Teiglingsgewicht 320 g auf Blechflächen-Modell umstellen~~ — **erledigt in
+    v4.29.0** (s. „= aktueller Stand" oben): `balls: 1, ballw: 600` (30×40-cm-Referenzblech,
+    0,5 g/cm², drei Quellen), Anleitungstexte + Backzeit preset-gebunden umgeschaltet.
+    Nachrichtlich, weiterhin offen: `teglia`-Hydration 75 % liegt am unteren Rand des
+    Quellenbands (75–85 %) — kein Fehler, nur ausbaufähig.
   - **Neue Backlog-Idee aus v4.28.0:** `state.scheduleOverride` könnte künftig als
     optionaler manueller Umschalter exponiert werden (eigener Regler/Toggle in der UI),
     falls der Nutzer auch außerhalb dieser zwei Presets einen festen statt einen aus der
