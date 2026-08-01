@@ -31,8 +31,34 @@
       method: 'direct', hyd: 60, salt: 2.8, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 0.2, balls: 4, ballw: 250, ddt: 24, flour: 'caputo_pizzeria',
       descKey: 'preset.napoliKlassisch.desc'
     },
+    // v4.30.0: Hefe 0,1 % -> 0,25 % + scheduleOverride (geteilte Kaltgare statt der
+    // generischen "Sehr lange Kaltgare ~48 h"-Schwelle) -- aus einer 7-Quellen-Prüfung
+    // (u. a. pizza1.de, Lorenzo's Gusto, Waldis Pizza, Burnhard, Ooni). Zwei Befunde:
+    // (1) sechs von sieben Quellen dosieren 0,2-0,3 % Hefe bei 44-52 h Gesamtdauer, unsere
+    // bisherigen 0,1 % lagen klar darunter -- 0,25 % sitzt mittig im belegten Cluster.
+    // (2) drei von vier detaillierten Quellen teilen die Kühlschrankzeit ungefähr hälftig:
+    // erst der GANZE Teig 12-24 h kalt, dann formen, dann die TEIGLINGE nochmal 12-20 h
+    // kalt -- das bildet die bisherige Kaltgare-Umschaltung (nur "alles vorne" ODER "alles
+    // hinten") nicht ab. state.scheduleOverride (s. js/schedule.js, seit v4.28.0) macht das
+    // Preset davon unabhängig: bulk 1 h Raumtemp + 20 h Kühlschrank im Ganzen, danach
+    // 20 h Kühlschrank als Teiglinge + 3 h temperieren, macht ~44 h in Summe. Die 20 h/20 h-
+    // Aufteilung selbst ist KEINE zitierte Einzelzahl, sondern bewusst am oberen Rand
+    // beider Quellenspannen (12-24 h bzw. 12-20 h) gewählt, damit die Gesamtdauer im
+    // belegten 44-52-h-Band landet -- Mechanismus (geteilte Kaltgare existiert, ungefähr
+    // hälftig) ist quellenbelegt, die konkrete Stundenverteilung ist eine konservative Wahl
+    // innerhalb der Bandbreite, keine getestete Einzelzahl. s. pizza-rechner-KONTEXT.md.
     napoli_kalt: {
-      method: 'direct', hyd: 65, salt: 3.0, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 0.1, balls: 4, ballw: 250, ddt: 23, flour: 'caputo_cuoco',
+      method: 'direct', hyd: 65, salt: 3.0, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 0.25, balls: 4, ballw: 250, ddt: 23, flour: 'caputo_cuoco',
+      scheduleOverride: {
+        labelKey: 'sched.napoliKaltOverride.label', labelDefault: 'Napoli-Kaltgare (geteilt) · ~44 h',
+        bulkKey: 'sched.napoliKaltOverride.bulk',
+        bulkDefault: '<b>1 h</b> bei Raumtemp anspringen lassen, dann <b>20 h</b> Kühlschrank (4 °C) im Ganzen',
+        bulkMin: 1260,
+        proofKey: 'sched.napoliKaltOverride.proof',
+        proofDefault: 'Nach dem Formen nochmal <b>20 h</b> Kühlschrank (4 °C), am Backtag <b>3 h</b> temperieren',
+        proofMin: 1380,
+        cold: true
+      },
       descKey: 'preset.napoliKalt.desc'
     },
     schnell: {

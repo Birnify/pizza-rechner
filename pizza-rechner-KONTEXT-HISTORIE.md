@@ -8,6 +8,21 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Teglia-max-Attribut-Bugfix (v4.29.1)
+
+v4.29.0 hatte einen Bug: `js/presets.js` wollte für `teglia` `ballw: 600` setzen, aber
+`#ballwN`/`#nrBallwN` hatten in allen drei HTML-Dateien noch `max="500"` (Altlast). Der
+HTML-Clamp in `js/widgets.js` kappte den Wert lautlos auf 500 — `PZ.state.ballw` stimmte
+nicht mit dem im Preset-Text versprochenen Gewicht überein. Die Testsuite fing das nicht,
+weil `tests/test.html` weder `js/presets.js`/`js/ui.js` noch ein echtes `#ballwN`-Element
+lädt (Clamp-Pfad wird dort nie durchlaufen). Fix: `max` auf `1000` erhöht (alle drei
+HTML-Dateien, beide Felder), live neu verifiziert (`ballw`/`totalW` jetzt korrekt 600/612 g).
+`tests/test.html`: 1106 → **1107** Prüfungen (neuer Trip-Wire-Regressionstest), alle grün.
+
+**Volle Details (Bug-Diagnose, Testarchitektur-Begründung, warum kein fetch-basierter
+Live-Test):** weiter unten in dieser Datei, Abschnitt „Teglia-Blechflächendosierung:
+HTML-max-Attribut-Bugfix (v4.29.1)" (vorherige Abschnitte ebenfalls dort verkettet).
+
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung — Stand bis 2026-08-01, Sitzungen 1–5
 
 Stand 2026-07-26, **nicht abgeschlossen**. Betrifft ausschließlich `assets/`, **kein

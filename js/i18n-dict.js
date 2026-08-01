@@ -74,6 +74,9 @@
   add('sched.nyOverride.label', 'New-York-Style-Kaltgare · ~44 h', 'New York style cold rise · ~44 h');
   add('sched.nyOverride.bulk', '<b>2 h</b> bei Raumtemp (Stockgare)', '<b>2 h</b> at room temp (bulk rise)');
   add('sched.nyOverride.proof', 'Teiglinge <b>38 h</b> Kühlschrank (4 °C), am Backtag <b>4 h</b> temperieren', 'Dough balls <b>38 h</b> in the fridge (4 °C), let come to room temp <b>4 h</b> on baking day');
+  add('sched.napoliKaltOverride.label', 'Napoli-Kaltgare (geteilt) · ~44 h', 'Napoli cold rise (split) · ~44 h');
+  add('sched.napoliKaltOverride.bulk', '<b>1 h</b> bei Raumtemp anspringen lassen, dann <b>20 h</b> Kühlschrank (4 °C) im Ganzen', '<b>1 h</b> at room temp to get going, then <b>20 h</b> in the fridge (4 °C) as one piece');
+  add('sched.napoliKaltOverride.proof', 'Nach dem Formen nochmal <b>20 h</b> Kühlschrank (4 °C), am Backtag <b>3 h</b> temperieren', 'After shaping another <b>20 h</b> in the fridge (4 °C), let come to room temp <b>3 h</b> on baking day');
 
   // ---- js/guide.js: Schritt-für-Schritt-Anleitung (dynamisch, mit {platzhaltern}) ---
   add('guide.title', 'Schritt-für-Schritt-Anleitung', 'Step-by-step guide');
@@ -567,11 +570,11 @@
   // der AVPN-Zutatenliste, nicht Teil davon. S. pizza-rechner-KONTEXT.md.
   add('preset.napoliKlassisch.desc', 'An den AVPN-Standard angelehnt: 60 % Hydration, Tipo 00. Das Olivenöl (2 %) ist eine bewusste Abweichung: die offizielle AVPN-Zutatenliste kennt nur Mehl, Wasser, Salz und Hefe (mehr dazu im Glossar „Echte neapolitanische Pizza (AVPN)“). ~28 h Gesamtgare, wenig Hefe, klassischer Geschmack.',
     'Inspired by the AVPN standard: 60 % hydration, Tipo 00. The olive oil (2 %) is a deliberate deviation: the official AVPN ingredient list only includes flour, water, salt and yeast (more in the glossary entry “True Neapolitan pizza (AVPN)”). ~28 h total rise, little yeast, classic flavor.');
-  // v4.25.1: Gesamtgare aus der Berechnung nachgemessen (44,62 h → ~45 h) statt der
-  // bisherigen geschätzten "~48 h" -- das lag sogar UNTER dem im Options-Label
-  // versprochenen Minimum von 48 h. Teigwerte unverändert.
-  add('preset.napoliKalt.desc', 'Lange Kaltgare: ~45 h insgesamt, der Großteil davon im Kühlschrank (4 °C), 2 % Olivenöl. Sehr wenig Hefe, maximales Aroma. Braucht ein starkes Mehl (W300+).',
-    'Long cold rise: ~45 h in total, most of it in the fridge (4 °C), 2 % olive oil. Very little yeast, maximum flavor. Needs a strong flour (W300+).');
+  // v4.30.0: Hefe 0,1 % -> 0,25 % + geteilte Kaltgare (erst der ganze Teig, dann die
+  // Teiglinge im Kühlschrank) statt der bisherigen einphasigen ~45-h-Beschreibung --
+  // aus einer 7-Quellen-Prüfung, s. Kommentar in js/presets.js. Neue Gesamtdauer ~44 h.
+  add('preset.napoliKalt.desc', 'Geteilte Kaltgare: ~44 h insgesamt, erst der ganze Teig, dann die Teiglinge im Kühlschrank (4 °C), 2 % Olivenöl. Wenig Hefe, volles Aroma. Braucht ein starkes Mehl (W300+).',
+    'Split cold rise: ~44 h in total, first the whole dough, then the dough balls in the fridge (4 °C), 2 % olive oil. Little yeast, full flavor. Needs a strong flour (W300+).');
   add('preset.schnell.desc', 'Gleicher Tag: ~2 h Stockgare + 2–3 h Stückgare bei warmer Raumtemp (24–26 °C), 2 % Olivenöl. Mehr Hefe, weniger Aroma: aber spontan.',
     'Same day: ~2 h bulk rise + 2–3 h final proof at warm room temp (24–26 °C), 2 % olive oil. More yeast, less flavor: but spontaneous.');
   // Bewusst PLAIN "&" (nicht "&amp;") in allen drei descKey-Einträgen unten:
@@ -705,8 +708,10 @@
   // jetzt in preset.napoliKlassisch.desc). Beide Gärzeiten aus der Berechnung nachgemessen
   // (27,62 h → ~28 h; 44,62 h → ~45 h, lag vorher sogar UNTER dem versprochenen
   // 48-h-Minimum) statt der bisherigen geschätzten Werte. Teigwerte unverändert.
+  // v4.30.0: napoli_kalt neu berechnet auf ~44 h (geteilte Kaltgare + höhere Hefemenge,
+  // s. js/presets.js) -- die "45 h" oben war der Vorgängerwert vor diesem Umbau.
   add('option.napoliKlassisch', 'Napoli Klassisch · ~28 h', 'Napoli Classic · ~28 h');
-  add('option.napoliKalt', 'Napoli Lange Kaltgare · ~45 h', 'Napoli Long Cold Rise · ~45 h');
+  add('option.napoliKalt', 'Napoli Lange Kaltgare · ~44 h', 'Napoli Long Cold Rise · ~44 h');
   // schnell: real gemessen 5,37 h liegt bereits innerhalb "4–6 h", keine Änderung nötig.
   add('option.schnell', 'Schnell · 4–6 h', 'Quick · 4–6 h');
   add('option.napoliBigaKlassisch', 'Napoli mit Biga (klassisch) · ~29 h', 'Napoli with Biga (classic) · ~29 h');
@@ -743,10 +748,10 @@
   // v4.25.1: Gärzeit aus der Berechnung nachgemessen (44,62 h → ~45 h) statt der
   // bisherigen geschätzten "48–72 h" -- die lag sogar UNTER dem versprochenen Minimum.
   add('preset.recommend.lang.name', 'Lang', 'Long');
-  add('preset.recommend.lang.time', '~45 h', '~45 h');
+  add('preset.recommend.lang.time', '~44 h', '~44 h');
   add('preset.recommend.lang.fit', 'Maximales Aroma, braucht starkes Mehl (W300+)', 'Maximum flavor, needs a strong flour (W300+)');
-  add('preset.recommend.lang.ariaLabel', 'Lang: ~45 h Gärzeit, maximales Aroma, braucht starkes Mehl (W300+)',
-    'Long: ~45 h rise time, maximum flavor, needs a strong flour (W300+)');
+  add('preset.recommend.lang.ariaLabel', 'Lang: ~44 h Gärzeit, maximales Aroma, braucht starkes Mehl (W300+)',
+    'Long: ~44 h rise time, maximum flavor, needs a strong flour (W300+)');
   add('preset.allRecipes', 'Alle Rezepte', 'All recipes');
 
   // -- Card: Einfacher Modus (v3.62.0) -------------------------------------------------

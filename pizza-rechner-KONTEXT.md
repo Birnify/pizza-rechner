@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-07-30 · Aktuelle Version: v4.29.1 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-01 · Aktuelle Version: v4.30.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -182,7 +182,7 @@ Abschnitt „Zucker-Feld / New York Style" weiter unten. Bewusst nicht in dieser
 | Key | Methode | Hyd | Salz | Öl | Hefe | Mehl (empfohlen) |
 |-----|---------|-----|------|------|------|------------------|
 | `napoli_klassisch` | direct | 60 % | 2,8 % | 2 % | 0,2 % | caputo_pizzeria |
-| `napoli_kalt` | direct | **65 %** | 3,0 % | 2 % | 0,1 % | **caputo_cuoco** |
+| `napoli_kalt` | direct (`scheduleOverride`, geteilte Kaltgare ~44 h — s. „= aktueller Stand" oben) | **65 %** | 3,0 % | 2 % | **0,25 %** | **caputo_cuoco** |
 | `schnell` | direct | 62 % | 2,5 % | 2 % | 1,5 % | caputo_pizzeria |
 | `napoli_biga_klassisch` | biga (pref 100, bhyd **50**, b_klassisch) | **70 %** | 2,8 % | 2 % | 1,0 % | caputo_cuoco |
 | `napoli_biga_kalt` | biga (pref 100, bhyd **50**, b_kalt) | **70 %** | 2,8 % | 2 % | 1,0 % | caputo_cuoco |
@@ -201,7 +201,8 @@ v4.24.0 beim Aktualisieren dieser Tabelle bemerkt: der Preset-Key existierte in
 `js/presets.js` gar nicht (mind. seit v4.7.0 nicht mehr, unklar seit wann genau) — reiner
 Dokumentationsfehler, keine Code-Änderung nötig. `teglia`-Öl seit v4.26.0 4 % → 2,5 %, aus
 Quellen abgeleitet; `teglia`-Hefe seit v4.28.0 0,3 % → 0,45 % + `scheduleOverride` (~76 h
-statt ~30 h) — s. „= aktueller Stand" oben.)
+statt ~30 h); `napoli_kalt`-Hefe seit v4.30.0 0,1 % → 0,25 % + `scheduleOverride` (geteilte
+Kaltgare, ~44 h statt der vorherigen generischen ~45-h-Schwelle) — s. „= aktueller Stand" oben.)
 
 ## Mehl-Datenbank (js/flour.js, Quelle: pizza1.de/blog/pizzamehl-uebersicht/)
 
@@ -215,20 +216,21 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Teglia-max-Attribut-Bugfix (v4.29.1) = aktueller Stand
+## Napoli Lange Kaltgare an Quellen angleichen (v4.30.0) = aktueller Stand
 
-v4.29.0 hatte einen Bug: `js/presets.js` wollte für `teglia` `ballw: 600` setzen, aber
-`#ballwN`/`#nrBallwN` hatten in allen drei HTML-Dateien noch `max="500"` (Altlast). Der
-HTML-Clamp in `js/widgets.js` kappte den Wert lautlos auf 500 — `PZ.state.ballw` stimmte
-nicht mit dem im Preset-Text versprochenen Gewicht überein. Die Testsuite fing das nicht,
-weil `tests/test.html` weder `js/presets.js`/`js/ui.js` noch ein echtes `#ballwN`-Element
-lädt (Clamp-Pfad wird dort nie durchlaufen). Fix: `max` auf `1000` erhöht (alle drei
-HTML-Dateien, beide Felder), live neu verifiziert (`ballw`/`totalW` jetzt korrekt 600/612 g).
-`tests/test.html`: 1106 → **1107** Prüfungen (neuer Trip-Wire-Regressionstest), alle grün.
+`napoli_kalt`: Hefe 0,1 % → **0,25 %** (belegter Cluster 0,2-0,3 % aus 7 Quellen, u. a.
+pizza1.de, Lorenzo's Gusto, Waldis Pizza, Burnhard, Ooni) + neuer `scheduleOverride`
+(seit v4.28.0, s. u.) für eine **geteilte Kaltgare**: 1 h Raumtemp + 20 h Kühlschrank im
+Ganzen, dann geformt nochmal 20 h Kühlschrank + 3 h temperieren, macht ~44 h in Summe.
+Mechanismus (drei von vier Quellen teilen die Kühlschrankzeit ungefähr hälftig zwischen
+Stockgare und Stückgare) ist quellenbelegt, die konkrete 20-h/20-h-Aufteilung ist eine
+konservative Wahl am oberen Rand der Quellenspannen (12-24 h bzw. 12-20 h), keine zitierte
+Einzelzahl. Preset-Beschreibung, Dropdown-Label und die "Lang"-Empfehlungskarte auf ~44 h
+gezogen. `tests/test.html`: PRESET_STATES + PRESET_LABEL_HOURS mitgezogen, weiterhin
+**1107** Prüfungen, alle grün. Live per Headless-Edge-CDP auf Desktop + Mobil verifiziert.
 
-**Volle Details (Bug-Diagnose, Testarchitektur-Begründung, warum kein fetch-basierter
-Live-Test):** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Teglia-Blechflächendosierung:
-HTML-max-Attribut-Bugfix (v4.29.1)" (vorherige Abschnitte ebenfalls dort verkettet).
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Teglia-max-Attribut-
+Bugfix (v4.29.1)" (vorherige Abschnitte ebenfalls dort verkettet).
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -902,6 +904,10 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
+- ~~Napoli Lange Kaltgare an Quellen angleichen~~ — **erledigt in v4.30.0** (kein Backlog-
+  Punkt im engeren Sinne, direkter Nutzerauftrag mit fertiger 7-Quellen-Prüfung; s.
+  „= aktueller Stand" oben). `napoli_kalt`-Hefe 0,1 % → 0,25 %, geteilte Kaltgare (~44 h)
+  über `scheduleOverride`.
 - ~~Teglia- und New-York-Style-Teigwerte an Quellen korrigieren~~ — **Öl/Zucker-Teil
   erledigt in v4.26.0** (kein Backlog-Punkt im engeren Sinne mehr, direkter Nutzerauftrag
   mit fertiger Quellenprüfung; s. „= aktueller Stand" oben). `teglia`-Öl 4 % → 2,5 %,

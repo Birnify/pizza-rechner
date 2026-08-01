@@ -1557,7 +1557,7 @@ header{position:relative;text-align:center;}
      daneben, ein zweiter Vorlese-Name wäre redundant (analog zum bestehenden
      .card-icon aria-hidden-Muster). -->
 <header>
-  <h1><img src="assets/logo.svg?v=4.29.1" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
+  <h1><img src="assets/logo.svg?v=4.30.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
 </header>
 
 <!-- Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay analog zum
@@ -1661,9 +1661,9 @@ header{position:relative;text-align:center;}
             <span class="preset-card-time" aria-hidden="true" data-i18n="preset.recommend.klassisch.time">~28 h</span>
             <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.recommend.klassisch.fit">An den AVPN-Standard angelehnter neapolitanischer Klassiker</span>
           </button>
-          <button type="button" class="preset-card" data-preset="napoli_kalt" aria-label="Lang: ~45 h Gärzeit, maximales Aroma, braucht starkes Mehl (W300+)" data-i18n-attr="aria-label:preset.recommend.lang.ariaLabel">
+          <button type="button" class="preset-card" data-preset="napoli_kalt" aria-label="Lang: ~44 h Gärzeit, maximales Aroma, braucht starkes Mehl (W300+)" data-i18n-attr="aria-label:preset.recommend.lang.ariaLabel">
             <span class="preset-card-name" aria-hidden="true" data-i18n="preset.recommend.lang.name">Lang</span>
-            <span class="preset-card-time" aria-hidden="true" data-i18n="preset.recommend.lang.time">~45 h</span>
+            <span class="preset-card-time" aria-hidden="true" data-i18n="preset.recommend.lang.time">~44 h</span>
             <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.recommend.lang.fit">Maximales Aroma, braucht starkes Mehl (W300+)</span>
           </button>
         </div>
@@ -1674,7 +1674,7 @@ header{position:relative;text-align:center;}
               <option value="" disabled hidden data-i18n="option.preset.none">Kein Rezept ausgewählt</option>
               <optgroup label="Neapolitanisch · Direkt" data-i18n-attr="label:optgroup.napoliDirect">
                 <option value="napoli_klassisch" data-i18n="option.napoliKlassisch">Napoli Klassisch · ~28 h</option>
-                <option value="napoli_kalt" data-i18n="option.napoliKalt">Napoli Lange Kaltgare · ~45 h</option>
+                <option value="napoli_kalt" data-i18n="option.napoliKalt">Napoli Lange Kaltgare · ~44 h</option>
                 <option value="schnell" data-i18n="option.schnell">Schnell · 4–6 h</option>
               </optgroup>
               <optgroup label="Neapolitanisch · Vorteig" data-i18n-attr="label:optgroup.napoliPref">
@@ -2447,7 +2447,7 @@ header{position:relative;text-align:center;}
              hier bewusst NICHT mehr dupliziert. -->
         <div class="nav-divider" role="separator"></div>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.29.1</span>
+        <span class="nav-version" id="appVersion">v4.30.0</span>
 
       </div>
     </details>
@@ -2798,6 +2798,9 @@ header{position:relative;text-align:center;}
   add('sched.nyOverride.label', 'New-York-Style-Kaltgare · ~44 h', 'New York style cold rise · ~44 h');
   add('sched.nyOverride.bulk', '<b>2 h</b> bei Raumtemp (Stockgare)', '<b>2 h</b> at room temp (bulk rise)');
   add('sched.nyOverride.proof', 'Teiglinge <b>38 h</b> Kühlschrank (4 °C), am Backtag <b>4 h</b> temperieren', 'Dough balls <b>38 h</b> in the fridge (4 °C), let come to room temp <b>4 h</b> on baking day');
+  add('sched.napoliKaltOverride.label', 'Napoli-Kaltgare (geteilt) · ~44 h', 'Napoli cold rise (split) · ~44 h');
+  add('sched.napoliKaltOverride.bulk', '<b>1 h</b> bei Raumtemp anspringen lassen, dann <b>20 h</b> Kühlschrank (4 °C) im Ganzen', '<b>1 h</b> at room temp to get going, then <b>20 h</b> in the fridge (4 °C) as one piece');
+  add('sched.napoliKaltOverride.proof', 'Nach dem Formen nochmal <b>20 h</b> Kühlschrank (4 °C), am Backtag <b>3 h</b> temperieren', 'After shaping another <b>20 h</b> in the fridge (4 °C), let come to room temp <b>3 h</b> on baking day');
 
   // ---- js/guide.js: Schritt-für-Schritt-Anleitung (dynamisch, mit {platzhaltern}) ---
   add('guide.title', 'Schritt-für-Schritt-Anleitung', 'Step-by-step guide');
@@ -3291,11 +3294,11 @@ header{position:relative;text-align:center;}
   // der AVPN-Zutatenliste, nicht Teil davon. S. pizza-rechner-KONTEXT.md.
   add('preset.napoliKlassisch.desc', 'An den AVPN-Standard angelehnt: 60 % Hydration, Tipo 00. Das Olivenöl (2 %) ist eine bewusste Abweichung: die offizielle AVPN-Zutatenliste kennt nur Mehl, Wasser, Salz und Hefe (mehr dazu im Glossar „Echte neapolitanische Pizza (AVPN)“). ~28 h Gesamtgare, wenig Hefe, klassischer Geschmack.',
     'Inspired by the AVPN standard: 60 % hydration, Tipo 00. The olive oil (2 %) is a deliberate deviation: the official AVPN ingredient list only includes flour, water, salt and yeast (more in the glossary entry “True Neapolitan pizza (AVPN)”). ~28 h total rise, little yeast, classic flavor.');
-  // v4.25.1: Gesamtgare aus der Berechnung nachgemessen (44,62 h → ~45 h) statt der
-  // bisherigen geschätzten "~48 h" -- das lag sogar UNTER dem im Options-Label
-  // versprochenen Minimum von 48 h. Teigwerte unverändert.
-  add('preset.napoliKalt.desc', 'Lange Kaltgare: ~45 h insgesamt, der Großteil davon im Kühlschrank (4 °C), 2 % Olivenöl. Sehr wenig Hefe, maximales Aroma. Braucht ein starkes Mehl (W300+).',
-    'Long cold rise: ~45 h in total, most of it in the fridge (4 °C), 2 % olive oil. Very little yeast, maximum flavor. Needs a strong flour (W300+).');
+  // v4.30.0: Hefe 0,1 % -> 0,25 % + geteilte Kaltgare (erst der ganze Teig, dann die
+  // Teiglinge im Kühlschrank) statt der bisherigen einphasigen ~45-h-Beschreibung --
+  // aus einer 7-Quellen-Prüfung, s. Kommentar in js/presets.js. Neue Gesamtdauer ~44 h.
+  add('preset.napoliKalt.desc', 'Geteilte Kaltgare: ~44 h insgesamt, erst der ganze Teig, dann die Teiglinge im Kühlschrank (4 °C), 2 % Olivenöl. Wenig Hefe, volles Aroma. Braucht ein starkes Mehl (W300+).',
+    'Split cold rise: ~44 h in total, first the whole dough, then the dough balls in the fridge (4 °C), 2 % olive oil. Little yeast, full flavor. Needs a strong flour (W300+).');
   add('preset.schnell.desc', 'Gleicher Tag: ~2 h Stockgare + 2–3 h Stückgare bei warmer Raumtemp (24–26 °C), 2 % Olivenöl. Mehr Hefe, weniger Aroma: aber spontan.',
     'Same day: ~2 h bulk rise + 2–3 h final proof at warm room temp (24–26 °C), 2 % olive oil. More yeast, less flavor: but spontaneous.');
   // Bewusst PLAIN "&" (nicht "&amp;") in allen drei descKey-Einträgen unten:
@@ -3429,8 +3432,10 @@ header{position:relative;text-align:center;}
   // jetzt in preset.napoliKlassisch.desc). Beide Gärzeiten aus der Berechnung nachgemessen
   // (27,62 h → ~28 h; 44,62 h → ~45 h, lag vorher sogar UNTER dem versprochenen
   // 48-h-Minimum) statt der bisherigen geschätzten Werte. Teigwerte unverändert.
+  // v4.30.0: napoli_kalt neu berechnet auf ~44 h (geteilte Kaltgare + höhere Hefemenge,
+  // s. js/presets.js) -- die "45 h" oben war der Vorgängerwert vor diesem Umbau.
   add('option.napoliKlassisch', 'Napoli Klassisch · ~28 h', 'Napoli Classic · ~28 h');
-  add('option.napoliKalt', 'Napoli Lange Kaltgare · ~45 h', 'Napoli Long Cold Rise · ~45 h');
+  add('option.napoliKalt', 'Napoli Lange Kaltgare · ~44 h', 'Napoli Long Cold Rise · ~44 h');
   // schnell: real gemessen 5,37 h liegt bereits innerhalb "4–6 h", keine Änderung nötig.
   add('option.schnell', 'Schnell · 4–6 h', 'Quick · 4–6 h');
   add('option.napoliBigaKlassisch', 'Napoli mit Biga (klassisch) · ~29 h', 'Napoli with Biga (classic) · ~29 h');
@@ -3467,10 +3472,10 @@ header{position:relative;text-align:center;}
   // v4.25.1: Gärzeit aus der Berechnung nachgemessen (44,62 h → ~45 h) statt der
   // bisherigen geschätzten "48–72 h" -- die lag sogar UNTER dem versprochenen Minimum.
   add('preset.recommend.lang.name', 'Lang', 'Long');
-  add('preset.recommend.lang.time', '~45 h', '~45 h');
+  add('preset.recommend.lang.time', '~44 h', '~44 h');
   add('preset.recommend.lang.fit', 'Maximales Aroma, braucht starkes Mehl (W300+)', 'Maximum flavor, needs a strong flour (W300+)');
-  add('preset.recommend.lang.ariaLabel', 'Lang: ~45 h Gärzeit, maximales Aroma, braucht starkes Mehl (W300+)',
-    'Long: ~45 h rise time, maximum flavor, needs a strong flour (W300+)');
+  add('preset.recommend.lang.ariaLabel', 'Lang: ~44 h Gärzeit, maximales Aroma, braucht starkes Mehl (W300+)',
+    'Long: ~44 h rise time, maximum flavor, needs a strong flour (W300+)');
   add('preset.allRecipes', 'Alle Rezepte', 'All recipes');
 
   // -- Card: Einfacher Modus (v3.62.0) -------------------------------------------------
@@ -7431,8 +7436,34 @@ header{position:relative;text-align:center;}
       method: 'direct', hyd: 60, salt: 2.8, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 0.2, balls: 4, ballw: 250, ddt: 24, flour: 'caputo_pizzeria',
       descKey: 'preset.napoliKlassisch.desc'
     },
+    // v4.30.0: Hefe 0,1 % -> 0,25 % + scheduleOverride (geteilte Kaltgare statt der
+    // generischen "Sehr lange Kaltgare ~48 h"-Schwelle) -- aus einer 7-Quellen-Prüfung
+    // (u. a. pizza1.de, Lorenzo's Gusto, Waldis Pizza, Burnhard, Ooni). Zwei Befunde:
+    // (1) sechs von sieben Quellen dosieren 0,2-0,3 % Hefe bei 44-52 h Gesamtdauer, unsere
+    // bisherigen 0,1 % lagen klar darunter -- 0,25 % sitzt mittig im belegten Cluster.
+    // (2) drei von vier detaillierten Quellen teilen die Kühlschrankzeit ungefähr hälftig:
+    // erst der GANZE Teig 12-24 h kalt, dann formen, dann die TEIGLINGE nochmal 12-20 h
+    // kalt -- das bildet die bisherige Kaltgare-Umschaltung (nur "alles vorne" ODER "alles
+    // hinten") nicht ab. state.scheduleOverride (s. js/schedule.js, seit v4.28.0) macht das
+    // Preset davon unabhängig: bulk 1 h Raumtemp + 20 h Kühlschrank im Ganzen, danach
+    // 20 h Kühlschrank als Teiglinge + 3 h temperieren, macht ~44 h in Summe. Die 20 h/20 h-
+    // Aufteilung selbst ist KEINE zitierte Einzelzahl, sondern bewusst am oberen Rand
+    // beider Quellenspannen (12-24 h bzw. 12-20 h) gewählt, damit die Gesamtdauer im
+    // belegten 44-52-h-Band landet -- Mechanismus (geteilte Kaltgare existiert, ungefähr
+    // hälftig) ist quellenbelegt, die konkrete Stundenverteilung ist eine konservative Wahl
+    // innerhalb der Bandbreite, keine getestete Einzelzahl. s. pizza-rechner-KONTEXT.md.
     napoli_kalt: {
-      method: 'direct', hyd: 65, salt: 3.0, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 0.1, balls: 4, ballw: 250, ddt: 23, flour: 'caputo_cuoco',
+      method: 'direct', hyd: 65, salt: 3.0, oil: 2, sugar: 0, yeastType: 'fresh', yeast: 0.25, balls: 4, ballw: 250, ddt: 23, flour: 'caputo_cuoco',
+      scheduleOverride: {
+        labelKey: 'sched.napoliKaltOverride.label', labelDefault: 'Napoli-Kaltgare (geteilt) · ~44 h',
+        bulkKey: 'sched.napoliKaltOverride.bulk',
+        bulkDefault: '<b>1 h</b> bei Raumtemp anspringen lassen, dann <b>20 h</b> Kühlschrank (4 °C) im Ganzen',
+        bulkMin: 1260,
+        proofKey: 'sched.napoliKaltOverride.proof',
+        proofDefault: 'Nach dem Formen nochmal <b>20 h</b> Kühlschrank (4 °C), am Backtag <b>3 h</b> temperieren',
+        proofMin: 1380,
+        cold: true
+      },
       descKey: 'preset.napoliKalt.desc'
     },
     schnell: {

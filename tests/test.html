@@ -766,7 +766,21 @@
     // hat dort nie existiert). Das Fixture prüfte ein Phantom-Preset: die Schleifen liefen
     // grün, deckten aber nichts Reales ab. Die gleichlautende, ebenfalls stale Zeile in
     // pizza-rechner-KONTEXT.md wurde bereits in v4.24.0 entfernt, dieses Fixture übersehen.
-    'napoli_kalt':      { method: 'direct', hyd: 65, salt: 3.0, oil: 2, yeast: 0.1, flour: 'caputo_cuoco' },
+    // v4.30.0: yeast 0,1 -> 0,25 + scheduleOverride (geteilte Kaltgare, 1:1-Kopie des
+    // Objekts aus js/presets.js, s. dortiger Kommentar für die Quellenherleitung).
+    'napoli_kalt': {
+      method: 'direct', hyd: 65, salt: 3.0, oil: 2, yeast: 0.25, flour: 'caputo_cuoco',
+      scheduleOverride: {
+        labelKey: 'sched.napoliKaltOverride.label', labelDefault: 'Napoli-Kaltgare (geteilt) · ~44 h',
+        bulkKey: 'sched.napoliKaltOverride.bulk',
+        bulkDefault: '<b>1 h</b> bei Raumtemp anspringen lassen, dann <b>20 h</b> Kühlschrank (4 °C) im Ganzen',
+        bulkMin: 1260,
+        proofKey: 'sched.napoliKaltOverride.proof',
+        proofDefault: 'Nach dem Formen nochmal <b>20 h</b> Kühlschrank (4 °C), am Backtag <b>3 h</b> temperieren',
+        proofMin: 1380,
+        cold: true
+      }
+    },
     'schnell':          { method: 'direct', hyd: 62, salt: 2.5, oil: 2, yeast: 1.5, flour: 'caputo_pizzeria' },
     // Seit v4.25.0: "napoli_biga" (eine Stufe, unbelegte Hefewerte) ersetzt durch zwei
     // Presets, die sich nur im Gärregime unterscheiden (s. js/presets.js). Beide Stufen
@@ -4817,7 +4831,7 @@
   // dynamische Label-Erzeugung, die für diesen Patch explizit nicht gewollt war.
   const PRESET_LABEL_HOURS = {
     'napoli_klassisch': 28,            // option.napoliKlassisch "Napoli Klassisch · ~28 h"
-    'napoli_kalt': 45,                 // option.napoliKalt "Napoli Lange Kaltgare · ~45 h"
+    'napoli_kalt': 44,                 // option.napoliKalt "Napoli Lange Kaltgare · ~44 h" (v4.30.0)
     'schnell': [4, 6],                 // option.schnell "Schnell · 4–6 h" (Spanne, kein Einzelwert)
     'napoli_biga_klassisch': 29,       // option.napoliBigaKlassisch "… · ~29 h"
     'napoli_biga_kalt': 60,            // option.napoliBigaKalt "… · ~60 h"
