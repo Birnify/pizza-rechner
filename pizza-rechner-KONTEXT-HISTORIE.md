@@ -8,6 +8,204 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung — Stand bis 2026-08-01, Sitzungen 1–5
+
+Stand 2026-07-26, **nicht abgeschlossen**. Betrifft ausschließlich `assets/`, **kein
+App-Code geändert**, deshalb hat diese Asset-Arbeit selbst nie einen Versionssprung ausgelöst (die
+seither erschienenen App-Releases bis v4.25.0 sind davon unabhängig) und es gibt keinen
+`Versionen/`-Schnappschuss dafür.
+
+**Was existiert (alles neu, noch nicht committet):**
+- `assets/BILD-PROMPTS.md` — **128** fertige Bild-Prompts in 12 Gruppen (Hero, Rezeptkarten,
+  Fertig-Fotos, Anleitungs-Schritte, Glossar-Banner, 38 Glossar-Artikelbilder, Onboarding,
+  Party, Leerzustände, Marketing, Texturen, Puffer). Jeder Block ist in sich geschlossen.
+  Die Zahl **38** Glossar-Artikel ist gegen `PZ.GLOSSARY_CATEGORIES` (`js/glossary.js`)
+  geprüft, eine ältere Fassung ging von 37 aus und kam auf 127 Blöcke.
+- `assets/generate_bilder.py` — liest die Datei, schickt jeden Block an die lokale
+  **ComfyUI-API** (`127.0.0.1:8188`), wartet, lädt das Bild und speichert es unter dem
+  Zieldateinamen. Aufruf: `python generate_bilder.py --blocks 1` bzw. `--blocks all`,
+  `--force` überschreibt, `--dry-run` prüft nur das Parsing.
+- `assets/comfyui_workflow_template.json` — aus der laufenden ComfyUI-Instanz ausgelesen.
+  Node-IDs: 8 Positiv, 9 Negativ, 10 Breite/Höhe, 11 KSampler/Seed, 13 Dateiname.
+
+**Vier harte Erkenntnisse (jeweils durch Fehlversuche belegt, stehen ausführlich im Kopf
+von `assets/BILD-PROMPTS.md`):**
+1. Der Workflow fährt **CFG 1.0** (distilliertes Turbo-Modell). Damit ist Classifier-Free
+   Guidance abgeschaltet und der **Negativ-Prompt völlig wirkungslos**. Alles Wichtige muss
+   in den Positiv-Teil, und zwar als Beschreibung dessen, was zu sehen sein SOLL.
+2. **Verneinungen im Positiv-Teil wirken nicht subtraktiv, sie bringen den Begriff erst
+   ins Bild.** „Keine Schrift…" stand in allen 128 Blöcken und erzeugte Schrift.
+3. Die Abschnitts-Marker `MOTIV:`/`BILDAUFBAU:` wurden vom Modell als Aufdruck auf eine
+   Küchenwaage gemalt. Sie bleiben im Dokument (Lesbarkeit), `generate_bilder.py` entfernt
+   sie vor dem Senden.
+4. Objekte müssen über **Form und Größe** beschrieben werden, nicht über ihren Namen, sonst
+   wird aus dem Teigschaber ein Küchenmesser und aus dem Pizzaschieber ein Tortenheber.
+   Ebenso reicht „fertig gebacken" nicht, der Backzustand muss ausformuliert werden, und
+   ein Untergrund muss **eindeutig** benannt sein (Alternativen mit „oder" führen zu
+   kreidigen Putzflächen).
+
+**Wo es steht:** Zwei komplette Durchläufe erzeugt (Blöcke 1–90 und 91–116), aber
+**noch mit den alten, fehlerhaften Prompts**. Danach wurden alle vier Punkte oben
+systematisch nachgezogen. Seither läuft auf Nutzerwunsch ein **sequenzieller
+Einzel-Durchlauf**: ein Bild erzeugen, ansehen, bei Mängeln den Prompt nacharbeiten und
+neu erzeugen, erst bei Zufriedenheit zum nächsten Block.
+
+**Stand 2026-07-26 (zweite Sitzung): die zwölf als „wirklich nötig" markierten Bilder
+sind alle erzeugt, gesichtet und abgenommen** — Block 1 (Header Desktop), 2 (Header
+Mobil), 8 (`card-napoli_klassisch`), 9 (`card-napoli_kalt`), 10 (`card-schnell`),
+11 (`card-napoli_biga`), 12 (`card-napoli_poolish`), 13 (`card-teglia`),
+14 (`card-newyork_style`), 19 (`pizza-final-neapolitanisch`), 20 (`pizza-final-teglia`),
+21 (`pizza-final-newyork`). Nachgearbeitet und neu erzeugt werden mussten dabei Block 9
+(einmal), 8 (einmal), 13 (einmal) und 20 (zweimal), Gründe s. u. Alles andere
+(Blöcke 3 bis 7, 15 bis 18, 22 bis 128) ist Ausbau und liegt weiterhin nur mit den
+**alten, fehlerhaften Prompts** im Ordner.
+
+**Vier Prompt-Fehlerklassen, die dabei gefunden und behoben wurden** (Details jeweils im
+Kopf von `assets/BILD-PROMPTS.md`):
+1. **Regel 1 war nur teilweise umgesetzt.** Im Positiv-Teil standen noch **151**
+   Verneinungen. Die schädlichen in den Pflicht-Blöcken sind behoben: „ausdrücklich kein
+   Blaustich" (Block 9) pflanzte Blau ein, „ausdrücklich ohne Leopardenflecken" (Block 14)
+   pflanzte genau die Flecken ein, die dem New-York-Style fehlen sollen, ebenso „ohne
+   lesbare Schilder" und „ohne jeden Aufdruck". Nach der bejahenden Umformulierung waren
+   beide Fehler weg. **Die restlichen Blöcke sind noch nicht durchgesehen**, s. „Was noch
+   offen ist" unten.
+2. **Auch der ROHE Teigzustand muss ausformuliert werden.** Block 9 lieferte sechs oben
+   goldbraun gebackene Brötchen statt kalt geführter Teiglinge. Mit dem Satz „ausdrücklich
+   roher, ungebackener Hefeteig: durchgehend blass cremeweiß bis elfenbeinfarben und matt,
+   …" kam sofort das Richtige. Derselbe Satz steht jetzt auch in 36, 37, 38, 60, 64, 65,
+   74, 115, 123.
+3. **Die Form der Pizza selbst muss in den Positiv-Teil.** Block 13 (Teglia) hatte nur das
+   *Blech* als rechteckig beschrieben, „runde Pizza" stand allein im wirkungslosen
+   Negativ-Teil: Ergebnis war eine runde Pizza mit Tortenstück auf einem rechteckigen
+   Blech. Mit „durchgehende rechteckige Teigplatte mit vier geraden Kanten und vier rechten
+   Winkeln, füllt das Blech randvoll bis in alle vier Ecken, in gleich große Rechtecke
+   geteilt" stimmte es. Block 20 wurde vorbeugend genauso nachgezogen.
+4. **Stückzahlen sind nicht steuerbar, die Anordnung schon.** „Genau zwei
+   Basilikumblätter" ergab fünf (Block 8), „ein einzelnes Blatt" ergab vier (Block 1). Das
+   ist bei CFG 1.0 nicht zu beheben. Das Rosetten-Muster dagegen verschwand mit „dicht
+   nebeneinander auf eine einzige Seite gelegt, sie berühren und überlappen sich, die
+   gegenüberliegende Hälfte zeigt nur Käse und Sauce". Also auf Verteilung zielen, nicht
+   auf die Zahl.
+
+Zusätzlich geprüft: die Untergründe sind inzwischen **überall eindeutig** (keine
+„A oder B"-Alternativen mehr), und von den Widersprüchen zwischen Stil-Vorspann und Motiv
+(Vorspann Marmor, Motiv Holztisch) war nur Block 19 echt betroffen, Block 20 nannte eine
+Steinfläche. Beide sind angeglichen.
+
+**Arbeitsweise dabei (Nutzer-Vorgabe):** nicht stapelweise durchlaufen lassen, sondern
+einzeln und mit Sichtprüfung. Immer nur **ein** ComfyUI-Job gleichzeitig, sonst fällt
+ComfyUI auf der **AMD RX 9070 XT** in den Low-VRAM-Modus (`lowvram patches` im Log) und
+wird rund 30-mal langsamer (1,9 s/it auf 55–67 s/it). Achtung: ein `TaskStop` auf das
+Python-Skript beendet **nicht** die bereits an ComfyUI übergebenen Jobs, die laufen in
+dessen eigener Queue weiter (`/queue` prüfen, `/interrupt` bzw. `{"clear":true}` an
+`/queue` posten).
+
+**Header-Blöcke immer am Zuschnitt beurteilen, nicht am Vollbild (2026-07-26 geklärt).**
+Der Desktop-Header ist live gemessen **1265 x 142 px** (`getBoundingClientRect()` an
+`pizza-rechner.html`, Viewport 1280 px), Verhältnis 8,9:1, und nutzt
+`background-size:cover` mit `background-position:center`. Von einem 21:9-Bild
+(2560 x 1100) sind dadurch nur **rund 25 % der Bildhöhe** sichtbar, ein mittlerer
+Streifen. Ein Hero-Bild als Vollbild zu bewerten führt deshalb in die Irre. Dafür gibt
+es jetzt `assets/sim_header_crop.py`: es rechnet `cover` + `center` nach und legt den
+tatsächlich sichtbaren Streifen zweifach vergrößert unter `assets/_sim/` ab
+(`python sim_header_crop.py header-margherita-desktop.jpg`). `_sim/` ist reine
+Prüfausgabe und gehört nicht ins Repo.
+
+**Block 1 ist damit abgenommen.** Eine frühere Sitzung hatte die Komposition verworfen
+(„im Zuschnitt bliebe nur Käsefläche") und empfohlen, die 21:9-Heros höher zu rendern
+(2560 x 1600) und den Mittelstreifen per Pillow herauszuschneiden. **Diese Empfehlung
+war falsch und ist verworfen:** höher rendern zoomt den sichtbaren Header-Streifen noch
+weiter in die Bildmitte hinein (bei 1600 px Höhe wären nur noch ~17 % sichtbar statt
+~25 %), also genau in die Käsefläche. Der Zuschnitt des vorhandenen Bildes wurde geprüft
+und zeigt tatsächlich links und rechts den leopardengefleckten Rand, dazwischen Käse,
+Sauce, Basilikum und in den Ecken bemehltes Holz. Das trägt einen Header. Auch die
+Prompt-Forderung „oberes und unteres Fünftel motivfrei lassen" ist damit gegenstandslos:
+gebraucht wird in der Bildmitte **Motiv**, nicht Leerfläche.
+
+**Stand 2026-07-26 (dritte Sitzung, autonom):**
+
+- **Verneinungen im Positiv-Teil vollständig abgearbeitet: von 151 auf 0.** 93
+  Ersetzungsregeln, ausschließlich innerhalb der ```-Blöcke und dort nur in Absätzen, die
+  nicht mit „Vermeide strikt:" beginnen. Jede Verneinung wurde bejahend umformuliert statt
+  gestrichen („keine Zahl lesbar" → „das Display bleibt eine reine dunkle Fläche", „kein
+  starkes Zentrum" → „alle Bildbereiche sind gleich stark gewichtet", „ohne Etikett" →
+  „aus blankem, rundum glattem Glas"). Der Prüfscan (Regex über alle Positiv-Absätze)
+  meldet jetzt 0 Treffer.
+- **Erzeugt, gesichtet und abgenommen:** Blöcke 3, 4, 5, 6, 7 (restliche Heros), 15 bis 18
+  (restliche Rezeptkarten), 22 bis 26 (restliche Fertig-Fotos), 27 bis 45 (komplette
+  Gruppe Anleitungs-Schritte). Block 2 wurde neu erzeugt, s. Mobil-Zuschnitt unten.
+  Nacharbeit nötig war dabei nur bei Block 3 (einmal), 4 (zweimal), 5 (einmal),
+  24 (zweimal) und 41 (zweimal); alle übrigen saßen im ersten Anlauf, was für die
+  Wirkung der Verneinungs-Bereinigung spricht.
+- **Sechste Fehlerklasse: ein genanntes geometrisches Muster landet im Bild, auch wenn
+  es nur eine Handbewegung meint** (Block 41). „Eine Kelle Tomate wird in der Mitte
+  abgesetzt und **in einer Spirale** nach außen verstrichen" ergab konzentrische
+  Sauce-Ringe als Dekor. Statt der Bewegung das Ergebnis beschreiben („die gesamte Mitte
+  ist lückenlos bedeckt, eine einzige durchgehende rote Fläche in gleichmäßiger Dicke").
+- **Der Mobil-Header ist 390 x 90 px** (live gemessen an `pizza-rechner-mobile.html`,
+  Viewport 390 x 844), Verhältnis 4,33:1, gleiche CSS-Regel wie Desktop (`header{}` ist
+  nicht nach Viewport gescoped). Von einem 4:5-Hochformat (1400 x 1750) sind dort nur
+  **19 % der Bildhöhe** sichtbar. `sim_header_crop.py` hat dafür jetzt ein `--mobile`.
+  Damit fiel auf, dass **Block 2 im echten Mobil-Header fast nur leeres Holz zeigte** (er
+  war in der zweiten Sitzung am Vollbild abgenommen worden, bevor die Mobil-Geometrie
+  bekannt war). Nachgearbeitet und neu erzeugt, sitzt jetzt.
+- **Neue Erkenntnis zum Bildaufbau von Headern:** „Motiv im mittleren Drittel halten"
+  wirkt nicht, der **Kamerastandpunkt** dagegen schon. Eine Kamera auf Hüfthöhe, die auf
+  eine Tischplatte blickt, legt das Motiv zwangsläufig ins untere Bilddrittel, also aus
+  dem Header-Streifen heraus (Block 4, zwei Fehlversuche). Erst der Wechsel auf **steile
+  Aufsicht, bei der die Arbeitsfläche das ganze Bild füllt**, brachte das Motiv in die
+  Bildmitte. Merksatz: die Bildposition über die Kameraposition steuern, nicht über eine
+  Positionsanweisung.
+- **Vierte Fehlerklasse gefunden: Bausteine, die dem Motiv widersprechen.** Der
+  Standard-Baustein „Die Pizza ist eindeutig fertig durchgebacken: … der Käse vollständig
+  zu einer blasigen Schicht verlaufen …" stand auch in den drei **käsefreien** Blöcken 24
+  und 80 (Marinara) und 90 (Sfincione) und erzeugte prompt Käseflecken auf der Marinara.
+  Dort steht jetzt eine käsefreie Variante desselben Bausteins. Lehre: beim Einsetzen
+  eines wiederverwendeten Textbausteins prüfen, ob er zum konkreten Motiv passt.
+- **Knoblauchscheiben brauchen Form ohne Binnenstruktur.** „dünne Knoblauchscheiben"
+  ergab Pilze und Tomatenscheiben; „flaches Oval mit hellerem Rand und Kern in der Mitte"
+  ergab Zitronen- und Gurkenscheiben (Ring plus Kern). Erst „winzige, unregelmäßig
+  geformte, flache Blättchen, kleiner als ein Fingernagel, durchgehend in einem einzigen
+  elfenbeinweißen Ton, die Fläche glatt und durchgehend einfarbig" ergab Knoblauch.
+
+**Stand 2026-07-26/27 (vierte Sitzung, Hauptagent direkt + eine weitere autonome
+Zwischen-Sitzung, per Datei-Abgleich statt Prosa verifiziert):** **103 von 128 Blöcken
+sind in `assets/_final/` abgenommen** (Block-Nummer → Dateiname per Skript gegen
+`BILD-PROMPTS.md` abgeglichen, nicht nur behauptet). Workflow bewährt: Block generieren
+→ **immer mit Zoom in die Problemzone prüfen**, nicht nur das Vollbild ansehen (sonst
+werden Fehler übersehen, s. Nutzer-Feedback) → bei Mangel Prompt gezielt nacharbeiten →
+neu erzeugen → erneut zoomen.
+
+**Zwei Werkzeuge, von einer Zwischen-Sitzung gebaut:**
+- `assets/qa_check_bild.py <Blocknummer> <Bildpfad>` — automatischer erster Filter per
+  lokalem Vision-Modell über **Ollama** (`127.0.0.1:11434`, Default-Modell
+  `huihui_ai/qwen3-vl-abliterated:8b-instruct`). Ersetzt laut eigenem Docstring
+  **nicht** die eigene Sichtprüfung, ist aber ein guter Vorfilter. Bisher ungenutzt,
+  stattdessen wurde in Sitzung 5 direkt `Ollama-Essensbeschreibung.ps1`
+  (`C:\Users\soere\OneDrive\Desktop\KI\`) für den Referenzbild-Workflow genutzt, s. u.
+- `assets/edit_bild.py <Bild> "<Anweisung>" --output <Ziel> --force` — gezielte
+  Nachbearbeitung eines bereits erzeugten Bildes per Textanweisung, über einen lokalen
+  Krea-2-Identity-Edit-Pfad. **Getestet und als ungeeignet verworfen** (2026-07-27):
+  die Identity-Edit-LoRA hält das Quellbild bei `ref_boost 4.0` so stark fest, dass
+  selbst klare Anweisungen keinen sichtbaren Effekt hatten. Nicht weiter verfolgen,
+  außer es gibt einen neuen Ansatz (andere LoRA/Stärke).
+
+**Bekannte, nicht behobene Schwäche:** „Fläche freilassen" ignoriert das Modell
+zuverlässig. Wenn eine Textzone zwingend gebraucht wird, ist sie im Layout
+(Gradient-Overlay) verlässlicher als im Prompt.
+
+**Die Bilder sind noch nirgends eingebunden.** `css/styles.css` setzt weiterhin das alte
+Platzhalter-Foto, kein Markup referenziert die neuen Karten-/Schritt-/Glossarbilder. Das
+Einbinden ist ein eigener, noch nicht begonnener Schritt (dann ein echtes App-Release mit
+Versionssprung, anders als die reine Asset-Arbeit hier). **Git-Falle beim Einbinden:**
+die drei versionierten Platzhalter (`pizza-final-neapolitanisch/-newyork/-teglia.jpg`)
+stehen als **gelöscht** in `git status`, weil die Ersatzbilder unter `assets/_final/`
+liegen, nicht am Originalpfad — beim Einbinden entweder kopieren oder Markup umbiegen.
+
+**Git-Stand nach Sitzung 4:** alles noch **uncommittet**.
+
+---
+
 ## Teglia-Blechflächendosierung: HTML-max-Attribut-Bugfix (v4.29.1)
 
 **Bug (in v4.29.0 eingeführt, noch am selben Tag gefunden und behoben):** `js/presets.js`
