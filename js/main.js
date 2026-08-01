@@ -183,4 +183,8 @@
   refreshRecipeSelect();
   PZ.applyMethod();
   PZ.calc();
+  // Live-Region-Ansage der Anleitung (v4.31.0, js/guide.js) erst NACH dem allerersten
+  // Boot-Aufbau scharf schalten -- sonst würde der initiale Render (Laden aus
+  // localStorage, applyMethod(), Erstrender oben) fälschlich schon eine Ansage auslösen.
+  if (PZ.enableGuideAnnounce) PZ.enableGuideAnnounce();
 })(window);

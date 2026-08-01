@@ -90,6 +90,12 @@
   // davor aria-hidden ist, s. glossaryLinkHtml() in js/guide.js). Spart v. a. auf Mobil
   // sichtbaren Platz, ohne die Bedeutung für Screenreader-Nutzer zu verlieren.
   add('guide.glossaryLink.label', '{term} im Glossar', '{term} in the glossary');
+  // Live-Region-Sammelansage (v4.31.0, s. Kommentar bei buildGuide()/#guideAnnounce in
+  // js/guide.js): kurzer, entprellter Hinweistext für Screenreader-Nutzer, dass sich die
+  // Anleitung unter ihnen geändert hat -- bewusst KEIN Detailtext (welcher Wert sich
+  // geändert hat), das wäre bei den vielen möglichen Reglern zu viel Sonderlogik für den
+  // Nutzen (s. Design-Entscheidung im Backlog-Eintrag).
+  add('guide.announce.updated', 'Anleitung aktualisiert', 'Guide updated');
   // Einklappbare Hinweisboxen (v4.10.0, Backlog Punkt H): sichtbarer Text des Toggle-
   // Buttons ist zugleich sein Accessible Name (kein zusätzliches aria-label nötig) --
   // Auf-/Zu-Zustand wird über aria-expanded angesagt, analog zum bestehenden .info-btn-Muster.

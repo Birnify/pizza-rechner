@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-02 · Aktuelle Version: v4.30.1 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-02 · Aktuelle Version: v4.31.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -216,25 +216,24 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Dezimaltrennzeichen-Fix in js/units.js (v4.30.1) = aktueller Stand
+## Live-Region-Ansage für die Schritt-für-Schritt-Anleitung (v4.31.0) = aktueller Stand
 
-`js/units.js` normierte Dezimaltrennzeichen bisher nicht auf Komma, anders als die
-etablierte App-Konvention (`js/widgets.js`/`js/party.js`, s. Bugfix v3.32.0). Betroffen:
-`formatWeightAuto()` (< 10 g, v. a. Hefe-Anzeige) erzeugte „1.20 g" statt „1,20 g";
-`formatWeight()` mit `metricDecimals > 0` (Salz/Öl/Zucker) erzeugte „12.5 g" statt
-„12,5 g"; `formatOzNumber()` im Imperial-Modus erzeugte „21.2 oz" statt „21,2 oz". Fix:
-gemeinsamer `deFixed(num, decimals)`-Helfer in `js/units.js`, ersetzt die drei
-`.toFixed()`-Einzelaufrufe. Zusätzlich beim Nachsehen gefunden und mitgefixt:
-`formatTemp()` hängte im Metrisch-Modus den Celsius-Wert per String-Konkatenation an
-(`celsius + '°C'`) — bei vom Aufrufer bereits auf 1 Nachkommastelle gerundeten Werten
-(z. B. `R.wT` in `js/calc.js`) erzeugte das ebenfalls einen Punkt statt Komma
-(„21.3°C"); jetzt `String(celsius).replace('.', ',')`. `tests/test.html`: 7 bestehende
-Tests (mOil-/mSugar-Anzeige-Parsing, Einkaufslisten-Substring-Checks) prüften den
-fehlerhaften Punkt-Zustand unbemerkt mit und wurden korrigiert, plus neue gezielte
-Regressionsprüfungen; 1107 → **1111** Prüfungen, alle grün.
+Behebt den MINOR-Nebenbefund aus dem v4.27.0-`accessibility-expert`-Review (WCAG 4.1.3):
+`#guideSteps` wird bei jeder Reglerbewegung komplett per `innerHTML` neu gerendert, ohne
+dass Screenreader-Nutzer etwas davon mitbekommen. Neue, eigene, visuell versteckte
+Live-Region `#guideAnnounce` (bewusst nicht `#flourWarn` wiederverwendet, die trägt
+sichtbaren Warntext) meldet über den bestehenden Helfer `PZ.announce()` (`js/dom.js`,
+seit v3.58.0) eine kurze, auf 1,5 s entprellte Sammelansage „Anleitung aktualisiert"
+(DE/EN, `js/i18n-dict.js`). `js/guide.js`: `announceReady`-Flag + `PZ.enableGuideAnnounce()`,
+von `js/main.js` erst NACH dem allerersten Boot-`PZ.calc()` aufgerufen, damit der initiale
+Seitenaufbau keine Ansage auslöst. `accessibility-expert`-Review: keine Blocker/Major, ein
+Minor (`role="status"` neben `aria-live="polite"` ist redundant) direkt behoben —
+`#guideAnnounce` ist jetzt identisch zu `#flourWarn` ausgezeichnet. `tests/test.html`:
+1111 → **1115** Prüfungen (neue Sektion 38, mit synchronem Timer-Mock statt echtem
+Warten), alle grün.
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Napoli Lange Kaltgare
-an Quellen angleichen (v4.30.0)" (vorherige Abschnitte ebenfalls dort verkettet).
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Dezimaltrennzeichen-Fix
+in js/units.js (v4.30.1)" (vorherige Abschnitte ebenfalls dort verkettet).
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -962,15 +961,11 @@ Keine Code-Änderung durch den Audit nötig.
   betrifft aber nur die Raumtemperatur-Skalierung bei Direktführung, NICHT die vier
   Hefemenge-Schwellen selbst (die bleiben unbelegt-aber-unverändert) und NICHT die
   Vorteig-Reifestufen (Biga/Poolish bleiben komplett unangetastet).
-- **Nebenbefund aus dem v4.27.0-`accessibility-expert`-Review** (MINOR, kein Blocker, kein
-  neues Problem — app-weites Bestandsverhalten): `#guideSteps` wird bei JEDER
-  Reglerbewegung (Hydration, Salz, Hefe, Raumtemperatur, alles) komplett per `innerHTML`
-  neu gerendert, ohne Live-Region-Ankündigung (WCAG 4.1.3), dass sich der Inhalt geändert
-  hat. Reviewer-Vorschlag: über die bereits vorhandene `#flourWarn`-Live-Region
-  mitlösen ("Anleitung aktualisiert") statt `#guideSteps` selbst live zu schalten (würde
-  bei über 20 Absätzen zu viel Lärm erzeugen). Bewusst nicht im v4.27.0-Zyklus behoben —
-  betrifft die ganze App, nicht nur die Temperaturskalierung, und ist eine eigene
-  Entscheidung wert (soll jede Reglerbewegung angesagt werden, oder nur bestimmte?).
+- ~~Nebenbefund aus dem v4.27.0-`accessibility-expert`-Review: `#guideSteps`-Live-Region-
+  Ansage~~ — **erledigt in v4.31.0** (s. „= aktueller Stand" oben). Eigene, visuell
+  versteckte Live-Region `#guideAnnounce` mit entprellter Sammelansage „Anleitung
+  aktualisiert", statt `#flourWarn` wiederzuverwenden oder `#guideSteps` selbst live zu
+  schalten.
 - **Type-ahead-Kette im `#preset`-Dropdown wird länger** (Nebenbefund aus dem
   v4.24.0-`accessibility-expert`-Review, kein Blocker, keine Regression; seit v4.25.0 durch
   die Biga-Aufteilung um einen weiteren Eintrag gewachsen): alle „Napoli …"-Optionen

@@ -1557,7 +1557,7 @@ header{position:relative;text-align:center;}
      daneben, ein zweiter Vorlese-Name wäre redundant (analog zum bestehenden
      .card-icon aria-hidden-Muster). -->
 <header>
-  <h1><img src="assets/logo.svg?v=4.30.1" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
+  <h1><img src="assets/logo.svg?v=4.31.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
 </header>
 
 <!-- Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay analog zum
@@ -2035,6 +2035,7 @@ header{position:relative;text-align:center;}
     <span id="guideSummary" style="font-size:12px;"></span>
   </div>
   <div id="flourWarn" style="margin-bottom:8px;" aria-live="polite" aria-atomic="true"></div>
+  <div id="guideAnnounce" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
   <div id="guideSteps"></div>
 </section>
 
@@ -2447,7 +2448,7 @@ header{position:relative;text-align:center;}
              hier bewusst NICHT mehr dupliziert. -->
         <div class="nav-divider" role="separator"></div>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.30.1</span>
+        <span class="nav-version" id="appVersion">v4.31.0</span>
 
       </div>
     </details>
@@ -2814,6 +2815,12 @@ header{position:relative;text-align:center;}
   // davor aria-hidden ist, s. glossaryLinkHtml() in js/guide.js). Spart v. a. auf Mobil
   // sichtbaren Platz, ohne die Bedeutung für Screenreader-Nutzer zu verlieren.
   add('guide.glossaryLink.label', '{term} im Glossar', '{term} in the glossary');
+  // Live-Region-Sammelansage (v4.31.0, s. Kommentar bei buildGuide()/#guideAnnounce in
+  // js/guide.js): kurzer, entprellter Hinweistext für Screenreader-Nutzer, dass sich die
+  // Anleitung unter ihnen geändert hat -- bewusst KEIN Detailtext (welcher Wert sich
+  // geändert hat), das wäre bei den vielen möglichen Reglern zu viel Sonderlogik für den
+  // Nutzen (s. Design-Entscheidung im Backlog-Eintrag).
+  add('guide.announce.updated', 'Anleitung aktualisiert', 'Guide updated');
   // Einklappbare Hinweisboxen (v4.10.0, Backlog Punkt H): sichtbarer Text des Toggle-
   // Buttons ist zugleich sein Accessible Name (kein zusätzliches aria-label nötig) --
   // Auf-/Zu-Zustand wird über aria-expanded angesagt, analog zum bestehenden .info-btn-Muster.
@@ -5727,6 +5734,24 @@ header{position:relative;text-align:center;}
 
   function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
 
+  // Live-Region-Ansage bei Anleitungs-Änderung (v4.31.0, Nebenbefund aus dem
+  // v4.27.0-accessibility-expert-Review, WCAG 4.1.3 Status Messages): #guideSteps wird
+  // bei jeder Reglerbewegung komplett per innerHTML neu gerendert (s. buildGuide() unten),
+  // ohne dass Screenreader-Nutzer davon etwas mitbekommen. Bewusst KEIN aria-live direkt
+  // auf #guideSteps (bei über 20 Absätzen zu viel Vorleselärm) und bewusst KEINE
+  // Wiederverwendung von #flourWarn (trägt sichtbaren Warntext, der nicht durch eine
+  // andere Meldung überschrieben werden darf) — stattdessen eine EIGENE, visuell
+  // versteckte Live-Region (#guideAnnounce, pizza-rechner.html/-mobile.html) mit einer
+  // kurzen, entprellten Sammelansage ("Anleitung aktualisiert"). Entprellt auf 1,5 s Ruhe
+  // nach der letzten Änderung, damit z. B. Slider-Ziehen über mehrere Stufen genau EINE
+  // Ansage ergibt statt einer Kaskade. `announceReady` bleibt false, bis js/main.js nach
+  // dem allerersten Boot-Aufruf von PZ.calc() PZ.enableGuideAnnounce() aufruft — vorher
+  // (Laden aus localStorage, applyMethod(), Erstrender) löst buildGuide() bewusst KEINE
+  // Ansage aus, sonst gäbe es Lärm direkt beim ersten Laden der Seite.
+  let announceReady = false;
+  let announceTimer = null;
+  PZ.enableGuideAnnounce = function () { announceReady = true; };
+
   // Rundung/Formatierung für Mengenangaben, INKL. Einheit (v3.65.0: über js/units.js,
   // damit die Anleitung im Imperial-Modus oz/lb statt g zeigt). Alle Wörterbuch-
   // Einträge, die {platzhalter} für Gewichte nutzen, haben deshalb KEIN hartkodiertes
@@ -6223,6 +6248,13 @@ header{position:relative;text-align:center;}
     });
     $('guideSteps').innerHTML = html;
     if (PZ.wireTimers) PZ.wireTimers();
+    if (announceReady) {
+      if (announceTimer) global.clearTimeout(announceTimer);
+      announceTimer = global.setTimeout(function () {
+        announceTimer = null;
+        if (PZ.announce) PZ.announce('guideAnnounce', t('guide.announce.updated'));
+      }, 1500);
+    }
   }
 
   PZ.buildGuide = buildGuide;
@@ -9545,6 +9577,10 @@ header{position:relative;text-align:center;}
   refreshRecipeSelect();
   PZ.applyMethod();
   PZ.calc();
+  // Live-Region-Ansage der Anleitung (v4.31.0, js/guide.js) erst NACH dem allerersten
+  // Boot-Aufbau scharf schalten -- sonst würde der initiale Render (Laden aus
+  // localStorage, applyMethod(), Erstrender oben) fälschlich schon eine Ansage auslösen.
+  if (PZ.enableGuideAnnounce) PZ.enableGuideAnnounce();
 })(window);
 
 </script>

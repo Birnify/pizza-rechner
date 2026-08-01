@@ -18,6 +18,24 @@
 
   function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
 
+  // Live-Region-Ansage bei Anleitungs-Änderung (v4.31.0, Nebenbefund aus dem
+  // v4.27.0-accessibility-expert-Review, WCAG 4.1.3 Status Messages): #guideSteps wird
+  // bei jeder Reglerbewegung komplett per innerHTML neu gerendert (s. buildGuide() unten),
+  // ohne dass Screenreader-Nutzer davon etwas mitbekommen. Bewusst KEIN aria-live direkt
+  // auf #guideSteps (bei über 20 Absätzen zu viel Vorleselärm) und bewusst KEINE
+  // Wiederverwendung von #flourWarn (trägt sichtbaren Warntext, der nicht durch eine
+  // andere Meldung überschrieben werden darf) — stattdessen eine EIGENE, visuell
+  // versteckte Live-Region (#guideAnnounce, pizza-rechner.html/-mobile.html) mit einer
+  // kurzen, entprellten Sammelansage ("Anleitung aktualisiert"). Entprellt auf 1,5 s Ruhe
+  // nach der letzten Änderung, damit z. B. Slider-Ziehen über mehrere Stufen genau EINE
+  // Ansage ergibt statt einer Kaskade. `announceReady` bleibt false, bis js/main.js nach
+  // dem allerersten Boot-Aufruf von PZ.calc() PZ.enableGuideAnnounce() aufruft — vorher
+  // (Laden aus localStorage, applyMethod(), Erstrender) löst buildGuide() bewusst KEINE
+  // Ansage aus, sonst gäbe es Lärm direkt beim ersten Laden der Seite.
+  let announceReady = false;
+  let announceTimer = null;
+  PZ.enableGuideAnnounce = function () { announceReady = true; };
+
   // Rundung/Formatierung für Mengenangaben, INKL. Einheit (v3.65.0: über js/units.js,
   // damit die Anleitung im Imperial-Modus oz/lb statt g zeigt). Alle Wörterbuch-
   // Einträge, die {platzhalter} für Gewichte nutzen, haben deshalb KEIN hartkodiertes
@@ -514,6 +532,13 @@
     });
     $('guideSteps').innerHTML = html;
     if (PZ.wireTimers) PZ.wireTimers();
+    if (announceReady) {
+      if (announceTimer) global.clearTimeout(announceTimer);
+      announceTimer = global.setTimeout(function () {
+        announceTimer = null;
+        if (PZ.announce) PZ.announce('guideAnnounce', t('guide.announce.updated'));
+      }, 1500);
+    }
   }
 
   PZ.buildGuide = buildGuide;

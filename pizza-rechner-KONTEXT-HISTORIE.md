@@ -8,6 +8,26 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Dezimaltrennzeichen-Fix in js/units.js (v4.30.1)
+
+`js/units.js` normierte Dezimaltrennzeichen bisher nicht auf Komma, anders als die
+etablierte App-Konvention (`js/widgets.js`/`js/party.js`, s. Bugfix v3.32.0). Betroffen:
+`formatWeightAuto()` (< 10 g, v. a. Hefe-Anzeige) erzeugte „1.20 g" statt „1,20 g";
+`formatWeight()` mit `metricDecimals > 0` (Salz/Öl/Zucker) erzeugte „12.5 g" statt
+„12,5 g"; `formatOzNumber()` im Imperial-Modus erzeugte „21.2 oz" statt „21,2 oz". Fix:
+gemeinsamer `deFixed(num, decimals)`-Helfer in `js/units.js`, ersetzt die drei
+`.toFixed()`-Einzelaufrufe. Zusätzlich beim Nachsehen gefunden und mitgefixt:
+`formatTemp()` hängte im Metrisch-Modus den Celsius-Wert per String-Konkatenation an
+(`celsius + '°C'`) — bei vom Aufrufer bereits auf 1 Nachkommastelle gerundeten Werten
+(z. B. `R.wT` in `js/calc.js`) erzeugte das ebenfalls einen Punkt statt Komma
+(„21.3°C"); jetzt `String(celsius).replace('.', ',')`. `tests/test.html`: 7 bestehende
+Tests (mOil-/mSugar-Anzeige-Parsing, Einkaufslisten-Substring-Checks) prüften den
+fehlerhaften Punkt-Zustand unbemerkt mit und wurden korrigiert, plus neue gezielte
+Regressionsprüfungen; 1107 → **1111** Prüfungen, alle grün.
+
+**Volle Details:** weiter unten in dieser Datei, Abschnitt „Napoli Lange Kaltgare an
+Quellen angleichen (v4.30.0)" (vorherige Abschnitte ebenfalls dort verkettet).
+
 ## Napoli Lange Kaltgare an Quellen angleichen (v4.30.0)
 
 `napoli_kalt`: Hefe 0,1 % → **0,25 %** (belegter Cluster 0,2-0,3 % aus 7 Quellen, u. a.

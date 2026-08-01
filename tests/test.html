@@ -43,6 +43,7 @@
   <div id="mYeastRow"></div>
   <div id="guideSummary"></div><div id="guideSteps"></div>
   <div id="flourWarn"></div>
+  <div id="guideAnnounce" role="status" aria-live="polite"></div>
   <div id="shoppingList"></div>
   <select id="flour"><option value="caputo_pizzeria" selected></option></select>
   <input type="text" id="timeISO">
@@ -5480,6 +5481,122 @@
         ok: (maxPresetBallw < HTML_MAX_BALLW) === true
       }
     ]);
+  })();
+
+  // ─────────────────────────────────────────────────────────────
+  heading('38 · Live-Region-Ansage der Anleitung (js/guide.js, v4.31.0, Nebenbefund v4.27.0-Review)');
+
+  // Mini-Helfer: ersetzt window.setTimeout/clearTimeout durch eine synchrone Warteschlange,
+  // damit die 1,5-s-Entprellung in js/guide.js UND der 50-ms-Clear-then-Set von
+  // PZ.announce() (js/dom.js) ohne echtes Warten getestet werden können. fn(flush)
+  // bekommt eine flush()-Funktion, die alle bis dahin geplanten (und währenddessen NEU
+  // geplanten, z. B. der innere PZ.announce()-Timer) Callbacks der Reihe nach ausführt --
+  // funktional dasselbe Ergebnis wie ein echter Browser über die Zeit liefern würde, nur
+  // ohne die Wartezeit. window.setTimeout/clearTimeout (nicht nur eine lokale Kopie),
+  // weil js/guide.js und js/dom.js beide über ihr IIFE-Argument "global" (= window beim
+  // jeweiligen Laden übergeben) zur AUFRUFZEIT auf die aktuelle Eigenschaft zugreifen --
+  // eine Neuzuweisung auf window wirkt sich also unmittelbar aus.
+  function withMockTimers(fn) {
+    const realSetTimeout = window.setTimeout, realClearTimeout = window.clearTimeout;
+    let queue = [], nextId = 1;
+    window.setTimeout = function (cb) {
+      const id = nextId++;
+      queue.push({ id: id, cb: cb });
+      return id;
+    };
+    window.clearTimeout = function (id) {
+      queue = queue.filter(function (item) { return item.id !== id; });
+    };
+    function flush() {
+      let guard = 0;
+      while (queue.length && guard++ < 50) {
+        const item = queue.shift();
+        item.cb();
+      }
+    }
+    try { fn(flush); } finally {
+      window.setTimeout = realSetTimeout;
+      window.clearTimeout = realClearTimeout;
+    }
+  }
+
+  // --- Kein Announce beim Initial-Render ---------------------------------------------
+  // PZ.enableGuideAnnounce() wurde in dieser Testsuite bisher NIE aufgerufen (kein
+  // js/main.js geladen, s. Skript-Liste oben) -- entspricht exakt dem echten Boot-Zustand
+  // VOR dem allerersten PZ.calc()-Aufruf in js/main.js. buildGuide() darf hier unter
+  // keinen Umständen eine Ansage auslösen, auch nicht verzögert.
+  (function () {
+    document.getElementById('guideAnnounce').textContent = '';
+    withMockTimers(function (flush) {
+      Object.assign(PZ.state, BASE);
+      PZ.calc();
+      flush(); // simuliert beliebig viel verstrichene Zeit
+    });
+    const text = document.getElementById('guideAnnounce').textContent;
+    renderBox('Initialer buildGuide()-Aufruf (vor PZ.enableGuideAnnounce()) löst keine Ansage aus', [
+      { label: '#guideAnnounce bleibt leer', actual: text, expected: '', tol: null, ok: text === '' }
+    ]);
+  })();
+
+  // Ab hier Ansage scharf schalten (entspricht js/main.js NACH dem Boot-PZ.calc()) --
+  // bleibt für den Rest der Suite an, wie im echten Betrieb auch (kein Zurückschalten
+  // vorgesehen, s. Kommentar bei PZ.enableGuideAnnounce in js/guide.js).
+  PZ.enableGuideAnnounce();
+
+  // --- Announce nach einer Änderung ----------------------------------------------------
+  (function () {
+    document.getElementById('guideAnnounce').textContent = '';
+    withMockTimers(function (flush) {
+      Object.assign(PZ.state, BASE, { hyd: 65 });
+      PZ.calc();
+      flush();
+    });
+    const text = document.getElementById('guideAnnounce').textContent;
+    const expected = PZ.t('guide.announce.updated');
+    renderBox('Reglerbewegung nach dem Boot löst nach der Entprellung eine Ansage aus', [
+      { label: '#guideAnnounce trägt "' + expected + '"', actual: text, expected: expected, tol: null, ok: text === expected }
+    ]);
+  })();
+
+  // --- Mehrere schnelle Änderungen ergeben genau EINE Ansage (Entprellung) ------------
+  (function () {
+    document.getElementById('guideAnnounce').textContent = '';
+    const origAnnounce = PZ.announce;
+    let calls = 0;
+    PZ.announce = function (id, text) { calls++; origAnnounce(id, text); };
+    try {
+      withMockTimers(function (flush) {
+        Object.assign(PZ.state, BASE, { hyd: 63 }); PZ.calc();
+        Object.assign(PZ.state, BASE, { hyd: 64 }); PZ.calc();
+        Object.assign(PZ.state, BASE, { hyd: 65 }); PZ.calc();
+        flush();
+      });
+    } finally {
+      PZ.announce = origAnnounce;
+    }
+    renderBox('Drei schnell aufeinanderfolgende Reglerbewegungen ergeben genau eine Ansage (kein Kaskadieren)', [
+      { label: 'PZ.announce()-Aufrufe', actual: calls, expected: 1, tol: null, ok: calls === 1 }
+    ]);
+  })();
+
+  // --- Übersetzbarkeit (js/i18n-dict.js) -----------------------------------------------
+  (function () {
+    const savedLang = PZ.getLang();
+    try {
+      PZ.setLang('en');
+      document.getElementById('guideAnnounce').textContent = '';
+      withMockTimers(function (flush) {
+        Object.assign(PZ.state, BASE, { hyd: 66 });
+        PZ.calc();
+        flush();
+      });
+      const textEn = document.getElementById('guideAnnounce').textContent;
+      renderBox('Ansagetext ist über js/i18n-dict.js übersetzbar (Englisch)', [
+        { label: '#guideAnnounce trägt "Guide updated"', actual: textEn, expected: 'Guide updated', tol: null, ok: textEn === 'Guide updated' }
+      ]);
+    } finally {
+      PZ.setLang(savedLang);
+    }
   })();
 
   // ─────────────────────────────────────────────────────────────
