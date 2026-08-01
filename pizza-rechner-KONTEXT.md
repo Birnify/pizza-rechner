@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-01 · Aktuelle Version: v4.30.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-02 · Aktuelle Version: v4.30.1 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -216,21 +216,25 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Napoli Lange Kaltgare an Quellen angleichen (v4.30.0) = aktueller Stand
+## Dezimaltrennzeichen-Fix in js/units.js (v4.30.1) = aktueller Stand
 
-`napoli_kalt`: Hefe 0,1 % → **0,25 %** (belegter Cluster 0,2-0,3 % aus 7 Quellen, u. a.
-pizza1.de, Lorenzo's Gusto, Waldis Pizza, Burnhard, Ooni) + neuer `scheduleOverride`
-(seit v4.28.0, s. u.) für eine **geteilte Kaltgare**: 1 h Raumtemp + 20 h Kühlschrank im
-Ganzen, dann geformt nochmal 20 h Kühlschrank + 3 h temperieren, macht ~44 h in Summe.
-Mechanismus (drei von vier Quellen teilen die Kühlschrankzeit ungefähr hälftig zwischen
-Stockgare und Stückgare) ist quellenbelegt, die konkrete 20-h/20-h-Aufteilung ist eine
-konservative Wahl am oberen Rand der Quellenspannen (12-24 h bzw. 12-20 h), keine zitierte
-Einzelzahl. Preset-Beschreibung, Dropdown-Label und die "Lang"-Empfehlungskarte auf ~44 h
-gezogen. `tests/test.html`: PRESET_STATES + PRESET_LABEL_HOURS mitgezogen, weiterhin
-**1107** Prüfungen, alle grün. Live per Headless-Edge-CDP auf Desktop + Mobil verifiziert.
+`js/units.js` normierte Dezimaltrennzeichen bisher nicht auf Komma, anders als die
+etablierte App-Konvention (`js/widgets.js`/`js/party.js`, s. Bugfix v3.32.0). Betroffen:
+`formatWeightAuto()` (< 10 g, v. a. Hefe-Anzeige) erzeugte „1.20 g" statt „1,20 g";
+`formatWeight()` mit `metricDecimals > 0` (Salz/Öl/Zucker) erzeugte „12.5 g" statt
+„12,5 g"; `formatOzNumber()` im Imperial-Modus erzeugte „21.2 oz" statt „21,2 oz". Fix:
+gemeinsamer `deFixed(num, decimals)`-Helfer in `js/units.js`, ersetzt die drei
+`.toFixed()`-Einzelaufrufe. Zusätzlich beim Nachsehen gefunden und mitgefixt:
+`formatTemp()` hängte im Metrisch-Modus den Celsius-Wert per String-Konkatenation an
+(`celsius + '°C'`) — bei vom Aufrufer bereits auf 1 Nachkommastelle gerundeten Werten
+(z. B. `R.wT` in `js/calc.js`) erzeugte das ebenfalls einen Punkt statt Komma
+(„21.3°C"); jetzt `String(celsius).replace('.', ',')`. `tests/test.html`: 7 bestehende
+Tests (mOil-/mSugar-Anzeige-Parsing, Einkaufslisten-Substring-Checks) prüften den
+fehlerhaften Punkt-Zustand unbemerkt mit und wurden korrigiert, plus neue gezielte
+Regressionsprüfungen; 1107 → **1111** Prüfungen, alle grün.
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Teglia-max-Attribut-
-Bugfix (v4.29.1)" (vorherige Abschnitte ebenfalls dort verkettet).
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Napoli Lange Kaltgare
+an Quellen angleichen (v4.30.0)" (vorherige Abschnitte ebenfalls dort verkettet).
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -967,12 +971,6 @@ Keine Code-Änderung durch den Audit nötig.
   bei über 20 Absätzen zu viel Lärm erzeugen). Bewusst nicht im v4.27.0-Zyklus behoben —
   betrifft die ganze App, nicht nur die Temperaturskalierung, und ist eine eigene
   Entscheidung wert (soll jede Reglerbewegung angesagt werden, oder nur bestimmte?).
-- **`PZ.formatWeightAuto()`-Dezimaltrennzeichen-Bug** (neu, v4.24.0 gefunden, nicht
-  behoben — Scope-Grenze): `toFixed(2)` erzeugt „1.20 g" mit Punkt statt Komma
-  (`js/units.js`), inkonsistent zum Rest der App (die anderen Formatierungen normieren auf
-  Komma, s. „Bugfix: inkonsistente Dezimaltrennzeichen bei Regler-Wertanzeigen (v3.32.0)"
-  weiter unten — dieselbe Fehlerklasse, aber eine andere, damals nicht mit erfasste
-  Funktion). Kleiner, klar umrissener Fix, ein Kandidat für „inline" statt Orchestrator.
 - **Type-ahead-Kette im `#preset`-Dropdown wird länger** (Nebenbefund aus dem
   v4.24.0-`accessibility-expert`-Review, kein Blocker, keine Regression; seit v4.25.0 durch
   die Biga-Aufteilung um einen weiteren Eintrag gewachsen): alle „Napoli …"-Optionen

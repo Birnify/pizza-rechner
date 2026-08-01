@@ -99,7 +99,14 @@
   const GRAMS_PER_OZ = 28.349523125;
   const OZ_PER_LB = 16;
 
-  function formatOzNumber(oz) { return oz.toFixed(1); }
+  // Deutsches Komma statt Punkt (v3.32.0-Bugfix, s. js/widgets.js/js/party.js) --
+  // dieselbe App-weite Konvention war in units.js bisher versehentlich nicht
+  // angewendet (v4.30.1-Fix): `toFixed()` liefert immer einen Punkt, unabhängig von
+  // Sprache/Locale normiert die App das hart auf Komma. Gemeinsamer Helfer statt
+  // einzelner .replace()-Aufrufe je Formatier-Funktion.
+  function deFixed(num, decimals) { return num.toFixed(decimals).replace('.', ','); }
+
+  function formatOzNumber(oz) { return deFixed(oz, 1); }
 
   function formatImperialWeight(grams) {
     let oz = Math.round((grams / GRAMS_PER_OZ) * 10) / 10;
@@ -119,7 +126,7 @@
   function formatWeight(grams, metricDecimals) {
     if (getUnitSystem() === 'imperial') return formatImperialWeight(grams);
     const d = metricDecimals == null ? 0 : metricDecimals;
-    const val = d > 0 ? grams.toFixed(d) : String(Math.round(grams));
+    const val = d > 0 ? deFixed(grams, d) : String(Math.round(grams));
     return val + ' g';
   }
   PZ.formatWeight = formatWeight;
@@ -130,7 +137,7 @@
   // deckt kleine Mengen bereits ausreichend genau ab, kein weiterer Sonderfall nötig).
   function formatWeightAuto(grams) {
     if (getUnitSystem() === 'imperial') return formatImperialWeight(grams);
-    const val = grams < 10 ? grams.toFixed(2) : String(Math.round(grams));
+    const val = grams < 10 ? deFixed(grams, 2) : String(Math.round(grams));
     return val + ' g';
   }
   PZ.formatWeightAuto = formatWeightAuto;
@@ -138,12 +145,17 @@
   // Temperatur: der übergebene Celsius-Wert ist bereits vom Aufrufer wie gewünscht
   // gerundet (z. B. R.wT auf 1 Nachkommastelle in js/calc.js) — im Metrisch-Modus wird
   // hier nur die Einheit angehängt, keine erneute Rundung. Im Imperial-Modus gilt die
-  // Vorgabe "Rundung auf ganze °F".
+  // Vorgabe "Rundung auf ganze °F" (dort immer ganzzahlig, kein Trennzeichen nötig).
+  // v4.30.1-Fix: der Metrisch-Zweig hängte den Wert bisher per String-Konkatenation an
+  // (`celsius + '°C'`) — bei bereits vom Aufrufer auf eine Nachkommastelle gerundeten
+  // Werten (z. B. R.wT = 21.3) erzeugte das "21.3°C" statt "21,3°C". `String(celsius)`
+  // statt `toFixed()`, weil hier (anders als bei deFixed()) die Nachkommastellenzahl
+  // nicht feststeht -- ganzzahlige Werte (z. B. state.ddt) bleiben unverändert ohne Komma.
   function formatTemp(celsius) {
     if (getUnitSystem() === 'imperial') {
       return Math.round(celsius * 9 / 5 + 32) + '°F';
     }
-    return celsius + '°C';
+    return String(celsius).replace('.', ',') + '°C';
   }
   PZ.formatTemp = formatTemp;
 

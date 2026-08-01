@@ -198,6 +198,15 @@
   // gezielt von dieser Baseline abweicht und sie danach wiederherstellt.
   PZ.ADJUST = { yeastAdjust: 0, wasteAdjust: 0 };
 
+  // Gerenderte Zahlenanzeigen (z. B. #mOil/#mSugar) nutzen seit je her (js/widgets.js) bzw.
+  // seit v4.30.1 (js/units.js) hart Komma statt Punkt als Dezimaltrennzeichen -- parseFloat()
+  // liest an einem Komma vorzeitig ab (parseFloat("11,76") -> 11). Dieser Helfer liest den
+  // DOM-Text stattdessen korrekt (Komma -> Punkt vor dem Parsen).
+  function parseDeFloat(str) { return parseFloat(String(str).replace(',', '.')); }
+  // Gegenstück: erwarteten Anzeigetext mit deutschem Komma statt Punkt bilden (js/units.js/
+  // js/widgets.js normieren seit je her bzw. seit v4.30.1 hart auf Komma).
+  function deFixed(num, decimals) { return num.toFixed(decimals).replace('.', ','); }
+
   // --- Haupt-Testfall: setzt state, rechnet, prüft R-Werte ---
   function testCase(name, overrides, buildChecks) {
     const state = Object.assign({}, BASE, overrides);
@@ -980,7 +989,7 @@
     method: 'biga', pref: 70, bhyd: 45, hyd: 65, oil: 2
   }, R => [
     ['oil > 0', R.oil > 0, true],
-    ['mOil-Anzeige = Gesamtöl', parseFloat(document.getElementById('mOil').textContent), R.oil, 0.05],
+    ['mOil-Anzeige = Gesamtöl', parseDeFloat(document.getElementById('mOil').textContent), R.oil, 0.05],
     ['Summe = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil, 1000, 0.01],
   ]);
 
@@ -1074,7 +1083,7 @@
     method: 'biga', pref: 70, bhyd: 45, hyd: 65, oil: 3, coldStage: 'bulk', yeast: 0.3
   }, R => [
     ['oil > 0 im Hauptteig', R.oil > 0, true],
-    ['mOil-Anzeige = Gesamtöl', parseFloat(document.getElementById('mOil').textContent), R.oil, 0.05],
+    ['mOil-Anzeige = Gesamtöl', parseDeFloat(document.getElementById('mOil').textContent), R.oil, 0.05],
     ['pYeast = gesamte Hefe (auch mit Öl/bulk)', R.pYeast, R.yeast, 0.001],
     ['mYeast = 0', R.mYeast, 0, 0.001],
     ['Summe = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil, 1000, 0.01],
@@ -1100,7 +1109,7 @@
       ['pw = pf (1:1)',      R.pw, R.pf, 0.05],
       ['pf + mFlour = flour', R.pf + R.mFlour, R.flour, 0.01],
       ['pw + mWater = water', R.pw + R.mWater, R.water, 0.01],
-      ['mOil-Anzeige = Gesamtöl', parseFloat(document.getElementById('mOil').textContent), R.oil, 0.05],
+      ['mOil-Anzeige = Gesamtöl', parseDeFloat(document.getElementById('mOil').textContent), R.oil, 0.05],
       ['Summe = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil, 1000, 0.01],
     ];
   });
@@ -1237,8 +1246,8 @@
     return [
       ['Mehl-Zeile mit gerundetem Wert', html.includes('' + Math.round(R.flour)), true],
       ['Wasser-Zeile mit gerundetem Wert', html.includes('' + Math.round(R.water)), true],
-      ['Salz-Zeile mit 1 Nachkommastelle', html.includes(R.salt.toFixed(1)), true],
-      ['Hefe-Zeile mit 2 Nachkommastellen (< 10 g)', html.includes(R.yeast.toFixed(2)), true],
+      ['Salz-Zeile mit 1 Nachkommastelle (Komma statt Punkt)', html.includes(deFixed(R.salt, 1)), true],
+      ['Hefe-Zeile mit 2 Nachkommastellen (< 10 g, Komma statt Punkt)', html.includes(deFixed(R.yeast, 2)), true],
       ['Keine Öl-Zeile bei 0 %', !html.includes('Olivenöl'), true],
       ['Gesamtteig-Anzeige', html.includes(Math.round(R.total) + ' g'), true],
     ];
@@ -1251,7 +1260,7 @@
     const html = document.getElementById('shoppingList').innerHTML;
     return [
       ['Öl-Zeile vorhanden', html.includes('Olivenöl'), true],
-      ['Öl-Wert wie im Ergebnis-Panel formatiert', html.includes(R.oil.toFixed(1)), true],
+      ['Öl-Wert wie im Ergebnis-Panel formatiert (Komma statt Punkt)', html.includes(deFixed(R.oil, 1)), true],
     ];
   });
 
@@ -1265,7 +1274,7 @@
     const html = document.getElementById('shoppingList').innerHTML;
     return [
       ['Zucker-Zeile vorhanden', html.includes('Zucker'), true],
-      ['Zucker-Wert wie im Ergebnis-Panel formatiert', html.includes(R.sugar.toFixed(1)), true],
+      ['Zucker-Wert wie im Ergebnis-Panel formatiert (Komma statt Punkt)', html.includes(deFixed(R.sugar, 1)), true],
     ];
   });
 
@@ -1355,7 +1364,7 @@
     const html = document.getElementById('shoppingList').innerHTML;
     return [
       ['R.yeast < 10 g (Kontrollcheck)', R.yeast < 10, true],
-      ['Hefe-Zeile mit 2 Nachkommastellen', html.includes(R.yeast.toFixed(2) + ' g'), true],
+      ['Hefe-Zeile mit 2 Nachkommastellen (Komma statt Punkt)', html.includes(deFixed(R.yeast, 2) + ' g'), true],
       ['Kein gerundeter Ganzzahl-Wert stattdessen', html.includes(String(Math.round(R.yeast)) + ' g') && Math.round(R.yeast) !== Number(R.yeast.toFixed(2)), false],
     ];
   });
@@ -2380,7 +2389,7 @@
     method: 'biga', pref: 70, bhyd: 45, hyd: 65, sugar: 2
   }, R => [
     ['sugar > 0', R.sugar > 0, true],
-    ['mSugar-Anzeige = Gesamtzucker', parseFloat(document.getElementById('mSugar').textContent), R.sugar, 0.05],
+    ['mSugar-Anzeige = Gesamtzucker', parseDeFloat(document.getElementById('mSugar').textContent), R.sugar, 0.05],
     ['kein #pSugar-Element im DOM (bewusst kein Vorteig-Zucker-Feld)', document.getElementById('pSugar'), null],
     ['Summe (inkl. Zucker) = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil + R.sugar, 1000, 0.01],
   ]);
@@ -2389,7 +2398,7 @@
     method: 'poolish', pref: 50, hyd: 66, sugar: 2, salt: 2.5, yeast: 0.2
   }, R => [
     ['sugar > 0', R.sugar > 0, true],
-    ['mSugar-Anzeige = Gesamtzucker', parseFloat(document.getElementById('mSugar').textContent), R.sugar, 0.05],
+    ['mSugar-Anzeige = Gesamtzucker', parseDeFloat(document.getElementById('mSugar').textContent), R.sugar, 0.05],
     ['kein #pSugar-Element im DOM', document.getElementById('pSugar'), null],
     ['pf + mFlour = flour (Zucker verschiebt keine Mehl-Aufteilung)', R.pf + R.mFlour, R.flour, 0.01],
     ['Summe (inkl. Zucker) = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil + R.sugar, 1000, 0.01],
@@ -2401,8 +2410,8 @@
   }, R => [
     ['oil > 0 im Hauptteig', R.oil > 0, true],
     ['sugar > 0 im Hauptteig', R.sugar > 0, true],
-    ['mOil-Anzeige = Gesamtöl', parseFloat(document.getElementById('mOil').textContent), R.oil, 0.05],
-    ['mSugar-Anzeige = Gesamtzucker', parseFloat(document.getElementById('mSugar').textContent), R.sugar, 0.05],
+    ['mOil-Anzeige = Gesamtöl', parseDeFloat(document.getElementById('mOil').textContent), R.oil, 0.05],
+    ['mSugar-Anzeige = Gesamtzucker', parseDeFloat(document.getElementById('mSugar').textContent), R.sugar, 0.05],
     ['pYeast = gesamte Hefe (auch mit Öl/Zucker/bulk)', R.pYeast, R.yeast, 0.001],
     ['mYeast = 0', R.mYeast, 0, 0.001],
     ['Summe (inkl. Zucker) = Gesamtgewicht', R.flour + R.water + R.salt + R.yeast + R.oil + R.sugar, 1000, 0.01],
@@ -3357,21 +3366,21 @@
       PZ.setUnitSystem('metric');
       renderBox('formatWeight()/formatWeightAuto() im Metrisch-Modus: 1:1 die bisherigen Rundungskonventionen', [
         { label: 'formatWeight(600) -> "600 g" (0 Nachkommastellen Default)', ok: PZ.formatWeight(600) === '600 g', actual: PZ.formatWeight(600), expected: '600 g', tol: null },
-        { label: 'formatWeight(16.8, 1) -> "16.8 g" (1 Nachkommastelle explizit)', ok: PZ.formatWeight(16.8, 1) === '16.8 g', actual: PZ.formatWeight(16.8, 1), expected: '16.8 g', tol: null },
-        { label: 'formatWeightAuto(1.8) -> "1.80 g" (< 10 g -> 2 Nachkommastellen)', ok: PZ.formatWeightAuto(1.8) === '1.80 g', actual: PZ.formatWeightAuto(1.8), expected: '1.80 g', tol: null },
-        { label: 'formatWeightAuto(16.8) -> "17 g" (>= 10 g -> ganzzahlig gerundet)', ok: PZ.formatWeightAuto(16.8) === '17 g', actual: PZ.formatWeightAuto(16.8), expected: '17 g', tol: null }
+        { label: 'formatWeight(16.8, 1) -> "16,8 g" (1 Nachkommastelle, Komma statt Punkt, v4.30.1-Fix)', ok: PZ.formatWeight(16.8, 1) === '16,8 g', actual: PZ.formatWeight(16.8, 1), expected: '16,8 g', tol: null },
+        { label: 'formatWeightAuto(1.8) -> "1,80 g" (< 10 g -> 2 Nachkommastellen, Komma, v4.30.1-Fix)', ok: PZ.formatWeightAuto(1.8) === '1,80 g', actual: PZ.formatWeightAuto(1.8), expected: '1,80 g', tol: null },
+        { label: 'formatWeightAuto(16.8) -> "17 g" (>= 10 g -> ganzzahlig gerundet, kein Trennzeichen)', ok: PZ.formatWeightAuto(16.8) === '17 g', actual: PZ.formatWeightAuto(16.8), expected: '17 g', tol: null }
       ]);
     })();
 
     // --- formatWeight(): Imperial-Modus, 0,1-oz-Rundung + "X lb Y oz"-Umbruch ab 16 oz ---
     (function () {
       PZ.setUnitSystem('imperial');
-      renderBox('formatWeight() im Imperial-Modus: 0,1-oz-Rundung, ab 16 oz "X lb Y oz"', [
-        { label: 'formatWeight(100) -> "3.5 oz" (< 16 oz bleibt reine Unze)', ok: PZ.formatWeight(100) === '3.5 oz', actual: PZ.formatWeight(100), expected: '3.5 oz', tol: null },
-        { label: 'formatWeight(600) -> "1 lb 5.2 oz" (>= 16 oz -> Pfund-Umbruch)', ok: PZ.formatWeight(600) === '1 lb 5.2 oz', actual: PZ.formatWeight(600), expected: '1 lb 5.2 oz', tol: null },
-        { label: 'formatWeight(453.592) -> "1 lb 0.0 oz" (Rundungs-Grenzfall exakt 1 lb, kein "0 lb 16.0 oz"-Bug)', ok: PZ.formatWeight(453.592) === '1 lb 0.0 oz', actual: PZ.formatWeight(453.592), expected: '1 lb 0.0 oz', tol: null },
-        { label: 'formatWeight(0) -> "0.0 oz" (kein NaN/negativer Wert)', ok: PZ.formatWeight(0) === '0.0 oz', actual: PZ.formatWeight(0), expected: '0.0 oz', tol: null },
-        { label: 'formatWeight(16.8, 1) ignoriert den metricDecimals-Parameter im Imperial-Modus', ok: PZ.formatWeight(16.8, 1) === '0.6 oz', actual: PZ.formatWeight(16.8, 1), expected: '0.6 oz', tol: null }
+      renderBox('formatWeight() im Imperial-Modus: 0,1-oz-Rundung (Komma statt Punkt, v4.30.1-Fix), ab 16 oz "X lb Y oz"', [
+        { label: 'formatWeight(100) -> "3,5 oz" (< 16 oz bleibt reine Unze)', ok: PZ.formatWeight(100) === '3,5 oz', actual: PZ.formatWeight(100), expected: '3,5 oz', tol: null },
+        { label: 'formatWeight(600) -> "1 lb 5,2 oz" (>= 16 oz -> Pfund-Umbruch)', ok: PZ.formatWeight(600) === '1 lb 5,2 oz', actual: PZ.formatWeight(600), expected: '1 lb 5,2 oz', tol: null },
+        { label: 'formatWeight(453.592) -> "1 lb 0,0 oz" (Rundungs-Grenzfall exakt 1 lb, kein "0 lb 16,0 oz"-Bug)', ok: PZ.formatWeight(453.592) === '1 lb 0,0 oz', actual: PZ.formatWeight(453.592), expected: '1 lb 0,0 oz', tol: null },
+        { label: 'formatWeight(0) -> "0,0 oz" (kein NaN/negativer Wert)', ok: PZ.formatWeight(0) === '0,0 oz', actual: PZ.formatWeight(0), expected: '0,0 oz', tol: null },
+        { label: 'formatWeight(16.8, 1) ignoriert den metricDecimals-Parameter im Imperial-Modus', ok: PZ.formatWeight(16.8, 1) === '0,6 oz', actual: PZ.formatWeight(16.8, 1), expected: '0,6 oz', tol: null }
       ]);
       PZ.setUnitSystem('metric');
     })();
@@ -3380,15 +3389,36 @@
     (function () {
       PZ.setUnitSystem('metric');
       const metric195 = PZ.formatTemp(19.5);
+      const metric21 = PZ.formatTemp(21);
       PZ.setUnitSystem('imperial');
       const imp195 = PZ.formatTemp(19.5);
       const imp24 = PZ.formatTemp(24);
-      renderBox('formatTemp(): Metrisch nur Einheit anhängen, Imperial auf ganze °F runden', [
-        { label: 'Metrisch: formatTemp(19.5) -> "19.5°C" (keine erneute Rundung)', ok: metric195 === '19.5°C', actual: metric195, expected: '19.5°C', tol: null },
+      renderBox('formatTemp(): Metrisch nur Einheit anhängen (Komma statt Punkt, v4.30.1-Fix), Imperial auf ganze °F runden', [
+        { label: 'Metrisch: formatTemp(19.5) -> "19,5°C" (keine erneute Rundung, Komma statt Punkt)', ok: metric195 === '19,5°C', actual: metric195, expected: '19,5°C', tol: null },
+        { label: 'Metrisch: formatTemp(21) -> "21°C" (ganzzahlig bleibt ohne Trennzeichen)', ok: metric21 === '21°C', actual: metric21, expected: '21°C', tol: null },
         { label: 'Imperial: formatTemp(19.5) -> "67°F"', ok: imp195 === '67°F', actual: imp195, expected: '67°F', tol: null },
         { label: 'Imperial: formatTemp(24) -> "75°F" (typischer DDT-Zielwert)', ok: imp24 === '75°F', actual: imp24, expected: '75°F', tol: null }
       ]);
       PZ.setUnitSystem('metric');
+    })();
+
+    // --- v4.30.1-Regressionstest: js/units.js normierte Dezimaltrennzeichen bisher NICHT
+    // auf Komma, anders als die etablierte App-Konvention (js/widgets.js/js/party.js,
+    // s. Bugfix v3.32.0 dort). Betroffen: formatWeightAuto() < 10 g (v. a. Hefe-Anzeige),
+    // formatWeight() mit metricDecimals > 0 (Salz/Öl/Zucker) und formatOzNumber() im
+    // Imperial-Modus. Gezielte Prüfung genau der zuvor gemeldeten Fälle. ---
+    (function () {
+      PZ.setUnitSystem('metric');
+      const yeastSmall = PZ.formatWeightAuto(1.23);
+      const saltOneDecimal = PZ.formatWeight(12.5, 1);
+      PZ.setUnitSystem('imperial');
+      const ozImperial = PZ._formatImperialWeight(600.5);
+      PZ.setUnitSystem('metric');
+      renderBox('v4.30.1-Regression: Dezimaltrennzeichen in js/units.js jetzt konsistent Komma (nie Punkt)', [
+        { label: 'formatWeightAuto(1.23) -> "1,23 g" (Hefe-Anzeige < 10 g, kein Punkt)', ok: yeastSmall === '1,23 g' && yeastSmall.indexOf('.') === -1, actual: yeastSmall, expected: '1,23 g', tol: null },
+        { label: 'formatWeight(12.5, 1) -> "12,5 g" (Salz/Öl/Zucker-Formatierung, kein Punkt)', ok: saltOneDecimal === '12,5 g' && saltOneDecimal.indexOf('.') === -1, actual: saltOneDecimal, expected: '12,5 g', tol: null },
+        { label: 'Imperial-Ausgabe enthält keinen Punkt mehr (nur Komma als Dezimaltrennzeichen)', ok: ozImperial.indexOf('.') === -1, actual: ozImperial, expected: 'kein "." enthalten', tol: null }
+      ]);
     })();
 
     // --- Integrationstest: PZ.calc() schreibt im Imperial-Modus oz/lb/°F ins DOM,

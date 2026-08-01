@@ -8,6 +8,22 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Napoli Lange Kaltgare an Quellen angleichen (v4.30.0)
+
+`napoli_kalt`: Hefe 0,1 % → **0,25 %** (belegter Cluster 0,2-0,3 % aus 7 Quellen, u. a.
+pizza1.de, Lorenzo's Gusto, Waldis Pizza, Burnhard, Ooni) + neuer `scheduleOverride`
+(seit v4.28.0, s. u.) für eine **geteilte Kaltgare**: 1 h Raumtemp + 20 h Kühlschrank im
+Ganzen, dann geformt nochmal 20 h Kühlschrank + 3 h temperieren, macht ~44 h in Summe.
+Mechanismus (drei von vier Quellen teilen die Kühlschrankzeit ungefähr hälftig zwischen
+Stockgare und Stückgare) ist quellenbelegt, die konkrete 20-h/20-h-Aufteilung ist eine
+konservative Wahl am oberen Rand der Quellenspannen (12-24 h bzw. 12-20 h), keine zitierte
+Einzelzahl. Preset-Beschreibung, Dropdown-Label und die "Lang"-Empfehlungskarte auf ~44 h
+gezogen. `tests/test.html`: PRESET_STATES + PRESET_LABEL_HOURS mitgezogen, weiterhin
+**1107** Prüfungen, alle grün. Live per Headless-Edge-CDP auf Desktop + Mobil verifiziert.
+
+**Volle Details:** weiter unten in dieser Datei, Abschnitt „Teglia-max-Attribut-
+Bugfix (v4.29.1)" (vorherige Abschnitte ebenfalls dort verkettet).
+
 ## Teglia-max-Attribut-Bugfix (v4.29.1)
 
 v4.29.0 hatte einen Bug: `js/presets.js` wollte für `teglia` `ballw: 600` setzen, aber
