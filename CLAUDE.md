@@ -139,6 +139,45 @@ Orchestrator übergeben.
 - Erst danach Ursache und Repro-Schritte an den Orchestrator übergeben, damit dieser die
   Diagnose nicht selbst neu herleiten muss.
 
+## Teigwerte und Rahmenparameter nie ohne verlässliche Quellen ändern
+
+**Nutzer-Vorgabe (2026-07-29), gilt dauerhaft für dieses Projekt:** Änderungen an der
+Teigzusammensetzung (Mengen, Bäckerprozente wie Hydration/Salz/Öl/Zucker/Hefe,
+Teiglingsgewicht) oder an Rahmenparametern (Temperaturen, Gärzeiten, Reibungsfaktoren,
+Backzeit-Formeln etc.) werden **nie** ohne Quellen vorgenommen, die belegen, dass der neue
+Wert stimmt. Das gilt unabhängig davon, ob direkt inline gearbeitet wird oder über den
+Orchestrator.
+
+- **"Quelle" heißt nicht irgendein Treffer.** Kein Vertrauen in erkennbar KI-generierte
+  Inhalte, anonyme SEO-Blogtexte ohne erkennbare fachliche Autorschaft, oder einzelne
+  Hobby-Rezepte ohne Bestätigung. Belastbar sind: reale, veröffentlichte und getestete
+  Rezepte (auch von Herstellern/Marken), etablierte Fachseiten mit erkennbarer
+  Back-Expertise, offizielle Regelwerke (z. B. AVPN-Disciplinare), sowie Fachliteratur.
+  Bei Rechner-/Blog-Seiten unklarer Autorenschaft: skeptisch bleiben, nach Möglichkeit
+  gegen eine zweite, unabhängige Quelle prüfen.
+- **Mehrere Quellen einholen, wo möglich, und deren Übereinstimmung explizit machen.**
+  Wenn sich Quellen widersprechen, das offen benennen statt einen Mittelwert zu bilden,
+  der wie Evidenz aussieht, aber keine ist. Wenn zwei Quellen exakt identische Zahlen
+  nennen, prüfen, ob sie tatsächlich unabhängig sind, oder gemeinsamen Ursprungs sein
+  könnten (dann als solches kennzeichnen, nicht als "mehrfach bestätigt" verkaufen).
+- **Mechanismus und konkreten Parameter sauber trennen**, falls nur einer von beiden
+  wirklich belegt ist (Beispiel v4.27.0: dass Temperatur die Gärzeit exponentiell
+  beeinflusst, war durch zwei unabhängige Fachquellen belegt; die konkrete Verdopplungs-
+  distanz von 10 °C war eine bewusst konservative Wahl innerhalb der von den Quellen
+  aufgespannten Bandbreite, keine zitierte Einzelzahl — beides wurde in Commit-Nachricht
+  und Kontextdatei unterschiedlich benannt).
+- **Wenn die Quellenlage nicht ausreicht, um sicher zu sein: nichts ändern.** Ein neuer
+  Ratewert mit Quellenanstrich ist nicht besser als der alte unbelegte Wert. Beispiel: die
+  vier generischen Hefemenge-Schwellen bei Direktführung (`js/schedule.js`) blieben bei der
+  gesamten Preset-Quellenprüfungs-Serie (v4.24.0 bis v4.28.0) bewusst unangetastet, weil
+  sich die dafür gefundenen Quellen um bis zu Faktor 25 widersprachen.
+- **In Commit-Nachricht und Kontextdatei ehrlich formulieren, was die Quellenlage
+  tatsächlich hergibt** — "aus Quellen abgeleitet" nur, wenn das wirklich zutrifft, sonst
+  präziser ("Mechanismus quellenbelegt, Parameter konservativ gewählt", "durch zwei
+  Quellen mit Verdacht auf gemeinsamen Ursprung gestützt" o. ä.). Nie "verifiziert" oder
+  "getestet" in Bezug auf tatsächliches Gärverhalten schreiben — keiner der aus dieser
+  Regel entstandenen Werte wurde je gebacken, die Testsuite prüft nur Rechenwege.
+
 ## Kommunikationsstil
 
 - Keinen Gedankenstrich (Em-Dash) in Texten verwenden, die der Nutzer sieht: weder im Chat
