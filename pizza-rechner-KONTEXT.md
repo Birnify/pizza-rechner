@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-02 · Aktuelle Version: v4.33.2 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-02 · Aktuelle Version: v4.33.3 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -216,7 +216,7 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0, Nachträge v4.33.1/v4.33.2) = aktueller Stand
+## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0, Nachträge v4.33.1/v4.33.2/v4.33.3) = aktueller Stand
 
 Nur Mobil (`css/mobile.css`): das 9-Karten-Gitter (1188 px hoch bei 390 px Breite) wird
 durch eine waagerecht wischbare Flex-Reihe mit CSS-Scroll-Snap ersetzt, Desktop behält
@@ -280,6 +280,22 @@ unangetastet (live geprüft: Titel-Start dort bei allen 9 Karten bereits identis
 — Karten sind dort breit genug, dass kein Titel umbricht, der Bug tritt nicht auf).
 `tests/test.html`: unverändert 1173/1173. `Versionen/v4.33.2 - Fix Kartenlayout
 Swipe-Leiste in einer Flucht/`.
+
+**Nachtrag v4.33.3 (Textfix, Nutzer-Feedback vom echten iPhone):** die 2-Zeilen-Klemmung
+aus v4.33.2 ließ nur 2 der 9 `preset.grid.*.fit`-Beschreibungen (DE) vollständig lesbar,
+die übrigen 7 wurden per `truncatePresetFitWords()` wortweise mit „…" gekürzt — vom Nutzer
+als nicht mehr lesbar bemängelt. Fix ausschließlich in `js/i18n-dict.js`: 7 der 9
+DE-Texte (plus passende neue EN-Entsprechungen) auf das Wesentliche gekürzt (meist die
+handlungsrelevante Mehlstärke-Angabe, sonst Aroma-/Krume-Charakteristik), Mechanismus
+(`truncatePresetFitWords()`, `.preset-card-fit`-CSS, Zeilenlimit) unverändert. Ein vom
+Nutzer vorgeschlagener Text (`napoliBigaKlassisch`: „Kräftige Röstaromen, offene Krume")
+lief bei der Live-Verifikation trotzdem noch über — selbst minimal auf „Röstaromen, offene
+Krume" nachgekürzt (Qualifier „Kräftige" entfernt, Kernaussage erhalten). Per
+Headless-WebKit (`playwright`) verifiziert: alle 9 Karten passen jetzt bei 390 px UND
+320 px, in DE UND EN, vollständig ohne Umbruch/Kürzung/Ellipsis (`scrollHeight` ≤
+`clientHeight`, kein „…" am Textende). `tests/test.html`: unverändert 1173/1173 (reine
+Textänderung, keine Testfälle betroffen). `Versionen/v4.33.3 - Preset-Beschreibungstexte
+gekuerzt/`.
 
 **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Bild-Grundgerüst plus
 bebildertes Preset-Kartengitter (v4.32.0, Nachtrag v4.32.1)" (vorherige Abschnitte
