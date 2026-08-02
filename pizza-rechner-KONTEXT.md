@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-02 · Aktuelle Version: v4.33.1 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-02 · Aktuelle Version: v4.33.2 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -216,7 +216,7 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0, Nachtrag v4.33.1) = aktueller Stand
+## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0, Nachträge v4.33.1/v4.33.2) = aktueller Stand
 
 Nur Mobil (`css/mobile.css`): das 9-Karten-Gitter (1188 px hoch bei 390 px Breite) wird
 durch eine waagerecht wischbare Flex-Reihe mit CSS-Scroll-Snap ersetzt, Desktop behält
@@ -254,6 +254,32 @@ Karten jetzt exakt 237 px hoch bei 390 px UND 320 px Breite (vorher 252 px Zeile
 mit ungleich verteiltem Leerraum); Desktop-Kartenhöhen unverändert (zeilenweise 231/225/240
 px). `tests/test.html`: unverändert 1173/1173 (reine CSS-/DOM-Text-Änderung, keine
 Rechenlogik betroffen). `Versionen/v4.33.1 - Fix ungleiche Kartenhoehen Swipe-Leiste/`.
+
+**Nachtrag v4.33.2 (Bugfix, erneut am echten iPhone-Screenshot diagnostiziert):** v4.33.1
+glich die Kartenhöhen zwar an, aber `justify-content:center` (unverändert aus
+`css/styles.css` übernommen) zentrierte den kompletten Inhaltsblock (Titel + Zeit +
+Beschreibung) innerhalb der festen 150 px — weil der Titel (`.preset-card-name`) je nach
+Textlänge ein- oder zweizeilig ist (live verifiziert: nur „Napoli Klassisch" und „Napoli
+Lange Kaltgare" brechen bei 130 px Kartenbreite um, die übrigen 7 Titel bleiben einzeilig),
+rutschte der ganze Block bei jeder Karte unterschiedlich weit nach oben/unten (Titel-Start
+schwankte gemessen um 25 px zwischen kürzester und längster Karte). Fix in `css/mobile.css`:
+`justify-content:flex-start` (Block beginnt oben) + `.preset-card-name` reserviert per
+`min-height:3em` + `-webkit-line-clamp:2` immer exakt 2 Zeilen (em statt px, skaliert mit
+der eigenen Schriftgröße statt nur mit dem Zoom-Faktor — `accessibility-expert`-Befund zur
+ursprünglichen px-Fassung eingearbeitet), 1-zeilige Titel stehen dadurch oben im
+reservierten Block statt zentriert. Weil der Titelblock jetzt bei allen 9 Karten exakt
+gleich hoch ist, landen Zeit und Beschreibung automatisch auf identischer Höhe (live
+gemessen, Headless-WebKit, 390 **und** 320 px: Titel-/Zeit-/Beschreibungsstart bei allen 9
+Karten exakt 94,3/138,3/158,3 px ab Kartenoberkante). Zusätzlich Nutzerauftrag „kompakter":
+`.preset-card-fit`-Klemmung 4 → 2 Zeilen (nur noch „Schnell" und „Poolish schnell" bleiben
+vollständig lesbar, die übrigen 7 werden per `truncatePresetFitWords()` — unverändert seit
+v4.33.1 — wortweise gekürzt) sowie Body-Padding 12/14 px → 8/12 px und Element-Abstand
+3 px → 2 px. Ergebnis: Body-Höhe fest 150 px → variabel, aber bei allen 9 Karten identisch
+110 px (−27 %), Gesamtkarte (inkl. Bild) 237 px → 197 px (−17 %). Desktop bewusst
+unangetastet (live geprüft: Titel-Start dort bei allen 9 Karten bereits identisch, 122,1 px
+— Karten sind dort breit genug, dass kein Titel umbricht, der Bug tritt nicht auf).
+`tests/test.html`: unverändert 1173/1173. `Versionen/v4.33.2 - Fix Kartenlayout
+Swipe-Leiste in einer Flucht/`.
 
 **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Bild-Grundgerüst plus
 bebildertes Preset-Kartengitter (v4.32.0, Nachtrag v4.32.1)" (vorherige Abschnitte

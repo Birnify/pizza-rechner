@@ -116,22 +116,59 @@ details.card{scroll-margin-top:10px;}
    (css/styles.css, mehrspaltiges CSS-Grid) gleicht Kartenhöhen pro Zeile bereits von selbst
    aus (verifiziert: 3er-Zeilen bei 1280px Breite landen jeweils auf identischer Höhe) und
    bleibt bewusst unangetastet.
-   4 Zeilen Klemmung (line-clamp) gewählt, weil damit 6 von 9 Beschreibungen vollständig
-   lesbar bleiben und nur die 3 längsten (Napoli Klassisch, Teglia, New York Style) gekürzt
-   werden -- bei 3 Zeilen wären es schon 5 von 9 gewesen. Der volle Text bleibt für
-   Screenreader ohnehin im aria-label der Karte erhalten (.preset-card-fit ist
-   aria-hidden="true").
-   150px feste Body-Höhe = per Headless-WebKit gemessener Maximalwert bei 4-Zeilen-Klemmung:
-   12px+12px Padding + 2-zeiliger Name (die beiden einzigen Karten mit Zeilenumbruch im
-   Namen, "Napoli Klassisch"/"Napoli Lange Kaltgare", je 42px) + 3px Gap + Zeit (18px) + 3px
-   Gap + 4-zeilige Beschreibung (60px) = 150px. justify-content:center (unverändert aus
-   css/styles.css übernommen) zentriert kürzeren Inhalt sauber innerhalb dieser festen Höhe,
-   statt Leerraum unten anzusammeln. */
+   BUGFIX (v4.33.2, erneut am echten iPhone-Screenshot diagnostiziert): der v4.33.1-Fix
+   glich zwar die KartenHÖHEN an, aber justify-content:center (unverändert aus
+   css/styles.css übernommen) zentrierte den kompletten Inhaltsblock (Titel + Zeit +
+   Beschreibung) INNERHALB der festen 150px -- weil der Titel (.preset-card-name) je nach
+   Textlänge ein- oder zweizeilig ist (live verifiziert: nur "Napoli Klassisch" und "Napoli
+   Lange Kaltgare" brechen bei 130px Kartenbreite um, die übrigen 7 Titel bleiben
+   einzeilig), rutschte der ganze Block bei jeder Karte unterschiedlich weit nach
+   oben/unten (Titel-Startpunkt schwankte gemessen um 25px zwischen kürzester und
+   längster Karte). Jetzt: justify-content:flex-start (Block beginnt oben, kein Zentrieren
+   mehr) + .preset-card-name reserviert exakt 2 Zeilen (= line-height 1.5 × font-size 14px,
+   dem ererbten body-Wert aus css/styles.css -- 1-zeilige Titel stehen dadurch oben im
+   reservierten Block, der Rest bleibt als Freiraum darunter, NICHT zentriert). Weil dieser
+   Titelblock jetzt bei allen 9 Karten exakt gleich hoch ist, landen Zeit
+   (.preset-card-time) und Beschreibung (.preset-card-fit) automatisch bei jeder Karte auf
+   identischer Höhe -- keine Karten-übergreifende Sonderregel nötig, folgt allein aus dem
+   festen Titelblock + dem normalen Flex-Column-Fluss.
+   accessibility-expert-Befund (v4.33.2, echter Lauf): die erste Fassung reservierte den
+   Titelblock über eine feste height:42px in px -- bei proportionalem Browser-/Pinch-Zoom
+   (WCAG 1.4.4/1.4.10) skalieren px-Werte und Schrift gleichermaßen, das schneidet also
+   nichts ab (gegengerechnet, kein echter Blocker), aber eine erzwungene Mindestschriftgröße
+   mancher Browser (nur Schrift skaliert, umliegende px-Werte nicht) könnte den Titel
+   trotzdem abschneiden. Deshalb jetzt min-height:3em (= 2 × line-height 1.5em, em bezieht
+   sich auf die EIGENE font-size des Elements, skaliert also mit jeder Schriftgrößen-
+   Änderung mit, nicht nur mit dem Zoom-Faktor) + -webkit-line-clamp:2 als Sicherheitsnetz
+   (identisches Muster wie bei .preset-card-fit) statt reinem overflow:hidden -- reserviert
+   weiterhin exakt 2 Zeilen, robuster gegen die genannte Randbedingung. Live nachgemessen:
+   an der Fluchtlinie (Titel-/Zeit-/Beschreibungsstart identisch bei allen 9 Karten) ändert
+   sich dadurch nichts.
+   Beschreibung zusätzlich von 4 auf 2 Zeilen-Klemmung reduziert (Nutzerauftrag "kompakter"):
+   live verifiziert bleiben davon nur noch 2 von 9 Beschreibungen vollständig lesbar
+   ("Schnell", "Poolish schnell" -- beide waren mit 4 Zeilen ohnehin schon ≤2-zeilig), die
+   übrigen 7 werden testweise wortweise gekürzt (truncatePresetFitWords() in js/presets.js,
+   unverändert seit v4.33.1 -- der Mechanismus liest scrollHeight/clientHeight dynamisch
+   und braucht keine Anpassung an die neue Zeilenzahl). Volltext bleibt für Screenreader
+   unverändert im aria-label der Karte (.preset-card-fit ist weiterhin aria-hidden="true").
+   Padding/Gap zusätzlich verschlankt (Nutzerauftrag "gezielt Innenabstände/Zwischenräume
+   verschlanken", nicht nur passiv durch weniger Text): Body-Padding 12px/14px -> 8px/12px,
+   Gap zwischen Titel/Zeit/Beschreibung 3px -> 2px. Ergebnis (Headless-WebKit gemessen):
+   Body-Höhe fest 150px -> variabel, aber bei allen 9 Karten identisch 110px (-27%);
+   Gesamtkarte (inkl. Bild) 237px -> 197px. height:auto statt fester Body-Höhe, weil die
+   Höhe jetzt allein aus dem festen Titelblock + max. 2-zeiliger Beschreibung folgt --
+   keine Karte kann davon abweichen, ein fixer Wert wäre nur eine Wiederholung derselben
+   Rechnung mit Bruch-Risiko bei künftigen Textänderungen. */
 .preset-grid .preset-card-fit{
   display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;
-  -webkit-line-clamp:4;line-clamp:4;
+  -webkit-line-clamp:2;line-clamp:2;
 }
-.preset-grid .preset-card-body{min-height:auto;height:150px;}
+.preset-grid .preset-card-body{min-height:auto;height:auto;justify-content:flex-start;gap:2px;padding:8px 12px;}
+.preset-grid .preset-card-name{
+  display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;
+  -webkit-line-clamp:2;line-clamp:2;
+  min-height:3em;
+}
 
 /* Größere Touch-Ziele */
 .seg button,.pills button{min-height:44px;}
