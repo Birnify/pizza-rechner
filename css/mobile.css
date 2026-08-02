@@ -100,7 +100,6 @@ details.card{scroll-margin-top:10px;}
   display:flex;flex-wrap:nowrap;
   overflow-x:auto;overflow-y:hidden;
   scroll-snap-type:x mandatory;
-  -webkit-overflow-scrolling:touch;
   overscroll-behavior-x:contain;
   padding:6px 6px 8px;margin:-6px -6px 6px;
   scrollbar-width:none;-ms-overflow-style:none;

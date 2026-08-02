@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-02 · Aktuelle Version: v4.33.5 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-02 · Aktuelle Version: v4.33.6 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -216,23 +216,20 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0 bis v4.33.5) = aktueller Stand
+## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0 bis v4.33.6) = aktueller Stand
 
-Nur Mobil (`css/mobile.css`): das 9-Karten-Gitter wird durch eine waagerecht wischbare
-Flex-Reihe mit CSS-Scroll-Snap ersetzt (Desktop-Gitter unverändert), inhaltlich neu
-gefasste `.fit`-Texte (v4.33.3/v4.33.4). **v4.33.5** (reiner Textfix, Nebenbefund aus
-v4.33.4): die 9 `preset.grid.*.ariaLabel`-Texte (`js/i18n-dict.js`, DE+EN) waren bei der
-inhaltlichen Neufassung der sichtbaren `.fit`-Texte nicht mitgezogen worden — Screenreader-
-Nutzer hörten bei mehreren Karten noch die alte Mehlstärke-Angabe (z. B. „braucht starkes
-Mehl (W300+)"), während sehende Nutzer bereits den neuen, mehlfreien Text sahen. Alle 18
-Wortlaute (9 Karten × DE/EN) im etablierten „Name: ~X h Gärzeit, <Eignung>"-Muster durch
-den jeweiligen neuen `.fit`-Text ersetzt, `option.*`-Dropdown-Texte nicht angefasst. Per
-Headless-Edge-DOM-Dump für alle 9 Karten in DE und EN live verifiziert: gerenderte
-`aria-label`-Attribute enthalten jetzt den neuen Text, kein „Mehl"/„W300+"/„W330+" mehr in
-den Preset-Karten. `tests/test.html`: durchgehend unverändert 1173/1173.
+**v4.33.6** (zwei kleine, unabhängige Nebenbefunde aus dem v4.33.0-Review, s. HISTORIE,
+zusammen in einem Zyklus umgesetzt): (1) `-webkit-overflow-scrolling:touch` an
+`.preset-grid` entfernt (seit iOS 13 wirkungslos). (2) Alle 9
+`preset.grid.*.ariaLabel`-Texte (`js/i18n-dict.js`, DE+EN) bekamen ein Positions-Präfix
+„Rezept X von 9: "/„Recipe X of 9: " nach der festen Markup-Reihenfolge (schnell=1 …
+newyorkStyle=9) — geprüft: nur die 9 Preset-Karten bauen `aria-label`-Texte auf diesem
+Weg, eigene gespeicherte Rezepte laufen weiterhin nur über das `#preset`-Dropdown. Per
+Headless-Edge-DOM-Dump (`--lang=de-DE`/`--lang=en-US`) für 3 Karten live verifiziert.
+`tests/test.html`: unverändert 1173/1173.
 
 **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Preset-Karten als
-Swipe-Leiste auf dem Handy (v4.33.0 bis v4.33.4)" (vorherige Abschnitte ebenfalls dort
+Swipe-Leiste auf dem Handy (v4.33.0 bis v4.33.5)" (vorherige Abschnitte ebenfalls dort
 verkettet).
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
@@ -942,17 +939,6 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
-- **Nebenbefunde aus dem v4.33.0-`mobile-optimizer`-/`accessibility-expert`-Review der
-  Swipe-Leiste** (Blocker/Major direkt im selben Zyklus behoben, s. „= aktueller Stand"
-  oben — hier nur die bewusst zurückgestellten Punkte, nach Prüfung durch den
-  Hauptagenten triagiert):
-  - **A11y MAJOR 2:** `aria-label` der Karten könnte zusätzlich die Position benennen
-    („Karte 3 von 9"). Kein WCAG-Kriterium verlangt das, die Gruppe ist bereits per
-    `role="group"`/`aria-label="Rezepte"` benannt — würde jedes Label nur länger machen.
-    Nur als Idee vermerkt, keine akute Notwendigkeit.
-  - **Mobile MINOR 6:** `-webkit-overflow-scrolling:touch` an `.preset-grid` ist seit
-    iOS 13 wirkungslos (natives Momentum-Scrolling ist Standard). Schadet nicht, kann
-    bei Gelegenheit entfernt werden.
 - **Nebenbefunde aus dem v4.32.0-`accessibility-expert`-/`mobile-optimizer`-Review des
   Preset-Kartengitters** (Blocker + MAJOR 2/3 direkt im selben Zyklus behoben, s. „=
   aktueller Stand" oben — hier nur die bewusst zurückgestellten Punkte):

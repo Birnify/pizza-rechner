@@ -1433,7 +1433,6 @@ details.card{scroll-margin-top:10px;}
   display:flex;flex-wrap:nowrap;
   overflow-x:auto;overflow-y:hidden;
   scroll-snap-type:x mandatory;
-  -webkit-overflow-scrolling:touch;
   overscroll-behavior-x:contain;
   padding:6px 6px 8px;margin:-6px -6px 6px;
   scrollbar-width:none;-ms-overflow-style:none;
@@ -1713,7 +1712,7 @@ header{position:relative;text-align:center;}
      daneben, ein zweiter Vorlese-Name wäre redundant (analog zum bestehenden
      .card-icon aria-hidden-Muster). -->
 <header>
-  <h1><img src="assets/logo.svg?v=4.33.5" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
+  <h1><img src="assets/logo.svg?v=4.33.6" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
 </header>
 
 <!-- Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay analog zum
@@ -2662,7 +2661,7 @@ header{position:relative;text-align:center;}
              hier bewusst NICHT mehr dupliziert. -->
         <div class="nav-divider" role="separator"></div>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.33.5</span>
+        <span class="nav-version" id="appVersion">v4.33.6</span>
 
       </div>
     </details>
@@ -3673,7 +3672,14 @@ header{position:relative;text-align:center;}
   // durch 9 gleichrangige Karten, eine je Rezept, mit Bild aus dem Register js/images.js.
   // Jede Karte: Name, Gärzeit, kurze Eignung -- dieselbe Struktur wie zuvor, jetzt für alle
   // Rezepte statt nur 3. aria-label je Karte im etablierten "Name: Zeit Gärzeit, Eignung"-
-  // Muster (s. v3.71.0-Accessibility-Befund unten).
+  // Muster (s. v3.71.0-Accessibility-Befund unten). Seit v4.33.6: "Rezept X von 9: "-Präfix
+  // (Positionsangabe fürs Durchtabben, accessibility-expert-Nice-to-have aus dem v4.33.0-
+  // Review, dort bewusst zurückgestellt) -- die Zahl X ist die feste Reihenfolge im Markup
+  // (pizza-rechner.html/-mobile.html, .preset-grid), nicht laufzeit-berechnet: schnell(1),
+  // napoliKlassisch(2), napoliKalt(3), napoliBigaKlassisch(4), napoliBigaKalt(5),
+  // napoliPoolishSchnell(6), napoliPoolishKalt(7), teglia(8), newyorkStyle(9). Eigene
+  // gespeicherte Rezepte laufen weiterhin nur über das #preset-Dropdown, nicht über
+  // Bild-Karten -- keine weitere Stelle betroffen.
   add('preset.grid.groupLabel', 'Rezepte', 'Recipes');
   // accessibility-expert-Befund (v3.71.0, MAJOR 1, weiterhin gültig): der Accessible Name
   // eines preset-card-Buttons darf nicht die kommentarlose Aneinanderreihung von
@@ -3682,8 +3688,8 @@ header{position:relative;text-align:center;}
   add('preset.grid.schnell.name', 'Schnell', 'Quick');
   add('preset.grid.schnell.time', '4–6 h', '4–6 h');
   add('preset.grid.schnell.fit', 'Locker-luftig für spontane Abende', 'Light and airy for a spontaneous night');
-  add('preset.grid.schnell.ariaLabel', 'Schnell: 4–6 h Gärzeit, locker-luftig für spontane Abende',
-    'Quick: 4–6 h rise time, light and airy for a spontaneous night');
+  add('preset.grid.schnell.ariaLabel', 'Rezept 1 von 9: Schnell, 4–6 h Gärzeit, locker-luftig für spontane Abende',
+    'Recipe 1 of 9: Quick, 4–6 h rise time, light and airy for a spontaneous night');
   // v4.25.1: "(AVPN)" als nackte Konformitätsbehauptung entschärft (das Preset behält
   // 2 % Öl, das AVPN-Disciplinare kennt kein Öl) und die Gärzeit aus der Berechnung
   // nachgemessen (27,62 h → ~28 h statt der bisherigen geschätzten "24 h"). Teigwerte
@@ -3693,8 +3699,8 @@ header{position:relative;text-align:center;}
   add('preset.grid.napoliKlassisch.name', 'Napoli Klassisch', 'Napoli Classic');
   add('preset.grid.napoliKlassisch.time', '~28 h', '~28 h');
   add('preset.grid.napoliKlassisch.fit', 'Ausgewogener AVPN-Klassiker', 'Balanced classic, AVPN inspired');
-  add('preset.grid.napoliKlassisch.ariaLabel', 'Napoli Klassisch: ~28 h Gärzeit, ausgewogener AVPN-Klassiker',
-    'Napoli Classic: ~28 h rise time, balanced classic, AVPN inspired');
+  add('preset.grid.napoliKlassisch.ariaLabel', 'Rezept 2 von 9: Napoli Klassisch, ~28 h Gärzeit, ausgewogener AVPN-Klassiker',
+    'Recipe 2 of 9: Napoli Classic, ~28 h rise time, balanced classic, AVPN inspired');
   // v4.25.1: Gärzeit aus der Berechnung nachgemessen (44,62 h → ~45 h) statt der
   // bisherigen geschätzten "48–72 h" -- die lag sogar UNTER dem versprochenen Minimum. Name
   // seit v4.32.0 "Napoli Lange Kaltgare" statt nur "Lang" (s. Kommentar bei
@@ -3702,38 +3708,38 @@ header{position:relative;text-align:center;}
   add('preset.grid.napoliKalt.name', 'Napoli Lange Kaltgare', 'Napoli Long Cold Rise');
   add('preset.grid.napoliKalt.time', '~44 h', '~44 h');
   add('preset.grid.napoliKalt.fit', 'Komplexes Aroma, lange Kaltgare', 'Complex flavor, long cold rise');
-  add('preset.grid.napoliKalt.ariaLabel', 'Napoli Lange Kaltgare: ~44 h Gärzeit, komplexes Aroma, lange Kaltgare',
-    'Napoli Long Cold Rise: ~44 h rise time, complex flavor, long cold rise');
+  add('preset.grid.napoliKalt.ariaLabel', 'Rezept 3 von 9: Napoli Lange Kaltgare, ~44 h Gärzeit, komplexes Aroma, lange Kaltgare',
+    'Recipe 3 of 9: Napoli Long Cold Rise, ~44 h rise time, complex flavor, long cold rise');
   add('preset.grid.napoliBigaKlassisch.name', 'Biga klassisch', 'Biga classic');
   add('preset.grid.napoliBigaKlassisch.time', '~29 h', '~29 h');
   add('preset.grid.napoliBigaKlassisch.fit', 'Röstaroma, offene Krume', 'Rich toasted flavor, open crumb');
-  add('preset.grid.napoliBigaKlassisch.ariaLabel', 'Biga klassisch: ~29 h Gärzeit, röstaroma, offene Krume',
-    'Biga classic: ~29 h rise time, rich toasted flavor, open crumb');
+  add('preset.grid.napoliBigaKlassisch.ariaLabel', 'Rezept 4 von 9: Biga klassisch, ~29 h Gärzeit, röstaroma, offene Krume',
+    'Recipe 4 of 9: Biga classic, ~29 h rise time, rich toasted flavor, open crumb');
   add('preset.grid.napoliBigaKalt.name', 'Biga kalt', 'Biga cold');
   add('preset.grid.napoliBigaKalt.time', '~60 h', '~60 h');
   add('preset.grid.napoliBigaKalt.fit', 'Kräftigeres Aroma, extra lange Reife', 'Even richer flavor, extra long rise');
-  add('preset.grid.napoliBigaKalt.ariaLabel', 'Biga kalt: ~60 h Gärzeit, kräftigeres Aroma, extra lange Reife',
-    'Biga cold: ~60 h rise time, even richer flavor, extra long rise');
+  add('preset.grid.napoliBigaKalt.ariaLabel', 'Rezept 5 von 9: Biga kalt, ~60 h Gärzeit, kräftigeres Aroma, extra lange Reife',
+    'Recipe 5 of 9: Biga cold, ~60 h rise time, even richer flavor, extra long rise');
   add('preset.grid.napoliPoolishSchnell.name', 'Poolish schnell', 'Poolish fast');
   add('preset.grid.napoliPoolishSchnell.time', '~20 h', '~20 h');
   add('preset.grid.napoliPoolishSchnell.fit', 'Mild im Geschmack, sehr luftige Krume', 'Mild flavor, very airy crumb');
-  add('preset.grid.napoliPoolishSchnell.ariaLabel', 'Poolish schnell: ~20 h Gärzeit, mild im Geschmack, sehr luftige Krume',
-    'Poolish fast: ~20 h rise time, mild flavor, very airy crumb');
+  add('preset.grid.napoliPoolishSchnell.ariaLabel', 'Rezept 6 von 9: Poolish schnell, ~20 h Gärzeit, mild im Geschmack, sehr luftige Krume',
+    'Recipe 6 of 9: Poolish fast, ~20 h rise time, mild flavor, very airy crumb');
   add('preset.grid.napoliPoolishKalt.name', 'Poolish kalt', 'Poolish cold');
   add('preset.grid.napoliPoolishKalt.time', '~34 h', '~34 h');
   add('preset.grid.napoliPoolishKalt.fit', 'Mild, aromatisch durch kalte Reife', 'Mild yet aromatic from a cold rise');
-  add('preset.grid.napoliPoolishKalt.ariaLabel', 'Poolish kalt: ~34 h Gärzeit, mild, aromatisch durch kalte Reife',
-    'Poolish cold: ~34 h rise time, mild yet aromatic from a cold rise');
+  add('preset.grid.napoliPoolishKalt.ariaLabel', 'Rezept 7 von 9: Poolish kalt, ~34 h Gärzeit, mild, aromatisch durch kalte Reife',
+    'Recipe 7 of 9: Poolish cold, ~34 h rise time, mild yet aromatic from a cold rise');
   add('preset.grid.teglia.name', 'Teglia', 'Teglia');
   add('preset.grid.teglia.time', '~76 h', '~76 h');
   add('preset.grid.teglia.fit', 'Knusprig-luftige Blechpizza', 'Crispy, airy pan pizza, Roman style');
-  add('preset.grid.teglia.ariaLabel', 'Teglia: ~76 h Gärzeit, knusprig-luftige Blechpizza',
-    'Teglia: ~76 h rise time, crispy, airy pan pizza, Roman style');
+  add('preset.grid.teglia.ariaLabel', 'Rezept 8 von 9: Teglia, ~76 h Gärzeit, knusprig-luftige Blechpizza',
+    'Recipe 8 of 9: Teglia, ~76 h rise time, crispy, airy pan pizza, Roman style');
   add('preset.grid.newyorkStyle.name', 'New York Style', 'New York Style');
   add('preset.grid.newyorkStyle.time', '~44 h', '~44 h');
   add('preset.grid.newyorkStyle.fit', 'Dünn, knusprig, klassisch faltbar', 'Thin, crispy, classic foldable slice');
-  add('preset.grid.newyorkStyle.ariaLabel', 'New York Style: ~44 h Gärzeit, dünn, knusprig, klassisch faltbar',
-    'New York Style: ~44 h rise time, thin, crispy, classic foldable slice');
+  add('preset.grid.newyorkStyle.ariaLabel', 'Rezept 9 von 9: New York Style, ~44 h Gärzeit, dünn, knusprig, klassisch faltbar',
+    'Recipe 9 of 9: New York Style, ~44 h rise time, thin, crispy, classic foldable slice');
   add('preset.allRecipes', 'Alle Rezepte', 'All recipes');
 
   // -- Card: Einfacher Modus (v3.62.0) -------------------------------------------------

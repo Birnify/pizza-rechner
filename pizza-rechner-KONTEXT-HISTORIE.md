@@ -8,6 +8,24 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0 bis v4.33.5)
+
+Nur Mobil (`css/mobile.css`): das 9-Karten-Gitter wird durch eine waagerecht wischbare
+Flex-Reihe mit CSS-Scroll-Snap ersetzt (Desktop-Gitter unverändert), inhaltlich neu
+gefasste `.fit`-Texte (v4.33.3/v4.33.4). **v4.33.5** (reiner Textfix, Nebenbefund aus
+v4.33.4): die 9 `preset.grid.*.ariaLabel`-Texte (`js/i18n-dict.js`, DE+EN) waren bei der
+inhaltlichen Neufassung der sichtbaren `.fit`-Texte nicht mitgezogen worden — Screenreader-
+Nutzer hörten bei mehreren Karten noch die alte Mehlstärke-Angabe (z. B. „braucht starkes
+Mehl (W300+)"), während sehende Nutzer bereits den neuen, mehlfreien Text sahen. Alle 18
+Wortlaute (9 Karten × DE/EN) im etablierten „Name: ~X h Gärzeit, <Eignung>"-Muster durch
+den jeweiligen neuen `.fit`-Text ersetzt, `option.*`-Dropdown-Texte nicht angefasst. Per
+Headless-Edge-DOM-Dump für alle 9 Karten in DE und EN live verifiziert: gerenderte
+`aria-label`-Attribute enthalten jetzt den neuen Text, kein „Mehl"/„W300+"/„W330+" mehr in
+den Preset-Karten. `tests/test.html`: durchgehend unverändert 1173/1173.
+
+**Volle Details zu v4.33.0-v4.33.4:** Abschnitt „Preset-Karten als Swipe-Leiste auf dem
+Handy (v4.33.0 bis v4.33.4)" direkt im Anschluss unten.
+
 ## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0 bis v4.33.4)
 
 Nur Mobil (`css/mobile.css`): das 9-Karten-Gitter wird durch eine waagerecht wischbare
