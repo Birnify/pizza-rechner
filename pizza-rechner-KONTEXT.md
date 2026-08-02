@@ -216,7 +216,7 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Bild-Grundgerüst plus bebildertes Preset-Kartengitter (v4.32.0) = aktueller Stand
+## Bild-Grundgerüst plus bebildertes Preset-Kartengitter (v4.32.0, Nachtrag v4.32.1) = aktueller Stand
 
 Erster Zyklus aus `BILD-EINBAU-KONZEPT.md`: `assets/_final/` → `assets/img/` (jetzt der
 reguläre App-Bildordner statt der Abnahme-Schleuse), neues Bild-Register `js/images.js`
@@ -262,6 +262,30 @@ pressed`-vs.-`radiogroup`-Muster, A11y MINOR 1 Sync-Robustheit, Mobile MINOR 4
 `srcset`) bewusst nicht in diesem Zyklus behoben, s. Backlog unten. Kontraste,
 Fokus-Ring, Tastaturbedienung und Alt-Text-Abgrenzung vom `accessibility-expert` ohne
 Blocker geprüft.
+
+**Nachtrag v4.32.1 (Bugfix, zwei am iPhone/live gemessene Fehler):**
+1. **Standalone-Build zeigte auf dem iPhone gar keine Kartenbilder.** Ursache: die
+   ursprüngliche Entscheidung "nur eine kleine Handauswahl einbetten" (s. `PZ._IMG_INLINE`
+   oben) hatte die 9 Preset-Kartenbilder nicht in der Auswahl. Entscheidung revidiert (s.
+   `BILD-EINBAU-KONZEPT.md` Abschnitt 4 Punkt 1): der Standalone-Build bettet jetzt **alle**
+   nicht-`pending`-Einträge aus `js/images.js`/`PZ.IMG` ein, `build-mobile-standalone.py`
+   liest die Dateiliste direkt aus dem Register (`inline_image_files()`) statt aus einer
+   zweiten, von Hand gepflegten Liste. 10 Dateien, 428 KB roh, Standalone-Datei jetzt
+   1.271.018 Bytes (~1,24 MB, vorher 1.033.502 Bytes) — Warnschwelle rund 3 MB für künftige
+   Kategorien (19 Schrittbilder, 45 Glossarbilder) in `BILD-EINBAU-KONZEPT.md` festgehalten.
+   Verifiziert per Headless-Playwright gegen eine Kopie der Standalone-Datei ohne
+   danebenliegenden `assets/`-Ordner: alle 9 Kartenbilder und das Fertig-Foto laden korrekt
+   als Data-URI.
+2. **Preset-Kartengitter verfehlte bei 390 px Viewportbreite (iPhone) zwei Spalten um
+   3 px.** `minmax(150px,1fr)` + `gap:10px` braucht 310 px für zwei Spalten, die gemessene
+   Gitterbreite lag bei 307 px — CSS Grid fiel auf eine einzige 307-px-Spalte zurück, neun
+   Karten übereinander ergaben ein 2743 px hohes Gitter. Mindestbreite auf `140px` gesenkt
+   (`css/styles.css`, `.preset-grid`); gemessen jetzt zwei Spalten, Gitterhöhe 1188 px. Bei
+   320 px (unter der bestehenden `max-width:359px`-Schwelle) weiterhin einspaltig, Desktop
+   unverändert vierspaltig — beides gegengeprüft.
+
+`tests/test.html`: unverändert 1173/1173 (keine Berechnungslogik betroffen, nur CSS-Wert
+und Python-Build-Skript). `Versionen/v4.32.1 - Standalone-Bilder plus Kartengitter-Spalten/`.
 
 **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Live-Region-Ansage für
 die Schritt-für-Schritt-Anleitung (v4.31.0)" (vorherige Abschnitte ebenfalls dort verkettet).

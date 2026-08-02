@@ -127,13 +127,32 @@ bis 3 auf, die folgenden nutzen sie nur noch.
 
 ---
 
-## 4. Getroffene Entscheidungen (Nutzer, 2026-08-02)
+## 4. Getroffene Entscheidungen (Nutzer, 2026-08-02, Punkt 1 revidiert am selben Tag)
 
-1. **Standalone-Build fürs iPhone bleibt eine Einzeldatei.** Eingebettet wird nur eine
-   kleine, bewusst ausgewählte Menge Bilder. Alle übrigen fehlen dort absichtlich, und
-   dank des `null`-Verhaltens aus Schicht 2 sieht die App auf dem iPhone trotzdem sauber
-   aus (kein kaputtes Bild, kein Layout-Loch). Welche Bilder zur Auswahl gehören, wird
-   pro Kategorie-Zyklus entschieden.
+1. **Revidiert (2026-08-02, am iPhone durchgefallen):** die ursprüngliche Fassung dieses
+   Punkts sah vor, dass der Standalone-Build nur eine kleine, von Hand ausgewählte Menge
+   Bilder einbettet. In der Praxis führte das dazu, dass die 9 neuen Preset-Kartenbilder
+   NICHT in dieser Auswahl standen -- auf dem iPhone (wo die Standalone-Datei tatsächlich
+   benutzt wird) blieb das komplette Kartengitter bildlos, ausgerechnet das Feature dieses
+   Zyklus. Gemessene Zahlen zum Zeitpunkt der Revision: die 7 verdrahteten Kartendateien in
+   `assets/img/` sind nach dem Verkleinern durch `assets/prepare_web_images.py` zusammen rund
+   176 KB, base64 rund 235 KB. Die Standalone-Datei lag bei 1.033.502 Bytes, mit allen
+   Kartenbildern bei rund 1,27 MB -- unproblematisch.
+
+   **Neue Regel:** der Standalone-Build bettet **alle Bilder ein, die tatsächlich im
+   Register (`js/images.js`, `PZ.IMG`) verdrahtet und nicht `pending` sind.** Das bleibt
+   automatisch klein, weil pro Zyklus nur die Bilder verdrahtet werden, die die jeweilige
+   Kategorie braucht, und `prepare_web_images.py` sie auf Anzeigegröße verkleinert. Nicht
+   verdrahtete Bilder (aktuell über 100 Stück in `assets/img/`) werden weiterhin NICHT
+   eingebettet. `build-mobile-standalone.py` liest dafür `js/images.js` direkt und leitet die
+   Dateiliste daraus ab (`inline_image_files()`) -- es gibt bewusst **keine** zweite, von Hand
+   gepflegte Aufzählung mehr, das war genau die Doppelpflege, die das Register eigentlich
+   abschaffen sollte.
+
+   **Warnschwelle:** wächst die Standalone-Datei durch künftige Zyklen auf über rund 3 MB,
+   muss die Strategie neu bewertet werden. Die kommenden Kategorien bringen 19 Schrittbilder
+   und 45 Glossarbilder mit, die zusammen deutlich mehr Gewicht haben können als die bisher
+   10 eingebetteten Dateien (428 KB roh, Stand v4.32.1).
 2. **Die Preset-Auswahl wird ein bebildertes Kartengitter über alle neun Rezepte.** Das
    heutige Dropdown im aufklappbaren `<details>` wird dadurch ersetzt. Jede Karte trägt
    Bild, Name, Zeitangabe und Eignung. Die bisherige Sonderrolle der drei Empfehlungen

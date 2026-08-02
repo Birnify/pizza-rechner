@@ -693,12 +693,21 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
    dessen change-Event aus, identischer Codepfad wie die weiterhin vorhandene
    Dropdown-Auswahl. auto-fill/minmax statt fixer Spaltenzahl: wächst/schrumpft ohne
    Media-Query auf schmalen Mobil-Viewports, Kartenbreite bleibt im Zielkorridor
-   150-300 px (s. BILD-EINBAU-KONZEPT.md). */
-.preset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px;}
-/* mobile-optimizer-Befund (MINOR 5, v4.32.0): zwei Spalten bei minmax(150px,1fr) wirken
-   unter ~360px Viewportbreite gedrängt (Text bricht ungünstig) -- unterhalb der
-   iPhone-SE-Breite (375px, kleinster verbreiteter Wert) bewusst einspaltig statt zwei
-   sehr schmaler Spalten. */
+   150-300 px (s. BILD-EINBAU-KONZEPT.md).
+   BUGFIX (v4.32.1, am iPhone reproduziert): mit minmax(150px,1fr) und gap:10px braucht
+   eine zweispaltige Zeile 150+10+150=310px Gitterbreite. Bei 390px Viewportbreite (iPhone)
+   ist die tatsächliche Gitterbreite aber nur 307px (Seiten-Padding) -- 3px zu wenig, CSS
+   Grid fällt dann auf eine einzige 307px-Spalte zurück. Neun Karten übereinander ergeben
+   ein 2743px hohes Gitter, mehr als drei Bildschirmhöhen vor der ersten Eingabe. Mit
+   minmax(140px,1fr) braucht eine Zeile nur noch 140+10+140=290px, passt mit Luft auch in
+   schmalere Gitterbreiten -- gemessen (Headless-Browser, 390px Viewport): zwei Spalten,
+   Gitterhöhe 1188px statt 2743px. */
+.preset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px;}
+/* mobile-optimizer-Befund (MINOR 5, v4.32.0): zwei Spalten wirken unter ~360px
+   Viewportbreite gedrängt (Text bricht ungünstig) -- unterhalb der iPhone-SE-Breite
+   (375px, kleinster verbreiteter Wert) bewusst einspaltig statt zwei sehr schmaler
+   Spalten. Bleibt bei 140px-Mindestbreite unverändert richtig: die Schwelle greift schon
+   vor der neuen 140px-Grenze, siehe 320px-Messung oben (weiterhin einspaltig). */
 @media (max-width:359px){.preset-grid{grid-template-columns:1fr;}}
 .preset-card{
   display:flex;flex-direction:column;align-items:stretch;text-align:left;

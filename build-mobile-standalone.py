@@ -30,40 +30,66 @@ html = SRC.read_text(encoding="utf-8")
 # s. js/images.js) -- ein reiner Text-Ersetzen wie frueher (html_text.replace(pfad, data-uri))
 # findet deshalb nichts mehr. Stattdessen wird eine kleine window.PZ._IMG_INLINE = { dateiname:
 # data-uri }-Zuweisung ALS ERSTE ANWEISUNG in denselben <script>-Block wie js/images.js selbst
-# gesetzt (s. inline_js() unten) -- fuer eine bewusst KLEINE Auswahl (Nutzer-Entscheidung: die
-# Einzeldatei bleibt klein, nicht alle ~18 MB Bildbestand werden eingebettet). js/images.js
-# prueft diese Map zur Laufzeit: ein Dateiname, der dort NICHT drin steht, wird wie ein
-# fehlendes Bild behandelt (PZ.img() liefert null) -- kein kaputtes <img>, einfach kein Bild.
-# Aktuelle Auswahl: die 3 Fotos der fertigen Pizza (Anleitungsende) -- identisch zur
-# bisherigen Auswahl vor v4.32.0. Die 9 Preset-Karten-Bilder sind bewusst NICHT dabei, die
-# Karten erscheinen im Standalone-Build also textuell ohne Bild (laut Bild-Register ein
-# gueltiger, vorgesehener Zustand -- "Karte ohne Bild" ist kein Fehlerfall).
+# gesetzt (s. inline_js() unten).
+#
+# BUGFIX (v4.32.1, am iPhone reproduziert): die urspruengliche Entscheidung "nur eine kleine,
+# von Hand ausgewaehlte Menge Bilder einbetten" hatte zur Folge, dass die 9 neuen
+# Preset-Kartenbilder NICHT in der Auswahl standen -- auf dem iPhone (Standalone-Datei ohne
+# Geschwister-Ordner) blieb das gesamte Kartengitter bildlos, ausgerechnet dort, wo der
+# Nutzer die App tatsächlich benutzt. Neue Regel (s. BILD-EINBAU-KONZEPT.md Abschnitt 4):
+# der Standalone-Build bettet ALLE Bilder ein, die im Register (js/images.js, PZ.IMG) nicht
+# als pending markiert sind -- keine von Hand gepflegte zweite Liste mehr, die Auswahl ergibt
+# sich automatisch aus dem, was ohnehin schon verdrahtet ist. Bleibt automatisch klein, weil
+# pro Zyklus nur die Bilder verdrahtet werden, die die jeweilige Kategorie braucht, und
+# assets/prepare_web_images.py sie vorher auf Anzeigegroesse verkleinert (s. Warnschwelle
+# rund 3 MB in BILD-EINBAU-KONZEPT.md, falls kuenftige Kategorien -- Schrittbilder,
+# Glossar -- die Datei deutlich waechst).
 #
 # BUGFIX (v4.32.0, mobile-optimizer-Review, BLOCKER): eine fruehere Fassung haengte die
 # _IMG_INLINE-Zuweisung als EIGENEN <script>-Block ans Ende von <body> an. js/images.js ruft
 # an seinem eigenen Modulende aber SYNCHRON hydrateImages(document) auf (fuer das statische
 # Preset-Kartengitter) -- das lief im Standalone-Build also VOR der _IMG_INLINE-Zuweisung,
 # PZ._IMG_INLINE war zu diesem Zeitpunkt undefined. Folge: js/images.js behandelte ausnahmslos
-# ALLE Bilder (auch die drei eigentlich eingebetteten) als "normalen assets/img/-Pfad" statt
+# ALLE Bilder (auch die eigentlich eingebetteten) als "normalen assets/img/-Pfad" statt
 # als Data-URI -- auf dem iPhone (kein Geschwister-Ordner neben der Einzeldatei) ueberall
-# kaputte Bilder, inklusive der drei absichtlich eingebetteten Fotos. Von Unit-Tests nicht
+# kaputte Bilder, inklusive der absichtlich eingebetteten Fotos. Von Unit-Tests nicht
 # erkennbar, weil der Fehler nur im gebauten Artefakt auftritt, nicht im Quellcode. Fix: die
 # Zuweisung steht jetzt als allererste Anweisung IM SELBEN <script>-Block wie js/images.js
 # selbst (s. inline_js() unten), garantiert also Ausfuehrung vor jedem Code aus der Datei.
-INLINE_IMAGE_FILES = [
-    "pizza-final-neapolitanisch.jpg",
-    "pizza-final-teglia.jpg",
-    "pizza-final-newyork.jpg",
-]
 MIME_BY_EXT = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp", "png": "image/png"}
+
+def inline_image_files():
+    """Liest js/images.js und liefert die Dateinamen aller nicht-pending Registereintraege
+    (PZ.IMG). Ein zweiter, von Hand gepflegter Ort fuer diese Liste ist bewusst vermieden --
+    genau diese Doppelpflege war der Grund, warum die 9 Preset-Kartenbilder in v4.32.0 in der
+    Standalone-Datei fehlten."""
+    js = (ROOT / "js" / "images.js").read_text(encoding="utf-8")
+    block = re.search(r"const IMG = \{(.*?)\n  \};", js, re.S)
+    if not block:
+        raise RuntimeError("js/images.js: IMG-Registerblock nicht gefunden")
+    entries = re.findall(r"\{[^{}]*\}", block.group(1))
+    files = []
+    for entry in entries:
+        if re.search(r"pending\s*:\s*true", entry):
+            continue
+        m = re.search(r"file\s*:\s*'([^']+)'", entry)
+        if m and m.group(1) not in files:
+            files.append(m.group(1))
+    return files
 
 def build_img_inline_snippet():
     entries = []
-    for name in INLINE_IMAGE_FILES:
+    total_bytes = 0
+    files = inline_image_files()
+    for name in files:
         path = ROOT / "assets" / "img" / name
         ext = path.suffix.lstrip(".").lower()
-        b64 = base64.b64encode(path.read_bytes()).decode("ascii")
+        raw = path.read_bytes()
+        total_bytes += len(raw)
+        b64 = base64.b64encode(raw).decode("ascii")
         entries.append("%r: 'data:%s;base64,%s'" % (name, MIME_BY_EXT.get(ext, "image/jpeg"), b64))
+    print(f"Eingebettete Bilder: {len(files)} ({total_bytes / 1024:.0f} KB roh, s. BILD-EINBAU-KONZEPT.md "
+          f"Abschnitt 4 fuer die rund-3-MB-Warnschwelle der Gesamtdatei)")
     return "window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {" + ",".join(entries) + "};\n"
 
 IMG_INLINE_SNIPPET = build_img_inline_snippet()
