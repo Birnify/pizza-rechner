@@ -605,6 +605,29 @@ tests/test.html      964 Prüfungen in 32 Kategorien (Doppelklick, kein Server) 
 README.md            kurzer Einstieg
 ```
 
+## Design-System (wo es liegt, Stand 2026-08-02)
+
+Die maßgebliche Design-System-Beschreibung für Teigmeister liegt im Repo unter
+**`design-import/DESIGNSYSTEM-TEIGMEISTER.md`** (vom Nutzer am 2026-08-02 bereitgestellt,
+vorher auf seinem Desktop). Sie enthält Farbrollen für beide Themes, das Typo-Konzept
+(Bitter + Hanken Grotesk), Radien, Abstände, Komponenten-Spezifikationen, Ton der Texte
+und die bewussten Abweichungen von der laufenden App. **Bei Design-Fragen zuerst dort
+nachsehen**, statt Werte neu zu erfinden.
+
+Im selben Ordner `design-import/` liegt das dazugehörige System als Dateien: `tokens/`
+(Farb-/Typo-/Abstands-Variablen, Quelle des v4.0.0-Imports), `components/` (React-Fassungen
+der App-Bausteine, unter anderem `cards/PresetCard.jsx`, `media/Media.jsx`), `guidelines/`
+(Spezimen-Karten), `ui_kits/teigmeister/` (Bildschirm-Nachbau). Das ist **Referenz, kein
+App-Code** — die App selbst lädt nichts daraus, `css/styles.css` ist die gelebte Fassung.
+
+Derselbe Stand liegt im Claude-Design-Projekt „Design System" des Nutzers
+(Projekt-ID `9e7391e5-3857-4faf-a77c-e3a0b5460e1b`), dorthin am 2026-08-02 mit 44 Dateien
+hochgeschoben. Änderungen am Design-System gehören in beide Richtungen abgeglichen.
+
+**Bild-Einbau:** das Konzept, wie die rund 128 erzeugten Bilder in die App kommen, steht
+in **`BILD-EINBAU-KONZEPT.md`** im Projekt-Root (Ordnerregel, zentrales Bild-Register,
+Markup-Baustein, Reihenfolge der Kategorien, getroffene Entscheidungen).
+
 **Ladereihenfolge** (Abhängigkeiten): dom → state → i18n-dict → i18n → settings → theme → units →
 widgets → flour → calc → schedule → guide → timer → ui → simplemode → print → pdf → presets →
 storage → newrecipe → share → party → glossary → main → nav → onboarding. Jedes Modul ist eine

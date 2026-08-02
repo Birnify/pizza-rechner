@@ -1,0 +1,44 @@
+<!-- @dsCard group="Brand" viewport="700x300" name="Imagery & the Media box" subtitle="Fixed ratios, warm placeholder, decorative by default, missing picture renders nothing" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><link rel="stylesheet" href="../styles.css">
+<style>body{margin:0;padding:22px;background:var(--card);font-family:var(--font-body);color:var(--ink)}
+h3{margin:0 0 4px;font-family:var(--font-body);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.row{display:flex;gap:16px;align-items:flex-start}
+.col{flex:1 1 0;min-width:0}
+.media{display:block;overflow:hidden;border-radius:var(--radius);background:var(--surface-2)}
+.media img{display:block;width:100%;height:100%;object-fit:cover}
+.r32{aspect-ratio:3/2}.r31{aspect-ratio:3/1}.r11{aspect-ratio:1/1}
+.tile{border:1px solid var(--line);border-radius:var(--radius);background:var(--card);overflow:hidden}
+.tile .media{border-radius:0}
+.tile .txt{padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.tile b{font-size:14px}
+.tile .t{font-size:12px;font-weight:600;color:var(--tomato-text)}
+.tile .f{font-size:11.5px;color:var(--muted);line-height:1.3}
+.empty{display:flex;align-items:center;justify-content:center;height:100%;font-size:11.5px;color:var(--muted-soft);text-align:center;padding:8px}
+.note{margin-top:14px;font-size:12px;color:var(--muted);line-height:1.55}
+.note b{color:var(--ink)}</style></head>
+<body>
+<div class="row">
+  <div class="col">
+    <h3>Ratios are fixed</h3>
+    <span class="media r32"><img src="../assets/pizza-final-neapolitanisch.jpg" alt=""></span>
+    <div class="note">3:2 cards and glossary · 4:3 guide steps · 16:9 finished photo · 3:1 glossary banner · 21:9 desktop hero · 4:5 mobile hero · 1:1 textures. The box reserves its ratio before the file arrives, so nothing reflows while scrolling.</div>
+  </div>
+  <div class="col">
+    <h3>Picture on a tile</h3>
+    <div class="tile">
+      <span class="media r32"><img src="../assets/pizza-final-neapolitanisch.jpg" alt=""></span>
+      <span class="txt"><b>Napoli klassisch</b><span class="t">~28 h</span><span class="f">An den AVPN-Standard angelehnt</span></span>
+    </div>
+    <div class="note">The photo is <b>decorative</b>: the text below already names the recipe, so a described photo would say it twice to a screen reader.</div>
+  </div>
+  <div class="col">
+    <h3>No picture yet</h3>
+    <div class="tile">
+      <span class="txt"><b>Napoli Poolish</b><span class="t">~26 h</span><span class="f">Mildes Aroma, luftige Krume</span></span>
+    </div>
+    <div class="note">A missing file renders <b>nothing at all</b>, never an empty frame or a broken icon. A grid mixing pictured and unpictured tiles is the normal state while the set is still being produced.</div>
+  </div>
+</div>
+<div class="note">While a file loads the box shows <b>--surface-2</b>, so the dark theme never flashes a bright hole. Photography is warm-toned and sits on warm surfaces, never on white. Only the header loads eagerly, everything else is lazy.</div>
+</body></html>
