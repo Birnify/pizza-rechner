@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-02 · Aktuelle Version: v4.33.3 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-02 · Aktuelle Version: v4.33.4 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -216,90 +216,23 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0, Nachträge v4.33.1/v4.33.2/v4.33.3) = aktueller Stand
+## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0 bis v4.33.4) = aktueller Stand
 
-Nur Mobil (`css/mobile.css`): das 9-Karten-Gitter (1188 px hoch bei 390 px Breite) wird
-durch eine waagerecht wischbare Flex-Reihe mit CSS-Scroll-Snap ersetzt, Desktop behält
-sein Gitter unverändert (`css/styles.css` nicht angefasst). Gemessen: 266 px statt
-1188 px Leistenhöhe, ~30 % der jeweils nächsten Karte sichtbar angeschnitten. Einmaliger,
-session-gebundener Anstupser (`js/presets.js`, respektiert `prefers-reduced-motion`,
-bricht bei Nutzerinteraktion sofort ab statt eine begonnene Geste zu überschreiben).
-Ausgewählte Karte scrollt beim Laden/Wechsel instant (motion-safe) ins Bild, Tastaturfokus
-holt jede Karte zuverlässig vollständig ins Bild (`scroll-margin-left` statt
-Container-Padding — Scroll-Snap „verbraucht" Container-Padding beim Einrasten vollständig,
-unabhängig von dessen Größe, s. Kommentar in `css/mobile.css`). `mobile-optimizer` +
-`accessibility-expert` ohne Blocker; zwei Major-Befunde direkt behoben
-(`overscroll-behavior-x:contain`, Anstupser-Abbruch bei Interaktion). `tests/test.html`:
-unverändert 1173/1173 (reine CSS-/Interaktionsänderung). `Versionen/v4.33.0 -
-Preset-Karten als Swipe-Leiste/`.
+Nur Mobil (`css/mobile.css`): das 9-Karten-Gitter wird durch eine waagerecht wischbare
+Flex-Reihe mit CSS-Scroll-Snap ersetzt (Desktop-Gitter unverändert). v4.33.1/v4.33.2
+behoben ungleiche Kartenhöhen und ein Zentrierungs-Bug (`css/mobile.css`,
+`.preset-card-fit`-Klemmung jetzt 2 Zeilen, `truncatePresetFitWords()` in `js/presets.js`
+kürzt bei Überlauf wortgrenzen-sicher). v4.33.3 kürzte 7 der 9 `preset.grid.*.fit`-Texte
+(DE+EN), damit sie ohne „…"-Kürzung lesbar sind. **v4.33.4** ersetzte alle 9 Texte
+inhaltlich (Nutzer-Vorgabe): keine Mehlstärke mehr (steht schon in der Mehl-Warnung),
+stattdessen einheitlich Textur/Krume + Aroma/Geschmack; 3 der 9 vom Nutzer vorgegebenen
+Texte mussten dafür selbst minimal weiter gekürzt werden (per Headless-WebKit über alle
+36 Kombinationen aus 9 Karten × DE/EN × 390/320 px verifiziert, kein Umbruch/Kürzung mehr).
+`tests/test.html`: durchgehend unverändert 1173/1173 (reine CSS-/Text-Änderungen).
 
-**Nachtrag v4.33.1 (Bugfix, am echten iPhone reproduziert):** Karten in der Swipe-Leiste
-waren unterschiedlich hoch (kurze Beschreibung z. B. „Poolish kalt" sichtbar kürzer als
-lange z. B. „Teglia", Unterkanten standen zackig nebeneinander) — `.preset-card-fit` hatte
-keine Zeilenbegrenzung, `.preset-card-body` nur eine `min-height`. Fix ausschließlich in
-`css/mobile.css` (Desktop-Gitter glich Zeilenhöhen bereits von selbst aus, verifiziert,
-bewusst unangetastet): `-webkit-line-clamp:4` auf `.preset-card-fit` (zeigt 6 von 9
-Beschreibungen vollständig, kürzt nur die 3 längsten) + feste `height:150px` statt
-`min-height` auf `.preset-card-body` (Maximalwert bei 4-Zeilen-Klemmung inkl. der beiden
-Karten mit zweizeiligem Namen). Reines CSS-`line-clamp` schneidet auf der letzten
-sichtbaren Zeile bekanntlich ohne Rücksicht auf Wortgrenzen ab (live gefunden: „New York
-Style" wurde zu „…mittelstarkes Meh…" statt „…Mehl…") — deshalb zusätzlich ein kleiner,
-wortgrenzen-sicherer Nachschliff in `js/presets.js` (`truncatePresetFitWords()`): kürzt bei
-tatsächlichem Überlauf testweise Wort für Wort und übernimmt die längste Wortfolge, die
-inklusive „…" noch in die geklemmte Höhe passt; läuft einmal beim Laden UND erneut über
-`document.fonts.ready` (Webfont-Nachladen ändert sonst nachträglich die Zeilenumbrüche) UND
-nach jedem Sprachwechsel. Volltext bleibt für Screenreader unverändert im `aria-label` der
-Karte (`.preset-card-fit` ist `aria-hidden="true"`). Per Headless-WebKit gemessen: alle 9
-Karten jetzt exakt 237 px hoch bei 390 px UND 320 px Breite (vorher 252 px Zeilen-Stretch
-mit ungleich verteiltem Leerraum); Desktop-Kartenhöhen unverändert (zeilenweise 231/225/240
-px). `tests/test.html`: unverändert 1173/1173 (reine CSS-/DOM-Text-Änderung, keine
-Rechenlogik betroffen). `Versionen/v4.33.1 - Fix ungleiche Kartenhoehen Swipe-Leiste/`.
-
-**Nachtrag v4.33.2 (Bugfix, erneut am echten iPhone-Screenshot diagnostiziert):** v4.33.1
-glich die Kartenhöhen zwar an, aber `justify-content:center` (unverändert aus
-`css/styles.css` übernommen) zentrierte den kompletten Inhaltsblock (Titel + Zeit +
-Beschreibung) innerhalb der festen 150 px — weil der Titel (`.preset-card-name`) je nach
-Textlänge ein- oder zweizeilig ist (live verifiziert: nur „Napoli Klassisch" und „Napoli
-Lange Kaltgare" brechen bei 130 px Kartenbreite um, die übrigen 7 Titel bleiben einzeilig),
-rutschte der ganze Block bei jeder Karte unterschiedlich weit nach oben/unten (Titel-Start
-schwankte gemessen um 25 px zwischen kürzester und längster Karte). Fix in `css/mobile.css`:
-`justify-content:flex-start` (Block beginnt oben) + `.preset-card-name` reserviert per
-`min-height:3em` + `-webkit-line-clamp:2` immer exakt 2 Zeilen (em statt px, skaliert mit
-der eigenen Schriftgröße statt nur mit dem Zoom-Faktor — `accessibility-expert`-Befund zur
-ursprünglichen px-Fassung eingearbeitet), 1-zeilige Titel stehen dadurch oben im
-reservierten Block statt zentriert. Weil der Titelblock jetzt bei allen 9 Karten exakt
-gleich hoch ist, landen Zeit und Beschreibung automatisch auf identischer Höhe (live
-gemessen, Headless-WebKit, 390 **und** 320 px: Titel-/Zeit-/Beschreibungsstart bei allen 9
-Karten exakt 94,3/138,3/158,3 px ab Kartenoberkante). Zusätzlich Nutzerauftrag „kompakter":
-`.preset-card-fit`-Klemmung 4 → 2 Zeilen (nur noch „Schnell" und „Poolish schnell" bleiben
-vollständig lesbar, die übrigen 7 werden per `truncatePresetFitWords()` — unverändert seit
-v4.33.1 — wortweise gekürzt) sowie Body-Padding 12/14 px → 8/12 px und Element-Abstand
-3 px → 2 px. Ergebnis: Body-Höhe fest 150 px → variabel, aber bei allen 9 Karten identisch
-110 px (−27 %), Gesamtkarte (inkl. Bild) 237 px → 197 px (−17 %). Desktop bewusst
-unangetastet (live geprüft: Titel-Start dort bei allen 9 Karten bereits identisch, 122,1 px
-— Karten sind dort breit genug, dass kein Titel umbricht, der Bug tritt nicht auf).
-`tests/test.html`: unverändert 1173/1173. `Versionen/v4.33.2 - Fix Kartenlayout
-Swipe-Leiste in einer Flucht/`.
-
-**Nachtrag v4.33.3 (Textfix, Nutzer-Feedback vom echten iPhone):** die 2-Zeilen-Klemmung
-aus v4.33.2 ließ nur 2 der 9 `preset.grid.*.fit`-Beschreibungen (DE) vollständig lesbar,
-die übrigen 7 wurden per `truncatePresetFitWords()` wortweise mit „…" gekürzt — vom Nutzer
-als nicht mehr lesbar bemängelt. Fix ausschließlich in `js/i18n-dict.js`: 7 der 9
-DE-Texte (plus passende neue EN-Entsprechungen) auf das Wesentliche gekürzt (meist die
-handlungsrelevante Mehlstärke-Angabe, sonst Aroma-/Krume-Charakteristik), Mechanismus
-(`truncatePresetFitWords()`, `.preset-card-fit`-CSS, Zeilenlimit) unverändert. Ein vom
-Nutzer vorgeschlagener Text (`napoliBigaKlassisch`: „Kräftige Röstaromen, offene Krume")
-lief bei der Live-Verifikation trotzdem noch über — selbst minimal auf „Röstaromen, offene
-Krume" nachgekürzt (Qualifier „Kräftige" entfernt, Kernaussage erhalten). Per
-Headless-WebKit (`playwright`) verifiziert: alle 9 Karten passen jetzt bei 390 px UND
-320 px, in DE UND EN, vollständig ohne Umbruch/Kürzung/Ellipsis (`scrollHeight` ≤
-`clientHeight`, kein „…" am Textende). `tests/test.html`: unverändert 1173/1173 (reine
-Textänderung, keine Testfälle betroffen). `Versionen/v4.33.3 - Preset-Beschreibungstexte
-gekuerzt/`.
-
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Bild-Grundgerüst plus
-bebildertes Preset-Kartengitter (v4.32.0, Nachtrag v4.32.1)" (vorherige Abschnitte
-ebenfalls dort verkettet).
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Preset-Karten als
+Swipe-Leiste auf dem Handy (v4.33.0, Nachträge v4.33.1/v4.33.2/v4.33.3)" (vorherige
+Abschnitte ebenfalls dort verkettet).
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -1008,6 +941,14 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
+- **Nebenbefund aus v4.33.4 (Preset-Fit-Texte inhaltlich neu):** die 9
+  `preset.grid.*.ariaLabel`-Texte (Screenreader-Beschreibung der Karten) wurden bewusst
+  NICHT angefasst — sie enthalten teils noch die alte, jetzt aus den sichtbaren
+  `.fit`-Texten entfernte Mehlstärke-Angabe (z. B. „braucht starkes Mehl (W300+)" bei
+  `napoliKalt`). Das ist kein Fehler (die Mehl-Info bleibt für Screenreader-Nutzer
+  zusätzlich verfügbar), aber sichtbarer und vorgelesener Text weichen jetzt inhaltlich
+  voneinander ab. Falls gewünscht: eigener kleiner Folgezyklus, der die 9 ariaLabel-Texte
+  an die neuen `.fit`-Texte anpasst.
 - **Nebenbefunde aus dem v4.33.0-`mobile-optimizer`-/`accessibility-expert`-Review der
   Swipe-Leiste** (Blocker/Major direkt im selben Zyklus behoben, s. „= aktueller Stand"
   oben — hier nur die bewusst zurückgestellten Punkte, nach Prüfung durch den
