@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-02 · Aktuelle Version: v4.33.6 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-02 · Aktuelle Version: v4.34.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -216,21 +216,24 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0 bis v4.33.6) = aktueller Stand
+## Geblurrte Textur als Seitenhintergrund (v4.34.0) = aktueller Stand
 
-**v4.33.6** (zwei kleine, unabhängige Nebenbefunde aus dem v4.33.0-Review, s. HISTORIE,
-zusammen in einem Zyklus umgesetzt): (1) `-webkit-overflow-scrolling:touch` an
-`.preset-grid` entfernt (seit iOS 13 wirkungslos). (2) Alle 9
-`preset.grid.*.ariaLabel`-Texte (`js/i18n-dict.js`, DE+EN) bekamen ein Positions-Präfix
-„Rezept X von 9: "/„Recipe X of 9: " nach der festen Markup-Reihenfolge (schnell=1 …
-newyorkStyle=9) — geprüft: nur die 9 Preset-Karten bauen `aria-label`-Texte auf diesem
-Weg, eigene gespeicherte Rezepte laufen weiterhin nur über das `#preset`-Dropdown. Per
-Headless-Edge-DOM-Dump (`--lang=de-DE`/`--lang=en-US`) für 3 Karten live verifiziert.
-`tests/test.html`: unverändert 1173/1173.
+Neue Foto-Ebene zwischen dem radialen `--bg-gradient`-Verlauf und der flachen `--bg`-Farbe:
+`assets/img/texture-teighaut.webp` (Hell) / `texture-kruste.webp` (Dunkel), 800x800,
+Gaussian-Blur 120px, `background-size:cover`. Alpha je Theme unterschiedlich (Hell 0,070,
+Dunkel 0,110) und **per Pixel-Worst-Case-Skript gegen WCAG 1.4.11 verifiziert** (3:1 gegen
+`--line`, worst-case 3,168:1 Hell / 3,181:1 Dunkel, von `accessibility-expert` unabhängig
+bestätigt) — bewusst deutlich niedriger als ursprünglich vorgesehen, dadurch ist die Textur
+nur noch dezente Tönung, kein Foto-Eindruck mehr (Design-Trade-off, WCAG hatte Vorrang).
+`js/images.js`: `PZ.imgCssUrl(key)` liefert eine absolute `url("...")` für CSS-Custom-
+Properties (relative Pfade lösen sich in JS-gesetzten Properties sonst falsch relativ zu
+`css/styles.css` statt zur Seite auf). `assets/prepare_web_images.py` bekam optionale
+Blur/Alpha-Parameter je TARGETS-Eintrag sowie einen Dateinamen-Filter (`python
+prepare_web_images.py <datei>`, verhindert versehentliches Mehrfach-Re-Encodieren bereits
+fertiger Dateien). `tests/test.html`: 1173 → **1186**.
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Preset-Karten als
-Swipe-Leiste auf dem Handy (v4.33.0 bis v4.33.5)" (vorherige Abschnitte ebenfalls dort
-verkettet).
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Geblurrte Textur als
+Seitenhintergrund (v4.34.0)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -329,10 +332,11 @@ zuverlässig übers Prompting (Layout/Gradient-Overlay statt Prompt-Anweisung). 
 weiterhin komplett uncommittet (betrifft nur die Erzeugungs-Skripte/Prompts unter `assets/`,
 nicht `assets/img/` selbst, das seit v4.32.0 der reguläre, versionierte App-Bildordner ist).
 
-**Bild-Einbau Zyklus 1 (Grundgerüst + Preset-Kartengitter) ist seit v4.32.0 erledigt** —
-s. „= aktueller Stand" oben und `BILD-EINBAU-KONZEPT.md`. Der Header nutzt weiterhin das
-alte Platzhalter-Foto (`--header-photo` in `css/styles.css`); das ist Zyklus 4 der dortigen
-Reihenfolge-Tabelle, noch nicht begonnen.
+**Bild-Einbau Zyklus 1 (Grundgerüst + Preset-Kartengitter) ist seit v4.32.0 erledigt**,
+**Zyklus 6 (Teil, Seitenhintergrund-Textur) seit v4.34.0** — s. „= aktueller Stand" oben
+und `BILD-EINBAU-KONZEPT.md`. Der Header nutzt weiterhin das alte Platzhalter-Foto
+(`--header-photo` in `css/styles.css`); das ist Zyklus 4 der dortigen Reihenfolge-Tabelle,
+noch nicht begonnen.
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 

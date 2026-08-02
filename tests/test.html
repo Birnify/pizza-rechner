@@ -5725,6 +5725,51 @@
       });
     });
 
+    // --- Seiten-Hintergrund-Textur (v4.34.0, "Geblurrte Textur als Seitenhintergrund"):
+    // bg.texture.light/bg.texture.dark + PZ.imgCssUrl() -- s. css/styles.css --bg-photo-*
+    // und js/images.js für den vollen Mechanismus. ---
+    testCase('bg.texture.light/dark: Registereinträge vorhanden, dekorativ (alt:null), je eigene Datei', {}, () => {
+      const light = PZ.img('bg.texture.light');
+      const dark = PZ.img('bg.texture.dark');
+      return [
+        ['bg.texture.light vorhanden', !!light, true],
+        ['bg.texture.dark vorhanden', !!dark, true],
+        ['bg.texture.light: alt:null (dekorativ)', light && light.alt, null],
+        ['bg.texture.dark: alt:null (dekorativ)', dark && dark.alt, null],
+        ['unterschiedliche Dateien (hell ≠ dunkel)', light && dark && light.file !== dark.file, true],
+        ['bg.texture.light-Datei', light && light.file, 'texture-teighaut.webp'],
+        ['bg.texture.dark-Datei', dark && dark.file, 'texture-kruste.webp'],
+      ];
+    });
+
+    testCase('PZ.imgCssUrl(): liefert absolute url("...") für ein bekanntes Bild, \'\' für unbekannt/pending', {}, () => {
+      const cssLight = PZ.imgCssUrl('bg.texture.light');
+      const cssUnknown = PZ.imgCssUrl('preset.gibt_es_nicht');
+      return [
+        ['beginnt mit url("', cssLight.indexOf('url("') === 0, true],
+        ['enthält assets/img/texture-teighaut.webp', cssLight.includes('assets/img/texture-teighaut.webp'), true],
+        // Der gefundene Bug dieses Zyklus: ein relativer Pfad als Custom-Property-Wert löst
+        // sich sonst relativ zu css/styles.css statt zur Seite auf -- absolute URL (mit
+        // Schema, z. B. http:// oder file://) verhindert das zuverlässig.
+        ['absolute URL (enthält "://")', cssLight.includes('://'), true],
+        ['unbekannter Key liefert \'\'', cssUnknown, ''],
+      ];
+    });
+
+    testCase('PZ.imgCssUrl(): data:-URIs (Standalone-Build) werden unverändert durchgereicht, nicht nochmal absolutiert', {}, () => {
+      const savedInline = PZ._IMG_INLINE;
+      PZ._IMG_INLINE = { 'texture-teighaut.webp': 'data:image/webp;base64,AAAA' };
+      try {
+        const css = PZ.imgCssUrl('bg.texture.light');
+        return [
+          ['enthält die data-URI', css.includes('data:image/webp;base64,AAAA'), true],
+          ['kein assets/img/-Pfad mehr enthalten', css.includes('assets/img/'), false],
+        ];
+      } finally {
+        PZ._IMG_INLINE = savedInline;
+      }
+    });
+
     // --- Sprachwechsel bei Alt-Texten: guide.final.* tragen i18n-Keys, sollten sich bei DE->EN ändern ---
     (function () {
       const savedLang = PZ.getLang ? PZ.getLang() : 'de';

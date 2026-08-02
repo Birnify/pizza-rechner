@@ -45,7 +45,16 @@
     // deshalb ein beschreibender Alt-Text statt alt:null (s. Kommentar in js/guide.js).
     'guide.final.napoli': { file: 'pizza-final-neapolitanisch.jpg', ratio: '16x9', alt: 'guide.step.finalPhoto.alt.napoli', w: 960, h: 540 },
     'guide.final.teglia': { file: 'pizza-final-teglia.jpg', ratio: '16x9', alt: 'guide.step.finalPhoto.alt.teglia', w: 960, h: 540 },
-    'guide.final.newyork': { file: 'pizza-final-newyork.jpg', ratio: '16x9', alt: 'guide.step.finalPhoto.alt.newyork', w: 960, h: 540 }
+    'guide.final.newyork': { file: 'pizza-final-newyork.jpg', ratio: '16x9', alt: 'guide.step.finalPhoto.alt.newyork', w: 960, h: 540 },
+    // Seiten-Hintergrund-Textur (v4.34.0, "Geblurrte Textur als Seitenhintergrund"): kein
+    // <img>, sondern CSS background-image auf dem --bg-gradient-Token (s. Kommentar
+    // "Seiten-Hintergrund-Textur" unten). ratio/alt bleiben trotzdem im Register gepflegt
+    // (konsistente Eintragsform, auch wenn imgHtml() hier nie aufgerufen wird) --
+    // dekorativ (alt:null), da die Textur reine Farbstimmung ist, keine eigene Information
+    // traegt. w/h = tatsaechliche Pixelmasse NACH assets/prepare_web_images.py (800x800,
+    // Gaussian-Blur 120px bereits in der Datei gebacken -- kein CSS filter noetig).
+    'bg.texture.light': { file: 'texture-teighaut.webp', ratio: '1x1', alt: null, w: 800, h: 800 },
+    'bg.texture.dark': { file: 'texture-kruste.webp', ratio: '1x1', alt: null, w: 800, h: 800 }
   };
 
   const DIR = 'assets/img/';
@@ -112,10 +121,49 @@
     });
   }
 
+  // Seiten-Hintergrund-Textur (v4.34.0): css/styles.css braucht den Dateipfad NICHT als
+  // <img>-Tag, sondern als CSS-Wert fuer background-image (Teil des --bg-gradient-Tokens).
+  // PZ.imgCssUrl(key) liefert dafuer ein fertiges url("...")-Fragment (inkl. Standalone-
+  // Build-Aufloesung ueber resolveSrc(), identisch zu imgHtml()) oder '' wenn PZ.img(key)
+  // null ist (unbekannt/pending/im Standalone-Build nicht eingebettet) -- der Aufrufer setzt
+  // das Ergebnis als Wert einer CSS-Custom-Property, css/styles.css haelt den Fallback
+  // (var(--bg-photo-*, none)), falls das Modul aus irgendeinem Grund nicht laeuft (z. B.
+  // in tests/test.html, wo <html> kein document.documentElement-Zugriff auf echtes CSS hat).
+  //
+  // WICHTIG (per Live-Test gefunden, v4.34.0): ein relativer Pfad wie "assets/img/x.webp"
+  // als Wert einer per JS gesetzten CSS-Custom-Property wird NICHT relativ zur Seite
+  // aufgeloest, sondern relativ zu der Stylesheet-Datei, in der der spaetere var(...)-
+  // Gebrauch steht (hier css/styles.css) -- das ergaebe "css/assets/img/x.webp" und damit
+  // ein kaputtes Bild. Deshalb hier IMMER in eine absolute URL ueber document.baseURI
+  // aufloesen (funktioniert identisch unter http(s):// wie unter file://, s. "Warum keine
+  // KI / kein Internet" in pizza-rechner-KONTEXT.md -- die App laeuft auch per
+  // Doppelklick ohne Server). data:-URIs (Standalone-Build) sind bereits absolut und
+  // werden unveraendert durchgereicht.
+  function imgCssUrl(key) {
+    const e = img(key);
+    if (!e) return '';
+    const src = resolveSrc(e.file);
+    const abs = /^data:/.test(src) ? src : new URL(src, document.baseURI).href;
+    return `url("${abs}")`;
+  }
+
+  // Setzt die beiden Rohpfad-Variablen einmalig beim Laden dieses Moduls (Register-Inhalt
+  // aendert sich nie zur Laufzeit) -- welche der beiden CSS tatsaechlich anzeigt, entscheidet
+  // ausschliesslich css/styles.css ueber :root[data-theme="dark"] (identisches Muster wie
+  // --bg-gradient selbst), dieses Modul kennt "hell/dunkel" bewusst nicht.
+  function applyBgPhotoVars() {
+    const root = document.documentElement;
+    if (!root || !root.style) return; // Testumgebungen ohne echtes <html> ueberspringen das
+    root.style.setProperty('--bg-photo-light', imgCssUrl('bg.texture.light'));
+    root.style.setProperty('--bg-photo-dark', imgCssUrl('bg.texture.dark'));
+  }
+
   PZ.IMG = IMG;
   PZ.img = img;
   PZ.imgHtml = imgHtml;
+  PZ.imgCssUrl = imgCssUrl;
   PZ.hydrateImages = hydrateImages;
 
   hydrateImages(document);
+  applyBgPhotoVars();
 })(window);

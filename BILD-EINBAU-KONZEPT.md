@@ -1,6 +1,6 @@
 # Konzept: Bilder in die App einbauen
 
-Stand: 2026-08-02 · App-Stand v4.31.0 · Grundlage für mehrere aufeinander folgende Zyklen
+Stand: 2026-08-02 · App-Stand v4.34.0 · Grundlage für mehrere aufeinander folgende Zyklen
 
 Dieses Dokument legt die **Mechanik** fest, mit der alle 128 Bild-Blöcke aus
 `assets/BILD-PROMPTS.md` in die App kommen. Es entsteht bewusst **vor** dem ersten
@@ -123,7 +123,7 @@ bis 3 auf, die folgenden nutzen sie nur noch.
 | 3 | Glossar (Kategorie-Banner und Artikelbilder) | 46 bis 90 | mittel | offen |
 | 4 | Hero/Header (ersetzt das heutige Einzelfoto) | 1 bis 7 | klein | offen |
 | 5 | Onboarding, Party, Leerzustände | 91 bis 105 | mittel | offen |
-| 6 | Texturen, Marketing, Varianten | 106 bis 128 | offen | offen |
+| 6 | Texturen, Marketing, Varianten | 106 bis 128 | offen | **teilweise (v4.34.0)**, s. Abschnitt 7 |
 
 ---
 
@@ -210,3 +210,15 @@ die Erzeugungs-Skripte (`generate_bilder.py` u. a.) sprechen noch von `assets/_f
 war explizit außerhalb des Auftrags), sollte aber vor der nächsten Erzeugungs-Sitzung
 nachgezogen werden, sonst legt der Workflow versehentlich einen neuen `assets/_final/`-Ordner
 an.
+
+## 7. Zyklus 6 (Teil): Seitenhintergrund-Textur (v4.34.0, erledigt)
+
+Vorgezogener Teilausschnitt aus Zyklus 6 („Texturen, Marketing, Varianten"): kein
+Anzeige-Slot für ein einzelnes Bild, sondern eine zusätzliche Foto-Ebene im bestehenden
+`--bg-gradient`-Token (`css/styles.css`), je Theme ein anderes stark weichgezeichnetes
+Texturbild (`assets/img/texture-teighaut.webp`/`texture-kruste.webp`). Alpha-Werte
+mussten gegenüber der ursprünglichen Absicht deutlich gesenkt werden, um WCAG 1.4.11
+(3:1 gegen `--line`, worst-case über die gesamte Bildfläche) zu erfüllen — Details,
+Testzahlen und Commit-Hash: `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Geblurrte
+Textur als Seitenhintergrund (v4.34.0)". Restliche Blöcke 106-128 (Marketing/Varianten)
+weiterhin offen.

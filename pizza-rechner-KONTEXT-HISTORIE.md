@@ -8,6 +8,115 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Geblurrte Textur als Seitenhintergrund (v4.34.0)
+
+Bild-Einbau-Zyklus 6 (Teil), s. `BILD-EINBAU-KONZEPT.md`: der bisherige rein abstrakte
+`--bg-gradient`-Farbverlauf in `css/styles.css` bekommt eine zusätzliche Foto-Ebene
+dazwischen (zwischen dem radialen Header-Verlauf und der flachen `--bg`-Basisfarbe): ein
+stark weichgezeichnetes Texturbild, je Theme ein anderes (`assets/img/texture-
+teighaut.webp` hell, `texture-kruste.webp` dunkel), über `background-size:cover`
+gestreckt statt gekachelt (ein Kachel-Test zeigte sichtbare Ton-Sprünge an den
+Stoßkanten, da der starke Blur nicht nahtlos umlaufend ist). Bewusst kein
+`background-attachment:fixed` (kein Parallax verlangt, vermeidet iOS-Safari-
+Repaint-Eigenheiten).
+
+**Kritischer Zwischenfall (vor dem eigentlichen Kontrastschritt gefunden):** eine
+vorherige, wegen eines Sitzungs-/Transkript-Abbruchs übernommene Arbeitskopie hatte
+bereits einen ausführlichen CSS-Kommentar samt Kontrastzahlen und einen bereits
+gelaufenen `accessibility-expert`-Review, die beide behaupteten, die Texturdateien seien
+längst mit Blur 120px/800x800/Alpha 0,35 erzeugt worden. Tatsächlich waren
+`assets/img/texture-teighaut.webp`/`-kruste.webp` byte-identisch mit der committeten
+1024x1024-RGB-Rohfassung ohne Alpha-Kanal — `assets/prepare_web_images.py` war nie
+erfolgreich gelaufen, die zuvor berichteten Zahlen bezogen sich auf einen Bildzustand,
+der nie existierte. Beim eigenen Verifizieren (Dateigröße/Maße/Modus per Pillow) sofort
+aufgefallen, alle bisherigen Kontrastwerte verworfen und neu gerechnet.
+
+**Alpha-Ermittlung (WORST CASE, nicht Durchschnitt):** ein eigenes Python/Pillow-Skript
+lädt die ORIGINALEN Quellbilder, wendet Resize(800x800)+GaussianBlur(120)+Alpha an
+(identisch zu `assets/prepare_web_images.py`), komponiert JEDEN der 640.000 Pixel
+einzeln über die jeweilige `--bg`-Flächenfarbe (Standard-WCAG-2.0-Luminanzformel) und
+ermittelt den ungünstigsten Pixel — relevant, weil `background-size:cover` je nach
+Scrollposition/Bildschirmgröße einen anderen Bildausschnitt zeigt. Der ursprünglich
+vorgesehene Wert Alpha 0,35 (für beide Themes identisch) bestand diese Prüfung nie: nur
+~2,10:1 (Hell) / ~1,98:1 (Dunkel) worst-case gegen `--line`, weit unter der 3:1-Schwelle
+aus WCAG 1.4.11. Nach Iteration (inkl. Nachrechnung auf der tatsächlich lossy-
+komprimierten WEBP-Ausgabedatei, nicht nur der Blur-Vorstufe) bewusst UNTERSCHIEDLICHE
+Alpha-Werte je Theme gewählt (die Quellbilder unterscheiden sich in Helligkeit/
+Sättigung, ein gemeinsamer Wert hätte ein Theme unnötig weit unter seinem jeweils
+möglichen Maximum gelassen): Hell (`texture-teighaut.webp`) Alpha 0,070 → Worst-Case
+3,168:1; Dunkel (`texture-kruste.webp`) Alpha 0,110 → Worst-Case 3,181:1. Beide mit
+~0,17-0,18 Marge über der 3:1-Schwelle (deckt kleinere Rendering-/Codec-Abweichungen ab).
+Von `accessibility-expert` unabhängig mit eigenem Pixel-Sampling aus den tatsächlichen
+Dateien nachgerechnet: 3,170:1 (Hell) / 3,185:1 (Dunkel), Abweichung unter 0,5 % (Rausch-
+bereich des Samplings) — keine Blocker/Major-Befunde, Struktur (`imgCssUrl()`,
+`applyBgPhotoVars()`, dekoratives Muster ohne Alt-Text), `@media print`,
+Fokus-Sichtbarkeit, `prefers-reduced-motion`/`-transparency` alle korrekt.
+
+**Sichtbarkeits-Nebenbefund, ehrlich benannt:** bei den WCAG-konformen Alpha-Werten
+(deutlich unter den ursprünglich vorgestellten 0,35) ist die Textur nur noch eine SEHR
+dezente, leicht ungleichmäßige Tönung — jede Wahrnehmung als "Foto" ist verschwunden,
+eine schwache, nicht rein flächige Farbvariation bleibt (Dunkel zeigt noch eine schwache
+kreisförmige Struktur). WCAG-Konformität und die ursprünglich gewünschte deutlichere
+Farbstimmung ließen sich hier NICHT beide voll erreichen; WCAG hatte gemäß Auftrag
+Vorrang. Vom `accessibility-expert` bestätigt als Design-Trade-off, kein A11y-Fehler.
+
+**`js/images.js`:** neue Registereinträge `bg.texture.light`/`bg.texture.dark`
+(dekorativ, `alt:null`, da reine Farbstimmung ohne eigene Information). Neue Funktion
+`PZ.imgCssUrl(key)` liefert ein fertiges `url("...")`-Fragment für CSS-Custom-Properties
+statt eines `<img>`-Tags — **Bug gefunden und gefixt:** ein relativer Pfad als Wert einer
+per JS gesetzten CSS-Custom-Property löst sich NICHT relativ zur Seite auf, sondern
+relativ zur Stylesheet-Datei, in der der spätere `var(...)`-Gebrauch steht
+(`css/styles.css`), das hätte `css/assets/img/...` ergeben. Deshalb immer über
+`document.baseURI` zu einer absoluten URL aufgelöst (funktioniert identisch unter
+http(s):// wie unter file://). `data:`-URIs (Standalone-Build) werden unverändert
+durchgereicht. `applyBgPhotoVars()` setzt `--bg-photo-light`/`--bg-photo-dark` einmalig
+beim Laden des Moduls auf `<html>`.
+
+**`css/styles.css`:** `--bg-photo-light`/`--bg-photo-dark`/`--bg-photo` ergänzen
+`--bg-gradient` als mittlere Ebene (Hell- und Dunkelmodus-Block, identisches
+Aufbau-Muster wie `--bg-gradient` selbst). `@media print{body{background:#fff}}` bleibt
+unverändert und überschreibt die Foto-Ebene beim Drucken vollständig (verifiziert).
+
+**`assets/prepare_web_images.py`:** optionale 5./6. Tupel-Elemente `blur`/`alpha` je
+TARGETS-Eintrag ergänzt (`ImageFilter.GaussianBlur` + `putalpha`). **Nebenbefund beim
+eigenen Testlauf:** das Skript verarbeitet ohne Filter immer ALLE TARGETS auf einmal —
+ein versehentlicher Volllauf hat dabei bereits fertige Karten-/Foto-Dateien aus früheren
+Zyklen ein zweites Mal verlustig re-encodiert (per `git checkout` auf den Commit-Stand
+zurückgesetzt, kein Datenverlust). Behoben mit einem optionalen Dateinamen-Filter über
+`sys.argv` (`python prepare_web_images.py texture-teighaut.webp texture-kruste.webp`),
+damit künftige Einzeldatei-Iterationen (z. B. bei weiteren Alpha-Anpassungen) das nicht
+mehr riskieren.
+
+**Standalone-Build:** beide Texturdateien sind sehr klein (2,7 KB / 2,6 KB, starker Blur
+komprimiert extrem gut) und werden über den bestehenden automatischen
+Register-Mechanismus (`build-mobile-standalone.py`, `inline_image_files()`) mit
+eingebettet, ohne eigene Entscheidung nötig — 12 Bilder gesamt, 433 KB roh, weit unter
+der ~3-MB-Warnschwelle aus `BILD-EINBAU-KONZEPT.md`.
+
+**Tests** (`tests/test.html`, bereits vorbereitet vom übernommenen Arbeitsstand, selbst
+per Headless-Edge-Dump nachgeprüft): neue Sektion für `bg.texture.light`/`bg.texture.dark`
+(Registereinträge, dekorativ, unterschiedliche Dateien) + `PZ.imgCssUrl()` (absolute URL,
+unbekannter Key liefert `''`, `data:`-URIs werden durchgereicht). 1173 → **1186**, alle
+grün (Headless-Edge-Dump).
+
+**Geändert:** `assets/img/texture-teighaut.webp`, `assets/img/texture-kruste.webp`,
+`assets/prepare_web_images.py`, `css/styles.css`, `js/images.js`, `tests/test.html`.
+`?v=` auf `4.34.0` gezogen (Desktop + Mobil). `pizza-rechner-mobile-standalone.html` neu
+gebaut. `Versionen/v4.34.0 - Geblurrte Textur als Seitenhintergrund/` enthält den
+vollständigen Schnappschuss.
+
+## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0 bis v4.33.6)
+
+**v4.33.6** (zwei kleine, unabhängige Nebenbefunde aus dem v4.33.0-Review, s. weiter unten,
+zusammen in einem Zyklus umgesetzt): (1) `-webkit-overflow-scrolling:touch` an
+`.preset-grid` entfernt (seit iOS 13 wirkungslos). (2) Alle 9
+`preset.grid.*.ariaLabel`-Texte (`js/i18n-dict.js`, DE+EN) bekamen ein Positions-Präfix
+„Rezept X von 9: "/„Recipe X of 9: " nach der festen Markup-Reihenfolge (schnell=1 …
+newyorkStyle=9) — geprüft: nur die 9 Preset-Karten bauen `aria-label`-Texte auf diesem
+Weg, eigene gespeicherte Rezepte laufen weiterhin nur über das `#preset`-Dropdown. Per
+Headless-Edge-DOM-Dump (`--lang=de-DE`/`--lang=en-US`) für 3 Karten live verifiziert.
+`tests/test.html`: unverändert 1173/1173.
+
 ## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0 bis v4.33.5)
 
 Nur Mobil (`css/mobile.css`): das 9-Karten-Gitter wird durch eine waagerecht wischbare

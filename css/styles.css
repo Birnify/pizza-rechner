@@ -55,9 +55,71 @@
      (WCAG 1.4.11) -- bewusst in Kauf genommen: die Karte hat zusätzlich Schatten
      (--shadow) UND einen 3px farbigen --tomato-Akzentrand, die Kartengrenze ist also
      nicht ALLEIN auf --line angewiesen; --line selbst nicht angefasst (Scope dieses
-     Zyklus ist ausschließlich das --bg-gradient-Token). */
+     Zyklus ist ausschließlich das --bg-gradient-Token).
+
+     Foto-Ebene (v4.34.0, "Geblurrte Textur als Seitenhintergrund"): --bg-photo-light/
+     --bg-photo-dark liefert js/images.js als fertiges url("assets/img/...")-Fragment
+     (Register-gesteuert, s. Kommentar dort) per JS-gesetzter Custom Property auf
+     <html> -- diese Datei kennt selbst KEINEN Dateinamen, nur die beiden Variablennamen.
+     --bg-photo wählt je Theme die passende Variable (identisches Aufbau-Muster wie
+     --bg-gradient selbst: Hell hier, Dunkel im [data-theme="dark"]-Block unten).
+     "center/cover no-repeat" statt Kacheln: die Quellbilder sind zwar kachelbare
+     Texturen (s. BILD-EINBAU-KONZEPT.md), aber der starke nachträgliche Gaussian-Blur
+     (120px auf 800x800, s. assets/prepare_web_images.py) ist NICHT nahtlos umlaufend --
+     ein Kachel-Test (3x2-Mosaik derselben Datei) zeigte sichtbare Ton-Sprünge an jeder
+     Stoßkante, deshalb bewusst eine einzelne, gestreckte Fläche statt Wiederholung.
+     Bewusst KEIN background-attachment:fixed (kein Parallax verlangt, vermeidet bekannte
+     iOS-Safari-Repaint-Eigenheiten bei fixierten Hintergründen).
+
+     Teiltransparenz statt voll deckendem Foto (Nebenbefund beim Test, nicht vorab
+     geplant): background-size:cover skaliert auf die GESAMTE, oft mehrere
+     Bildschirmhöhen lange Seite (nicht nur den Viewport) -- ein voll deckendes Foto
+     würde an manchen Scrollpositionen dadurch einen stark hineingezoomten, kräftiger
+     wirkenden Bildausschnitt zeigen statt der gewollten dezenten Farbstimmung. Behoben,
+     indem die Dateien selbst (assets/img/texture-*.webp) mit Alpha statt voller
+     Deckkraft erzeugt werden (RGBA-WebP, s. assets/prepare_web_images.py) -- die
+     Foto-Ebene mischt sich dadurch IMMER mit der darunterliegenden var(--bg)-Ebene,
+     unabhängig davon, welcher Bildausschnitt gerade skaliert gezeigt wird. Bewusst keine
+     vh-begrenzte Größe als Alternative gewählt (hätte am unteren Rand einen harten
+     Kontrastsprung zu --bg erzeugt, wo die Textur sonst aufhört).
+
+     Kontrast-Worst-Case (v4.34.0, Pflicht: WCAG 1.4.11 verlangt 3:1 für UI-Komponenten-
+     grenzen wie --line, geprüft am WORST CASE über den GESAMTEN 800x800-Bildbereich,
+     nicht am Durchschnitt -- da background-size:cover je nach Scrollposition/
+     Bildschirmgröße einen anderen Ausschnitt zeigt): ein Python/Pillow-Skript lädt die
+     ORIGINALEN Quellbilder, wendet denselben Resize+Blur(120px)+Alpha-Schritt wie
+     assets/prepare_web_images.py an, komponiert JEDEN der 640.000 Pixel einzeln über die
+     jeweilige --bg-Flächenfarbe (Standard-WCAG-2.0-Luminanzformel) und nimmt den
+     ungünstigsten Pixel. Ein erster Versuch dieses Zyklus mit Alpha 0,35 (identisch für
+     beide Themes) hatte diese Prüfung NIE tatsächlich bestanden -- der Wert war ohne
+     Nachrechnung übernommen worden und lag im Worst Case bei nur ~2,10:1 (Hell) /
+     ~1,98:1 (Dunkel), weit unter der Schwelle. Nach Alpha-Iteration (an der jeweils in
+     die WebP-Datei gebackenen Byte-Alpha, inkl. eines Nachrechnens auf der tatsächlich
+     lossy-komprimierten Ausgabedatei, nicht nur der Blur-Vorstufe) tragen jetzt zwei
+     bewusst UNTERSCHIEDLICHE Alpha-Werte je Theme (die Quellbilder unterscheiden sich in
+     Helligkeit/Sättigung, ein gemeinsamer Wert hätte ein Theme unnötig weit unter dem
+     jeweils möglichen Maximum gelassen): texture-teighaut.webp (Hell) Alpha 0,070 -->
+     Worst-Case-Kontrast 3,168:1; texture-kruste.webp (Dunkel) Alpha 0,110 -->
+     Worst-Case-Kontrast 3,181:1. Beide mit ca. 0,17-0,18 Marge über der 3:1-Schwelle
+     (deckt kleinere Rendering-/Codec-Abweichungen ab, kein exaktes Grenzsitzen).
+     Sichtbarkeits-Nebenbefund (ehrlich benannt, nicht verschwiegen): bei diesen Alpha-
+     Werten (deutlich unter den ursprünglich vorgestellten 0,35) ist die Textur nur noch
+     eine SEHR dezente, leicht ungleichmäßige Tönung -- per gerenderter Kompositions-
+     Vorschau geprüft (kein Live-Browser-Screenshot verfügbar in dieser Session, daher
+     eine mathematisch exakte Offline-Komposition derselben Pixel-/Alpha-/Bg-Werte, die
+     der Browser ebenso berechnen würde): in beiden Themes bleibt eine erkennbare, nicht
+     rein flächige Farbvariation (Dunkel zeigt sogar noch eine schwache kreisförmige
+     Struktur), aber jede Wahrnehmung als "Foto" ist verschwunden -- WCAG-Konformität und
+     die ursprünglich gewünschte deutlichere Farbstimmung ließen sich hier NICHT beide
+     voll erreichen, WCAG hatte gemäß Auftrag Vorrang. Karten haben zusätzlich weiterhin
+     Schatten UND einen 3px farbigen --tomato-Akzentrand, die Kartengrenze ist nicht
+     ALLEIN auf --line angewiesen. */
+  --bg-photo-light: none;
+  --bg-photo-dark: none;
+  --bg-photo: var(--bg-photo-light);
   --bg-gradient:
     radial-gradient(90vw 65vh at 50% -8vh,#dfa796 0%,#eacec2 35%,transparent 68%),
+    var(--bg-photo) center/cover no-repeat,
     var(--bg);
 
   /* --- Text (warmes Dunkelbraun, nie reines #000) --- */
@@ -229,8 +291,12 @@
        Lichtschein-Muster, hier mit dem dunkelmoduseigenen --tomato/--bg gemischt:
        eine warme Glut/Ember-Anmutung von oben statt des kaum sichtbaren
        Card->Bg-Verlaufs). */
+    /* Foto-Ebene: dieselbe Herleitung wie im Hellmodus oben, hier die Dunkel-Variante
+       (--bg-photo-dark, gebackene Kruste statt roher Teighaut). */
+    --bg-photo: var(--bg-photo-dark);
     --bg-gradient:
       radial-gradient(90vw 65vh at 50% -8vh,#642e24 0%,#371f1a 35%,transparent 68%),
+      var(--bg-photo) center/cover no-repeat,
       var(--bg);
     /* Kontrast-Fix, analog zum Hellmodus oben: #3a332e gegen --bg/--card lag nur bei
        ~1,35-1,56:1. Aufgehellt auf #7a6e5f -- rechnerisch ~3,90:1 gegen --bg,
