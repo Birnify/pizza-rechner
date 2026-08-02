@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-02 · Aktuelle Version: v4.33.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-02 · Aktuelle Version: v4.33.1 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -216,7 +216,7 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0) = aktueller Stand
+## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0, Nachtrag v4.33.1) = aktueller Stand
 
 Nur Mobil (`css/mobile.css`): das 9-Karten-Gitter (1188 px hoch bei 390 px Breite) wird
 durch eine waagerecht wischbare Flex-Reihe mit CSS-Scroll-Snap ersetzt, Desktop behält
@@ -232,6 +232,28 @@ unabhängig von dessen Größe, s. Kommentar in `css/mobile.css`). `mobile-optim
 (`overscroll-behavior-x:contain`, Anstupser-Abbruch bei Interaktion). `tests/test.html`:
 unverändert 1173/1173 (reine CSS-/Interaktionsänderung). `Versionen/v4.33.0 -
 Preset-Karten als Swipe-Leiste/`.
+
+**Nachtrag v4.33.1 (Bugfix, am echten iPhone reproduziert):** Karten in der Swipe-Leiste
+waren unterschiedlich hoch (kurze Beschreibung z. B. „Poolish kalt" sichtbar kürzer als
+lange z. B. „Teglia", Unterkanten standen zackig nebeneinander) — `.preset-card-fit` hatte
+keine Zeilenbegrenzung, `.preset-card-body` nur eine `min-height`. Fix ausschließlich in
+`css/mobile.css` (Desktop-Gitter glich Zeilenhöhen bereits von selbst aus, verifiziert,
+bewusst unangetastet): `-webkit-line-clamp:4` auf `.preset-card-fit` (zeigt 6 von 9
+Beschreibungen vollständig, kürzt nur die 3 längsten) + feste `height:150px` statt
+`min-height` auf `.preset-card-body` (Maximalwert bei 4-Zeilen-Klemmung inkl. der beiden
+Karten mit zweizeiligem Namen). Reines CSS-`line-clamp` schneidet auf der letzten
+sichtbaren Zeile bekanntlich ohne Rücksicht auf Wortgrenzen ab (live gefunden: „New York
+Style" wurde zu „…mittelstarkes Meh…" statt „…Mehl…") — deshalb zusätzlich ein kleiner,
+wortgrenzen-sicherer Nachschliff in `js/presets.js` (`truncatePresetFitWords()`): kürzt bei
+tatsächlichem Überlauf testweise Wort für Wort und übernimmt die längste Wortfolge, die
+inklusive „…" noch in die geklemmte Höhe passt; läuft einmal beim Laden UND erneut über
+`document.fonts.ready` (Webfont-Nachladen ändert sonst nachträglich die Zeilenumbrüche) UND
+nach jedem Sprachwechsel. Volltext bleibt für Screenreader unverändert im `aria-label` der
+Karte (`.preset-card-fit` ist `aria-hidden="true"`). Per Headless-WebKit gemessen: alle 9
+Karten jetzt exakt 237 px hoch bei 390 px UND 320 px Breite (vorher 252 px Zeilen-Stretch
+mit ungleich verteiltem Leerraum); Desktop-Kartenhöhen unverändert (zeilenweise 231/225/240
+px). `tests/test.html`: unverändert 1173/1173 (reine CSS-/DOM-Text-Änderung, keine
+Rechenlogik betroffen). `Versionen/v4.33.1 - Fix ungleiche Kartenhoehen Swipe-Leiste/`.
 
 **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Bild-Grundgerüst plus
 bebildertes Preset-Kartengitter (v4.32.0, Nachtrag v4.32.1)" (vorherige Abschnitte

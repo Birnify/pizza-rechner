@@ -1440,6 +1440,31 @@ details.card{scroll-margin-top:10px;}
 }
 .preset-grid::-webkit-scrollbar{display:none;}
 .preset-grid .preset-card{flex:0 0 130px;scroll-snap-align:start;scroll-margin-left:6px;}
+/* BUGFIX (v4.33.1, am echten iPhone reproduziert -- Screenshot zeigte zackige Unterkanten):
+   .preset-card-fit (css/styles.css) hatte keine Zeilenbegrenzung und .preset-card-body nur
+   eine min-height -- die 9 Beschreibungstexte schwanken zwischen 33 und 78 Zeichen und
+   brauchen bei 130px Kartenbreite zwischen 2 und 5 Zeilen, wodurch jede Karte einzeln nach
+   unten wuchs. Fix NUR hier (mobile.css lädt nur auf pizza-rechner-mobile.html, s.
+   Dateistruktur-Kommentar in pizza-rechner-KONTEXT.md) -- das Desktop-Gitter
+   (css/styles.css, mehrspaltiges CSS-Grid) gleicht Kartenhöhen pro Zeile bereits von selbst
+   aus (verifiziert: 3er-Zeilen bei 1280px Breite landen jeweils auf identischer Höhe) und
+   bleibt bewusst unangetastet.
+   4 Zeilen Klemmung (line-clamp) gewählt, weil damit 6 von 9 Beschreibungen vollständig
+   lesbar bleiben und nur die 3 längsten (Napoli Klassisch, Teglia, New York Style) gekürzt
+   werden -- bei 3 Zeilen wären es schon 5 von 9 gewesen. Der volle Text bleibt für
+   Screenreader ohnehin im aria-label der Karte erhalten (.preset-card-fit ist
+   aria-hidden="true").
+   150px feste Body-Höhe = per Headless-WebKit gemessener Maximalwert bei 4-Zeilen-Klemmung:
+   12px+12px Padding + 2-zeiliger Name (die beiden einzigen Karten mit Zeilenumbruch im
+   Namen, "Napoli Klassisch"/"Napoli Lange Kaltgare", je 42px) + 3px Gap + Zeit (18px) + 3px
+   Gap + 4-zeilige Beschreibung (60px) = 150px. justify-content:center (unverändert aus
+   css/styles.css übernommen) zentriert kürzeren Inhalt sauber innerhalb dieser festen Höhe,
+   statt Leerraum unten anzusammeln. */
+.preset-grid .preset-card-fit{
+  display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;
+  -webkit-line-clamp:4;line-clamp:4;
+}
+.preset-grid .preset-card-body{min-height:auto;height:150px;}
 
 /* Größere Touch-Ziele */
 .seg button,.pills button{min-height:44px;}
@@ -1651,7 +1676,7 @@ header{position:relative;text-align:center;}
      daneben, ein zweiter Vorlese-Name wäre redundant (analog zum bestehenden
      .card-icon aria-hidden-Muster). -->
 <header>
-  <h1><img src="assets/logo.svg?v=4.33.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
+  <h1><img src="assets/logo.svg?v=4.33.1" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
 </header>
 
 <!-- Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay analog zum
@@ -2600,7 +2625,7 @@ header{position:relative;text-align:center;}
              hier bewusst NICHT mehr dupliziert. -->
         <div class="nav-divider" role="separator"></div>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.33.0</span>
+        <span class="nav-version" id="appVersion">v4.33.1</span>
 
       </div>
     </details>
@@ -8060,6 +8085,56 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
   }
   $('preset').addEventListener('change', syncPresetCardSelection);
   syncPresetCardSelection();
+
+  // Wortgrenzen-sicheres Kürzen der Preset-Beschreibung (v4.33.1, Bugfix "ungleiche
+  // Kartenhöhen in der Swipe-Leiste"): css/mobile.css begrenzt .preset-card-fit dort per
+  // -webkit-line-clamp auf 4 Zeilen, damit alle Karten der Mobil-Swipe-Leiste gleich hoch
+  // werden (feste Höhe für .preset-card-body). Reines CSS-Line-Clamp hat aber eine bekannte
+  // Lücke: das Auslassungszeichen "…" wird auf der letzten sichtbaren Zeile einfach an die
+  // Zeichenposition gesetzt, an der der verfügbare Platz endet -- OHNE Rücksicht auf
+  // Wortgrenzen. Live per Headless-WebKit verifiziert: bei "New York Style" reichte das
+  // letzte Wort ("Mehl") exakt bis an den Kartenrand, wodurch der Browser mitten im Wort
+  // kürzte ("mittelstarkes Meh…" statt "…Mehl…"). Die anderen 8 Karten waren zufällig
+  // nicht betroffen (ihr jeweils letztes sichtbares Wort ließ genug Platz für "…"), das
+  // Problem ist aber vom exakten Textinhalt abhängig und nicht pauschal durch eine andere
+  // Zeilenzahl zu vermeiden.
+  // Deshalb hier ein kleiner Nachschliff NACH dem CSS-Clamp (der als No-JS-Fallback stehen
+  // bleibt, s. css/mobile.css): läuft nur, wenn .preset-card-fit tatsächlich überläuft
+  // (scrollHeight > clientHeight -- auf dem Desktop-Gitter ohne Line-Clamp immer false,
+  // dort also ein No-op, kein Sonderfall nötig), kürzt dann testweise Wort für Wort und
+  // übernimmt die längste Wortfolge, die inklusive "…" noch in die geklemmte Höhe passt.
+  // Card-Breite ist fix (130px, unabhängig vom Viewport), eine erneute Prüfung bei
+  // Fenster-Resize ist deshalb nicht nötig.
+  // Liest den Ausgangstext IMMER frisch über t(data-i18n) statt über el.textContent --
+  // sonst würde ein zweiter Lauf (Webfont-Nachlade-Fall unten, oder ein Sprachwechsel)
+  // versehentlich einen bereits gekürzten String erneut kürzen.
+  // Zwei Aufruf-Zeitpunkte nötig (Bug beim ersten Versuch live gefunden): direkt beim
+  // Modul-Setup misst scrollHeight/clientHeight noch mit der System-Schriftart, weil die
+  // selbst gehosteten Webfonts (css/fonts.css) asynchron nachladen -- zu dem frühen
+  // Zeitpunkt erschien z. B. "New York Style" fälschlich als "passt bereits komplett" und
+  // blieb unangetastet. Deshalb zusätzlich ein zweiter Lauf über document.fonts.ready.
+  function truncatePresetFitWords() {
+    document.querySelectorAll('.preset-grid .preset-card-fit').forEach(function (el) {
+      const key = el.getAttribute('data-i18n');
+      const full = key ? t(key) : el.textContent;
+      el.textContent = full;
+      if (el.scrollHeight <= el.clientHeight + 1) return; // passt bereits komplett
+      const words = full.split(' ');
+      let fit = '';
+      for (let i = 0; i < words.length; i++) {
+        const candidate = fit ? fit + ' ' + words[i] : words[i];
+        el.textContent = candidate + '…';
+        if (el.scrollHeight > el.clientHeight + 1) break;
+        fit = candidate;
+      }
+      el.textContent = (fit || words[0]) + '…';
+    });
+  }
+  truncatePresetFitWords();
+  if (global.document && document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(truncatePresetFitWords).catch(function () { /* ignorierbar */ });
+  }
+  if (PZ.i18nOnChange) PZ.i18nOnChange(truncatePresetFitWords);
 
   // Einmaliger "Anstupser" für die Swipe-Leiste (v4.33.0): rückt die Kartenreihe beim
   // ersten Anzeigen einmal kurz an und wieder zurück, als Hinweis, dass rechts weitere

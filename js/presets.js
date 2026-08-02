@@ -293,6 +293,56 @@
   $('preset').addEventListener('change', syncPresetCardSelection);
   syncPresetCardSelection();
 
+  // Wortgrenzen-sicheres Kürzen der Preset-Beschreibung (v4.33.1, Bugfix "ungleiche
+  // Kartenhöhen in der Swipe-Leiste"): css/mobile.css begrenzt .preset-card-fit dort per
+  // -webkit-line-clamp auf 4 Zeilen, damit alle Karten der Mobil-Swipe-Leiste gleich hoch
+  // werden (feste Höhe für .preset-card-body). Reines CSS-Line-Clamp hat aber eine bekannte
+  // Lücke: das Auslassungszeichen "…" wird auf der letzten sichtbaren Zeile einfach an die
+  // Zeichenposition gesetzt, an der der verfügbare Platz endet -- OHNE Rücksicht auf
+  // Wortgrenzen. Live per Headless-WebKit verifiziert: bei "New York Style" reichte das
+  // letzte Wort ("Mehl") exakt bis an den Kartenrand, wodurch der Browser mitten im Wort
+  // kürzte ("mittelstarkes Meh…" statt "…Mehl…"). Die anderen 8 Karten waren zufällig
+  // nicht betroffen (ihr jeweils letztes sichtbares Wort ließ genug Platz für "…"), das
+  // Problem ist aber vom exakten Textinhalt abhängig und nicht pauschal durch eine andere
+  // Zeilenzahl zu vermeiden.
+  // Deshalb hier ein kleiner Nachschliff NACH dem CSS-Clamp (der als No-JS-Fallback stehen
+  // bleibt, s. css/mobile.css): läuft nur, wenn .preset-card-fit tatsächlich überläuft
+  // (scrollHeight > clientHeight -- auf dem Desktop-Gitter ohne Line-Clamp immer false,
+  // dort also ein No-op, kein Sonderfall nötig), kürzt dann testweise Wort für Wort und
+  // übernimmt die längste Wortfolge, die inklusive "…" noch in die geklemmte Höhe passt.
+  // Card-Breite ist fix (130px, unabhängig vom Viewport), eine erneute Prüfung bei
+  // Fenster-Resize ist deshalb nicht nötig.
+  // Liest den Ausgangstext IMMER frisch über t(data-i18n) statt über el.textContent --
+  // sonst würde ein zweiter Lauf (Webfont-Nachlade-Fall unten, oder ein Sprachwechsel)
+  // versehentlich einen bereits gekürzten String erneut kürzen.
+  // Zwei Aufruf-Zeitpunkte nötig (Bug beim ersten Versuch live gefunden): direkt beim
+  // Modul-Setup misst scrollHeight/clientHeight noch mit der System-Schriftart, weil die
+  // selbst gehosteten Webfonts (css/fonts.css) asynchron nachladen -- zu dem frühen
+  // Zeitpunkt erschien z. B. "New York Style" fälschlich als "passt bereits komplett" und
+  // blieb unangetastet. Deshalb zusätzlich ein zweiter Lauf über document.fonts.ready.
+  function truncatePresetFitWords() {
+    document.querySelectorAll('.preset-grid .preset-card-fit').forEach(function (el) {
+      const key = el.getAttribute('data-i18n');
+      const full = key ? t(key) : el.textContent;
+      el.textContent = full;
+      if (el.scrollHeight <= el.clientHeight + 1) return; // passt bereits komplett
+      const words = full.split(' ');
+      let fit = '';
+      for (let i = 0; i < words.length; i++) {
+        const candidate = fit ? fit + ' ' + words[i] : words[i];
+        el.textContent = candidate + '…';
+        if (el.scrollHeight > el.clientHeight + 1) break;
+        fit = candidate;
+      }
+      el.textContent = (fit || words[0]) + '…';
+    });
+  }
+  truncatePresetFitWords();
+  if (global.document && document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(truncatePresetFitWords).catch(function () { /* ignorierbar */ });
+  }
+  if (PZ.i18nOnChange) PZ.i18nOnChange(truncatePresetFitWords);
+
   // Einmaliger "Anstupser" für die Swipe-Leiste (v4.33.0): rückt die Kartenreihe beim
   // ersten Anzeigen einmal kurz an und wieder zurück, als Hinweis, dass rechts weitere
   // Karten folgen. Kein dauerhaft laufendes Karussell -- läuft höchstens einmal pro

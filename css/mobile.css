@@ -107,6 +107,31 @@ details.card{scroll-margin-top:10px;}
 }
 .preset-grid::-webkit-scrollbar{display:none;}
 .preset-grid .preset-card{flex:0 0 130px;scroll-snap-align:start;scroll-margin-left:6px;}
+/* BUGFIX (v4.33.1, am echten iPhone reproduziert -- Screenshot zeigte zackige Unterkanten):
+   .preset-card-fit (css/styles.css) hatte keine Zeilenbegrenzung und .preset-card-body nur
+   eine min-height -- die 9 Beschreibungstexte schwanken zwischen 33 und 78 Zeichen und
+   brauchen bei 130px Kartenbreite zwischen 2 und 5 Zeilen, wodurch jede Karte einzeln nach
+   unten wuchs. Fix NUR hier (mobile.css lädt nur auf pizza-rechner-mobile.html, s.
+   Dateistruktur-Kommentar in pizza-rechner-KONTEXT.md) -- das Desktop-Gitter
+   (css/styles.css, mehrspaltiges CSS-Grid) gleicht Kartenhöhen pro Zeile bereits von selbst
+   aus (verifiziert: 3er-Zeilen bei 1280px Breite landen jeweils auf identischer Höhe) und
+   bleibt bewusst unangetastet.
+   4 Zeilen Klemmung (line-clamp) gewählt, weil damit 6 von 9 Beschreibungen vollständig
+   lesbar bleiben und nur die 3 längsten (Napoli Klassisch, Teglia, New York Style) gekürzt
+   werden -- bei 3 Zeilen wären es schon 5 von 9 gewesen. Der volle Text bleibt für
+   Screenreader ohnehin im aria-label der Karte erhalten (.preset-card-fit ist
+   aria-hidden="true").
+   150px feste Body-Höhe = per Headless-WebKit gemessener Maximalwert bei 4-Zeilen-Klemmung:
+   12px+12px Padding + 2-zeiliger Name (die beiden einzigen Karten mit Zeilenumbruch im
+   Namen, "Napoli Klassisch"/"Napoli Lange Kaltgare", je 42px) + 3px Gap + Zeit (18px) + 3px
+   Gap + 4-zeilige Beschreibung (60px) = 150px. justify-content:center (unverändert aus
+   css/styles.css übernommen) zentriert kürzeren Inhalt sauber innerhalb dieser festen Höhe,
+   statt Leerraum unten anzusammeln. */
+.preset-grid .preset-card-fit{
+  display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;
+  -webkit-line-clamp:4;line-clamp:4;
+}
+.preset-grid .preset-card-body{min-height:auto;height:150px;}
 
 /* Größere Touch-Ziele */
 .seg button,.pills button{min-height:44px;}
