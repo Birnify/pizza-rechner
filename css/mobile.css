@@ -61,6 +61,53 @@ details.card .acc-body{padding:0 20px 20px;}
 /* Geöffnete Card beim Auto-Scroll nicht direkt an den Rand kleben lassen */
 details.card{scroll-margin-top:10px;}
 
+/* Preset-Karten als Swipe-Leiste (v4.33.0, Feature "Preset-Karten als Swipe-Leiste auf
+   dem Handy"): das zweispaltige Gitter aus css/styles.css (dort für den Desktop
+   unverändert stehen gelassen -- Abgrenzung: "Der Desktop behält sein Gitter") war bei
+   neun Karten 1188px hoch, mehr als anderthalb Bildschirmhöhen, und schob den
+   eigentlichen Rechner weit nach unten. Auf dem Handy überschreibt diese Regel deshalb
+   nur den Container-Mechanismus (Grid -> horizontal scrollende Flex-Reihe mit
+   Scroll-Snap) -- .preset-card selbst bleibt unverändert (gleiche Breite wie zuvor im
+   Gitter bei 390px Viewportbreite berechnet, s. Kommentar in css/styles.css).
+   scroll-snap-type:x MANDATORY statt "proximity", weil die Feature-Vorgabe explizit
+   "Einrastpunkte, sodass die Karten sauber stehenbleiben" verlangt -- proximity lässt
+   Karten gelegentlich schräg zwischen zwei Stopps stehen.
+   padding+margin heben sich seitlich/oben exakt auf (Puffer fürs Layout bleibt an
+   derselben Stelle wie vorher), reservieren aber 6px Innenabstand: ohne den würde
+   overflow-x:auto den Fokusring der Randkarten abschneiden (outline 2px +
+   outline-offset 2px = 4px, s. .preset-card:focus-visible in css/styles.css) --
+   overflow schneidet outline-offset gern ab, genau der in der Aufgabe genannte Fall.
+   Bottom-Abstand bleibt in Summe 14px wie im ursprünglichen Gitter (padding-bottom 8px +
+   margin-bottom 6px). Scrollbar bewusst versteckt (auf iOS ohnehin nur ein Overlay-
+   Indikator, hier stört eine dauerhaft sichtbare Leiste unter den Karten nur) -- die
+   angeschnittene nächste Karte am rechten Rand ist die eigentliche "hier geht's weiter"
+   Anzeige, kein zusätzlicher Pfeil/Punkte (Abgrenzung: "Keine Punkte- oder
+   Pfeil-Navigation").
+   overscroll-behavior-x:contain (mobile-optimizer-Befund, Nachtrag): ohne das kann
+   waagerechtes Überziehen am linken/rechten Rand der Leiste auf iOS Safari die
+   Zurück-/Vor-Wischgeste des Browsers auslösen -- die Leiste soll ihr eigenes
+   Scroll-Overscroll nicht an die Seite/den Browser durchreichen.
+   BUGFIX (v4.33.0-Nachtrag, per Headless-Edge-Test gefunden): das linke Container-
+   Padding reicht NICHT, um den Fokusring der jeweils linken Karte vor dem Abschneiden
+   zu schützen -- scroll-snap-type:mandatory parkt eine an "start" ausgerichtete Karte
+   grundsätzlich exakt am Rand der Padding-Box (das Padding zählt zum Snapport dazu und
+   wird beim Einrasten vollständig "aufgebraucht", unabhängig von seiner Größe). Die
+   eigentliche Absicherung übernimmt deshalb scroll-margin-left auf .preset-card unten
+   -- das ist der Mechanismus, den Scroll-Snap selbst als Pufferzone respektiert. Gilt
+   für JEDE Karte, nicht nur die erste: sobald eine Karte per Wischen ganz nach links
+   gerückt ist, träfe sie ohne diesen Puffer dasselbe Problem. */
+.preset-grid{
+  display:flex;flex-wrap:nowrap;
+  overflow-x:auto;overflow-y:hidden;
+  scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-x:contain;
+  padding:6px 6px 8px;margin:-6px -6px 6px;
+  scrollbar-width:none;-ms-overflow-style:none;
+}
+.preset-grid::-webkit-scrollbar{display:none;}
+.preset-grid .preset-card{flex:0 0 130px;scroll-snap-align:start;scroll-margin-left:6px;}
+
 /* Größere Touch-Ziele */
 .seg button,.pills button{min-height:44px;}
 input[type=range]{height:10px;}

@@ -8,6 +8,77 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Bild-Grundgerüst plus bebildertes Preset-Kartengitter (v4.32.0, Nachtrag v4.32.1)
+
+Erster Zyklus aus `BILD-EINBAU-KONZEPT.md`: `assets/_final/` → `assets/img/` (jetzt der
+reguläre App-Bildordner statt der Abnahme-Schleuse), neues Bild-Register `js/images.js`
+(`PZ.IMG`/`PZ.img()`/`PZ.imgHtml()`/`PZ.hydrateImages()` — einzige Stelle mit Bild-
+Dateinamen; unbekannter/pending Key liefert `null`/`''`, kein kaputtes Bild), gemeinsamer
+CSS-Baustein `.media`/`.media--<ratio>` (7 Seitenverhältnisse, 2 aktuell genutzt). Die
+Rezept-Auswahl ist jetzt ein 9-Karten-Bildgitter (`.preset-grid`) statt 3 Textkarten +
+Dropdown-Fallback (Dropdown bleibt für „Eigene Rezepte" bestehen); Biga-/Poolish-Varianten
+teilen sich je ein Kartenbild. Behebt nebenbei den aktiven Bug, dass das Foto der fertigen
+Pizza (Anleitungsende) seit einer Ordner-Umbenennung auf drei nicht mehr existierende
+Pfade zeigte — läuft jetzt über dasselbe Register. Bildaufbereitung (`assets/
+prepare_web_images.py`, Pillow) verkleinert die 10 in diesem Zyklus verdrahteten Dateien
+von ~2 MB auf ~428 KB. Standalone-Build bettet weiterhin nur die 3 Fertig-Fotos ein
+(`PZ._IMG_INLINE`), die 9 Kartenbilder fehlen dort bewusst (Karte ohne Bild = gültiger
+Zustand). `tests/test.html`: 1115 → **1173** Prüfungen (neue Sektionen 39+40, u. a. vom
+`test-generator`-Agenten ergänzt — dessen unbestätigten Lauf selbst per Headless-Edge
+nachgeprüft, einen fehlerhaften Eigen-Test [nur ein Tautologie-Check ohne echten
+Fehlerfall] entfernt), alle grün. Regressionsschutz gegen den ursprünglichen Bug (kein
+hartkodierter Bildpfad mehr außerhalb von `js/images.js`) per Grep über den Quellbaum
+verifiziert, dokumentiert in `tests/test.html` Sektion 39 (kein Browser-Test möglich, s.
+dortige Begründung).
+
+**`mobile-optimizer`-Review fand einen BLOCKER, selbst nachvollzogen und behoben:** der
+Standalone-Build setzte `window.PZ._IMG_INLINE` als eigenen `<script>`-Block ganz am Ende
+von `<body>` — `js/images.js` ruft an seinem Modulende aber synchron `hydrateImages
+(document)` auf, das lief also VOR der Zuweisung, `_IMG_INLINE` war zu dem Zeitpunkt
+`undefined`. Ergebnis: auf einem iPhone ohne danebenliegenden `assets/`-Ordner wären ALLE
+Bilder kaputt gewesen, auch die drei eigentlich eingebetteten Fotos — genau der Zustand,
+den das Register verhindern soll, von der Testsuite nicht erkennbar (tritt nur im
+gebauten Artefakt auf). Fix (`build-mobile-standalone.py`): die `_IMG_INLINE`-Zuweisung
+steht jetzt als allererste Anweisung IM SELBEN `<script>`-Block wie `js/images.js` selbst.
+Verifiziert gegen eine Kopie der Standalone-Datei OHNE danebenliegenden `assets/`-Ordner
+(Headless-Edge-CDP): die 9 Kartenbilder fehlen dort jetzt sauber (kein kaputtes Bild), die
+3 Fertig-Fotos laden weiterhin korrekt als Data-URI.
+
+Weitere Befunde direkt behoben: MAJOR 2 (Kartengitter steht oberhalb der Falz, jetzt
+`data-img-eager` statt `loading="lazy"`), MAJOR 3 (Karten ohne Bild — aktuell keine der 9,
+aber künftige teilweise befüllte Kategorien — behalten dank `min-height` auf
+`.preset-card-body` ein ordentliches Touch-Ziel, ohne den „kein Bild statt leerer
+Rahmen"-Grundsatz zu verletzen), MINOR 5 (`.preset-grid` unter 360 px einspaltig statt
+zwei gedrängter Spalten). Drei weitere Nebenbefunde (A11y MAJOR 1 app-weites `aria-
+pressed`-vs.-`radiogroup`-Muster, A11y MINOR 1 Sync-Robustheit, Mobile MINOR 4
+`srcset`) bewusst nicht in diesem Zyklus behoben, s. Backlog in `pizza-rechner-KONTEXT.md`.
+Kontraste, Fokus-Ring, Tastaturbedienung und Alt-Text-Abgrenzung vom `accessibility-expert`
+ohne Blocker geprüft.
+
+**Nachtrag v4.32.1 (Bugfix, zwei am iPhone/live gemessene Fehler):**
+1. **Standalone-Build zeigte auf dem iPhone gar keine Kartenbilder.** Ursache: die
+   ursprüngliche Entscheidung "nur eine kleine Handauswahl einbetten" (s. `PZ._IMG_INLINE`
+   oben) hatte die 9 Preset-Kartenbilder nicht in der Auswahl. Entscheidung revidiert (s.
+   `BILD-EINBAU-KONZEPT.md` Abschnitt 4 Punkt 1): der Standalone-Build bettet jetzt **alle**
+   nicht-`pending`-Einträge aus `js/images.js`/`PZ.IMG` ein, `build-mobile-standalone.py`
+   liest die Dateiliste direkt aus dem Register (`inline_image_files()`) statt aus einer
+   zweiten, von Hand gepflegten Liste. 10 Dateien, 428 KB roh, Standalone-Datei jetzt
+   1.271.018 Bytes (~1,24 MB, vorher 1.033.502 Bytes) — Warnschwelle rund 3 MB für künftige
+   Kategorien (19 Schrittbilder, 45 Glossarbilder) in `BILD-EINBAU-KONZEPT.md` festgehalten.
+   Verifiziert per Headless-Playwright gegen eine Kopie der Standalone-Datei ohne
+   danebenliegenden `assets/`-Ordner: alle 9 Kartenbilder und das Fertig-Foto laden korrekt
+   als Data-URI.
+2. **Preset-Kartengitter verfehlte bei 390 px Viewportbreite (iPhone) zwei Spalten um
+   3 px.** `minmax(150px,1fr)` + `gap:10px` braucht 310 px für zwei Spalten, die gemessene
+   Gitterbreite lag bei 307 px — CSS Grid fiel auf eine einzige 307-px-Spalte zurück, neun
+   Karten übereinander ergaben ein 2743 px hohes Gitter. Mindestbreite auf `140px` gesenkt
+   (`css/styles.css`, `.preset-grid`); gemessen jetzt zwei Spalten, Gitterhöhe 1188 px. Bei
+   320 px (unter der bestehenden `max-width:359px`-Schwelle) weiterhin einspaltig, Desktop
+   unverändert vierspaltig — beides gegengeprüft.
+
+`tests/test.html`: unverändert 1173/1173 (keine Berechnungslogik betroffen, nur CSS-Wert
+und Python-Build-Skript). `Versionen/v4.32.1 - Standalone-Bilder plus Kartengitter-Spalten/`.
+
 ## Live-Region-Ansage für die Schritt-für-Schritt-Anleitung (v4.31.0)
 
 Behebt den MINOR-Nebenbefund aus dem v4.27.0-`accessibility-expert`-Review (WCAG 4.1.3):

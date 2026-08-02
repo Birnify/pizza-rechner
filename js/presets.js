@@ -228,11 +228,41 @@
   // bebildertes Preset-Kartengitter"): die Karten setzen #preset direkt und lösen dessen
   // 'change'-Event aus -- identischer Codepfad wie eine Dropdown-Auswahl
   // (handlePresetChange()/applyPreset() oben), keine eigene Logik hier.
-  document.querySelectorAll('.preset-card[data-preset]').forEach(b => b.addEventListener('click', () => {
-    const sel = $('preset');
-    sel.value = b.dataset.preset;
-    sel.dispatchEvent(new Event('change'));
-  }));
+  document.querySelectorAll('.preset-card[data-preset]').forEach(b => {
+    b.addEventListener('click', () => {
+      const sel = $('preset');
+      sel.value = b.dataset.preset;
+      sel.dispatchEvent(new Event('change'));
+    });
+    // Tastaturbedienung der Swipe-Leiste (v4.33.0): der Browser scrollt eine per Tab
+    // fokussierte Karte zwar von selbst ins Bild, aber per Headless-Test gefunden --
+    // mit scroll-snap-type:mandatory reicht das bei JEDER zweiten Karte (der jeweils
+    // rechten von zwei fast passenden Karten) nicht aus, weil eine nur teilweise
+    // sichtbare Zwischenposition kein gültiger Einrastpunkt ist -- die Karte blieb dann
+    // zu 98 % abgeschnitten stehen, obwohl sie den Fokus hatte. Expliziter
+    // scrollIntoView holt sie zuverlässig vollständig ins Bild (auf dem Desktop-Gitter
+    // ohne horizontalen Überlauf ein No-op).
+    b.addEventListener('focus', () => b.scrollIntoView({ inline: 'nearest', block: 'nearest' }));
+  });
+
+  // Anstupser bricht bei Nutzerinteraktion ab (Nachtrag v4.33.0, mobile-optimizer-/
+  // accessibility-expert-Befund): wer direkt nach dem Laden schon selbst wischt, tippt
+  // oder eine Karte per Tastatur fokussiert, hat die Leiste bereits gefunden -- der
+  // Anstupser darf dann nicht mehr über eine bereits begonnene Geste hinweg die
+  // Scroll-Position verändern. 'pointerdown'/'touchstart'/'wheel' auf der Leiste (deckt
+  // Kartenklicks mit ab, da Events von den Kind-Buttons hochbubbeln) sowie 'focus' auf
+  // jeder Karte zählen als Interaktion. Bewusst NICHT das 'scroll'-Event: der Anstupser
+  // scrollt den Container ja selbst, das würde ihn augenblicklich wieder selbst
+  // abbrechen. Die Listener werden sofort beim Modul-Setup registriert (nicht erst beim
+  // Start des Anstupsers), damit auch eine sehr frühe Geste vor dem 'load'-Event zählt.
+  let presetGridInteracted = false;
+  (function watchPresetGridInteraction() {
+    const grid = document.querySelector('.preset-grid');
+    if (!grid) return;
+    const mark = () => { presetGridInteracted = true; };
+    ['pointerdown', 'touchstart', 'wheel'].forEach(ev => grid.addEventListener(ev, mark, { passive: true, once: true }));
+    grid.querySelectorAll('.preset-card').forEach(b => b.addEventListener('focus', mark, { once: true }));
+  })();
 
   // Ausgewählte Karte sichtbar/vorlesbar machen (v4.32.0, aria-pressed statt einer rein
   // optischen Markierung -- Vorgabe aus design-import/components/cards/PresetCard.jsx):
@@ -244,12 +274,94 @@
   function syncPresetCardSelection() {
     const sel = $('preset');
     const key = sel ? sel.value : '';
+    let activeBtn = null;
     document.querySelectorAll('.preset-card[data-preset]').forEach(b => {
-      b.setAttribute('aria-pressed', b.dataset.preset === key ? 'true' : 'false');
+      const isActive = b.dataset.preset === key;
+      b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      if (isActive) activeBtn = b;
     });
+    // Ausgewählte Karte ins Bild holen (v4.33.0, Feature "Preset-Karten als Swipe-Leiste
+    // auf dem Handy"): scrollIntoView OHNE 'behavior' scrollt instant, keine Animation --
+    // respektiert prefers-reduced-motion automatisch, weil schlicht nichts animiert wird.
+    // 'nearest' auf beiden Achsen scrollt nur, wenn die Karte nicht schon sichtbar ist
+    // (z. B. kein Sprung direkt nach einem Klick auf genau diese Karte) und verhindert,
+    // dass ein 'block'-Sprung die ganze Seite vertikal verschiebt, obwohl die Karte
+    // längst im sichtbaren Bereich liegt. Auf dem Desktop-Gitter (kein horizontaler
+    // Überlauf) ist der Aufruf ein No-op.
+    if (activeBtn) activeBtn.scrollIntoView({ inline: 'nearest', block: 'nearest' });
   }
   $('preset').addEventListener('change', syncPresetCardSelection);
   syncPresetCardSelection();
+
+  // Einmaliger "Anstupser" für die Swipe-Leiste (v4.33.0): rückt die Kartenreihe beim
+  // ersten Anzeigen einmal kurz an und wieder zurück, als Hinweis, dass rechts weitere
+  // Karten folgen. Kein dauerhaft laufendes Karussell -- läuft höchstens einmal pro
+  // Sitzung, danach bewegt sich die Leiste nie wieder von selbst (bewusste Vorgabe, s.
+  // Feature-Definition: "Karten, die sich beim Lesen unter dem Finger wegbewegen" wurde
+  // als Bedenken genannt und abgelehnt).
+  // sessionStorage statt localStorage: eine dauerhafte (Tage/Wochen überdauernde)
+  // Unterdrückung würde den Hinweis auch neuen Sitzungen vorenthalten, obwohl die
+  // meisten Nutzer die App nicht täglich öffnen und bis dahin schlicht wieder vergessen
+  // haben können, dass die Reihe wischbar ist -- "einmal pro Sitzung" ist der bessere
+  // Kompromiss zwischen "nicht nervig" und "hilft beim Wiederentdecken".
+  // Läuft nur, wenn tatsächlich horizontal übergelaufen wird (grid.scrollWidth >
+  // grid.clientWidth) -- auf dem Desktop-Gitter ist das nie der Fall, ein eigener
+  // Viewport-/Media-Check ist deshalb nicht nötig.
+  function nudgePresetGrid() {
+    const grid = document.querySelector('.preset-grid');
+    if (!grid) return;
+    if (presetGridInteracted) return; // Nutzer war schneller als der Anstupser
+    let alreadyShown = false;
+    try { alreadyShown = sessionStorage.getItem('pzPresetSwipeHint') === '1'; }
+    catch (e) { /* z. B. privater Modus ohne sessionStorage -- dann einfach zulassen */ }
+    if (alreadyShown) return;
+    try { sessionStorage.setItem('pzPresetSwipeHint', '1'); } catch (e) { /* ignorieren */ }
+    // prefers-reduced-motion ist PFLICHT, nicht optional (Feature-Vorgabe): wer
+    // reduzierte Bewegung eingestellt hat, bekommt den Anstupser gar nicht erst.
+    if (global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    requestAnimationFrame(() => {
+      if (presetGridInteracted) return; // seit dem Scheduling doch noch selbst gegriffen
+      const maxScroll = grid.scrollWidth - grid.clientWidth;
+      if (maxScroll <= 1) return; // kein Überlauf -- Desktop-Gitter oder alles passt bereits
+      const start = grid.scrollLeft;
+      const target = Math.min(start + 48, maxScroll);
+      if (target <= start) return; // schon ganz am rechten Rand, kein Platz zum Anstupsen
+      // scroll-snap-type kurz aushebeln: sonst zieht der Browser den Zwischenstand des
+      // Anstupsers (bewusst NICHT kartenweise ausgerichtet) sofort auf den nächsten
+      // Einrastpunkt statt der gewollten kurzen Anschub-Bewegung.
+      const prevSnap = grid.style.scrollSnapType;
+      grid.style.scrollSnapType = 'none';
+      // Erzwungener Reflow (per Headless-Edge-Test gefunden): ohne den lesenden Zugriff
+      // auf offsetWidth zwischen dem Style-Wechsel und scrollTo() sieht scrollTo() noch
+      // die alte (mandatory) Snap-Einstellung und klemmt das Ziel sofort wieder auf die
+      // Startposition zurück -- der Anstupser bewegte sich dann sichtbar gar nicht.
+      void grid.offsetWidth;
+      grid.scrollTo({ left: target, behavior: 'smooth' });
+      setTimeout(() => {
+        // Während der Hinbewegung selbst gegriffen (v4.33.0-Nachtrag): NICHT mehr
+        // zurückscrollen, das würde der eigenen Geste die Position unter dem Finger
+        // wegziehen -- nur den Snap-Zustand wieder freigeben, den Rest übernimmt der
+        // Nutzer selbst.
+        if (presetGridInteracted) { grid.style.scrollSnapType = prevSnap; return; }
+        grid.scrollTo({ left: start, behavior: 'smooth' });
+        setTimeout(() => { grid.style.scrollSnapType = prevSnap; }, 450);
+      }, 450);
+    });
+  }
+  // Der Anstupser startet erst nach dem 'load'-Event (+ zwei rAF-Ticks, für einen
+  // wirklich abgeschlossenen Layout-/Paint-Durchlauf), NICHT direkt beim Modul-Setup:
+  // per Headless-Test gefunden (verifiziert gegen echtes Edge/Chromium), dass
+  // scrollTo({behavior:'smooth'}) mitten in der noch laufenden Initial-Ladephase
+  // (Bilder laden lazy nach, Layout verschiebt sich noch) von einem folgenden Reflow
+  // unterbrochen und dabei sofort wieder auf die Startposition zurückgeklemmt wird --
+  // der Anstupser bewegte sich dann sichtbar überhaupt nicht. Nach 'load' ist das
+  // Layout stabil genug, damit die Animation zuverlässig läuft.
+  function scheduleNudge() {
+    const runSoon = () => requestAnimationFrame(() => requestAnimationFrame(nudgePresetGrid));
+    if (document.readyState === 'complete') runSoon();
+    else global.addEventListener('load', runSoon, { once: true });
+  }
+  scheduleNudge();
 
   // Manuelle Änderung an einem Regler → #preset-Auswahl zurücksetzen (kein Preset/eigenes
   // Rezept mehr aktiv). Seit v3.22.0 gibt es dafür keine "Eigene Einstellung"-Option mehr —
