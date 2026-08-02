@@ -667,19 +667,59 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 }
 .selectbox:focus{outline:2px solid var(--tomato);outline-offset:1px;}
 .selectbox-lg{padding:11px 12px;border-radius:var(--radius);font-size:14.5px;font-weight:600;}
-/* Rezeptwahl führen (v3.71.0): 3 Empfehlungskarten (Schnell/Klassisch/Lang) vor dem
-   vollen 8er-Dropdown, das jetzt hinter "Alle Rezepte" eingeklappt ist -- s. js/presets.js
-   (Klick setzt #preset + löst dessen change-Event aus, identischer Codepfad). flex-wrap
-   statt fixem 3-Spalten-Grid: wächst/schrumpft ohne Media-Query auf schmalen Mobil-
-   Viewports (wird bei Bedarf zweizeilig statt abgeschnitten). */
-.preset-recommend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+/* Bild-Grundgerüst (v4.32.0, "Bild-Grundgerüst plus bebildertes Preset-Kartengitter"):
+   EINE Bildbox für alle Bildkategorien der App (Schicht 3 aus BILD-EINBAU-KONZEPT.md,
+   identisch zu design-import/components/media/Media.jsx). Reserviert die Fläche per
+   aspect-ratio VOR dem Laden (kein Layout-Sprung), zeigt währenddessen --surface-2 statt
+   Weiß, object-fit:cover schneidet zentriert zu. Sieben Seitenverhältnisse: 3:2 Karten/
+   Glossar, 4:3 Anleitungsschritte/Leerzustände, 16:9 Fertig-Foto/Onboarding, 3:1
+   Glossar-Banner, 21:9 Desktop-Header, 4:5 Mobil-Header, 1:1 Texturen. Nur 3:2 und 16:9
+   sind in diesem Zyklus tatsächlich in Benutzung (Preset-Karten + Foto der fertigen
+   Pizza) -- die übrigen fünf sind bewusst schon jetzt definiert, damit spätere
+   Bild-Zyklen (s. BILD-EINBAU-KONZEPT.md, Abschnitt 3) keine eigene Variante mehr
+   erfinden müssen. Fehlt ein Bild (PZ.img()/PZ.imgHtml() liefern dann null/''), entsteht
+   gar kein .media-Element -- kein leerer Rahmen, kein kaputtes Bild. */
+.media{display:block;position:relative;overflow:hidden;background:var(--surface-2);border-radius:var(--radius);}
+.media img{display:block;width:100%;height:100%;object-fit:cover;}
+.media--3x2{aspect-ratio:3/2;}
+.media--4x3{aspect-ratio:4/3;}
+.media--16x9{aspect-ratio:16/9;}
+.media--3x1{aspect-ratio:3/1;}
+.media--21x9{aspect-ratio:21/9;}
+.media--4x5{aspect-ratio:4/5;}
+.media--1x1{aspect-ratio:1/1;}
+/* Rezeptwahl führen (v3.71.0, seit v4.32.0 9 bebilderte Karten statt 3 reintextuellen
+   Empfehlungskarten -- eine Karte je Rezept, s. js/presets.js: Klick setzt #preset + löst
+   dessen change-Event aus, identischer Codepfad wie die weiterhin vorhandene
+   Dropdown-Auswahl. auto-fill/minmax statt fixer Spaltenzahl: wächst/schrumpft ohne
+   Media-Query auf schmalen Mobil-Viewports, Kartenbreite bleibt im Zielkorridor
+   150-300 px (s. BILD-EINBAU-KONZEPT.md). */
+.preset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px;}
+/* mobile-optimizer-Befund (MINOR 5, v4.32.0): zwei Spalten bei minmax(150px,1fr) wirken
+   unter ~360px Viewportbreite gedrängt (Text bricht ungünstig) -- unterhalb der
+   iPhone-SE-Breite (375px, kleinster verbreiteter Wert) bewusst einspaltig statt zwei
+   sehr schmaler Spalten. */
+@media (max-width:359px){.preset-grid{grid-template-columns:1fr;}}
 .preset-card{
-  flex:1 1 140px;display:flex;flex-direction:column;align-items:flex-start;gap:3px;
-  text-align:left;border:1px solid var(--line);background:var(--card);border-radius:var(--radius);
-  padding:12px 14px;cursor:pointer;transition:all .12s;min-height:44px;font:inherit;
+  display:flex;flex-direction:column;align-items:stretch;text-align:left;
+  border:1px solid var(--line);background:var(--card);border-radius:var(--radius);
+  overflow:hidden;cursor:pointer;transition:border-color .12s;min-height:44px;font:inherit;padding:0;
 }
 .preset-card:hover{border-color:var(--tomato);}
 .preset-card:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+/* Ausgewählte Karte (v4.32.0, aria-pressed statt einer rein optischen Markierung, s.
+   js/presets.js syncPresetCardSelection() -- Vorgabe aus PresetCard.jsx): identischer
+   Tomate-Rahmen wie :hover, bleibt aber auch ohne Maus/Fokus sichtbar. */
+.preset-card[aria-pressed="true"]{border-color:var(--tomato);}
+.preset-card .media{border-radius:0;}
+/* mobile-optimizer-Befund (MAJOR 3, v4.32.0): fehlt einer Karte das Bild (Register-Konzept:
+   dann entsteht laut PZ.imgHtml() bewusst GAR KEIN .media-Element, s. Kommentar oben -- das
+   bleibt unverändert, "leerer Rahmen statt Bild" ist explizit NICHT gewollt), darf die Karte
+   trotzdem nicht unter ein ordentliches Touch-Ziel schrumpfen. min-height hier (statt nur am
+   .preset-card selbst) wirkt unabhängig davon, ob die Karte ein .media-Geschwisterelement
+   hat -- betrifft aktuell keine der 9 Karten (alle bebildert), sichert aber künftige, nur
+   teilweise befüllte Kategorien ab (s. BILD-EINBAU-KONZEPT.md). */
+.preset-card-body{display:flex;flex-direction:column;justify-content:center;gap:3px;padding:12px 14px;min-height:64px;}
 .preset-card-name{font-weight:700;font-size:14px;color:var(--ink);}
 .preset-card-time{font-size:12px;font-weight:600;color:var(--tomato-text);}
 .preset-card-fit{font-size:11.5px;color:var(--muted);line-height:1.3;}
@@ -1105,13 +1145,11 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 /* Foto der fertigen Pizza (v3.69.0), abschließender Anleitungsschritt nach dem Backen --
    gemeinsame Regel für Desktop UND Mobil (beide laden css/styles.css), kein separates
    Mobil-Override nötig (.step .body ist bereits flex:1;min-width:0, das Bild skaliert mit
-   der Kartenbreite). width/height-Attribute am <img> selbst (js/guide.js) reservieren den
-   Platz vorab (verhindert Layoutsprung beim Nachladen), object-fit hier hält das Seiten-
-   verhältnis unabhängig von max-width. */
-.step .body .final-photo{
-  display:block;width:100%;max-width:440px;height:auto;margin-top:10px;
-  border-radius:var(--radius);border:1px solid var(--line);object-fit:cover;
-}
+   der Kartenbreite). Seit v4.32.0 ist das Bild selbst ein .media--16x9-Element aus dem
+   Bild-Register (js/images.js, PZ.imgHtml(key, {extraClass:'final-photo'})) -- Ratio/
+   Ladeverhalten/Platzhalterfarbe kommen von .media (s. o.), diese Regel ergänzt nur noch
+   die seitenspezifische Breitenbegrenzung + den früheren Rahmen. */
+.step .body .final-photo{width:100%;max-width:440px;margin-top:10px;border:1px solid var(--line);}
 .step-glossary-link{
   background:none;border:none;padding:0;margin:0;color:var(--tomato-text);font:inherit;
   font-weight:700;text-decoration:underline;cursor:pointer;text-align:left;flex:1;min-width:0;

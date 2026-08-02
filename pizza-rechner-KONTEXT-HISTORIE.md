@@ -8,6 +8,22 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Live-Region-Ansage für die Schritt-für-Schritt-Anleitung (v4.31.0)
+
+Behebt den MINOR-Nebenbefund aus dem v4.27.0-`accessibility-expert`-Review (WCAG 4.1.3):
+`#guideSteps` wird bei jeder Reglerbewegung komplett per `innerHTML` neu gerendert, ohne
+dass Screenreader-Nutzer etwas davon mitbekommen. Neue, eigene, visuell versteckte
+Live-Region `#guideAnnounce` (bewusst nicht `#flourWarn` wiederverwendet, die trägt
+sichtbaren Warntext) meldet über den bestehenden Helfer `PZ.announce()` (`js/dom.js`,
+seit v3.58.0) eine kurze, auf 1,5 s entprellte Sammelansage „Anleitung aktualisiert"
+(DE/EN, `js/i18n-dict.js`). `js/guide.js`: `announceReady`-Flag + `PZ.enableGuideAnnounce()`,
+von `js/main.js` erst NACH dem allerersten Boot-`PZ.calc()` aufgerufen, damit der initiale
+Seitenaufbau keine Ansage auslöst. `accessibility-expert`-Review: keine Blocker/Major, ein
+Minor (`role="status"` neben `aria-live="polite"` ist redundant) direkt behoben —
+`#guideAnnounce` ist jetzt identisch zu `#flourWarn` ausgezeichnet. `tests/test.html`:
+1111 → **1115** Prüfungen (neue Sektion 38, mit synchronem Timer-Mock statt echtem
+Warten), alle grün.
+
 ## Dezimaltrennzeichen-Fix in js/units.js (v4.30.1)
 
 `js/units.js` normierte Dezimaltrennzeichen bisher nicht auf Komma, anders als die

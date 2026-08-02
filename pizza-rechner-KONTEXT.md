@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-02 · Aktuelle Version: v4.31.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-02 · Aktuelle Version: v4.32.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -216,24 +216,55 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Live-Region-Ansage für die Schritt-für-Schritt-Anleitung (v4.31.0) = aktueller Stand
+## Bild-Grundgerüst plus bebildertes Preset-Kartengitter (v4.32.0) = aktueller Stand
 
-Behebt den MINOR-Nebenbefund aus dem v4.27.0-`accessibility-expert`-Review (WCAG 4.1.3):
-`#guideSteps` wird bei jeder Reglerbewegung komplett per `innerHTML` neu gerendert, ohne
-dass Screenreader-Nutzer etwas davon mitbekommen. Neue, eigene, visuell versteckte
-Live-Region `#guideAnnounce` (bewusst nicht `#flourWarn` wiederverwendet, die trägt
-sichtbaren Warntext) meldet über den bestehenden Helfer `PZ.announce()` (`js/dom.js`,
-seit v3.58.0) eine kurze, auf 1,5 s entprellte Sammelansage „Anleitung aktualisiert"
-(DE/EN, `js/i18n-dict.js`). `js/guide.js`: `announceReady`-Flag + `PZ.enableGuideAnnounce()`,
-von `js/main.js` erst NACH dem allerersten Boot-`PZ.calc()` aufgerufen, damit der initiale
-Seitenaufbau keine Ansage auslöst. `accessibility-expert`-Review: keine Blocker/Major, ein
-Minor (`role="status"` neben `aria-live="polite"` ist redundant) direkt behoben —
-`#guideAnnounce` ist jetzt identisch zu `#flourWarn` ausgezeichnet. `tests/test.html`:
-1111 → **1115** Prüfungen (neue Sektion 38, mit synchronem Timer-Mock statt echtem
-Warten), alle grün.
+Erster Zyklus aus `BILD-EINBAU-KONZEPT.md`: `assets/_final/` → `assets/img/` (jetzt der
+reguläre App-Bildordner statt der Abnahme-Schleuse), neues Bild-Register `js/images.js`
+(`PZ.IMG`/`PZ.img()`/`PZ.imgHtml()`/`PZ.hydrateImages()` — einzige Stelle mit Bild-
+Dateinamen; unbekannter/pending Key liefert `null`/`''`, kein kaputtes Bild), gemeinsamer
+CSS-Baustein `.media`/`.media--<ratio>` (7 Seitenverhältnisse, 2 aktuell genutzt). Die
+Rezept-Auswahl ist jetzt ein 9-Karten-Bildgitter (`.preset-grid`) statt 3 Textkarten +
+Dropdown-Fallback (Dropdown bleibt für „Eigene Rezepte" bestehen); Biga-/Poolish-Varianten
+teilen sich je ein Kartenbild. Behebt nebenbei den aktiven Bug, dass das Foto der fertigen
+Pizza (Anleitungsende) seit einer Ordner-Umbenennung auf drei nicht mehr existierende
+Pfade zeigte — läuft jetzt über dasselbe Register. Bildaufbereitung (`assets/
+prepare_web_images.py`, Pillow) verkleinert die 10 in diesem Zyklus verdrahteten Dateien
+von ~2 MB auf ~428 KB. Standalone-Build bettet weiterhin nur die 3 Fertig-Fotos ein
+(`PZ._IMG_INLINE`), die 9 Kartenbilder fehlen dort bewusst (Karte ohne Bild = gültiger
+Zustand). `tests/test.html`: 1115 → **1173** Prüfungen (neue Sektionen 39+40, u. a. vom
+`test-generator`-Agenten ergänzt — dessen unbestätigten Lauf selbst per Headless-Edge
+nachgeprüft, einen fehlerhaften Eigen-Test [nur ein Tautologie-Check ohne echten
+Fehlerfall] entfernt), alle grün. Regressionsschutz gegen den ursprünglichen Bug (kein
+hartkodierter Bildpfad mehr außerhalb von `js/images.js`) per Grep über den Quellbaum
+verifiziert, dokumentiert in `tests/test.html` Sektion 39 (kein Browser-Test möglich, s.
+dortige Begründung).
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Dezimaltrennzeichen-Fix
-in js/units.js (v4.30.1)" (vorherige Abschnitte ebenfalls dort verkettet).
+**`mobile-optimizer`-Review fand einen BLOCKER, selbst nachvollzogen und behoben:** der
+Standalone-Build setzte `window.PZ._IMG_INLINE` als eigenen `<script>`-Block ganz am Ende
+von `<body>` — `js/images.js` ruft an seinem Modulende aber synchron `hydrateImages
+(document)` auf, das lief also VOR der Zuweisung, `_IMG_INLINE` war zu dem Zeitpunkt
+`undefined`. Ergebnis: auf einem iPhone ohne danebenliegenden `assets/`-Ordner wären ALLE
+Bilder kaputt gewesen, auch die drei eigentlich eingebetteten Fotos — genau der Zustand,
+den das Register verhindern soll, von der Testsuite nicht erkennbar (tritt nur im
+gebauten Artefakt auf). Fix (`build-mobile-standalone.py`): die `_IMG_INLINE`-Zuweisung
+steht jetzt als allererste Anweisung IM SELBEN `<script>`-Block wie `js/images.js` selbst.
+Verifiziert gegen eine Kopie der Standalone-Datei OHNE danebenliegenden `assets/`-Ordner
+(Headless-Edge-CDP): die 9 Kartenbilder fehlen dort jetzt sauber (kein kaputtes Bild), die
+3 Fertig-Fotos laden weiterhin korrekt als Data-URI.
+
+Weitere Befunde direkt behoben: MAJOR 2 (Kartengitter steht oberhalb der Falz, jetzt
+`data-img-eager` statt `loading="lazy"`), MAJOR 3 (Karten ohne Bild — aktuell keine der 9,
+aber künftige teilweise befüllte Kategorien — behalten dank `min-height` auf
+`.preset-card-body` ein ordentliches Touch-Ziel, ohne den „kein Bild statt leerer
+Rahmen"-Grundsatz zu verletzen), MINOR 5 (`.preset-grid` unter 360 px einspaltig statt
+zwei gedrängter Spalten). Drei weitere Nebenbefunde (A11y MAJOR 1 app-weites `aria-
+pressed`-vs.-`radiogroup`-Muster, A11y MINOR 1 Sync-Robustheit, Mobile MINOR 4
+`srcset`) bewusst nicht in diesem Zyklus behoben, s. Backlog unten. Kontraste,
+Fokus-Ring, Tastaturbedienung und Alt-Text-Abgrenzung vom `accessibility-expert` ohne
+Blocker geprüft.
+
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Live-Region-Ansage für
+die Schritt-für-Schritt-Anleitung (v4.31.0)" (vorherige Abschnitte ebenfalls dort verkettet).
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -328,10 +359,14 @@ nicht final ausgewählt, s. oben.
 
 **Was noch offen ist (unverändert gegenüber Sitzung 4, s. Historie für Details):**
 Restblöcke oben erzeugen und abnehmen; „Fläche freilassen" funktioniert weiterhin nicht
-zuverlässig übers Prompting (Layout/Gradient-Overlay statt Prompt-Anweisung); Bilder sind
-**noch nirgends in die App eingebunden** (`css/styles.css` zeigt weiterhin aufs alte
-Platzhalter-Foto) — das ist ein eigener, noch nicht begonnener Schritt mit eigenem
-Versionssprung. Git-Stand weiterhin komplett uncommittet.
+zuverlässig übers Prompting (Layout/Gradient-Overlay statt Prompt-Anweisung). Git-Stand
+weiterhin komplett uncommittet (betrifft nur die Erzeugungs-Skripte/Prompts unter `assets/`,
+nicht `assets/img/` selbst, das seit v4.32.0 der reguläre, versionierte App-Bildordner ist).
+
+**Bild-Einbau Zyklus 1 (Grundgerüst + Preset-Kartengitter) ist seit v4.32.0 erledigt** —
+s. „= aktueller Stand" oben und `BILD-EINBAU-KONZEPT.md`. Der Header nutzt weiterhin das
+alte Platzhalter-Foto (`--header-photo` in `css/styles.css`); das ist Zyklus 4 der dortigen
+Reihenfolge-Tabelle, noch nicht begonnen.
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
@@ -525,6 +560,10 @@ js/i18n.js           PZ.t()/PZ.setLang() — Deutsch/Englisch-Sprachversion (v3.
                      HTML-Texte + dynamisch generierte JS-Texte ab (Anleitung, Einkaufsliste, ...).
                      Seit v3.55.0 reine Laufzeit-Engine (übernimmt DICT von js/i18n-dict.js), PZ.
                      _i18nAdd bleibt als Hook für spätere, nach dieser Datei ladende Ergänzungen
+js/images.js         Bild-Register (v4.32.0, s. BILD-EINBAU-KONZEPT.md): PZ.IMG (einzige Stelle mit
+                     Bild-Dateinamen) + PZ.img(key)/PZ.imgHtml(key,opts) (liefern null/'' bei
+                     unbekanntem/pending/im Standalone-Build nicht eingebettetem Bild) +
+                     PZ.hydrateImages() (füllt statische `[data-img-key]`-Platzhalter beim Laden)
 js/settings.js       PZ.FLAGS — Feature-Flags fürs Einstellungen-Menü (v3.16.0), eigener
                      localStorage-Key `pizzaRechnerFeatureFlags`, vorwärtskompatibler Merge mit DEFAULTS.
                      Seit v3.64.0 zusätzlich PZ.ADJUST (Hefemengen-/Verschwendungs-Anpassung, eigener
@@ -596,12 +635,13 @@ js/onboarding.js     Willkommens-Screen / Einführung (v3.63.0): eigenständiges
                      Burgermenü-Punkt auf Desktop bzw. Ende der "Funktionen"-Karte auf Mobil,
                      s. "= aktueller Stand" oben), Persistenz via
                      localStorage-Key pizzaOnboardingDontShow. Läuft als letztes Script (nach nav.js)
-tests/test.html      964 Prüfungen in 32 Kategorien (Doppelklick, kein Server) — lädt 17 der 27
-                     js/*-Module direkt (dom/state/i18n-dict/i18n/settings/theme/units/widgets/
-                     flour/schedule/guide/calc/print/pdf/storage/share/party); ui.js, timer.js,
-                     presets.js, newrecipe.js, glossary.js, main.js, nav.js, simplemode.js,
-                     onboarding.js werden NICHT geladen (reines DOM-Wiring bzw. Browser-APIs) —
-                     einzelne Ausschnitte wie PZ.PRESETS werden bei Bedarf punktuell gestubbt
+tests/test.html      964 Prüfungen in 32 Kategorien (Doppelklick, kein Server) — lädt 18 der 28
+                     js/*-Module direkt (dom/state/i18n-dict/i18n/images/settings/theme/units/
+                     widgets/flour/schedule/guide/calc/print/pdf/storage/share/party); ui.js,
+                     timer.js, presets.js, newrecipe.js, glossary.js, main.js, nav.js,
+                     simplemode.js, onboarding.js werden NICHT geladen (reines DOM-Wiring bzw.
+                     Browser-APIs) — einzelne Ausschnitte wie PZ.PRESETS werden bei Bedarf
+                     punktuell gestubbt
 README.md            kurzer Einstieg
 ```
 
@@ -626,16 +666,19 @@ hochgeschoben. Änderungen am Design-System gehören in beide Richtungen abgegli
 
 **Bild-Einbau:** das Konzept, wie die rund 128 erzeugten Bilder in die App kommen, steht
 in **`BILD-EINBAU-KONZEPT.md`** im Projekt-Root (Ordnerregel, zentrales Bild-Register,
-Markup-Baustein, Reihenfolge der Kategorien, getroffene Entscheidungen).
+Markup-Baustein, Reihenfolge der Kategorien, getroffene Entscheidungen). Zyklus 1 (Grundgerüst
++ Preset-Kartengitter) ist seit v4.32.0 erledigt, s. „= aktueller Stand" oben.
 
-**Ladereihenfolge** (Abhängigkeiten): dom → state → i18n-dict → i18n → settings → theme → units →
-widgets → flour → calc → schedule → guide → timer → ui → simplemode → print → pdf → presets →
-storage → newrecipe → share → party → glossary → main → nav → onboarding. Jedes Modul ist eine
-IIFE, kommuniziert nur über `window.PZ`. `onboarding` MUSS nach `nav` geladen werden (braucht
-`PZ.closeNav`). **`i18n-dict` MUSS vor `i18n` geladen werden** (Handoff über `PZ._I18N_DICT`);
-**`widgets` MUSS vor `flour`/`ui`/`newrecipe` geladen werden** (liefert PZ.makeLink/makeSeg/
-makePrefStages/fillFlourSelect, die diese drei Module beim eigenen Laden direkt aufrufen).
-`units` MUSS vor `calc`/`guide`/`print` geladen werden (liefert PZ.formatWeight/formatWeightAuto/
+**Ladereihenfolge** (Abhängigkeiten): dom → state → i18n-dict → i18n → images → settings → theme →
+units → widgets → flour → calc → schedule → guide → timer → ui → simplemode → print → pdf →
+presets → storage → newrecipe → share → party → glossary → main → nav → onboarding. Jedes Modul
+ist eine IIFE, kommuniziert nur über `window.PZ`. `onboarding` MUSS nach `nav` geladen werden
+(braucht `PZ.closeNav`). **`i18n-dict` MUSS vor `i18n` geladen werden** (Handoff über
+`PZ._I18N_DICT`); `images` MUSS nach `i18n` geladen werden (löst dekorative vs. beschreibende
+Alt-Texte über `PZ.t()` auf) und vor `guide`/`glossary`/`presets` (die künftig/bereits
+`PZ.imgHtml()` aufrufen). **`widgets` MUSS vor `flour`/`ui`/`newrecipe` geladen werden** (liefert
+PZ.makeLink/makeSeg/makePrefStages/fillFlourSelect, die diese drei Module beim eigenen Laden
+direkt aufrufen). `units` MUSS vor `calc`/`guide`/`print` geladen werden (liefert PZ.formatWeight/formatWeightAuto/
 formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 
 **Cache-Busting:** CSS/JS werden mit `?v=X.Y.Z` geladen. **Bei jeder neuen Version mitziehen.**
@@ -930,6 +973,28 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
+- **Nebenbefunde aus dem v4.32.0-`accessibility-expert`-/`mobile-optimizer`-Review des
+  Preset-Kartengitters** (Blocker + MAJOR 2/3 direkt im selben Zyklus behoben, s. „=
+  aktueller Stand" oben — hier nur die bewusst zurückgestellten Punkte):
+  - **A11y MAJOR 1 (app-weite Musterfrage, nicht kartenspezifisch):** `role="group"` +
+    `aria-pressed` auf den 9 `.preset-card`-Buttons beschreibt streng genommen eine Gruppe
+    unabhängiger Umschalter, nicht eine „eins aus neun"-Auswahl — dafür wäre
+    `role="radiogroup"`/`role="radio"`/`aria-checked` das genauere Muster. Bewusst NICHT
+    geändert: identisch zum bestehenden Muster der App-Segmentschalter (`.seg button`,
+    ebenfalls `aria-pressed` statt `radiogroup`) — ein Wechsel nur hier hätte zwei
+    unterschiedliche Auswahlmuster nebeneinander erzeugt. Kandidat für einen künftigen,
+    app-weiten Zyklus, der beide Stellen gemeinsam umstellt, falls gewünscht.
+  - **A11y MINOR 1:** `syncPresetCardSelection()` (`js/presets.js`) hält den sichtbaren
+    `aria-pressed`-Zustand nur bei `#preset`-`change`-Events sowie den beiden Stepper-
+    Feld-Stellen nach, die `#preset.value` manuell zurücksetzen, aktuell auf dem Laufenden.
+    Strukturelles Risiko für künftigen Code, der `#preset.value` an neuer Stelle ohne
+    Event setzt (bliebe dann optisch veraltet) — kein aktuell nachweisbarer Fehler.
+  - **A11y MINOR 2:** Touch-Ziele der Karten bei extremem Browser-Zoom theoretisch knapp,
+    praktisch unkritisch.
+  - **Mobile MINOR 4:** Karten-Bilder sind mit 600×400 px aufbereitet, angezeigt aber nur
+    mit rund 135–150 px Breite — ein `srcset`/eine kleinere Zielgröße wäre sparsamer.
+    Bewusst nicht in diesem Zyklus (Gewichtsziel für die 10 verdrahteten Dateien mit ~428
+    KB bereits deutlich unter der ~2-MB-Zielmarke erreicht, s. „= aktueller Stand" oben).
 - ~~Napoli Lange Kaltgare an Quellen angleichen~~ — **erledigt in v4.30.0** (kein Backlog-
   Punkt im engeren Sinne, direkter Nutzerauftrag mit fertiger 7-Quellen-Prüfung; s.
   „= aktueller Stand" oben). `napoli_kalt`-Hefe 0,1 % → 0,25 %, geteilte Kaltgare (~44 h)

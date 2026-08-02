@@ -224,14 +224,32 @@
   }
   $('preset').addEventListener('change', e => handlePresetChange(e.target.value));
 
-  // Rezeptwahl führen (v3.71.0): die 3 Empfehlungskarten (Schnell/Klassisch/Lang) setzen
-  // #preset direkt und lösen dessen 'change'-Event aus -- identischer Codepfad wie eine
-  // Dropdown-Auswahl (handlePresetChange()/applyPreset() oben), keine eigene Logik hier.
+  // Rezeptwahl führen (v3.71.0, seit v4.32.0 9 statt 3 Karten -- "Bild-Grundgerüst plus
+  // bebildertes Preset-Kartengitter"): die Karten setzen #preset direkt und lösen dessen
+  // 'change'-Event aus -- identischer Codepfad wie eine Dropdown-Auswahl
+  // (handlePresetChange()/applyPreset() oben), keine eigene Logik hier.
   document.querySelectorAll('.preset-card[data-preset]').forEach(b => b.addEventListener('click', () => {
     const sel = $('preset');
     sel.value = b.dataset.preset;
     sel.dispatchEvent(new Event('change'));
   }));
+
+  // Ausgewählte Karte sichtbar/vorlesbar machen (v4.32.0, aria-pressed statt einer rein
+  // optischen Markierung -- Vorgabe aus design-import/components/cards/PresetCard.jsx):
+  // liest #preset.value FRISCH bei jedem Aufruf (kein separat mitgeführter State), damit
+  // die Anzeige auch dann korrekt bleibt, wenn #preset.value von anderer Stelle gesetzt
+  // wird. Läuft bei jedem 'change' von #preset (deckt Kartenklick UND direkte
+  // Select-Bedienung inkl. "Eigene Rezepte" ab) sowie an den beiden Stellen unten, die
+  // #preset.value ohne 'change'-Event auf '' zurücksetzen (Stepper-Felder).
+  function syncPresetCardSelection() {
+    const sel = $('preset');
+    const key = sel ? sel.value : '';
+    document.querySelectorAll('.preset-card[data-preset]').forEach(b => {
+      b.setAttribute('aria-pressed', b.dataset.preset === key ? 'true' : 'false');
+    });
+  }
+  $('preset').addEventListener('change', syncPresetCardSelection);
+  syncPresetCardSelection();
 
   // Manuelle Änderung an einem Regler → #preset-Auswahl zurücksetzen (kein Preset/eigenes
   // Rezept mehr aktiv). Seit v3.22.0 gibt es dafür keine "Eigene Einstellung"-Option mehr —
@@ -258,10 +276,10 @@
   const stepperFields = ['balls', 'ballw', 'hyd', 'salt', 'oil', 'sugar', 'pref', 'bhyd', 'yeast', 'ddt', 'room', 'flourTemp'];
   stepperFields.forEach(f => {
     const n = $(f + 'N');
-    if (n) n.addEventListener('input', () => { $('preset').value = ''; PZ.state.scheduleOverride = null; });
+    if (n) n.addEventListener('input', () => { $('preset').value = ''; PZ.state.scheduleOverride = null; syncPresetCardSelection(); });
     ['Dec', 'Inc'].forEach(suffix => {
       const btn = $(f + suffix);
-      if (btn) btn.addEventListener('click', () => { $('preset').value = ''; PZ.state.scheduleOverride = null; });
+      if (btn) btn.addEventListener('click', () => { $('preset').value = ''; PZ.state.scheduleOverride = null; syncPresetCardSelection(); });
     });
   });
 

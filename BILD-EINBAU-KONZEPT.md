@@ -116,14 +116,14 @@ Jede Kategorie ist ein eigener Zyklus über den Orchestrator (Markup plus CSS in
 und Mobil, also klar kein Inline-Fix). Der erste Zyklus baut zusätzlich die Schichten 1
 bis 3 auf, die folgenden nutzen sie nur noch.
 
-| # | Kategorie | Blöcke | Aufwand |
-|---|-----------|--------|---------|
-| 1 | Preset-Karten **plus Grundgerüst** plus Fix des kaputten Anleitungsfotos | 8 bis 18 | groß (Fundament) |
-| 2 | Anleitungs-Schrittbilder | 27 bis 45 | mittel |
-| 3 | Glossar (Kategorie-Banner und Artikelbilder) | 46 bis 90 | mittel |
-| 4 | Hero/Header (ersetzt das heutige Einzelfoto) | 1 bis 7 | klein |
-| 5 | Onboarding, Party, Leerzustände | 91 bis 105 | mittel |
-| 6 | Texturen, Marketing, Varianten | 106 bis 128 | offen |
+| # | Kategorie | Blöcke | Aufwand | Status |
+|---|-----------|--------|---------|--------|
+| 1 | Preset-Karten **plus Grundgerüst** plus Fix des kaputten Anleitungsfotos | 8 bis 18 | groß (Fundament) | **erledigt (v4.32.0)** |
+| 2 | Anleitungs-Schrittbilder | 27 bis 45 | mittel | offen |
+| 3 | Glossar (Kategorie-Banner und Artikelbilder) | 46 bis 90 | mittel | offen |
+| 4 | Hero/Header (ersetzt das heutige Einzelfoto) | 1 bis 7 | klein | offen |
+| 5 | Onboarding, Party, Leerzustände | 91 bis 105 | mittel | offen |
+| 6 | Texturen, Marketing, Varianten | 106 bis 128 | offen | offen |
 
 ---
 
@@ -171,3 +171,23 @@ festgelegt ist statt in jedem Zyklus neu in CSS erfunden zu werden:
 
 Der Umsetzungs-Zyklus überträgt diese Spezifikation nach `css/styles.css` und
 `js/images.js`, er erfindet sie nicht neu.
+
+---
+
+## 6. Zyklus 1: Ergebnis (v4.32.0, erledigt)
+
+Alle vier Schichten wie oben beschrieben umgesetzt: `assets/img/` (Umbenennung von
+`assets/_final/`), `js/images.js` (Register + `PZ.imgHtml()` + `PZ.hydrateImages()` für
+statische Platzhalter), `.media`/`.media--<ratio>` in `css/styles.css` (alle 7 Verhältnisse
+schon definiert, 3:2 und 16:9 in Benutzung), `assets/prepare_web_images.py` (Pillow, verkleinert
+gezielt angebundene Dateien auf Anzeigegröße statt aller 128 auf einmal). Preset-Auswahl ist
+jetzt ein 9-Karten-Gitter, das kaputte Anleitungsfoto ist behoben. Details, Testzahlen und
+Commit-Hash: `pizza-rechner-KONTEXT.md`, Abschnitt „Bild-Grundgerüst plus bebildertes
+Preset-Kartengitter (v4.32.0)".
+
+Offene Nebenpunkte für spätere Zyklen: `assets/BILD-PROMPTS.md`/`assets/SESSION-STATUS.md`/
+die Erzeugungs-Skripte (`generate_bilder.py` u. a.) sprechen noch von `assets/_final/` statt
+`assets/img/` — bewusst nicht in diesem Zyklus mitgezogen (die laufende Bild-Erzeugungsarbeit
+war explizit außerhalb des Auftrags), sollte aber vor der nächsten Erzeugungs-Sitzung
+nachgezogen werden, sonst legt der Workflow versehentlich einen neuen `assets/_final/`-Ordner
+an.

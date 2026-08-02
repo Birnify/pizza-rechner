@@ -20,7 +20,7 @@
   } catch(e) {}
 })();
 </script>
-<link rel="stylesheet" href="css/styles.css?v=4.31.0">
+<link rel="stylesheet" href="css/styles.css?v=4.32.0">
 </head>
 <body>
 <header>
@@ -28,7 +28,7 @@
     <button type="button" id="navToggle" class="nav-toggle" aria-expanded="false" aria-controls="navMenu" data-i18n-attr="aria-label:nav.menuOpen">
       <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
     </button>
-    <h1><img src="assets/logo.svg?v=4.31.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
+    <h1><img src="assets/logo.svg?v=4.32.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
   </div>
 </header>
 
@@ -56,7 +56,7 @@
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navMobileLink" href="pizza-rechner-mobile.html" data-i18n="nav.toMobile">Zur Mobil-Ansicht</a>
-    <span class="nav-version" id="appVersion">v4.31.0</span>
+    <span class="nav-version" id="appVersion">v4.32.0</span>
   </div>
 </nav>
 
@@ -140,26 +140,86 @@
 
     <div class="card">
       <h2 data-i18n-attr="aria-label:card.preset.title"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11c-2 0-3.2-1.6-2.6-3.4C3.9 6 5.3 5 7 5.3 7.4 3.4 9.1 2 11 2s3.6 1.4 4 3.3c1.7-.3 3.1.7 3.6 2.3.6 1.8-.6 3.4-2.6 3.4"/><path d="M6 11v6a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-6"/><path d="M5 20h13"/></svg></span><span data-i18n="card.preset.title">Fertiges Rezept wählen</span></h2>
-      <!-- Rezeptwahl führen (v3.72.0): 3 Empfehlungskarten statt direkt ein 8er-Dropdown --
-           Schnell/Klassisch/Lang decken die 3 häufigsten Einstiegsfälle ab. Klick setzt
-           #preset (unten, jetzt hinter "Alle Rezepte" eingeklappt) + löst dessen 'change'-
-           Event aus (js/presets.js) -- identischer Codepfad wie die Dropdown-Auswahl,
-           keine neue Anwendungslogik. -->
-      <div class="preset-recommend" role="group" aria-label="Empfohlene Rezepte" data-i18n-attr="aria-label:preset.recommend.groupLabel">
-        <button type="button" class="preset-card" data-preset="schnell" aria-label="Schnell: 4–6 h Gärzeit, für spontane Pizza am selben Tag" data-i18n-attr="aria-label:preset.recommend.schnell.ariaLabel">
-          <span class="preset-card-name" aria-hidden="true" data-i18n="preset.recommend.schnell.name">Schnell</span>
-          <span class="preset-card-time" aria-hidden="true" data-i18n="preset.recommend.schnell.time">4–6 h</span>
-          <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.recommend.schnell.fit">Für spontane Pizza am selben Tag</span>
+      <!-- Rezeptwahl führen (v3.72.0, seit v4.32.0 "Bild-Grundgerüst plus bebildertes
+           Preset-Kartengitter"): 9 bebilderte Karten statt 3 Empfehlungskarten + separatem
+           8er-Dropdown -- eine Karte je Rezept. Klick setzt #preset (unten, weiterhin hinter
+           "Alle Rezepte" eingeklappt, dort u. a. für "Eigene Rezepte" gebraucht) + löst
+           dessen 'change'-Event aus (js/presets.js) -- identischer Codepfad wie die
+           Dropdown-Auswahl, keine neue Anwendungslogik. Bilder kommen ausschließlich über
+           das Register js/images.js (data-img-key, s. dort PZ.hydrateImages()) -- kein
+           Dateiname hier im HTML, s. BILD-EINBAU-KONZEPT.md. -->
+      <div class="preset-grid" role="group" aria-label="Rezepte" data-i18n-attr="aria-label:preset.grid.groupLabel">
+        <button type="button" class="preset-card" data-preset="schnell" aria-pressed="false" aria-label="Schnell: 4–6 h Gärzeit, für spontane Pizza am selben Tag" data-i18n-attr="aria-label:preset.grid.schnell.ariaLabel">
+          <span class="media media--3x2" data-img-key="preset.schnell" data-img-eager aria-hidden="true"></span>
+          <span class="preset-card-body">
+            <span class="preset-card-name" aria-hidden="true" data-i18n="preset.grid.schnell.name">Schnell</span>
+            <span class="preset-card-time" aria-hidden="true" data-i18n="preset.grid.schnell.time">4–6 h</span>
+            <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.grid.schnell.fit">Für spontane Pizza am selben Tag</span>
+          </span>
         </button>
-        <button type="button" class="preset-card" data-preset="napoli_klassisch" aria-label="Klassisch: ~28 h Gärzeit, an den AVPN-Standard angelehnter neapolitanischer Klassiker" data-i18n-attr="aria-label:preset.recommend.klassisch.ariaLabel">
-          <span class="preset-card-name" aria-hidden="true" data-i18n="preset.recommend.klassisch.name">Klassisch</span>
-          <span class="preset-card-time" aria-hidden="true" data-i18n="preset.recommend.klassisch.time">~28 h</span>
-          <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.recommend.klassisch.fit">An den AVPN-Standard angelehnter neapolitanischer Klassiker</span>
+        <button type="button" class="preset-card" data-preset="napoli_klassisch" aria-pressed="false" aria-label="Napoli Klassisch: ~28 h Gärzeit, an den AVPN-Standard angelehnter neapolitanischer Klassiker" data-i18n-attr="aria-label:preset.grid.napoliKlassisch.ariaLabel">
+          <span class="media media--3x2" data-img-key="preset.napoli_klassisch" data-img-eager aria-hidden="true"></span>
+          <span class="preset-card-body">
+            <span class="preset-card-name" aria-hidden="true" data-i18n="preset.grid.napoliKlassisch.name">Napoli Klassisch</span>
+            <span class="preset-card-time" aria-hidden="true" data-i18n="preset.grid.napoliKlassisch.time">~28 h</span>
+            <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.grid.napoliKlassisch.fit">An den AVPN-Standard angelehnter neapolitanischer Klassiker</span>
+          </span>
         </button>
-        <button type="button" class="preset-card" data-preset="napoli_kalt" aria-label="Lang: ~44 h Gärzeit, maximales Aroma, braucht starkes Mehl (W300+)" data-i18n-attr="aria-label:preset.recommend.lang.ariaLabel">
-          <span class="preset-card-name" aria-hidden="true" data-i18n="preset.recommend.lang.name">Lang</span>
-          <span class="preset-card-time" aria-hidden="true" data-i18n="preset.recommend.lang.time">~44 h</span>
-          <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.recommend.lang.fit">Maximales Aroma, braucht starkes Mehl (W300+)</span>
+        <button type="button" class="preset-card" data-preset="napoli_kalt" aria-pressed="false" aria-label="Napoli Lange Kaltgare: ~44 h Gärzeit, maximales Aroma, braucht starkes Mehl (W300+)" data-i18n-attr="aria-label:preset.grid.napoliKalt.ariaLabel">
+          <span class="media media--3x2" data-img-key="preset.napoli_kalt" data-img-eager aria-hidden="true"></span>
+          <span class="preset-card-body">
+            <span class="preset-card-name" aria-hidden="true" data-i18n="preset.grid.napoliKalt.name">Napoli Lange Kaltgare</span>
+            <span class="preset-card-time" aria-hidden="true" data-i18n="preset.grid.napoliKalt.time">~44 h</span>
+            <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.grid.napoliKalt.fit">Maximales Aroma, braucht starkes Mehl (W300+)</span>
+          </span>
+        </button>
+        <button type="button" class="preset-card" data-preset="napoli_biga_klassisch" aria-pressed="false" aria-label="Biga klassisch: ~29 h Gärzeit, Vorteig mit kräftigen Röstaromen und offener Krume" data-i18n-attr="aria-label:preset.grid.napoliBigaKlassisch.ariaLabel">
+          <span class="media media--3x2" data-img-key="preset.napoli_biga_klassisch" data-img-eager aria-hidden="true"></span>
+          <span class="preset-card-body">
+            <span class="preset-card-name" aria-hidden="true" data-i18n="preset.grid.napoliBigaKlassisch.name">Biga klassisch</span>
+            <span class="preset-card-time" aria-hidden="true" data-i18n="preset.grid.napoliBigaKlassisch.time">~29 h</span>
+            <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.grid.napoliBigaKlassisch.fit">Vorteig mit kräftigen Röstaromen und offener Krume</span>
+          </span>
+        </button>
+        <button type="button" class="preset-card" data-preset="napoli_biga_kalt" aria-pressed="false" aria-label="Biga kalt: ~60 h Gärzeit, kalt geführter Vorteig, noch mehr Aroma durch lange Kühlschrankreife" data-i18n-attr="aria-label:preset.grid.napoliBigaKalt.ariaLabel">
+          <span class="media media--3x2" data-img-key="preset.napoli_biga_kalt" data-img-eager aria-hidden="true"></span>
+          <span class="preset-card-body">
+            <span class="preset-card-name" aria-hidden="true" data-i18n="preset.grid.napoliBigaKalt.name">Biga kalt</span>
+            <span class="preset-card-time" aria-hidden="true" data-i18n="preset.grid.napoliBigaKalt.time">~60 h</span>
+            <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.grid.napoliBigaKalt.fit">Kalt geführter Vorteig, noch mehr Aroma durch lange Kühlschrankreife</span>
+          </span>
+        </button>
+        <button type="button" class="preset-card" data-preset="napoli_poolish_schnell" aria-pressed="false" aria-label="Poolish schnell: ~20 h Gärzeit, milder Vorteig mit luftiger Krume" data-i18n-attr="aria-label:preset.grid.napoliPoolishSchnell.ariaLabel">
+          <span class="media media--3x2" data-img-key="preset.napoli_poolish_schnell" data-img-eager aria-hidden="true"></span>
+          <span class="preset-card-body">
+            <span class="preset-card-name" aria-hidden="true" data-i18n="preset.grid.napoliPoolishSchnell.name">Poolish schnell</span>
+            <span class="preset-card-time" aria-hidden="true" data-i18n="preset.grid.napoliPoolishSchnell.time">~20 h</span>
+            <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.grid.napoliPoolishSchnell.fit">Milder Vorteig mit luftiger Krume</span>
+          </span>
+        </button>
+        <button type="button" class="preset-card" data-preset="napoli_poolish_kalt" aria-pressed="false" aria-label="Poolish kalt: ~34 h Gärzeit, kalt geführter Vorteig mit mehr Aroma" data-i18n-attr="aria-label:preset.grid.napoliPoolishKalt.ariaLabel">
+          <span class="media media--3x2" data-img-key="preset.napoli_poolish_kalt" data-img-eager aria-hidden="true"></span>
+          <span class="preset-card-body">
+            <span class="preset-card-name" aria-hidden="true" data-i18n="preset.grid.napoliPoolishKalt.name">Poolish kalt</span>
+            <span class="preset-card-time" aria-hidden="true" data-i18n="preset.grid.napoliPoolishKalt.time">~34 h</span>
+            <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.grid.napoliPoolishKalt.fit">Kalt geführter Vorteig, milder Teig mit mehr Aroma</span>
+          </span>
+        </button>
+        <button type="button" class="preset-card" data-preset="teglia" aria-pressed="false" aria-label="Teglia: ~76 h Gärzeit, römische Blechpizza, braucht sehr starkes Mehl (W330+)" data-i18n-attr="aria-label:preset.grid.teglia.ariaLabel">
+          <span class="media media--3x2" data-img-key="preset.teglia" data-img-eager aria-hidden="true"></span>
+          <span class="preset-card-body">
+            <span class="preset-card-name" aria-hidden="true" data-i18n="preset.grid.teglia.name">Teglia</span>
+            <span class="preset-card-time" aria-hidden="true" data-i18n="preset.grid.teglia.time">~76 h</span>
+            <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.grid.teglia.fit">Römische Blechpizza, braucht sehr starkes Mehl (W330+)</span>
+          </span>
+        </button>
+        <button type="button" class="preset-card" data-preset="newyork_style" aria-pressed="false" aria-label="New York Style: ~44 h Gärzeit, dünnere Kruste mit etwas Zucker für Bräunung, braucht mittelstarkes Mehl (W300+)" data-i18n-attr="aria-label:preset.grid.newyorkStyle.ariaLabel">
+          <span class="media media--3x2" data-img-key="preset.newyork_style" data-img-eager aria-hidden="true"></span>
+          <span class="preset-card-body">
+            <span class="preset-card-name" aria-hidden="true" data-i18n="preset.grid.newyorkStyle.name">New York Style</span>
+            <span class="preset-card-time" aria-hidden="true" data-i18n="preset.grid.newyorkStyle.time">~44 h</span>
+            <span class="preset-card-fit" aria-hidden="true" data-i18n="preset.grid.newyorkStyle.fit">Dünnere Kruste mit etwas Zucker für Bräunung, braucht mittelstarkes Mehl (W300+)</span>
+          </span>
         </button>
       </div>
       <details class="preset-all-details">
@@ -947,33 +1007,34 @@
 <footer aria-hidden="true"></footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/dom.js?v=4.31.0"></script>
-<script src="js/state.js?v=4.31.0"></script>
-<script src="js/i18n-dict.js?v=4.31.0"></script>
-<script src="js/i18n.js?v=4.31.0"></script>
-<script src="js/settings.js?v=4.31.0"></script>
-<script src="js/theme.js?v=4.31.0"></script>
-<script src="js/units.js?v=4.31.0"></script>
-<script src="js/widgets.js?v=4.31.0"></script>
-<script src="js/flour.js?v=4.31.0"></script>
-<script src="js/calc.js?v=4.31.0"></script>
-<script src="js/schedule.js?v=4.31.0"></script>
-<script src="js/guide.js?v=4.31.0"></script>
-<script src="js/timer.js?v=4.31.0"></script>
-<script src="js/ui.js?v=4.31.0"></script>
-<script src="js/simplemode.js?v=4.31.0"></script>
-<script src="js/print.js?v=4.31.0"></script>
-<script src="js/pdf.js?v=4.31.0"></script>
-<script src="js/presets.js?v=4.31.0"></script>
-<script src="js/storage.js?v=4.31.0"></script>
-<script src="js/newrecipe.js?v=4.31.0"></script>
-<script src="js/share.js?v=4.31.0"></script>
-<script src="js/party.js?v=4.31.0"></script>
-<script src="js/glossary.js?v=4.31.0"></script>
-<script src="js/main.js?v=4.31.0"></script>
+<script src="js/dom.js?v=4.32.0"></script>
+<script src="js/state.js?v=4.32.0"></script>
+<script src="js/i18n-dict.js?v=4.32.0"></script>
+<script src="js/i18n.js?v=4.32.0"></script>
+<script src="js/images.js?v=4.32.0"></script>
+<script src="js/settings.js?v=4.32.0"></script>
+<script src="js/theme.js?v=4.32.0"></script>
+<script src="js/units.js?v=4.32.0"></script>
+<script src="js/widgets.js?v=4.32.0"></script>
+<script src="js/flour.js?v=4.32.0"></script>
+<script src="js/calc.js?v=4.32.0"></script>
+<script src="js/schedule.js?v=4.32.0"></script>
+<script src="js/guide.js?v=4.32.0"></script>
+<script src="js/timer.js?v=4.32.0"></script>
+<script src="js/ui.js?v=4.32.0"></script>
+<script src="js/simplemode.js?v=4.32.0"></script>
+<script src="js/print.js?v=4.32.0"></script>
+<script src="js/pdf.js?v=4.32.0"></script>
+<script src="js/presets.js?v=4.32.0"></script>
+<script src="js/storage.js?v=4.32.0"></script>
+<script src="js/newrecipe.js?v=4.32.0"></script>
+<script src="js/share.js?v=4.32.0"></script>
+<script src="js/party.js?v=4.32.0"></script>
+<script src="js/glossary.js?v=4.32.0"></script>
+<script src="js/main.js?v=4.32.0"></script>
 <!-- Burger-Menü-Navigation (v3.26.0) war bis v3.53.0 eine eigenständige Inline-Kopie
      hier -- seit v3.54.0 gemeinsames Modul mit der Mobil-Seite, s. js/nav.js. -->
-<script src="js/nav.js?v=4.31.0"></script>
-<script src="js/onboarding.js?v=4.31.0"></script>
+<script src="js/nav.js?v=4.32.0"></script>
+<script src="js/onboarding.js?v=4.32.0"></script>
 </body>
 </html>

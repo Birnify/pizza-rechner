@@ -23,21 +23,50 @@ OUT = ROOT / "pizza-rechner-mobile-standalone.html"
 
 html = SRC.read_text(encoding="utf-8")
 
-# Fotos der fertigen Pizza (v3.69.0, "Foto der fertigen Pizza am Ende der Anleitung"):
-# js/guide.js referenziert sie als normale relative Pfade ("assets/pizza-final-*.jpg"),
-# die als String-Literale im weiter unten inline eingebetteten JS landen. Anders als
-# CSS/JS werden Bilder hier NICHT generisch inlined -- bewusst nur diese drei bekannten
-# Dateien (Scope der Feature-Definition), nicht das bestehende Header-Foto
-# (assets/header-pizza.jpg, CSS-Hintergrund, dort bislang ungeklärt/unverändert gelassen).
-# Ersetzung als reiner String-Austausch NACH dem JS-Inlining unten (s. Aufruf von
-# inline_images()): base64 enthält keine Anführungszeichen/Backslashes, bleibt also
-# innerhalb des umgebenden JS-String-Literals unproblematisch.
-def inline_images(html_text):
-    for img_path in sorted((ROOT / "assets").glob("pizza-final-*.jpg")):
-        rel = "assets/" + img_path.name
-        b64 = base64.b64encode(img_path.read_bytes()).decode("ascii")
-        html_text = html_text.replace(rel, "data:image/jpeg;base64," + b64)
-    return html_text
+# Bilder im Standalone-Build (v3.69.0, seit v4.32.0 ueber das Bild-Register js/images.js,
+# s. BILD-EINBAU-KONZEPT.md Abschnitt 4 "Getroffene Entscheidungen"): die App referenziert
+# Bilder seit v4.32.0 NIRGENDS mehr als literalen String-Pfad im JS-Quelltext (der Pfad wird
+# zur Laufzeit aus PZ.IMG[key].file + einem festen "assets/img/"-Praefix zusammengesetzt,
+# s. js/images.js) -- ein reiner Text-Ersetzen wie frueher (html_text.replace(pfad, data-uri))
+# findet deshalb nichts mehr. Stattdessen wird eine kleine window.PZ._IMG_INLINE = { dateiname:
+# data-uri }-Zuweisung ALS ERSTE ANWEISUNG in denselben <script>-Block wie js/images.js selbst
+# gesetzt (s. inline_js() unten) -- fuer eine bewusst KLEINE Auswahl (Nutzer-Entscheidung: die
+# Einzeldatei bleibt klein, nicht alle ~18 MB Bildbestand werden eingebettet). js/images.js
+# prueft diese Map zur Laufzeit: ein Dateiname, der dort NICHT drin steht, wird wie ein
+# fehlendes Bild behandelt (PZ.img() liefert null) -- kein kaputtes <img>, einfach kein Bild.
+# Aktuelle Auswahl: die 3 Fotos der fertigen Pizza (Anleitungsende) -- identisch zur
+# bisherigen Auswahl vor v4.32.0. Die 9 Preset-Karten-Bilder sind bewusst NICHT dabei, die
+# Karten erscheinen im Standalone-Build also textuell ohne Bild (laut Bild-Register ein
+# gueltiger, vorgesehener Zustand -- "Karte ohne Bild" ist kein Fehlerfall).
+#
+# BUGFIX (v4.32.0, mobile-optimizer-Review, BLOCKER): eine fruehere Fassung haengte die
+# _IMG_INLINE-Zuweisung als EIGENEN <script>-Block ans Ende von <body> an. js/images.js ruft
+# an seinem eigenen Modulende aber SYNCHRON hydrateImages(document) auf (fuer das statische
+# Preset-Kartengitter) -- das lief im Standalone-Build also VOR der _IMG_INLINE-Zuweisung,
+# PZ._IMG_INLINE war zu diesem Zeitpunkt undefined. Folge: js/images.js behandelte ausnahmslos
+# ALLE Bilder (auch die drei eigentlich eingebetteten) als "normalen assets/img/-Pfad" statt
+# als Data-URI -- auf dem iPhone (kein Geschwister-Ordner neben der Einzeldatei) ueberall
+# kaputte Bilder, inklusive der drei absichtlich eingebetteten Fotos. Von Unit-Tests nicht
+# erkennbar, weil der Fehler nur im gebauten Artefakt auftritt, nicht im Quellcode. Fix: die
+# Zuweisung steht jetzt als allererste Anweisung IM SELBEN <script>-Block wie js/images.js
+# selbst (s. inline_js() unten), garantiert also Ausfuehrung vor jedem Code aus der Datei.
+INLINE_IMAGE_FILES = [
+    "pizza-final-neapolitanisch.jpg",
+    "pizza-final-teglia.jpg",
+    "pizza-final-newyork.jpg",
+]
+MIME_BY_EXT = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp", "png": "image/png"}
+
+def build_img_inline_snippet():
+    entries = []
+    for name in INLINE_IMAGE_FILES:
+        path = ROOT / "assets" / "img" / name
+        ext = path.suffix.lstrip(".").lower()
+        b64 = base64.b64encode(path.read_bytes()).decode("ascii")
+        entries.append("%r: 'data:%s;base64,%s'" % (name, MIME_BY_EXT.get(ext, "image/jpeg"), b64))
+    return "window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {" + ",".join(entries) + "};\n"
+
+IMG_INLINE_SNIPPET = build_img_inline_snippet()
 
 def inline_css(match):
     href = match.group(1).split("?")[0]
@@ -56,11 +85,15 @@ def inline_css(match):
 def inline_js(match):
     src = match.group(1).split("?")[0]
     js = (ROOT / src).read_text(encoding="utf-8")
+    if src == "js/images.js":
+        # PZ._IMG_INLINE MUSS bereits gesetzt sein, BEVOR js/images.js seinen eigenen
+        # Modul-Code ausfuehrt (hydrateImages(document) am Modulende) -- deshalb hier als
+        # allererste Anweisung im SELBEN <script>-Block vorangestellt, s. Kommentar oben.
+        js = IMG_INLINE_SNIPPET + js
     return f"<script>\n{js}\n</script>"
 
 html = re.sub(r'<link rel="stylesheet" href="(css/[^"]+)">', inline_css, html)
 html = re.sub(r'<script src="(js/[^"]+)"></script>', inline_js, html)
-html = inline_images(html)
 
 OUT.write_text(html, encoding="utf-8")
 print(f"Geschrieben: {OUT} ({len(html):,} Zeichen)")

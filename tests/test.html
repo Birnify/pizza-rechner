@@ -103,6 +103,7 @@
 <script src="../js/state.js"></script>
 <script src="../js/i18n-dict.js"></script>
 <script src="../js/i18n.js"></script>
+<script src="../js/images.js"></script>
 <script src="../js/settings.js"></script>
 <script src="../js/theme.js"></script>
 <script src="../js/units.js"></script>
@@ -3589,13 +3590,20 @@
   // letzten Backschritt mit einem zur Pizzaform passenden Foto. Zuordnung ausschließlich
   // über den #preset-DOM-Wert (js/guide.js liest KEIN state.preset -- das gibt es nicht,
   // s. Kommentar in js/guide.js), deshalb wird hier direkt am Stub-<select> manipuliert
-  // statt über testCase()-Overrides (die betreffen nur PZ.state).
+  // statt über testCase()-Overrides (die betreffen nur PZ.state). Seit v4.32.0 kommt das
+  // Markup über PZ.imgHtml() aus dem Bild-Register (js/images.js) -- die Klasse
+  // "final-photo" sitzt jetzt auf dem äußeren <span class="media media--16x9 …">, nicht
+  // mehr auf dem <img> selbst (s. Sektion 39 unten für Tests des Registers selbst).
   (function () {
     function setActivePreset(value) {
       document.getElementById('preset').value = value;
     }
     function guideHtml() { return document.getElementById('guideSteps').innerHTML; }
-    function finalPhotoImgCount(html) { return (html.match(/class="final-photo"/g) || []).length; }
+    function finalPhotoImgCount(html) { return (html.match(/class="media media--16x9 final-photo"/g) || []).length; }
+    function finalPhotoImgTag(html) {
+      const m = html.match(/<span class="media media--16x9 final-photo"><img[^>]*><\/span>/);
+      return m ? m[0] : '';
+    }
 
     testCase('"Eigene Einstellung" (#preset leer): neapolitanisches Foto als Fallback', {}, () => {
       setActivePreset('');
@@ -3606,7 +3614,8 @@
         ['neapolitanisches Foto referenziert', html.includes('pizza-final-neapolitanisch.jpg'), true],
         ['kein Teglia-Foto', html.includes('pizza-final-teglia.jpg'), false],
         ['kein New-York-Foto', html.includes('pizza-final-newyork.jpg'), false],
-        ['Alt-Text nicht leer', /alt="[^"]+"/.test(html.match(/<img[^>]*class="final-photo"[^>]*>/)[0]), true],
+        ['über assets/img/ referenziert', html.includes('assets/img/pizza-final-neapolitanisch.jpg'), true],
+        ['Alt-Text nicht leer', /alt="[^"]+"/.test(finalPhotoImgTag(html)), true],
       ];
     });
 
@@ -5597,6 +5606,300 @@
     } finally {
       PZ.setLang(savedLang);
     }
+  })();
+
+  // ─────────────────────────────────────────────────────────────
+  heading('39 · Bild-Register (js/images.js, v4.32.0, "Bild-Grundgerüst plus bebildertes Preset-Kartengitter")');
+
+  // Deckt Schicht 2 aus BILD-EINBAU-KONZEPT.md ab: PZ.img()/PZ.imgHtml() liefern bei
+  // unbekanntem ODER als "pending" markiertem Key nichts (kein kaputtes Bild), jeder der 9
+  // Preset-Schlüssel hat einen Registereintrag, PZ._IMG_INLINE (Standalone-Build) übersteuert
+  // den normalen assets/img/-Pfad. Tatsächliche Dateiexistenz kann diese Suite NICHT prüfen
+  // (file://-Doppelklick-Betrieb, s. Begründung bei Sektion 37 oben -- synchrones
+  // XHR/fetch auf eine Nachbardatei schlägt unter file:// zuverlässig fehl) -- per direktem
+  // Dateisystem-Check außerhalb dieser Suite verifiziert: alle 10 in diesem Zyklus
+  // verdrahteten Dateien (7 Karten + 3 Fertig-Fotos) existieren unter assets/img/.
+  //
+  // Regressionsschutz gegen den ursprünglichen Bug (drei fest verdrahtete Pfade in
+  // js/guide.js zeigten nach einer Ordner-Umbenennung ins Leere): aus demselben
+  // file://-Grund KEIN Browser-Test möglich (bräuchte Zugriff auf den Quelltext aller
+  // js/*.js/*.html-Dateien, nicht nur der eigenen). Stattdessen bei jedem Release per
+  // Grep über den Quellbaum verifiziert (zuletzt für v4.32.0, sauber):
+  //   grep -rn "assets/(pizza-final-|img/|_final/)" --include=*.js --include=*.html .
+  // Erwartetes Ergebnis: Treffer NUR in js/images.js (dem Register selbst, DIR-Konstante),
+  // im daraus gebauten pizza-rechner-mobile-standalone.html sowie in Prosekommentaren, die
+  // den alten Bug beschreiben -- kein Treffer in irgendeiner anderen js/*.js- oder
+  // pizza-rechner*.html-Datei. `design-import/` ist bewusst ausgenommen (Referenz, kein
+  // App-Code, s. pizza-rechner-KONTEXT.md Abschnitt „Design-System").
+  (function () {
+    const PRESET_KEYS = [
+      'napoli_klassisch', 'napoli_kalt', 'schnell',
+      'napoli_biga_klassisch', 'napoli_biga_kalt',
+      'napoli_poolish_schnell', 'napoli_poolish_kalt',
+      'teglia', 'newyork_style'
+    ];
+
+    testCase('Jeder der 9 Preset-Schlüssel hat einen Registereintrag "preset.<key>"', {}, () => {
+      return PRESET_KEYS.map(k => {
+        const e = PZ.img('preset.' + k);
+        return ['preset.' + k + ' vorhanden (nicht pending)', !!e, true];
+      });
+    });
+
+    testCase('Biga-/Poolish-Varianten teilen sich je ein Bild (klassisch/schnell + kalt gleiche Datei)', {}, () => {
+      return [
+        ['napoli_biga_klassisch === napoli_biga_kalt', PZ.img('preset.napoli_biga_klassisch').file, PZ.img('preset.napoli_biga_kalt').file],
+        ['napoli_poolish_schnell === napoli_poolish_kalt', PZ.img('preset.napoli_poolish_schnell').file, PZ.img('preset.napoli_poolish_kalt').file],
+      ];
+    });
+
+    testCase('Alle 9 Preset-Bilder sind 3:2-Karten, dekorativ (alt:null)', {}, () => {
+      return PRESET_KEYS.map(k => {
+        const e = PZ.img('preset.' + k);
+        return ['preset.' + k + ': ratio 3x2 + alt:null', e.ratio === '3x2' && e.alt === null, true];
+      });
+    });
+
+    testCase('Unbekannter Registerschlüssel: PZ.img() liefert null, PZ.imgHtml() liefert \'\'', {}, () => {
+      return [
+        ['PZ.img(unbekannt) === null', PZ.img('preset.gibt_es_nicht'), null],
+        ['PZ.imgHtml(unbekannt) === \'\'', PZ.imgHtml('preset.gibt_es_nicht'), ''],
+      ];
+    });
+
+    testCase('Als pending markierter Eintrag: PZ.img() liefert null, PZ.imgHtml() liefert \'\'', {}, () => {
+      // Temporärer Test-Eintrag statt eines echten pending:true-Bilds im Register (aktuell
+      // hat kein Preset/Foto dieses Zyklus pending:true) -- PZ.IMG ist bewusst als PZ.IMG
+      // exportiert (kein privater Modul-State), genau damit sich das hier isoliert
+      // nachstellen lässt.
+      PZ.IMG['test.pending'] = { file: 'nicht-vorhanden.webp', ratio: '3x2', alt: null, pending: true };
+      try {
+        return [
+          ['PZ.img(pending) === null', PZ.img('test.pending'), null],
+          ['PZ.imgHtml(pending) === \'\'', PZ.imgHtml('test.pending'), ''],
+        ];
+      } finally {
+        delete PZ.IMG['test.pending'];
+      }
+    });
+
+    testCase('PZ.imgHtml() für ein bekanntes Bild: assets/img/-Pfad, richtige Ratio-Klasse, leerer Alt-Text (dekorativ)', {}, () => {
+      const html = PZ.imgHtml('preset.napoli_klassisch');
+      return [
+        ['enthält assets/img/card-napoli_klassisch.webp', html.includes('assets/img/card-napoli_klassisch.webp'), true],
+        ['trägt class="media media--3x2"', html.includes('class="media media--3x2"'), true],
+        ['alt="" (dekorativ)', html.includes('alt=""'), true],
+        ['loading="lazy" (kein eager)', html.includes('loading="lazy"'), true],
+      ];
+    });
+
+    testCase('PZ.imgHtml() mit opts.eager und opts.extraClass', {}, () => {
+      const html = PZ.imgHtml('guide.final.teglia', { eager: true, extraClass: 'final-photo' });
+      return [
+        ['loading="eager"', html.includes('loading="eager"'), true],
+        ['Zusatzklasse final-photo gesetzt', html.includes('class="media media--16x9 final-photo"'), true],
+        ['Alt-Text nicht leer (Foto trägt eigene Information, s. js/guide.js)', /alt="[^"]+"/.test(html), true],
+      ];
+    });
+
+    testCase('PZ._IMG_INLINE (Standalone-Build) übersteuert den assets/img/-Pfad, unbekannte Dateien werden dort zu "kein Bild"', {}, () => {
+      const savedInline = PZ._IMG_INLINE;
+      PZ._IMG_INLINE = { 'card-napoli_klassisch.webp': 'data:image/webp;base64,AAAA' };
+      try {
+        const htmlInlined = PZ.imgHtml('preset.napoli_klassisch');
+        const htmlMissing = PZ.imgHtml('preset.schnell'); // card-schnell.webp NICHT in der Inline-Map
+        return [
+          ['eingebettetes Bild: data-URI statt assets/img/-Pfad', htmlInlined.includes('data:image/webp;base64,AAAA'), true],
+          ['eingebettetes Bild: kein assets/img/-Pfad mehr enthalten', htmlInlined.includes('assets/img/'), false],
+          ['nicht eingebettetes Bild verhält sich wie "kein Bild" (\'\')', htmlMissing, ''],
+        ];
+      } finally {
+        PZ._IMG_INLINE = savedInline;
+      }
+    });
+
+    testCase('Foto der fertigen Pizza (guide.final.*): 3 Einträge, je 16:9, mit beschreibendem Alt-Text-Key', {}, () => {
+      return ['napoli', 'teglia', 'newyork'].map(k => {
+        const e = PZ.img('guide.final.' + k);
+        return ['guide.final.' + k + ': ratio 16x9 + alt-Key gesetzt', !!e && e.ratio === '16x9' && !!e.alt, true];
+      });
+    });
+
+    // --- Sprachwechsel bei Alt-Texten: guide.final.* tragen i18n-Keys, sollten sich bei DE->EN ändern ---
+    (function () {
+      const savedLang = PZ.getLang ? PZ.getLang() : 'de';
+      try {
+        PZ.setLang('de');
+        const altDE = PZ.imgHtml('guide.final.napoli');
+        const altDE_text = altDE.match(/alt="([^"]*)"/)[1];
+
+        PZ.setLang('en');
+        const altEN = PZ.imgHtml('guide.final.napoli');
+        const altEN_text = altEN.match(/alt="([^"]*)"/)[1];
+
+        renderBox('Sprachwechsel · guide.final.napoli Alt-Text ändert sich bei DE→EN', [
+          { label: 'Alt-Text Deutsch nicht leer', ok: altDE_text && altDE_text.length > 0, actual: altDE_text.length, expected: '> 0', tol: null },
+          { label: 'Alt-Text Englisch nicht leer', ok: altEN_text && altEN_text.length > 0, actual: altEN_text.length, expected: '> 0', tol: null },
+          { label: 'Alt-Text unterscheidet sich (DE !== EN)', ok: altDE_text !== altEN_text, actual: altEN_text.substring(0, 20), expected: '≠ ' + altDE_text.substring(0, 20), tol: null }
+        ]);
+      } finally {
+        if (PZ.setLang) PZ.setLang(savedLang);
+      }
+    })();
+
+    // --- PZ.hydrateImages() Idempotenz: Mehrfachaufruf sollte nicht doppeln ---
+    (function () {
+      const testRoot = document.createElement('div');
+      testRoot.innerHTML = '<span data-img-key="preset.napoli_klassisch"></span>';
+
+      PZ.hydrateImages(testRoot);
+      const firstHtml = testRoot.innerHTML;
+      const firstCount = (firstHtml.match(/<img/g) || []).length;
+
+      // Zweiter Aufruf auf demselben Root (mit bereits gerendertem Markup)
+      // Das sollte KEINE Änderung haben, da es keine [data-img-key] mehr gibt
+      PZ.hydrateImages(testRoot);
+      const secondHtml = testRoot.innerHTML;
+      const secondCount = (secondHtml.match(/<img/g) || []).length;
+
+      renderBox('PZ.hydrateImages() Idempotenz · Mehrfachaufruf doppelt nicht', [
+        { label: 'Erster Aufruf erzeugt genau 1× <img>', ok: firstCount === 1, actual: firstCount, expected: 1, tol: null },
+        { label: 'Zweiter Aufruf auf gleichen Root ändert nichts (HTML identisch)', ok: firstHtml === secondHtml, actual: 'identisch', expected: 'identisch', tol: null },
+        { label: 'Zweiter Aufruf erzeugt weiterhin genau 1× <img> (kein Doppel)', ok: secondCount === 1, actual: secondCount, expected: 1, tol: null }
+      ]);
+    })();
+
+    // --- PZ.hydrateImages() mit explizitem Root-Parameter (statt document) ---
+    (function () {
+      const testRoot = document.createElement('div');
+      testRoot.innerHTML = '<span data-img-key="preset.teglia"></span>';
+
+      PZ.hydrateImages(testRoot);
+      const html = testRoot.innerHTML;
+
+      renderBox('PZ.hydrateImages(root) mit explizitem Root-Parameter · ersetzt Platzhalter im Root', [
+        { label: 'data-img-key-Attribute werden entfernt', ok: !html.includes('data-img-key'), actual: html.includes('data-img-key'), expected: false, tol: null },
+        { label: 'Bild-HTML wird eingefügt (enthält assets/img/)', ok: html.includes('assets/img/'), actual: html.includes('assets/img/'), expected: true, tol: null },
+        { label: 'teglia-Datei korrekt referenziert', ok: html.includes('card-teglia.webp'), actual: html.includes('card-teglia.webp'), expected: true, tol: null },
+        { label: 'Enthält <span class="media media--3x2">', ok: html.includes('media media--3x2'), actual: html.includes('media media--3x2'), expected: true, tol: null }
+      ]);
+    })();
+  })();
+
+  // ─────────────────────────────────────────────────────────────
+  heading('40 · finalPhotoKey() Funktion (js/guide.js, v4.32.0)');
+
+  // finalPhotoKey() liest den #preset-DOM-Element-Wert und liefert den entsprechenden
+  // Bild-Register-Key: teglia->guide.final.teglia, newyork_style->guide.final.newyork,
+  // alle anderen (incl. leer/"Eigene Einstellung")->guide.final.napoli.
+  (function () {
+    function setPreset(value) {
+      document.getElementById('preset').value = value;
+    }
+
+    // Direkter Zugriff auf finalPhotoKey() ist nicht öffentlich (nicht in PZ exportiert).
+    // Stattdessen prüfen wir es indirekt über buildGuide() und das gerenderte Foto-HTML,
+    // oder wir simulieren die Logik der Funktion selbst basierend auf #preset-Wert.
+    // Wir testen die LOGIK, nicht die Funktion direkt.
+
+    function extractFinalPhotoFile(guideHtml) {
+      // Extrahiert den Dateinamen aus dem final-photo-Markup
+      const match = guideHtml.match(/class="media media--16x9 final-photo"[^>]*>\s*<img[^>]*src="[^"]*\/([^"]+)"/);
+      return match ? match[1] : null;
+    }
+
+    testCase('finalPhotoKey() Logik · Preset leer ("Eigene Einstellung"): Fallback zu neapolitanisch', {}, () => {
+      setPreset('');
+      PZ.buildGuide();
+      const file = extractFinalPhotoFile(document.getElementById('guideSteps').innerHTML);
+      return [
+        ['Foto ist pizza-final-neapolitanisch.jpg (Fallback)', file, 'pizza-final-neapolitanisch.jpg'],
+      ];
+    });
+
+    testCase('finalPhotoKey() Logik · Preset "napoli_klassisch": Neapolitanisch-Fallback', {}, () => {
+      setPreset('napoli_klassisch');
+      PZ.buildGuide();
+      const file = extractFinalPhotoFile(document.getElementById('guideSteps').innerHTML);
+      return [
+        ['Foto ist pizza-final-neapolitanisch.jpg', file, 'pizza-final-neapolitanisch.jpg'],
+      ];
+    });
+
+    testCase('finalPhotoKey() Logik · Preset "napoli_kalt": Neapolitanisch-Fallback', {}, () => {
+      setPreset('napoli_kalt');
+      PZ.buildGuide();
+      const file = extractFinalPhotoFile(document.getElementById('guideSteps').innerHTML);
+      return [
+        ['Foto ist pizza-final-neapolitanisch.jpg', file, 'pizza-final-neapolitanisch.jpg'],
+      ];
+    });
+
+    testCase('finalPhotoKey() Logik · Preset "schnell": Neapolitanisch-Fallback', {}, () => {
+      setPreset('schnell');
+      PZ.buildGuide();
+      const file = extractFinalPhotoFile(document.getElementById('guideSteps').innerHTML);
+      return [
+        ['Foto ist pizza-final-neapolitanisch.jpg', file, 'pizza-final-neapolitanisch.jpg'],
+      ];
+    });
+
+    testCase('finalPhotoKey() Logik · Preset "napoli_biga_klassisch": Neapolitanisch-Fallback', {}, () => {
+      setPreset('napoli_biga_klassisch');
+      PZ.buildGuide();
+      const file = extractFinalPhotoFile(document.getElementById('guideSteps').innerHTML);
+      return [
+        ['Foto ist pizza-final-neapolitanisch.jpg', file, 'pizza-final-neapolitanisch.jpg'],
+      ];
+    });
+
+    testCase('finalPhotoKey() Logik · Preset "napoli_biga_kalt": Neapolitanisch-Fallback', {}, () => {
+      setPreset('napoli_biga_kalt');
+      PZ.buildGuide();
+      const file = extractFinalPhotoFile(document.getElementById('guideSteps').innerHTML);
+      return [
+        ['Foto ist pizza-final-neapolitanisch.jpg', file, 'pizza-final-neapolitanisch.jpg'],
+      ];
+    });
+
+    testCase('finalPhotoKey() Logik · Preset "napoli_poolish_schnell": Neapolitanisch-Fallback', {}, () => {
+      setPreset('napoli_poolish_schnell');
+      PZ.buildGuide();
+      const file = extractFinalPhotoFile(document.getElementById('guideSteps').innerHTML);
+      return [
+        ['Foto ist pizza-final-neapolitanisch.jpg', file, 'pizza-final-neapolitanisch.jpg'],
+      ];
+    });
+
+    testCase('finalPhotoKey() Logik · Preset "napoli_poolish_kalt": Neapolitanisch-Fallback', {}, () => {
+      setPreset('napoli_poolish_kalt');
+      PZ.buildGuide();
+      const file = extractFinalPhotoFile(document.getElementById('guideSteps').innerHTML);
+      return [
+        ['Foto ist pizza-final-neapolitanisch.jpg', file, 'pizza-final-neapolitanisch.jpg'],
+      ];
+    });
+
+    testCase('finalPhotoKey() Logik · Preset "teglia": Teglia-spezifisches Foto', {}, () => {
+      setPreset('teglia');
+      PZ.buildGuide();
+      const file = extractFinalPhotoFile(document.getElementById('guideSteps').innerHTML);
+      return [
+        ['Foto ist pizza-final-teglia.jpg', file, 'pizza-final-teglia.jpg'],
+      ];
+    });
+
+    testCase('finalPhotoKey() Logik · Preset "newyork_style": New-York-spezifisches Foto', {}, () => {
+      setPreset('newyork_style');
+      PZ.buildGuide();
+      const file = extractFinalPhotoFile(document.getElementById('guideSteps').innerHTML);
+      return [
+        ['Foto ist pizza-final-newyork.jpg', file, 'pizza-final-newyork.jpg'],
+      ];
+    });
+
+    // Cleanup: Preset-Select zurück auf leer
+    setPreset('');
   })();
 
   // ─────────────────────────────────────────────────────────────

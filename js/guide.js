@@ -123,18 +123,20 @@
   // schon (s. presets.js, Slider-Listener setzen `$('preset').value = ''`). Alles außer
   // 'teglia'/'newyork_style' (leer = "Eigene Einstellung", jedes andere Preset, ein
   // geladenes eigenes Rezept "recipe:<id>") fällt auf das neapolitanische Foto zurück.
-  const FINAL_PHOTO = {
-    teglia: { src: 'assets/pizza-final-teglia.jpg', altKey: 'guide.step.finalPhoto.alt.teglia' },
-    newyork_style: { src: 'assets/pizza-final-newyork.jpg', altKey: 'guide.step.finalPhoto.alt.newyork' }
-  };
-  function finalPhoto() {
+  // Seit v4.32.0 ("Bild-Grundgerüst"): der Dateiname selbst steht NICHT mehr hier, sondern
+  // ausschließlich im Bild-Register js/images.js (PZ.IMG) -- genau die vorher hier fest
+  // verdrahteten Pfade (assets/pizza-final-*.jpg) zeigten nach einer Ordner-Umbenennung ins
+  // Leere und lösten den Bugfix aus, der diesen Zyklus angestoßen hat.
+  function finalPhotoKey() {
     const presetEl = $('preset');
     const key = presetEl ? presetEl.value : '';
-    return FINAL_PHOTO[key] || { src: 'assets/pizza-final-neapolitanisch.jpg', altKey: 'guide.step.finalPhoto.alt.napoli' };
+    if (key === 'teglia') return 'guide.final.teglia';
+    if (key === 'newyork_style') return 'guide.final.newyork';
+    return 'guide.final.napoli';
   }
 
   // Teglia-spezifische Anleitungstexte (v4.29.0, "Formen"-Tipp/"Ausziehen"-Schritt/
-  // Backzeit): identisches Zuordnungsmuster wie FINAL_PHOTO/finalPhoto() oben -- reiner
+  // Backzeit): identisches Zuordnungsmuster wie finalPhotoKey() oben -- reiner
   // #preset-DOM-Wert, kein state.preset (Begründung s. Kommentar dort). Bewusst NICHT
   // über state.balls===1 o.ä. ausgelöst: ein manuell auf 1 Teigling reduziertes
   // NICHT-Teglia-Rezept soll weiterhin die generischen runden Formulierungen/Formel
@@ -477,9 +479,12 @@
 
     // Foto der fertigen Pizza (v3.69.0): eigener, abschließender Schritt nach dem letzten
     // Backschritt, keine sichtbare Bildunterschrift zusätzlich zum Alt-Text (Accessibility).
-    const photo = finalPhoto();
-    st(t('guide.step.finalPhoto.title'), '', t('guide.step.finalPhoto.body'),
-      `<img src="${photo.src}" alt="${t(photo.altKey)}" class="final-photo" loading="lazy" width="1920" height="1079">`, 0);
+    // Seit v4.32.0: Markup + Dateiname kommen aus dem Bild-Register (PZ.imgHtml(), s.
+    // js/images.js) statt aus einem festen Pfad hier -- fehlt PZ.imgHtml() ausnahmsweise
+    // (sollte nicht vorkommen, Ladereihenfolge stellt es sicher), erscheint der Schritt
+    // ohne Foto statt mit einem kaputten <img>.
+    const photoHtml = PZ.imgHtml ? PZ.imgHtml(finalPhotoKey(), { extraClass: 'final-photo' }) : '';
+    st(t('guide.step.finalPhoto.title'), '', t('guide.step.finalPhoto.body'), photoHtml, 0);
 
     // ===== Zeiten berechnen =====
     const steps = _items.filter(i => !i.sec);
