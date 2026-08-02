@@ -8,6 +8,24 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0 bis v4.33.4)
+
+Nur Mobil (`css/mobile.css`): das 9-Karten-Gitter wird durch eine waagerecht wischbare
+Flex-Reihe mit CSS-Scroll-Snap ersetzt (Desktop-Gitter unverändert). v4.33.1/v4.33.2
+behoben ungleiche Kartenhöhen und ein Zentrierungs-Bug (`css/mobile.css`,
+`.preset-card-fit`-Klemmung jetzt 2 Zeilen, `truncatePresetFitWords()` in `js/presets.js`
+kürzt bei Überlauf wortgrenzen-sicher). v4.33.3 kürzte 7 der 9 `preset.grid.*.fit`-Texte
+(DE+EN), damit sie ohne „…"-Kürzung lesbar sind. v4.33.4 ersetzte alle 9 Texte
+inhaltlich (Nutzer-Vorgabe): keine Mehlstärke mehr (steht schon in der Mehl-Warnung),
+stattdessen einheitlich Textur/Krume + Aroma/Geschmack; 3 der 9 vom Nutzer vorgegebenen
+Texte mussten dafür selbst minimal weiter gekürzt werden (per Headless-WebKit über alle
+36 Kombinationen aus 9 Karten × DE/EN × 390/320 px verifiziert, kein Umbruch/Kürzung mehr).
+`tests/test.html`: durchgehend unverändert 1173/1173 (reine CSS-/Text-Änderungen).
+
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Preset-Karten als
+Swipe-Leiste auf dem Handy (v4.33.0, Nachträge v4.33.1/v4.33.2/v4.33.3)" (vorherige
+Abschnitte ebenfalls dort verkettet).
+
 ## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0, Nachträge v4.33.1/v4.33.2/v4.33.3)
 
 Nur Mobil (`css/mobile.css`): das 9-Karten-Gitter (1188 px hoch bei 390 px Breite) wird

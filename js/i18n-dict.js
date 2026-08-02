@@ -743,8 +743,8 @@
   add('preset.grid.schnell.name', 'Schnell', 'Quick');
   add('preset.grid.schnell.time', '4–6 h', '4–6 h');
   add('preset.grid.schnell.fit', 'Locker-luftig für spontane Abende', 'Light and airy for a spontaneous night');
-  add('preset.grid.schnell.ariaLabel', 'Schnell: 4–6 h Gärzeit, für spontane Pizza am selben Tag',
-    'Quick: 4–6 h rise time, for spontaneous pizza the same day');
+  add('preset.grid.schnell.ariaLabel', 'Schnell: 4–6 h Gärzeit, locker-luftig für spontane Abende',
+    'Quick: 4–6 h rise time, light and airy for a spontaneous night');
   // v4.25.1: "(AVPN)" als nackte Konformitätsbehauptung entschärft (das Preset behält
   // 2 % Öl, das AVPN-Disciplinare kennt kein Öl) und die Gärzeit aus der Berechnung
   // nachgemessen (27,62 h → ~28 h statt der bisherigen geschätzten "24 h"). Teigwerte
@@ -754,8 +754,8 @@
   add('preset.grid.napoliKlassisch.name', 'Napoli Klassisch', 'Napoli Classic');
   add('preset.grid.napoliKlassisch.time', '~28 h', '~28 h');
   add('preset.grid.napoliKlassisch.fit', 'Ausgewogener AVPN-Klassiker', 'Balanced classic, AVPN inspired');
-  add('preset.grid.napoliKlassisch.ariaLabel', 'Napoli Klassisch: ~28 h Gärzeit, an den AVPN-Standard angelehnter neapolitanischer Klassiker',
-    'Napoli Classic: ~28 h rise time, Neapolitan classic inspired by the AVPN standard');
+  add('preset.grid.napoliKlassisch.ariaLabel', 'Napoli Klassisch: ~28 h Gärzeit, ausgewogener AVPN-Klassiker',
+    'Napoli Classic: ~28 h rise time, balanced classic, AVPN inspired');
   // v4.25.1: Gärzeit aus der Berechnung nachgemessen (44,62 h → ~45 h) statt der
   // bisherigen geschätzten "48–72 h" -- die lag sogar UNTER dem versprochenen Minimum. Name
   // seit v4.32.0 "Napoli Lange Kaltgare" statt nur "Lang" (s. Kommentar bei
@@ -763,38 +763,38 @@
   add('preset.grid.napoliKalt.name', 'Napoli Lange Kaltgare', 'Napoli Long Cold Rise');
   add('preset.grid.napoliKalt.time', '~44 h', '~44 h');
   add('preset.grid.napoliKalt.fit', 'Komplexes Aroma, lange Kaltgare', 'Complex flavor, long cold rise');
-  add('preset.grid.napoliKalt.ariaLabel', 'Napoli Lange Kaltgare: ~44 h Gärzeit, maximales Aroma, braucht starkes Mehl (W300+)',
-    'Napoli Long Cold Rise: ~44 h rise time, maximum flavor, needs a strong flour (W300+)');
+  add('preset.grid.napoliKalt.ariaLabel', 'Napoli Lange Kaltgare: ~44 h Gärzeit, komplexes Aroma, lange Kaltgare',
+    'Napoli Long Cold Rise: ~44 h rise time, complex flavor, long cold rise');
   add('preset.grid.napoliBigaKlassisch.name', 'Biga klassisch', 'Biga classic');
   add('preset.grid.napoliBigaKlassisch.time', '~29 h', '~29 h');
   add('preset.grid.napoliBigaKlassisch.fit', 'Röstaroma, offene Krume', 'Rich toasted flavor, open crumb');
-  add('preset.grid.napoliBigaKlassisch.ariaLabel', 'Biga klassisch: ~29 h Gärzeit, Vorteig mit kräftigen Röstaromen und offener Krume',
-    'Biga classic: ~29 h rise time, pre-ferment with rich toasted aromas and an open crumb');
+  add('preset.grid.napoliBigaKlassisch.ariaLabel', 'Biga klassisch: ~29 h Gärzeit, röstaroma, offene Krume',
+    'Biga classic: ~29 h rise time, rich toasted flavor, open crumb');
   add('preset.grid.napoliBigaKalt.name', 'Biga kalt', 'Biga cold');
   add('preset.grid.napoliBigaKalt.time', '~60 h', '~60 h');
   add('preset.grid.napoliBigaKalt.fit', 'Kräftigeres Aroma, extra lange Reife', 'Even richer flavor, extra long rise');
-  add('preset.grid.napoliBigaKalt.ariaLabel', 'Biga kalt: ~60 h Gärzeit, kalt geführter Vorteig, noch mehr Aroma durch lange Kühlschrankreife',
-    'Biga cold: ~60 h rise time, cold pre-ferment with even more flavor from a long fridge rise');
+  add('preset.grid.napoliBigaKalt.ariaLabel', 'Biga kalt: ~60 h Gärzeit, kräftigeres Aroma, extra lange Reife',
+    'Biga cold: ~60 h rise time, even richer flavor, extra long rise');
   add('preset.grid.napoliPoolishSchnell.name', 'Poolish schnell', 'Poolish fast');
   add('preset.grid.napoliPoolishSchnell.time', '~20 h', '~20 h');
   add('preset.grid.napoliPoolishSchnell.fit', 'Mild im Geschmack, sehr luftige Krume', 'Mild flavor, very airy crumb');
-  add('preset.grid.napoliPoolishSchnell.ariaLabel', 'Poolish schnell: ~20 h Gärzeit, milder Vorteig mit luftiger Krume',
-    'Poolish fast: ~20 h rise time, mild pre-ferment with an airy crumb');
+  add('preset.grid.napoliPoolishSchnell.ariaLabel', 'Poolish schnell: ~20 h Gärzeit, mild im Geschmack, sehr luftige Krume',
+    'Poolish fast: ~20 h rise time, mild flavor, very airy crumb');
   add('preset.grid.napoliPoolishKalt.name', 'Poolish kalt', 'Poolish cold');
   add('preset.grid.napoliPoolishKalt.time', '~34 h', '~34 h');
   add('preset.grid.napoliPoolishKalt.fit', 'Mild, aromatisch durch kalte Reife', 'Mild yet aromatic from a cold rise');
-  add('preset.grid.napoliPoolishKalt.ariaLabel', 'Poolish kalt: ~34 h Gärzeit, kalt geführter Vorteig mit mehr Aroma',
-    'Poolish cold: ~34 h rise time, cold pre-ferment with more flavor');
+  add('preset.grid.napoliPoolishKalt.ariaLabel', 'Poolish kalt: ~34 h Gärzeit, mild, aromatisch durch kalte Reife',
+    'Poolish cold: ~34 h rise time, mild yet aromatic from a cold rise');
   add('preset.grid.teglia.name', 'Teglia', 'Teglia');
   add('preset.grid.teglia.time', '~76 h', '~76 h');
   add('preset.grid.teglia.fit', 'Knusprig-luftige Blechpizza', 'Crispy, airy pan pizza, Roman style');
-  add('preset.grid.teglia.ariaLabel', 'Teglia: ~76 h Gärzeit, römische Blechpizza, braucht sehr starkes Mehl (W330+)',
-    'Teglia: ~76 h rise time, Roman pan pizza, needs a very strong flour (W330+)');
+  add('preset.grid.teglia.ariaLabel', 'Teglia: ~76 h Gärzeit, knusprig-luftige Blechpizza',
+    'Teglia: ~76 h rise time, crispy, airy pan pizza, Roman style');
   add('preset.grid.newyorkStyle.name', 'New York Style', 'New York Style');
   add('preset.grid.newyorkStyle.time', '~44 h', '~44 h');
   add('preset.grid.newyorkStyle.fit', 'Dünn, knusprig, klassisch faltbar', 'Thin, crispy, classic foldable slice');
-  add('preset.grid.newyorkStyle.ariaLabel', 'New York Style: ~44 h Gärzeit, dünnere Kruste mit etwas Zucker für Bräunung, braucht mittelstarkes Mehl (W300+)',
-    'New York Style: ~44 h rise time, thinner crust with a touch of sugar for browning, needs a medium-strong flour (W300+)');
+  add('preset.grid.newyorkStyle.ariaLabel', 'New York Style: ~44 h Gärzeit, dünn, knusprig, klassisch faltbar',
+    'New York Style: ~44 h rise time, thin, crispy, classic foldable slice');
   add('preset.allRecipes', 'Alle Rezepte', 'All recipes');
 
   // -- Card: Einfacher Modus (v3.62.0) -------------------------------------------------

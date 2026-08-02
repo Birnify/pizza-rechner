@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-02 · Aktuelle Version: v4.33.4 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-02 · Aktuelle Version: v4.33.5 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -216,23 +216,24 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0 bis v4.33.4) = aktueller Stand
+## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0 bis v4.33.5) = aktueller Stand
 
 Nur Mobil (`css/mobile.css`): das 9-Karten-Gitter wird durch eine waagerecht wischbare
-Flex-Reihe mit CSS-Scroll-Snap ersetzt (Desktop-Gitter unverändert). v4.33.1/v4.33.2
-behoben ungleiche Kartenhöhen und ein Zentrierungs-Bug (`css/mobile.css`,
-`.preset-card-fit`-Klemmung jetzt 2 Zeilen, `truncatePresetFitWords()` in `js/presets.js`
-kürzt bei Überlauf wortgrenzen-sicher). v4.33.3 kürzte 7 der 9 `preset.grid.*.fit`-Texte
-(DE+EN), damit sie ohne „…"-Kürzung lesbar sind. **v4.33.4** ersetzte alle 9 Texte
-inhaltlich (Nutzer-Vorgabe): keine Mehlstärke mehr (steht schon in der Mehl-Warnung),
-stattdessen einheitlich Textur/Krume + Aroma/Geschmack; 3 der 9 vom Nutzer vorgegebenen
-Texte mussten dafür selbst minimal weiter gekürzt werden (per Headless-WebKit über alle
-36 Kombinationen aus 9 Karten × DE/EN × 390/320 px verifiziert, kein Umbruch/Kürzung mehr).
-`tests/test.html`: durchgehend unverändert 1173/1173 (reine CSS-/Text-Änderungen).
+Flex-Reihe mit CSS-Scroll-Snap ersetzt (Desktop-Gitter unverändert), inhaltlich neu
+gefasste `.fit`-Texte (v4.33.3/v4.33.4). **v4.33.5** (reiner Textfix, Nebenbefund aus
+v4.33.4): die 9 `preset.grid.*.ariaLabel`-Texte (`js/i18n-dict.js`, DE+EN) waren bei der
+inhaltlichen Neufassung der sichtbaren `.fit`-Texte nicht mitgezogen worden — Screenreader-
+Nutzer hörten bei mehreren Karten noch die alte Mehlstärke-Angabe (z. B. „braucht starkes
+Mehl (W300+)"), während sehende Nutzer bereits den neuen, mehlfreien Text sahen. Alle 18
+Wortlaute (9 Karten × DE/EN) im etablierten „Name: ~X h Gärzeit, <Eignung>"-Muster durch
+den jeweiligen neuen `.fit`-Text ersetzt, `option.*`-Dropdown-Texte nicht angefasst. Per
+Headless-Edge-DOM-Dump für alle 9 Karten in DE und EN live verifiziert: gerenderte
+`aria-label`-Attribute enthalten jetzt den neuen Text, kein „Mehl"/„W300+"/„W330+" mehr in
+den Preset-Karten. `tests/test.html`: durchgehend unverändert 1173/1173.
 
 **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Preset-Karten als
-Swipe-Leiste auf dem Handy (v4.33.0, Nachträge v4.33.1/v4.33.2/v4.33.3)" (vorherige
-Abschnitte ebenfalls dort verkettet).
+Swipe-Leiste auf dem Handy (v4.33.0 bis v4.33.4)" (vorherige Abschnitte ebenfalls dort
+verkettet).
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -941,14 +942,6 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
-- **Nebenbefund aus v4.33.4 (Preset-Fit-Texte inhaltlich neu):** die 9
-  `preset.grid.*.ariaLabel`-Texte (Screenreader-Beschreibung der Karten) wurden bewusst
-  NICHT angefasst — sie enthalten teils noch die alte, jetzt aus den sichtbaren
-  `.fit`-Texten entfernte Mehlstärke-Angabe (z. B. „braucht starkes Mehl (W300+)" bei
-  `napoliKalt`). Das ist kein Fehler (die Mehl-Info bleibt für Screenreader-Nutzer
-  zusätzlich verfügbar), aber sichtbarer und vorgelesener Text weichen jetzt inhaltlich
-  voneinander ab. Falls gewünscht: eigener kleiner Folgezyklus, der die 9 ariaLabel-Texte
-  an die neuen `.fit`-Texte anpasst.
 - **Nebenbefunde aus dem v4.33.0-`mobile-optimizer`-/`accessibility-expert`-Review der
   Swipe-Leiste** (Blocker/Major direkt im selben Zyklus behoben, s. „= aktueller Stand"
   oben — hier nur die bewusst zurückgestellten Punkte, nach Prüfung durch den
