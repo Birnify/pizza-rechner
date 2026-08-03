@@ -136,7 +136,7 @@ bis 3 auf, die folgenden nutzen sie nur noch.
 |---|-----------|--------|---------|--------|
 | 1 | Preset-Karten **plus Grundgerüst** plus Fix des kaputten Anleitungsfotos | 8 bis 18 | groß (Fundament) | **erledigt (v4.32.0)** |
 | 2 | Anleitungs-Schrittbilder | 27 bis 45 | mittel | **erledigt (v4.35.0)** |
-| 3 | Glossar (Kategorie-Banner und Artikelbilder) | 46 bis 90 | mittel | offen |
+| 3 | Glossar (Kategorie-Banner und Artikelbilder) | 46 bis 90 | mittel | **teilweise (v4.36.0, nur Kategorie-Banner)**, s. Abschnitt 9 |
 | 4 | Hero/Header (ersetzt das heutige Einzelfoto) | 1 bis 7 | klein | offen |
 | 5 | Onboarding, Party, Leerzustände | 91 bis 105 | mittel | offen |
 | 6 | Texturen, Marketing, Varianten | 106 bis 128 | offen | **teilweise (v4.34.0)**, s. Abschnitt 7 |
@@ -263,3 +263,18 @@ erwies sich als sichtbar unscharf (Nutzer-Meldung). v4.35.1 milderte das nur CSS
 jetzt dauerhaft in `assets/originals/` (s. Schicht 4, neue nicht-destruktive Konvention)
 und werden auf 600x448 statt 300x224 verkleinert (doppelte lineare Auflösung). Details:
 `pizza-rechner-KONTEXT.md`, Abschnitt „= aktueller Stand".
+
+## 9. Zyklus 3 (Teil): Glossar-Kategorie-Banner (v4.36.0, nur Banner — Artikelbilder offen)
+
+Vorgezogener Teilausschnitt aus Zyklus 3: nur die 7 Kategorie-Banner (3:1), eingebettet
+in das neue Glossar-Kachelregal-Navigationskonzept (Regal aus Kacheln, betretene
+Kategorie mit Bannerkopf, s. `pizza-rechner-KONTEXT.md`, Abschnitt „= aktueller Stand").
+6 der 7 Banner lagen bereits fertig in `assets/img/` (vor der v4.35.2-Konvention erzeugt,
+kein Original mehr vorhanden), das 7. (`toppings`) wurde nach der seit v4.35.2
+verbindlichen nicht-destruktiven Konvention nachgezogen (`assets/originals/`,
+`assets/prepare_web_images.py`, 1496×496). Die ~24 bereits fertig erzeugten Artikelbilder
+(3:2, z. B. `glossar-hydration.webp`) wurden bewusst NICHT verdrahtet — explizite
+Abgrenzung der Feature-Definition dieses Zyklus, nicht Teil des ursprünglichen
+Blöcke-46-bis-90-Umfangs. Bleiben offen für einen künftigen Zyklus. Details, Testzahlen
+und Commit-Hash: `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-Kachelregal
+(v4.36.0)".

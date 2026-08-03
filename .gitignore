@@ -4,3 +4,9 @@ Versionen/
 # Windows
 Thumbs.db
 desktop.ini
+
+# Pruefausgabe von assets/sim_header_crop.py (Header-Zuschnitt-Simulation, kein Asset)
+assets/_sim/
+
+# Temporaere Review-Kopien (z. B. entpackte Design-Vorschlaege), kein Ersatz fuer design-import/
+_review/

@@ -1039,6 +1039,23 @@
   add('glossary.searchResultsOne', '1 Artikel gefunden.', '1 article found.');
   add('glossary.searchResultsMany', '{n} Artikel gefunden.', '{n} articles found.');
 
+  // Glossar-Kachelregal (v4.36.0): Regal aus Kategoriekacheln statt reiner Textliste --
+  // Kategorie wird betreten (eigene Ansicht mit Zurück-Weg), Suche liefert weiterhin eine
+  // flache Trefferliste über alle Kategorien. Neue Texte für Kachel-/Kategoriekopf-
+  // Artikelzahl, Zurück-Button, Suchzusammenfassung und Leer-Zustand mit Bild.
+  add('glossary.articleCountOne', '1 Artikel', '1 article');
+  add('glossary.articleCountMany', '{n} Artikel', '{n} articles');
+  add('glossary.categoryCountOne', '1 Kategorie', '1 category');
+  add('glossary.categoryCountMany', '{n} Kategorien', '{n} categories');
+  add('btn.glossaryBack', 'Alle Kategorien', 'All categories');
+  // {articles}/{categories} kommen bereits fertig formatiert (z. B. "3 Artikel") aus
+  // glossary.articleCount*/categoryCount* -- kein weiteres Pluralformat hier nötig.
+  add('glossary.searchSummary', '{articles} in {categories}. Suche über alle Kategorien, Titel und Artikeltext.',
+    '{articles} in {categories}. Searching across all categories, titles and article text.');
+  add('glossary.emptyHint', 'Gesucht wird in Titel und Artikeltext aller {n} Kategorien.',
+    'Searching titles and article text across all {n} categories.');
+  add('btn.glossaryResetSearch', 'Zurück zum Regal', 'Back to the shelf');
+
   add('glossary.wwert.title', 'W-Wert (Mehlstärke)', 'W-value (flour strength)');
   add('glossary.wwert.body',
     '<p>Der W-Wert (auch Mehlstärke oder Alveograph-Wert genannt) beschreibt, wie viel Wasser ein Mehl aufnehmen kann und wie belastbar sein Klebergerüst (Gluten) ist. Je höher der W-Wert, desto mehr Wasser bindet das Mehl und desto länger hält der Teig eine lange, warme oder kalte Gare aus, ohne zu erschlaffen.</p><p>Schwache Mehle (W 90–180) eignen sich für kurze Gärzeiten von wenigen Stunden, starke Mehle (W 260–350+) für 24 bis 72 Stunden. Der Teigrechner nutzt den W-Wert, um bei jedem Rezept zu warnen, wenn die gewählte Gärzeit nicht zur Mehlstärke passt.</p>',

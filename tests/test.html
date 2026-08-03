@@ -87,6 +87,16 @@
   </div>
   <div id="unitsAnnounce" role="status" aria-live="polite"></div>
   <div id="wasteNote"></div>
+  <!-- Sektion 41 (v4.36.0, Glossar-Kachelregal): js/glossary.js wird ab hier tatsächlich
+       geladen (bis v4.35.2 bewusst ausgeschlossen, s. Kommentar oben bei den
+       Modul-<script>-Tags) -- die drei Ansichten (Regal/Kategorie/Suche) sind reine
+       DOM-Logik ohne PZ.state-Bezug, brauchen aber echte Stub-Elemente, weil das Modul
+       beim Laden sofort rendert (renderShelf() beim ersten render()-Aufruf). Bewusst VOR
+       dem fmPrevOnly-Paar unten eingefügt (nicht dahinter) -- das Paar muss laut eigenem
+       Kommentar die LETZTEN Kinder von #stubs bleiben. -->
+  <input type="text" id="glossarySearch">
+  <div id="glossarySearchLiveMsg" role="status" aria-live="polite"></div>
+  <div id="glossaryList"></div>
   <!-- fmPrevOnly-Paar bewusst als LETZTE Kinder von #stubs (kein nachfolgendes
        Geschwister im DOM) -- testet den "kein sichtbarer Nachfolger -> voriges
        Geschwister"-Zweig von PZ.moveFocusBeforeHide(). -->
@@ -117,6 +127,7 @@
 <script src="../js/storage.js"></script>
 <script src="../js/share.js"></script>
 <script src="../js/party.js"></script>
+<script src="../js/glossary.js"></script>
 
 <script>
 "use strict";
@@ -6257,6 +6268,268 @@
 
     // Cleanup: Preset-Select zurück auf leer
     setPreset('');
+  })();
+
+  // ─────────────────────────────────────────────────────────────
+  heading('41 · Glossar-Kachelregal (js/glossary.js, v4.36.0)');
+
+  // Erstes Mal, dass js/glossary.js in dieser Testsuite geladen wird (bis v4.35.2
+  // bewusst ausgeschlossen, s. Kommentar bei den Modul-<script>-Tags oben) -- die drei
+  // Ansichten (Regal/Kategorie/Suche) sind reine DOM-Logik ohne PZ.state-Bezug, echte
+  // Klicks auf die von glossary.js selbst (synchron beim Laden, nicht erst bei
+  // DOMContentLoaded) verdrahteten Buttons lösen die echten Handler aus -- kein Stub/
+  // Mock nötig, anders als z. B. bei #themeSwitch (Sektion 24), dessen Klick-Verdrahtung
+  // erst bei DOMContentLoaded gebunden wird. withMockTimers() wird von Sektion 38 oben
+  // wiederverwendet (function-scope-Hoisting innerhalb desselben IIFE).
+  // --- Neue i18n-Texte (DE+EN, nicht leer + Platzhalter-Ersetzung) -----------------------
+  (function () {
+    const savedLang = PZ.getLang();
+    try {
+      PZ.setLang('de');
+      const backDe = PZ.t('btn.glossaryBack');
+      const oneArticleDe = PZ.t('glossary.articleCountOne');
+      const manyArticlesDe = PZ.t('glossary.articleCountMany', { n: 5 });
+      const oneCatDe = PZ.t('glossary.categoryCountOne');
+      const manyCatsDe = PZ.t('glossary.categoryCountMany', { n: 3 });
+      const summaryDe = PZ.t('glossary.searchSummary', { articles: '5 Artikel', categories: '2 Kategorien' });
+      const emptyHintDe = PZ.t('glossary.emptyHint', { n: 7 });
+      const resetDe = PZ.t('btn.glossaryResetSearch');
+      PZ.setLang('en');
+      const backEn = PZ.t('btn.glossaryBack');
+      const manyArticlesEn = PZ.t('glossary.articleCountMany', { n: 5 });
+      const summaryEn = PZ.t('glossary.searchSummary', { articles: '5 articles', categories: '2 categories' });
+      const emptyHintEn = PZ.t('glossary.emptyHint', { n: 7 });
+      const resetEn = PZ.t('btn.glossaryResetSearch');
+      renderBox('Neue Glossar-Kachelregal-Texte: DE+EN nicht leer, Platzhalter korrekt ersetzt', [
+        { label: 'btn.glossaryBack (DE) nicht leer', actual: backDe.length, expected: '> 0', tol: null, ok: backDe.length > 0 },
+        { label: 'btn.glossaryBack (EN) nicht leer und unterscheidet sich von DE', actual: backEn, expected: '≠ ' + backDe, tol: null, ok: backEn.length > 0 && backEn !== backDe },
+        { label: 'glossary.articleCountOne (DE) = "1 Artikel"', actual: oneArticleDe, expected: '1 Artikel', tol: null, ok: oneArticleDe === '1 Artikel' },
+        { label: 'glossary.articleCountMany (DE, n=5) = "5 Artikel"', actual: manyArticlesDe, expected: '5 Artikel', tol: null, ok: manyArticlesDe === '5 Artikel' },
+        { label: 'glossary.articleCountMany (EN, n=5) = "5 articles"', actual: manyArticlesEn, expected: '5 articles', tol: null, ok: manyArticlesEn === '5 articles' },
+        { label: 'glossary.categoryCountOne (DE) = "1 Kategorie"', actual: oneCatDe, expected: '1 Kategorie', tol: null, ok: oneCatDe === '1 Kategorie' },
+        { label: 'glossary.categoryCountMany (DE, n=3) = "3 Kategorien"', actual: manyCatsDe, expected: '3 Kategorien', tol: null, ok: manyCatsDe === '3 Kategorien' },
+        { label: 'glossary.searchSummary (DE) enthält beide Platzhalter-Werte, kein Em-Dash', actual: summaryDe, expected: 'enthält "5 Artikel" + "2 Kategorien", kein „—“', tol: null, ok: summaryDe.indexOf('5 Artikel') !== -1 && summaryDe.indexOf('2 Kategorien') !== -1 && summaryDe.indexOf('—') === -1 },
+        { label: 'glossary.searchSummary (EN) enthält beide Platzhalter-Werte', actual: summaryEn, expected: 'enthält "5 articles" + "2 categories"', tol: null, ok: summaryEn.indexOf('5 articles') !== -1 && summaryEn.indexOf('2 categories') !== -1 },
+        { label: 'glossary.emptyHint (DE) enthält "7"', actual: emptyHintDe, expected: 'enthält "7"', tol: null, ok: emptyHintDe.indexOf('7') !== -1 },
+        { label: 'glossary.emptyHint (EN) enthält "7"', actual: emptyHintEn, expected: 'enthält "7"', tol: null, ok: emptyHintEn.indexOf('7') !== -1 },
+        { label: 'btn.glossaryResetSearch (DE) nicht leer', actual: resetDe.length, expected: '> 0', tol: null, ok: resetDe.length > 0 },
+        { label: 'btn.glossaryResetSearch (EN) nicht leer und unterscheidet sich von DE', actual: resetEn, expected: '≠ ' + resetDe, tol: null, ok: resetEn.length > 0 && resetEn !== resetDe }
+      ]);
+    } finally {
+      PZ.setLang(savedLang);
+    }
+  })();
+
+  (function () {
+    const listEl = document.getElementById('glossaryList');
+    const searchEl = document.getElementById('glossarySearch');
+
+    function resetToShelf() {
+      searchEl.value = '';
+      searchEl.dispatchEvent(new Event('input'));
+      const back = listEl.querySelector('.glossary-back-btn');
+      if (back) back.click();
+    }
+
+    // --- Regal: 7 Kacheln, alphabetisch (DE) sortiert, mit Bannerbild, ohne Icon -------
+    (function () {
+      resetToShelf();
+      const tiles = Array.prototype.slice.call(listEl.querySelectorAll('.glossary-tile'));
+      const titles = tiles.map(function (b) { return b.querySelector('.glossary-tile-title').textContent; });
+      const sortedTitles = titles.slice().sort(function (a, b) { return a.localeCompare(b, 'de', { sensitivity: 'base' }); });
+      const allHaveBanner = tiles.every(function (b) { return !!b.querySelector('.media--3x1 img'); });
+      const tileIconCount = listEl.querySelectorAll('.glossary-tile .glossary-cat-icon').length;
+      renderBox('Regal-Ansicht: 7 Kategoriekacheln, alphabetisch sortiert, mit Bannerbild, ohne Icon', [
+        { label: 'Anzahl Kacheln', actual: tiles.length, expected: 7, tol: null, ok: tiles.length === 7 },
+        { label: 'Kacheln sind alphabetisch (DE) sortiert', actual: titles.join('|'), expected: sortedTitles.join('|'), tol: null, ok: titles.join('|') === sortedTitles.join('|') },
+        { label: 'jede Kachel hat ein 3:1-Bannerbild', actual: allHaveBanner, expected: true, tol: null, ok: allHaveBanner === true },
+        { label: 'keine Kachel trägt ein eigenes Icon (Abgrenzung Feature-Definition)', actual: tileIconCount, expected: 0, tol: null, ok: tileIconCount === 0 }
+      ]);
+    })();
+
+    // --- Kategorie betreten: Zurück-Button, Bannerkopf ohne Icon, Artikel sortiert -----
+    (function () {
+      resetToShelf();
+      listEl.querySelector('.glossary-tile[data-cat="basics"]').click();
+      const backBtn = listEl.querySelector('.glossary-back-btn');
+      const header = listEl.querySelector('.glossary-cat-header');
+      const bannerIcon = header ? header.querySelector('.glossary-cat-banner-overlay .glossary-cat-icon') : 'n/a';
+      const items = Array.prototype.slice.call(listEl.querySelectorAll('.glossary-cat-articles details.glossary-item'));
+      const ids = items.map(function (d) { return d.dataset.id; });
+      const expectedIds = PZ.GLOSSARY_CATEGORIES.filter(function (c) { return c.key === 'basics'; })[0].ids.slice().sort(function (a, b) {
+        return PZ.t('glossary.' + a + '.title').localeCompare(PZ.t('glossary.' + b + '.title'), 'de', { sensitivity: 'base' });
+      });
+      const openCount = items.filter(function (d) { return d.open; }).length;
+      const focusedIsHeading = document.activeElement && document.activeElement.classList.contains('glossary-cat-banner-title');
+      renderBox('Kategorie betreten ("basics"): Zurück-Button, Bannerkopf ohne Icon, Artikel alphabetisch, keiner offen, Fokus auf Überschrift', [
+        { label: 'Zurück-Button vorhanden', actual: !!backBtn, expected: true, tol: null, ok: !!backBtn },
+        { label: 'kein Icon-Badge im Bannerkopf (Abgrenzung)', actual: bannerIcon, expected: null, tol: null, ok: bannerIcon === null },
+        { label: 'Artikel-Reihenfolge = alphabetisch (DE)', actual: ids.join('|'), expected: expectedIds.join('|'), tol: null, ok: ids.join('|') === expectedIds.join('|') },
+        { label: 'kein Artikel initial offen', actual: openCount, expected: 0, tol: null, ok: openCount === 0 },
+        { label: 'Fokus landet auf der Kategorie-Überschrift', actual: focusedIsHeading, expected: true, tol: null, ok: focusedIsHeading === true }
+      ]);
+    })();
+
+    // --- Single-Open-Akkordeon innerhalb der Kategorie ---------------------------------
+    // Setzt .open direkt + feuert das 'toggle'-Event selbst (statt summary.click()): ein
+    // ECHTER Klick auf <summary> toggelt die BROWSER-eigene <details>-Aktivierung in
+    // aktuellen Chromium-Versionen NICHT mehr zwingend synchron (das "toggle"-Event kann
+    // intern verzögert dispatcht werden, s. HTML "interruptible details"-Spec-Update) --
+    // für einen deterministischen Test der EIGENEN Single-Open-LOGIK (nicht des Browser-
+    // Timings) wird der Auslöser hier direkt nachgebildet.
+    (function () {
+      resetToShelf();
+      listEl.querySelector('.glossary-tile[data-cat="basics"]').click();
+      const items = Array.prototype.slice.call(listEl.querySelectorAll('.glossary-cat-articles details.glossary-item'));
+      items[0].open = true;
+      items[0].dispatchEvent(new Event('toggle'));
+      const firstOpenAfterFirst = items[0].open;
+      items[1].open = true;
+      items[1].dispatchEvent(new Event('toggle'));
+      const firstOpenAfterSecond = items[0].open;
+      const secondOpen = items[1].open;
+      renderBox('Single-Open-Akkordeon: Öffnen eines zweiten Artikels schließt den ersten', [
+        { label: 'erster Artikel öffnet sich', actual: firstOpenAfterFirst, expected: true, tol: null, ok: firstOpenAfterFirst === true },
+        { label: 'erster Artikel schließt sich beim Öffnen des zweiten', actual: firstOpenAfterSecond, expected: false, tol: null, ok: firstOpenAfterSecond === false },
+        { label: 'zweiter Artikel ist offen', actual: secondOpen, expected: true, tol: null, ok: secondOpen === true }
+      ]);
+    })();
+
+    // --- Zurück-Button: kehrt ins Regal zurück, Fokus zurück auf die verlassene Kachel -
+    (function () {
+      resetToShelf();
+      listEl.querySelector('.glossary-tile[data-cat="basics"]').click();
+      listEl.querySelector('.glossary-back-btn').click();
+      const shelf = listEl.querySelector('.glossary-shelf');
+      const focusedTile = document.activeElement;
+      const isBasicsTile = !!(focusedTile && focusedTile.classList.contains('glossary-tile') && focusedTile.dataset.cat === 'basics');
+      renderBox('Zurück-Button: kehrt ins Regal zurück, Fokus auf die zuvor betretene Kachel', [
+        { label: 'Regal wieder sichtbar', actual: !!shelf, expected: true, tol: null, ok: !!shelf },
+        { label: 'Fokus zurück auf "basics"-Kachel', actual: isBasicsTile, expected: true, tol: null, ok: isBasicsTile === true }
+      ]);
+    })();
+
+    // --- Suche: flache, nach Kategorie gruppierte Trefferliste -------------------------
+    (function () {
+      resetToShelf();
+      searchEl.value = 'poolish';
+      searchEl.dispatchEvent(new Event('input'));
+      const hit = listEl.querySelector('details.glossary-item[data-id="poolish"]');
+      const groupIcon = listEl.querySelector('.glossary-group-heading .glossary-cat-icon');
+      const summary = listEl.querySelector('.glossary-search-summary');
+      const shelfGone = !listEl.querySelector('.glossary-shelf');
+      renderBox('Suche "poolish": Treffer erscheint gruppiert, mit Kategorie-Icon + Zusammenfassungssatz', [
+        { label: 'Regal/Kategorie-Ansicht ist verschwunden', actual: shelfGone, expected: true, tol: null, ok: shelfGone === true },
+        { label: 'Treffer "poolish" erscheint', actual: !!hit, expected: true, tol: null, ok: !!hit },
+        { label: 'Kategorie-Icon als Gruppenmarke vorhanden', actual: !!groupIcon, expected: true, tol: null, ok: !!groupIcon },
+        { label: 'Suchzusammenfassung vorhanden', actual: !!summary, expected: true, tol: null, ok: !!summary }
+      ]);
+    })();
+
+    // --- Suche findet auch reine Artikeltext-Treffer (nicht nur Titel) -----------------
+    (function () {
+      resetToShelf();
+      searchEl.value = 'kühlschrank';
+      searchEl.dispatchEvent(new Event('input'));
+      const hit = listEl.querySelector('details.glossary-item[data-id="kalteGare"]');
+      renderBox('Suche findet auch reine Artikeltext-Treffer ("Kühlschrank" -> "Kalte Gare", nicht im Titel)', [
+        { label: '"kühlschrank" findet "kalteGare"', actual: !!hit, expected: true, tol: null, ok: !!hit }
+      ]);
+    })();
+
+    // --- Suche leeren kehrt zur vorherigen Kategorie zurück (nicht zum Regal) ----------
+    (function () {
+      resetToShelf();
+      listEl.querySelector('.glossary-tile[data-cat="preferments"]').click();
+      searchEl.value = 'hydration';
+      searchEl.dispatchEvent(new Event('input'));
+      const searchingHasShelf = !!listEl.querySelector('.glossary-shelf');
+      searchEl.value = '';
+      searchEl.dispatchEvent(new Event('input'));
+      const backToCategory = !!listEl.querySelector('.glossary-cat-header');
+      const notShelf = !listEl.querySelector('.glossary-shelf');
+      renderBox('Suche leeren kehrt zur vorherigen Kategorie zurück (nicht zum Regal)', [
+        { label: 'während der Suche kein Regal sichtbar', actual: searchingHasShelf, expected: false, tol: null, ok: searchingHasShelf === false },
+        { label: 'nach dem Leeren wieder in der Kategorie ("preferments")', actual: backToCategory, expected: true, tol: null, ok: backToCategory === true },
+        { label: 'nicht zurück im Regal', actual: notShelf, expected: true, tol: null, ok: notShelf === true }
+      ]);
+    })();
+
+    // --- Suche ohne Treffer: Leer-Zustand mit Bild + Reset-Button -----------------------
+    (function () {
+      resetToShelf();
+      searchEl.value = 'xyzxyzkeintreffer';
+      searchEl.dispatchEvent(new Event('input'));
+      const empty = listEl.querySelector('.glossary-empty');
+      const resetBtn = empty ? empty.querySelector('.glossary-empty-reset') : null;
+      const hasImage = empty ? !!empty.querySelector('.glossary-empty-media img') : false;
+      renderBox('Suche ohne Treffer: Leer-Zustand mit Bild + Reset-Button', [
+        { label: 'Leer-Zustand erscheint', actual: !!empty, expected: true, tol: null, ok: !!empty },
+        { label: 'Leer-Zustand zeigt das "keine Treffer"-Bild', actual: hasImage, expected: true, tol: null, ok: hasImage === true },
+        { label: 'Reset-Button vorhanden', actual: !!resetBtn, expected: true, tol: null, ok: !!resetBtn }
+      ]);
+      if (resetBtn) {
+        resetBtn.click();
+        const backToShelf = !!listEl.querySelector('.glossary-shelf');
+        const searchCleared = searchEl.value === '';
+        renderBox('Reset-Button im Leer-Zustand: Suchfeld geleert, zurück ins Regal', [
+          { label: 'Suchfeld geleert', actual: searchCleared, expected: true, tol: null, ok: searchCleared === true },
+          { label: 'zurück im Regal', actual: backToShelf, expected: true, tol: null, ok: backToShelf === true }
+        ]);
+      }
+    })();
+
+    // --- Live-Region-Ansage der Trefferzahl (WCAG 4.1.3, PZ.announce() 50-ms-Timer) ----
+    // "windowpane" statt "poolish": Fachbegriff kommt nur im Artikel "windowpane" selbst
+    // vor (anders als "poolish", das per Volltextsuche ZUSÄTZLICH im Fließtext von "biga"
+    // auftaucht -- "als etwas anspruchsvoller ... als Poolish" -- macht 2 statt 1 Treffer,
+    // beides korrektes Suchverhalten, nur kein eindeutiger Ein-Treffer-Fall).
+    (function () {
+      resetToShelf();
+      document.getElementById('glossarySearchLiveMsg').textContent = '';
+      withMockTimers(function (flush) {
+        searchEl.value = 'windowpane';
+        searchEl.dispatchEvent(new Event('input'));
+        flush();
+      });
+      const msg = document.getElementById('glossarySearchLiveMsg').textContent;
+      const expected = PZ.t('glossary.searchResultsOne');
+      renderBox('Live-Region meldet die Trefferzahl nach der Suche', [
+        { label: '#glossarySearchLiveMsg trägt "' + expected + '"', actual: msg, expected: expected, tol: null, ok: msg === expected }
+      ]);
+    })();
+
+    // --- PZ.gotoGlossaryEntry(): betritt die passende Kategorie, öffnet + fokussiert ---
+    (function () {
+      resetToShelf();
+      // PZ.gotoView ist hier nicht geladen (js/nav.js gehört nicht zu dieser
+      // Testsuite, s. Dateistruktur-Kommentar oben) -- js/glossary.js ruft es nur auf,
+      // wenn vorhanden (`if (PZ.gotoView)`), bleibt hier folgenlos no-op, kein Stub nötig.
+      PZ.gotoGlossaryEntry('poolish');
+      const details = listEl.querySelector('details.glossary-item[data-id="poolish"]');
+      const isOpen = details ? details.open : false;
+      const focusedIsSummary = !!details && document.activeElement === details.querySelector('summary');
+      const inCategoryView = !!listEl.querySelector('.glossary-back-btn');
+      renderBox('PZ.gotoGlossaryEntry("poolish"): betritt die Kategorie "preferments", öffnet + fokussiert den Artikel', [
+        { label: 'Kategorie-Ansicht aktiv (Zurück-Button vorhanden)', actual: inCategoryView, expected: true, tol: null, ok: inCategoryView === true },
+        { label: 'Artikel "poolish" ist offen', actual: isOpen, expected: true, tol: null, ok: isOpen === true },
+        { label: 'Fokus liegt auf dem Artikel-Titel (<summary>)', actual: focusedIsSummary, expected: true, tol: null, ok: focusedIsSummary === true }
+      ]);
+    })();
+
+    // --- Unbekannte ID: kein Crash, keine Navigation ------------------------------------
+    (function () {
+      resetToShelf();
+      let threw = false;
+      try { PZ.gotoGlossaryEntry('unbekannteId'); } catch (e) { threw = true; }
+      const stillShelf = !!listEl.querySelector('.glossary-shelf');
+      renderBox('PZ.gotoGlossaryEntry() mit unbekannter ID: kein Crash, keine Navigation', [
+        { label: 'kein Fehler geworfen', actual: threw, expected: false, tol: null, ok: threw === false },
+        { label: 'Ansicht bleibt unverändert (Regal)', actual: stillShelf, expected: true, tol: null, ok: stillShelf === true }
+      ]);
+    })();
+
+    resetToShelf();
   })();
 
   // ─────────────────────────────────────────────────────────────

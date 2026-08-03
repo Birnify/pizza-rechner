@@ -130,6 +130,16 @@ TARGETS = {
     "step-stretchFold.webp": (600, 448, "WEBP", 78),
     "step-waterTemp.webp": (600, 448, "WEBP", 78),
     "step-weighIngredients.webp": (600, 448, "WEBP", 78),
+    # Zyklus "Glossar-Kachelregal" (v4.36.0): 3:1 Kategorie-Banner (Kachelregal-Einstieg +
+    # Kategoriekopf). Die 6 zuerst erzeugten Banner (basics/ingredients/preferments/styles/
+    # techniques/tools) wurden VOR der Nicht-destruktiv-Umstellung direkt nach assets/img/
+    # gelegt (kein Original mehr vorhanden, analog zu Karten/Pizza-Fotos/Texturen oben) --
+    # nur das 7. Banner (toppings, zuletzt erzeugt) hat ein Original in assets/originals/ und
+    # wird hier verarbeitet. 1496x496 ist bereits die Erzeugungsauflösung UND die
+    # Zielgroesse (identisch zu den 6 Geschwisterdateien, s. Kontextdatei) -- der Lauf
+    # durch dieses Skript etabliert nur die nicht-destruktive Konvention (Original bleibt
+    # unangetastet), skaliert aber nicht tatsaechlich herunter.
+    "glossar-cat-toppings.webp": (1496, 496, "WEBP", 85),
 }
 
 

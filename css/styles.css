@@ -653,6 +653,18 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
      fixierten Quick-Bar verschwinden -- analog zu #result/#partyResultSummary/details.card,
      die bereits scroll-margin-top gesetzt haben. */
   scroll-margin-top:16px;
+  /* mobile-optimizer-Befund (v4.36.0, Kachelregal): am eigenen Live-Rendering (Playwright,
+     360px) nachgestellt -- betrifft NICHT (wie zunächst vom Spezialisten vermutet) die
+     scroll-margin-TOP, sondern fehlt komplett am unteren Ende: springt gotoGlossaryEntry()
+     zu einem Artikel, der bereits ohne Scrollen im Viewport liegt (kurze Kategorie, letzter
+     Eintrag knapp vor Seitenende), unterbleibt jeder Scroll, weil scrollIntoView() die fixe
+     Bottom-Tab-Leiste (css/mobile.css .bottom-tabs, position:fixed, ~58px) nicht kennt -- der
+     Artikel kann dadurch bis zu wenige Pixel darunter verschwinden (gemessen: 5,75px bei
+     "sfincione"/Kategorie "styles"). scroll-margin-bottom behebt das analog zum bestehenden
+     scroll-margin-top-Fix (16px dort war für die höhere Quick-Bar gedacht, hier reicht die
+     Bottom-Tab-Höhe + Sicherheitsabstand). Wirkt nur auf Mobil (dort gibt es die fixe
+     Leiste), auf Desktop folgenlos. */
+  scroll-margin-bottom:74px;
 }
 .glossary-item summary::-webkit-details-marker{display:none;}
 .glossary-item summary::after{
@@ -678,39 +690,8 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .glossary-body p{margin:0 0 8px;}
 .glossary-body p:last-child{margin-bottom:0;}
 
-/* Glossar-Gruppierung + Suche (v4.14.0, js/glossary.js) — sichtbare, auf-/
-   zuklappbare Kategorie-Zwischenüberschriften (eigenes, um die Artikel-<details>
-   VERSCHACHTELTES <details>, s. js/glossary.js-Kopfkommentar) entlang der
-   bereits bestehenden thematischen Zuordnung (PZ.GLOSSARY_CATEGORIES), plus
-   ein Suchfeld, das Titel + Artikeltext filtert. Kategorien ohne Treffer
-   werden per nativem [hidden]-Attribut ausgeblendet (kein zusätzliches CSS
-   dafür nötig). Anzeige-Reihenfolge von Kategorien UND Artikeln ist
-   alphabetisch (live sortiert in js/glossary.js, nicht hier). */
+/* Glossar-Suchfeld (v4.14.0, unverändert seit v4.36.0). */
 .glossary-search{margin-bottom:16px;}
-.glossary-category:not(:first-child){border-top:1px solid var(--line);padding-top:2px;}
-.glossary-category summary.glossary-cat-heading{
-  cursor:pointer;list-style:none;padding:12px 22px 12px 0;position:relative;
-  margin:10px 0 2px;font-size:11.5px;font-weight:700;color:var(--muted);
-  text-transform:uppercase;letter-spacing:1.2px;-webkit-tap-highlight-color:transparent;
-  display:flex;align-items:center;gap:7px;
-}
-/* Nachtrag zur v4.14.0-Runde: dezentes, monochromes Icon je Kategorie (s.
-   CAT_ICONS in js/glossary.js) -- erbt die gedeckte Überschrift-Farbe über
-   `currentColor`, kein eigener Farbwert nötig. */
-.glossary-cat-icon{display:inline-flex;flex-shrink:0;color:inherit;}
-.glossary-cat-icon svg{display:block;}
-.glossary-category:first-child summary.glossary-cat-heading{margin-top:0;}
-.glossary-category summary.glossary-cat-heading::-webkit-details-marker{display:none;}
-.glossary-category summary.glossary-cat-heading::after{
-  /* Alt-Text-Syntax (leere Beschreibung) wie beim Artikel-Chevron oben --
-     verhindert, dass der generierte Pfeil in den Accessible Name der
-     Kategorie-Überschrift einfließt (identischer WCAG-4.1.2-Fix). */
-  content:'▾' / '';position:absolute;right:0;top:12px;color:var(--muted);
-  font-size:12px;transition:transform .15s;
-}
-.glossary-category[open] > summary.glossary-cat-heading::after{transform:rotate(180deg);}
-.glossary-category summary.glossary-cat-heading:hover{color:var(--tomato-text);}
-.glossary-category summary.glossary-cat-heading:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
 /* accessibility-expert-Befund (v4.14.0, MINOR, Projekt-Konsistenz, kein WCAG-Verstoß):
    .selectbox:focus (oben) zeigt den Ring bei JEDEM Fokus inkl. Maus-Klick; neuere
    Formulare im Projekt (z. B. .stepper input) nutzen bereits :focus-visible (nur
@@ -720,7 +701,101 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
    eigener, größerer Zyklus. */
 #glossarySearch:focus{outline:none;}
 #glossarySearch:focus-visible{outline:2px solid var(--tomato);outline-offset:1px;}
-.glossary-no-results{font-size:13.5px;color:var(--muted);padding:6px 0 2px;}
+
+/* Glossar-Kachelregal (v4.36.0, js/glossary.js) — ersetzt die vorherige
+   auf-/zuklappbare Kategorie-Liste (verschachtelte <details>, bis v4.35.2) durch drei
+   Ansichten INNERHALB derselben Karte: Regal (Kacheln), betretene Kategorie (Bannerkopf
+   + Artikelliste), Suchtreffer (nach Kategorie gruppiert). .glossary-item/.glossary-body
+   oben bleiben unverändert -- Artikel sehen in allen drei Kontexten identisch aus. */
+
+/* Ebene 1: Regal. auto-fill/minmax analog zum bestehenden .preset-grid-Muster --
+   wächst/schrumpft ohne Media-Query, Kachelbreite bleibt im Zielkorridor ~240-360px
+   (breiter als .preset-card, weil das 3:1-Banner sonst zu schmal/niedrig würde). */
+.glossary-shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:4px;}
+.glossary-tile{
+  display:flex;flex-direction:column;align-items:stretch;text-align:left;
+  border:1px solid var(--line);background:var(--card);border-radius:var(--radius);
+  overflow:hidden;cursor:pointer;transition:border-color .12s;min-height:44px;font:inherit;padding:0;
+}
+.glossary-tile:hover{border-color:var(--tomato);}
+.glossary-tile:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+.glossary-tile .media{border-radius:0;}
+.glossary-tile-body{display:flex;flex-direction:column;gap:3px;padding:12px 14px 13px;border-top:1px solid var(--line-soft);}
+.glossary-tile-title{font-family:var(--font-body);font-weight:700;font-size:14.5px;color:var(--ink-strong);}
+.glossary-tile-count{font-size:12px;color:var(--muted);}
+
+/* Ebene 2: betretene Kategorie. Zurück-Button (Pill, analog .coupled-badge-Ecke) +
+   Bannerkopf mit Text-Overlay (Gradient-Scrim wie header/.step__photo-Nachbarschaft,
+   s. --scrim-Token). KEIN Icon-Badge (Abgrenzung der Feature-Definition). */
+.glossary-back-btn{
+  display:flex;align-items:center;gap:7px;margin:0 0 14px;padding:8px 12px;
+  /* mobile-optimizer-Befund (v4.36.0, MAJOR, Projekt-Konsistenz): 44px statt der
+     ursprünglichen 38px -- deckt sich mit .bottom-tabs .nav-item/.quickbar .qb-jump/
+     .seg button/.pills button, die im Projekt durchgängig bei 44px liegen. */
+  min-height:44px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius-chip);color:var(--ink);font:600 13px/1 var(--font-body);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.glossary-back-btn:hover{color:var(--tomato-text);border-color:var(--tomato);}
+.glossary-back-btn:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+.glossary-cat-header{margin-bottom:6px;}
+.glossary-cat-banner{display:block;}
+/* Volle Bannerhöhe abgedunkelt (analog zum Foto-Header, s. header{} oben, dort per
+   Live-Screenshot auf ~6:1 Kontrast-Marge kalibriert) -- eigene Ebene UNTER dem
+   Text-Overlay, damit der Verlauf die ganze Bildfläche abdeckt statt nur die
+   Text-Zeile selbst (das 3:1-Banner ist niedrig, der Text-Block nimmt sonst relativ
+   viel Fläche ein). */
+.glossary-cat-banner-scrim{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(20,9,5,0) 30%,rgba(20,9,5,.55) 65%,rgba(20,9,5,.82) 100%);
+}
+.glossary-cat-banner-overlay{
+  position:absolute;left:0;right:0;bottom:0;display:flex;align-items:flex-end;gap:10px;
+  padding:12px 14px;
+}
+.glossary-cat-banner-title{
+  margin:0;flex:1;min-width:0;color:#fff;font-family:var(--font-head);font-size:19px;
+  font-weight:700;line-height:1.25;text-shadow:0 1px 4px rgba(0,0,0,.4);
+}
+.glossary-cat-banner-title:focus-visible{outline:2px solid #fff;outline-offset:2px;}
+.glossary-cat-banner-count{
+  flex:none;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:#fff;
+  background:rgba(0,0,0,.42);border-radius:var(--radius-chip);padding:4px 10px;
+  align-self:flex-end;margin-bottom:2px;
+}
+/* Kein Bannerbild im Register (pending/unbekannt) -> Titel bleibt reiner Text, gleiche
+   Optik wie .card h2 (Konsistenz mit dem übrigen Karten-Innenleben). */
+.glossary-cat-title-plain{
+  margin:0 0 6px;font-size:14px;text-transform:uppercase;letter-spacing:1.2px;
+  color:var(--ink);font-weight:700;padding-bottom:10px;border-bottom:1px solid var(--line);
+}
+.glossary-cat-title-plain:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+.glossary-cat-articles{margin-top:4px;}
+
+/* Ebene 3: Suchtrefferliste. Kleines, monochromes Icon (CAT_ICONS) als Gruppenmarke --
+   einziger verbleibender Einsatzort dieses Icon-Sets (Abgrenzung Feature-Definition). */
+.glossary-search-summary{margin:0 0 10px;font-size:12.5px;line-height:1.5;color:var(--muted);}
+.glossary-group-heading{
+  display:flex;align-items:center;gap:7px;margin:16px 0 2px;font-size:11.5px;font-weight:700;
+  color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;
+}
+.glossary-search-group:first-child .glossary-group-heading{margin-top:0;}
+.glossary-cat-icon{display:inline-flex;flex-shrink:0;color:inherit;}
+.glossary-cat-icon svg{display:block;}
+
+/* Leer-Zustand der Suche (0 Treffer über alle Kategorien) -- mit dem vorhandenen Bild
+   "keine Treffer" (assets/img/empty-keine-treffer.webp, js/images.js). */
+.glossary-empty{padding:10px 0 6px;text-align:center;}
+.glossary-empty-media{max-width:220px;margin:0 auto 14px;}
+.glossary-empty-title{margin:0;font-size:15px;font-weight:700;color:var(--ink);}
+.glossary-empty-hint{margin:6px 0 14px;font-size:12.5px;line-height:1.5;color:var(--muted);}
+.glossary-empty-reset{
+  font:700 13px/1 var(--font-body);color:#fff;background:var(--tomato-dark);
+  border:1px solid var(--tomato-dark);border-radius:var(--radius-chip);padding:12px 18px;
+  min-height:44px;cursor:pointer;transition:filter .12s;
+}
+.glossary-empty-reset:hover{filter:brightness(1.08);}
+.glossary-empty-reset:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
 
 .card{
   background:var(--card);border-radius:18px;padding:20px;

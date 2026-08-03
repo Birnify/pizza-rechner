@@ -8,6 +8,140 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Glossar-Kachelregal (v4.36.0)
+
+Vom Nutzer per `/define-feature` strukturiert: der Nutzer sichtete live drei per
+Claude-Design-Export vorbereitete Navigations-Konzepte für das Pizza-Glossar
+("Register", "Kachelregal", "Lesepult") und entschied sich für Vorschlag 2
+("Kachelregal"). Feature-Definition wurde in zwei Rückfrage-Runden verfeinert (u. a. eine
+Nachschärfung zum Icon-Badge). Umgesetzt in einem eigenen, autonom laufenden
+Orchestrator-Zyklus (Auftrag inkl. verbindlicher Layout-Vorlage, `_review/`-Export,
+gitignored).
+
+**Vorher:** Das Glossar war eine reine Textliste mit 7 auf-/zuklappbaren
+Kategorie-Zwischenüberschriften (verschachtelte `<details>`, seit v4.14.0) — alle
+Kategorien konnten gleichzeitig offen sein, kein Bildmaterial.
+
+**Nachher:** Drei Ansichten innerhalb derselben Karte, `js/glossary.js` komplett neu
+geschrieben:
+1. **Regal** (Einstieg): 7 Kategoriekacheln (`<button class="glossary-tile">`) mit
+   3:1-Bannerbild, Titel, Artikelzahl, alphabetisch sortiert. Kein Icon (Abgrenzung der
+   Feature-Definition: das Bild identifiziert die Kategorie bereits ausreichend).
+2. **Betretene Kategorie**: Zurück-Button „Alle Kategorien" + großer Bannerkopf (Titel +
+   Artikelzahl-Chip als Text-Overlay auf dunkel abgedunkeltem Foto, Gradient-Scrim
+   analog zum bestehenden Foto-Header) + darunter die Artikel als unverändertes
+   Single-Open-`<details>`-Akkordeon (seit v4.3.0). Kein Icon-Badge im Bannerkopf
+   (identische Abgrenzung wie oben — der runde Tomatenbadge aus der Design-Vorlage
+   entfiel ersatzlos).
+3. **Suche**: verlässt beide Ebenen, liefert eine flache, nach Kategorie gruppierte
+   Trefferliste über Titel UND Artikeltext ALLER Kategorien (unveränderte Suchlogik,
+   nur neu gruppiert dargestellt). Das bestehende kleine Kategorie-Icon-Set
+   (`CAT_ICONS`, seit v4.14.0, inkl. der beiden NICHT getauschten Glyphen
+   Techniken/Werkzeuge) dient jetzt ausschließlich hier als Gruppenmarke. Leer-Zustand
+   (0 Treffer) mit dem vorhandenen Bild `empty-keine-treffer.webp`, Erklärtext und
+   „Zurück zum Regal"-Button.
+
+**State-Architektur:** `{ cat, query, openId }`, rein intern in `js/glossary.js`, kein
+`PZ.state`-Bezug. `state.cat` bleibt beim Suchen unangetastet — das allein ist der ganze
+Mechanismus, der "Suchfeld leeren kehrt zur vorherigen Ansicht zurück" (Regal ODER die
+zuvor betretene Kategorie) implementiert, ganz ohne den früheren
+`catOpenSnapshot`-Umweg. `openId` ist bewusst EIN globaler Wert (kein Pro-Ansicht-State
+nötig, weil zu jedem Zeitpunkt ohnehin nur eine Artikelliste im DOM steht).
+
+**Fokus-Management (neu, da jetzt echte Ansichtswechsel statt reinem Auf-/Zuklappen):**
+Kategorie betreten → Fokus wandert auf die neue Kategorie-Überschrift
+(`tabindex="-1"` + `.focus()`, identisches Muster zu `PZ.focusView()` in `js/nav.js`);
+Zurück-Button → Fokus kehrt zur zuvor betretenen Kachel zurück. `PZ.gotoGlossaryEntry()`
+(Sprung aus der Anleitung) betritt jetzt die passende Kategorie als eigene Ansicht statt
+nur ein `<details>` in einer flachen Liste aufzuklappen, öffnet + fokussiert den Artikel
+danach wie zuvor. Bewusst KEIN "Aus der Anleitung"-Badge ergänzt (aus der Design-Vorlage
+übernommen worden wäre, aber nicht Teil der abgestimmten Feature-Definition — "landet
+weiterhin direkt beim aufgeklappten Artikel" impliziert unverändertes, kein neues
+Verhalten).
+
+**Bildmaterial** (`js/images.js`, Schicht 2/3 aus `BILD-EINBAU-KONZEPT.md`, Zyklus 3
+"Glossar" jetzt erledigt): 7 neue Registereinträge `glossary.cat.<key>` (3:1) + 1
+`glossary.emptySearch` (4:3, Leer-Zustand). 6 der 7 Kategorie-Banner lagen bereits
+fertig in `assets/img/` (vor der v4.35.2-Nicht-destruktiv-Umstellung erzeugt, kein
+Original mehr vorhanden — bleiben unverändert). Das 7. Banner (`toppings`) wurde neu
+nach der seit v4.35.2 verbindlichen Konvention eingebaut: Original nach
+`assets/originals/glossar-cat-toppings.webp`, `assets/prepare_web_images.py` (neuer
+TARGETS-Eintrag, 1496×496, Quality 85 — identisch zur bereits vorhandenen
+Erzeugungsauflösung der 6 Geschwisterdateien, das Skript etabliert hier nur die
+nicht-destruktive Archivierung, skaliert aber nicht tatsächlich herunter) erzeugt die
+Web-Fassung. Bewusst KEINE Artikelbilder (3:2) verdrahtet, obwohl für ~24 Artikel
+bereits fertige `assets/img/glossar-<id>.webp`-Dateien existieren (explizite Abgrenzung
+der Feature-Definition, nicht Teil dieses Zyklus).
+
+**CSS** (`css/styles.css`): alte, jetzt obsolete Akkordeon-Kategorie-Regeln entfernt
+(`.glossary-category`, summary-gescopte `.glossary-cat-heading`, `.glossary-no-results`).
+Neue Klassen: `.glossary-shelf`/`.glossary-tile*` (Regal, `auto-fill minmax(240px,1fr)`
+analog zum bestehenden `.preset-grid`-Muster), `.glossary-back-btn`,
+`.glossary-cat-header`/`.glossary-cat-banner*` (Bannerkopf inkl. eigenem
+`.glossary-cat-banner-scrim` als separate Verlaufs-Ebene UNTER dem Text-Overlay, damit
+der Gradient die GESAMTE Bildfläche abdunkelt statt nur die Textzeile),
+`.glossary-search-summary`/`.glossary-group-heading` (Suchtrefferliste, `.glossary-cat-icon`
+bleibt als Klassenname erhalten, jetzt aber nur noch hier verwendet),
+`.glossary-empty*` (Leer-Zustand). `.glossary-item`/`.glossary-body` (Artikel-Akkordeon
+selbst) unverändert, in allen drei Ansichten identisch wiederverwendet.
+
+**i18n** (`js/i18n-dict.js`): 9 neue Strings DE+EN (`btn.glossaryBack`,
+`glossary.articleCountOne/Many`, `glossary.categoryCountOne/Many`,
+`glossary.searchSummary`, `glossary.emptyHint`, `btn.glossaryResetSearch`) — bestehende
+Kategorie-Titel/Such-Strings (`glossary.cat.*.title`, `glossary.noResults`,
+`glossary.searchResults*`) unverändert wiederverwendet.
+
+**Tests** (`tests/test.html`): `js/glossary.js` wird erstmals überhaupt in der
+Testsuite geladen (bis v4.35.2 bewusst ausgeschlossen, reines DOM-Wiring). Neue
+Sektion 41 mit 46 Prüfungen: Regal-Sortierung/-Banner/kein-Icon, Kategorie betreten
+(Zurück-Button, Bannerkopf ohne Icon, Artikel-Sortierung, kein Artikel initial offen,
+Fokus auf Überschrift), Single-Open-Akkordeon (per direktem `.open`-Set + manuell
+dispatchtem `toggle`-Event getestet, NICHT per `summary.click()` — ein echter Klick
+toggelt in aktuellen Chromium-Versionen nicht mehr zuverlässig synchron, s. Kommentar im
+Test), Zurück-Navigation inkl. Fokus-Rückkehr zur Kachel, Suche (gruppiert, Titel- UND
+Artikeltext-Treffer, Leeren kehrt zur vorherigen Kategorie statt zum Regal zurück),
+Leer-Zustand inkl. Reset-Button, Live-Region-Ansage der Trefferzahl (`withMockTimers()`
+aus Sektion 38 wiederverwendet), `PZ.gotoGlossaryEntry()` inkl. unbekannter ID (kein
+Crash), neue i18n-Texte DE+EN. Alle **1289** Prüfungen grün (1243 vorher + 46 neu),
+per Headless-Edge-Dump verifiziert. Kein `test-generator`-Lauf angefordert (`js/calc.js`/
+`schedule.js`/`guide.js` unverändert, nur ein UI-Modul geändert, für das umfassend
+selbst geschriebene Tests vorliegen).
+
+**Härten:** `accessibility-expert`-Review ohne jeden Befund (0 Blocker/Major/Minor,
+u. a. Kontrast des Overlay-Texts an allen 7 echten Bannerfotos einzeln nachgerechnet,
+14,45:1 im kritischsten Fall). Dunkelmodus-Kontraste zusätzlich selbst per
+WCAG-2.0-Luminanzformel nachgerechnet (`.glossary-tile-count` 6,58:1, `.glossary-back-btn`
+Hover 5,44:1) — der Spezialist hatte nur Hell-Werte ausgewiesen.
+`mobile-optimizer`-Bericht kritisch geprüft statt übernommen: seine eigene
+Blocker/Major-Zusammenfassung widersprach den Einzelbefunden (tatsächlich 2 Major,
+0 Blocker), und sein zentraler Vorschlag (`scroll-margin-top` 16px → 150px, gegen
+angebliche Verdeckung durch eine OBEN fixierte Leiste) beruhte auf einer falschen
+Layout-Annahme — beide fixen Mobil-Leisten (`.quickbar`, `.bottom-tabs`) sitzen unten,
+nicht oben, gegen `css/mobile.css` verifiziert und abgelehnt. Sein einziger belastbarer
+Befund (Zurück-Button `min-height:38px` statt der projektweiten 44px-Konvention,
+`.bottom-tabs .nav-item`/`.quickbar .qb-jump`/`.seg button`/`.pills button`) wurde
+übernommen. Beim eigenen Live-Nachstellen (Playwright, 360px Viewport) zusätzlich einen
+echten, vom Spezialisten nicht gefundenen Randfall bestätigt: springt
+`gotoGlossaryEntry()` auf den letzten Artikel einer kurzen, bereits ohne Scrollen
+sichtbaren Kategorie, unterblieb jeder Scroll (der Browser hält das Ziel für "bereits
+sichtbar", ignoriert dabei aber die fixe Bottom-Tab-Leiste) — der Artikel konnte bis zu
+~5,75px darunter verschwinden. Behoben mit neuem `scroll-margin-bottom:74px` auf
+`.glossary-item summary` (analog zum bestehenden `scroll-margin-top:16px` von v4.3.0),
+per Instant-Scroll-Test verifiziert (voller verfügbarer Scroll-Weg wird jetzt genutzt).
+Lange Kategorietitel ("Werkzeuge & Ausrüstung", "Vorteig & Gärmethoden") bei 360px per
+Screenshot geprüft: brechen sauber auf 2 Zeilen um, keine Überlappung mit dem
+Artikelzahl-Chip.
+
+**Geändert:** `js/glossary.js` (komplett neu), `js/images.js`, `js/i18n-dict.js`,
+`css/styles.css`, `pizza-rechner.html`, `pizza-rechner-mobile.html`, `tests/test.html`,
+`assets/prepare_web_images.py`, `assets/originals/glossar-cat-toppings.webp` (neu),
+`assets/img/glossar-cat-toppings.webp` (neu erzeugt), `BILD-EINBAU-KONZEPT.md`
+(Zyklus 3 als erledigt markiert). `?v=` auf `4.36.0` gezogen (Desktop + Mobil,
+Cache-Busting + Footer-Version). `pizza-rechner-mobile-standalone.html` neu gebaut
+(2.976.638 Zeichen, ~2,84 MB — unter der ~3-MB-Warnschwelle aus
+`BILD-EINBAU-KONZEPT.md`, aber näher dran als zuvor: die 8 neuen Bilder wiegen
+zusammen roh rund 800 KB).
+
 ## Anleitungs-Schrittbilder in doppelter Auflösung + nicht-destruktive Bildaufbereitung (v4.35.2)
 
 Direkter Nutzerauftrag (Diagnose und Zielwerte bereits feststehend, kein `/define-feature`

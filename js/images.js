@@ -103,7 +103,30 @@
     'guide.step.finalProof': { file: 'step-finalProof.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
     'guide.step.preheat': { file: 'step-preheat.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
     'guide.step.shape': { file: 'step-shape.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
-    'guide.step.bakeTopping': { file: 'step-bakeTopping.webp', ratio: '4x3', alt: null, w: 300, h: 224 }
+    'guide.step.bakeTopping': { file: 'step-bakeTopping.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    // Glossar-Kachelregal (v4.36.0, "Bild-Einbau Zyklus 3"): 7 Kategorie-Banner (3:1),
+    // genutzt sowohl auf der Regal-Kachel (js/glossary.js renderShelf) als auch im
+    // Kategoriekopf (renderCategory) -- derselbe Registereintrag, zweimal gerendert.
+    // Key-Schema 'glossary.cat.<key>' -- <key> ist identisch zum PZ.GLOSSARY_CATEGORIES-
+    // Kategorie-Key (js/glossary.js). Dekorativ (alt:null): Titel + Artikelzahl stehen
+    // bereits als Text daneben/darüber, das Bannerbild identifiziert die Kategorie nur
+    // zusätzlich visuell, trägt keine eigene, sonst fehlende Information. Kein Icon-Badge
+    // auf dem Banner (Abgrenzung der Feature-Definition: "Bild identifiziert die Kategorie
+    // ausreichend") -- das bestehende CAT_ICONS-Set bleibt ausschließlich der
+    // Suchtrefferliste vorbehalten (dort gibt es kein Bannerbild).
+    'glossary.cat.basics': { file: 'glossar-cat-basics.webp', ratio: '3x1', alt: null, w: 1496, h: 496 },
+    'glossary.cat.techniques': { file: 'glossar-cat-techniques.webp', ratio: '3x1', alt: null, w: 1496, h: 496 },
+    'glossary.cat.preferments': { file: 'glossar-cat-preferments.webp', ratio: '3x1', alt: null, w: 1496, h: 496 },
+    'glossary.cat.tools': { file: 'glossar-cat-tools.webp', ratio: '3x1', alt: null, w: 1496, h: 496 },
+    'glossary.cat.ingredients': { file: 'glossar-cat-ingredients.webp', ratio: '3x1', alt: null, w: 1496, h: 496 },
+    'glossary.cat.toppings': { file: 'glossar-cat-toppings.webp', ratio: '3x1', alt: null, w: 1496, h: 496 },
+    'glossary.cat.styles': { file: 'glossar-cat-styles.webp', ratio: '3x1', alt: null, w: 1496, h: 496 },
+    // Leer-Zustand der Glossar-Suche (0 Treffer über alle Kategorien) -- dasselbe Bild ist
+    // für spätere Leerzustände (Backlog "Onboarding, Party, Leerzustände", Zyklus 5 aus
+    // BILD-EINBAU-KONZEPT.md) wiederverwendbar, hier der erste tatsächliche Verwendungsort.
+    // Dekorativ: der Text direkt daneben ("Keine Treffer für diesen Suchbegriff.") sagt
+    // bereits alles, was für die Bedienung nötig ist.
+    'glossary.emptySearch': { file: 'empty-keine-treffer.webp', ratio: '4x3', alt: null, w: 1200, h: 896 }
   };
 
   const DIR = 'assets/img/';

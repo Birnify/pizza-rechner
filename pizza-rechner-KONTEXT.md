@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-03 · Aktuelle Version: v4.35.1 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-03 · Aktuelle Version: v4.36.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -204,6 +204,8 @@ Quellen abgeleitet; `teglia`-Hefe seit v4.28.0 0,3 % → 0,45 % + `scheduleOverr
 statt ~30 h); `napoli_kalt`-Hefe seit v4.30.0 0,1 % → 0,25 % + `scheduleOverride` (geteilte
 Kaltgare, ~44 h statt der vorherigen generischen ~45-h-Schwelle) — s. „= aktueller Stand" oben.)
 
+**Erste reale Backbestätigung (2026-08-03):** der Nutzer hat `napoli_kalt` praktisch nachgebacken, mit gutem Ergebnis. Damit ist dies der bisher einzige Preset-Wert dieser Tabelle mit echter Back-Rückmeldung, konkret für die in v4.30.0 aus der Quellenlage abgeleitete Hefemenge (0,1 % → 0,25 %) und die geteilte Kaltgare (`scheduleOverride`, ~44 h). Alle anderen Presets beruhen weiterhin ausschließlich auf Quellenherleitung ohne eigenen Backtest, s. „Teigwerte und Rahmenparameter nie ohne verlässliche Quellen ändern" in `CLAUDE.md`.
+
 ## Mehl-Datenbank (js/flour.js, Quelle: pizza1.de/blog/pizzamehl-uebersicht/)
 
 13 Mehle in 3 Gruppen (Molino Caputo / Molino Dallagiovanna / Teichners Beste).
@@ -216,22 +218,24 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Anleitungs-Schrittbilder in doppelter Auflösung + nicht-destruktive Bildaufbereitung (v4.35.2) = aktueller Stand
+## Glossar-Kachelregal (v4.36.0) = aktueller Stand
 
-Vollständiger Fix der seit v4.35.0 gemeldeten Unschärfe der 19 Anleitungs-Schrittbilder
-(v4.35.1 hatte das nur CSS-seitig gemildert). Die Originale (1200x896) wurden aus dem
-Git-Verlauf zurückgeholt und liegen jetzt dauerhaft in `assets/originals/`; verkleinert
-wird auf 600x448 statt vorher 300x224 (doppelte lineare Auflösung, 165 KB → 419 KB
-gesamt). `assets/prepare_web_images.py` skaliert dafür nicht mehr destruktiv in place,
-sondern liest aus `assets/originals/` und schreibt nur die Kopie nach `assets/img/` —
-verbindliche Konvention für alle künftigen Bild-Zyklen, s. `BILD-EINBAU-KONZEPT.md`.
-`js/guide.js` `PHOTO_SRC_H` 224 → 448 (Bildhöhen-Deckel `PHOTO_MAX_UPSCALE` nach
-Live-Nachmessung bewusst bei 1,3 belassen, greift jetzt nur noch als Sicherheitsnetz statt
-aktiv). `tests/test.html`: weiterhin **1243** grün (reine Zahlenverschiebung der
-Deckel-Konstanten in den bestehenden 3 Tests, keine neuen Tests nötig).
+Das Glossar startet jetzt als Regal aus 7 bebilderten Kategoriekacheln statt einer
+reinen Textliste; eine Kategorie wird als eigene Ansicht betreten (Zurück-Weg,
+Bannerkopf mit Titel/Artikelzahl, Artikel weiterhin als Single-Open-Akkordeon), die
+Suche liefert weiterhin eine flache, jetzt nach Kategorie gruppierte Trefferliste über
+alle Kategorien, inkl. Leer-Zustand mit Bild. Vom Nutzer per `/define-feature` nach
+Live-Sichtung dreier Design-Konzepte gewählt (Vorschlag 2 „Kachelregal"). `js/glossary.js`
+komplett neu geschrieben, 7 neue Kategorie-Banner + 1 Leer-Zustand-Bild registriert
+(`js/images.js`), neue CSS-Klassen (`css/styles.css`), 9 neue i18n-Strings.
+`tests/test.html`: **1289** grün (1243 vorher + 46 neu, `js/glossary.js` wird jetzt
+erstmals mitgeladen). `accessibility-expert`-Review ohne Befund; `mobile-optimizer`-
+Bericht teilweise fehlerhaft (falsche Layout-Annahme abgelehnt), sein einziger validierter
+Befund (Zurück-Button-Touch-Ziel) sowie ein selbst gefundener Rand-Fall
+(`scroll-margin-bottom` bei Sprung auf den letzten Artikel einer kurzen Kategorie) behoben.
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Anleitungs-Schrittbilder
-in doppelter Auflösung + nicht-destruktive Bildaufbereitung (v4.35.2)".
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-Kachelregal
+(v4.36.0)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -595,10 +599,11 @@ js/share.js          Teilen-Link (v3.14.0): PZ.state als Base64-JSON in der URL,
 js/party.js          Pizza-Party-Planer (v3.27.0) — eigenständiger Bereich, kein Zugriff auf
                      PZ.state/PZ.calc()
 js/glossary.js       Pizza-Glossar (v3.37.0) — eigenständiger Menü-Bereich, reine Anzeige-Funktion.
-                     Seit v4.3.0: Single-Open-Akkordeon (Öffnen eines Artikels schließt den
-                     vorher offenen), identisch auf Desktop + Mobil. Seit v4.14.0:
-                     PZ.GLOSSARY_CATEGORIES (7 auf-/zuklappbare, alphabetisch sortierte
-                     Kategorien mit Icon) + Suchfeld über Titel/Artikeltext, s.
+                     Seit v4.36.0 (komplett neu geschrieben, "Glossar-Kachelregal"): drei
+                     Ansichten -- Regal aus 7 bebilderten Kategoriekacheln (PZ.GLOSSARY_
+                     CATEGORIES, alphabetisch sortiert) / betretene Kategorie (Bannerkopf +
+                     unverändertes Single-Open-<details>-Akkordeon der Artikel, seit v4.3.0)
+                     / flache, gruppierte Suchtrefferliste über Titel+Artikeltext, s.
                      „= aktueller Stand" oben
 js/main.js           Start: Speichern-Button, Rezept-Auswahl/-Buttons, load(), applyMethod(), calc()
 js/nav.js            Gemeinsames Navigations-Modul (v3.54.0, vorher zwei/drei duplizierte
@@ -956,6 +961,19 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
+- **Glossar-Artikelbilder (Bild-Einbau Zyklus 3, Rest)** (neu, v4.36.0): das
+  Glossar-Kachelregal (s. „= aktueller Stand" oben) verdrahtet bewusst nur die 7
+  Kategorie-Banner, nicht die ~24 bereits fertig erzeugten Artikelbilder (3:2, z. B.
+  `assets/img/glossar-hydration.webp`) — explizite Abgrenzung dieses Zyklus. Layout-Ort
+  wäre der aufgeklappte Artikel-Body (`.glossary-body`, analog zum bare-Bildband-Muster
+  aus den Anleitungs-Schrittbildern oder dem `.media--3x2`-Boxmuster der Preset-Karten).
+  Noch nicht spezifiziert, welches der beiden Muster passt.
+- **Zurück-Weg vom Regal, wenn ein Filter/Zustand aktiv war** (Nebenbefund, v4.36.0,
+  kein Bug): der Zurück-Weg ins Regal setzt aktuell keinen Scroll-Zustand zurück — bei
+  sehr langen Kategorien könnte ein Nutzer nach „Zurück" auf einer Regal-Position
+  landen, die nicht der ursprünglichen entspricht (kein Scroll-Reset). Sehr geringe
+  praktische Relevanz (Regal ist selten länger als eine Bildschirmhöhe), nur zur
+  Kenntnis, kein Handlungsbedarf.
 - ~~**Schrittbilder auf modernen 3x-Displays weiterhin unscharf beim Aufklappen**~~ —
   **erledigt in v4.35.2** (s. „= aktueller Stand" oben): Originale aus dem Git-Verlauf
   zurückgeholt, Quellauflösung verdoppelt (300x224 → 600x448), Deckel wirkt jetzt nur noch
