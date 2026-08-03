@@ -8,6 +8,166 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Anleitungs-Schrittbilder + Ein-Aufklapper-Redesign (v4.35.0)
+
+Bild-Einbau-Zyklus 2 (`BILD-EINBAU-KONZEPT.md`, Blöcke 27-45) + ein vom Nutzer
+mitbeauftragtes Redesign der Zusatzinhalte (Tipp/Warnung/Timer/Glossar) unter Anleitungs-
+schritten. Verbindliche Design-Vorlage: `design-import/handoff-schrittbilder/
+3a-reference.html` ("Variante 3a", vom Nutzer abgenommen). Zwei Dinge in einem Zyklus,
+weil sie strukturell zusammenhängen (das Bildband braucht Platz an der linken Kartenkante,
+der neue Aufklapper baut auf derselben Kartenstruktur auf).
+
+**A) 19 Anleitungs-Schrittbilder** (`assets/img/step-*.webp`, bereits vorhanden, exakt nach
+den Schritt-Schlüsseln benannt): randloses Bildband an der linken Kartenkante, 88px breit
+(76px unter 360px Viewport), volle (dynamische) Kartenhöhe, `object-fit:cover`.
+- **Zuordnung über `opts.imgKey`, NICHT über den Titel-i18n-Key:** `js/guide.js` vergibt
+  pro `st()`-Aufruf ein explizites `imgKey` (z. B. `{imgKey:'bigaMix'}`). Wichtig, weil
+  zwei Call-Sites (Vorteig- und Direkt-Variante von "Schüttwasser temperieren") denselben
+  Titel-i18n-Key (`guide.step.waterTemp.title`) teilen, aber nur die Vorteig-Variante ein
+  Bild bekommt (`imgKey:'waterTemp'`), die Direkt-Variante bewusst keins. Fünf Schritte
+  bekommen bewusst KEIN Bild: `saltAdd` (Vorteig-Salz-Schritt), `prefWeigh`,
+  `prefCombine` (Titel `guide.prefGenericTitle`), `shapeTeglia`, `waterTempDirect` — sie
+  bekommen stattdessen die 3px-Akzentkante (`.step--noimg::before`), kein Platzhalter.
+- **`js/images.js`:** 19 neue `guide.step.<key>`-Registereinträge. `PZ.imgHtml()` bekam
+  einen neuen `opts.bare`-Modus (nacktes `<img>` ohne `.media`-Box-Wrapper) für dieses
+  dynamisch hohe Band, das kein festes Seitenverhältnis reservieren kann.
+- **Echter Layout-Bug live gefunden (weder vom Orchestrator noch von den Sub-Agenten auf
+  Anhieb erkannt, erst durch eigene Playwright-Messung aufgefallen):** im `bare`-Modus
+  wurden anfangs trotzdem width/height-HTML-Attribute gesetzt (aus dem Register, wie beim
+  normalen `.media`-Muster). In einer Flexbox-Zeile mit `align-self:stretch` +
+  `object-fit:cover` berechnete Chromium die hypothetische (Vor-Stretch-)Kreuzachsen-Größe
+  des `<img>` aus der ROHEN Attribut-Höhe (224px) statt aus dem Seitenverhältnis relativ
+  zur tatsächlichen CSS-Breite (88px, rechnerisch ~66px) — das blähte die GESAMTE Flex-
+  Zeile (Bild UND Textspalte) auf 224px auf, unabhängig vom tatsächlichen Textinhalt (bei
+  jedem der 19 Schritte identisch 224px, auch bei sehr kurzen). Reproduziert und isoliert:
+  Entfernen der Attribute behebt es, ein `aspect-ratio:auto!important`-CSS-Override dagegen
+  NICHT (das Problem lag in der Hypothese-Berechnung, nicht im finalen `aspect-ratio`-Wert).
+  Fix: `opts.bare` lässt width/height-Attribute jetzt grundsätzlich weg (der Layout-Shift-
+  Schutz ergibt für diesen dynamisch-hohen Anwendungsfall ohnehin keinen Sinn).
+- **`assets/prepare_web_images.py`:** 19 neue TARGETS-Einträge, 300x224 (exaktes 4:3 der
+  1200x896-Erzeugungsauflösung, kein Verzerren), WEBP Qualität 78. 1,9 MB → **165 KB**
+  gesamt (~8,7 KB je Bild).
+- **Eingefrorene Höhe beim Öffnen — Korrektur der Referenzvorlage:** die Referenz friert
+  das Bildband beim Aufklappen auf einem festen 152px-Wert ein, um Zuschnitts-Sprünge zu
+  vermeiden. Ein Live-Test mit `mobile-optimizer`-Rückfrage ("miss es selbst nach") zeigte:
+  die tatsächliche geschlossene Kartenhöhe schwankt je nach Viewport/Textlänge extrem
+  (Desktop 1280px ~102-140px, Mobil ~390px ~129-314px je nach Schritt) — ein fixer
+  152px-Wert hätte das Band auf den meisten Mobil-Schritten beim Öffnen sichtbar
+  SCHRUMPFEN lassen statt es einzufrieren. Ersetzt durch dynamische JS-Messung
+  (`js/guide.js` `openMore()`: misst `photo.getBoundingClientRect().height` unmittelbar
+  vor dem Öffnen — die Karte ist zu diesem Zeitpunkt noch geschlossen/gestreckt — und setzt
+  sie als Inline-`height`-Style; `closeMore()` entfernt den Inline-Wert wieder). CSS setzt
+  beim Öffnen nur noch `align-self:flex-start` (verhindert erneutes Stretchen durch den
+  wachsenden Extras-Bereich), keinen festen Pixelwert mehr. Live für kurze (129px) und sehr
+  lange (314px) Schritte verifiziert: kein sichtbarer Sprung mehr in keinem Fall.
+
+**B) Ein Aufklapper pro Schritt statt Einzel-Toggles** (ersetzt das v4.10.0-Muster
+`.hint-toggle`/`.hint-body`): `tip()`/`warn()` in `js/guide.js` liefern jetzt nur noch
+reine `<div class="note note--tip/warn">`-Textbausteine (kein eigener Toggle-Button mehr).
+Der Render-Loop sammelt pro Schritt alle Bausteine (Tipp-/Warn-Notes + optionaler
+`.timerbox`-Platzhalter + optionaler `.glossary-ref`-Fallback-Link) in einem
+`.step__extras`-Container, davor ein gemeinsamer `.step__more`-Button.
+- **Farbcodierung ist Funktion, nicht Deko:** neutral (`--info-bg`/`--info-text`) wenn nur
+  Tipp/Timer/Glossar enthalten sind, ocker+Rahmen (`.step__more--warn`,
+  `--warn-bg`/`--warn-text`/`--warning`) sobald mindestens eine Warnung dabei ist.
+- **Icons statt Emoji** (Design-System-Vorgabe "Emoji is not iconography here"):
+  `svgIcon()`-Helfer in `js/guide.js`, Pfade aus `ICON_PATHS` — `info` (Tipp), `glossar`
+  (Buch, identisch zur Navigationsleiste), `clock` (Timer), `chevron` (Pfeil, rotiert bei
+  `aria-expanded="true"`). Neues `warn`-Icon (Dreieck + Ausrufezeichen, nach dem
+  Bauprinzip von `info`) ergänzt UND in `design-import/components/core/Icon.jsx`
+  nachgezogen, damit Referenz und App-Icon-Satz nicht auseinanderlaufen.
+- **`aria-label` statt sichtbarem Text:** `buildMoreLabel()` setzt sich aus den tatsächlich
+  vorhandenen Kategorien zusammen, mit korrektem Singular/Plural in DE+EN (`guide.more.*`-
+  Keys in `js/i18n-dict.js`), z. B. "Mehr zu diesem Schritt: 1 Warnung, 2 Tipps".
+- **`opts.directExtra`** (neu, `st()`-Option): das bestehende, IMMER sichtbare "Foto der
+  fertigen Pizza" am Anleitungsende (v3.69.0) läuft NICHT über den neuen Aufklapper-
+  Mechanismus (kein `.note`, würde sonst fälschlich in die Warn-/Tipp-Zählung einfließen
+  und mangels Treffer gar nicht gerendert werden) — eigener Durchreich-Pfad, der immer
+  direkt im Kartenkörper landet.
+- **Zeit-Chip-Regel aus der Referenz übernommen:** `.step__time` (enthält optional
+  `.step__chip` UND `.step__clock` gemeinsam) ist jetzt immer das letzte, `flex-shrink:0`-
+  Element der Titelzeile, bricht nie um — behebt die vom Nutzer bemerkte Uneinheitlichkeit
+  bei langen Titeln.
+- **`--badge-ink`-Aufhellung der Referenz gegengerechnet und bewusst NICHT übernommen:**
+  die Referenz hellt `--badge-ink` im Dunkelmodus auf `#3a322c` auf. WCAG-2.0-Formel
+  nachgerechnet: Scheibe gegen `--card` (Dunkel) verbessert sich nur von 1,10:1 auf
+  1,33:1 (beide weit unter der 3:1-Schwelle für UI-Komponenten, also kein Compliance-
+  Gewinn), während die eigentlich entscheidende Lesbarkeit (weiße Ziffer auf der Scheibe)
+  von 15,26:1 auf 12,56:1 SINKT — ein Rückschritt ohne Gegenwert. Bleibt in beiden Themes
+  `#2b2420` (Begründung im CSS-Kommentar bei `--badge-ink`). Ein `accessibility-expert`-
+  Review derselben Werte lieferte für die Dunkelspalte fälschlich 12,56:1 (hat offenbar den
+  verworfenen Referenzvorschlag statt des Ist-Zustands gerechnet) — beim Übernehmen von
+  Sub-Agenten-Zahlen in Zukunft besonders bei Kontrastwerten in unmittelbarer Nähe einer
+  bereits getroffenen Entscheidung selbst nachrechnen.
+- **Touch-Ziel-Fix** (`mobile-optimizer`-Befund, nach eigener Prüfung bestätigt real):
+  `.step__more` ist mit `box-sizing:border-box` nur 26px hoch (App-Konvention sonst 44px).
+  Unsichtbares `::after`-Overlay (44x44px, zentriert auf dem Button) statt optischer
+  Vergrößerung — live per `elementFromPoint()` + echtem Klick-Test außerhalb des
+  sichtbaren 26px-Bereichs verifiziert, keine visuelle Änderung.
+- **Fokus-Verwaltung geprüft, nicht geändert:** ein `accessibility-expert`-MAJOR-Befund
+  ("Fokus beim Schließen nicht verwaltet") erwies sich bei eigener Prüfung als nicht
+  zutreffend für den Klick-Fall (Fokus liegt beim Umschalten technisch zwangsläufig immer
+  auf dem gerade geklickten Button, nie auf dem automatisch geschlossenen anderen). Der
+  tatsächlich relevante Fall — `buildGuide()` ersetzt bei JEDEM `PZ.calc()` das komplette
+  `#guideSteps`-DOM; lag der Fokus zu diesem Zeitpunkt auf einem `.step__more` (z. B. nach
+  Tastatur-Bedienung eines Reglers), geht er auf `<body>` verloren (WCAG 2.4.3) — ist
+  bereits vorbestehendes, unverändertes Verhalten (traf vor diesem Zyklus identisch auf
+  `.hint-toggle` zu) und wurde NICHT in diesem Zyklus behoben, s. Backlog.
+
+**C) Druck/PDF:** `@media print` (`css/styles.css`) blendet `.step__photo` und
+`.step__more` aus, erzwingt `.step__extras{display:flex!important}` (wie zuvor
+`.hint-body` immer sichtbar). `js/pdf.js` (`collectGuideContent()`) an die neue
+`.step__title`/`.step__chip`/`.step__clock`/`.step__text`/`.step__extras > .note`-Struktur
+angepasst, klont `.step__text` und entfernt `.step__more` vor der Text-Extraktion (kein
+Aufklapper-Zähler im PDF-Fließtext).
+
+**Alt-Text-Entscheidung:** alle 19 Schrittbilder `alt=""` (dekorativ) — Sichtprüfung von
+zwei Kandidatenbildern mit komplexen Handgriffen (Kneten, Stretch & Fold) bestätigte: sie
+zeigen dieselbe Handlung, die der Schritttext bereits vollständig beschreibt, ohne
+zusätzliche nur-visuelle Details.
+
+**Tests:** `tests/test.html` Sektion 30 ("Akkordeon-Verhalten der Hinweisboxen") komplett
+ersetzt durch neue Tests für `.step__more`/`.step__extras`/`is-open` (Single-Open-
+Akkordeon, Farbcodierung gegen tatsächliche `.note--warn`-Kindelemente statt zirkulärer
+String-Suche, exakte Bildzuordnung pro Schritt inkl. der waterTemp/waterTempDirect-
+Unterscheidung, `aria-label`-Singular/Plural in DE+EN, PDF-Regression mit Tiefenvergleich +
+explizitem Digit-Leak-Check). Erste `test-generator`-Lieferung hatte mehrere Schwächen
+(zirkuläre Farbtests, nur grobe Bildzählung statt exakter Zuordnung, toter Plural-Test,
+stille Skip-Guards) — beim Gegenlesen gefunden und selbst korrigiert, nicht ungeprüft
+übernommen. 1186 → **1236** Prüfungen, per Headless-Lauf verifiziert.
+
+**Geändert:** `js/guide.js`, `js/images.js`, `js/i18n-dict.js`, `js/pdf.js`,
+`css/styles.css`, `assets/prepare_web_images.py`, `assets/img/step-*.webp` (19 Dateien
+verkleinert), `design-import/components/core/Icon.jsx`, `design-import/
+DESIGNSYSTEM-TEIGMEISTER.md` (neuer `warn`-Icon-Eintrag), `tests/test.html`. `?v=` auf
+`4.35.0` gezogen (Desktop + Mobil). `pizza-rechner-mobile-standalone.html` neu gebaut:
+19 Bilder eingebettet, 1,27 MB → **1,46 MB** (weit unter der 3-MB-Warnschwelle aus
+`BILD-EINBAU-KONZEPT.md`). `Versionen/v4.35.0 - Anleitungs-Schrittbilder plus
+Ein-Aufklapper-Redesign/` enthält den vollständigen Schnappschuss.
+
+**Backlog-Nebenbefund (nicht in diesem Zyklus behoben):** `#guideSteps` wird bei jedem
+`PZ.calc()` komplett per `innerHTML` neu aufgebaut — liegt der Tastatur-Fokus zu diesem
+Zeitpunkt auf einem interaktiven Element darin (z. B. `.step__more`, vorher `.hint-toggle`),
+geht er auf `<body>` verloren (WCAG 2.4.3). Vorbestehendes Verhalten, keine Regression
+dieses Zyklus, aber ein echter Kandidat für einen künftigen Zyklus (analog zum bereits
+gelösten `.collapse`/`.show`-Fokus-Erhalt aus v4.12.0, `PZ.moveFocusBeforeHide()`).
+
+## Kontrastspielraum-Nachbesserung Seitenhintergrund-Textur (v4.34.1)
+
+Nachbesserung von v4.34.0 (Nutzer fand die dortigen Alpha-Werte live "unbrauchbar" —
+zu wenig Farbstimmung übrig). Hell-Theme nutzt jetzt `assets/img/texture-marmor.webp`
+statt `texture-teighaut.webp`, Alpha 0,070 → **0,190** (worst-case 3,162:1 gegen `--line`,
+klar sichtbare Verbesserung). Dunkel-Theme bleibt `texture-kruste.webp`, bekommt aber eine
+neue nichtlineare Lichter-Kompression vor der Alpha-Ebene (`assets/prepare_web_images.py`,
+neuer `highlight`-Parameter), Alpha 0,110 → **0,150** (worst-case 3,139:1) — nur ein
+moderater, ehrlich eingeordneter Gewinn, da beide getesteten Dunkel-Kandidaten (Kruste,
+Holz) im Mittel deutlich heller sind als das sehr dunkle `--bg`. Beide Werte von
+`accessibility-expert` unabhängig bestätigt. `tests/test.html`: unverändert **1186**.
+
+**Volle Details (inkl. v4.34.0-Grundlagen):** Abschnitte „Kontrastspielraum-Nachbesserung
+Seitenhintergrund-Textur (v4.34.1)" (dieser Abschnitt) und „Geblurrte Textur als
+Seitenhintergrund (v4.34.0)" direkt darunter.
+
 ## Geblurrte Textur als Seitenhintergrund (v4.34.0)
 
 Bild-Einbau-Zyklus 6 (Teil), s. `BILD-EINBAU-KONZEPT.md`: der bisherige rein abstrakte

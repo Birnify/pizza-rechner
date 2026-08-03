@@ -119,7 +119,7 @@ bis 3 auf, die folgenden nutzen sie nur noch.
 | # | Kategorie | Blöcke | Aufwand | Status |
 |---|-----------|--------|---------|--------|
 | 1 | Preset-Karten **plus Grundgerüst** plus Fix des kaputten Anleitungsfotos | 8 bis 18 | groß (Fundament) | **erledigt (v4.32.0)** |
-| 2 | Anleitungs-Schrittbilder | 27 bis 45 | mittel | offen |
+| 2 | Anleitungs-Schrittbilder | 27 bis 45 | mittel | **erledigt (v4.35.0)** |
 | 3 | Glossar (Kategorie-Banner und Artikelbilder) | 46 bis 90 | mittel | offen |
 | 4 | Hero/Header (ersetzt das heutige Einzelfoto) | 1 bis 7 | klein | offen |
 | 5 | Onboarding, Party, Leerzustände | 91 bis 105 | mittel | offen |
@@ -226,3 +226,16 @@ moderater Gewinn, ehrlich eingeordnet). Details, Testzahlen und Commit-Hash:
 `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitte „Kontrastspielraum-Nachbesserung
 Seitenhintergrund-Textur (v4.34.1)" und „Geblurrte Textur als Seitenhintergrund (v4.34.0)".
 Restliche Blöcke 106-128 (Marketing/Varianten) weiterhin offen.
+
+## 8. Zyklus 2: Anleitungs-Schrittbilder (v4.35.0, erledigt)
+
+19 Schrittbilder (Blöcke 27-45) als randloses Bildband an der linken Kartenkante der
+Anleitungsschritte (`js/guide.js` `.step__photo`, `opts.imgKey` je `st()`-Aufruf), plus
+ein vom Nutzer mitbeauftragtes Redesign der Zusatzinhalte zu einem einzigen Aufklapper pro
+Schritt. Neuer `opts.bare`-Modus in `PZ.imgHtml()` (kein `.media`-Box-Wrapper, da die
+Bandhöhe dynamisch/kartenabhängig ist statt eines festen Seitenverhältnisses) — dabei ein
+echter Chromium-Flexbox-Layout-Bug gefunden und behoben (width/height-HTML-Attribute
+zusammen mit `align-self:stretch` bliesen die ganze Kartenzeile auf eine falsche,
+inhaltsunabhängige Höhe auf). Details, Testzahlen und Commit-Hash:
+`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Anleitungs-Schrittbilder +
+Ein-Aufklapper-Redesign (v4.35.0)".

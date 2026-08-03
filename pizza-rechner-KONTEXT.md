@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-03 · Aktuelle Version: v4.34.1 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-03 · Aktuelle Version: v4.35.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -216,21 +216,29 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Kontrastspielraum-Nachbesserung Seitenhintergrund-Textur (v4.34.1) = aktueller Stand
+## Anleitungs-Schrittbilder + Ein-Aufklapper-Redesign (v4.35.0) = aktueller Stand
 
-Nachbesserung von v4.34.0 (Nutzer fand die dortigen Alpha-Werte live "unbrauchbar" —
-zu wenig Farbstimmung übrig). Hell-Theme nutzt jetzt `assets/img/texture-marmor.webp`
-statt `texture-teighaut.webp`, Alpha 0,070 → **0,190** (worst-case 3,162:1 gegen `--line`,
-klar sichtbare Verbesserung). Dunkel-Theme bleibt `texture-kruste.webp`, bekommt aber eine
-neue nichtlineare Lichter-Kompression vor der Alpha-Ebene (`assets/prepare_web_images.py`,
-neuer `highlight`-Parameter), Alpha 0,110 → **0,150** (worst-case 3,139:1) — nur ein
-moderater, ehrlich eingeordneter Gewinn, da beide getesteten Dunkel-Kandidaten (Kruste,
-Holz) im Mittel deutlich heller sind als das sehr dunkle `--bg`. Beide Werte von
-`accessibility-expert` unabhängig bestätigt. `tests/test.html`: unverändert **1186**.
+Bild-Einbau Zyklus 2 (`BILD-EINBAU-KONZEPT.md`): 19 Anleitungsschritte bekommen ein
+randloses Bildband (`.step__photo`, `js/images.js`-Keys `guide.step.<key>`, 5 Schritte
+bewusst ohne Bild). Gleichzeitig ersetzt js/guide.js das bisherige v4.10.0-Muster
+(Einzel-Toggle je Tipp/Warnung) durch EINEN Aufklapper pro Schritt (`.step__more`/
+`.step__extras`), der Tipp+Warnung+Timer+Glossar bündelt, mit Icons statt Emoji
+(neues `warn`-Icon in `design-import/components/core/Icon.jsx` + `js/guide.js`) und
+Farbcodierung (neutral vs. ocker, sobald eine Warnung enthalten ist). Zeit-Chip-Bereich
+ist jetzt immer letztes, nie umbrechendes Element der Titelzeile. `--badge-ink`-Aufhellung
+der Referenz gegengerechnet (WCAG-2.0-Formel) und bewusst NICHT übernommen (bleibt in
+beiden Themes `#2b2420`, Details im CSS-Kommentar bei `--badge-ink`). Zwei echte Bugs live
+gefunden und behoben, die keiner der Sub-Agenten fand: (1) width/height-HTML-Attribute auf
+dem gestreckten Bildband trieben in Chromium die ganze Flex-Kartenzeile auf eine falsche,
+inhaltsunabhängige Höhe (`js/images.js`, neuer `opts.bare`-Modus lässt sie deshalb weg);
+(2) die eingefrorene Bildhöhe beim Öffnen war ursprünglich ein fixer 152px-Wert aus der
+Referenz, auf Mobil-Viewports schwankt die tatsächliche geschlossene Kartenhöhe aber
+zwischen 129-314px — jetzt löst `js/guide.js` das dynamisch (misst die Höhe unmittelbar
+vor dem Öffnen). `tests/test.html`: 1186 → **1236** (Sektion 30 komplett neu). Standalone-
+Datei: 19 Bilder eingebettet, 1,27 MB → **1,46 MB** (weit unter der 3-MB-Warnschwelle).
 
-**Volle Details (inkl. v4.34.0-Grundlagen):** `pizza-rechner-KONTEXT-HISTORIE.md`,
-Abschnitte „Kontrastspielraum-Nachbesserung Seitenhintergrund-Textur (v4.34.1)" und
-„Geblurrte Textur als Seitenhintergrund (v4.34.0)".
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Anleitungs-Schrittbilder
++ Ein-Aufklapper-Redesign (v4.35.0)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 

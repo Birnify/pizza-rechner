@@ -248,7 +248,25 @@
      var(--ink-strong) zweckentfremdet als "immer dunkler Badge-Hintergrund mit
      weißer Schrift" diente (.step .num, .step .body .timechip) — eigener Name seit
      v4.0.0, weil --ink-strong jetzt die neue Bedeutung "max. Text-Betonung" trägt
-     (s. oben). Unverändert #2b2420 in beiden Themes, wie zuvor. */
+     (s. oben). Unverändert #2b2420 in beiden Themes, wie zuvor.
+
+     Erneut geprüft und BEWUSST NICHT geändert (v4.35.0, "Anleitungs-Schrittbilder"): die
+     Referenzvorlage design-import/handoff-schrittbilder/3a-reference.html hellt
+     --badge-ink im Dunkelmodus auf #3a322c auf. WCAG-2.0-Luminanzformel nachgerechnet
+     (Skript in diesem Zyklus, nicht nur Augenmaß):
+       - Scheibe #2b2420 gegen --card #201d1b (Dunkel, aktuell):      1.10:1
+       - Scheibe #3a322c gegen --card #201d1b (Dunkel, Referenz-Alt): 1.33:1
+       - weiße Ziffer gegen #2b2420 (Text-Kontrast, aktuell):         15.26:1
+       - weiße Ziffer gegen #3a322c (Text-Kontrast, Referenz-Alt):    12.56:1
+     Die Aufhellung bringt die Scheibe-gegen-Karte-Grenze (WCAG 1.4.11, Zielwert 3:1) von
+     1.10:1 auf 1.33:1 -- bleibt damit klar unter der Schwelle, ist also KEIN Compliance-
+     Fix, nur eine geringfügige kosmetische Verschiebung. Die eigentlich entscheidende
+     Lesbarkeit (weiße Ziffer auf der Scheibe) ist in BEIDEN Fällen weit über der
+     4.5:1-Textschwelle, sinkt durch die Aufhellung aber von 15.26:1 auf 12.56:1 --
+     ein Rückschritt ohne Gegenwert. Da der Token an mehreren Stellen genutzt wird
+     (.step__num-Kreis UND .step__clock-Chip) und die Gleichheit beider Themes eine
+     bestehende, bewusste Entscheidung ist (s. Kommentar oben), gibt es keinen
+     zahlenbasierten Grund, sie hier aufzugeben -- Wert bleibt #2b2420 in beiden Themes. */
   --badge-ink:#2b2420;
   --basil:var(--success);
   --basil-text:var(--success-text);
@@ -1111,48 +1129,119 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
    werden im Dunkelmodus-Block überschrieben), Fix gilt daher für Hell- UND Dunkelmodus
    gleichermaßen -- rechnerisch gegengeprüft. */
 .daybadge.d2{background:#8d6814;}
-/* Design-Import Zyklus 2 (v4.1.0, "Anleitung/Zeitplan-Screen"): .step/.schedbar/
-   .step .num/.step .body .timechip/.step .body .warn wurden gegen die Referenzen
-   StepCard.jsx/ScheduleBar.jsx/Note.jsx aus design-import/ geprüft und stimmten
-   bereits exakt überein (Zyklus 1 hatte die dafür nötigen Tokens -- --card, --line,
-   --badge-ink, --font-head/--font-numeric, --basil/--success, --crust,
-   --warning/--warn-bg/--warn-text -- schon app-weit eingeführt). Nur .step .body
-   .chip (Technik-Chip) und der .tip-Linksrand brauchten noch eine echte Anpassung,
-   s. Kommentare dort. */
+/* Anleitungsschritt-Karte (v4.35.0, "Anleitungs-Schrittbilder + Ein-Aufklapper-Redesign"):
+   ersetzt das v4.1.0-Design-Import-Zyklus-2-Layout (.step .num/.step .body .chip/.timechip)
+   mit der vom Nutzer abgenommenen Referenzvorlage
+   design-import/handoff-schrittbilder/3a-reference.html ("Variante 3a") -- randloses
+   Bildband an der linken Kartenkante, EIN gemeinsamer Aufklapper statt einzelner
+   Tipp-/Warn-Toggles, Zeit-Bereich immer als letztes, nie umbrechendes Element der
+   Titelzeile. Tokennamen 1:1 aus der Referenz übernommen (die Referenz nutzt bereits die
+   echten App-Token-Namen). BEM-artige .step__*-Klassen ersetzen die vorherigen
+   Nachfahren-Selektoren (.step .num usw.) -- kein Verhaltensunterschied, nur klarere
+   Struktur, die auch das Bildband + den Aufklapper sauber einordnet. */
 .step{
-  display:flex;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-  border-left:3px solid var(--line);
-  padding:16px 18px;margin-bottom:10px;
+  position:relative;display:flex;min-height:104px;overflow:hidden;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  margin-bottom:10px;
 }
-.step .num{
+/* Schritt OHNE Bild (fehlender/nicht verdrahteter opts.imgKey, s. js/guide.js): 3px-
+   Akzentkante links, identisch zum bisherigen Look (vorher .step{border-left:3px solid
+   var(--line)} auf JEDEM Schritt) -- jetzt nur noch auf den Schritten ohne Bildband, per
+   ::before statt echtem border-left, damit sie nicht mit dem Bildband um Flex-Breite
+   konkurriert und der abgerundete Kartenrand (border-radius + overflow:hidden fürs Band)
+   sauber bleibt. */
+.step--noimg::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--line);}
+/* Bildband: randlos, volle (dynamische) Kartenhöhe, object-fit:cover übernimmt den
+   Zuschnitt aus der 4:3-Quelle. 76px unter 360px Viewport (schmale Handys). */
+.step__photo{flex-shrink:0;width:88px;align-self:stretch;object-fit:cover;display:block;}
+/* Aufgeklappt: Band friert auf der zuletzt gemessenen GESCHLOSSENEN Höhe ein, damit sich
+   der Bildausschnitt nicht ändert, wenn die Karte durch den geöffneten Extras-Bereich
+   wächst. KEIN fester Pixelwert hier -- ein Live-Test in diesem Zyklus widerlegte die
+   ursprüngliche Annahme (Referenzvorlage: 152px): die tatsächliche geschlossene
+   Kartenhöhe schwankt je nach Viewport-Breite/Textlänge/Sprache extrem (Desktop 1280px
+   ~102-140px, Mobil ~390px ~129-314px je nach Schritt) -- ein fixer Wert hätte auf Mobil
+   das Band beim Öffnen sichtbar SCHRUMPFEN lassen statt es einzufrieren. Stattdessen
+   misst js/guide.js (openMore()) die tatsächliche Höhe UNMITTELBAR vor dem Öffnen und
+   setzt sie als Inline-Style -- align-self:flex-start verhindert hier nur, dass der
+   spätere, gewachsene Extras-Bereich das Band per Flex-Stretch erneut mitzieht.
+   closeMore() entfernt den Inline-Wert wieder (Rückkehr zu align-self:stretch). */
+.step.is-open .step__photo{align-self:flex-start;}
+@media (max-width:359px){ .step__photo{width:76px;} }
+.step__body{flex:1;min-width:0;padding:16px 18px 16px 21px;}
+.step__head{display:flex;gap:10px;align-items:flex-start;}
+.step__num{
   /* var(--badge-ink) statt var(--ink) (v3.47.0 Dunkelmodus): var(--ink) ist die
      THEMENABHÄNGIGE Textfarbe (wird im Dunkelmodus hell) -- als Badge-Füllfläche mit
      weißer Schrift braucht dieser Kreis aber eine fest dunkle Fläche in beiden Themes.
-     Umbenannt von --ink-strong auf --badge-ink in v4.0.0 (Design-Import Zyklus 1):
-     --ink-strong trägt seither die neue Token-Bedeutung "max. Text-Betonung" aus dem
-     importierten Design-System, --badge-ink ist der eigene, unveränderte Fixwert. */
+     Bleibt bewusst in beiden Themes identisch, s. ausführliche Kontrast-Nachrechnung beim
+     --badge-ink-Token oben (Abschnitt "Alte Token-Namen als Aliase"). */
   flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--badge-ink);color:#fff;
   display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;font-family:var(--font-head);
 }
-.step .body{flex:1;min-width:0;}
-.step .body h4{margin:2px 0 5px;font-size:15.5px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-weight:700;}
-.step .body .chip{
-  /* Design-Import Zyklus 2 (v4.1.0): borderless Info-Tönung statt der alten,
-     Crust-umrandeten Chip-Farbe (--chip-bg/--chip-text) -- entspricht jetzt exakt
-     Badge.jsx tone="warm" aus dem Import (--info-bg/--info-text, kein sichtbarer
-     Rahmen). Kontrast selbst nachgerechnet (sRGB-Gammakorrektur/relative Luminanz):
-     Hellmodus ~5,45:1, Dunkelmodus ~7,51:1 -- beide über der 4,5:1-AA-Schwelle für
-     Fließtext, obwohl hier nur ein kleiner Chip-Text ist. Alte --chip-bg/--chip-text-
-     Aliase bleiben in :root für evtl. andere Verwender unverändert bestehen. */
+.step__title{margin:3px 0 0;flex:1;min-width:0;font-family:var(--font-head);font-size:15.5px;font-weight:700;line-height:1.25;color:var(--ink);}
+/* REGEL (aus der Referenz übernommen): der Zeit-Bereich ist immer das letzte Element der
+   Titelzeile, oben ausgerichtet, schrumpft nie und bricht nie um -- unabhängig davon, wie
+   lang der Titel ist (behebt die zuvor uneinheitliche Positionierung von Technik-/
+   Wanduhrzeit-Chip). Beide Chip-Arten können gleichzeitig vorkommen (js/guide.js), sitzen
+   dafür gemeinsam in diesem EINEN Wrapper statt einzeln umzubrechen. */
+.step__time{display:flex;align-items:center;gap:6px;flex-shrink:0;align-self:flex-start;margin-top:2px;white-space:nowrap;}
+.step__chip{
+  /* Kontrast wie zuvor bei .step .body .chip nachgerechnet (unverändert): Hellmodus
+     ~5,45:1, Dunkelmodus ~7,51:1 -- beide über der 4,5:1-AA-Schwelle für Fließtext. */
   font-size:11px;font-weight:700;background:var(--info-bg);color:var(--info-text);border:1px solid transparent;
-  padding:2px 9px;border-radius:var(--radius-chip);letter-spacing:.3px;text-transform:none;
+  padding:2px 9px;border-radius:var(--radius-chip);letter-spacing:.3px;
 }
-.step .body p{margin:0;font-size:13.5px;color:var(--step-text);line-height:1.5;}
-.step .body p b{color:var(--ink);}
-.step .body .timechip{
+.step__clock{
   font-size:12px;font-weight:800;background:var(--badge-ink);color:#fff;
-  padding:3px 11px;border-radius:var(--radius-chip);letter-spacing:.3px;margin-left:auto;
+  padding:3px 11px;border-radius:var(--radius-chip);letter-spacing:.3px;
 }
+.step__text{margin:8px 0 0;font-size:13.5px;color:var(--step-text);line-height:1.5;}
+.step__text b{color:var(--ink);}
+/* EIN Aufklapper für Tipp + Warnung + Timer + Glossar (v4.35.0, ersetzt die v4.10.0-
+   Einzel-Toggles .hint-toggle/.hint-body, s. Historie unten). Schwebt per float an das
+   Ende des Schritttextes (in dessen letzte Zeile, notfalls knapp darunter). Icons statt
+   Emoji (design-import/components/core/Icon.jsx, js/guide.js svgIcon()) -- die
+   Farbcodierung ist die eigentliche Funktion, nicht Deko: neutral (--info-bg) wenn nur
+   Tipp/Glossar/Timer enthalten sind, ocker+Rahmen (--warn-bg/--warning) sobald eine
+   Warnung dabei ist, sonst würden Warnungen unsichtbar hinter einem neutralen Pfeil
+   verschwinden. */
+.step__more{
+  position:relative; /* Anker fürs unsichtbare Touch-Ziel-Overlay, s. ::after unten */
+  float:right;margin:3px 0 0 10px;
+  display:inline-flex;align-items:center;gap:4px;white-space:nowrap;
+  font:inherit;font-size:11.5px;font-weight:700;line-height:1;
+  padding:6px 9px;min-height:26px;border:1px solid transparent;border-radius:var(--radius-chip);
+  background:var(--info-bg);color:var(--info-text);cursor:pointer;
+}
+/* Touch-Ziel-Fix (mobile-optimizer-Befund, v4.35.0): mit box-sizing:border-box (App-weit
+   gesetzt) ist die tatsächliche Knopfhöhe genau 26px (min-height schließt das Polster mit
+   ein) -- deutlich unter dem im Projekt sonst etablierten 44px-Touch-Ziel-Richtwert (s.
+   .switch-row/.step-glossary-link). Die Referenzvorlage 3a-reference.html gab die 26px als
+   reine Design-Optik vor, nicht als geprüfte Touch-Fläche. Statt den Knopf selbst optisch
+   zu vergrößern (würde die schwebende, kompakte Platzierung am Textende zerstören):
+   unsichtbares ::after-Overlay, zentriert auf dem Knopf, mind. 44x44 CSS-Pixel groß --
+   liegt als generierter Inhalt IM Knopf selbst, Klicks/Taps darauf zählen als Klicks auf
+   den Knopf, ohne dass optisch irgendetwas größer wirkt. */
+.step__more::after{
+  content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:max(100%,44px);height:44px;
+}
+.step__more--warn{background:var(--warn-bg);color:var(--warn-text);border-color:var(--warning);font-weight:800;}
+.step__more:hover{filter:brightness(.96);}
+.step__more:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
+.step__more-count{font-variant-numeric:tabular-nums;}
+.step__more>svg{flex-shrink:0;}
+.step__more>svg:last-child{transition:transform .15s ease;}
+.step__more[aria-expanded="true"]>svg:last-child{transform:rotate(180deg);}
+.step__extras{clear:both;display:none;margin-top:9px;flex-direction:column;gap:6px;}
+.step.is-open .step__extras{display:flex;}
+.step.is-open .step__more{float:none;margin:9px 0 0;}
+/* Tipp-/Warn-Textbausteine innerhalb von .step__extras -- Farbwerte identisch zum
+   vorherigen .hint-body-Muster übernommen (oliv/--success für Tipp, ocker/--warning für
+   Warnung), nur ohne den davor liegenden Einzel-Toggle-Button. */
+.note{font-size:12.5px;line-height:1.45;padding:7px 10px;border-radius:2px;border-left:3px solid transparent;}
+.note--warn{font-weight:700;border-left-color:var(--warning);background:var(--warn-bg);color:var(--warn-text);}
+.note--tip{border-left-color:var(--success);background:var(--tip-bg);color:var(--basil-text);}
 .schedbar{
   background:var(--basil);color:#fff;border-radius:var(--radius);
   padding:13px 16px;margin-bottom:14px;font-size:13.5px;line-height:1.5;
@@ -1173,46 +1262,13 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
 }
 .schedbar-goto-zeitplan:hover{opacity:.85;}
 .schedbar-goto-zeitplan:focus-visible{outline:2px solid #fff;outline-offset:2px;border-radius:1px;}
-/* Einklappbare Hinweisboxen mit gegenseitigem Ausschluss (v4.10.0, Backlog Punkt H,
-   "Akkordeon"): .tip/.warn waren bis hierher permanent sichtbare Volltext-Boxen (Farbwerte
-   unverändert von hier übernommen -- oliv/--success für Tipp, ocker/--warning für Warnung,
-   s. Kommentare der jeweils vorherigen Fassung dieser Regeln in der Historie). Jetzt zeigt
-   .hint-toggle nur noch einen kompakten Label-Button, .hint-body den Volltext, standardmäßig
-   per display:none versteckt und erst mit der Klasse .is-open sichtbar (von js/guide.js
-   gesetzt). Struktur/Klick-Verhalten (App-weites Single-Open-Akkordeon): js/guide.js. */
-.step .body .hintbox{margin-top:7px;}
-.step .body .hintbox+.hintbox{margin-top:6px;}
-.step .body .hint-toggle{
-  display:inline-flex;align-items:center;gap:6px;
-  font-size:12.5px;font-weight:700;line-height:1;font-family:inherit;
-  border:none;border-left:3px solid var(--success);border-radius:2px;
-  padding:8px 11px;min-height:32px;cursor:pointer;
-  background:var(--tip-bg);color:var(--basil-text);
-}
-.step .body .hintbox-warn .hint-toggle{
-  border-left-color:var(--warning);background:var(--warn-bg);color:var(--warn-text);
-}
-.step .body .hint-toggle:hover{filter:brightness(.96);}
-.step .body .hint-toggle:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
-.step .body .hint-toggle-icon{font-size:13px;}
-/* Aufklapp-Pfeil zusätzlich zum aria-expanded-Zustand -- rein dekorativ (kein eigener
-   Text/aria-Attribut nötig), analog .more-options-details summary::after. */
-.step .body .hint-toggle::after{content:'▾';margin-left:2px;font-size:10px;opacity:.75;}
-.step .body .hint-toggle[aria-expanded="true"]::after{content:'▴';}
-.step .body .hint-body{
-  display:none;margin-top:2px;font-size:12.5px;line-height:1.45;border-radius:2px;
-  padding:7px 10px;border-left:3px solid var(--success);
-  background:var(--tip-bg);color:var(--basil-text);
-}
-.step .body .hint-body.is-open{display:block;}
-.step .body .hintbox-warn .hint-body{
-  border-left-color:var(--warning);background:var(--warn-bg);color:var(--warn-text);
-}
 /* Glossar-Verweis (v3.68.0, "Glossar-Verweise in der Anleitung"): kleiner, unauffälliger
    Sprung-Link am Ende eines Anleitungsschritts (js/guide.js glossaryLinkHtml()) --
-   bewusst KEINE farbige Box wie .tip/.warn (sonst zu viel visuelle Konkurrenz, da mehrere
-   Schritte gleichzeitig einen Verweis haben können), nur ein unterstrichenes Wort im
-   Fließtext, analog zum bestehenden .schedbar-goto-zeitplan-Muster.
+   bewusst KEINE farbige Box wie .note (sonst zu viel visuelle Konkurrenz), nur ein
+   unterstrichenes Wort im Fließtext, analog zum bestehenden .schedbar-goto-zeitplan-Muster.
+   Seit v4.35.0 IMMER innerhalb von .step__extras (dessen flex-Container bereits
+   `gap:6px` zwischen allen Kindern setzt) -- kein eigener margin-top mehr nötig/gewollt,
+   sonst doppelter Abstand zum vorherigen Element.
    Flex-Layout (v3.69.1-Bugfix): vorher stand das 📖-Icon auf einer eigenen Zeile über dem
    <button>, weil der Button (Browser-Default `display:inline-block` + `text-align:center`)
    die volle Containerbreite einnahm und seinen Text zentrierte -- besonders sichtbar auf
@@ -1220,21 +1276,17 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
    zwei nebeneinanderliegenden Flex-Items, `align-items:flex-start` hält das Icon oben am
    (ggf. mehrzeiligen) Linktext ausgerichtet statt vertikal zentriert. Icon-`<span>` trägt
    `aria-hidden="true"` (js/guide.js), da der Button-Text bereits vorgelesen wird. */
-/* Selektor bewusst unscoped (nicht nur .step .body .glossary-ref) seit Backlog Punkt I
-   (v4.11.0): bis v4.16.0 nutzte auch #waterTempGlossaryRef im Ergebnis-Panel (js/calc.js)
-   dieselbe Klasse außerhalb eines .step-Anleitungsschritts. Seit v4.16.0 ("Schüttwasser-
-   Anzeige entfernen") ist js/guide.js wieder der einzige Nutzer -- Selektor bleibt trotzdem
-   unscoped (kein funktionaler Nachteil, spart eine erneute Änderung bei künftigem
-   Wiederauftauchen eines Verweises außerhalb von .step). */
-.glossary-ref{margin-top:7px;font-size:12.5px;color:var(--muted);display:flex;align-items:flex-start;gap:6px;}
+.glossary-ref{font-size:12.5px;color:var(--muted);display:flex;align-items:flex-start;gap:6px;}
 /* Foto der fertigen Pizza (v3.69.0), abschließender Anleitungsschritt nach dem Backen --
    gemeinsame Regel für Desktop UND Mobil (beide laden css/styles.css), kein separates
-   Mobil-Override nötig (.step .body ist bereits flex:1;min-width:0, das Bild skaliert mit
+   Mobil-Override nötig (.step__body ist bereits flex:1;min-width:0, das Bild skaliert mit
    der Kartenbreite). Seit v4.32.0 ist das Bild selbst ein .media--16x9-Element aus dem
    Bild-Register (js/images.js, PZ.imgHtml(key, {extraClass:'final-photo'})) -- Ratio/
    Ladeverhalten/Platzhalterfarbe kommen von .media (s. o.), diese Regel ergänzt nur noch
-   die seitenspezifische Breitenbegrenzung + den früheren Rahmen. */
-.step .body .final-photo{width:100%;max-width:440px;margin-top:10px;border:1px solid var(--line);}
+   die seitenspezifische Breitenbegrenzung + den früheren Rahmen. Seit v4.35.0 über
+   opts.directExtra gereicht (js/guide.js) -- IMMER sichtbar, unabhängig vom neuen
+   .step__more-Aufklapper-Mechanismus (kein .note, zählt nicht zu dessen Warn-/Tipp-Summe). */
+.step__body .final-photo{width:100%;max-width:440px;margin-top:10px;border:1px solid var(--line);}
 .step-glossary-link{
   background:none;border:none;padding:0;margin:0;color:var(--tomato-text);font:inherit;
   font-weight:700;text-decoration:underline;cursor:pointer;text-align:left;flex:1;min-width:0;
@@ -1310,12 +1362,20 @@ footer{text-align:center;font-size:11.5px;color:var(--muted);padding:0 20px 30px
   body{background:#fff;}
   .timerbox,.timerhint{display:none;}
   .glossary-ref{display:none;}
-  /* Einklappbare Hinweisboxen (v4.10.0, Backlog Punkt H): auf Papier gibt es keine
-     Interaktion -- Toggle-Button ausblenden, Volltext IMMER zeigen (unabhängig vom
-     Bildschirm-Aufklappzustand), damit "Anleitung drucken" wie bisher den kompletten
-     Tipp-/Warntext enthält. */
-  .step .body .hint-toggle{display:none;}
-  .step .body .hint-body{display:block!important;}
+  /* Schrittbilder sind rein dekorativ -- kosten auf Papier nur Tinte/Seitenlänge (analog zum
+     Rest dieses @media-print-Blocks, der bereits Timer/Glossar-Verweise als nicht
+     papiertauglich ausblendet). Das separate, größere "Foto der fertigen Pizza"
+     (.final-photo) ist NICHT betroffen -- eigener, bereits bestehender Mechanismus, nicht
+     Teil dieses Zyklus. */
+  .step__photo{display:none;}
+  /* EIN Aufklapper pro Schritt (v4.35.0, ersetzt das v4.10.0-Einzel-Toggle-Muster): auf
+     Papier gibt es keine Interaktion -- Aufklapper-Button ausblenden, Extras-Container
+     IMMER zeigen (unabhängig vom Bildschirm-Aufklappzustand), damit "Anleitung drucken"
+     wie bisher den kompletten Tipp-/Warntext enthält. Timer/Glossar-Verweis liegen im
+     selben Container, bleiben aber über die eigenen .timerbox/.glossary-ref-Regeln oben
+     weiterhin ausgeblendet. */
+  .step__more{display:none;}
+  .step__extras{display:flex!important;}
   /* Anleitung drucken: nur die Schritt-für-Schritt-Anleitung bleibt sichtbar */
   body.print-guide .result{display:none;}
   /* Einkaufsliste drucken: alles außer der Einkaufsliste ausblenden (inkl. Anleitung + Ergebnis-Panel) */

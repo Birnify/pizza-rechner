@@ -83,6 +83,33 @@ TARGETS = {
     # eine Lichter-Kompression VOR der Alpha-Ebene (s. Kommentar "highlight" oben).
     "texture-marmor.webp": (800, 800, "WEBP", 80, 120, 0.190),
     "texture-kruste.webp": (800, 800, "WEBP", 80, 120, 0.150, (-2, 0.05)),
+    # Zyklus "Anleitungs-Schrittbilder" (v4.35.0): randloses Bildband an der linken
+    # Kartenkante, angezeigt mit 88px Breite (76px unter 360px Viewport), object-fit:cover,
+    # volle (dynamische) Kartenhoehe. 300x224 haelt exakt das 4:3-Seitenverhaeltnis der
+    # Erzeugungsaufloesung (1200x896) bei -- kein Verzerren beim Resize, der browserseitige
+    # object-fit:cover-Zuschnitt macht aus dem Querformat je nach Kartenhoehe einen
+    # schmaleren Ausschnitt. 300px Breite ist bereits >3x der 88px-Anzeigebreite (satter
+    # Retina-Puffer). Quelldateien lagen bei rund 1,9 MB gesamt (19 Dateien, ~100 KB je
+    # Datei) -- weit ueber Anzeigegroesse.
+    "step-addYeast.webp": (300, 224, "WEBP", 78),
+    "step-autolyse.webp": (300, 224, "WEBP", 78),
+    "step-bakeTopping.webp": (300, 224, "WEBP", 78),
+    "step-bigaMix.webp": (300, 224, "WEBP", 78),
+    "step-bigaRest.webp": (300, 224, "WEBP", 78),
+    "step-bulkRise.webp": (300, 224, "WEBP", 78),
+    "step-checkTemp.webp": (300, 224, "WEBP", 78),
+    "step-dissolveYeast.webp": (300, 224, "WEBP", 78),
+    "step-finalProof.webp": (300, 224, "WEBP", 78),
+    "step-formBalls.webp": (300, 224, "WEBP", 78),
+    "step-knead.webp": (300, 224, "WEBP", 78),
+    "step-mixSalt.webp": (300, 224, "WEBP", 78),
+    "step-poolishMix.webp": (300, 224, "WEBP", 78),
+    "step-poolishRest.webp": (300, 224, "WEBP", 78),
+    "step-preheat.webp": (300, 224, "WEBP", 78),
+    "step-shape.webp": (300, 224, "WEBP", 78),
+    "step-stretchFold.webp": (300, 224, "WEBP", 78),
+    "step-waterTemp.webp": (300, 224, "WEBP", 78),
+    "step-weighIngredients.webp": (300, 224, "WEBP", 78),
 }
 
 

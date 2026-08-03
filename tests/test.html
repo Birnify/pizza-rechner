@@ -3915,254 +3915,452 @@
   })();
 
   // ─────────────────────────────────────────────────────────────
-  heading('30 · Akkordeon-Verhalten der Hinweisboxen (v4.10.0)');
-
-  // Hilfsfunktionen für Hinweisbox-Tests
+  heading('30 · Akkordeon + Aufklapper-Button-Logik (v4.35.0: .step__more/.step__extras/is-open)');
+  // Ersetzt komplett die frühere v4.10.0-Sektion (.hint-toggle/.hint-body je Einzel-Hinweis
+  // -- dieses Muster existiert seit v4.35.0 nicht mehr, s. js/guide.js). Erstellt vom
+  // test-generator-Agent, vom Orchestrator gegengelesen und an mehreren Stellen korrigiert
+  // (Details: pizza-rechner-KONTEXT.md, Abschnitt "Anleitungs-Schrittbilder ... (v4.35.0)"):
+  // (1) die ursprünglichen Farbcodierungs-Tests waren zirkulär (prüften outerHTML-Substring
+  // "warn" gegen die Klasse, die denselben String enthält -- konnten praktisch nicht rot
+  // werden); jetzt gegen die tatsächlichen .note--warn/.note--tip-Kindelemente in
+  // .step__extras geprüft. (2) die Bildzuordnung wurde nur grob gezählt (>10 bzw. >=5); jetzt
+  // pro Schritt exakt gegen die erwartete Bilddatei geprüft, inkl. der zwei Call-Sites von
+  // "Schüttwasser temperieren" (Vorteig bekommt step-waterTemp.webp, Direkt bewusst KEIN
+  // Bild). (3) der geforderte Plural-Fall ("2 Tipps"/"2 tips") fehlte; jetzt über den
+  // mixSalt-Schritt mit Zucker+Öl gleichzeitig (sugarTip+oilTip) hergestellt. (4) der
+  // Teglia-Preset-Test setzte #preset.value ohne den im Projekt etablierten Ablauf
+  // (setActivePreset()+PZ.buildGuide(), s. Sektion 36); übernommen. (5) alle
+  // `if (...) return;`-Silent-Skip-Guards entfernt -- eine nicht erfüllte Vorbedingung ist
+  // jetzt eine rote Prüfung, kein stilles Weglassen (genau das hatte zuvor 13 Prüfungen
+  // unbemerkt verschwinden lassen). (6) der PDF-Regressionstest prüft jetzt zusätzlich
+  // explizit, dass die extrahierte Fließtext-Zeile NICHT auf die Ziffer des
+  // Aufklapper-Zählers endet (Beweis, dass der Button vor der Text-Extraktion sauber
+  // herausgeklont wird, s. js/pdf.js).
   (function () {
-    function countHintToggles(guideStepsEl) {
-      return (guideStepsEl || {}).querySelectorAll ? guideStepsEl.querySelectorAll('.hint-toggle').length : 0;
+    function countMoreButtons(guideStepsEl) {
+      return (guideStepsEl || {}).querySelectorAll ? guideStepsEl.querySelectorAll('.step__more').length : 0;
     }
-    function countOpenHints(guideStepsEl) {
-      return (guideStepsEl || {}).querySelectorAll ? guideStepsEl.querySelectorAll('.hint-toggle[aria-expanded="true"]').length : 0;
+    function countOpenSteps(guideStepsEl) {
+      return (guideStepsEl || {}).querySelectorAll ? guideStepsEl.querySelectorAll('.step.is-open').length : 0;
     }
-    function hasInlineGlossaryLink(guideStepsEl) {
-      if (!(guideStepsEl || {}).querySelectorAll) return false;
-      return guideStepsEl.querySelectorAll('.inline-glossary-link').length > 0;
-    }
-    function inlineLinksInHintBodies(guideStepsEl) {
-      if (!(guideStepsEl || {}).querySelectorAll) return 0;
-      return guideStepsEl.querySelectorAll('.hint-body .inline-glossary-link').length;
-    }
+    function setActivePreset(value) { document.getElementById('preset').value = value; }
 
-    const multiHintState = {
+    const multiContentState = {
       method: 'biga', hyd: 75, yeast: 0.3, salt: 2.8, oil: 2, pref: 100, bhyd: 45
     };
 
     // Test 1: Default-Zustand nach buildGuide()
     (function () {
-      Object.assign(PZ.state, BASE, multiHintState);
+      Object.assign(PZ.state, BASE, multiContentState);
       PZ.calc();
       const guideEl = document.getElementById('guideSteps');
-      const numToggles = countHintToggles(guideEl);
-      const numOpen = countOpenHints(guideEl);
+      const numButtons = countMoreButtons(guideEl);
+      const numOpen = countOpenSteps(guideEl);
       const allCollapsed = Array.prototype.every.call(
-        guideEl ? guideEl.querySelectorAll('.hint-toggle') : [],
+        guideEl ? guideEl.querySelectorAll('.step__more') : [],
         btn => btn.getAttribute('aria-expanded') === 'false'
       );
-      const noOpenBodies = Array.prototype.every.call(
-        guideEl ? guideEl.querySelectorAll('.hint-body') : [],
-        body => !body.classList.contains('is-open')
-      );
-      renderBox('Akkordeon · Default-Zustand: alle Hinweisboxen eingeklappt', [
-        { label: 'mindestens 2 Hinweisboxen im Rezept vorhanden (Test-Validierung)', ok: numToggles >= 2, actual: numToggles, expected: '≥ 2', tol: null },
-        { label: 'alle .hint-toggle haben aria-expanded="false"', ok: allCollapsed, actual: allCollapsed, expected: true, tol: null },
-        { label: 'keine .hint-body hat Klasse is-open', ok: noOpenBodies, actual: noOpenBodies, expected: true, tol: null },
-        { label: 'countOpenHints() = 0', ok: numOpen === 0, actual: numOpen, expected: 0, tol: null }
+      renderBox('Akkordeon · Default-Zustand: alle .step__more eingeklappt, keine .step.is-open', [
+        { label: 'mindestens 2 .step__more-Buttons im Rezept vorhanden (Test-Validierung)', ok: numButtons >= 2, actual: numButtons, expected: '≥ 2', tol: null },
+        { label: 'alle .step__more haben aria-expanded="false"', ok: allCollapsed, actual: allCollapsed, expected: true, tol: null },
+        { label: 'keine .step.is-open im DOM', ok: numOpen === 0, actual: numOpen, expected: 0, tol: null }
       ]);
     })();
 
-    // Test 2: Klick auf einen Toggle öffnet genau diesen
+    // Test 2: Klick auf einen Button öffnet genau diesen Schritt
     (function () {
-      Object.assign(PZ.state, BASE, multiHintState);
+      Object.assign(PZ.state, BASE, multiContentState);
       PZ.calc();
       const guideEl = document.getElementById('guideSteps');
-      if (!guideEl) return;
-      const btns = guideEl.querySelectorAll('.hint-toggle');
-      if (btns.length === 0) return;
-      const btn0 = btns[0];
-      const id0 = btn0.getAttribute('aria-controls');
-      const body0 = id0 ? document.getElementById(id0) : null;
+      const btns = guideEl ? guideEl.querySelectorAll('.step__more') : [];
+      const found = btns.length > 0;
+      const btn0 = found ? btns[0] : null;
+      const step0 = btn0 ? btn0.closest('.step') : null;
+      if (btn0) btn0.click();
 
-      btn0.click();
-
-      const isOpen = btn0.getAttribute('aria-expanded') === 'true';
-      const bodyHasOpenClass = body0 ? body0.classList.contains('is-open') : false;
-      renderBox('Akkordeon · Klick öffnet genau diesen Toggle', [
-        { label: 'Button[0] hat aria-expanded="true" nach Klick', ok: isOpen, actual: isOpen, expected: true, tol: null },
-        { label: 'zugehörige .hint-body bekommt Klasse is-open', ok: bodyHasOpenClass, actual: bodyHasOpenClass, expected: true, tol: null }
+      const isExpanded = btn0 ? btn0.getAttribute('aria-expanded') === 'true' : false;
+      const stepHasOpenClass = step0 ? step0.classList.contains('is-open') : false;
+      renderBox('Akkordeon · Klick öffnet genau diesen Schritt (.step bekommt is-open)', [
+        { label: 'mindestens 1 .step__more vorhanden (Test-Validierung)', ok: found, actual: found, expected: true, tol: null },
+        { label: 'Button[0] hat aria-expanded="true" nach Klick', ok: isExpanded, actual: isExpanded, expected: true, tol: null },
+        { label: 'Elternkarte (.step) bekommt Klasse is-open', ok: stepHasOpenClass, actual: stepHasOpenClass, expected: true, tol: null }
       ]);
     })();
 
-    // Test 3: Klick auf zweiten Toggle schließt den ersten (Single-Open-Logik)
+    // Test 3: Klick auf zweiten Button schließt den ersten (Single-Open-Logik)
     (function () {
-      Object.assign(PZ.state, BASE, multiHintState);
+      Object.assign(PZ.state, BASE, multiContentState);
       PZ.calc();
       const guideEl = document.getElementById('guideSteps');
-      if (!guideEl) return;
-      const btns = guideEl.querySelectorAll('.hint-toggle');
-      if (btns.length < 2) return;
-      const btn0 = btns[0];
-      const btn1 = btns[1];
+      const btns = guideEl ? guideEl.querySelectorAll('.step__more') : [];
+      const found = btns.length >= 2;
+      const btn0 = found ? btns[0] : null;
+      const btn1 = found ? btns[1] : null;
+      const step0 = btn0 ? btn0.closest('.step') : null;
+      const step1 = btn1 ? btn1.closest('.step') : null;
 
-      btn0.click();
-      const btn0OpenAfterClick0 = btn0.getAttribute('aria-expanded') === 'true';
+      if (btn0) btn0.click();
+      const btn0OpenAfterClick0 = btn0 ? btn0.getAttribute('aria-expanded') === 'true' : false;
+      if (btn1) btn1.click();
+      const btn0ClosedAfterClick1 = btn0 ? btn0.getAttribute('aria-expanded') === 'false' : false;
+      const btn1OpenAfterClick1 = btn1 ? btn1.getAttribute('aria-expanded') === 'true' : false;
+      const step0NoOpen = step0 ? !step0.classList.contains('is-open') : false;
+      const step1HasOpen = step1 ? step1.classList.contains('is-open') : false;
+      const totalOpen = countOpenSteps(guideEl);
 
-      btn1.click();
-      const btn0ClosedAfterClick1 = btn0.getAttribute('aria-expanded') === 'false';
-      const btn1OpenAfterClick1 = btn1.getAttribute('aria-expanded') === 'true';
-      const totalOpen = countOpenHints(guideEl);
-
-      renderBox('Akkordeon · Klick auf zweiten Toggle schließt den ersten (Single-Open)', [
+      renderBox('Akkordeon · Klick auf zweiten Button schließt den ersten (Single-Open)', [
+        { label: 'mindestens 2 .step__more vorhanden (Test-Validierung)', ok: found, actual: found, expected: true, tol: null },
         { label: 'Button[0] war offen nach erstem Klick (Validierung)', ok: btn0OpenAfterClick0, actual: btn0OpenAfterClick0, expected: true, tol: null },
         { label: 'Button[0] ist jetzt geschlossen nach Klick auf Button[1]', ok: btn0ClosedAfterClick1, actual: btn0ClosedAfterClick1, expected: true, tol: null },
         { label: 'Button[1] ist jetzt offen', ok: btn1OpenAfterClick1, actual: btn1OpenAfterClick1, expected: true, tol: null },
-        { label: 'maximal 1 .hint-toggle[aria-expanded="true"] im ganzen #guideSteps', ok: totalOpen === 1, actual: totalOpen, expected: 1, tol: null }
+        { label: '.step[0] hat keine is-open-Klasse mehr', ok: step0NoOpen, actual: step0NoOpen, expected: true, tol: null },
+        { label: '.step[1] hat is-open-Klasse', ok: step1HasOpen, actual: step1HasOpen, expected: true, tol: null },
+        { label: 'maximal 1 .step.is-open im ganzen #guideSteps', ok: totalOpen === 1, actual: totalOpen, expected: 1, tol: null }
       ]);
     })();
 
-    // Test 4: Erneuter Klick auf offenen Toggle schließt ihn (Toggle-Out)
+    // Test 4: Erneuter Klick auf offenen Button schließt ihn (Toggle-Out)
     (function () {
-      Object.assign(PZ.state, BASE, multiHintState);
+      Object.assign(PZ.state, BASE, multiContentState);
       PZ.calc();
       const guideEl = document.getElementById('guideSteps');
-      if (!guideEl) return;
-      const btns = guideEl.querySelectorAll('.hint-toggle');
-      if (btns.length === 0) return;
-      const btn0 = btns[0];
+      const btns = guideEl ? guideEl.querySelectorAll('.step__more') : [];
+      const found = btns.length > 0;
+      const btn0 = found ? btns[0] : null;
+      const step0 = btn0 ? btn0.closest('.step') : null;
 
-      btn0.click();
-      const openAfterFirst = btn0.getAttribute('aria-expanded') === 'true';
+      if (btn0) btn0.click();
+      const openAfterFirst = btn0 ? btn0.getAttribute('aria-expanded') === 'true' : false;
+      if (btn0) btn0.click();
+      const closedAfterSecond = btn0 ? btn0.getAttribute('aria-expanded') === 'false' : false;
+      const stepNoOpenAfterSecond = step0 ? !step0.classList.contains('is-open') : false;
 
-      btn0.click();
-      const closedAfterSecond = btn0.getAttribute('aria-expanded') === 'false';
-      const totalOpen = countOpenHints(guideEl);
-
-      renderBox('Akkordeon · Erneuter Klick auf offenen Toggle schließt ihn', [
-        { label: 'Button ist nach erstem Klick offen (Validierung)', ok: openAfterFirst, actual: openAfterFirst, expected: true, tol: null },
+      renderBox('Akkordeon · Erneuter Klick auf offenen Button schließt ihn (Toggle-Out)', [
+        { label: 'mindestens 1 .step__more vorhanden (Test-Validierung)', ok: found, actual: found, expected: true, tol: null },
+        { label: 'Button war nach erstem Klick offen (Validierung)', ok: openAfterFirst, actual: openAfterFirst, expected: true, tol: null },
         { label: 'Button ist nach zweitem Klick geschlossen', ok: closedAfterSecond, actual: closedAfterSecond, expected: true, tol: null },
-        { label: 'countOpenHints() = 0 (nichts offen mehr)', ok: totalOpen === 0, actual: totalOpen, expected: 0, tol: null }
+        { label: '.step hat nach zweitem Klick keine is-open-Klasse', ok: stepNoOpenAfterSecond, actual: stepNoOpenAfterSecond, expected: true, tol: null }
       ]);
     })();
 
-    // Test 5: Mehrere Hinweisboxen im SELBEN Schritt — Single-Open auch innerhalb eines Schritts
+    // Test 5: Akkordeon-Zustand wird bei jedem neuen buildGuide()/calc()-Durchlauf zurückgesetzt
     (function () {
-      const sameStepState = {
-        method: 'direct', hyd: 62, oil: 2, sugar: 2, yeast: 0.3, salt: 2.8
-      };
-      Object.assign(PZ.state, BASE, sameStepState);
+      Object.assign(PZ.state, BASE, multiContentState);
       PZ.calc();
       const guideEl = document.getElementById('guideSteps');
-      if (!guideEl) return;
-      const btns = guideEl.querySelectorAll('.hint-toggle');
-      if (btns.length < 2) return;
-
-      btns[0].click();
-      const openCount1 = countOpenHints(guideEl);
-
-      btns[1].click();
-      const openCount2 = countOpenHints(guideEl);
-      const firstClosed = btns[0].getAttribute('aria-expanded') === 'false';
-      const secondOpen = btns[1].getAttribute('aria-expanded') === 'true';
-
-      renderBox('Akkordeon · Mehrere Hinweisboxen im selben Schritt: Single-Open auch hier', [
-        { label: 'nach Klick auf Button[0]: 1 Box offen', ok: openCount1 === 1, actual: openCount1, expected: 1, tol: null },
-        { label: 'nach Klick auf Button[1]: Button[0] automatisch geschlossen', ok: firstClosed, actual: firstClosed, expected: true, tol: null },
-        { label: 'nach Klick auf Button[1]: Button[1] jetzt offen', ok: secondOpen, actual: secondOpen, expected: true, tol: null },
-        { label: 'insgesamt nur 1 Box offen (nicht 2)', ok: openCount2 === 1, actual: openCount2, expected: 1, tol: null }
-      ]);
-    })();
-
-    // Test 6: Inline-Glossar-Links bleiben unabhängig vom Akkordeon-Zustand klickbar
-    (function () {
-      Object.assign(PZ.state, BASE, multiHintState);
-      PZ.calc();
-      const guideEl = document.getElementById('guideSteps');
-      if (!guideEl) return;
-
-      const hasInlineLinks = hasInlineGlossaryLink(guideEl);
-      const inlineLinksInBodies = inlineLinksInHintBodies(guideEl);
-
-      const btns = guideEl.querySelectorAll('.hint-toggle');
-      btns.forEach(btn => btn.click());
-
-      const inlineLinksInBodiesAfterOpen = inlineLinksInHintBodies(guideEl);
-
-      renderBox('Akkordeon · Inline-Glossar-Links unabhängig vom Toggle-Zustand erreichbar', [
-        { label: '.inline-glossary-link-Elemente kommen in der Anleitung vor (falls überhaupt Glossar-Links)', ok: hasInlineLinks === false || hasInlineLinks === true, actual: hasInlineLinks, expected: '0 oder ≥1', tol: null },
-        { label: 'kein .inline-glossary-link sitzt als Nachfahre in .hint-body (Selektor-Check)', ok: inlineLinksInBodies === 0, actual: inlineLinksInBodies, expected: 0, tol: null },
-        { label: 'auch nach dem Öffnen aller Hinweisboxen: .inline-glossary-link nicht in .hint-body', ok: inlineLinksInBodiesAfterOpen === 0, actual: inlineLinksInBodiesAfterOpen, expected: 0, tol: null }
-      ]);
-    })();
-
-    // Test 7: PDF-Export: PZ._pdfCollectGuideContent() liefert vollen Text unabhängig vom Akkordeon-Zustand
-    (function () {
-      Object.assign(PZ.state, BASE, multiHintState);
-      PZ.calc();
-
-      if (!PZ._pdfCollectGuideContent) return;
-
-      const pdfContent1 = PZ._pdfCollectGuideContent();
-
-      const guideEl = document.getElementById('guideSteps');
-      if (guideEl) {
-        const btns = guideEl.querySelectorAll('.hint-toggle');
-        if (btns.length > 0) btns[0].click();
-      }
-
-      const pdfContent2 = PZ._pdfCollectGuideContent();
-
-      const contentLength1 = pdfContent1 ? pdfContent1.length : 0;
-      const contentLength2 = pdfContent2 ? pdfContent2.length : 0;
-
-      renderBox('Akkordeon · PDF-Export: vollen Text unabhängig von Auf-/Zugeklappt-Zustand', [
-        { label: 'PZ._pdfCollectGuideContent() liefert Inhalte (nicht leer)', ok: contentLength1 > 0, actual: contentLength1, expected: '> 0', tol: null },
-        { label: 'PDF-Inhalt bleibt gleich unabhängig vom Toggle-Zustand (komplett vs. einzeln offen)', ok: contentLength1 === contentLength2, actual: contentLength1, expected: contentLength2, tol: null }
-      ]);
-    })();
-
-    // Test 8: Randfall — Akkordeon-Zustand wird bei jedem buildGuide() zurückgesetzt
-    (function () {
-      Object.assign(PZ.state, BASE, multiHintState);
-      PZ.calc();
-      const guideEl = document.getElementById('guideSteps');
-      if (!guideEl) return;
-
-      const btns1 = guideEl.querySelectorAll('.hint-toggle');
-      if (btns1.length > 0) btns1[0].click();
-      const openCount1 = countOpenHints(guideEl);
+      const btns1 = guideEl ? guideEl.querySelectorAll('.step__more') : [];
+      const found = btns1.length > 0;
+      if (found) btns1[0].click();
+      const openCount1 = countOpenSteps(guideEl);
 
       PZ.calc();
 
       const guideEl2 = document.getElementById('guideSteps');
-      const openCount2 = countOpenHints(guideEl2);
+      const openCount2 = countOpenSteps(guideEl2);
       const allClosed = Array.prototype.every.call(
-        guideEl2 ? guideEl2.querySelectorAll('.hint-toggle') : [],
+        guideEl2 ? guideEl2.querySelectorAll('.step__more') : [],
         btn => btn.getAttribute('aria-expanded') === 'false'
       );
 
-      renderBox('Akkordeon · buildGuide() reset: Hinweisbox-Zustand wird bei neuem calc() zurückgesetzt', [
-        { label: 'nach erstem calc() + Klick: 1 Box offen (Validierung)', ok: openCount1 === 1, actual: openCount1, expected: 1, tol: null },
-        { label: 'nach zweitem calc(): alle Boxen wieder eingeklappt', ok: allClosed, actual: allClosed, expected: true, tol: null },
-        { label: 'countOpenHints() = 0 nach neuem buildGuide()', ok: openCount2 === 0, actual: openCount2, expected: 0, tol: null }
+      renderBox('Akkordeon · buildGuide()-Reset: Zustand wird bei neuem calc() zurückgesetzt', [
+        { label: 'mindestens 1 .step__more vorhanden (Test-Validierung)', ok: found, actual: found, expected: true, tol: null },
+        { label: 'nach erstem calc() + Klick: 1 Schritt offen (Validierung)', ok: openCount1 === 1, actual: openCount1, expected: 1, tol: null },
+        { label: 'nach neuem calc(): 0 Schritte offen', ok: openCount2 === 0, actual: openCount2, expected: 0, tol: null },
+        { label: 'alle .step__more haben wieder aria-expanded="false"', ok: allClosed, actual: allClosed, expected: true, tol: null }
       ]);
     })();
 
-    // Test 9: Regression — Akkordeon-Logik bei verschiedenen Rezepten/Methoden
+    // Test 6: Regression — Single-Open-Logik über direct/biga/poolish, EINZELN geprüft
+    // (nicht in einer einzigen allConsistent-Sammelprüfung, damit im Fehlerfall sichtbar
+    // ist, WELCHE Methode betroffen ist).
+    [
+      { method: 'direct', hyd: 62, yeast: 0.3 },
+      { method: 'biga', hyd: 70, pref: 100, bhyd: 45, prefStage: 'b_klassisch', prefMature: 17 },
+      { method: 'poolish', hyd: 66, pref: 66, prefStage: 'p_warm', prefMature: 10 }
+    ].forEach(recipe => {
+      Object.assign(PZ.state, BASE, recipe);
+      PZ.calc();
+      const guideEl = document.getElementById('guideSteps');
+      const btns = guideEl ? guideEl.querySelectorAll('.step__more') : [];
+      const found = btns.length >= 2;
+      if (found) { btns[0].click(); btns[1].click(); }
+      const ok = found &&
+        btns[0].getAttribute('aria-expanded') === 'false' &&
+        btns[1].getAttribute('aria-expanded') === 'true' &&
+        countOpenSteps(guideEl) === 1;
+      renderBox('Akkordeon · Regression Methode "' + recipe.method + '": Single-Open korrekt', [
+        { label: 'mindestens 2 .step__more vorhanden (Test-Validierung)', ok: found, actual: found, expected: true, tol: null },
+        { label: 'Single-Open-Logik korrekt (Button[0] zu, Button[1] offen, genau 1 .step.is-open)', ok: ok, actual: ok, expected: true, tol: null }
+      ]);
+    });
+
+    // ===== FARBCODIERUNG DES .step__more-BUTTONS =====
+    // Nicht-zirkulär: prüft die CSS-Klasse gegen das tatsächliche .note--warn-Kindelement
+    // in .step__extras (unabhängige Datenquelle), nicht gegen den Button-Inhalt selbst.
     (function () {
-      const recipes = [
-        { method: 'direct', hyd: 60, yeast: 0.3 },
-        { method: 'biga', hyd: 65, yeast: 0.3 },
-        { method: 'poolish', hyd: 66, yeast: 0.2 }
-      ];
-
-      const allConsistent = recipes.every(recipe => {
-        Object.assign(PZ.state, BASE, recipe);
-        PZ.calc();
-        const guideEl = document.getElementById('guideSteps');
-        if (!guideEl) return true;
-        const btns = guideEl.querySelectorAll('.hint-toggle');
-        if (btns.length < 2) return true;
-
-        btns[0].click();
-        btns[1].click();
-
-        return btns[0].getAttribute('aria-expanded') === 'false' &&
-               btns[1].getAttribute('aria-expanded') === 'true' &&
-               countOpenHints(guideEl) === 1;
+      Object.assign(PZ.state, BASE, multiContentState);
+      PZ.calc();
+      const guideEl = document.getElementById('guideSteps');
+      const steps = Array.prototype.slice.call(guideEl.querySelectorAll('.step'));
+      const moreSteps = steps.filter(s => s.querySelector('.step__more'));
+      const allCorrect = moreSteps.every(s => {
+        const btn = s.querySelector('.step__more');
+        const extras = s.querySelector('.step__extras');
+        const hasWarnNote = !!(extras && extras.querySelector('.note--warn'));
+        return btn.classList.contains('step__more--warn') === hasWarnNote;
       });
+      const anyWarnCase = moreSteps.some(s => {
+        const extras = s.querySelector('.step__extras');
+        return !!(extras && extras.querySelector('.note--warn'));
+      });
+      const anyNonWarnCase = moreSteps.some(s => {
+        const extras = s.querySelector('.step__extras');
+        return !!(extras && !extras.querySelector('.note--warn'));
+      });
+      renderBox('Farbcodierung · .step__more--warn stimmt exakt mit Vorhandensein von .note--warn überein', [
+        { label: 'es gibt mindestens einen Schritt MIT Warnung (Test-Validierung)', ok: anyWarnCase, actual: anyWarnCase, expected: true, tol: null },
+        { label: 'es gibt mindestens einen Schritt OHNE Warnung, aber mit Aufklapper (Test-Validierung)', ok: anyNonWarnCase, actual: anyNonWarnCase, expected: true, tol: null },
+        { label: 'für JEDEN Schritt: --warn-Klasse gesetzt genau dann, wenn .note--warn vorhanden ist', ok: allCorrect, actual: allCorrect, expected: true, tol: null }
+      ]);
+    })();
 
-      renderBox('Akkordeon · Regression: Single-Open-Logik über alle Methoden konsistent', [
-        { label: 'Akkordeon-Verhalten identisch für direct/biga/poolish', ok: allConsistent, actual: allConsistent, expected: true, tol: null }
+    // ===== aria-label / buildMoreLabel(): Singular, Plural, Kombination, DE+EN =====
+    // Test: reiner Singular-Fall — "Zutaten abwiegen" (Direkt) hat NUR den
+    // weighIngredients-Tipp, keine Warnung/Timer/Glossar an diesem Schritt.
+    (function () {
+      if (PZ.setLang) PZ.setLang('de');
+      Object.assign(PZ.state, BASE, { method: 'direct', hyd: 62, yeast: 1.5, salt: 2.8, oil: 0, sugar: 0 });
+      PZ.calc();
+      const guideEl = document.getElementById('guideSteps');
+      const steps = Array.prototype.slice.call(guideEl.querySelectorAll('.step'));
+      const step = steps.find(s => {
+        const t = s.querySelector('.step__title');
+        return t && t.textContent.trim() === 'Zutaten abwiegen';
+      });
+      const found = !!step;
+      const btn = found ? step.querySelector('.step__more') : null;
+      const label = btn ? btn.getAttribute('aria-label') : '';
+      renderBox('aria-label · Singular (Deutsch): "Zutaten abwiegen" hat exakt "1 Tipp"', [
+        { label: 'Schritt "Zutaten abwiegen" gefunden (Test-Validierung)', ok: found, actual: found, expected: true, tol: null },
+        { label: 'aria-label lautet exakt "Mehr zu diesem Schritt: 1 Tipp"', ok: label === 'Mehr zu diesem Schritt: 1 Tipp', actual: label, expected: 'Mehr zu diesem Schritt: 1 Tipp', tol: null }
+      ]);
+    })();
+
+    // Test: derselbe Fall auf Englisch.
+    (function () {
+      if (PZ.setLang) PZ.setLang('en');
+      Object.assign(PZ.state, BASE, { method: 'direct', hyd: 62, yeast: 1.5, salt: 2.8, oil: 0, sugar: 0 });
+      PZ.calc();
+      const guideEl = document.getElementById('guideSteps');
+      const steps = Array.prototype.slice.call(guideEl.querySelectorAll('.step'));
+      const step = steps.find(s => {
+        const t = s.querySelector('.step__title');
+        return t && t.textContent.trim() === 'Weigh the ingredients';
+      });
+      const found = !!step;
+      const btn = found ? step.querySelector('.step__more') : null;
+      const label = btn ? btn.getAttribute('aria-label') : '';
+      renderBox('aria-label · Singular (English): "Weigh the ingredients" has exactly "1 tip"', [
+        { label: 'step "Weigh the ingredients" found (test validation)', ok: found, actual: found, expected: true, tol: null },
+        { label: 'aria-label reads exactly "More about this step: 1 tip"', ok: label === 'More about this step: 1 tip', actual: label, expected: 'More about this step: 1 tip', tol: null }
+      ]);
+      if (PZ.setLang) PZ.setLang('de');
+    })();
+
+    // Test: Plural + Kombination — mixSalt-Schritt mit Zucker UND Öl gleichzeitig hat
+    // 1 Warnung + 2 Tipps (sugarTip + oilTip) -> "1 Warnung, 2 Tipps".
+    (function () {
+      if (PZ.setLang) PZ.setLang('de');
+      Object.assign(PZ.state, BASE, { method: 'direct', hyd: 62, yeast: 1.5, salt: 2.8, oil: 2, sugar: 1 });
+      PZ.calc();
+      const guideEl = document.getElementById('guideSteps');
+      const steps = Array.prototype.slice.call(guideEl.querySelectorAll('.step'));
+      const step = steps.find(s => {
+        const t = s.querySelector('.step__title');
+        return t && t.textContent.trim().indexOf('Mischen') === 0;
+      });
+      const found = !!step;
+      const btn = found ? step.querySelector('.step__more') : null;
+      const label = btn ? btn.getAttribute('aria-label') : '';
+      const extras = found ? step.querySelector('.step__extras') : null;
+      const warnCount = extras ? extras.querySelectorAll('.note--warn').length : 0;
+      const tipCount = extras ? extras.querySelectorAll('.note--tip').length : 0;
+      renderBox('aria-label · Plural + Kombination: Mischen-Schritt mit Zucker+Öl -> "1 Warnung, 2 Tipps"', [
+        { label: 'Mischen-Schritt gefunden (Test-Validierung)', ok: found, actual: found, expected: true, tol: null },
+        { label: 'Schritt enthält tatsächlich 1 .note--warn und 2 .note--tip (Test-Validierung)', ok: warnCount === 1 && tipCount === 2, actual: `warn=${warnCount},tip=${tipCount}`, expected: 'warn=1,tip=2', tol: null },
+        { label: 'aria-label lautet exakt "Mehr zu diesem Schritt: 1 Warnung, 2 Tipps"', ok: label === 'Mehr zu diesem Schritt: 1 Warnung, 2 Tipps', actual: label, expected: 'Mehr zu diesem Schritt: 1 Warnung, 2 Tipps', tol: null }
+      ]);
+    })();
+
+    // ===== BILDZUORDNUNG (.step__photo / .step--noimg): exakt pro Schritt, nicht nur gezählt =====
+    // PZ.img() direkt gegen das Register: alle 19 verdrahteten Keys lösen auf einen Eintrag auf.
+    (function () {
+      const keys = ['bigaMix', 'bigaRest', 'poolishMix', 'poolishRest', 'waterTemp', 'weighIngredients',
+        'autolyse', 'addYeast', 'dissolveYeast', 'mixSalt', 'stretchFold', 'knead', 'checkTemp',
+        'bulkRise', 'formBalls', 'finalProof', 'preheat', 'shape', 'bakeTopping'];
+      const allResolve = keys.every(k => !!(PZ.img && PZ.img('guide.step.' + k)));
+      const missing = keys.filter(k => !(PZ.img && PZ.img('guide.step.' + k)));
+      renderBox('Bildregister · alle 19 guide.step.<key>-Einträge lösen über PZ.img() auf', [
+        { label: 'alle 19 Keys liefern einen Registereintrag', ok: allResolve, actual: missing.length ? 'fehlt: ' + missing.join(',') : 'alle da', expected: 'alle da', tol: null }
+      ]);
+    })();
+
+    // Vorteig-Rezept (Biga): prüft die Vorteig-spezifischen Bild-Zuordnungen + die
+    // Vorteig-Variante von "Schüttwasser temperieren" (bekommt sehr wohl ein Bild).
+    (function () {
+      Object.assign(PZ.state, BASE, { method: 'biga', hyd: 70, pref: 100, bhyd: 45, prefStage: 'b_klassisch', prefMature: 17, yeast: 0.3, salt: 2.8, oil: 2 });
+      PZ.calc();
+      const guideEl = document.getElementById('guideSteps');
+      const steps = Array.prototype.slice.call(guideEl.querySelectorAll('.step'));
+      function findByTitleStart(text) {
+        return steps.find(s => {
+          const t = s.querySelector('.step__title');
+          return t && t.textContent.trim().indexOf(text) === 0;
+        });
+      }
+      const cases = [
+        { title: 'Biga grob mischen', file: 'step-bigaMix.webp', hasImg: true },
+        { title: 'Biga reifen lassen', file: 'step-bigaRest.webp', hasImg: true },
+        { title: 'Schüttwasser temperieren', file: 'step-waterTemp.webp', hasImg: true },
+        { title: 'Vorteig abwiegen', file: null, hasImg: false },
+        { title: 'Salz zugeben', file: null, hasImg: false }
+      ];
+      const checks = [];
+      cases.forEach(c => {
+        const step = findByTitleStart(c.title);
+        const found = !!step;
+        checks.push({ label: 'Schritt "' + c.title + '" gefunden (Test-Validierung)', ok: found, actual: found, expected: true, tol: null });
+        if (!found) return;
+        const photo = step.querySelector('.step__photo');
+        if (c.hasImg) {
+          const srcOk = !!(photo && photo.getAttribute('src').indexOf(c.file) !== -1);
+          checks.push({ label: '"' + c.title + '": .step__photo src enthält ' + c.file, ok: srcOk, actual: photo ? photo.getAttribute('src') : null, expected: c.file, tol: null });
+          checks.push({ label: '"' + c.title + '": KEINE step--noimg-Klasse', ok: !step.classList.contains('step--noimg'), actual: step.className, expected: 'ohne step--noimg', tol: null });
+        } else {
+          checks.push({ label: '"' + c.title + '": KEIN .step__photo', ok: !photo, actual: !!photo, expected: false, tol: null });
+          checks.push({ label: '"' + c.title + '": hat step--noimg-Klasse', ok: step.classList.contains('step--noimg'), actual: step.className, expected: 'step--noimg', tol: null });
+        }
+      });
+      renderBox('Bildzuordnung · Vorteig (Biga): Schüttwasser temperieren BEKOMMT ein Bild, Vorteig abwiegen/Salz zugeben NICHT', checks);
+    })();
+
+    // Direkt-Rezept (yeast < 1,2 %, Autolyse-Zweig): prüft die Direkt-spezifischen
+    // Zuordnungen -- insbesondere, dass die DIREKTE Variante von "Schüttwasser
+    // temperieren" bewusst KEIN Bild bekommt (Unterscheidung von der Vorteig-Variante
+    // oben, beide teilen sich denselben Titel-i18n-Key, aber unterschiedliche imgKeys).
+    (function () {
+      Object.assign(PZ.state, BASE, { method: 'direct', hyd: 62, yeast: 0.3, salt: 2.8, oil: 0, sugar: 0 });
+      PZ.calc();
+      const guideEl = document.getElementById('guideSteps');
+      const steps = Array.prototype.slice.call(guideEl.querySelectorAll('.step'));
+      function findByTitleStart(text) {
+        return steps.find(s => {
+          const t = s.querySelector('.step__title');
+          return t && t.textContent.trim().indexOf(text) === 0;
+        });
+      }
+      const cases = [
+        { title: 'Zutaten abwiegen', file: 'step-weighIngredients.webp', hasImg: true },
+        { title: 'Autolyse', file: 'step-autolyse.webp', hasImg: true },
+        { title: 'Hefe zugeben', file: 'step-addYeast.webp', hasImg: true },
+        { title: 'Schüttwasser temperieren', file: null, hasImg: false },
+        { title: 'Pizza ausziehen', file: 'step-shape.webp', hasImg: true },
+        { title: 'Belegen', file: 'step-bakeTopping.webp', hasImg: true }
+      ];
+      const checks = [];
+      cases.forEach(c => {
+        const step = findByTitleStart(c.title);
+        const found = !!step;
+        checks.push({ label: 'Schritt "' + c.title + '" gefunden (Test-Validierung)', ok: found, actual: found, expected: true, tol: null });
+        if (!found) return;
+        const photo = step.querySelector('.step__photo');
+        if (c.hasImg) {
+          const srcOk = !!(photo && photo.getAttribute('src').indexOf(c.file) !== -1);
+          checks.push({ label: '"' + c.title + '": .step__photo src enthält ' + c.file, ok: srcOk, actual: photo ? photo.getAttribute('src') : null, expected: c.file, tol: null });
+        } else {
+          checks.push({ label: '"' + c.title + '" (Direkt-Variante): KEIN .step__photo', ok: !photo, actual: !!photo, expected: false, tol: null });
+          checks.push({ label: '"' + c.title + '" (Direkt-Variante): hat step--noimg-Klasse', ok: step.classList.contains('step--noimg'), actual: step.className, expected: 'step--noimg', tol: null });
+        }
+      });
+      renderBox('Bildzuordnung · Direkt: Schüttwasser temperieren BEKOMMT KEIN Bild (im Gegensatz zur Vorteig-Variante oben)', checks);
+    })();
+
+    // dissolveYeast-Variante (yeast >= 1,2 %, kein Autolyse-Zweig).
+    (function () {
+      Object.assign(PZ.state, BASE, { method: 'direct', hyd: 62, yeast: 1.5, salt: 2.8, oil: 0, sugar: 0 });
+      PZ.calc();
+      const guideEl = document.getElementById('guideSteps');
+      const steps = Array.prototype.slice.call(guideEl.querySelectorAll('.step'));
+      const step = steps.find(s => {
+        const t = s.querySelector('.step__title');
+        return t && t.textContent.trim() === 'Hefe lösen';
+      });
+      const found = !!step;
+      const photo = found ? step.querySelector('.step__photo') : null;
+      const srcOk = !!(photo && photo.getAttribute('src').indexOf('step-dissolveYeast.webp') !== -1);
+      renderBox('Bildzuordnung · "Hefe lösen" (kein Autolyse-Zweig) bekommt step-dissolveYeast.webp', [
+        { label: 'Schritt "Hefe lösen" gefunden (Test-Validierung)', ok: found, actual: found, expected: true, tol: null },
+        { label: '.step__photo src enthält step-dissolveYeast.webp', ok: srcOk, actual: photo ? photo.getAttribute('src') : null, expected: 'step-dissolveYeast.webp', tol: null }
+      ]);
+    })();
+
+    // Teglia-Preset (über den im Projekt etablierten Testweg, s. Sektion 36
+    // setActivePreset()+PZ.buildGuide()): "Teig ins Blech ziehen" ersetzt "Pizza
+    // ausziehen" komplett und bleibt bildlos (shapeTeglia hat keinen imgKey).
+    (function () {
+      Object.assign(PZ.state, BASE, { method: 'direct', hyd: 62, yeast: 0.45, salt: 2.5, oil: 2.5, balls: 1, ballw: 600 });
+      setActivePreset('teglia');
+      PZ.buildGuide();
+      const guideEl = document.getElementById('guideSteps');
+      const html = guideEl.innerHTML;
+      const steps = Array.prototype.slice.call(guideEl.querySelectorAll('.step'));
+      const step = steps.find(s => {
+        const t = s.querySelector('.step__title');
+        return t && t.textContent.trim() === 'Teig ins Blech ziehen';
+      });
+      const found = !!step;
+      const noPhoto = found ? !step.querySelector('.step__photo') : false;
+      const hasNoImgClass = found ? step.classList.contains('step--noimg') : false;
+      const genericTitleAbsent = html.indexOf('Pizza ausziehen') === -1;
+      renderBox('Bildzuordnung · Teglia-Preset: "Teig ins Blech ziehen" bildlos, "Pizza ausziehen" nicht im HTML', [
+        { label: 'Schritt "Teig ins Blech ziehen" gefunden (Test-Validierung)', ok: found, actual: found, expected: true, tol: null },
+        { label: 'generischer Titel "Pizza ausziehen" NICHT im HTML', ok: genericTitleAbsent, actual: genericTitleAbsent, expected: true, tol: null },
+        { label: 'KEIN .step__photo am shapeTeglia-Schritt', ok: noPhoto, actual: noPhoto, expected: true, tol: null },
+        { label: 'shapeTeglia-Schritt hat step--noimg-Klasse', ok: hasNoImgClass, actual: hasNoImgClass, expected: true, tol: null }
+      ]);
+      setActivePreset(''); // Aufräumen: nicht in nachfolgende Sektionen "Eigene Einstellung" durchsickern lassen
+    })();
+
+    // ===== PDF-EXPORT REGRESSION =====
+    // Voller Inhalt unabhängig vom Akkordeon-Zustand (tiefer Vergleich, nicht nur
+    // Array-Länge) + Beweis, dass der Aufklapper-Zähler NICHT in den extrahierten
+    // Fließtext hineinrutscht (js/pdf.js klont .step__text und entfernt .step__more
+    // vor der Text-Extraktion).
+    (function () {
+      Object.assign(PZ.state, BASE, multiContentState);
+      PZ.calc();
+
+      const available = !!PZ._pdfCollectGuideContent;
+      const blocks1 = available ? PZ._pdfCollectGuideContent() : [];
+
+      const guideEl = document.getElementById('guideSteps');
+      const btns = guideEl ? guideEl.querySelectorAll('.step__more') : [];
+      if (btns.length > 0) btns[0].click();
+
+      const blocks2 = available ? PZ._pdfCollectGuideContent() : [];
+      const identical = JSON.stringify(blocks1) === JSON.stringify(blocks2);
+
+      const bodyBlocks = blocks1.filter(b => b.type === 'body');
+      const anyBodyBlocks = bodyBlocks.length > 0;
+      // Fließtext darf NIEMALS auf eine rohe Ziffer enden (das wäre der Aufklapper-Zähler,
+      // der nicht sauber herausgeklont wurde) -- reguläre Sätze enden auf Satzzeichen/Wörter.
+      const noDigitLeak = bodyBlocks.every(b => !/[0-9]\s*$/.test(b.text));
+
+      renderBox('PDF-Export · Voller Inhalt unabhängig vom Akkordeon-Zustand, kein Aufklapper-Zähler im Fließtext', [
+        { label: 'PZ._pdfCollectGuideContent() ist verfügbar (Test-Validierung)', ok: available, actual: available, expected: true, tol: null },
+        { label: 'mindestens ein body-Block vorhanden (Test-Validierung)', ok: anyBodyBlocks, actual: bodyBlocks.length, expected: '≥ 1', tol: null },
+        { label: 'Inhalt (tiefer Vergleich) identisch vor/nach dem Öffnen eines Aufklappers', ok: identical, actual: identical, expected: true, tol: null },
+        { label: 'kein body-Block endet auf eine rohe Ziffer (Aufklapper-Zähler sauber entfernt)', ok: noDigitLeak, actual: noDigitLeak, expected: true, tol: null }
       ]);
     })();
 

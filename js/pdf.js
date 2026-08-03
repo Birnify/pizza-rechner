@@ -124,34 +124,41 @@
           const t = textOf(child);
           if (t) blocks.push({ type: 'day', text: t });
         } else if (child.classList.contains('step')) {
-          const num = textOf(child.querySelector('.num'));
-          const h4 = child.querySelector('.body > h4');
-          let title = '';
-          if (h4) {
-            const clone = h4.cloneNode(true);
-            const chipEl = clone.querySelector('.chip');
-            const chipText = chipEl ? textOf(chipEl) : '';
-            if (chipEl) chipEl.parentNode.removeChild(chipEl);
-            const timeEl = clone.querySelector('.timechip');
-            const timeText = timeEl ? textOf(timeEl) : '';
-            if (timeEl) timeEl.parentNode.removeChild(timeEl);
-            title = sanitizeText(clone.textContent);
-            if (chipText) title += ' (' + chipText + ')';
-            if (timeText) title += '  [' + timeText + ']';
-          }
+          const num = textOf(child.querySelector('.step__num'));
+          const titleEl = child.querySelector('.step__title');
+          let title = titleEl ? sanitizeText(titleEl.textContent) : '';
+          const chipEl = child.querySelector('.step__chip');
+          const chipText = chipEl ? textOf(chipEl) : '';
+          if (chipText) title += ' (' + chipText + ')';
+          const timeEl = child.querySelector('.step__clock');
+          const timeText = timeEl ? textOf(timeEl) : '';
+          if (timeText) title += '  [' + timeText + ']';
           blocks.push({ type: 'stepTitle', num: num, text: title });
-          const body = textOf(child.querySelector('.body > p'));
+          // EIN Aufklapper pro Schritt (v4.35.0, ersetzt das frühere hintbox/hint-body-
+          // Muster): der Fließtext (.step__text) enthält jetzt zusätzlich den unsichtbaren
+          // .step__more-Aufklapper-Button (Icons + Ziffer) als eigenes Kind -- aus einem
+          // Klon entfernt, bevor der reine Fließtext extrahiert wird, sonst würde die
+          // Zähl-Ziffer des Buttons in den PDF-Fließtext hineinrutschen.
+          const bodyEl = child.querySelector('.step__text');
+          let body = '';
+          if (bodyEl) {
+            const bodyClone = bodyEl.cloneNode(true);
+            const moreBtn = bodyClone.querySelector('.step__more');
+            if (moreBtn) moreBtn.parentNode.removeChild(moreBtn);
+            body = sanitizeText(bodyClone.textContent);
+          }
           if (body) blocks.push({ type: 'body', text: body });
-          // Einklappbare Hinweisboxen (v4.10.0, Backlog Punkt H): .tip/.warn sind keine
-          // direkten `.body`-Kinder mehr, sondern `.hint-body`-Textcontainer innerhalb
-          // eines `.hintbox`-Wrappers (Toggle-Button + Text). `textContent` liefert den
-          // vollen Text unabhängig vom aktuellen Auf-/Zugeklappt-Zustand (CSS-Sichtbarkeit
-          // beeinflusst textContent nicht) -- der PDF-Export enthält also weiterhin IMMER
-          // den kompletten Hinweistext, unabhängig davon, ob er im Bildschirm gerade offen
-          // oder eingeklappt ist.
-          const extras = child.querySelectorAll('.body > .hintbox > .hint-body');
+          // `.note`-Textbausteine liegen jetzt direkt (nicht mehr hinter einem eigenen
+          // Toggle-Button) im `.step__extras`-Container, `textContent` liefert den vollen
+          // Text unabhängig vom aktuellen Auf-/Zugeklappt-Zustand der Elternkarte (CSS-
+          // Sichtbarkeit beeinflusst textContent nicht) -- der PDF-Export enthält also
+          // weiterhin IMMER den kompletten Hinweistext, unabhängig davon, ob der Schritt im
+          // Bildschirm gerade offen oder eingeklappt ist. `.timerbox`/`.glossary-ref` sitzen
+          // im selben Container, werden hier aber bewusst NICHT mitgelesen (Selektor
+          // `.note`-spezifisch) -- unverändert zum bisherigen Verhalten.
+          const extras = child.querySelectorAll('.step__extras > .note');
           Array.prototype.forEach.call(extras, function (ex) {
-            const isWarn = ex.parentElement && ex.parentElement.classList.contains('hintbox-warn');
+            const isWarn = ex.classList.contains('note--warn');
             const t = textOf(ex);
             if (t) blocks.push({ type: isWarn ? 'warn' : 'tip', text: t });
           });

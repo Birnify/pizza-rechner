@@ -96,11 +96,19 @@
   // geändert hat), das wäre bei den vielen möglichen Reglern zu viel Sonderlogik für den
   // Nutzen (s. Design-Entscheidung im Backlog-Eintrag).
   add('guide.announce.updated', 'Anleitung aktualisiert', 'Guide updated');
-  // Einklappbare Hinweisboxen (v4.10.0, Backlog Punkt H): sichtbarer Text des Toggle-
-  // Buttons ist zugleich sein Accessible Name (kein zusätzliches aria-label nötig) --
-  // Auf-/Zu-Zustand wird über aria-expanded angesagt, analog zum bestehenden .info-btn-Muster.
-  add('guide.hint.toggleTip', 'Tipp', 'Tip');
-  add('guide.hint.toggleWarn', 'Warnung', 'Warning');
+  // EIN Aufklapper pro Schritt (v4.35.0, ersetzt die früheren guide.hint.toggleTip/
+  // toggleWarn-Einzel-Toggle-Beschriftungen): der Button enthält nur Icons + eine Ziffer +
+  // einen Pfeil, sein Accessible Name kommt komplett aus diesem zusammengesetzten
+  // aria-label (js/guide.js buildMoreLabel()) statt aus sichtbarem Text. Deutscher UND
+  // englischer Singular/Plural sind hier beide regulär (Warnung/Warnungen, tip/tips),
+  // kein Sonderfall nötig.
+  add('guide.more.label', 'Mehr zu diesem Schritt: {parts}', 'More about this step: {parts}');
+  add('guide.more.warnOne', '1 Warnung', '1 warning');
+  add('guide.more.warnMany', '{n} Warnungen', '{n} warnings');
+  add('guide.more.tipOne', '1 Tipp', '1 tip');
+  add('guide.more.tipMany', '{n} Tipps', '{n} tips');
+  add('guide.more.timer', 'Timer', 'Timer');
+  add('guide.more.glossary', 'Glossar', 'Glossary');
   add('guide.weekday.0', 'So', 'Sun'); add('guide.weekday.1', 'Mo', 'Mon');
   add('guide.weekday.2', 'Di', 'Tue'); add('guide.weekday.3', 'Mi', 'Wed');
   add('guide.weekday.4', 'Do', 'Thu'); add('guide.weekday.5', 'Fr', 'Fri');

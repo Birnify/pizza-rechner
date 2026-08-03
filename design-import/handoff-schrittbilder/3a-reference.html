@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Teigmeister · Anleitungsschritt 3a (Referenz)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bitter:wght@400..800&family=Hanken+Grotesk:wght@400..800&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================================
+   Referenzimplementierung "Variante 3a" — Schrittbild als randloses Band an
+   der linken Kartenkante + EIN sprechender Aufklapper + fester Zeit-Chip.
+   Tokennamen entsprechen 1:1 css/styles.css der App (v4.x).
+   ========================================================================== */
+:root{
+  --bg:#f2ece2; --card:#fdfaf5; --surface-2:#e9e0d2;
+  --line:#8c7b64; --line-soft:#ece4d6;
+  --ink:#2a2320; --muted:#6d645b; --step-text:#463f38;
+  --tomato:#c4472e; --tomato-text:#af3f29;
+  --badge-ink:#2b2420;
+  --info-bg:#efe6d6; --info-text:#665a45;
+  --success:#4f8c4a; --success-text:#3c7337; --success-bg:#e4efe1;
+  --warning:#c9882b; --warning-text:#8f6111; --warn-bg:#f6ebd0;
+  --focus:#2f7a99;
+  --radius:14px; --radius-chip:999px;
+  --font-head:'Bitter',Georgia,serif;
+  --font-body:'Hanken Grotesk',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  color-scheme:light;
+}
+[data-theme="dark"]{
+  --bg:#151312; --card:#201d1b; --surface-2:#2a2622;
+  --line:#7a6e5f; --line-soft:#2c2723;
+  --ink:#ede9e6; --muted:#a8a19c; --step-text:#cdc6c0;
+  --tomato:#d1533c; --tomato-text:#ef7a5c;
+  --badge-ink:#3a322c;                 /* im Dunkelmodus aufgehellt, s. README */
+  --info-bg:#302b25; --info-text:#cabca6;
+  --success:#5f9d5a; --success-text:#8bc283; --success-bg:#1e2a1b;
+  --warning:#d99a3c; --warning-text:#e8b25a; --warn-bg:#3b2c0e;
+  --focus:#8ab4c8;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);line-height:1.5;-webkit-font-smoothing:antialiased;}
+.demo-bar{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line-soft);}
+.demo-bar h1{margin:0;font-family:var(--font-head);font-size:16px;flex:1;}
+.demo-bar button{font:inherit;font-size:13px;font-weight:700;padding:8px 14px;min-height:36px;border:1px solid var(--line);border-radius:var(--radius-chip);background:var(--card);color:var(--ink);cursor:pointer;}
+.guide{max-width:420px;margin:0 auto;padding:14px 14px 40px;}
+
+/* --- Schrittkarte ------------------------------------------------------- */
+.step{
+  position:relative;display:flex;min-height:104px;overflow:hidden;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  margin-bottom:10px;
+}
+/* Schritt OHNE Bild: 3px-Akzentkante links wie bisher */
+.step--noimg::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--line);}
+
+/* Bildband: randlos, volle Kartenhöhe */
+.step__photo{flex-shrink:0;width:88px;align-self:stretch;object-fit:cover;display:block;}
+/* Aufgeklappt: Band friert auf der geschlossenen Höhe ein → Zuschnitt bleibt gleich */
+.step.is-open .step__photo{align-self:flex-start;height:152px;}
+@media (max-width:359px){ .step__photo{width:76px;} }
+
+.step__body{flex:1;min-width:0;padding:14px 16px 14px 19px;}
+.step__head{display:flex;gap:10px;align-items:flex-start;}
+.step__num{
+  flex-shrink:0;width:28px;height:28px;border-radius:50%;
+  background:var(--badge-ink);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-head);font-weight:700;font-size:13px;
+}
+.step__title{margin:3px 0 0;flex:1;min-width:0;font-family:var(--font-head);font-size:15.5px;font-weight:700;line-height:1.25;color:var(--ink);}
+/* REGEL: Zeit-Chip ist immer das letzte Element der Titelzeile, oben
+   ausgerichtet, schrumpft nie und bricht nie um — unabhängig von Titellänge. */
+.step__time{
+  flex-shrink:0;align-self:flex-start;margin-top:2px;white-space:nowrap;
+  font-size:12px;font-weight:800;letter-spacing:.3px;
+  background:var(--badge-ink);color:#fff;padding:3px 11px;border-radius:var(--radius-chip);
+}
+.step__text{margin:8px 0 0;overflow:hidden;font-size:13.5px;line-height:1.5;color:var(--step-text);}
+.step__text b{color:var(--ink);}
+
+/* --- EIN Aufklapper für Tipp + Warnung + Glossar ------------------------- */
+.step__more{
+  float:right;margin:3px 0 0 10px;
+  display:inline-flex;align-items:center;gap:4px;white-space:nowrap;
+  font:inherit;font-size:11.5px;font-weight:700;line-height:1;
+  padding:6px 9px;min-height:26px;border:1px solid transparent;border-radius:var(--radius-chip);
+  background:var(--info-bg);color:var(--info-text);cursor:pointer;
+}
+/* Enthält der Aufklapper eine Warnung, wechselt er auf Ocker + Rahmen */
+.step__more--warn{background:var(--warn-bg);color:var(--warning-text);border-color:var(--warning);font-weight:800;}
+.step__more:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
+.step__more-arrow{font-size:10px;opacity:.8;}
+
+.step__extras{clear:both;display:none;margin-top:9px;flex-direction:column;gap:6px;}
+.step.is-open .step__extras{display:flex;}
+.step.is-open .step__more{float:none;margin:9px 0 0;}
+.note{font-size:12.5px;line-height:1.45;padding:7px 10px;border-radius:2px;border-left:3px solid transparent;}
+.note--warn{font-weight:700;border-left-color:var(--warning);background:var(--warn-bg);color:var(--warning-text);}
+.note--tip{border-left-color:var(--success);background:var(--success-bg);color:var(--success-text);}
+.glossary-ref{display:flex;align-items:flex-start;gap:6px;font-size:12.5px;color:var(--muted);}
+.glossary-ref button{background:none;border:0;padding:0;font:inherit;font-weight:700;color:var(--tomato-text);text-decoration:underline;cursor:pointer;text-align:left;}
+</style>
+</head>
+<body>
+<div class="demo-bar">
+  <h1>Variante 3a — Referenz</h1>
+  <button type="button" id="themeBtn">Dunkelmodus</button>
+</div>
+
+<div class="guide">
+
+  <!-- 1 · Bild, Zeit, 2 Zusatzinhalte (Tipp + Glossar) → neutraler Chip -->
+  <article class="step">
+    <img class="step__photo" src="assets/step-weighIngredients.webp" alt="" loading="lazy">
+    <div class="step__body">
+      <div class="step__head">
+        <div class="step__num">1</div>
+        <h4 class="step__title">Zutaten abwiegen</h4>
+        <span class="step__time">5 Min</span>
+      </div>
+      <p class="step__text">Wiege <b>620 g Mehl</b> ab und stelle Waage, Schüssel und Teigkarte bereit.<button type="button" class="step__more" aria-expanded="false">💡 📖 2 <span class="step__more-arrow" aria-hidden="true">▾</span></button></p>
+      <div class="step__extras">
+        <div class="note note--tip"><b>Genau wiegen.</b> Eine digitale Waage mit 1-g-Schritten macht bei der Hefe den Unterschied.</div>
+        <div class="glossary-ref"><span aria-hidden="true">📖</span><button type="button" data-glossary-id="mehltype">Glossar: Mehltype</button></div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 2 · kurzer Titel, keine Zusatzinhalte → kein Aufklapper -->
+  <article class="step">
+    <img class="step__photo" src="assets/step-knead.webp" alt="" loading="lazy">
+    <div class="step__body">
+      <div class="step__head">
+        <div class="step__num">2</div>
+        <h4 class="step__title">Kneten</h4>
+        <span class="step__time">10 Min</span>
+      </div>
+      <p class="step__text">Knete <b>8–10 Minuten</b>, bis der Teig glatt ist und sich vom Schüsselrand löst.</p>
+    </div>
+  </article>
+
+  <!-- 3 · langer Text, keine Zeitangabe, nur Warnung → ockerfarbener Chip -->
+  <article class="step">
+    <img class="step__photo" src="assets/step-mixSalt.webp" alt="" loading="lazy">
+    <div class="step__body">
+      <div class="step__head">
+        <div class="step__num">3</div>
+        <h4 class="step__title">Mischen mit Salz und Öl</h4>
+      </div>
+      <p class="step__text">Gib das Salz und <b>20 g Olivenöl</b> dazu und mische alles gründlich, bis der Teig die Flüssigkeit vollständig aufgenommen hat und sich vom Schüsselrand zu lösen beginnt. Der Teig wirkt in den ersten Minuten klebrig und ungleichmäßig, das ist normal und gibt sich beim Kneten.<button type="button" class="step__more step__more--warn" aria-expanded="false">⚠ 1 <span class="step__more-arrow" aria-hidden="true">▾</span></button></p>
+      <div class="step__extras">
+        <div class="note note--warn">⚠ Öl erst nach dem Salz zugeben, sonst schließt sich der Teig nicht.</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 4 · OHNE Bild: sieht aus wie heute, kein Platzhalter -->
+  <article class="step step--noimg">
+    <div class="step__body">
+      <div class="step__head">
+        <div class="step__num">4</div>
+        <h4 class="step__title">Salz zugeben</h4>
+      </div>
+      <p class="step__text">Gib <b>17 g Salz</b> dazu und knete zwei Minuten weiter, bis es vollständig eingearbeitet ist.<button type="button" class="step__more step__more--warn" aria-expanded="false">⚠ 1 <span class="step__more-arrow" aria-hidden="true">▾</span></button></p>
+      <div class="step__extras">
+        <div class="note note--warn">⚠ Salz nie direkt auf die Hefe geben – sie stirbt sonst ab.</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 5 · aufgeklappt, drei Inhalte, Bildband eingefroren -->
+  <article class="step is-open">
+    <img class="step__photo" src="assets/step-checkTemp.webp" alt="" loading="lazy">
+    <div class="step__body">
+      <div class="step__head">
+        <div class="step__num">5</div>
+        <h4 class="step__title">Teigtemperatur prüfen</h4>
+        <span class="step__time">2 Min</span>
+      </div>
+      <p class="step__text">Miss die Teigtemperatur. Sie sollte bei <b>24–26 °C</b> liegen.</p>
+      <button type="button" class="step__more step__more--warn" aria-expanded="true">⚠ 💡 📖 3 <span class="step__more-arrow" aria-hidden="true">▴</span></button>
+      <div class="step__extras">
+        <div class="note note--warn">⚠ Über 28 °C übersäuert der Teig in der Stockgare.</div>
+        <div class="note note--tip"><b>Zu warm?</b> Stell die Schüssel 20 Minuten kühl, bevor du die Gare startest.</div>
+        <div class="glossary-ref"><span aria-hidden="true">📖</span><button type="button" data-glossary-id="teigtemperatur">Glossar: Teigtemperatur</button></div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 6 · sehr langer Titel: Zeit-Chip bleibt an derselben Stelle -->
+  <article class="step">
+    <img class="step__photo" src="assets/step-poolishRest.webp" alt="" loading="lazy">
+    <div class="step__body">
+      <div class="step__head">
+        <div class="step__num">6</div>
+        <h4 class="step__title">Poolish über Nacht bei Raumtemperatur reifen lassen</h4>
+        <span class="step__time">12–16 Std</span>
+      </div>
+      <p class="step__text">Lass den Poolish <b>12–16 Stunden</b> abgedeckt stehen, bis die Oberfläche Blasen wirft und leicht einfällt.<button type="button" class="step__more" aria-expanded="false">💡 1 <span class="step__more-arrow" aria-hidden="true">▾</span></button></p>
+      <div class="step__extras">
+        <div class="note note--tip"><b>Reif genug?</b> Ein Teelöffel Poolish muss im Wasserglas oben schwimmen.</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 7 · kurzer Titel, keine Zusatzinhalte -->
+  <article class="step">
+    <img class="step__photo" src="assets/step-bulkRise.webp" alt="" loading="lazy">
+    <div class="step__body">
+      <div class="step__head">
+        <div class="step__num">7</div>
+        <h4 class="step__title">Stockgare</h4>
+        <span class="step__time">4 Std</span>
+      </div>
+      <p class="step__text">Lass den Teig <b>4 Stunden</b> abgedeckt bei Raumtemperatur ruhen.</p>
+    </div>
+  </article>
+
+</div>
+
+<script>
+// Akkordeon: app-weit nur EIN offener Aufklapper gleichzeitig (bestehendes Muster).
+document.querySelector('.guide').addEventListener('click', function (e) {
+  var btn = e.target.closest('.step__more');
+  if (!btn) return;
+  var step = btn.closest('.step');
+  var open = step.classList.contains('is-open');
+  document.querySelectorAll('.step.is-open').forEach(function (s) {
+    s.classList.remove('is-open');
+    var b = s.querySelector('.step__more');
+    if (b) { b.setAttribute('aria-expanded', 'false'); b.querySelector('.step__more-arrow').textContent = '▾'; }
+  });
+  if (!open) {
+    step.classList.add('is-open');
+    btn.setAttribute('aria-expanded', 'true');
+    btn.querySelector('.step__more-arrow').textContent = '▴';
+  }
+});
+document.getElementById('themeBtn').addEventListener('click', function () {
+  var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
+  this.textContent = dark ? 'Dunkelmodus' : 'Hellmodus';
+});
+</script>
+</body>
+</html>

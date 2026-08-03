@@ -59,7 +59,51 @@
     // Lichter-Kompression VOR der Alpha-Ebene (assets/prepare_web_images.py), moderater
     // Alpha-Gewinn (0,110 -> 0,150).
     'bg.texture.light': { file: 'texture-marmor.webp', ratio: '1x1', alt: null, w: 800, h: 800 },
-    'bg.texture.dark': { file: 'texture-kruste.webp', ratio: '1x1', alt: null, w: 800, h: 800 }
+    'bg.texture.dark': { file: 'texture-kruste.webp', ratio: '1x1', alt: null, w: 800, h: 800 },
+    // Anleitungs-Schrittbilder (v4.35.0, "Bild-Einbau Zyklus 2"): randloses Bildband an der
+    // linken Kartenkante (js/guide.js, .step__photo, opts.bare -- kein .media-Box-Wrapper,
+    // die Kartenhöhe ist dynamisch/variabel, der finale Zuschnitt entsteht per CSS
+    // object-fit:cover, nicht durch eine feste Seitenverhältnis-Box). Key-Schema
+    // 'guide.step.<stepKey>' -- <stepKey> ist NICHT identisch mit dem jeweiligen
+    // guide.step.<key>.title-i18n-Key (der wird an zwei Call-Sites mit unterschiedlichem
+    // Bildbedarf geteilt, z. B. waterTemp bei Vorteig VS. Direkt), sondern das explizite
+    // opts.imgKey, das js/guide.js pro st()-Aufruf einzeln vergibt. Fünf Schritte bekommen
+    // bewusst KEIN Bild (saltAdd, prefWeigh, prefCombine, shapeTeglia, waterTempDirect) --
+    // dafür gibt es hier keinen Registereintrag, PZ.img() liefert dann null wie bei jedem
+    // unbekannten Key, js/guide.js rendert die 3px-Akzentkante (.step--noimg) statt eines
+    // Platzhalters. Alt-Texte bewusst dekorativ (alt:null): der Schritttext benennt bereits
+    // Zutat/Menge/Handgriff, das Foto illustriert nur, trägt keine eigene Information, die
+    // nicht ohnehin im Text steht. Accessibility-Review (v4.35.0-Zyklus) stellte diese
+    // Einordnung explizit infrage bei Schritten mit "technisch komplexen Handgriffen"
+    // (Kneten, Stretch & Fold, Formen) -- Sichtprüfung der tatsächlichen Fotos (Hände beim
+    // Falten/Kneten von Teig) bestätigte: die Bilder zeigen dieselbe Handlung, die der
+    // Schritttext bereits beschreibt (z. B. "4 Runden Dehnen & Falten … mit nassen Händen"),
+    // ohne zusätzliche, nur visuell erkennbare Details (kein spezifischer Winkel, keine
+    // Konsistenz-/Farbmerkmale, die im Text fehlen würden) -- dekorativ bleibt für alle 19
+    // Schrittbilder angemessen. w/h = tatsächliche Pixelmaße NACH
+    // assets/prepare_web_images.py (300x224, exaktes 4:3-Seitenverhältnis der
+    // Erzeugungsauflösung 1200x896 beibehalten -- object-fit:cover übernimmt den finalen,
+    // dynamischen Zuschnitt im Browser, ein Vorab-Zuschnitt auf ein schmales Hochformat wäre
+    // unnötig, da die Bandhöhe je Karte variiert).
+    'guide.step.bigaMix': { file: 'step-bigaMix.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    'guide.step.bigaRest': { file: 'step-bigaRest.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    'guide.step.poolishMix': { file: 'step-poolishMix.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    'guide.step.poolishRest': { file: 'step-poolishRest.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    'guide.step.waterTemp': { file: 'step-waterTemp.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    'guide.step.weighIngredients': { file: 'step-weighIngredients.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    'guide.step.autolyse': { file: 'step-autolyse.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    'guide.step.addYeast': { file: 'step-addYeast.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    'guide.step.dissolveYeast': { file: 'step-dissolveYeast.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    'guide.step.mixSalt': { file: 'step-mixSalt.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    'guide.step.stretchFold': { file: 'step-stretchFold.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    'guide.step.knead': { file: 'step-knead.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    'guide.step.checkTemp': { file: 'step-checkTemp.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    'guide.step.bulkRise': { file: 'step-bulkRise.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    'guide.step.formBalls': { file: 'step-formBalls.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    'guide.step.finalProof': { file: 'step-finalProof.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    'guide.step.preheat': { file: 'step-preheat.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    'guide.step.shape': { file: 'step-shape.webp', ratio: '4x3', alt: null, w: 300, h: 224 },
+    'guide.step.bakeTopping': { file: 'step-bakeTopping.webp', ratio: '4x3', alt: null, w: 300, h: 224 }
   };
 
   const DIR = 'assets/img/';
@@ -90,14 +134,39 @@
   // opts.eager: sofort laden statt loading="lazy" (nur Header/Hero, hier noch ungenutzt).
   // opts.extraClass: zusätzliche CSS-Klasse auf dem äußeren <span> (z. B. "final-photo" für
   // eine seitenspezifische Zusatzregel wie max-width, s. css/styles.css).
+  // opts.bare (v4.35.0, Anleitungs-Schrittbilder): liefert das nackte <img> OHNE den
+  // umschließenden <span class="media media--<ratio>">-Box-Wrapper -- für Fälle, in denen
+  // der Aufrufer NICHT ein festes Seitenverhältnis per aspect-ratio-Box reserviert (Schicht
+  // 3 im Regelfall), sondern ein dynamisch hohes Flex-Element ist (js/guide.js
+  // .step__photo: randloses Bildband über die volle, variable Kartenhöhe, object-fit:cover
+  // übernimmt den Zuschnitt). opts.extraClass landet in diesem Modus direkt auf dem <img>
+  // selbst statt auf einem Wrapper-<span>.
+  //
+  // WICHTIG (per Live-Test in diesem Zyklus gefunden, echter Layout-Bug): im bare-Modus
+  // werden width/height-ATTRIBUTE bewusst NICHT gesetzt, obwohl das Register sie fürs
+  // normale .media-Muster mitführt. Grund: in einem Flexbox-Zeile mit align-self:stretch +
+  // object-fit:cover berechnet Chromium die HYPOTHETISCHE (Vor-Stretch-)Kreuzachsen-Größe
+  // eines <img> mit width/height-Attributen aus der ROHEN Attribut-Höhe (hier 224px),
+  // NICHT aus dem Seitenverhältnis relativ zur tatsächlichen CSS-Breite (88px, hätte
+  // rechnerisch ~66px ergeben) -- diese überhöhte Hypothese bläht dadurch die GESAMTE
+  // Flex-Zeile (Bild UND Textspalte) auf 224px auf, unabhängig vom tatsächlichen
+  // Textinhalt. Reproduziert und isoliert per Playwright: Entfernen der Attribute behebt
+  // es, ein `aspect-ratio:auto!important`-Override dagegen NICHT. Da der bare-Modus
+  // ohnehin für Fälle gedacht ist, in denen der Aufrufer die Box-Größe komplett selbst
+  // bestimmt (das Seitenverhältnis wird durch object-fit:cover sowieso nicht eingehalten),
+  // ist der Layout-Shift-Schutz von width/height hier weder nötig noch sinnvoll.
   function imgHtml(key, opts) {
     opts = opts || {};
     const e = img(key);
     if (!e) return '';
     const altText = e.alt ? (PZ.t ? PZ.t(e.alt) : e.alt) : '';
-    const cls = 'media media--' + e.ratio + (opts.extraClass ? ' ' + opts.extraClass : '');
-    const dims = (e.w && e.h) ? ` width="${e.w}" height="${e.h}"` : '';
     const loading = opts.eager ? 'eager' : 'lazy';
+    if (opts.bare) {
+      const imgCls = opts.extraClass || '';
+      return `<img${imgCls ? ` class="${imgCls}"` : ''} src="${resolveSrc(e.file)}" alt="${altText}" loading="${loading}" decoding="async">`;
+    }
+    const dims = (e.w && e.h) ? ` width="${e.w}" height="${e.h}"` : '';
+    const cls = 'media media--' + e.ratio + (opts.extraClass ? ' ' + opts.extraClass : '');
     return `<span class="${cls}"><img src="${resolveSrc(e.file)}" alt="${altText}"${dims} loading="${loading}" decoding="async"></span>`;
   }
 

@@ -20,6 +20,10 @@ const PATHS = {
   check: <path d="M5 12.5 10 17.5 19 6.5"/>,
   chevron: <path d="M6 9.5 12 15.5 18 9.5"/>,
   info: <><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/></>,
+  // Added v4.35.0 ("Anleitungs-Schrittbilder"): triangle + exclamation mark, built on the
+  // same principle as `info` above (kept in sync with js/guide.js ICON_PATHS.warn in the
+  // Teigmeister app so the reference and the shipped app never drift apart).
+  warn: <><path d="M12 4.8 21 19.8H3z"/><path d="M12 10v4M12 17v.5"/></>,
   save: <><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></>,
   share: <><circle cx="6" cy="12" r="2.2"/><circle cx="17" cy="6" r="2.2"/><circle cx="17" cy="18" r="2.2"/><path d="M8 11 15 7M8 13l7 4"/></>,
   print: <><path d="M7 9V4h10v5M7 17H5v-6h14v6h-2M7 14h10v6H7z"/></>,
