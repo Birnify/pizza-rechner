@@ -136,7 +136,7 @@ bis 3 auf, die folgenden nutzen sie nur noch.
 |---|-----------|--------|---------|--------|
 | 1 | Preset-Karten **plus Grundgerüst** plus Fix des kaputten Anleitungsfotos | 8 bis 18 | groß (Fundament) | **erledigt (v4.32.0)** |
 | 2 | Anleitungs-Schrittbilder | 27 bis 45 | mittel | **erledigt (v4.35.0)** |
-| 3 | Glossar (Kategorie-Banner und Artikelbilder) | 46 bis 90 | mittel | **teilweise (v4.36.0, nur Kategorie-Banner)**, s. Abschnitt 9 |
+| 3 | Glossar (Kategorie-Banner und Artikelbilder) | 46 bis 90 | mittel | **erledigt (v4.36.0 Banner, v4.37.0 Artikelbilder)**, s. Abschnitt 9 |
 | 4 | Hero/Header (ersetzt das heutige Einzelfoto) | 1 bis 7 | klein | offen |
 | 5 | Onboarding, Party, Leerzustände | 91 bis 105 | mittel | offen |
 | 6 | Texturen, Marketing, Varianten | 106 bis 128 | offen | **teilweise (v4.34.0)**, s. Abschnitt 7 |
@@ -264,17 +264,38 @@ jetzt dauerhaft in `assets/originals/` (s. Schicht 4, neue nicht-destruktive Kon
 und werden auf 600x448 statt 300x224 verkleinert (doppelte lineare Auflösung). Details:
 `pizza-rechner-KONTEXT.md`, Abschnitt „= aktueller Stand".
 
-## 9. Zyklus 3 (Teil): Glossar-Kategorie-Banner (v4.36.0, nur Banner — Artikelbilder offen)
+## 9. Zyklus 3: Glossar-Kategorie-Banner (v4.36.0) + Artikelbilder (v4.37.0) — beides erledigt
 
-Vorgezogener Teilausschnitt aus Zyklus 3: nur die 7 Kategorie-Banner (3:1), eingebettet
-in das neue Glossar-Kachelregal-Navigationskonzept (Regal aus Kacheln, betretene
-Kategorie mit Bannerkopf, s. `pizza-rechner-KONTEXT.md`, Abschnitt „= aktueller Stand").
-6 der 7 Banner lagen bereits fertig in `assets/img/` (vor der v4.35.2-Konvention erzeugt,
-kein Original mehr vorhanden), das 7. (`toppings`) wurde nach der seit v4.35.2
-verbindlichen nicht-destruktiven Konvention nachgezogen (`assets/originals/`,
-`assets/prepare_web_images.py`, 1496×496). Die ~24 bereits fertig erzeugten Artikelbilder
-(3:2, z. B. `glossar-hydration.webp`) wurden bewusst NICHT verdrahtet — explizite
-Abgrenzung der Feature-Definition dieses Zyklus, nicht Teil des ursprünglichen
-Blöcke-46-bis-90-Umfangs. Bleiben offen für einen künftigen Zyklus. Details, Testzahlen
-und Commit-Hash: `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-Kachelregal
-(v4.36.0)".
+**Teil 1 (v4.36.0, Kategorie-Banner):** die 7 Kategorie-Banner (3:1), eingebettet in das
+Glossar-Kachelregal-Navigationskonzept (Regal aus Kacheln, betretene Kategorie mit
+Bannerkopf). 6 der 7 Banner lagen bereits fertig in `assets/img/` (vor der v4.35.2-
+Konvention erzeugt, kein Original mehr vorhanden), das 7. (`toppings`) wurde nach der
+nicht-destruktiven Konvention nachgezogen (`assets/originals/`,
+`assets/prepare_web_images.py`, 1496×496). Details, Testzahlen, Commit-Hash:
+`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-Kachelregal (v4.36.0)".
+
+**Teil 2 (v4.37.0, Artikelbilder, "Bild-Einbau Zyklus 3, Rest"):** 33 von 38
+Glossar-Artikeln bekommen jetzt ein 3:2-Bild oberhalb ihres Texts im aufgeklappten
+`<details>` (Key-Schema `glossary.<id>`, `js/images.js`). 5 Ausnahmen: `biga`/
+`belagCapricciosa` haben kein fertiges Bild in `assets/img/` (nur lose Arbeitsstände
+direkt unter `assets/`, außerhalb des Scopes), `belagNachDemBacken`/
+`belagQuattroFormaggi`/`sfincione` haben eine fertige Datei, wurden aber vom Nutzer
+während dieses Zyklus per Direktanweisung nicht freigegeben (`GLOSSARY_ARTICLE_BLOCKLIST`
+in `js/images.js`, Selbsttest wirft bei Widerspruch zur Positivliste).
+
+**Bewusste Abweichung von der Standalone-Regel aus Abschnitt 4:** alle 33 Dateien sind
+1200×800 (kein Original mehr vorhanden, deshalb NICHT destruktiv verkleinert, s.
+`pizza-rechner-KONTEXT.md` für die ehrliche Einordnung) und liegen zusammen roh bei über
+3 MB, base64 über 4 MB — eingebettet hätte das den Standalone-Build weit über die
+~3-MB-Warnschwelle getrieben. Alle 33 Einträge tragen deshalb `noStandalone:true`;
+`build-mobile-standalone.py` (`inline_image_files()`) lässt sie aus, auf
+`pizza-rechner.html`/`-mobile.html` (Web) bleiben sie unverändert sichtbar. Standalone-
+Datei nach dem Rebuild: 39 eingebettete Bilder (unverändert gegenüber v4.36.0), ~2,86 MB
+(vorher ~2,84 MB — die Differenz kommt ausschließlich vom mitinlinierten JS-Quelltext,
+nicht von neuen Bildern).
+
+2 der 33 Bilder (`napoletanaVsRomana`, `windowpane`) bekamen nach einem
+`accessibility-expert`-Review einen beschreibenden statt dekorativen Alt-Text (WCAG
+1.1.1) — beide zeigen die fachliche Kerninformation des Artikels selbst (Krustenform-
+Vergleich bzw. Windowpane-Idealzustand), nicht nur eine Illustration. Details, Testzahlen
+und Commit-Hash: `pizza-rechner-KONTEXT.md`, Abschnitt „= aktueller Stand".

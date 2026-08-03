@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-03 · Aktuelle Version: v4.36.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-03 · Aktuelle Version: v4.37.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -218,24 +218,23 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Glossar-Kachelregal (v4.36.0) = aktueller Stand
+## Glossar-Artikelbilder (v4.37.0) = aktueller Stand
 
-Das Glossar startet jetzt als Regal aus 7 bebilderten Kategoriekacheln statt einer
-reinen Textliste; eine Kategorie wird als eigene Ansicht betreten (Zurück-Weg,
-Bannerkopf mit Titel/Artikelzahl, Artikel weiterhin als Single-Open-Akkordeon), die
-Suche liefert weiterhin eine flache, jetzt nach Kategorie gruppierte Trefferliste über
-alle Kategorien, inkl. Leer-Zustand mit Bild. Vom Nutzer per `/define-feature` nach
-Live-Sichtung dreier Design-Konzepte gewählt (Vorschlag 2 „Kachelregal"). `js/glossary.js`
-komplett neu geschrieben, 7 neue Kategorie-Banner + 1 Leer-Zustand-Bild registriert
-(`js/images.js`), neue CSS-Klassen (`css/styles.css`), 9 neue i18n-Strings.
-`tests/test.html`: **1289** grün (1243 vorher + 46 neu, `js/glossary.js` wird jetzt
-erstmals mitgeladen). `accessibility-expert`-Review ohne Befund; `mobile-optimizer`-
-Bericht teilweise fehlerhaft (falsche Layout-Annahme abgelehnt), sein einziger validierter
-Befund (Zurück-Button-Touch-Ziel) sowie ein selbst gefundener Rand-Fall
-(`scroll-margin-bottom` bei Sprung auf den letzten Artikel einer kurzen Kategorie) behoben.
+33 von 38 Glossar-Artikeln zeigen jetzt beim Aufklappen ihr eigenes 3:2-Bild oberhalb des
+Artikeltexts (Bild-Einbau Zyklus 3, Rest — v4.36.0 hatte nur die Kategorie-Banner
+verdrahtet). 5 Ausnahmen bleiben bildlos: 2 ohne fertige Datei, 3 vom Nutzer während
+dieses Zyklus explizit gesperrt (`GLOSSARY_ARTICLE_BLOCKLIST`, `js/images.js`). Die 33
+Dateien (1200×800, kein Original mehr vorhanden, deshalb bewusst nicht destruktiv
+verkleinert) bekommen ein neues `noStandalone:true`-Registerfeld und werden NICHT in
+`pizza-rechner-mobile-standalone.html` eingebettet (hätten die ~3-MB-Warnschwelle weit
+gerissen) — auf beiden Web-Seiten unverändert sichtbar, lazy-loaded. 2 Bilder
+(`napoletanaVsRomana`, `windowpane`) bekamen nach einem `accessibility-expert`-Review
+einen beschreibenden statt dekorativen Alt-Text (WCAG 1.1.1, zeigen die fachliche
+Kerninformation selbst statt nur zu illustrieren). `tests/test.html`: **1351** grün (1289
+vorher + 62 neu).
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-Kachelregal
-(v4.36.0)".
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-Artikelbilder
+(v4.37.0)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -961,13 +960,18 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
-- **Glossar-Artikelbilder (Bild-Einbau Zyklus 3, Rest)** (neu, v4.36.0): das
-  Glossar-Kachelregal (s. „= aktueller Stand" oben) verdrahtet bewusst nur die 7
-  Kategorie-Banner, nicht die ~24 bereits fertig erzeugten Artikelbilder (3:2, z. B.
-  `assets/img/glossar-hydration.webp`) — explizite Abgrenzung dieses Zyklus. Layout-Ort
-  wäre der aufgeklappte Artikel-Body (`.glossary-body`, analog zum bare-Bildband-Muster
-  aus den Anleitungs-Schrittbildern oder dem `.media--3x2`-Boxmuster der Preset-Karten).
-  Noch nicht spezifiziert, welches der beiden Muster passt.
+- ~~**Glossar-Artikelbilder (Bild-Einbau Zyklus 3, Rest)**~~ — **erledigt in v4.37.0**
+  (s. „= aktueller Stand" oben). 33 von 38 Artikeln bebildert, Zyklus 3 aus
+  `BILD-EINBAU-KONZEPT.md` damit komplett abgeschlossen.
+- **Neu (v4.37.0): 5 Glossar-Artikel weiterhin ohne Bild.** `biga`/`belagCapricciosa`
+  haben kein fertiges Bild in `assets/img/` (nur lose Arbeitsstände unter `assets/`,
+  außerhalb des App-Bild-Workflows). `belagNachDemBacken`/`belagQuattroFormaggi`/
+  `sfincione` haben eine fertige Datei, wurden aber vom Nutzer während des v4.37.0-Zyklus
+  per Direktanweisung gesperrt (`GLOSSARY_ARTICLE_BLOCKLIST`, `js/images.js`) — Grund
+  nicht dokumentiert, ggf. beim Nutzer nachfragen, falls das für einen künftigen Zyklus
+  relevant wird. Freigabe/Ergänzung ist eine reine Registeränderung (Id aus der
+  Blockliste entfernen bzw. Bild erzeugen + Id zu `GLOSSARY_ARTICLE_IDS_WITH_FILE`
+  hinzufügen), kein neuer Code-Zyklus nötig.
 - **Zurück-Weg vom Regal, wenn ein Filter/Zustand aktiv war** (Nebenbefund, v4.36.0,
   kein Bug): der Zurück-Weg ins Regal setzt aktuell keinen Scroll-Zustand zurück — bei
   sehr langen Kategorien könnte ein Nutzer nach „Zurück" auf einer Regal-Position

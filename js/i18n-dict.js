@@ -1106,6 +1106,13 @@
   add('glossary.windowpane.body',
     '<p>Der Windowpane-Test prüft, ob der Teig genug geknetet ist: Man zieht ein kleines Stück Teig vorsichtig zwischen den Fingern auseinander, bis eine dünne, fast durchsichtige Membran entsteht: wie eine Fensterscheibe (englisch „windowpane").</p><p>Reißt der Teig dabei sofort mit unregelmäßigen Löchern, ist das Glutennetzwerk noch nicht ausreichend entwickelt und braucht mehr Knet- oder Ruhezeit. Hält die Membran stand, ohne sofort zu reißen, ist der Teig bereit für die Stockgare.</p>',
     '<p>The windowpane test checks whether a dough has been kneaded enough: a small piece is gently stretched between the fingers until it forms a thin, almost translucent membrane: like a windowpane.</p><p>If it tears immediately with ragged holes, the gluten network isn\'t developed enough yet and needs more kneading or rest. If the membrane holds without tearing right away, the dough is ready for bulk fermentation.</p>');
+  // Beschreibender Alt-Text für das Artikelbild (v4.37.0, accessibility-expert-Befund,
+  // WCAG 1.1.1): das Foto zeigt den Idealzustand (durchscheinend, reißt nicht) selbst, den
+  // der Fließtext nur abstrakt beschreibt -- anders als bei den 30 rein illustrierenden
+  // Artikelbildern trägt dieses Bild eine eigene, sonst fehlende Information.
+  add('glossary.windowpane.imgAlt',
+    'Teig wird in Händen gedehnt und ist durchsichtig, ohne zu reißen: Zeichen vollständiger Glutenentwicklung',
+    'Dough stretched between hands and translucent without tearing: a sign of full gluten development');
 
   add('glossary.autolyse.title', 'Autolyse', 'Autolyse');
   add('glossary.autolyse.body',
@@ -1252,6 +1259,14 @@
   add('glossary.napoletanaVsRomana.body',
     '<p>Neapolitanische Pizza (Napoletana) hat einen dicken, weichen, luftigen Rand und eine dünne, biegsame Mitte: durch die kurze, sehr heiße Backzeit bleibt sie innen fast schon leicht feucht („al dente").</p><p>Römische Pizza (Romana, auch „scrocchiarella") ist dagegen insgesamt dünn und knusprig-kross bis zum Rand, mit weniger Hydration und oft längerer, kühlerer Backzeit im normalen Backofen. Beide Stile unterscheiden sich deutlich in Teigführung, Hydration und gewünschter Textur.</p>',
     '<p>Neapolitan pizza (Napoletana) has a thick, soft, airy rim and a thin, pliable center: the short, very hot bake keeps the inside almost slightly moist ("al dente").</p><p>Roman pizza (Romana, also called "scrocchiarella") is instead thin and crisp all the way to the edge, with lower hydration and often a longer, cooler bake in a regular oven. Both styles differ significantly in dough handling, hydration and intended texture.</p>');
+  // Beschreibender Alt-Text für das Artikelbild (v4.37.0, accessibility-expert-Befund,
+  // WCAG 1.1.1): das Bild zeigt den direkten Vergleich beider Krustenformen nebeneinander --
+  // genau der fachliche Kern dieses Artikels, im Fließtext nur abstrakt beschreibbar. Anders
+  // als bei den 30 rein illustrierenden Artikelbildern trägt dieses Bild eine eigene, sonst
+  // fehlende Information.
+  add('glossary.napoletanaVsRomana.imgAlt',
+    'Neapolitanische Pizza (rund, hochgewölbt mit charakteristischem Rand-Aufwurf) neben römischer Teglia-Pizza (rechteckig, flach, gleichmäßige Höhe)',
+    'Neapolitan pizza (round, high-rising with a characteristic puffy rim) next to a Roman teglia-style pizza (rectangular, flat, evenly thick)');
 
   add('glossary.newYorkStyle.title', 'New York Style Pizza', 'New York style pizza');
   add('glossary.newYorkStyle.body',

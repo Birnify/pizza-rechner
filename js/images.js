@@ -126,8 +126,96 @@
     // BILD-EINBAU-KONZEPT.md) wiederverwendbar, hier der erste tatsächliche Verwendungsort.
     // Dekorativ: der Text direkt daneben ("Keine Treffer für diesen Suchbegriff.") sagt
     // bereits alles, was für die Bedienung nötig ist.
-    'glossary.emptySearch': { file: 'empty-keine-treffer.webp', ratio: '4x3', alt: null, w: 1200, h: 896 }
+    'glossary.emptySearch': { file: 'empty-keine-treffer.webp', ratio: '4x3', alt: null, w: 1200, h: 896 },
+
+    // Glossar-Artikelbilder (v4.37.0, "Bild-Einbau Zyklus 3, Rest"): 3:2-Bild OBERHALB des
+    // Artikeltexts im aufgeklappten <details> (js/glossary.js, makeArticleDetails). Key-
+    // Schema 'glossary.<id>' -- <id> identisch zur PZ.GLOSSARY_CATEGORIES-Artikel-Id
+    // (js/glossary.js lädt NACH images.js, daher hier bewusst keine Code-Referenz darauf,
+    // nur die Ids selbst unten als eigenständig gepflegte Liste).
+    //
+    // Von 38 Glossar-Artikeln insgesamt sind hier NUR 33 verdrahtet. Zwei Gruppen von
+    // Ausnahmen, aus unterschiedlichen Gründen -- beide bewusst NICHT einfach aus dem
+    // Verzeichnisinhalt von assets/img/ abgeleitet, s. GLOSSARY_ARTICLE_BLOCKLIST unten:
+    //   1. Kein Bild vorhanden: 'biga', 'belagCapricciosa' -- es existiert schlicht keine
+    //      Datei glossar-biga.webp/glossar-belagCapricciosa.webp in assets/img/ (nur lose
+    //      Arbeitsstände direkt unter assets/, außerhalb des Scopes dieses Zyklus).
+    //   2. Bild vorhanden, aber vom Nutzer NICHT freigegeben (Direktanweisung während
+    //      dieses Zyklus, 2026-08-03): 'belagNachDemBacken', 'belagQuattroFormaggi',
+    //      'sfincione' -- die Dateien liegen fertig und git-getrackt in assets/img/, werden
+    //      hier aber bewusst NICHT registriert. Dateien bleiben unangetastet liegen (nicht
+    //      löschen/verschieben/umbenennen).
+    //
+    // Die tatsächlichen 33 Registereinträge stehen NICHT als Literal hier im Objekt, sondern
+    // werden gleich nach dem Schließen dieses Objekts aus GLOSSARY_ARTICLE_IDS_WITH_FILE
+    // erzeugt (s. unten) -- einzige Stelle, die dafür gepflegt werden muss.
   };
+
+  // GLOSSARY_ARTICLE_BLOCKLIST -- EINZIGE Stelle, die pflegt, welche Glossar-Artikel trotz
+  // vorhandener Datei in assets/img/ NICHT angebunden werden (Grund 2 oben). Um ein Bild
+  // später freizugeben: Id hier entfernen UND einen 'glossary.<id>'-Eintrag weiter unten in
+  // GLOSSARY_ARTICLE_IDS_WITH_FILE ergänzen. Um ein weiteres Bild zu sperren: Id hier
+  // ergänzen UND aus GLOSSARY_ARTICLE_IDS_WITH_FILE entfernen -- der Selbsttest direkt
+  // darunter wirft beim Laden, falls beides auseinanderläuft.
+  const GLOSSARY_ARTICLE_BLOCKLIST = [
+    'belagNachDemBacken', // glossar-belagNachDemBacken.webp liegt vor, nicht freigegeben
+    'belagQuattroFormaggi', // glossar-belagQuattroFormaggi.webp liegt vor, nicht freigegeben
+    'sfincione' // glossar-sfincione.webp liegt vor, nicht freigegeben
+  ];
+
+  // Die 33 Artikel-Ids, für die eine freigegebene Datei glossar-<id>.webp existiert (Grund 1
+  // oben -- 'biga'/'belagCapricciosa' fehlen deshalb schon hier, nicht erst über die
+  // Blockliste). Reihenfolge folgt PZ.GLOSSARY_CATEGORIES (js/glossary.js) zur besseren
+  // Lesbarkeit, ist aber funktional beliebig.
+  const GLOSSARY_ARTICLE_IDS_WITH_FILE = [
+    'wwert', 'tipo00', 'baeckerprozente', 'hydration', 'eisMethode', 'gluten',
+    'stretchFold', 'windowpane', 'autolyse',
+    'poolish', 'kalteGare', 'einfrieren', 'malzmehl',
+    'ofenVsBackofen', 'ofenHeizarten', 'pizzastein', 'pizzaschieber', 'ofenthermometer', 'teigschaber', 'kuechenwaage', 'gaerbox',
+    'sanMarzano', 'passata', 'fiorDiLatte', 'olivenoel', 'basilikum',
+    'belagMarinara', 'belagDiavola',
+    'echteNeapolitanische', 'margherita', 'napoletanaVsRomana', 'newYorkStyle', 'detroitStyle'
+  ];
+
+  // w/h = tatsächliche Pixelmaße der bestehenden Dateien (1200x800, exaktes 3:2). KEIN
+  // Original in assets/originals/ vorhanden (alle 33 vor der v4.35.2-Nicht-destruktiv-
+  // Konvention erzeugt) -- deshalb bewusst NICHT verkleinert, s. Kontextdatei "= aktueller
+  // Stand" für die ehrliche Einordnung ("im Zweifel Auflösung unverändert lassen").
+  // Dekorativ (alt:null) ist der Regelfall: der Artikeltitel steht bereits im <summary>
+  // direkt darüber, der Artikeltext darunter beschreibt den Begriff vollständig -- das Foto
+  // illustriert nur, trägt keine für das Verständnis nötige eigene Information (analog zur
+  // Einordnung der 19 Anleitungs-Schrittbilder weiter oben).
+  //
+  // GLOSSARY_ARTICLE_ALT_OVERRIDES (accessibility-expert-Review dieses Zyklus, WCAG 1.1.1):
+  // 2 der 33 Bilder sind KEINE reine Illustration, sondern zeigen selbst die fachliche
+  // Kerninformation, die der Fließtext nur abstrakt beschreiben kann -- bekommen deshalb
+  // einen beschreibenden Alt-Text-Key statt null (js/i18n-dict.js):
+  //   - 'napoletanaVsRomana': zeigt den direkten Vergleich beider Krustenformen nebeneinander.
+  //   - 'windowpane': zeigt den geprüften Idealzustand (durchscheinend, reißt nicht) selbst.
+  // Die übrigen 31, inkl. der geprüften Kandidaten 'stretchFold'/'poolish'/'autolyse',
+  // bleiben dekorativ (alt:null) -- explizit einzeln geprüft, nicht pauschal entschieden.
+  const GLOSSARY_ARTICLE_ALT_OVERRIDES = {
+    napoletanaVsRomana: 'glossary.napoletanaVsRomana.imgAlt',
+    windowpane: 'glossary.windowpane.imgAlt'
+  };
+  // noStandalone:true: alle 33 Dateien zusammen liegen roh bei über 3 MB, base64 deutlich
+  // über 4 MB -- eingebettet hätte das den ~2,84-MB-Standalone-Build weit über die
+  // ~3-MB-Warnschwelle aus BILD-EINBAU-KONZEPT.md getrieben. Da keine Originale mehr
+  // existieren, ist eine verlustfreie Verkleinerung nicht möglich (s. o.), destruktives
+  // Herunterskalieren der einzigen verbliebenen Fassung wurde bewusst NICHT gewählt.
+  // Bewusste, dokumentierte Abweichung von der bisherigen "alles Nicht-pending wird
+  // eingebettet"-Regel NUR für diese Kategorie: auf pizza-rechner.html/-mobile.html (Web,
+  // lazy-loaded, je Kategorie ohnehin nur ein Artikel gleichzeitig offen) unverändert
+  // sichtbar; im iPhone-Standalone-Build bewusst kein Bild (identisches "kein Bild statt
+  // kaputtes Bild"-Verhalten wie bei einem pending-Eintrag, s. build-mobile-standalone.py
+  // inline_image_files()).
+  GLOSSARY_ARTICLE_IDS_WITH_FILE.forEach(function (id) {
+    if (GLOSSARY_ARTICLE_BLOCKLIST.indexOf(id) !== -1) {
+      throw new Error('images.js: "' + id + '" steht in GLOSSARY_ARTICLE_IDS_WITH_FILE UND in GLOSSARY_ARTICLE_BLOCKLIST -- widersprüchlich, bitte genau eine der beiden Listen pflegen.');
+    }
+    const alt = GLOSSARY_ARTICLE_ALT_OVERRIDES[id] || null;
+    IMG['glossary.' + id] = { file: 'glossar-' + id + '.webp', ratio: '3x2', alt: alt, w: 1200, h: 800, noStandalone: true };
+  });
 
   const DIR = 'assets/img/';
 

@@ -689,6 +689,12 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .glossary-body{margin:0 0 14px;font-size:13.5px;line-height:var(--leading-relaxed);color:var(--ink);}
 .glossary-body p{margin:0 0 8px;}
 .glossary-body p:last-child{margin-bottom:0;}
+/* Glossar-Artikelbilder (v4.37.0, "Bild-Einbau Zyklus 3, Rest") -- 3:2-Bild OBERHALB des
+   Artikeltexts, s. js/images.js. Volle Breite der Karten-/Akkordeon-Spalte (kein
+   max-width, anders als .glossary-empty-media, das bewusst klein und zentriert bleibt) --
+   das .media-Grundmuster (border-radius:var(--radius), background:var(--surface-2) als
+   Ladeplatzhalter) bleibt unverändert, nur der Bodenabstand kommt hinzu. */
+.glossary-article-media{margin:0 0 12px;}
 
 /* Glossar-Suchfeld (v4.14.0, unverändert seit v4.36.0). */
 .glossary-search{margin-bottom:16px;}

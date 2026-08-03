@@ -59,10 +59,19 @@ html = SRC.read_text(encoding="utf-8")
 MIME_BY_EXT = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp", "png": "image/png"}
 
 def inline_image_files():
-    """Liest js/images.js und liefert die Dateinamen aller nicht-pending Registereintraege
-    (PZ.IMG). Ein zweiter, von Hand gepflegter Ort fuer diese Liste ist bewusst vermieden --
-    genau diese Doppelpflege war der Grund, warum die 9 Preset-Kartenbilder in v4.32.0 in der
-    Standalone-Datei fehlten."""
+    """Liest js/images.js und liefert die Dateinamen aller nicht-pending, nicht-noStandalone
+    Registereintraege (PZ.IMG). Ein zweiter, von Hand gepflegter Ort fuer diese Liste ist
+    bewusst vermieden -- genau diese Doppelpflege war der Grund, warum die 9
+    Preset-Kartenbilder in v4.32.0 in der Standalone-Datei fehlten.
+
+    Scannt NUR das literale "const IMG = {...}"-Objekt -- Eintraege, die (wie die 33
+    Glossar-Artikelbilder seit v4.37.0) per forEach() NACH dem Schliessen dieses Literals
+    programmatisch ergaenzt werden, sind fuer diese Funktion dadurch strukturell unsichtbar
+    und werden nie eingebettet. Das ist hier beabsichtigt (alle 33 Dateien tragen
+    noStandalone:true, s. js/images.js: roh > 3 MB, base64 > 4 MB, haette die
+    ~3-MB-Warnschwelle aus BILD-EINBAU-KONZEPT.md weit gerissen) -- die zusaetzliche
+    noStandalone-Pruefung unten ist ein Sicherheitsnetz, falls ein kuenftiger Zyklus
+    einzelne dieser Eintraege doch ins Literal verschiebt, ohne das Flag zu entfernen."""
     js = (ROOT / "js" / "images.js").read_text(encoding="utf-8")
     block = re.search(r"const IMG = \{(.*?)\n  \};", js, re.S)
     if not block:
@@ -71,6 +80,8 @@ def inline_image_files():
     files = []
     for entry in entries:
         if re.search(r"pending\s*:\s*true", entry):
+            continue
+        if re.search(r"noStandalone\s*:\s*true", entry):
             continue
         m = re.search(r"file\s*:\s*'([^']+)'", entry)
         if m and m.group(1) not in files:

@@ -8,6 +8,112 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Glossar-Artikelbilder (v4.37.0)
+
+Bild-Einbau Zyklus 3, Rest (s. `BILD-EINBAU-KONZEPT.md` Abschnitt 9): der v4.36.0-Zyklus
+verdrahtete nur die 7 Kategorie-Banner, die einzelnen Artikel blieben bildlos. Feature-
+Definition über `/define-feature` mit dem Nutzer abgestimmt, inkl. dreier von ihm
+beantworteter Entscheidungsfragen (Platzierung: oberhalb des Artikeltexts im
+aufgeklappten `<details>`, nicht in der zugeklappten Zeile/Suchtrefferliste; Umgang mit
+Lücken: kein Platzhalter/Ersatzgrafik, betroffene Artikel sehen aus wie vorher; Fior di
+Latte trotz offener Nutzer-Unzufriedenheit mit dem Bild selbst mit eingebaut, ein
+späterer Bildaustausch braucht keine Code-Änderung, da nur über den Dateinamen gezogen
+wird).
+
+**Korrektur einer Falschangabe aus dem v4.36.0-Abschluss:** dort stand "~24 fertige
+Artikelbilder" im Backlog-Eintrag — tatsächlich waren es **36** (per Skript gegen
+`js/glossary.js`/`assets/img/` abgeglichen, zu Beginn dieses Zyklus verifiziert). Von
+diesen 36 sind jetzt **33 verdrahtet**, 3 (`belagNachDemBacken`, `belagQuattroFormaggi`,
+`sfincione`) bewusst vom Nutzer während dieses Zyklus per Direktanweisung gesperrt
+(Dateien bleiben unangetastet liegen). 2 weitere Artikel (`biga`, `belagCapricciosa`)
+haben nach wie vor kein fertiges Bild in `assets/img/` (nur lose Arbeitsstände direkt
+unter `assets/`, außerhalb des Scopes).
+
+**`js/images.js`:** neuer Abschnitt nach `glossary.emptySearch`. Zwei explizit gepflegte
+Listen statt einer aus dem Verzeichnisinhalt abgeleiteten Automatik: `GLOSSARY_ARTICLE_
+BLOCKLIST` (die 3 gesperrten Ids, mit Begründungskommentar je Eintrag) und `GLOSSARY_
+ARTICLE_IDS_WITH_FILE` (die 33 freigegebenen Ids, Reihenfolge folgt `PZ.GLOSSARY_
+CATEGORIES`). Ein `forEach()` erzeugt daraus die eigentlichen `'glossary.<id>'`-
+Registereinträge (`ratio:'3x2'`, `w:1200,h:800` — tatsächliche Pixelmaße der
+bestehenden Dateien, KEIN Original in `assets/originals/` vorhanden, deshalb bewusst
+NICHT destruktiv verkleinert, s. u.) NACH dem Schließen des `const IMG = {...}`-Literals.
+Ein Selbsttest wirft beim Laden, falls eine Id versehentlich in beiden Listen zugleich
+steht.
+
+**Standalone-Build-Ausnahme (bewusste Abweichung von der bisherigen "alles Nicht-pending
+wird eingebettet"-Regel aus `BILD-EINBAU-KONZEPT.md` Abschnitt 4, NUR für diese
+Kategorie):** alle 33 Dateien zusammen liegen roh bei rund 3,03 MB, base64 rund 4,05 MB —
+eingebettet hätte das den ~2,84-MB-Standalone-Build weit über die ~3-MB-Warnschwelle
+getrieben. Da für keine der 33 Dateien ein Original existiert, war eine verlustfreie
+Verkleinerung nicht möglich; destruktives Herunterskalieren der einzigen verbliebenen
+Fassung wurde bewusst nicht gewählt (s. Nutzer-Vorgabe zur Bildkonvention). Stattdessen
+neues Registerfeld `noStandalone:true` auf allen 33 Einträgen. Da diese Einträge
+strukturell außerhalb des von `build-mobile-standalone.py` (`inline_image_files()`)
+geparsten `const IMG = {...}`-Literals liegen, werden sie ohnehin nie eingebettet — die
+`noStandalone`-Prüfung im Parser ist zusätzlich als Sicherheitsnetz ergänzt, falls ein
+künftiger Zyklus einzelne Einträge doch ins Literal verschiebt, ohne das Flag zu
+entfernen. Ergebnis nach dem Rebuild: weiterhin 39 eingebettete Bilder (unverändert
+gegenüber v4.36.0), Standalone-Datei ~2,86 MB (vorher ~2,84 MB, die Differenz kommt
+ausschließlich vom mitinlinierten neuen JS-Quelltext, nicht von Bildern). Auf
+`pizza-rechner.html`/`-mobile.html` (normales Web-Deployment) sind alle 33 Bilder
+unverändert sichtbar, lazy-loaded.
+
+**`js/glossary.js` (`makeArticleDetails`):** `body.innerHTML` setzt jetzt
+`PZ.imgHtml('glossary.' + id, {extraClass:'glossary-article-media'}) + t('glossary.' +
+id + '.body')` statt nur den reinen Textkörper — das Bild-`<span>` (falls vorhanden)
+steht dadurch strukturell vor dem Text. Kein `opts.eager` nötig: ein geschlossenes
+`<details>` rendert seinen Inhalt gar nicht sichtbar, `loading="lazy"` verzögert das
+Laden zusätzlich; per eigener Live-Messung bestätigt (s. Härten unten), dass beim
+Betreten einer 8-Artikel-Kategorie kein einziges Bild vorab geladen wird, sondern nur das
+tatsächlich geöffnete.
+
+**`css/styles.css`:** neue Klasse `.glossary-article-media{margin:0 0 12px;}` direkt nach
+den bestehenden `.glossary-body`-Regeln — volle Spaltenbreite (kein `max-width`, anders
+als das kleine, zentrierte `.glossary-empty-media`), das `.media`-Grundmuster
+(`border-radius:var(--radius)`, `background:var(--surface-2)` als Ladeplatzhalter) bleibt
+unverändert.
+
+**`build-mobile-standalone.py`:** `inline_image_files()` überspringt jetzt zusätzlich
+Einträge mit `noStandalone:true` (analog zur bestehenden `pending:true`-Prüfung),
+Docstring erweitert um die Begründung.
+
+**Alt-Text (`accessibility-expert`-Review, WCAG 1.1.1):** Ausgangslage war
+`alt:null` (dekorativ) für alle 33 Bilder, analog zur Einordnung der 19 Anleitungs-
+Schrittbilder aus v4.35.0 — Artikeltitel steht bereits im `<summary>`, Artikeltext
+beschreibt den Begriff vollständig. Der Spezialist prüfte gezielt (nicht pauschal) und
+fand 2 begründete Ausnahmen: `napoletanaVsRomana` (zeigt den direkten
+Krustenform-Vergleich, den fachlichen Kern des Artikels, nur abstrakt im Text
+beschreibbar) und `windowpane` (zeigt den geprüften Idealzustand — durchscheinend, reißt
+nicht — selbst, den der Text nur benennt). Beide bekamen einen beschreibenden
+Alt-Text-Key (`glossary.<id>.imgAlt`, DE+EN in `js/i18n-dict.js`) statt `null`
+(`GLOSSARY_ARTICLE_ALT_OVERRIDES`-Map in `js/images.js`). Explizit geprüft und als
+weiterhin dekorativ bestätigt: `stretchFold`, `poolish`, `autolyse` sowie die übrigen 28.
+Ein separat gemeldeter Minor (Ladeplatzhalter-Kontrast `--bg` gegen `--surface-2`,
+1,11:1 hell / 1,23:1 dunkel, WCAG 1.4.11) wurde bewusst NICHT umgesetzt: der Platzhalter
+ist kein Bedienelement, trägt keine Bedeutung und ist nur für Sekundenbruchteile
+sichtbar. `mobile-optimizer` nicht angefordert (kein neues/verändertes Mobil-spezifisches
+Markup, gemeinsames JS/CSS für Desktop und Mobil).
+
+**Tests** (`tests/test.html`, neue Sektion 42, 1289 → **1351**, 62 neue Prüfungen):
+Registervollständigkeit (genau 33 von 38 `PZ.GLOSSARY_TOPICS`-Ids haben einen
+`glossary.<id>`-Eintrag, die restlichen 5 sind exakt die dokumentierten Ausnahmen),
+`PZ.img()`/`PZ.imgHtml()` liefern für die 5 Ausnahmen `null`/`''`, Registerform aller 33
+Einträge (Ratio, Maße, `noStandalone`, Dateiname, Alt-Text dekorativ außer den 2
+begründeten Ausnahmen), `PZ.imgHtml()`-Markup (Pfad, Klassen, `alt=""`, `loading="lazy"`),
+`PZ._IMG_INLINE`-Simulation (Artikelbilder werden im Standalone-Build nie eingebettet),
+die 2 beschreibenden Alt-Texte DE+EN (nicht leer, unterscheiden sich, wechseln mit der
+Sprache — identisches Prüfmuster wie `guide.final.napoli`), sowie DOM-Rendering
+(`poolish`: Bild steht als erstes Kind von `.glossary-body` vor dem Text; `biga`: kein
+`.glossary-article-media`, Artikeltext trotzdem vorhanden, kein leerer Rahmen). Alle 1351
+Prüfungen grün, per Headless-Edge-Dump verifiziert. Kein `test-generator`-Lauf angefordert
+(`js/calc.js`/`schedule.js` unverändert, reines Anzeige-/Register-Modul mit umfassend
+selbst geschriebenen Tests).
+
+**Geändert:** `js/images.js`, `js/glossary.js`, `js/i18n-dict.js`, `css/styles.css`,
+`build-mobile-standalone.py`, `tests/test.html`. `?v=` auf `4.37.0` gezogen (Desktop +
+Mobil, Cache-Busting + Footer-Version). `pizza-rechner-mobile-standalone.html` neu gebaut.
+`Versionen/v4.37.0 - Glossar-Artikelbilder/` enthält den vollständigen Schnappschuss.
+
 ## Glossar-Kachelregal (v4.36.0)
 
 Vom Nutzer per `/define-feature` strukturiert: der Nutzer sichtete live drei per

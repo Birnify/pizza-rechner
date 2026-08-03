@@ -6532,6 +6532,147 @@
     resetToShelf();
   })();
 
+  heading('42 · Glossar-Artikelbilder (js/images.js + js/glossary.js, v4.37.0)');
+
+  // Deckt Bild-Einbau Zyklus 3 (Rest) ab: 33 von 38 Glossar-Artikeln bekommen ein 3:2-Bild
+  // oberhalb ihres Texts im aufgeklappten <details>. 5 Ausnahmen aus zwei verschiedenen
+  // Gründen (kein Bild vorhanden vs. vom Nutzer während dieses Zyklus nicht freigegeben),
+  // s. js/images.js (GLOSSARY_ARTICLE_BLOCKLIST/GLOSSARY_ARTICLE_IDS_WITH_FILE) für die
+  // volle Begründung.
+  (function () {
+    const NO_IMAGE_IDS = ['biga', 'belagCapricciosa', 'belagNachDemBacken', 'belagQuattroFormaggi', 'sfincione'];
+
+    testCase('Genau 33 von 38 Glossar-Artikeln haben einen Registereintrag "glossary.<id>"', {}, () => {
+      const withImage = PZ.GLOSSARY_TOPICS.filter((id) => !!PZ.img('glossary.' + id));
+      const withoutImage = PZ.GLOSSARY_TOPICS.filter((id) => !PZ.img('glossary.' + id));
+      return [
+        ['PZ.GLOSSARY_TOPICS.length === 38', PZ.GLOSSARY_TOPICS.length, 38],
+        ['Artikel MIT Registereintrag', withImage.length, 33],
+        ['Artikel OHNE Registereintrag = die 5 dokumentierten Ausnahmen', withoutImage.slice().sort().join('|'), NO_IMAGE_IDS.slice().sort().join('|')]
+      ];
+    });
+
+    testCase('Die 5 bildlosen Artikel: PZ.img() liefert null, PZ.imgHtml() liefert \'\'', {}, () => {
+      return NO_IMAGE_IDS.reduce((acc, id) => acc.concat([
+        ['PZ.img(glossary.' + id + ') === null', PZ.img('glossary.' + id), null],
+        ['PZ.imgHtml(glossary.' + id + ') === \'\'', PZ.imgHtml('glossary.' + id), '']
+      ]), []);
+    });
+
+    // accessibility-expert-Befund dieses Zyklus (WCAG 1.1.1): 2 der 33 Artikelbilder
+    // tragen selbst fachliche Kerninformation (Krustenform-Vergleich bzw. Windowpane-
+    // Idealzustand) statt reiner Illustration und bekommen deshalb einen beschreibenden
+    // Alt-Text-Key statt null -- s. js/images.js GLOSSARY_ARTICLE_ALT_OVERRIDES.
+    const DESCRIPTIVE_ALT_IDS = ['napoletanaVsRomana', 'windowpane'];
+
+    testCase('Alle 33 Artikelbilder: ratio 3x2, 1200x800, noStandalone:true, korrekter Dateiname; Alt-Text dekorativ außer 2 begründeten Ausnahmen', {}, () => {
+      const ids = PZ.GLOSSARY_TOPICS.filter((id) => !!PZ.img('glossary.' + id));
+      return ids.map((id) => {
+        const e = PZ.img('glossary.' + id);
+        const altOk = DESCRIPTIVE_ALT_IDS.indexOf(id) !== -1 ? (typeof e.alt === 'string' && e.alt.length > 0) : e.alt === null;
+        const ok = e.ratio === '3x2' && altOk && e.w === 1200 && e.h === 800 &&
+          e.noStandalone === true && e.file === 'glossar-' + id + '.webp';
+        return ['glossary.' + id + ': Registerform korrekt', ok, true];
+      });
+    });
+
+    testCase('PZ.imgHtml() für ein Artikelbild: assets/img/-Pfad, richtige Klassen, dekorativ, lazy', {}, () => {
+      const html = PZ.imgHtml('glossary.poolish', { extraClass: 'glossary-article-media' });
+      return [
+        ['enthält assets/img/glossar-poolish.webp', html.includes('assets/img/glossar-poolish.webp'), true],
+        ['trägt class="media media--3x2 glossary-article-media"', html.includes('class="media media--3x2 glossary-article-media"'), true],
+        ['alt="" (dekorativ)', html.includes('alt=""'), true],
+        ['loading="lazy"', html.includes('loading="lazy"'), true]
+      ];
+    });
+
+    testCase('PZ._IMG_INLINE (Standalone-Build): Artikelbilder werden NIE eingebettet (noStandalone), unabhängig vom Inline-Stand', {}, () => {
+      const savedInline = PZ._IMG_INLINE;
+      PZ._IMG_INLINE = {}; // simuliert den Standalone-Build: build-mobile-standalone.py
+      // nimmt Artikelbilder wegen noStandalone:true nie in diese Map auf (s.
+      // build-mobile-standalone.py inline_image_files()) -- hier direkt am Register
+      // nachgestellt: ein leeres bzw. das Bild NICHT enthaltendes _IMG_INLINE ergibt
+      // "kein Bild", exakt wie im echten Standalone-Build.
+      try {
+        return [
+          ['PZ.imgHtml(glossary.poolish) === \'\' im (simulierten) Standalone-Build', PZ.imgHtml('glossary.poolish'), '']
+        ];
+      } finally {
+        PZ._IMG_INLINE = savedInline;
+      }
+    });
+
+    // accessibility-expert-Befund: "napoletanaVsRomana" und "windowpane" brauchen einen
+    // beschreibenden Alt-Text statt alt:null (s. o.) -- DE+EN nicht leer, unterscheiden sich,
+    // ändern sich bei Sprachwechsel (identisches Prüfmuster wie guide.final.napoli oben).
+    (function () {
+      const savedLang = PZ.getLang ? PZ.getLang() : 'de';
+      try {
+        DESCRIPTIVE_ALT_IDS.forEach((id) => {
+          PZ.setLang('de');
+          const htmlDE = PZ.imgHtml('glossary.' + id);
+          const altDE = htmlDE.match(/alt="([^"]*)"/)[1];
+          PZ.setLang('en');
+          const htmlEN = PZ.imgHtml('glossary.' + id);
+          const altEN = htmlEN.match(/alt="([^"]*)"/)[1];
+          renderBox('Beschreibender Alt-Text · glossary.' + id + ' (accessibility-expert-Befund, WCAG 1.1.1)', [
+            { label: 'Alt-Text Deutsch nicht leer', actual: altDE.length, expected: '> 0', tol: null, ok: altDE.length > 0 },
+            { label: 'Alt-Text Englisch nicht leer', actual: altEN.length, expected: '> 0', tol: null, ok: altEN.length > 0 },
+            { label: 'Alt-Text unterscheidet sich (DE ≠ EN)', actual: altEN.substring(0, 20), expected: '≠ ' + altDE.substring(0, 20), tol: null, ok: altDE !== altEN }
+          ]);
+        });
+      } finally {
+        if (PZ.setLang) PZ.setLang(savedLang);
+      }
+    })();
+  })();
+
+  // --- Rendering: Bild steht (wenn vorhanden) vor dem Artikeltext; ohne Bild kein Rahmen -
+  (function () {
+    const listEl = document.getElementById('glossaryList');
+    const searchEl = document.getElementById('glossarySearch');
+    function resetToShelf() {
+      searchEl.value = '';
+      searchEl.dispatchEvent(new Event('input'));
+      const back = listEl.querySelector('.glossary-back-btn');
+      if (back) back.click();
+    }
+    function openArticle(catKey, id) {
+      resetToShelf();
+      listEl.querySelector('.glossary-tile[data-cat="' + catKey + '"]').click();
+      const details = listEl.querySelector('details.glossary-item[data-id="' + id + '"]');
+      details.open = true;
+      details.dispatchEvent(new Event('toggle'));
+      return details;
+    }
+
+    (function () {
+      const details = openArticle('preferments', 'poolish');
+      const body = details.querySelector('.glossary-body');
+      const media = body ? body.querySelector('.glossary-article-media') : null;
+      const mediaIsFirstChild = !!body && body.firstElementChild === media;
+      const img = media ? media.querySelector('img') : null;
+      renderBox('Artikel "poolish" (hat Bild): .glossary-article-media steht als erstes Kind vor dem Artikeltext', [
+        { label: '.glossary-article-media vorhanden', actual: !!media, expected: true, tol: null, ok: !!media },
+        { label: 'Bild ist erstes Kind von .glossary-body (vor dem Text)', actual: mediaIsFirstChild, expected: true, tol: null, ok: mediaIsFirstChild === true },
+        { label: '<img> dekorativ (alt="")', actual: img ? img.getAttribute('alt') : 'n/a', expected: '', tol: null, ok: !!img && img.getAttribute('alt') === '' }
+      ]);
+    })();
+
+    (function () {
+      const details = openArticle('preferments', 'biga');
+      const body = details.querySelector('.glossary-body');
+      const media = body ? body.querySelector('.glossary-article-media') : null;
+      const hasText = !!body && body.textContent.trim().length > 0;
+      renderBox('Artikel "biga" (kein freigegebenes Bild): kein .glossary-article-media, Artikeltext unverändert vorhanden', [
+        { label: 'kein .glossary-article-media (kein leerer Rahmen)', actual: !!media, expected: false, tol: null, ok: !media },
+        { label: 'Artikeltext weiterhin vorhanden', actual: hasText, expected: true, tol: null, ok: hasText === true }
+      ]);
+    })();
+
+    resetToShelf();
+  })();
+
   // ─────────────────────────────────────────────────────────────
   const s = document.getElementById('summary');
   s.textContent = failed === 0

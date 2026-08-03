@@ -148,7 +148,16 @@
 
     const body = document.createElement('div');
     body.className = 'glossary-body';
-    body.innerHTML = t('glossary.' + id + '.body');
+    // Artikelbild (v4.37.0, "Bild-Einbau Zyklus 3, Rest") OBERHALB des Artikeltexts, s.
+    // js/images.js für Register/Ausnahmen (33 von 38 Artikeln). PZ.imgHtml() liefert ''
+    // für die 5 Artikel ohne freigegebenes Bild -- dann bleibt .glossary-body wie vor
+    // diesem Zyklus (nur der Textinhalt, kein leerer Rahmen). Kein opts.eager nötig,
+    // loading="lazy" (Default) reicht: ein geschlossenes <details> rendert seinen Inhalt
+    // laut UA-Stylesheet gar nicht (display:none), der Browser lädt ein darin liegendes
+    // <img> deshalb ohnehin erst, wenn der Artikel geöffnet wird -- und je Kategorie ist
+    // wegen des bestehenden Single-Open-Akkordeons ohnehin nie mehr als einer offen.
+    const mediaHtml = PZ.imgHtml ? PZ.imgHtml('glossary.' + id, { extraClass: 'glossary-article-media' }) : '';
+    body.innerHTML = mediaHtml + t('glossary.' + id + '.body');
 
     details.appendChild(summary);
     details.appendChild(body);
