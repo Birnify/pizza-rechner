@@ -151,7 +151,9 @@
     'Use deliberately <b>cool</b> water here, not room temperature: this firm, low-yeast pre-ferment already matures slowly, and cool water keeps its starting temperature low (roughly 18–20 °C) to avoid it taking off too fast.');
 
   add('guide.step.bigaMix.title', 'Biga grob mischen', 'Roughly mix the biga');
-  add('guide.step.bigaMix.chip', 'mit der Hand', 'by hand');
+  // guide.step.bigaMix.chip ("mit der Hand") seit v4.35.1 entfernt -- die Technik-Angabe
+  // stand bereits wortgleich im Body ("mit den Händen nur grob vermengen"), s.
+  // "Zeit-Chip nur noch für echte Zeitangaben" weiter unten bei checkTemp.chip.
   add('guide.step.bigaMix.body', 'Hefe im Wasser auflösen, übers Mehl geben und <b>mit den Händen nur grob vermengen</b> – ca. <b>1–2 min</b>, bis keine trockenen Mehlnester mehr da sind. Die Biga bleibt krümelig-stückig, <b>nicht glatt kneten</b>. (Hier keine Maschine nutzen – zu festes Kneten zerstört die Struktur.)',
     'Dissolve the yeast in the water, pour over the flour and <b>mix roughly by hand only</b>: about <b>1–2 min</b>, until there are no dry flour pockets left. The biga stays crumbly and lumpy, <b>do not knead it smooth</b>. (Don\'t use a machine here: kneading it too firm destroys the structure.)');
   add('guide.step.bigaMix.warn', 'Es soll aussehen wie nasse Brösel oder grober Streusel, nicht wie ein normaler Teig.',
@@ -170,7 +172,8 @@
     'A longer rise needs <b>less yeast</b> in the pre-ferment and/or <b>cooler</b> storage. Ready = airy and spongy, just barely starting to collapse.');
 
   add('guide.step.poolishMix.title', 'Poolish verrühren', 'Stir the poolish');
-  add('guide.step.poolishMix.chip', 'mit Löffel / Schneebesen', 'with a spoon / whisk');
+  // guide.step.poolishMix.chip ("mit Löffel / Schneebesen") seit v4.35.1 entfernt --
+  // stand bereits wortgleich im Body, s. Kommentar bei guide.step.bigaMix.chip oben.
   add('guide.step.poolishMix.body', 'Hefe im Wasser auflösen, dann Mehl einrühren – <b>mit einem Löffel oder Schneebesen ca. 2–3 min rühren</b>, bis ein <b>zäher, klumpenfreier Pfannkuchenteig</b> entsteht. Abdecken.',
     'Dissolve the yeast in the water, then stir in the flour: <b>stir with a spoon or whisk for about 2–3 min</b> until you get a <b>thick, lump-free pancake-batter consistency</b>. Cover.');
   add('guide.poolish.temp.warm', 'Durchgehend bei <b>Raumtemperatur</b> ausreifen lassen, keine Kühlung nötig.',
@@ -299,18 +302,24 @@
   add('guide.step.knead.bodySuffix', ', bis der Teig <b>glatt & elastisch</b> ist. Fenstertest: dünn ausziehbar ohne zu reißen.',
     ', until the dough is <b>smooth &amp; elastic</b>. Windowpane test: stretches thin without tearing.');
   add('guide.step.checkTemp.title', 'Teigtemperatur prüfen', 'Check the dough temperature');
-  add('guide.step.checkTemp.chip', 'Ziel 23–25 °C', 'Target 23–25 °C');
+  // guide.step.checkTemp.chip ("Ziel 23–25 °C") seit v4.35.1 entfernt (Befund 1,
+  // v4.35.1-Bugfix "Zeit-Chip drängt Titel zusammen"): der Zeit-Chip zeigt seither nur
+  // noch echte Zeitangaben, Technik-/Temperatur-/Warnhinweise wandern in Fließtext oder
+  // Aufklapper. Der Zielwert steht im body-Zweig bereits dynamisch als {ddt} -- nur der
+  // bodyNoWater-Zweig hatte bisher GAR keinen Zahlenwert (der Chip war dort die einzige
+  // Quelle), deshalb dort zusätzlich der statische Richtwert "23–25 °C" ergänzt.
   add('guide.step.checkTemp.body', 'Thermometer in den Teig: <b>{ddt}</b> angepeilt. Wärmer → schnellere Gare, kälter → langsamer.',
     'Thermometer into the dough: targeting <b>{ddt}</b>. Warmer → faster rise, colder → slower.');
   // Bugfix v4.24.0: Variante ohne Zieltemperatur-Behauptung für Vorteig-Rezepte ohne
   // Hauptteig-Restwasser (kein Schüttwasser-Stellhebel mehr übrig, s. Kommentar in
   // js/guide.js).
-  add('guide.step.checkTemp.bodyNoWater', 'Thermometer in den Teig: aktuelle Temperatur notieren. Es ist kein Schüttwasser mehr übrig, über das sich die Temperatur gezielt steuern ließe.',
-    'Thermometer into the dough: note the current temperature. There is no mixing water left here to steer the temperature with.');
+  add('guide.step.checkTemp.bodyNoWater', 'Thermometer in den Teig: aktuelle Temperatur notieren, Zielbereich liegt bei 23–25 °C. Es ist kein Schüttwasser mehr übrig, über das sich die Temperatur gezielt steuern ließe.',
+    'Thermometer into the dough: note the current temperature, target range is 23–25 °C. There is no mixing water left here to steer the temperature with.');
 
   add('guide.step.bulkRise.title', 'Stockgare (im Stück)', 'Bulk rise (whole dough)');
-  add('guide.step.bulkRise.chipColdBalls', 'Raumtemp + kühl', 'Room temp + cold');
-  add('guide.step.bulkRise.chipDefault', 'Raumtemp', 'Room temp');
+  // guide.step.bulkRise.chipColdBalls/.chipDefault ("Raumtemp + kühl"/"Raumtemp") seit
+  // v4.35.1 entfernt -- {bulk} kommt aus js/schedule.js und nennt "bei Raumtemp" bzw. die
+  // Kühlschranktemperatur bereits explizit in jeder Variante, war also bereits dupliziert.
   add('guide.step.bulkRise.body', 'Teig zur Kugel formen, in eine geölte/abgedeckte Schüssel. {bulk}.',
     'Shape the dough into a ball, place in an oiled/covered bowl. {bulk}.');
   add('guide.step.formBalls.title', 'Teiglinge formen', 'Shape the dough balls');
@@ -329,8 +338,10 @@
   add('guide.step.formBalls.tipTeglia', 'Bei Teglia dient das Rundwirken nur der glatten, spannungsfreien Oberfläche, bevor der Teig direkt ins geölte Blech gedrückt wird — kein runder Rand (Cornicione), die Form entsteht erst beim Ausziehen im Blech.',
     'For teglia, shaping into a ball is only to get a smooth, tension-free surface before pressing the dough straight into the oiled pan — no round rim (cornicione), the shape only takes form once it is stretched out in the pan.');
   add('guide.step.finalProof.title', 'Stückgare (Teiglinge)', 'Final proof (dough balls)');
-  add('guide.step.finalProof.chipCold', 'kühl · Fingertest', 'cold · finger test');
-  add('guide.step.finalProof.chipDefault', 'Fingertest', 'finger test');
+  // guide.step.finalProof.chipCold/.chipDefault ("kühl · Fingertest"/"Fingertest") seit
+  // v4.35.1 entfernt -- {proof} nennt "kühl"/Kühlschrank bereits, und der Body beschreibt
+  // den Fingertest bereits ausführlich in Worten (leichter Fingerdruck, federt langsam
+  // zurück), war also bereits dupliziert.
   add('guide.step.finalProof.body', '{proof}. <b>Fertig</b>, wenn ein leichter Fingerdruck <b>langsam</b> zurückfedert (eine kleine Delle bleibt).',
     '{proof}. <b>Ready</b> when a light finger press springs back <b>slowly</b> (a small dent remains).');
   add('guide.step.finalProof.tip', 'Teiglinge vor dem Backen wirklich auf Raumtemperatur kommen lassen – kalter Teig reißt beim Ausziehen.',
@@ -354,7 +365,9 @@
   add('guide.step.preheat.tip', 'Der Stein muss richtig durchglühen – lieber 10 min länger. (Startzeit = 50 min vor dem Backen.)',
     'The stone needs to really heat through: better 10 min too long. (Start time = 50 min before baking.)');
   add('guide.step.shape.title', 'Pizza ausziehen', 'Stretch the pizza');
-  add('guide.step.shape.chip', 'kein Nudelholz!', 'no rolling pin!');
+  // guide.step.shape.chip ("kein Nudelholz!") seit v4.35.1 entfernt -- die Warnung steht
+  // bereits wortgleich sinngemäß im warn()-Aufklapper unten (guide.step.shape.warn), war
+  // also bereits dupliziert.
   add('guide.step.shape.body', 'Teigling in Mehl/Grieß betten, von der Mitte mit den <b>Fingerspitzen flachdrücken</b>, Rand (~1,5 cm) stehen lassen, über die Handrücken auf Größe ziehen.',
     'Bed the dough ball in flour/semolina, <b>flatten from the center with your fingertips</b>, leave the rim (~1.5 cm) untouched, stretch to size over the backs of your hands.');
   add('guide.step.shape.warn', 'Nie ein Nudelholz – das drückt die Luft aus dem Rand. Der Cornicione lebt von der Gärblase.',
@@ -373,7 +386,8 @@
   // breite Spanne "15-60 min" formuliert statt einer erfundenen Einzelzahl (s.
   // pizza-rechner-KONTEXT.md, "Wenn die Quellenlage nicht ausreicht").
   add('guide.step.shapeTeglia.title', 'Teig ins Blech ziehen', 'Stretch the dough into the pan');
-  add('guide.step.shapeTeglia.chip', 'kein Nudelholz!', 'no rolling pin!');
+  // guide.step.shapeTeglia.chip ("kein Nudelholz!") seit v4.35.1 entfernt -- s. Kommentar
+  // bei guide.step.shape.chip oben, identischer Grund.
   add('guide.step.shapeTeglia.body', 'Blech gut ölen. Teigling mit geölten/bemehlten Händen von der Mitte nach außen <b>vorsichtig in die Form drücken</b>, nicht zu fest pressen. Springt der Teig zurück, bevor er die Ecken erreicht: mit einem Tuch abdecken und <b>15–60 min ruhen</b> lassen, danach weiterziehen.',
     'Oil the pan well. With oiled/floured hands, <b>gently press the dough</b> from the center outward to fill the pan, without pressing too hard. If it springs back before reaching the corners: cover with a cloth and let it <b>rest 15–60 min</b>, then continue stretching.');
   add('guide.step.shapeTeglia.warn', 'Nie ein Nudelholz – das drückt die Gärgase aus dem Teig. Die luftig-offenporige Krume ist gerade das Kennzeichen von Teglia/Pizza al taglio.',

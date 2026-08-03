@@ -1166,6 +1166,18 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
    spätere, gewachsene Extras-Bereich das Band per Flex-Stretch erneut mitzieht.
    closeMore() entfernt den Inline-Wert wieder (Rückkehr zu align-self:stretch). */
 .step.is-open .step__photo{align-self:flex-start;}
+/* v4.35.1-Nachbesserung (mobile-optimizer-Befund, Bugfix-Zyklus "Zeit-Chip/Bildschärfe"):
+   sobald der Aufklapper offen ist, ist die Bildspalte praktisch IMMER kürzer als die durch
+   die Extras gewachsene Kartenzeile (das gilt schon unabhängig vom neuen Höhen-Deckel in
+   js/guide.js, openMore() -- der Deckel vergrößert diese bestehende Lücke bei extremen
+   Fällen nur zusätzlich um ca. 11 %). Ohne sichtbaren Abschluss sah das im HELLEN Theme
+   wie ein fehlendes/kaputtes Bild statt wie ein bewusstes Thumbnail aus (live per
+   Headless-Edge-CDP geprüft: Karte 706px, Bild 291px, 415px einfarbige Lücke direkt
+   darunter). Ein sehr dezenter 1px-Trenner (--line-soft, "kaum sichtbarer innerer
+   Trenner") markiert den Bildabschluss als Absicht statt als Fehler -- bewusst nur bei
+   is-open (im geschlossenen Zustand füllt das Bild ohnehin die volle Kartenhöhe, dort
+   würde die Linie nur am äußersten Kartenrand kollidieren, ohne jeden Nutzen). */
+.step.is-open .step__photo{border-bottom:1px solid var(--line-soft);}
 @media (max-width:359px){ .step__photo{width:76px;} }
 .step__body{flex:1;min-width:0;padding:16px 18px 16px 21px;}
 .step__head{display:flex;gap:10px;align-items:flex-start;}

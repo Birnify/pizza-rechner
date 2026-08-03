@@ -4364,6 +4364,118 @@
       ]);
     })();
 
+    // ===== NEUE TESTS (v4.35.1): Bildhöhe einfrieren & Deckelung =====
+    // Tests für openMore()/closeMore()-Logik in js/guide.js:
+    // - PHOTO_SRC_H = 224, PHOTO_MAX_UPSCALE = 1.3 → Deckel = 291,2px
+    // - openMore() setzt style.height = Math.min(gemessen, Deckel)
+    // - closeMore() setzt style.height = '' (Rückbau)
+    (function () {
+      const PHOTO_SRC_H = 224;
+      const PHOTO_MAX_UPSCALE = 1.3;
+      const CAP_HEIGHT = PHOTO_SRC_H * PHOTO_MAX_UPSCALE; // 291.2
+
+      // Test 1: Unter dem Deckel – gemessene Höhe wird exakt beibehalten
+      (function () {
+        Object.assign(PZ.state, BASE, { method: 'direct', hyd: 62, yeast: 0.3 });
+        PZ.calc();
+        const guideEl = document.getElementById('guideSteps');
+        const steps = guideEl ? Array.prototype.slice.call(guideEl.querySelectorAll('.step')) : [];
+        const step = steps.length > 0 ? steps[0] : null;
+        const photo = step ? step.querySelector('.step__photo') : null;
+        const btn = step ? step.querySelector('.step__more') : null;
+
+        const stepFound = !!step, photoFound = !!photo, btnFound = !!btn;
+        if (!stepFound || !photoFound || !btnFound) {
+          renderBox('Bildhöhe (v4.35.1) · Unter dem Deckel (Regression): Höhe 150px wird beibehalten', [
+            { label: '.step gefunden (Test-Validierung)', ok: stepFound, actual: stepFound, expected: true, tol: null },
+            { label: '.step__photo gefunden (Test-Validierung)', ok: photoFound, actual: photoFound, expected: true, tol: null },
+            { label: '.step__more Button gefunden (Test-Validierung)', ok: btnFound, actual: btnFound, expected: true, tol: null }
+          ]);
+          return;
+        }
+
+        photo.style.height = '150px';
+        const heightBeforeOpen = parseFloat(photo.style.height);
+
+        btn.click();
+
+        const heightAfterOpen = parseFloat(photo.style.height);
+
+        renderBox('Bildhöhe (v4.35.1) · Unter dem Deckel (Regression): Höhe 150px wird beibehalten', [
+          { label: 'vor Klick: style.height ist 150px (Test-Setup)', ok: heightBeforeOpen === 150, actual: heightBeforeOpen, expected: 150, tol: 0.1 },
+          { label: 'nach Klick: style.height bleibt bei 150px (nicht auf Deckel 291,2px erhöht)', ok: heightAfterOpen === 150, actual: heightAfterOpen, expected: 150, tol: 0.1 }
+        ]);
+      })();
+
+      // Test 2: Über dem Deckel – Höhe wird auf 291,2px gedeckelt
+      (function () {
+        Object.assign(PZ.state, BASE, { method: 'direct', hyd: 62, yeast: 0.3 });
+        PZ.calc();
+        const guideEl = document.getElementById('guideSteps');
+        const steps = guideEl ? Array.prototype.slice.call(guideEl.querySelectorAll('.step')) : [];
+        const step = steps.length > 0 ? steps[0] : null;
+        const photo = step ? step.querySelector('.step__photo') : null;
+        const btn = step ? step.querySelector('.step__more') : null;
+
+        const stepFound = !!step, photoFound = !!photo, btnFound = !!btn;
+        if (!stepFound || !photoFound || !btnFound) {
+          renderBox('Bildhöhe (v4.35.1) · Über dem Deckel: Höhe 350px wird auf 291,2px gedeckelt', [
+            { label: '.step gefunden (Test-Validierung)', ok: stepFound, actual: stepFound, expected: true, tol: null },
+            { label: '.step__photo gefunden (Test-Validierung)', ok: photoFound, actual: photoFound, expected: true, tol: null },
+            { label: '.step__more Button gefunden (Test-Validierung)', ok: btnFound, actual: btnFound, expected: true, tol: null }
+          ]);
+          return;
+        }
+
+        photo.style.height = '350px';
+        const heightBeforeOpen = parseFloat(photo.style.height);
+
+        btn.click();
+
+        const heightAfterOpen = parseFloat(photo.style.height);
+
+        renderBox('Bildhöhe (v4.35.1) · Über dem Deckel: Höhe 350px wird auf 291,2px gedeckelt', [
+          { label: 'vor Klick: style.height ist 350px (Test-Setup)', ok: heightBeforeOpen === 350, actual: heightBeforeOpen, expected: 350, tol: 0.1 },
+          { label: 'Deckel = PHOTO_SRC_H (224) × PHOTO_MAX_UPSCALE (1.3)', ok: Math.abs(CAP_HEIGHT - 291.2) < 0.01, actual: CAP_HEIGHT, expected: 291.2, tol: 0.1 },
+          { label: 'nach Klick: style.height wird auf Deckel gedeckelt (291,2px, nicht 350px)', ok: Math.abs(heightAfterOpen - CAP_HEIGHT) < 0.1, actual: heightAfterOpen, expected: CAP_HEIGHT, tol: 0.1 }
+        ]);
+      })();
+
+      // Test 3: Rückbau beim Schließen – style.height wird zurückgesetzt
+      (function () {
+        Object.assign(PZ.state, BASE, { method: 'direct', hyd: 62, yeast: 0.3 });
+        PZ.calc();
+        const guideEl = document.getElementById('guideSteps');
+        const steps = guideEl ? Array.prototype.slice.call(guideEl.querySelectorAll('.step')) : [];
+        const step = steps.length > 0 ? steps[0] : null;
+        const photo = step ? step.querySelector('.step__photo') : null;
+        const btn = step ? step.querySelector('.step__more') : null;
+
+        const stepFound = !!step, photoFound = !!photo, btnFound = !!btn;
+        if (!stepFound || !photoFound || !btnFound) {
+          renderBox('Bildhöhe (v4.35.1) · closeMore() setzt style.height zurück', [
+            { label: '.step gefunden (Test-Validierung)', ok: stepFound, actual: stepFound, expected: true, tol: null },
+            { label: '.step__photo gefunden (Test-Validierung)', ok: photoFound, actual: photoFound, expected: true, tol: null },
+            { label: '.step__more Button gefunden (Test-Validierung)', ok: btnFound, actual: btnFound, expected: true, tol: null }
+          ]);
+          return;
+        }
+
+        photo.style.height = '250px';
+        btn.click();
+        const heightAfterOpen = photo.style.height;
+        const hasHeightAfterOpen = heightAfterOpen !== '';
+
+        btn.click();
+        const heightAfterClose = photo.style.height;
+
+        renderBox('Bildhöhe (v4.35.1) · closeMore() setzt style.height zurück', [
+          { label: 'nach Öffnen: style.height ist gesetzt (nicht leer)', ok: hasHeightAfterOpen, actual: heightAfterOpen, expected: 'nicht leer', tol: null },
+          { label: 'nach Schließen: style.height ist wieder leer (rückgesetzt auf Ausgangsstand)', ok: heightAfterClose === '', actual: heightAfterClose, expected: '', tol: null }
+        ]);
+      })();
+    })();
+
   })();
 
   // ─────────────────────────────────────────────────────────────

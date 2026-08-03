@@ -8,6 +8,110 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Zeit-Chip nur noch für echte Zeitangaben + Bildhöhen-Deckel (v4.35.1)
+
+Bugfix-Zyklus, kein neues Feature: der Nutzer meldete und reproduzierte live zwei
+Qualitätsregressionen aus v4.35.0 ("Anleitungs-Schrittbilder + Ein-Aufklapper-Redesign").
+Diagnose lag vollständig vor, kein `/define-feature` nötig.
+
+**Befund 1 — Zeit-Chip drängt auf dem Handy systemweit den Titel zusammen.** Die
+v4.35.0-Regel "der Zeit-Bereich ist immer das letzte, nie umbrechende Element der
+Titelzeile" funktionierte auf dem Desktop, nahm auf schmalen Mobil-Viewports aber fixen,
+nie schrumpfenden Platz weg. Live gemessen (375px, Rezept "Biga klassisch", Profi-Modus):
+von 15 Anleitungsschritten brachen 10 auf mehrere Titelzeilen um, "Stretch & Fold statt
+Kneten" sogar auf 4 Zeilen.
+
+Nutzer-Entscheidung (Vorgabe, keine eigene Alternative): der Zeit-Chip trägt künftig NUR
+NOCH echte Zeitangaben (Dauer/Minuten/Stunden). Schritte ohne echte Zeitangabe bekommen
+keinen Chip mehr. Umgesetzt in `js/guide.js` (`st(title, chip, ...)`-Aufrufe) + Kommentare
+in `js/i18n-dict.js`:
+- **Chip entfernt (9 Stellen):** `bigaMix` ("mit der Hand"), `poolishMix` ("mit Löffel /
+  Schneebesen"), `waterTemp` (beide Aufrufstellen, `gt(R.wT)`, dynamischer Temperaturwert),
+  `checkTemp` ("Ziel 23–25 °C"), `bulkRise` ("Raumtemp"/"Raumtemp + kühl"), `formBalls`
+  (`${R.N} × ${g(R.W)}`), `finalProof` ("Fingertest"/"kühl · Fingertest"),
+  `shape`/`shapeTeglia` ("kein Nudelholz!"). In JEDEM dieser Fälle stand der Chip-Inhalt
+  bereits wortgleich im Fließtext oder im bestehenden `warn()`/`tip()`-Aufklapper (gegen
+  den tatsächlichen Body-Text geprüft, nicht nur angenommen) — reine Streichung ohne
+  Textverschiebung nötig. Einzige Ausnahme: `checkTemp.bodyNoWater` (Vorteig-Rezepte ohne
+  Hauptteig-Restwasser) hatte GAR keinen Zahlenwert im Fließtext, dort wurde "Zielbereich
+  liegt bei 23–25 °C" ergänzt.
+- **Chip bewusst behalten:** `saltAdd`/`mixSalt` ("nach 2–3 min") — kein Schrittdauer-
+  Etikett, sondern ein Timing-Hinweis INNERHALB des Schritts (wann das Öl nach dem Salz
+  dazukommt), fürs korrekte Ausführen wichtig genug, um sichtbar zu bleiben. Enthält eine
+  echte Minutenangabe, passt zur Nutzer-Vorgabe.
+- **Nicht angefasst:** die Wanduhrzeit-Anzeige (`.step__clock`) bleibt unverändert (kurz
+  genug, nicht Ursache des Problems, nur `i.chip`-Texte waren betroffen).
+
+Live-Nachmessung nach dem Fix (Headless-Edge-CDP, 375px, Biga klassisch, Profi-Modus):
+**5 von 15 Titeln weiterhin mehrzeilig** (vorher 10/15) — 3 davon mit legitimem, bewusst
+behaltenem Zeit-Chip ("Biga reifen lassen" 17h, "Stretch & Fold statt Kneten" 4×30min,
+"Ofen vorheizen" 30–45min), 2 rein längenbedingt OHNE jeden Chip ("Schüttwasser
+temperieren", "Teigtemperatur prüfen" — beide haben ein Bildband, das die verfügbare
+Titelbreite von ~245px auf ~168px reduziert, unabhängig vom Chip). New York Style, 375px:
+4 von 13 mehrzeilig. `mobile-optimizer` erweiterte die Messung um weitere Breakpoints:
+320px 11/15 (reines Platzproblem auf sehr schmalen/alten Geräten), 359px 5/15, 375px 5/15
+(bestätigt die eigene Zahl exakt), 400px 3/15 — der Fix hilft ab ~359px spürbar, bei 320px
+kaum noch (kein Chip-Problem mehr, sondern ein reines Breitenproblem).
+
+**Befund 2 — Schrittbilder wirken sichtbar hochskaliert/unscharf.** Root Cause: alle 19
+Quellbilder (`assets/img/step-*.webp`) sind 300×224px, `object-fit:cover` skaliert bei
+88px Bandbreite rein nach der Höhe. Die in v4.35.0 eingeführte dynamische Freeze-Höhen-
+Messung (`openMore()`) kann auf Mobil-Viewports bei extras-lastigen Schritten Werte bis
+314-334px erreichen (CSS-Skalierungsfaktor bis 1,49x, Worst Case "Mischen & Zucker & Salz
+& Öl" im Preset New York Style).
+
+Leitplanke (Nutzer-Vorgabe): Neu-Erzeugen/Hochskalieren der Quellbilder per KI-Pipeline
+ist NICHT Teil dieses Zyklus (separater, manueller, VRAM-limitierter Prozess, s. Abschnitt
+„LAUFENDE ARBEIT" unten) — nur CSS-/Rendering-seitige Lösung. Umgesetzt: `openMore()`
+(`js/guide.js`) deckelt die eingefrorene Höhe jetzt auf `PHOTO_SRC_H (224) ×
+PHOTO_MAX_UPSCALE (1.3)` = 291,2px, unabhängig von der tatsächlich gemessenen Kartenhöhe.
+Live verifiziert (mehrere Presets × Breakpoints): Worst Case sinkt von 1,49x auf 1,30x
+CSS-Skalierungsfaktor.
+
+**Ehrliche Einordnung (Nachfrage im Zyklus, nicht von selbst aufgefallen):** 1,3x ist der
+CSS-Pixel-Faktor, NICHT der auf dem Gerät sichtbare. Der reale Faktor ist CSS-Skalierung ×
+devicePixelRatio: ~2,6x auf 2x-Displays (viele Android-Handys, ältere iPhones), ~3,9x auf
+3x-Displays (iPhone 12 Pro und neuer, sehr verbreitet) — das liegt in der Größenordnung des
+ungedeckelten Vorher-Zustands (~2,8-3,0x auf 2x, ~4,2-4,5x auf 3x). Diese CSS-seitige
+Lösung MILDERT das Problem (weniger extreme Ausreißer), löst die gemeldete Unschärfe auf
+einem modernen 3x-Handy aber nur teilweise — eine vollständige Lösung bräuchte höher
+aufgelöste Quellbilder (s. Backlog).
+
+**Nebenbefund, von `mobile-optimizer` live gemessen (nicht vom Auftrag vorhergesehen):**
+der Höhen-Deckel vergrößert eine bereits VOR diesem Fix bestehende Lücke unter dem
+Bildband bei sehr hohen, extras-lastigen aufgeklappten Karten (Bild deckt nur die
+eingefrorene Höhe ab, die Karte selbst wächst durch die Extras viel weiter). Worst Case
+(New York Style, "Mischen & Zucker & Salz & Öl", 375px): Kartenhöhe 706,5px, Bildhöhe
+291,2px, Lücke 415,3px (vorher, ungedeckelt: 372,75px Lücke bei 333,75px Bildhöhe — der
+Deckel vergrößert die Lücke um ~11 %). Im dunklen Theme fällt das kaum auf (`--card` und
+Fototöne ähnlich dunkel), im hellen Theme (`--card` hell-creme) wirkte der harte Übergang
+wie ein fehlendes/kaputtes Bild statt wie ein bewusstes Thumbnail. Fix: `css/styles.css`
+bekam `.step.is-open .step__photo{border-bottom:1px solid var(--line-soft)}` — ein sehr
+dezenter 1px-Trenner (Token bereits vorhanden, "kaum sichtbarer innerer Trenner", in beiden
+Themes definiert), nur im aufgeklappten Zustand aktiv, macht den Bildabschluss als Absicht
+lesbar. Verifiziert per computed style (0px geschlossen, 1px + korrekter Theme-Farbwert
+offen). Eigene kleine Design-Entscheidung innerhalb des vereinbarten CSS-Scopes, keine
+Änderung am Deckel-Faktor selbst.
+
+**Sub-Agenten-Durchläufe:** `test-generator` (3 neue Testfälle für den Höhen-Deckel,
+Sektion 30 — solide, keine Korrektur nötig, positiver Kontrast zu früheren Runden mit
+zirkulären Tests/stillen Abbrüchen); `accessibility-expert` (keine Befunde; ein
+Korrektur-Hinweis vom Hauptagenten: "4 Schritte ohne Aufklapper" ist keine Nebenwirkung
+dieses Fixes, bestand schon vorher, per `git diff` gegengeprüft); `mobile-optimizer`
+(konnte diesmal keinen echten Browser nutzen, gab das ehrlich zu statt es zu verschleiern
+— Code-Analyse korrekt, aber die zwei Kernfragen blieben unverifiziert, deshalb selbst live
+nachgemessen inkl. dem oben beschriebenen Lücken-Nebenbefund).
+
+**Tests** (`tests/test.html`): 1236 → **1243** (7 neue Prüfungen, Sektion 30: Deckel-
+Regression unter 291,2px bleibt unverändert, Deckelung über 291,2px greift korrekt,
+`closeMore()` setzt `style.height` weiterhin zurück). `pizza-rechner-mobile-standalone.html`
+neu gebaut (31 eingebettete Bilder, ~1,49 MB, weit unter der 3-MB-Warnschwelle).
+
+**Geändert:** `js/guide.js`, `js/i18n-dict.js`, `css/styles.css`, `tests/test.html`,
+`pizza-rechner.html`, `pizza-rechner-mobile.html`. `?v=` auf `4.35.1` gezogen (Desktop +
+Mobil). `Versionen/v4.35.1 - Zeit-Chip nur noch fuer echte Dauer plus Bildhoehen-Deckel/`
+enthält den vollständigen Schnappschuss.
+
 ## Anleitungs-Schrittbilder + Ein-Aufklapper-Redesign (v4.35.0)
 
 Bild-Einbau-Zyklus 2 (`BILD-EINBAU-KONZEPT.md`, Blöcke 27-45) + ein vom Nutzer

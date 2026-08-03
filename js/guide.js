@@ -293,7 +293,7 @@
         }),
         clampNote + tip(t(isBiga ? 'guide.step.prefWeigh.tipBiga' : 'guide.step.prefWeigh.tip')), 5);
       if (isBiga) {
-        st(t('guide.step.bigaMix.title'), t('guide.step.bigaMix.chip'),
+        st(t('guide.step.bigaMix.title'), '',
           t('guide.step.bigaMix.body'),
           warn(t('guide.step.bigaMix.warn')), 10, { imgKey: 'bigaMix' });
         // Seit v4.25.0: nur noch zwei Stufen (b_klassisch 17 h / b_kalt 48 h, s.
@@ -307,7 +307,7 @@
           tip(t('guide.step.bigaRest.tip')) + timerBox('biga-reifen', matureMin), matureMin,
           { glossaryId: _usedGlossaryIds.has('biga') ? undefined : 'biga', imgKey: 'bigaRest' });
       } else {
-        st(t('guide.step.poolishMix.title'), t('guide.step.poolishMix.chip'),
+        st(t('guide.step.poolishMix.title'), '',
           t('guide.step.poolishMix.body'), '', 10, { imgKey: 'poolishMix' });
         const poolishTempTxt = state.prefMature <= 14
           ? t('guide.poolish.temp.warm')
@@ -320,7 +320,7 @@
       sec(t('guide.sec.main'));
       const hasMW = R.mWater >= 1, hasMF = R.mFlour >= 1;
       if (hasMW) {
-        st(t('guide.step.waterTemp.title'), gt(R.wT),
+        st(t('guide.step.waterTemp.title'), '',
           t('guide.step.waterTemp.body', { mWater: g(R.mWater), wT: gt(R.wT) }),
           '', 5, { imgKey: 'waterTemp' });
       }
@@ -359,7 +359,7 @@
           oilPart: hasOil ? t('guide.weighIngredients.oilPart', { oil: g(R.oil) }) : ''
         }),
         tip(t('guide.step.weighIngredients.tip')), 5, { imgKey: 'weighIngredients' });
-      st(t('guide.step.waterTemp.title'), gt(R.wT),
+      st(t('guide.step.waterTemp.title'), '',
         t('guide.step.waterTempDirect.body', { water: g(R.water), wT: gt(R.wT), ddt: gt(state.ddt) }),
         '', 5);
       if (state.yeast < 1.2) {
@@ -413,7 +413,7 @@
     const checkTempBody = (pref && !R.hasMixingWater)
       ? t('guide.step.checkTemp.bodyNoWater')
       : t('guide.step.checkTemp.body', { ddt: gt(state.ddt) });
-    st(t('guide.step.checkTemp.title'), t('guide.step.checkTemp.chip'),
+    st(t('guide.step.checkTemp.title'), '',
       checkTempBody, '', 2, { imgKey: 'checkTemp' });
 
     const ballsCold = f.cold && state.coldStage !== 'bulk';
@@ -446,7 +446,7 @@
     let bulkRiseTitle = inlineGlossaryLink(t('guide.step.bulkRise.title'), bulkColdGlossary);
     let bulkRiseBody = t('guide.step.bulkRise.body', { bulk: bulkText });
     if (bulkColdGlossary && !_usedGlossaryIds.has(bulkColdGlossary)) bulkRiseBody = inlineGlossaryLink(bulkRiseBody, bulkColdGlossary);
-    st(bulkRiseTitle, f.cold && !ballsCold ? t('guide.step.bulkRise.chipColdBalls') : t('guide.step.bulkRise.chipDefault'),
+    st(bulkRiseTitle, '',
       bulkRiseBody, (f.bulkScaled ? tempScaledTip() : '') + timerBox('stockgare', f.bulkMin), f.bulkMin,
       { glossaryId: (bulkColdGlossary && !_usedGlossaryIds.has(bulkColdGlossary)) ? bulkColdGlossary : undefined, imgKey: 'bulkRise' });
     // Einfrier-Hinweis (bis v4.7.0 hier als optionaler .tip-Textblock, Feature-Flag
@@ -457,14 +457,14 @@
     let formBallsTitle = inlineGlossaryLink(t('guide.step.formBalls.title'), 'einfrieren');
     let formBallsBody = t('guide.step.formBalls.body', { N: R.N, W: g(R.W), boxTxt: ballsCold ? t('guide.box.cold') : t('guide.box.normal') });
     if (!_usedGlossaryIds.has('einfrieren')) formBallsBody = inlineGlossaryLink(formBallsBody, 'einfrieren');
-    st(formBallsTitle, `${R.N} × ${g(R.W)}`,
+    st(formBallsTitle, '',
       formBallsBody,
       tip(isTegliaPreset() ? t('guide.step.formBalls.tipTeglia') : t('guide.step.formBalls.tip')), 10,
       { glossaryId: _usedGlossaryIds.has('einfrieren') ? undefined : 'einfrieren', imgKey: 'formBalls' });
     let finalProofTitle = inlineGlossaryLink(t('guide.step.finalProof.title'), finalProofColdGlossary);
     let finalProofBody = t('guide.step.finalProof.body', { proof: proofText });
     if (finalProofColdGlossary && !_usedGlossaryIds.has(finalProofColdGlossary)) finalProofBody = inlineGlossaryLink(finalProofBody, finalProofColdGlossary);
-    st(finalProofTitle, ballsCold ? t('guide.step.finalProof.chipCold') : t('guide.step.finalProof.chipDefault'),
+    st(finalProofTitle, '',
       finalProofBody,
       (f.proofScaled ? tempScaledTip() : '') + (f.cold ? tip(t('guide.step.finalProof.tip')) : '') + timerBox('stueckgare', f.proofMin), f.proofMin,
       { glossaryId: (finalProofColdGlossary && !_usedGlossaryIds.has(finalProofColdGlossary)) ? finalProofColdGlossary : undefined, imgKey: 'finalProof' });
@@ -478,7 +478,7 @@
       tip(t('guide.step.preheat.tip')) + timerBox('ofen-vorheizen', 40), 0,
       { back: 50, glossaryId: _usedGlossaryIds.has('ofenHeizarten') ? undefined : 'ofenHeizarten', imgKey: 'preheat' });
     const teglia = isTegliaPreset();
-    st(t(teglia ? 'guide.step.shapeTeglia.title' : 'guide.step.shape.title'), t(teglia ? 'guide.step.shapeTeglia.chip' : 'guide.step.shape.chip'),
+    st(t(teglia ? 'guide.step.shapeTeglia.title' : 'guide.step.shape.title'), '',
       t(teglia ? 'guide.step.shapeTeglia.body' : 'guide.step.shape.body'),
       warn(t(teglia ? 'guide.step.shapeTeglia.warn' : 'guide.step.shape.warn')), 5,
       teglia ? {} : { imgKey: 'shape' });
@@ -563,9 +563,23 @@
         // REGEL (Referenz "Variante 3a"): der Zeit-Bereich ist immer das letzte Element
         // der Titelzeile, oben ausgerichtet, bricht nie um -- unabhängig von der
         // Titellänge (behebt die zuvor uneinheitliche Positionierung von .chip/.timechip
-        // bei langen Titeln). Beide Chips (Dauer-/Technik-Chip UND Wanduhrzeit-Chip)
-        // können gleichzeitig vorkommen, s. js/guide.js-Historie -- sie sitzen jetzt
-        // gemeinsam in EINEM flex-shrink:0-Wrapper statt einzeln umzubrechen.
+        // bei langen Titeln). Beide Chips (Dauer-Chip UND Wanduhrzeit-Chip) können
+        // gleichzeitig vorkommen, s. js/guide.js-Historie -- sie sitzen jetzt gemeinsam in
+        // EINEM flex-shrink:0-Wrapper statt einzeln umzubrechen.
+        // v4.35.1-Bugfix ("Zeit-Chip drängt Titel zusammen"): `i.chip` trägt seit hier NUR
+        // NOCH echte Zeit-/Dauerangaben (z. B. "8–12 min", "4 × alle 30 min", Vorteig-
+        // Reifezeit in Stunden) -- der fixe, nie schrumpfende Chip-Platz ließ auf schmalen
+        // Mobil-Viewports (375px) sonst kaum Raum für den Titel, 10 von 15 Titeln im
+        // Testrezept brachen dadurch mehrzeilig um. Technik- (`bigaMix`/`poolishMix`),
+        // Temperatur- (`waterTemp`/`checkTemp`), Orts- (`bulkRise`), Stückzahl-
+        // (`formBalls`) und Warn-Hinweise (`shape`/`shapeTeglia`) haben seither KEINEN Chip
+        // mehr -- ihr Inhalt stand in allen Fällen bereits wortgleich im Fließtext oder im
+        // warn()/tip()-Aufklapper (s. js/i18n-dict.js-Kommentare bei den jeweiligen
+        // `.chip`-Keys), nur `checkTemp.bodyNoWater` bekam dafür einen ergänzten
+        // Zahlenwert. `saltAdd`/`mixSalt` behalten ihren Chip ("nach 2–3 min") bewusst: das
+        // ist kein Schrittdauer-Etikett, sondern ein Timing-Hinweis INNERHALB des Schritts
+        // (wann das Öl nach dem Salz dazukommt), fürs korrekte Ausführen wichtig genug, um
+        // sichtbar zu bleiben.
         timeHtml = `<span class="step__time">${chipHtml}${clockHtml}</span>`;
       }
 
@@ -649,10 +663,40 @@
   // Inline-Style gesetzt, danach erst die Klasse is-open ergänzt (die per CSS auf
   // align-self:flex-start umschaltet, damit ein später wachsender Extras-Bereich die
   // eingefrorene Höhe nicht per Flex-Stretch wieder überschreibt).
+  //
+  // Obergrenze gegen Hochskalierung (v4.35.1-Bugfix, Befund 2 "Schrittbilder wirken
+  // sichtbar hochskaliert/unscharf"): alle 19 Quellbilder (assets/img/step-*.webp) sind
+  // 300x224px -- object-fit:cover skaliert bei 88px Bandbreite rein nach der Höhe
+  // (containerHeight/224), auf Mobil-Viewports maß die eingefrorene Höhe bis zu 314-334px
+  // (Skalierungsfaktor ~1,4-1,49x CSS-Pixel). Statt die Quellbilder neu zu erzeugen
+  // (bewusst NICHT Teil dieses Zyklus, s. pizza-rechner-KONTEXT.md), wird die eingefrorene
+  // Höhe hier gedeckelt: max. das 1,3-fache der Quellhöhe (~291px) -- begrenzt die
+  // extremsten Ausreißer spürbar, ohne das Bild bei knapp geschlossenen Karten unnötig zu
+  // verkleinern (dort bleibt die gemessene Höhe ohnehin meist deutlich unter dem Deckel).
+  // Karten, deren tatsächliche geöffnete Höhe den Deckel überschreitet, zeigen dann eine
+  // entsprechend kürzere Bildspalte als die restliche Kartenhöhe -- unauffällig, weil
+  // .step overflow:hidden + abgerundete Ecken hat und darunter nur die (einfarbige)
+  // Kartenfläche sichtbar wird, kein Bildfehler.
+  // WICHTIG, ehrliche Einordnung (Nachfrage im v4.35.1-Zyklus): 1,3x ist der CSS-Pixel-
+  // Skalierungsfaktor, NICHT der tatsächlich auf dem Gerät sichtbare. Der reale Faktor ist
+  // CSS-Skalierung × devicePixelRatio: auf 2x-Displays (viele Android-Handys, ältere
+  // iPhones) effektiv ~2,6x, auf 3x-Displays (iPhone 12 Pro und neuer, sehr verbreitet)
+  // effektiv ~3,9x -- das liegt in der Größenordnung des ungedeckelten Vorher-Zustands
+  // (~2,8-3,0x auf 2x, ~4,2-4,5x auf 3x). Diese CSS-seitige Lösung MILDERT das Problem
+  // (weniger extreme Ausreißer, die 314-334px-Karten sind jetzt gedeckelt), löst die vom
+  // Nutzer gemeldete Unschärfe auf einem modernen 3x-Handy aber nur teilweise, nicht
+  // vollständig -- eine vollständige Lösung bräuchte höher aufgelöste Quellbilder
+  // (bewusst nicht Teil dieses Zyklus).
+  const PHOTO_SRC_H = 224;
+  const PHOTO_MAX_UPSCALE = 1.3;
   function openMore(btn) {
     const step = btn.closest('.step');
     const photo = step ? step.querySelector('.step__photo') : null;
-    if (photo) photo.style.height = photo.getBoundingClientRect().height + 'px';
+    if (photo) {
+      const measured = photo.getBoundingClientRect().height;
+      const capped = Math.min(measured, PHOTO_SRC_H * PHOTO_MAX_UPSCALE);
+      photo.style.height = capped + 'px';
+    }
     btn.setAttribute('aria-expanded', 'true');
     if (step) step.classList.add('is-open');
   }

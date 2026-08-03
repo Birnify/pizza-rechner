@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-03 · Aktuelle Version: v4.35.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-03 · Aktuelle Version: v4.35.1 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -216,29 +216,20 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Anleitungs-Schrittbilder + Ein-Aufklapper-Redesign (v4.35.0) = aktueller Stand
+## Zeit-Chip nur noch für echte Zeitangaben + Bildhöhen-Deckel (v4.35.1) = aktueller Stand
 
-Bild-Einbau Zyklus 2 (`BILD-EINBAU-KONZEPT.md`): 19 Anleitungsschritte bekommen ein
-randloses Bildband (`.step__photo`, `js/images.js`-Keys `guide.step.<key>`, 5 Schritte
-bewusst ohne Bild). Gleichzeitig ersetzt js/guide.js das bisherige v4.10.0-Muster
-(Einzel-Toggle je Tipp/Warnung) durch EINEN Aufklapper pro Schritt (`.step__more`/
-`.step__extras`), der Tipp+Warnung+Timer+Glossar bündelt, mit Icons statt Emoji
-(neues `warn`-Icon in `design-import/components/core/Icon.jsx` + `js/guide.js`) und
-Farbcodierung (neutral vs. ocker, sobald eine Warnung enthalten ist). Zeit-Chip-Bereich
-ist jetzt immer letztes, nie umbrechendes Element der Titelzeile. `--badge-ink`-Aufhellung
-der Referenz gegengerechnet (WCAG-2.0-Formel) und bewusst NICHT übernommen (bleibt in
-beiden Themes `#2b2420`, Details im CSS-Kommentar bei `--badge-ink`). Zwei echte Bugs live
-gefunden und behoben, die keiner der Sub-Agenten fand: (1) width/height-HTML-Attribute auf
-dem gestreckten Bildband trieben in Chromium die ganze Flex-Kartenzeile auf eine falsche,
-inhaltsunabhängige Höhe (`js/images.js`, neuer `opts.bare`-Modus lässt sie deshalb weg);
-(2) die eingefrorene Bildhöhe beim Öffnen war ursprünglich ein fixer 152px-Wert aus der
-Referenz, auf Mobil-Viewports schwankt die tatsächliche geschlossene Kartenhöhe aber
-zwischen 129-314px — jetzt löst `js/guide.js` das dynamisch (misst die Höhe unmittelbar
-vor dem Öffnen). `tests/test.html`: 1186 → **1236** (Sektion 30 komplett neu). Standalone-
-Datei: 19 Bilder eingebettet, 1,27 MB → **1,46 MB** (weit unter der 3-MB-Warnschwelle).
+Bugfix-Zyklus zu zwei vom Nutzer live gemeldeten/reproduzierten Regressionen aus v4.35.0:
+der Zeit-Chip in der Anleitungs-Titelzeile trägt jetzt NUR noch echte Zeitangaben (9
+Technik-/Temperatur-/Orts-/Stückzahl-/Warn-Chips entfernt, Inhalt stand bereits im
+Fließtext/Aufklapper), und die beim Aufklappen eingefrorene Bildhöhe ist auf max. 1,3x der
+Quellhöhe gedeckelt (mildert die extremsten Hochskalierungs-Ausreißer, löst die Unschärfe
+auf modernen 3x-Displays aber nur teilweise — eine vollständige Lösung bräuchte höher
+aufgelöste Quellbilder, bewusst nicht Teil dieses Zyklus). Dazu ein dezenter
+`border-bottom` am aufgeklappten Bildband gegen eine sonst wie kaputt wirkende Lücke im
+hellen Theme. `tests/test.html`: 1236 → **1243**.
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Anleitungs-Schrittbilder
-+ Ein-Aufklapper-Redesign (v4.35.0)".
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Zeit-Chip nur noch für
+echte Zeitangaben + Bildhöhen-Deckel (v4.35.1)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -948,6 +939,28 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
+- **Nebenbefunde aus dem v4.35.1-Bugfix-Zyklus** (kein Blocker, s. „= aktueller Stand"
+  oben für den Fix selbst):
+  - **Schrittbilder auf modernen 3x-Displays weiterhin unscharf beim Aufklappen:** der
+    neue CSS-Höhen-Deckel (1,3x der 224px-Quellhöhe) senkt den CSS-Skalierungsfaktor von
+    bis zu 1,49x auf max. 1,3x, der TATSÄCHLICHE geräte-pixel-Faktor bleibt aber hoch
+    (~2,6x auf 2x-Displays, ~3,9x auf 3x-Displays wie iPhone 12 Pro+ — ähnliche
+    Größenordnung wie vorher ungedeckelt). Eine vollständige Lösung bräuchte höher
+    aufgelöste Quellbilder (z. B. 2x-Export der bestehenden 19 `assets/img/step-*.webp`),
+    das ist ein manueller, vom Nutzer selbst gesteuerter Bild-Session-Schritt (s. Abschnitt
+    „LAUFENDE ARBEIT … Bild-Prompts" unten), kein automatisierter Zyklus.
+  - **Zwei Anleitungstitel bleiben bei 375px mehrzeilig, unabhängig vom Chip-Fix:**
+    „Schüttwasser temperieren" und „Teigtemperatur prüfen" (beide MIT Bildband, dadurch nur
+    ~168px statt ~245px verfügbare Titelbreite) sind rein längenbedingt zweizeilig, kein
+    Chip beteiligt. Bei 320px sind es sogar 11 von 15 Titeln (reines Platzproblem auf sehr
+    schmalen/alten Geräten wie iPhone SE 1./2. Generation). Kandidat für einen künftigen
+    Layout-Zyklus (z. B. schmaleres Bildband, kleinere Titel-Schrift ab einem Breakpoint),
+    falls das stört — noch nicht spezifiziert.
+  - **Lücke unter dem Bildband bei sehr hohen, extras-lastigen aufgeklappten Karten:**
+    bereits mit einem dezenten `border-bottom` entschärft (s. „= aktueller Stand" oben),
+    aber die Lücke selbst (bis zu ~415px einfarbige Fläche unter dem Bild) besteht
+    strukturell weiter. Mögliche künftige Richtung: Deckel-Faktor für sehr hohe Karten
+    großzügiger fassen (Kompromiss Schärfe/Lücke), falls der Trenner allein nicht reicht.
 - **Nebenbefunde aus dem v4.32.0-`accessibility-expert`-/`mobile-optimizer`-Review des
   Preset-Kartengitters** (Blocker + MAJOR 2/3 direkt im selben Zyklus behoben, s. „=
   aktueller Stand" oben — hier nur die bewusst zurückgestellten Punkte):
