@@ -1,30 +1,44 @@
 #!/usr/bin/env python3
 """
-Bereitet abgenommene Bilder aus assets/img/ auf Anzeigegroesse auf (Schicht 4 aus
-BILD-EINBAU-KONZEPT.md): die Quelldateien liegen auf Erzeugungs-Aufloesung (z. B. 1496x1000
-fuer Karten, 1920x1080 fuer das Foto der fertigen Pizza), angezeigt werden sie deutlich
-kleiner (Karten ca. 150-300 px Breite). Skaliert + re-encodiert IN PLACE (ein Bild = eine
-Datei unter assets/img/, keine zweite "Web"-Kopie, keine doppelten 18 MB im Repo -- s.
-BILD-EINBAU-KONZEPT.md Abschnitt "Schicht 1").
+Bereitet abgenommene Bilder aus assets/originals/ auf Anzeigegroesse auf (Schicht 4 aus
+BILD-EINBAU-KONZEPT.md) und schreibt das Ergebnis nach assets/img/, dem app-seitigen
+Bildordner.
+
+NICHT-DESTRUKTIV (seit v4.35.2, Nutzer-Vorgabe): das Original bleibt in assets/originals/
+IMMER unangetastet -- das Skript liest von dort und schreibt nur die skalierte Kopie nach
+assets/img/, nie umgekehrt. Vorher (bis v4.35.x) skalierte das Skript IN PLACE unter
+assets/img/, sodass es keine hoeher aufgeloeste Fassung mehr gab, sobald einmal verkleinert
+wurde (das war der Grund, warum die 19 Anleitungs-Schrittbilder aus v4.35.0 nur noch aus dem
+Git-Verlauf zurückgeholt werden konnten, s. Kontextdatei v4.35.2). Weil jeder Lauf wieder vom
+unveraenderten Original ausgeht, ist beliebig oftes Wiederholen (z. B. mit einer geaenderten
+Zielgroesse) jetzt verlustfrei moeglich -- der alte Warnhinweis "nicht mehrfach hintereinander
+auf dieselbe Datei anwenden" entfaellt dadurch ersatzlos.
+
+assets/originals/ ist ab jetzt das DAUERHAFTE Archiv der Erzeugungs-Aufloesung, nicht nur ein
+Durchlaufposten (s. BILD-EINBAU-KONZEPT.md Abschnitt "Schicht 1"). Fuer die drei bereits vor
+dieser Umstellung bearbeiteten Kategorien (Karten, Pizza-Fotos, Texturen) existieren KEINE
+Originale mehr (sie wurden vor v4.35.2 destruktiv in place verkleinert, die hochaufgeloesten
+Fassungen sind nicht mehr rekonstruierbar) -- deren TARGETS-Eintraege bleiben unten stehen
+(Dokumentationswert der einst genutzten Zielgroessen), werden aber beim Ausfuehren
+uebersprungen, weil kein Original vorhanden ist; die bereits skalierten Dateien in assets/img/
+bleiben dabei unangetastet liegen. Nur Kategorien mit einem tatsaechlichen Original in
+assets/originals/ werden verarbeitet.
 
 Verarbeitet bewusst NUR die Dateien, die der jeweilige Bild-Einbau-Zyklus tatsaechlich
-verdrahtet hat (s. TARGETS unten) -- nicht alle 118 abgenommenen Bilder auf einmal, weil
-Zielgroessen fuer noch nicht angebundene Kategorien (Glossar, Anleitungsschritte, Header, ...)
-erst in ihrem jeweils eigenen Zyklus feststehen. Ein spaeterer Zyklus ergaenzt seine eigenen
-Dateien in TARGETS und ruft das Skript erneut auf.
+verdrahtet hat (s. TARGETS unten) -- nicht alle abgenommenen Bilder auf einmal, weil
+Zielgroessen fuer noch nicht angebundene Kategorien (Glossar, Header, ...) erst in ihrem
+jeweils eigenen Zyklus feststehen. Ein spaeterer Zyklus legt sein Original unter
+assets/originals/ ab, ergaenzt seine eigenen Dateien in TARGETS und ruft das Skript erneut auf.
 
 Aufruf: python assets/prepare_web_images.py
-Vorher/Nachher-Groessen werden auf der Konsole ausgegeben. Nicht mehrfach hintereinander auf
-dieselbe Datei anwenden (jeder Lauf skaliert ausgehend vom AKTUELLEN Dateiinhalt, wiederholtes
-Verkleinern wuerde weiter verlustig re-encodieren) -- bei Bedarf aus assets/BILD-PROMPTS.md /
-dem Erzeugungs-Workflow neu abnehmen, statt aus einer bereits verkleinerten Fassung erneut zu
-skalieren.
+Vorher/Nachher-Groessen werden auf der Konsole ausgegeben.
 """
 from pathlib import Path
 from PIL import Image, ImageFilter
 
 ROOT = Path(__file__).parent
 IMG_DIR = ROOT / "img"
+ORIGINALS_DIR = ROOT / "originals"
 
 # Zyklus 1 (Bild-Grundgerüst + Preset-Kartengitter, v4.32.0): Preset-Karten (3:2) und das
 # Foto der fertigen Pizza (16:9). Breite jeweils rund 2x der groessten tatsaechlichen
@@ -59,6 +73,11 @@ IMG_DIR = ROOT / "img"
 # hoeheren Alpha-Wert bei gleicher WCAG-Marge. Bei Texturen mit sehr hellem Durchschnittston
 # gegen ein sehr dunkles --bg (Dark-Theme) bleibt der Gewinn trotzdem MODERAT, kein
 # Wunder-Fix (s. Kontextdatei fuer die ehrliche Einordnung).
+#
+# WICHTIG (seit v4.35.2): die folgenden drei Kategorien (Karten, Pizza-Fotos, Texturen)
+# haben KEIN Original mehr in assets/originals/ (destruktiv verkleinert VOR der
+# Nicht-destruktiv-Umstellung) -- ihre Eintraege werden beim Ausfuehren uebersprungen, s.
+# Docstring oben. Sie bleiben nur als Dokumentation der einst genutzten Zielgroessen stehen.
 TARGETS = {
     # 3:2 Karten (Rezept-Auswahl) -- angezeigt mit ca. 150-300 px Breite
     "card-napoli_klassisch.webp": (600, 400, "WEBP", 80),
@@ -83,33 +102,34 @@ TARGETS = {
     # eine Lichter-Kompression VOR der Alpha-Ebene (s. Kommentar "highlight" oben).
     "texture-marmor.webp": (800, 800, "WEBP", 80, 120, 0.190),
     "texture-kruste.webp": (800, 800, "WEBP", 80, 120, 0.150, (-2, 0.05)),
-    # Zyklus "Anleitungs-Schrittbilder" (v4.35.0): randloses Bildband an der linken
-    # Kartenkante, angezeigt mit 88px Breite (76px unter 360px Viewport), object-fit:cover,
-    # volle (dynamische) Kartenhoehe. 300x224 haelt exakt das 4:3-Seitenverhaeltnis der
-    # Erzeugungsaufloesung (1200x896) bei -- kein Verzerren beim Resize, der browserseitige
-    # object-fit:cover-Zuschnitt macht aus dem Querformat je nach Kartenhoehe einen
-    # schmaleren Ausschnitt. 300px Breite ist bereits >3x der 88px-Anzeigebreite (satter
-    # Retina-Puffer). Quelldateien lagen bei rund 1,9 MB gesamt (19 Dateien, ~100 KB je
-    # Datei) -- weit ueber Anzeigegroesse.
-    "step-addYeast.webp": (300, 224, "WEBP", 78),
-    "step-autolyse.webp": (300, 224, "WEBP", 78),
-    "step-bakeTopping.webp": (300, 224, "WEBP", 78),
-    "step-bigaMix.webp": (300, 224, "WEBP", 78),
-    "step-bigaRest.webp": (300, 224, "WEBP", 78),
-    "step-bulkRise.webp": (300, 224, "WEBP", 78),
-    "step-checkTemp.webp": (300, 224, "WEBP", 78),
-    "step-dissolveYeast.webp": (300, 224, "WEBP", 78),
-    "step-finalProof.webp": (300, 224, "WEBP", 78),
-    "step-formBalls.webp": (300, 224, "WEBP", 78),
-    "step-knead.webp": (300, 224, "WEBP", 78),
-    "step-mixSalt.webp": (300, 224, "WEBP", 78),
-    "step-poolishMix.webp": (300, 224, "WEBP", 78),
-    "step-poolishRest.webp": (300, 224, "WEBP", 78),
-    "step-preheat.webp": (300, 224, "WEBP", 78),
-    "step-shape.webp": (300, 224, "WEBP", 78),
-    "step-stretchFold.webp": (300, 224, "WEBP", 78),
-    "step-waterTemp.webp": (300, 224, "WEBP", 78),
-    "step-weighIngredients.webp": (300, 224, "WEBP", 78),
+    # Zyklus "Anleitungs-Schrittbilder" (v4.35.0, Neuaufloesung v4.35.2): randloses
+    # Bildband an der linken Kartenkante, angezeigt mit 88px Breite (76px unter 360px
+    # Viewport), object-fit:cover, volle (dynamische) Kartenhoehe. Urspruenglich auf
+    # 300x224 verkleinert (v4.35.0) -- das erwies sich als sichtbar unscharf (v4.35.1-
+    # Bugfix behalf sich nur mit einem CSS-seitigen Hochskalierungs-Deckel, s.
+    # Kontextdatei). Die 19 Originale (1200x896, aus dem Git-Verlauf zurückgeholt, s.
+    # Kontextdatei v4.35.2) liegen jetzt in assets/originals/. Neue Zielgroesse 600x448
+    # (v4.35.2, mit dem Nutzer abgestimmt): doppelte lineare Aufloesung ggue. vorher,
+    # haelt weiterhin exakt das 4:3-Seitenverhaeltnis bei (kein Verzerren beim Resize).
+    "step-addYeast.webp": (600, 448, "WEBP", 78),
+    "step-autolyse.webp": (600, 448, "WEBP", 78),
+    "step-bakeTopping.webp": (600, 448, "WEBP", 78),
+    "step-bigaMix.webp": (600, 448, "WEBP", 78),
+    "step-bigaRest.webp": (600, 448, "WEBP", 78),
+    "step-bulkRise.webp": (600, 448, "WEBP", 78),
+    "step-checkTemp.webp": (600, 448, "WEBP", 78),
+    "step-dissolveYeast.webp": (600, 448, "WEBP", 78),
+    "step-finalProof.webp": (600, 448, "WEBP", 78),
+    "step-formBalls.webp": (600, 448, "WEBP", 78),
+    "step-knead.webp": (600, 448, "WEBP", 78),
+    "step-mixSalt.webp": (600, 448, "WEBP", 78),
+    "step-poolishMix.webp": (600, 448, "WEBP", 78),
+    "step-poolishRest.webp": (600, 448, "WEBP", 78),
+    "step-preheat.webp": (600, 448, "WEBP", 78),
+    "step-shape.webp": (600, 448, "WEBP", 78),
+    "step-stretchFold.webp": (600, 448, "WEBP", 78),
+    "step-waterTemp.webp": (600, 448, "WEBP", 78),
+    "step-weighIngredients.webp": (600, 448, "WEBP", 78),
 }
 
 
@@ -140,13 +160,13 @@ def apply_highlight_compression(im, highlight):
 def main():
     # Optionale Dateinamen-Filter ueber sys.argv (z. B. beim Iterieren einzelner Alpha-/
     # Blur-Werte fuer EIN Bild): ohne Argumente verarbeitet main() wie bisher ALLE
-    # TARGETS -- das re-encodiert dabei zwangslaeufig auch bereits fertige Dateien anderer
-    # Zyklen erneut verlustig (s. Warnung im Docstring oben). Mit `python
-    # prepare_web_images.py texture-teighaut.webp` wird NUR diese eine Datei angefasst.
+    # TARGETS, fuer die ein Original existiert. Mit `python prepare_web_images.py
+    # step-knead.webp` wird NUR diese eine Datei angefasst.
     import sys
     only = set(sys.argv[1:]) or None
     total_before = 0
     total_after = 0
+    skipped_no_original = []
     for name, cfg in TARGETS.items():
         if only and name not in only:
             continue
@@ -154,12 +174,13 @@ def main():
         blur = cfg[4] if len(cfg) > 4 else None
         alpha = cfg[5] if len(cfg) > 5 else None
         highlight = cfg[6] if len(cfg) > 6 else None
-        path = IMG_DIR / name
-        if not path.exists():
-            print(f"UEBERSPRUNGEN (fehlt): {name}")
+        src_path = ORIGINALS_DIR / name
+        if not src_path.exists():
+            skipped_no_original.append(name)
             continue
-        before = path.stat().st_size
-        with Image.open(path) as im:
+        dst_path = IMG_DIR / name
+        before = dst_path.stat().st_size if dst_path.exists() else 0
+        with Image.open(src_path) as im:
             im = im.convert("RGB") if fmt == "JPEG" else im.convert("RGBA") if im.mode in ("P", "LA") else im
             resized = im.resize((w, h), Image.LANCZOS)
             if blur:
@@ -172,8 +193,8 @@ def main():
             save_kwargs = {"quality": quality}
             if fmt == "JPEG":
                 save_kwargs["optimize"] = True
-            resized.save(path, fmt, **save_kwargs)
-        after = path.stat().st_size
+            resized.save(dst_path, fmt, **save_kwargs)
+        after = dst_path.stat().st_size
         total_before += before
         total_after += after
         extra_note = (
@@ -182,7 +203,13 @@ def main():
             + (f", alpha {alpha}" if alpha is not None else "")
         )
         print(f"{name}: {before/1024:.0f} KB -> {after/1024:.0f} KB ({w}x{h}{extra_note})")
-    print(f"\nGesamt: {total_before/1024:.0f} KB -> {total_after/1024:.0f} KB")
+
+    if skipped_no_original:
+        print(f"\nUEBERSPRUNGEN (kein Original in assets/originals/, assets/img/ unveraendert gelassen):")
+        for name in skipped_no_original:
+            print(f"  - {name}")
+
+    print(f"\nGesamt (nur tatsaechlich verarbeitete Dateien): {total_before/1024:.0f} KB -> {total_after/1024:.0f} KB")
 
 
 if __name__ == "__main__":

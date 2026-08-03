@@ -107,6 +107,22 @@ erlaubt, eine Kategorie einzubauen, obwohl vier ihrer Bilder noch fehlen.
   gesamte App unter rund 2 MB Bildlast, statt 18 MB.
 - Der Standalone-Build kann **nicht** alle Bilder als base64 einbetten. Das ist die
   einzige offene Grundsatzentscheidung, s. Abschnitt 4.
+- **Verbindliche Konvention seit v4.35.2 (nicht-destruktive Aufbereitung, gilt für ALLE
+  künftigen Bild-Einbau-Zyklen):** `assets/prepare_web_images.py` skaliert NIE wieder in
+  place. Jede Bildkategorie legt ihre in Erzeugungsauflösung abgenommene Fassung dauerhaft
+  unter **`assets/originals/`** ab (das persistente Archiv, nicht zu verwechseln mit dem
+  früheren `assets/_final/`, das als reine Abnahme-Schleuse VOR dem Wiring gedacht war und
+  inzwischen zu `assets/img/` wurde, s. Schicht 1 oben). Das Skript liest ausschließlich
+  aus `assets/originals/` und schreibt die skalierte Kopie nach `assets/img/`, die
+  Originaldatei bleibt dabei immer unverändert. Ein Zyklus kann dadurch beliebig oft mit
+  geänderter Zielgröße erneut laufen, ohne verlustiges Mehrfach-Re-Encodieren -- der Grund
+  für diese Umstellung war ein realer Datenverlust (die 19 v4.35.0-Schrittbilder waren nur
+  noch aus dem Git-Verlauf rekonstruierbar, weil die vorherige In-Place-Verkleinerung keine
+  höher aufgelöste Fassung übrig ließ, s. `pizza-rechner-KONTEXT.md` v4.35.2). Für die vor
+  dieser Umstellung bearbeiteten Kategorien (Karten, Pizza-Fotos, Texturen) existieren
+  keine Originale mehr -- das ist bewusst nicht rückwirkend behoben (Aufwand/Nutzen, die
+  hochaufgelösten Fassungen sind nicht mehr rekonstruierbar), gilt aber für jeden neuen
+  Zyklus ab jetzt verbindlich.
 
 ---
 
@@ -239,3 +255,11 @@ zusammen mit `align-self:stretch` bliesen die ganze Kartenzeile auf eine falsche
 inhaltsunabhängige Höhe auf). Details, Testzahlen und Commit-Hash:
 `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Anleitungs-Schrittbilder +
 Ein-Aufklapper-Redesign (v4.35.0)".
+
+**Nachbesserung v4.35.1 + vollständiger Fix v4.35.2:** die 300x224-Zielgröße aus v4.35.0
+erwies sich als sichtbar unscharf (Nutzer-Meldung). v4.35.1 milderte das nur CSS-seitig
+(Hochskalierungs-Deckel `PHOTO_MAX_UPSCALE`). v4.35.2 behebt die eigentliche Ursache: die
+19 Originale (1200x896) wurden aus dem Git-Verlauf (Commit `c17acf7`) zurückgeholt, liegen
+jetzt dauerhaft in `assets/originals/` (s. Schicht 4, neue nicht-destruktive Konvention)
+und werden auf 600x448 statt 300x224 verkleinert (doppelte lineare Auflösung). Details:
+`pizza-rechner-KONTEXT.md`, Abschnitt „= aktueller Stand".

@@ -665,29 +665,36 @@
   // eingefrorene Höhe nicht per Flex-Stretch wieder überschreibt).
   //
   // Obergrenze gegen Hochskalierung (v4.35.1-Bugfix, Befund 2 "Schrittbilder wirken
-  // sichtbar hochskaliert/unscharf"): alle 19 Quellbilder (assets/img/step-*.webp) sind
-  // 300x224px -- object-fit:cover skaliert bei 88px Bandbreite rein nach der Höhe
-  // (containerHeight/224), auf Mobil-Viewports maß die eingefrorene Höhe bis zu 314-334px
-  // (Skalierungsfaktor ~1,4-1,49x CSS-Pixel). Statt die Quellbilder neu zu erzeugen
-  // (bewusst NICHT Teil dieses Zyklus, s. pizza-rechner-KONTEXT.md), wird die eingefrorene
-  // Höhe hier gedeckelt: max. das 1,3-fache der Quellhöhe (~291px) -- begrenzt die
-  // extremsten Ausreißer spürbar, ohne das Bild bei knapp geschlossenen Karten unnötig zu
-  // verkleinern (dort bleibt die gemessene Höhe ohnehin meist deutlich unter dem Deckel).
-  // Karten, deren tatsächliche geöffnete Höhe den Deckel überschreitet, zeigen dann eine
-  // entsprechend kürzere Bildspalte als die restliche Kartenhöhe -- unauffällig, weil
-  // .step overflow:hidden + abgerundete Ecken hat und darunter nur die (einfarbige)
-  // Kartenfläche sichtbar wird, kein Bildfehler.
-  // WICHTIG, ehrliche Einordnung (Nachfrage im v4.35.1-Zyklus): 1,3x ist der CSS-Pixel-
-  // Skalierungsfaktor, NICHT der tatsächlich auf dem Gerät sichtbare. Der reale Faktor ist
-  // CSS-Skalierung × devicePixelRatio: auf 2x-Displays (viele Android-Handys, ältere
-  // iPhones) effektiv ~2,6x, auf 3x-Displays (iPhone 12 Pro und neuer, sehr verbreitet)
-  // effektiv ~3,9x -- das liegt in der Größenordnung des ungedeckelten Vorher-Zustands
-  // (~2,8-3,0x auf 2x, ~4,2-4,5x auf 3x). Diese CSS-seitige Lösung MILDERT das Problem
-  // (weniger extreme Ausreißer, die 314-334px-Karten sind jetzt gedeckelt), löst die vom
-  // Nutzer gemeldete Unschärfe auf einem modernen 3x-Handy aber nur teilweise, nicht
-  // vollständig -- eine vollständige Lösung bräuchte höher aufgelöste Quellbilder
-  // (bewusst nicht Teil dieses Zyklus).
-  const PHOTO_SRC_H = 224;
+  // sichtbar hochskaliert/unscharf"; Quellbilder in v4.35.2 auf die doppelte lineare
+  // Auflösung neu erzeugt, s. u.): object-fit:cover skaliert bei 88px Bandbreite rein
+  // nach der Höhe (containerHeight/PHOTO_SRC_H). Bis v4.35.1 waren alle 19 Quellbilder
+  // (assets/img/step-*.webp) nur 300x224px -- auf Mobil-Viewports maß die eingefrorene
+  // Höhe bis zu 314-334px (Skalierungsfaktor ~1,4-1,49x CSS-Pixel), real (× devicePixelRatio)
+  // ~2,8-4,5x, spürbar unscharf auf modernen 3x-Handys.
+  // v4.35.2: die 19 Originale (1200x896, aus dem Git-Verlauf zurückgeholt, s.
+  // pizza-rechner-KONTEXT.md) werden jetzt auf 600x448 statt 300x224 verkleinert --
+  // PHOTO_SRC_H entsprechend verdoppelt. Live-Nachmessung (Headless-Edge-CDP, worst-case
+  // Schritt "Mischen & Zucker & Salz & Öl" im Preset New York Style, sowie testweise Biga-
+  // /Poolish-/Teglia-Presets, jeweils bei mehreren Breiten/devicePixelRatio-Kombinationen):
+  // bei realistischen Mobil-Breiten (320-390px CSS, 2x-3x DPR) liegt die eingefrorene Höhe
+  // jetzt bei 314-473px -- das ist CSS-seitig bereits ein Faktor von nur noch ~0,7-1,06x
+  // der neuen Quellhöhe (also größtenteils gar kein Hochskalieren mehr nötig), real
+  // (× DPR) ~1,7-2,24x statt vorher ~2,8-4,5x. Selbst bei einer sehr schmalen 280px-Breite
+  // (z. B. zusammengeklapptes Foldable-Außendisplay, in der Praxis kein typischer
+  // Nutzungsfall) blieb der schlechteste gemessene Wert bei 553,9px = Faktor 1,236x --
+  // weiterhin UNTER dem bisherigen Deckel von 1,3x.
+  // Entscheidung PHOTO_MAX_UPSCALE bewusst UNVERÄNDERT bei 1,3 belassen (nicht gelockert):
+  // die Messung zeigt, dass der Deckel bei keinem getesteten realistischen Fall mehr
+  // greift (deutlich mehr Reserve als vorher) -- eine Lockerung hätte keinen Nutzen (löst
+  // kein beobachtetes Problem), würde aber die Sicherheitsmarge für künftig wachsende
+  // Extras-Texte oder noch schmalere/ungetestete Geräte verringern und dabei denselben
+  // realen Geräte-Skalierungsfaktor (~3,9x auf 3x-Displays) wieder ermöglichen, der vor
+  // v4.35.1 als sichtbar unscharf gemeldet wurde. Der Deckel wirkt dadurch jetzt als reines
+  // Sicherheitsnetz statt (wie in v4.35.1) als aktiv fast immer eingreifender Regler --
+  // das ist auch der Grund, warum die in v4.35.1 dokumentierte vergrößerte Lücke unter
+  // dem Bildband (".step.is-open .step__photo{border-bottom:...}") jetzt seltener/gar
+  // nicht mehr auftritt, ohne dass am Deckel selbst etwas geändert werden musste.
+  const PHOTO_SRC_H = 448;
   const PHOTO_MAX_UPSCALE = 1.3;
   function openMore(btn) {
     const step = btn.closest('.step');

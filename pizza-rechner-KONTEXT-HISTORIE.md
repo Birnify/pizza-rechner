@@ -8,6 +8,102 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Anleitungs-Schrittbilder in doppelter Auflösung + nicht-destruktive Bildaufbereitung (v4.35.2)
+
+Direkter Nutzerauftrag (Diagnose und Zielwerte bereits feststehend, kein `/define-feature`
+nötig), zweiteilig: vollständiger Fix der seit v4.35.0 gemeldeten Bildunschärfe (v4.35.1
+hatte das nur mit einem CSS-Deckel gemildert) + Umstellung des Aufbereitungsskripts auf ein
+dauerhaft nicht-destruktives Modell.
+
+**Diagnose (vom Nutzer per Git-Verlauf-Analyse bereits vorgelegt, selbst nachvollzogen):**
+die 19 Anleitungs-Schrittbilder (`assets/img/step-*.webp`) wurden ursprünglich in 1200x896px
+generiert, aber in v4.35.0 per `assets/prepare_web_images.py` destruktiv IN PLACE auf 300x224
+verkleinert — die höher aufgelösten Originale existierten danach nirgends mehr im
+Arbeitsbaum, lagen aber vollständig im Git-Verlauf, im Commit `c17acf7` (dem Commit direkt
+vor der Verkleinerung). Per `git cat-file -s c17acf7:assets/img/step-<key>.webp` für alle 19
+Dateien gegengeprüft: alle vorhanden, keine fehlt.
+
+**Teil A: Originale zurückgeholt, neue Zielgröße.** Alle 19 Dateien aus `c17acf7` extrahiert
+(`git show c17acf7:assets/img/step-<key>.webp > ...`), Pixel-Maße per Pillow verifiziert
+(alle exakt 1200x896, zusammen 1.885.533 Bytes ≈ 1,84 MB). Liegen jetzt dauerhaft unter
+`assets/originals/step-*.webp` (s. Teil B). Neue Zielgröße 600x448 (mit dem Nutzer
+abgestimmt, doppelte lineare Auflösung, exaktes 4:3-Seitenverhältnis der Erzeugungsauflösung
+bleibt erhalten). `assets/prepare_web_images.py` TARGETS der 19 Einträge entsprechend
+angepasst. Ergebnis (gemessen, nicht die grobe Vorab-Schätzung des Nutzers von ~660 KB):
+**165 KB → 419 KB** gesamt (~22 KB je Datei). Standalone-Build (`build-mobile-standalone.py`)
+neu gebaut: 31 eingebettete Bilder, **1.887.325 Bytes ≈ 1,80 MB** (vorher ~1,49 MB, s.
+v4.35.1) — weiterhin klar unter der 3-MB-Warnschwelle aus `BILD-EINBAU-KONZEPT.md`.
+
+**`js/guide.js` `PHOTO_SRC_H` 224 → 448.** `PHOTO_MAX_UPSCALE` nach Live-Nachmessung bewusst
+UNVERÄNDERT bei 1,3 belassen (nicht gelockert). Messmethode identisch zu v4.35.1 (Headless-
+Edge-CDP, WebSocket, `--remote-allow-origins=*`, `Emulation.setDeviceMetricsOverride`), jetzt
+selbst durchgeführt statt vom `mobile-optimizer` geliefert: worst-case-Schritt "Mischen &
+Zucker & Salz & Öl" (Preset New York Style) bei mehreren Breiten/DPR-Kombinationen sowie
+testweise über Biga-/Poolish-/Teglia-Presets. Ergebnisse:
+- Realistische Mobil-Breiten (320-390px CSS, 2x-3x DPR): eingefrorene Höhe 314-473px, CSS-
+  Skalierungsfaktor nur noch **~0,7-1,06x** der neuen Quellhöhe (größtenteils GAR KEIN
+  Hochskalieren mehr nötig), real (× DPR) **~1,7-2,24x** statt vorher ~2,8-4,5x.
+- Extremfall 280px-Breite (z. B. zusammengeklapptes Foldable-Außendisplay, kein typischer
+  Nutzungsfall) über 4 Presets: schlechtester Wert 553,9px = Faktor **1,236x** — weiterhin
+  UNTER dem bestehenden Deckel von 1,3x (582,4px).
+- Begründung, den Deckel NICHT zu lockern: er greift bei keinem getesteten realistischen
+  Fall mehr (deutlich mehr Reserve als vorher: der v4.35.1-Fund war ein ungedeckelter
+  Extremwert von 1,49x, oberhalb des damaligen Deckels). Eine Lockerung hätte keinen Nutzen
+  (löst kein beobachtetes Problem), würde aber die Sicherheitsmarge für künftig wachsende
+  Extras-Texte verringern und denselben realen Geräte-Skalierungsfaktor (~3,9x auf
+  3x-Displays) wieder ermöglichen, der vor v4.35.1 als sichtbar unscharf gemeldet wurde. Der
+  Deckel wirkt jetzt als reines Sicherheitsnetz statt (wie in v4.35.1) als aktiv fast immer
+  eingreifender Regler.
+
+**`tests/test.html`, Sektion "Bildhöhe (v4.35.1)":** `CAP_HEIGHT` (448 × 1,3 = 582,4 statt
+224 × 1,3 = 291,2) und die Test-2-Fixture-Höhe (650px statt 350px, da 350px jetzt unter dem
+neuen Deckel läge) nachgezogen — reine Zahlenverschiebung, kein neuer Testfall nötig,
+`test-generator` daher nicht angefordert. Weiterhin **1243/1243** grün (Headless-Edge-Dump).
+
+**Live-Verifikation (Vorher/Nachher-Screenshot-Vergleich, Headless-Edge-CDP):** Schritt
+"Mischen & Zucker & Salz & Öl" (New York Style) auf Desktop (1440px) und Mobil (390px, 3x
+DPR), hell und dunkel — jeweils mit der alten (300x224, aus Git-HEAD) und neuen (600x448)
+Fassung von `step-mixSalt.webp` fotografiert (Original danach sofort zurückgetauscht). In
+allen 3 verglichenen Ansichten deutlich sichtbare Schärfe-Verbesserung (Marmormaserung,
+einzelne Salzkörner, Ölfluss vorher verwaschen, jetzt klar erkennbar).
+
+**Teil B: nicht-destruktive Bildaufbereitung (Nutzer-Vorgabe, gilt für ALLE künftigen
+Bild-Zyklen).** `assets/prepare_web_images.py` skaliert nicht mehr in place. Neuer,
+dauerhafter Ordner `assets/originals/` (bewusst NICHT `assets/_final/` wiederverwendet — der
+Ordner existiert im Arbeitsbaum inzwischen gar nicht mehr, war ohnehin nur als
+"Abnahme-Schleuse vor dem Wiring" gedacht, s. `BILD-EINBAU-KONZEPT.md`, nicht als
+Dauerarchiv; die Wiederverwendung hätte exakt die Bedeutungs-Verwechslung reproduziert, vor
+der das Konzeptdokument warnt). Das Skript liest ab jetzt aus `assets/originals/<datei>` und
+schreibt die skalierte Kopie nach `assets/img/<datei>`, ohne das Original zu berühren —
+beliebig oft wiederholbar (z. B. mit geänderter Zielgröße) ohne verlustiges
+Mehrfach-Re-Encodieren. Der alte Warnhinweis im Docstring ("nicht mehrfach hintereinander auf
+dieselbe Datei anwenden") entfällt ersatzlos.
+
+Für die 3 bereits vor dieser Umstellung bearbeiteten Kategorien (7 Rezept-Karten, 3
+Fertig-Fotos, 2 Texturen — 12 Dateien) existieren KEINE Originale mehr: bei ihnen fiel die
+destruktive Verkleinerung in denselben Commit, in dem sie erstmals ins Repo kamen (anders
+als bei den Schrittbildern, wo ein früherer Git-Zustand mit voller Auflösung existierte).
+Kein lokales Backup gefunden. Bewusst NICHT rückwirkend behoben (nicht Teil des Auftrags,
+Aufwand/Nutzen, nur per Neuerzeugung über den ComfyUI-Workflow möglich) — als Backlog-Punkt
+in `pizza-rechner-KONTEXT.md`, Abschnitt „LAUFENDE ARBEIT", mit Blocknummern dokumentiert,
+falls künftig höhere Auflösung gewünscht ist. Ihre TARGETS-Einträge bleiben im Skript stehen
+(Dokumentationswert), werden aber beim Ausführen übersprungen (kein Original vorhanden), die
+bereits skalierten Dateien in `assets/img/` bleiben davon unberührt.
+
+`BILD-EINBAU-KONZEPT.md` (Abschnitt „Schicht 4") um die neue verbindliche Konvention
+ergänzt, plus eine Nachbesserungs-Notiz im Zyklus-2-Abschnitt.
+
+**Nicht angefasst:** Berechnungslogik, CSS/Markup außerhalb der genannten Kommentar-Updates,
+alle anderen Bildkategorien (Karten/Fotos/Texturen bleiben bei ihrer bisherigen, bereits
+verkleinerten Fassung liegen).
+
+**Geändert:** `assets/prepare_web_images.py`, `assets/originals/step-*.webp` (neu, 19
+Dateien), `assets/img/step-*.webp` (19 Dateien neu verkleinert), `js/guide.js`,
+`tests/test.html`, `BILD-EINBAU-KONZEPT.md`, `pizza-rechner-mobile-standalone.html` (neu
+gebaut). `?v=` auf `4.35.2` gezogen (Desktop + Mobil). `Versionen/v4.35.2 - Anleitungs-
+Schrittbilder in doppelter Aufloesung plus nicht-destruktive Bildaufbereitung/` enthält den
+vollständigen Schnappschuss.
+
 ## Zeit-Chip nur noch für echte Zeitangaben + Bildhöhen-Deckel (v4.35.1)
 
 Bugfix-Zyklus, kein neues Feature: der Nutzer meldete und reproduzierte live zwei

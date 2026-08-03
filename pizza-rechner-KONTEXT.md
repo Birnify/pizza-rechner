@@ -216,20 +216,22 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Zeit-Chip nur noch für echte Zeitangaben + Bildhöhen-Deckel (v4.35.1) = aktueller Stand
+## Anleitungs-Schrittbilder in doppelter Auflösung + nicht-destruktive Bildaufbereitung (v4.35.2) = aktueller Stand
 
-Bugfix-Zyklus zu zwei vom Nutzer live gemeldeten/reproduzierten Regressionen aus v4.35.0:
-der Zeit-Chip in der Anleitungs-Titelzeile trägt jetzt NUR noch echte Zeitangaben (9
-Technik-/Temperatur-/Orts-/Stückzahl-/Warn-Chips entfernt, Inhalt stand bereits im
-Fließtext/Aufklapper), und die beim Aufklappen eingefrorene Bildhöhe ist auf max. 1,3x der
-Quellhöhe gedeckelt (mildert die extremsten Hochskalierungs-Ausreißer, löst die Unschärfe
-auf modernen 3x-Displays aber nur teilweise — eine vollständige Lösung bräuchte höher
-aufgelöste Quellbilder, bewusst nicht Teil dieses Zyklus). Dazu ein dezenter
-`border-bottom` am aufgeklappten Bildband gegen eine sonst wie kaputt wirkende Lücke im
-hellen Theme. `tests/test.html`: 1236 → **1243**.
+Vollständiger Fix der seit v4.35.0 gemeldeten Unschärfe der 19 Anleitungs-Schrittbilder
+(v4.35.1 hatte das nur CSS-seitig gemildert). Die Originale (1200x896) wurden aus dem
+Git-Verlauf zurückgeholt und liegen jetzt dauerhaft in `assets/originals/`; verkleinert
+wird auf 600x448 statt vorher 300x224 (doppelte lineare Auflösung, 165 KB → 419 KB
+gesamt). `assets/prepare_web_images.py` skaliert dafür nicht mehr destruktiv in place,
+sondern liest aus `assets/originals/` und schreibt nur die Kopie nach `assets/img/` —
+verbindliche Konvention für alle künftigen Bild-Zyklen, s. `BILD-EINBAU-KONZEPT.md`.
+`js/guide.js` `PHOTO_SRC_H` 224 → 448 (Bildhöhen-Deckel `PHOTO_MAX_UPSCALE` nach
+Live-Nachmessung bewusst bei 1,3 belassen, greift jetzt nur noch als Sicherheitsnetz statt
+aktiv). `tests/test.html`: weiterhin **1243** grün (reine Zahlenverschiebung der
+Deckel-Konstanten in den bestehenden 3 Tests, keine neuen Tests nötig).
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Zeit-Chip nur noch für
-echte Zeitangaben + Bildhöhen-Deckel (v4.35.1)".
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Anleitungs-Schrittbilder
+in doppelter Auflösung + nicht-destruktive Bildaufbereitung (v4.35.2)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -316,6 +318,21 @@ nachgebessert** (nicht an den Bild-Prompts selbst):
   `KI/Bilder/detail-hefe.jpeg`.
 - **77** (`glossar-fiorDiLatte`) — technisch fertig, aber Nutzer zuletzt unzufrieden,
   s. o.
+
+**Nicht mehr in Originalauflösung rekonstruierbar (v4.35.2-Befund):** bei folgenden 12
+Dateien fiel die destruktive Verkleinerung in denselben Commit (`c17acf7`), in dem sie
+erstmals ins Repo kamen — anders als bei den 19 Anleitungs-Schrittbildern (s. „= aktueller
+Stand" oben, dort gab es einen früheren Git-Zustand mit voller Auflösung) existiert hier
+kein Git-Zustand mit voller Auflösung, kein lokales Backup gefunden. Nur per Neuerzeugung
+über den eigenen ComfyUI-Workflow wiederherstellbar, falls künftig höhere Auflösung
+gewünscht ist (kein automatisierter Zyklus, s. Projektregel zu Bildern):
+- 7 Rezept-Karten (aktuell 600×400): Block 8 `card-napoli_klassisch`, Block 9
+  `card-napoli_kalt`, Block 10 `card-schnell`, Block 11 `card-napoli_biga`, Block 12
+  `card-napoli_poolish`, Block 13 `card-teglia`, Block 14 `card-newyork_style`
+- 3 Fotos der fertigen Pizza (aktuell 960×540): Block 19 `pizza-final-neapolitanisch`,
+  Block 20 `pizza-final-teglia`, Block 21 `pizza-final-newyork`
+- 2 Seitenhintergrund-Texturen (aktuell 800×800, stark weichgezeichnet): Block 113
+  `texture-marmor`, Block 116 `texture-kruste`
 
 Damit erledigt in Sitzung 5 (zusätzlich zu den 103 aus Sitzung 4): 77 (vorläufig), 82-84,
 90 (alle zurückgeholt und mit Referenzbild-Workflow neu bestätigt bzw. bei bereits guten
@@ -939,16 +956,11 @@ Keine Code-Änderung durch den Audit nötig.
 
 ## Mögliche nächste Schritte (offen / Ideen)
 
-- **Nebenbefunde aus dem v4.35.1-Bugfix-Zyklus** (kein Blocker, s. „= aktueller Stand"
-  oben für den Fix selbst):
-  - **Schrittbilder auf modernen 3x-Displays weiterhin unscharf beim Aufklappen:** der
-    neue CSS-Höhen-Deckel (1,3x der 224px-Quellhöhe) senkt den CSS-Skalierungsfaktor von
-    bis zu 1,49x auf max. 1,3x, der TATSÄCHLICHE geräte-pixel-Faktor bleibt aber hoch
-    (~2,6x auf 2x-Displays, ~3,9x auf 3x-Displays wie iPhone 12 Pro+ — ähnliche
-    Größenordnung wie vorher ungedeckelt). Eine vollständige Lösung bräuchte höher
-    aufgelöste Quellbilder (z. B. 2x-Export der bestehenden 19 `assets/img/step-*.webp`),
-    das ist ein manueller, vom Nutzer selbst gesteuerter Bild-Session-Schritt (s. Abschnitt
-    „LAUFENDE ARBEIT … Bild-Prompts" unten), kein automatisierter Zyklus.
+- ~~**Schrittbilder auf modernen 3x-Displays weiterhin unscharf beim Aufklappen**~~ —
+  **erledigt in v4.35.2** (s. „= aktueller Stand" oben): Originale aus dem Git-Verlauf
+  zurückgeholt, Quellauflösung verdoppelt (300x224 → 600x448), Deckel wirkt jetzt nur noch
+  als Sicherheitsnetz statt aktiv fast immer einzugreifen.
+- **Weitere Nebenbefunde aus dem v4.35.1-Bugfix-Zyklus** (kein Blocker):
   - **Zwei Anleitungstitel bleiben bei 375px mehrzeilig, unabhängig vom Chip-Fix:**
     „Schüttwasser temperieren" und „Teigtemperatur prüfen" (beide MIT Bildband, dadurch nur
     ~168px statt ~245px verfügbare Titelbreite) sind rein längenbedingt zweizeilig, kein
