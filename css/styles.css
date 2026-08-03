@@ -90,30 +90,40 @@
      ORIGINALEN Quellbilder, wendet denselben Resize+Blur(120px)+Alpha-Schritt wie
      assets/prepare_web_images.py an, komponiert JEDEN der 640.000 Pixel einzeln über die
      jeweilige --bg-Flächenfarbe (Standard-WCAG-2.0-Luminanzformel) und nimmt den
-     ungünstigsten Pixel. Ein erster Versuch dieses Zyklus mit Alpha 0,35 (identisch für
-     beide Themes) hatte diese Prüfung NIE tatsächlich bestanden -- der Wert war ohne
-     Nachrechnung übernommen worden und lag im Worst Case bei nur ~2,10:1 (Hell) /
-     ~1,98:1 (Dunkel), weit unter der Schwelle. Nach Alpha-Iteration (an der jeweils in
-     die WebP-Datei gebackenen Byte-Alpha, inkl. eines Nachrechnens auf der tatsächlich
-     lossy-komprimierten Ausgabedatei, nicht nur der Blur-Vorstufe) tragen jetzt zwei
-     bewusst UNTERSCHIEDLICHE Alpha-Werte je Theme (die Quellbilder unterscheiden sich in
-     Helligkeit/Sättigung, ein gemeinsamer Wert hätte ein Theme unnötig weit unter dem
-     jeweils möglichen Maximum gelassen): texture-teighaut.webp (Hell) Alpha 0,070 -->
-     Worst-Case-Kontrast 3,168:1; texture-kruste.webp (Dunkel) Alpha 0,110 -->
-     Worst-Case-Kontrast 3,181:1. Beide mit ca. 0,17-0,18 Marge über der 3:1-Schwelle
-     (deckt kleinere Rendering-/Codec-Abweichungen ab, kein exaktes Grenzsitzen).
-     Sichtbarkeits-Nebenbefund (ehrlich benannt, nicht verschwiegen): bei diesen Alpha-
-     Werten (deutlich unter den ursprünglich vorgestellten 0,35) ist die Textur nur noch
-     eine SEHR dezente, leicht ungleichmäßige Tönung -- per gerenderter Kompositions-
-     Vorschau geprüft (kein Live-Browser-Screenshot verfügbar in dieser Session, daher
-     eine mathematisch exakte Offline-Komposition derselben Pixel-/Alpha-/Bg-Werte, die
-     der Browser ebenso berechnen würde): in beiden Themes bleibt eine erkennbare, nicht
-     rein flächige Farbvariation (Dunkel zeigt sogar noch eine schwache kreisförmige
-     Struktur), aber jede Wahrnehmung als "Foto" ist verschwunden -- WCAG-Konformität und
-     die ursprünglich gewünschte deutlichere Farbstimmung ließen sich hier NICHT beide
-     voll erreichen, WCAG hatte gemäß Auftrag Vorrang. Karten haben zusätzlich weiterhin
-     Schatten UND einen 3px farbigen --tomato-Akzentrand, die Kartengrenze ist nicht
-     ALLEIN auf --line angewiesen. */
+     ungünstigsten Pixel. Ein erster Versuch dieses Zyklus (v4.34.0) mit Alpha 0,35
+     (identisch für beide Themes) hatte diese Prüfung NIE tatsächlich bestanden -- der Wert
+     war ohne Nachrechnung übernommen worden und lag im Worst Case bei nur ~2,10:1 (Hell) /
+     ~1,98:1 (Dunkel), weit unter der Schwelle. Die daraufhin gefundenen Alpha-Werte
+     (texture-teighaut.webp 0,070 / texture-kruste.webp 0,110) bestanden WCAG zwar sicher,
+     wirkten live betrachtet laut Nutzer aber "unbrauchbar" -- kaum noch als Farbstimmung
+     erkennbar, s. HISTORIE v4.34.0.
+
+     Nachbesserung v4.34.1 ("Kontrastspielraum-Nachbesserung Seitenhintergrund-Textur"):
+     mehrere Kandidatentexturen (Mehl, Marmor, Leinen für Hell; Holz für Dunkel, s.
+     assets/BILD-PROMPTS.md Block 111-114) mit identischer Worst-Case-Methodik durchprobiert
+     -- ALLE Werte auf der tatsächlich lossy-komprimierten WebP-Ausgabedatei nachgerechnet,
+     nicht nur der Blur-Vorstufe:
+       - Hell: texture-teighaut.webp durch texture-marmor.webp ersetzt (deutlich mehr
+         Kontrastspielraum von Natur aus). Alpha 0,190 --> Worst-Case-Kontrast 3,162:1
+         (Marge 0,162, vergleichbar zur v4.34.0-Marge). Das ist 2,7x die vorherige Alpha
+         -- sichtbar mehr Farbstimmung UND eine schwach erkennbare Maserungsstruktur, per
+         Offline-Komposition verifiziert (s. Versionen/v4.34.1 .../preview_light.png).
+       - Dunkel: texture-holz.webp (Kandidat) UND eine reine Alpha-Erhöhung auf
+         texture-kruste.webp brachten NUR marginale Verbesserung -- beide Texturen sind im
+         Mittel deutlich heller als das sehr dunkle --bg (#151312), ein lineares Tonen
+         Richtung --bg oder eine lineare Kontrastspreizung ist dabei rechnerisch
+         AEQUIVALENT zu einem simplen niedrigeren Alpha-Wert (bringt also keinen echten
+         Zugewinn, nachgerechnet, nicht nur vermutet). Ein NICHTLINEARER Ansatz (nur
+         überdurchschnittlich helle Pixel Richtung Kanal-Mittelwert stauchen, s.
+         assets/prepare_web_images.py "highlight"-Parameter) erlaubte auf
+         texture-kruste.webp selbst einen moderat höheren Alpha-Wert 0,150 (statt 0,110)
+         bei Worst-Case-Kontrast 3,139:1 (Marge 0,139) -- texture-holz.webp blieb dabei
+         sogar hinter diesem Ergebnis zurück, deshalb kein Dateiwechsel im Dunkel-Theme.
+         **Ehrlich eingeordnet:** das ist ein reales, aber nur moderates Plus (+36 % Alpha),
+         kein Durchbruch wie im Hell-Theme -- s. Versionen/v4.34.1 .../preview_dark.png und
+         Kontextdatei für die volle Herleitung. Karten haben zusätzlich weiterhin Schatten
+         UND einen 3px farbigen --tomato-Akzentrand, die Kartengrenze ist nicht ALLEIN auf
+         --line angewiesen. */
   --bg-photo-light: none;
   --bg-photo-dark: none;
   --bg-photo: var(--bg-photo-light);

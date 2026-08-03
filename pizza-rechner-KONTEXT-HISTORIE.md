@@ -105,6 +105,89 @@ grün (Headless-Edge-Dump).
 gebaut. `Versionen/v4.34.0 - Geblurrte Textur als Seitenhintergrund/` enthält den
 vollständigen Schnappschuss.
 
+## Kontrastspielraum-Nachbesserung Seitenhintergrund-Textur (v4.34.1)
+
+Direkte Nachbesserung von v4.34.0 (s. Abschnitt oben): der Nutzer hat sich das Ergebnis live
+angesehen (Offline-Komposition der echten Dateien) und fand es "unbrauchbar" — bei Hell war
+von der Teigstruktur praktisch nichts mehr zu erkennen, bei Dunkel nur eine sehr vage
+Umrissform. Auftrag: andere Kandidatentexturen (bereits in `assets/img/` vorhanden, s.
+`assets/BILD-PROMPTS.md` Block 111-114) mit von Natur aus mehr Kontrastspielraum
+ausprobieren, damit ein höherer, noch sichtbarer Alpha-Wert möglich wird, bevor der
+3:1-Kontrast gegen `--line` kippt.
+
+**Methodik:** identisches Pixel-Worst-Case-Skript wie in v4.34.0 (WCAG-2.0-Luminanzformel,
+Resize 800x800 + GaussianBlur 120px + Alpha, komponiert über die jeweilige `--bg`-Fläche,
+ungünstigster der 640.000 Pixel). Getestet für Hell: `texture-mehl.webp`, `texture-
+marmor.webp`, `texture-leinen.webp` (die bisherige `texture-teighaut.webp` galt als zu
+kontrastarm für brauchbare Deckkraft). Für Dunkel: `texture-holz.webp` (die bisherige
+`texture-kruste.webp` galt ebenso als zu kontrastarm).
+
+**Hell — klarer Erfolg:** `texture-marmor.webp` hat deutlich mehr Kontrastspielraum als
+`texture-teighaut.webp` (warmer Marmor mit dunkleren Adern statt gleichmäßig heller
+Teighaut). Bei Alpha 0,190 (statt vorher 0,070 — 2,7x) liegt der Worst-Case-Kontrast bei
+3,162:1 (Marge 0,162, auf der tatsächlich lossy-komprimierten WebP-Ausgabedatei
+nachgerechnet, nicht nur der Blur-Vorstufe). `texture-mehl.webp` erreichte nur ~0,10-0,15
+brauchbares Alpha, `texture-leinen.webp` nur ~0,10 (beide schlechter als Marmor) — nicht
+weiterverfolgt. Per Offline-Komposition (`background-size:cover`, 1440x1000, radial-
+gradient-Ebene ignoriert) sichtbar geprüft: die Marmorstruktur (Adern, Farbvariation) ist
+jetzt tatsächlich als Struktur erkennbar, nicht nur eine hauchdünne Tönung wie zuvor. Vom
+`accessibility-expert` unabhängig nachgerechnet (3,1623:1, Abweichung < 0,001) und
+subjektiv als "deutlich verbessert" eingestuft.
+
+**Dunkel — nur moderater Erfolg, ehrlich eingeordnet:** `texture-holz.webp` (Kandidat)
+brachte KEINE Verbesserung gegenüber der bisherigen `texture-kruste.webp` — beide Texturen
+sind im Mittel (nach Blur) deutlich heller (R ~130-230) als das sehr dunkle `--bg`
+(`#151312`), das begrenzt den worst-case-vertretbaren Alpha-Wert unabhängig von der
+gewählten Datei auf ein ähnliches Niveau. **Wichtiger Nebenbefund (mathematisch
+hergeleitet, nicht nur vermutet):** ein lineares Tonen der Textur Richtung `--bg` ODER eine
+lineare Kontrastspreizung um den Bildmittelwert sind rechnerisch AEQUIVALENT zu einem
+einfach niedrigeren Alpha-Wert (`comp = bg + (tex-bg)*(1-s)*a` — dieselbe Form wie ein
+Alpha von `(1-s)*a` ohne jede Vorverarbeitung). Beide naheliegenden "Nachbearbeitungs"-
+Ideen aus dem Auftrag bringen bei linearer Umsetzung also KEINEN echten Zugewinn, nur einen
+höheren nominellen Alpha-Wert bei gleichem sichtbaren Ergebnis. Stattdessen ein NICHT-
+linearer Ansatz gewählt: nur überdurchschnittlich helle Pixel (je RGB-Kanal am eigenen
+Bildmittelwert gemessen) werden Richtung Mittelwert gestaucht (Faktor 0,05), unter-
+durchschnittliche bleiben unangetastet — das komprimiert gezielt nur die Ausreißer, die den
+Worst-Case auslösen, ohne die "typische" Bildhelligkeit zu verschieben. Auf
+`texture-kruste.webp` selbst angewendet (`assets/prepare_web_images.py`, neuer optionaler
+7. TARGETS-Tupel-Eintrag `highlight = (thr_mode, comp)`, `thr_mode -2` = Kanal-Mittelwert)
+erlaubte das einen moderat höheren Alpha-Wert 0,150 (statt 0,110 — +36 %) bei Worst-Case-
+Kontrast 3,139:1 (Marge 0,139, auf der Ausgabedatei nachgerechnet). `texture-holz.webp` mit
+derselben Technik blieb dabei SCHLECHTER als `texture-kruste.webp` (0,11 statt 0,15 bei
+vergleichbarer Marge) — deshalb kein Dateiwechsel im Dunkel-Theme, nur die Nachbearbeitung
+der bestehenden Datei. Per Offline-Komposition sichtbar geprüft: der sehr dunkle
+Hintergrund dominiert weiterhin, beim genauen Hinsehen ist erkennbar mehr tonale Abstufung
+vorhanden als zuvor, aber kein großer Unterschied auf den ersten Blick — vom
+`accessibility-expert` unabhängig nachgerechnet (3,1392:1, Abweichung < 0,001) und
+subjektiv als "moderat verbessert" bestätigt, in Übereinstimmung mit der eigenen
+Einschätzung. Kein Blocker, aber offen für einen möglichen weiteren Anlauf (s. Backlog).
+
+**`assets/img/texture-teighaut.webp`:** bewusst auf die ORIGINALE 1024x1024-RGB-Rohfassung
+zurückgesetzt (aus dem Commit vor v4.34.0 wiederhergestellt), statt als verwaister,
+bereits verarbeiteter 800x800-Alpha-0,070-Rest im Repo liegen zu bleiben — konsistent mit
+den anderen unbenutzten Kandidatentexturen (`texture-mehl.webp`, `texture-holz.webp`,
+`texture-leinen.webp`), die ebenfalls als unverarbeitete Rohdateien vorliegen, falls ein
+späterer Zyklus sie doch noch braucht.
+
+**`js/images.js`:** `bg.texture.light` zeigt jetzt auf `texture-marmor.webp` (vorher
+`texture-teighaut.webp`), `bg.texture.dark` bleibt `texture-kruste.webp` (nur der
+Dateiinhalt hat sich geändert). `tests/test.html`: bestehende Registrierungstests von
+`texture-teighaut.webp` auf `texture-marmor.webp` umgestellt (Dateiname-Referenzen), sonst
+unverändert, 1186 → **1186** (keine neuen Prüfungen, reine Asset-/Registry-Änderung, keine
+neue Logik in `js/calc.js`/`js/schedule.js`).
+
+**Standalone-Build:** `pizza-rechner-mobile-standalone.html` neu gebaut (beide
+Texturdateien bleiben winzig, ~2 KB je Datei nach dem starken Blur — 12 Bilder gesamt,
+432 KB roh, weit unter der ~3-MB-Warnschwelle).
+
+**Geändert:** `js/images.js`, `assets/prepare_web_images.py`, `css/styles.css`,
+`tests/test.html`, `assets/img/texture-marmor.webp`, `assets/img/texture-kruste.webp`,
+`assets/img/texture-teighaut.webp` (zurückgesetzt, s. o.). `?v=` auf `4.34.1` gezogen
+(Desktop + Mobil). `Versionen/v4.34.1 - Kontrastspielraum-Nachbesserung
+Seitenhintergrund-Textur/` enthält den vollständigen Schnappschuss samt vier
+Vorschau-PNGs (`preview_light.png`/`preview_dark.png` neu, `preview_light_OLD_v4.34.0.png`/
+`preview_dark_OLD_v4.34.0.png` zum direkten Vorher-Nachher-Vergleich).
+
 ## Preset-Karten als Swipe-Leiste auf dem Handy (v4.33.0 bis v4.33.6)
 
 **v4.33.6** (zwei kleine, unabhängige Nebenbefunde aus dem v4.33.0-Review, s. weiter unten,

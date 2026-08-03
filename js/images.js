@@ -53,7 +53,12 @@
     // dekorativ (alt:null), da die Textur reine Farbstimmung ist, keine eigene Information
     // traegt. w/h = tatsaechliche Pixelmasse NACH assets/prepare_web_images.py (800x800,
     // Gaussian-Blur 120px bereits in der Datei gebacken -- kein CSS filter noetig).
-    'bg.texture.light': { file: 'texture-teighaut.webp', ratio: '1x1', alt: null, w: 800, h: 800 },
+    // v4.34.1: texture-teighaut.webp (Hell) durch texture-marmor.webp ersetzt -- bei
+    // vergleichbarer WCAG-Marge deutlich mehr Alpha-Spielraum (0,070 -> 0,190), s.
+    // Kontextdatei. texture-kruste.webp (Dunkel) bleibt die Datei, bekommt aber eine
+    // Lichter-Kompression VOR der Alpha-Ebene (assets/prepare_web_images.py), moderater
+    // Alpha-Gewinn (0,110 -> 0,150).
+    'bg.texture.light': { file: 'texture-marmor.webp', ratio: '1x1', alt: null, w: 800, h: 800 },
     'bg.texture.dark': { file: 'texture-kruste.webp', ratio: '1x1', alt: null, w: 800, h: 800 }
   };
 

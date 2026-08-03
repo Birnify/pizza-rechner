@@ -211,14 +211,18 @@ war explizit außerhalb des Auftrags), sollte aber vor der nächsten Erzeugungs-
 nachgezogen werden, sonst legt der Workflow versehentlich einen neuen `assets/_final/`-Ordner
 an.
 
-## 7. Zyklus 6 (Teil): Seitenhintergrund-Textur (v4.34.0, erledigt)
+## 7. Zyklus 6 (Teil): Seitenhintergrund-Textur (v4.34.0, erledigt, v4.34.1 nachgebessert)
 
 Vorgezogener Teilausschnitt aus Zyklus 6 („Texturen, Marketing, Varianten"): kein
 Anzeige-Slot für ein einzelnes Bild, sondern eine zusätzliche Foto-Ebene im bestehenden
 `--bg-gradient`-Token (`css/styles.css`), je Theme ein anderes stark weichgezeichnetes
-Texturbild (`assets/img/texture-teighaut.webp`/`texture-kruste.webp`). Alpha-Werte
-mussten gegenüber der ursprünglichen Absicht deutlich gesenkt werden, um WCAG 1.4.11
-(3:1 gegen `--line`, worst-case über die gesamte Bildfläche) zu erfüllen — Details,
-Testzahlen und Commit-Hash: `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Geblurrte
-Textur als Seitenhintergrund (v4.34.0)". Restliche Blöcke 106-128 (Marketing/Varianten)
-weiterhin offen.
+Texturbild. Alpha-Werte mussten gegenüber der ursprünglichen Absicht deutlich gesenkt
+werden, um WCAG 1.4.11 (3:1 gegen `--line`, worst-case über die gesamte Bildfläche) zu
+erfüllen — der Nutzer fand das v4.34.0-Ergebnis live "unbrauchbar" (zu wenig Farbstimmung
+übrig). v4.34.1 hat nachgebessert: Hell nutzt jetzt `texture-marmor.webp` statt
+`texture-teighaut.webp` (Alpha 0,070 → 0,190, klarer Sprung), Dunkel bleibt
+`texture-kruste.webp` mit einer neuen Lichter-Kompression (Alpha 0,110 → 0,150, nur
+moderater Gewinn, ehrlich eingeordnet). Details, Testzahlen und Commit-Hash:
+`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitte „Kontrastspielraum-Nachbesserung
+Seitenhintergrund-Textur (v4.34.1)" und „Geblurrte Textur als Seitenhintergrund (v4.34.0)".
+Restliche Blöcke 106-128 (Marketing/Varianten) weiterhin offen.

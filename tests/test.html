@@ -5737,7 +5737,7 @@
         ['bg.texture.light: alt:null (dekorativ)', light && light.alt, null],
         ['bg.texture.dark: alt:null (dekorativ)', dark && dark.alt, null],
         ['unterschiedliche Dateien (hell ≠ dunkel)', light && dark && light.file !== dark.file, true],
-        ['bg.texture.light-Datei', light && light.file, 'texture-teighaut.webp'],
+        ['bg.texture.light-Datei', light && light.file, 'texture-marmor.webp'],
         ['bg.texture.dark-Datei', dark && dark.file, 'texture-kruste.webp'],
       ];
     });
@@ -5747,7 +5747,7 @@
       const cssUnknown = PZ.imgCssUrl('preset.gibt_es_nicht');
       return [
         ['beginnt mit url("', cssLight.indexOf('url("') === 0, true],
-        ['enthält assets/img/texture-teighaut.webp', cssLight.includes('assets/img/texture-teighaut.webp'), true],
+        ['enthält assets/img/texture-marmor.webp', cssLight.includes('assets/img/texture-marmor.webp'), true],
         // Der gefundene Bug dieses Zyklus: ein relativer Pfad als Custom-Property-Wert löst
         // sich sonst relativ zu css/styles.css statt zur Seite auf -- absolute URL (mit
         // Schema, z. B. http:// oder file://) verhindert das zuverlässig.
@@ -5758,7 +5758,7 @@
 
     testCase('PZ.imgCssUrl(): data:-URIs (Standalone-Build) werden unverändert durchgereicht, nicht nochmal absolutiert', {}, () => {
       const savedInline = PZ._IMG_INLINE;
-      PZ._IMG_INLINE = { 'texture-teighaut.webp': 'data:image/webp;base64,AAAA' };
+      PZ._IMG_INLINE = { 'texture-marmor.webp': 'data:image/webp;base64,AAAA' };
       try {
         const css = PZ.imgCssUrl('bg.texture.light');
         return [

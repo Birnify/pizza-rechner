@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-02 · Aktuelle Version: v4.34.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-03 · Aktuelle Version: v4.34.1 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -216,24 +216,21 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Geblurrte Textur als Seitenhintergrund (v4.34.0) = aktueller Stand
+## Kontrastspielraum-Nachbesserung Seitenhintergrund-Textur (v4.34.1) = aktueller Stand
 
-Neue Foto-Ebene zwischen dem radialen `--bg-gradient`-Verlauf und der flachen `--bg`-Farbe:
-`assets/img/texture-teighaut.webp` (Hell) / `texture-kruste.webp` (Dunkel), 800x800,
-Gaussian-Blur 120px, `background-size:cover`. Alpha je Theme unterschiedlich (Hell 0,070,
-Dunkel 0,110) und **per Pixel-Worst-Case-Skript gegen WCAG 1.4.11 verifiziert** (3:1 gegen
-`--line`, worst-case 3,168:1 Hell / 3,181:1 Dunkel, von `accessibility-expert` unabhängig
-bestätigt) — bewusst deutlich niedriger als ursprünglich vorgesehen, dadurch ist die Textur
-nur noch dezente Tönung, kein Foto-Eindruck mehr (Design-Trade-off, WCAG hatte Vorrang).
-`js/images.js`: `PZ.imgCssUrl(key)` liefert eine absolute `url("...")` für CSS-Custom-
-Properties (relative Pfade lösen sich in JS-gesetzten Properties sonst falsch relativ zu
-`css/styles.css` statt zur Seite auf). `assets/prepare_web_images.py` bekam optionale
-Blur/Alpha-Parameter je TARGETS-Eintrag sowie einen Dateinamen-Filter (`python
-prepare_web_images.py <datei>`, verhindert versehentliches Mehrfach-Re-Encodieren bereits
-fertiger Dateien). `tests/test.html`: 1173 → **1186**.
+Nachbesserung von v4.34.0 (Nutzer fand die dortigen Alpha-Werte live "unbrauchbar" —
+zu wenig Farbstimmung übrig). Hell-Theme nutzt jetzt `assets/img/texture-marmor.webp`
+statt `texture-teighaut.webp`, Alpha 0,070 → **0,190** (worst-case 3,162:1 gegen `--line`,
+klar sichtbare Verbesserung). Dunkel-Theme bleibt `texture-kruste.webp`, bekommt aber eine
+neue nichtlineare Lichter-Kompression vor der Alpha-Ebene (`assets/prepare_web_images.py`,
+neuer `highlight`-Parameter), Alpha 0,110 → **0,150** (worst-case 3,139:1) — nur ein
+moderater, ehrlich eingeordneter Gewinn, da beide getesteten Dunkel-Kandidaten (Kruste,
+Holz) im Mittel deutlich heller sind als das sehr dunkle `--bg`. Beide Werte von
+`accessibility-expert` unabhängig bestätigt. `tests/test.html`: unverändert **1186**.
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Geblurrte Textur als
-Seitenhintergrund (v4.34.0)".
+**Volle Details (inkl. v4.34.0-Grundlagen):** `pizza-rechner-KONTEXT-HISTORIE.md`,
+Abschnitte „Kontrastspielraum-Nachbesserung Seitenhintergrund-Textur (v4.34.1)" und
+„Geblurrte Textur als Seitenhintergrund (v4.34.0)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
