@@ -198,23 +198,25 @@
     napoletanaVsRomana: 'glossary.napoletanaVsRomana.imgAlt',
     windowpane: 'glossary.windowpane.imgAlt'
   };
-  // noStandalone:true: alle 33 Dateien zusammen liegen roh bei über 3 MB, base64 deutlich
-  // über 4 MB -- eingebettet hätte das den ~2,84-MB-Standalone-Build weit über die
-  // ~3-MB-Warnschwelle aus BILD-EINBAU-KONZEPT.md getrieben. Da keine Originale mehr
-  // existieren, ist eine verlustfreie Verkleinerung nicht möglich (s. o.), destruktives
-  // Herunterskalieren der einzigen verbliebenen Fassung wurde bewusst NICHT gewählt.
-  // Bewusste, dokumentierte Abweichung von der bisherigen "alles Nicht-pending wird
-  // eingebettet"-Regel NUR für diese Kategorie: auf pizza-rechner.html/-mobile.html (Web,
-  // lazy-loaded, je Kategorie ohnehin nur ein Artikel gleichzeitig offen) unverändert
-  // sichtbar; im iPhone-Standalone-Build bewusst kein Bild (identisches "kein Bild statt
-  // kaputtes Bild"-Verhalten wie bei einem pending-Eintrag, s. build-mobile-standalone.py
-  // inline_image_files()).
+  // Standalone-Embedding (v4.38.1 korrigiert, s. Kontextdatei "Glossar-Artikelbilder im
+  // Standalone-Build"): v4.37.0 hatte hier noch `noStandalone: true` gesetzt, weil alle 33
+  // Dateien zusammen roh bei über 3 MB, base64 deutlich über 4 MB liegen -- eingebettet
+  // hätte das den Standalone-Build weit über die ~3-MB-Warnschwelle aus
+  // BILD-EINBAU-KONZEPT.md getrieben. Das widersprach aber der dortigen Abschnitt-4-Regel
+  // ("der Standalone-Build bettet ALLE Bilder ein, die registriert und nicht pending
+  // sind") und führte dazu, dass die Bilder auf dem echten iPhone komplett fehlten. Fix:
+  // es gibt jetzt KEIN `noStandalone` mehr, stattdessen liest build-mobile-standalone.py
+  // für genau diese 33 Dateien eine kleinere 600x400-Zweitfassung aus
+  // assets/img_standalone/ (erzeugt von assets/prepare_standalone_glossary_images.py aus
+  // der bestehenden 1200x800-Datei in assets/img/, DAS Web-Original bleibt unangetastet) --
+  // Web (pizza-rechner.html/-mobile.html) zeigt weiterhin die volle 1200x800-Auflösung aus
+  // assets/img/, nur der Standalone-Build embedded die kleinere Fassung.
   GLOSSARY_ARTICLE_IDS_WITH_FILE.forEach(function (id) {
     if (GLOSSARY_ARTICLE_BLOCKLIST.indexOf(id) !== -1) {
       throw new Error('images.js: "' + id + '" steht in GLOSSARY_ARTICLE_IDS_WITH_FILE UND in GLOSSARY_ARTICLE_BLOCKLIST -- widersprüchlich, bitte genau eine der beiden Listen pflegen.');
     }
     const alt = GLOSSARY_ARTICLE_ALT_OVERRIDES[id] || null;
-    IMG['glossary.' + id] = { file: 'glossar-' + id + '.webp', ratio: '3x2', alt: alt, w: 1200, h: 800, noStandalone: true };
+    IMG['glossary.' + id] = { file: 'glossar-' + id + '.webp', ratio: '3x2', alt: alt, w: 1200, h: 800 };
   });
 
   const DIR = 'assets/img/';

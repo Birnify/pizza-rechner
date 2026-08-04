@@ -6565,13 +6565,13 @@
     // Alt-Text-Key statt null -- s. js/images.js GLOSSARY_ARTICLE_ALT_OVERRIDES.
     const DESCRIPTIVE_ALT_IDS = ['napoletanaVsRomana', 'windowpane'];
 
-    testCase('Alle 33 Artikelbilder: ratio 3x2, 1200x800, noStandalone:true, korrekter Dateiname; Alt-Text dekorativ außer 2 begründeten Ausnahmen', {}, () => {
+    testCase('Alle 33 Artikelbilder: ratio 3x2, 1200x800, korrekter Dateiname (kein noStandalone mehr seit v4.38.1); Alt-Text dekorativ außer 2 begründeten Ausnahmen', {}, () => {
       const ids = PZ.GLOSSARY_TOPICS.filter((id) => !!PZ.img('glossary.' + id));
       return ids.map((id) => {
         const e = PZ.img('glossary.' + id);
         const altOk = DESCRIPTIVE_ALT_IDS.indexOf(id) !== -1 ? (typeof e.alt === 'string' && e.alt.length > 0) : e.alt === null;
         const ok = e.ratio === '3x2' && altOk && e.w === 1200 && e.h === 800 &&
-          e.noStandalone === true && e.file === 'glossar-' + id + '.webp';
+          !e.noStandalone && e.file === 'glossar-' + id + '.webp';
         return ['glossary.' + id + ': Registerform korrekt', ok, true];
       });
     });
@@ -6586,16 +6586,22 @@
       ];
     });
 
-    testCase('PZ._IMG_INLINE (Standalone-Build): Artikelbilder werden NIE eingebettet (noStandalone), unabhängig vom Inline-Stand', {}, () => {
+    testCase('PZ._IMG_INLINE (Standalone-Build, seit v4.38.1): Artikelbilder werden eingebettet, wenn eine Data-URI vorliegt; ohne Eintrag "kein Bild"', {}, () => {
+      // Seit v4.38.1 bettet build-mobile-standalone.py die 33 Artikelbilder ein (kleinere
+      // 600x400-Zweitfassung aus assets/img_standalone/, s. build-mobile-standalone.py
+      // parse_forEach_glossary_files()) -- js/images.js selbst kennt "noStandalone" gar
+      // nicht als Laufzeit-Konzept, PZ.img()/PZ.imgHtml() reagieren nur auf PZ._IMG_INLINE
+      // (identisches generisches Verhalten wie bei jeder anderen Bildkategorie, s. Test
+      // "PZ._IMG_INLINE (Standalone-Build) übersteuert den assets/img/-Pfad" oben).
       const savedInline = PZ._IMG_INLINE;
-      PZ._IMG_INLINE = {}; // simuliert den Standalone-Build: build-mobile-standalone.py
-      // nimmt Artikelbilder wegen noStandalone:true nie in diese Map auf (s.
-      // build-mobile-standalone.py inline_image_files()) -- hier direkt am Register
-      // nachgestellt: ein leeres bzw. das Bild NICHT enthaltendes _IMG_INLINE ergibt
-      // "kein Bild", exakt wie im echten Standalone-Build.
+      PZ._IMG_INLINE = { 'glossar-poolish.webp': 'data:image/webp;base64,AAAA' };
       try {
+        const htmlInlined = PZ.imgHtml('glossary.poolish');
+        const htmlMissing = PZ.imgHtml('glossary.autolyse'); // glossar-autolyse.webp NICHT in der Inline-Map
         return [
-          ['PZ.imgHtml(glossary.poolish) === \'\' im (simulierten) Standalone-Build', PZ.imgHtml('glossary.poolish'), '']
+          ['eingebettetes Artikelbild: data-URI statt assets/img/-Pfad', htmlInlined.includes('data:image/webp;base64,AAAA'), true],
+          ['eingebettetes Artikelbild: kein assets/img/-Pfad mehr enthalten', htmlInlined.includes('assets/img/'), false],
+          ['nicht eingebettetes Artikelbild verhält sich wie "kein Bild" (\'\')', htmlMissing, ''],
         ];
       } finally {
         PZ._IMG_INLINE = savedInline;

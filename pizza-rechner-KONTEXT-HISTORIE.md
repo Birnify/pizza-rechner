@@ -8,6 +8,83 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Glossar-Artikelbilder im Standalone-Build (v4.38.1)
+
+Bugfix, vom Nutzer per `/define-feature` strukturiert, nachdem er live auf seinem iPhone
+gemerkt hatte, dass die 33 Glossar-Artikelbilder aus v4.37.0 in
+`pizza-rechner-mobile-standalone.html` komplett fehlten.
+
+**Ursache:** v4.37.0 hatte die 33 Bilder mit `noStandalone: true` markiert UND sie
+strukturell so registriert (per `forEach()` NACH dem literalen `const IMG = {...}`-Block
+in `js/images.js`), dass `build-mobile-standalone.py` (`inline_image_files()`, das nur den
+literalen Block per Regex scannt) sie gar nicht erst sehen konnte. Das widersprach der
+bereits am 2026-08-02 nach einem realen iPhone-Fehlschlag festgelegten Regel
+(`BILD-EINBAU-KONZEPT.md` Abschnitt 4): "der Standalone-Build bettet alle Bilder ein, die
+tatsächlich im Register verdrahtet und nicht `pending` sind" — keine handverlesene
+Teilmenge. Grund für die v4.37.0-Abweichung war die Dateigröße: alle 33 Dateien zusammen
+liegen roh bei über 3 MB (base64 über 4 MB), volle 1200×800-Auflösung hätte den
+Standalone-Build auf geschätzt 7-10 MB aufgebläht.
+
+**Lösung (abgestimmte Feature-Definition):** eine zweite, deutlich kleinere Fassung
+(600×400 statt 1200×800) NUR fürs Standalone-Embedding, erzeugt aus den bestehenden
+`assets/img/`-Dateien. Die Web-Version (`pizza-rechner.html`/`-mobile.html`) zeigt
+weiterhin die volle 1200×800-Auflösung, unverändert. 600×400 ist Retina-tauglich für die
+live am Mobil-Layout gemessene tatsächliche Anzeigebreite (307 CSS-Pixel bei
+`devicePixelRatio` 2). Kein Original mehr in `assets/originals/` vorhanden (die 33 Dateien
+wurden schon bei ihrer v4.37.0-Erzeugung ohne separates Original registriert) — die neue
+Zweitfassung liest deshalb direkt aus der bestehenden 1200×800-Webdatei, nicht aus einem
+Original wie der reguläre `assets/prepare_web_images.py`-Workflow.
+
+**Umsetzung:**
+- **`js/images.js`:** `noStandalone: true` bei den 33 per `forEach()` registrierten
+  Einträgen entfernt (Kommentarblock direkt darüber entsprechend neu geschrieben). Die
+  `forEach()`-Registrierung selbst (einzige Pflegestelle: `GLOSSARY_ARTICLE_IDS_WITH_FILE`)
+  bleibt bewusst bestehen, statt die 33 Einträge einzeln ins literale `IMG`-Objekt zu
+  schreiben — das hätte die schlanke Ein-Stellen-Pflege wieder aufgegeben, die genau diese
+  Liste eigentlich bezweckt.
+- **Neu `assets/prepare_standalone_glossary_images.py`:** liest die Artikel-Id-Liste direkt
+  aus `js/images.js` (`GLOSSARY_ARTICLE_IDS_WITH_FILE`, keine dritte, von Hand gepflegte
+  Liste), verkleinert jede bestehende `assets/img/glossar-<id>.webp` auf 600×400 (WEBP,
+  Qualität 78) und schreibt das Ergebnis nach neuem `assets/img_standalone/` — `assets/img/`
+  bleibt dabei unangetastet. Ergebnis: 33 Dateien, 3.108 KB → 699 KB roh (Faktor ~0,22).
+- **`build-mobile-standalone.py`:** `inline_image_files()` erkennt jetzt zusätzlich zu den
+  literal im `IMG`-Objekt verdrahteten Einträgen auch die per `forEach()` registrierten
+  Glossar-Einträge (neue Funktion `parse_forEach_glossary_files()`, liest dieselben
+  JS-Arrays wie `js/images.js` selbst — `GLOSSARY_ARTICLE_IDS_WITH_FILE` minus
+  `GLOSSARY_ARTICLE_BLOCKLIST` — statt eine vierte Liste zu pflegen). Für genau diese 33
+  Dateien wird beim Embedding aus dem neuen `assets/img_standalone/` gelesen statt aus
+  `assets/img/` (`GLOSSARY_SMALL_DIR`-Konstante), alle anderen Kategorien unverändert aus
+  `assets/img/`.
+- **`BILD-EINBAU-KONZEPT.md`** Abschnitt 4: Nachtrag ergänzt, dass die v4.37.0-Abweichung
+  korrigiert wurde, die Regel selbst bleibt unverändert gültig. Abschnitt 9 (Zyklus-3-
+  Rückblick) um einen Verweis auf die Korrektur ergänzt.
+
+**Ergebnis:** Standalone-Datei wächst von 39 auf 72 eingebettete Bilder (39 bisherige + 33
+neu), Dateigröße von ~2,93 MB auf **3.959.508 Bytes (~3,78 MB)** — innerhalb
+des im Feature-Auftrag genannten ~3,5-4-MB-Rahmens. Per Byte-Ebene verifiziert: die
+eingebetteten `glossar-*.webp`-Data-URIs dekodieren tatsächlich zu 600×400 (nicht mehr die
+volle 1200×800-Webversion).
+
+**Tests:** 2 bestehende Tests prüften explizit `e.noStandalone === true`
+("Registerform korrekt") bzw. simulierten mit einem leeren `PZ._IMG_INLINE`, dass
+Artikelbilder "NIE eingebettet" werden — beide Annahmen waren durch den Fix überholt, nicht
+neue Bugs. Angepasst: der Registerform-Test erwartet jetzt `!e.noStandalone`, der
+`_IMG_INLINE`-Test simuliert stattdessen (analog zum bestehenden Muster für Preset-Karten)
+sowohl den Fall "Bild ist in der Inline-Map vorhanden → wird als Data-URI eingebettet" als
+auch "Bild fehlt in der Map → verhält sich wie kein Bild". `tests/test.html`: 1351 → 1353
+Prüfungen (die erweiterte `_IMG_INLINE`-Testfunktion liefert jetzt 3 statt 1 Assertion),
+alle grün (Headless-Edge-Dump). Kein `test-generator`-Lauf nötig (keine neue
+Berechnungslogik, reine Bild-Pipeline). Kein Spezialisten-Review in Phase 4 (kein neues/
+verändertes Markup oder CSS — reine Build-Pipeline-Korrektur, welche Bild-Bytes eingebettet
+werden, nicht wie sie gerendert werden).
+
+**Geändert:** `js/images.js`, `build-mobile-standalone.py`, `tests/test.html`,
+`BILD-EINBAU-KONZEPT.md`. Neu: `assets/prepare_standalone_glossary_images.py`,
+`assets/img_standalone/` (33 Dateien). `?v=` auf `4.38.1` gezogen (Desktop + Mobil,
+Cache-Busting + Footer-Version). `pizza-rechner-mobile-standalone.html` neu gebaut.
+`Versionen/v4.38.1 - Glossar-Bilder im Standalone-Build/` enthält den vollständigen
+Schnappschuss.
+
 ## Header-Bild ausgetauscht (v4.38.0)
 
 Bild-Einbau Zyklus 4 (Hero/Header, s. `BILD-EINBAU-KONZEPT.md` Blöcke 1 bis 7): der App-

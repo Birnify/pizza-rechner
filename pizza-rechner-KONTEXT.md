@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-04 · Aktuelle Version: v4.38.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-04 · Aktuelle Version: v4.38.1 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -218,20 +218,20 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Header-Bild ausgetauscht (v4.38.0) = aktueller Stand
+## Glossar-Artikelbilder im Standalone-Build (v4.38.1) = aktueller Stand
 
-Bild-Einbau Zyklus 4 (Hero/Header) abgeschlossen: `--header-photo` in `css/styles.css`
-zeigt jetzt `assets/img/header-teig-desktop.webp` statt des bisherigen
-`assets/header-pizza.jpg`. Bildwahl aus 4 bereits generierten Varianten, nach eigenem
-Check gegen die Prompt-Vorgabe (2 Varianten mit sichtbarer Naht auf der Teigkuppe nicht
-empfohlen) vom Nutzer getroffen. Einbau nicht-destruktiv (Pass-Through-Eintrag in
-`assets/prepare_web_images.py`, analog `glossar-cat-toppings.webp`), Kontrast live per
-Canvas-Messung gegen die echten Titel-Koordinaten und die tatsächliche Overlay-Deckkraft
-geprüft (6,27:1 Desktop, 5,59:1 Mobil, beide über der 3:1-Großtext-Schwelle). Keine
-Logikänderung, `tests/test.html` unverändert bei **1351** grün.
+Korrigiert eine v4.37.0-Abweichung von der Standalone-Regel (BILD-EINBAU-KONZEPT.md
+Abschnitt 4, "alle registrierten, nicht-pending Bilder werden eingebettet"): die 33
+Glossar-Artikelbilder fehlten dadurch komplett auf dem echten iPhone. Fix: `noStandalone:
+true` entfernt, `build-mobile-standalone.py` erkennt jetzt auch programmatisch (per
+`forEach()`) registrierte Registereinträge und bettet für diese 33 Dateien eine kleinere
+600×400-Zweitfassung aus neuem `assets/img_standalone/` ein (erzeugt von
+`assets/prepare_standalone_glossary_images.py` aus der unveränderten 1200×800-Webversion).
+Standalone-Datei wuchs von ~2,93 MB auf ~3,78 MB. Web-Version unverändert. Testsuite auf
+**1353** grün (2 Tests, die noch `noStandalone:true` erwarteten, korrigiert).
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Header-Bild
-ausgetauscht (v4.38.0)".
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-Artikelbilder im
+Standalone-Build (v4.38.1)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -959,7 +959,9 @@ Keine Code-Änderung durch den Audit nötig.
 
 - ~~**Glossar-Artikelbilder (Bild-Einbau Zyklus 3, Rest)**~~ — **erledigt in v4.37.0**
   (s. „= aktueller Stand" oben). 33 von 38 Artikeln bebildert, Zyklus 3 aus
-  `BILD-EINBAU-KONZEPT.md` damit komplett abgeschlossen.
+  `BILD-EINBAU-KONZEPT.md` damit komplett abgeschlossen. ~~Nachbesserung: die 33 Bilder
+  fehlten dadurch auf dem echten iPhone (Standalone-Build)~~ — **erledigt in v4.38.1**
+  (s. „= aktueller Stand" oben), kleinere 600×400-Zweitfassung nur fürs Embedding.
 - **Neu (v4.37.0): 5 Glossar-Artikel weiterhin ohne Bild.** `biga`/`belagCapricciosa`
   haben kein fertiges Bild in `assets/img/` (nur lose Arbeitsstände unter `assets/`,
   außerhalb des App-Bild-Workflows). `belagNachDemBacken`/`belagQuattroFormaggi`/

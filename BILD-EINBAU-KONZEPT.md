@@ -169,6 +169,17 @@ bis 3 auf, die folgenden nutzen sie nur noch.
    muss die Strategie neu bewertet werden. Die kommenden Kategorien bringen 19 Schrittbilder
    und 45 Glossarbilder mit, die zusammen deutlich mehr Gewicht haben können als die bisher
    10 eingebetteten Dateien (428 KB roh, Stand v4.32.1).
+
+   **Nachtrag (v4.38.1, "Glossar-Artikelbilder im Standalone-Build"):** v4.37.0 war bei den
+   33 Glossar-Artikelbildern versehentlich genau von dieser Regel abgewichen --
+   `noStandalone:true` plus eine für `inline_image_files()` strukturell unsichtbare
+   `forEach()`-Registrierung ließen die Bilder auf dem echten iPhone komplett fehlen (s.
+   `pizza-rechner-KONTEXT.md`, Abschnitt „= aktueller Stand"). Korrigiert, indem
+   `inline_image_files()` jetzt auch programmatisch registrierte Einträge erkennt und für
+   genau diese 33 Dateien eine kleinere 600×400-Zweitfassung aus `assets/img_standalone/`
+   einbettet (volle 1200×800-Auflösung hätte die Warnschwelle weit gerissen) -- die Regel
+   selbst („alle registrierten, nicht-pending Bilder einbetten") bleibt unverändert gültig,
+   auch für künftige Kategorien.
 2. **Die Preset-Auswahl wird ein bebildertes Kartengitter über alle neun Rezepte.** Das
    heutige Dropdown im aufklappbaren `<details>` wird dadurch ersetzt. Jede Karte trägt
    Bild, Name, Zeitangabe und Eignung. Die bisherige Sonderrolle der drei Empfehlungen
@@ -283,16 +294,18 @@ direkt unter `assets/`, außerhalb des Scopes), `belagNachDemBacken`/
 während dieses Zyklus per Direktanweisung nicht freigegeben (`GLOSSARY_ARTICLE_BLOCKLIST`
 in `js/images.js`, Selbsttest wirft bei Widerspruch zur Positivliste).
 
-**Bewusste Abweichung von der Standalone-Regel aus Abschnitt 4:** alle 33 Dateien sind
-1200×800 (kein Original mehr vorhanden, deshalb NICHT destruktiv verkleinert, s.
-`pizza-rechner-KONTEXT.md` für die ehrliche Einordnung) und liegen zusammen roh bei über
-3 MB, base64 über 4 MB — eingebettet hätte das den Standalone-Build weit über die
-~3-MB-Warnschwelle getrieben. Alle 33 Einträge tragen deshalb `noStandalone:true`;
-`build-mobile-standalone.py` (`inline_image_files()`) lässt sie aus, auf
-`pizza-rechner.html`/`-mobile.html` (Web) bleiben sie unverändert sichtbar. Standalone-
-Datei nach dem Rebuild: 39 eingebettete Bilder (unverändert gegenüber v4.36.0), ~2,86 MB
-(vorher ~2,84 MB — die Differenz kommt ausschließlich vom mitinlinierten JS-Quelltext,
-nicht von neuen Bildern).
+**Abweichung von der Standalone-Regel aus Abschnitt 4 (in v4.38.1 korrigiert, s. dortiger
+Nachtrag):** alle 33 Dateien sind 1200×800 (kein Original mehr vorhanden, deshalb NICHT
+destruktiv verkleinert, s. `pizza-rechner-KONTEXT.md` für die ehrliche Einordnung) und
+liegen zusammen roh bei über 3 MB, base64 über 4 MB — eingebettet hätte das den
+Standalone-Build weit über die ~3-MB-Warnschwelle getrieben. Alle 33 Einträge trugen
+deshalb `noStandalone:true`; `build-mobile-standalone.py` (`inline_image_files()`) ließ sie
+aus, auf `pizza-rechner.html`/`-mobile.html` (Web) blieben sie unverändert sichtbar.
+Standalone-Datei nach dem Rebuild: 39 eingebettete Bilder (unverändert gegenüber v4.36.0),
+~2,86 MB (vorher ~2,84 MB — die Differenz kommt ausschließlich vom mitinlinierten
+JS-Quelltext, nicht von neuen Bildern). **Auf dem echten iPhone fehlten dadurch alle 33
+Bilder komplett** — v4.38.1 hat das korrigiert (kleinere 600×400-Zweitfassung nur fürs
+Embedding, s. Abschnitt 4 Nachtrag).
 
 2 der 33 Bilder (`napoletanaVsRomana`, `windowpane`) bekamen nach einem
 `accessibility-expert`-Review einen beschreibenden statt dekorativen Alt-Text (WCAG
