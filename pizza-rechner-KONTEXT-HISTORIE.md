@@ -8,6 +8,70 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Eigener Mobil-Header (v4.38.2)
+
+Bild-Einbau Zyklus 4, Block 7 (`BILD-EINBAU-KONZEPT.md` Abschnitt 10): die Mobil-Seite
+(`pizza-rechner-mobile.html`) zeigte bis v4.38.1 dasselbe `--header-photo` wie die
+Desktop-Seite (21:9, `header-teig-desktop.webp`). Beim extrem flachen Mobil-Header-
+Ausschnitt (390×90px, nur ~19 % der Bildhöhe eines 4:5-Hochformats sichtbar, s.
+`assets/sim_header_crop.py --mobile`) braucht ein Hochformat-Bild einen anderen
+Bildausschnitt als das breite Desktop-Bild — deshalb jetzt ein eigenes, bereits generiertes
+4:5-Motiv ("Hand zieht Teig"). Bildwahl aus 4 bereits vorliegenden Varianten
+(`assets/header-teig-mobile_v1..v4.jpg`), Nutzer wählte Variante 1 nach Sichtung per
+Kontaktbogen (Brainstorming-Phase bereits vorab abgeschlossen, direkter Einstieg in
+Implementierung).
+
+**Einbau, nicht-destruktiv wie seit v4.35.2 Konvention:** Variante 1 als
+`assets/originals/header-teig-mobile.webp` archiviert (verlustfrei aus dem JPG-Original
+re-encodiert, `lossless=True`, dient künftigen Re-Skalierungen als Quelle).
+`assets/prepare_web_images.py` um einen TARGETS-Eintrag ergänzt: **1200×1495** (statt
+reinem Pass-Through wie beim Desktop-Pendant) — bewusste, dokumentierte Abwägung: die sehr
+schmale Mobil-Headerbox skaliert bei `background-size:cover` auf die BildBREITE, 1200px
+Quellbreite bleibt selbst bei den breitesten gängigen Phones (~430 CSS-px) und 3×-
+Pixeldichte (~1290 physische px) nur geringfügig (~7 %) unterversorgt, was hinter der
+festen 62 %-Abdunklungsebene nicht wahrnehmbar ist; Datei sinkt dadurch von ~224 KB
+(reiner 1400×1744-Pass-Through) auf ~173 KB WebP q85.
+
+**`css/mobile.css`:** neuer `:root`-Block ganz oben in der Datei,
+`--header-photo:url('../assets/img/header-teig-mobile.webp')` — überschreibt den in
+`css/styles.css` gesetzten Desktop-Wert, weil `pizza-rechner-mobile.html` `css/mobile.css`
+NACH `css/styles.css` lädt (bestätigt, kein bestehendes `:root`-Override-Muster in
+`mobile.css` vorgefunden, das ist der erste). `pizza-rechner.html` (Desktop) bindet
+`css/mobile.css` gar nicht ein, bleibt also unverändert bei `header-teig-desktop.webp`.
+Kein Media-Query-Mechanismus (bewusst, die App hat zwei getrennte HTML-Seiten statt einer
+echten responsiven Seite, das bleibt so). `build-mobile-standalone.py` benötigte keine
+Anpassung: `inline_css()` korrigiert den `../`-Pfad bereits generisch für jede per
+`<link>` eingebundene CSS-Datei, nicht nur für `styles.css`.
+
+**Kontrast-Verifikation (zwei unabhängige Methoden, da keine Live-Browser-Werkzeuge in
+diesem Subagenten-Kontext verfügbar waren):** (1) Headless-Edge-Screenshot der echten
+Mobil-Seite bei 390×844 (Onboarding-Overlay per vorab gesetztem `localStorage`-Flag
+unterdrückt), Titel-Bounding-Box aus den tatsächlichen weißen Textpixeln ermittelt
+(154-342×30-55px), Hintergrundpixel darin nur akzeptiert, wenn ihre rechnerische
+Rückrechnung durch die Overlay-Formel (`rgba(20,9,5,.62)`) einen gültigen, nicht von
+Text-Antialiasing kontaminierten Fotowert ergab. (2) Rein analytische Gegenprobe direkt aus
+`assets/img/header-teig-mobile.webp`, mit derselben cover/center-Zuschneide-Mathematik wie
+`assets/sim_header_crop.py` und derselben Overlay-Formel, ganz ohne Text im Bild. Beide
+Methoden ergaben übereinstimmend **ca. 5,76-5,83:1** — klar über der 3:1-Großtext-Schwelle
+(26px, 700) und in ähnlicher Größenordnung wie der bisherige gemeinsame Wert (5,59:1 bei
+v4.38.0). Keine Anpassung der Overlay-Deckkraft nötig. `accessibility-expert` und
+`mobile-optimizer` bewusst nicht angefordert: reiner Bild-/CSS-Token-Austausch ohne neues
+Markup, identisches etabliertes Muster wie beim Desktop-Header (v4.38.0).
+
+`assets/HEADER-FOTO-README.txt` und `BILD-EINBAU-KONZEPT.md` (Abschnitt 10, Status-Tabelle)
+entsprechend nachgezogen. Keine Logikänderung, `tests/test.html` bleibt unverändert bei
+**1353** grün (Headless-Edge-Dump verifiziert, vorher wie nachher).
+
+**Geändert:** `assets/prepare_web_images.py`, `assets/originals/header-teig-mobile.webp`
+(neu), `assets/img/header-teig-mobile.webp` (neu), `css/mobile.css`,
+`assets/HEADER-FOTO-README.txt`, `BILD-EINBAU-KONZEPT.md`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`, `pizza-rechner-mobile-standalone.html`. `?v=` auf `4.38.2`
+gezogen (Desktop + Mobil, Cache-Busting + Footer-Version). Reines Inline-Vorgehen über den
+`feature-cycle-orchestrator`-Subagenten (Brainstorming bereits vom Nutzer vorab
+abgeschlossen), mit denselben Sorgfaltspflichten wie bei v4.38.0 (nicht-destruktive
+Konvention, Kontrast-Verifikation, Versionierung, Kontextdatei-Pflege).
+`Versionen/v4.38.2 - Eigener Mobil-Header/` enthält den vollständigen Schnappschuss.
+
 ## Glossar-Artikelbilder im Standalone-Build (v4.38.1)
 
 Bugfix, vom Nutzer per `/define-feature` strukturiert, nachdem er live auf seinem iPhone

@@ -1,5 +1,18 @@
 /* mobile.css — Ergänzungen nur für pizza-rechner-mobile.html (Akkordeon, größere Touch-Ziele) */
 
+/* Eigener Mobil-Header (v4.38.2, Bild-Einbau Zyklus 4 Fortsetzung): überschreibt die in
+   css/styles.css gesetzte --header-photo (dort das 21:9-Desktop-Bild) mit einem eigenen
+   4:5-Hochformat-Foto. Funktioniert nur, weil pizza-rechner-mobile.html css/mobile.css NACH
+   css/styles.css lädt (spätere Regel gewinnt bei gleicher Spezifität) -- pizza-rechner.html
+   (Desktop) bindet css/mobile.css gar nicht ein, ist also unberührt. Gleicher Pfad-Stolperstein
+   wie beim Desktop-Token (s. dortiger Kommentar in css/styles.css): der Pfad ist relativ zu
+   DIESER CSS-Datei (css/mobile.css), nicht zu den HTML-Dateien im Projekt-Root, deshalb
+   "../assets/…". build-mobile-standalone.py korrigiert das beim Inlinen automatisch (gilt
+   generisch für jede per <link> eingebundene CSS-Datei, s. inline_css() dort). */
+:root{
+  --header-photo:url('../assets/img/header-teig-mobile.webp');
+}
+
 /* iOS-Eigenheiten: Rubber-Band-Weißblitz abfangen, Doppeltipp-Zoom/300ms-Delay auf
    Bedienelementen killen, kein grauer Tap-Highlight. */
 html{background:var(--bg-gradient);}

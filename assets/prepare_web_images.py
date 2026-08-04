@@ -147,6 +147,19 @@ TARGETS = {
     # Zielgroesse (Pass-Through wie glossar-cat-toppings.webp oben), der Lauf durch dieses
     # Skript etabliert nur die nicht-destruktive Konvention.
     "header-teig-desktop.webp": (2560, 1096, "WEBP", 85),
+    # Zyklus 4 (Hero/Header, Fortsetzung, v4.38.2): eigener Mobil-Header (4:5), ersetzt das
+    # bisherige Teilen desselben Desktop-Bilds ueber css/mobile.css (:root-Override von
+    # --header-photo, s. Kontextdatei). Original 1400x1744 (nicht exakt 4:5 = 1400x1750,
+    # normale kleine Abweichung aus der KI-Erzeugung). Anders als beim Desktop-Pendant HIER
+    # bewusst kein reiner Pass-Through, sondern eine moderate Verkleinerung auf 1200x1495
+    # (Seitenverhaeltnis beibehalten): der Mobil-Header wird bei background-size:cover durch
+    # die SEHR schmale Headerbox (390x90 bei 390px Viewport, s. sim_header_crop.py --mobile)
+    # auf die Breite skaliert -- 1200px Quellbreite bleibt selbst bei den breitesten
+    # gaengigen Phones (bis ~430 CSS-px) und 3x-Pixeldichte (~1290 physische px) nur
+    # geringfuegig (~7%) unterversorgt, was hinter der festen 62%-Abdunklungsebene
+    # (header{} in css/styles.css) nicht wahrnehmbar ist. Datei sinkt dadurch von ~224 KB
+    # (1400x1744-Pass-Through) auf ~173 KB WebP q85.
+    "header-teig-mobile.webp": (1200, 1495, "WEBP", 85),
 }
 
 

@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-04 · Aktuelle Version: v4.38.1 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-04 · Aktuelle Version: v4.38.2 (Desktop + Mobil, gleiche App-Version, seit v4.38.2 mit unterschiedlichen Header-Fotos) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -218,20 +218,20 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Glossar-Artikelbilder im Standalone-Build (v4.38.1) = aktueller Stand
+## Eigener Mobil-Header (v4.38.2) = aktueller Stand
 
-Korrigiert eine v4.37.0-Abweichung von der Standalone-Regel (BILD-EINBAU-KONZEPT.md
-Abschnitt 4, "alle registrierten, nicht-pending Bilder werden eingebettet"): die 33
-Glossar-Artikelbilder fehlten dadurch komplett auf dem echten iPhone. Fix: `noStandalone:
-true` entfernt, `build-mobile-standalone.py` erkennt jetzt auch programmatisch (per
-`forEach()`) registrierte Registereinträge und bettet für diese 33 Dateien eine kleinere
-600×400-Zweitfassung aus neuem `assets/img_standalone/` ein (erzeugt von
-`assets/prepare_standalone_glossary_images.py` aus der unveränderten 1200×800-Webversion).
-Standalone-Datei wuchs von ~2,93 MB auf ~3,78 MB. Web-Version unverändert. Testsuite auf
-**1353** grün (2 Tests, die noch `noStandalone:true` erwarteten, korrigiert).
+Bild-Einbau Zyklus 4, Block 7: `pizza-rechner-mobile.html` zeigt jetzt ein eigenes
+4:5-Hochformat-Headerfoto (`assets/img/header-teig-mobile.webp`, "Hand zieht Teig") statt
+des bisherigen, mit Desktop geteilten 21:9-Bilds — per neuem `:root`-Override in
+`css/mobile.css` (überschreibt `--header-photo`, lädt nach `css/styles.css`, kein
+Media-Query, Desktop unberührt). Nicht-destruktiv eingebaut (`assets/originals/`,
+moderat auf 1200×1495 verkleinert statt Pass-Through, Begründung in
+`assets/prepare_web_images.py`). Kontrast per zwei unabhängigen Methoden geprüft (Headless-
+Edge-Screenshot + analytische Gegenprobe aus der Bilddatei): ca. 5,76-5,83:1, klar über der
+3:1-Schwelle. Testsuite unverändert bei **1353** grün (reine Asset-/CSS-Änderung).
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-Artikelbilder im
-Standalone-Build (v4.38.1)".
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Eigener Mobil-Header
+(v4.38.2)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -346,10 +346,10 @@ weiterhin komplett uncommittet (betrifft nur die Erzeugungs-Skripte/Prompts unte
 nicht `assets/img/` selbst, das seit v4.32.0 der reguläre, versionierte App-Bildordner ist).
 
 **Bild-Einbau Zyklus 1 (Grundgerüst + Preset-Kartengitter) ist seit v4.32.0 erledigt**,
-**Zyklus 6 (Teil, Seitenhintergrund-Textur) seit v4.34.0** — s. „= aktueller Stand" oben
-und `BILD-EINBAU-KONZEPT.md`. Der Header nutzt weiterhin das alte Platzhalter-Foto
-(`--header-photo` in `css/styles.css`); das ist Zyklus 4 der dortigen Reihenfolge-Tabelle,
-noch nicht begonnen.
+**Zyklus 6 (Teil, Seitenhintergrund-Textur) seit v4.34.0**, **Zyklus 4 (Teil, Hero/Header)
+seit v4.38.0 (Desktop) und v4.38.2 (eigener Mobil-Header)** — s. „= aktueller Stand" oben
+und `BILD-EINBAU-KONZEPT.md`. Die restlichen 5 Blöcke aus Zyklus 4 (4 Desktop-Konzepte,
+1 weiterer Mobil-Entwurf) bleiben offen.
 
 ## Mehltemperatur getrennt von Raumtemperatur (v3.20.0)
 
