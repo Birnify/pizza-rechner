@@ -8,6 +8,62 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Header-Bild ausgetauscht (v4.38.0)
+
+Bild-Einbau Zyklus 4 (Hero/Header, s. `BILD-EINBAU-KONZEPT.md` Blöcke 1 bis 7): der App-
+Header (`--header-photo` in `css/styles.css`) zeigte seit v3.44.0 ein einzelnes
+nutzerbereitgestelltes Foto (`assets/header-pizza.jpg`, Nahaufnahme einer Margherita).
+Jetzt stattdessen `assets/img/header-teig-desktop.webp` (generiert, Block 3 "header-teig-
+desktop" aus `assets/BILD-PROMPTS.md`, Motiv: sechs Teiglinge auf bemehlter Arbeitsplatte,
+21:9).
+
+**Bildwahl:** aus einer früheren Sitzung lagen bereits 4 generierte Varianten
+(`assets/alt-header-teig-desktop_v1..v4.webp`) bereit, ungesichtet. Vor der Auswahl
+eigener Check gegen die Prompt-Vorgabe ("keine Ritzungen, Kerben, Falten, Nähte" auf der
+Teigkuppe): Varianten 3 und 4 zeigten eine sichtbare Falte bzw. ein Faltenmuster auf dem
+rechten Teigling, widersprachen also der eigenen Bildvorgabe, wurden dem Nutzer deshalb
+nicht empfohlen. Nutzer wählte daraufhin **Variante 1**. Varianten 2 bis 4 bleiben als
+Dateien liegen (keine Löschung), werden aber nicht verwendet.
+
+**Einbau, nicht-destruktiv wie seit v4.35.2 Konvention:** `assets/alt-header-teig-
+desktop_v1.webp` nach `assets/originals/header-teig-desktop.webp` kopiert, `assets/
+prepare_web_images.py` um einen Pass-Through-Eintrag ergänzt (2560×1096, identisch zur
+Erzeugungsauflösung, wie zuvor schon bei `glossar-cat-toppings.webp` in v4.36.0), Skript
+für nur diese eine Datei aufgerufen (215 KB → 144 KB durch Re-Kompression). `--header-
+photo` in `css/styles.css` auf den neuen Pfad gezogen.
+
+**Sichtbarkeits- und Kontrast-Check, nach dem etablierten Verfahren (`assets/
+sim_header_crop.py` + Live-Messung statt Schätzung):** der Desktop-Header ist bei 1280 px
+Viewport gemessen 1265×142 px groß (`background-size:cover`), zeigt also nur einen
+schmalen Streifen von rund 26 % der Bildhöhe — die Komposition (Teiglinge exakt auf
+halber Bildhöhe platziert, s. Prompt) trägt dem bereits Rechnung, der sichtbare
+Ausschnitt zeigt plausible Teigtextur. Kontrast des weißen Headertitels ("Teigmeister",
+26 px, 700, also WCAG-Großtext-Schwelle 3:1) gegen das Bild live im Browser gemessen
+(Canvas, echte Titel-Koordinaten, echte Overlay-Deckkraft `rgba(20,9,5,.62)` aus
+`header{}`, nicht der im README dokumentierte veraltete Wert 0,55): **6,27:1** am
+Desktop (1265×142), **5,59:1** am Mobil-Header (390×90, 390 px Viewport) — beide deutlich
+über der 3:1-Schwelle, keine Anpassung der Overlay-Deckkraft nötig.
+
+**Standalone-Build:** `assets/img/header-teig-desktop.webp` wird — wie zuvor schon
+`assets/header-pizza.jpg` — NICHT als Base64 in `pizza-rechner-mobile-standalone.html`
+eingebettet, nur pfad-korrigiert (`build-mobile-standalone.py` hat für `--header-photo`
+nie eine Inline-Logik gehabt, das ist unverändertes Altverhalten, keine Regression
+dieses Zyklus). Die Datei bleibt bei ~2,86 MB, unter der 3-MB-Warnschwelle.
+
+`assets/HEADER-FOTO-README.txt` und `assets/BILD-EINBAU-KONZEPT.md` (Status-Tabelle
+Zyklus 4 auf "erledigt") entsprechend nachgezogen. Keine Logikänderung, `tests/test.html`
+bleibt unverändert bei **1351** grün. Reines Inline-Vorgehen im Hauptgespräch (keine
+Rückfrage-Runde über den Orchestrator nötig, laut Nutzer-Entscheidung), aber weiterhin
+mit denselben Sorgfaltspflichten (nicht-destruktive Konvention, Kontrast-Live-Messung,
+Versionierung, Kontextdatei-Pflege).
+
+**Geändert:** `assets/prepare_web_images.py`, `assets/originals/header-teig-
+desktop.webp` (neu), `assets/img/header-teig-desktop.webp` (neu), `css/styles.css`,
+`assets/HEADER-FOTO-README.txt`, `BILD-EINBAU-KONZEPT.md`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`, `pizza-rechner-mobile-standalone.html`. `?v=` auf `4.38.0`
+gezogen (Desktop + Mobil, Cache-Busting + Footer-Version).
+`Versionen/v4.38.0 - Header-Bild ausgetauscht/` enthält den vollständigen Schnappschuss.
+
 ## Glossar-Artikelbilder (v4.37.0)
 
 Bild-Einbau Zyklus 3, Rest (s. `BILD-EINBAU-KONZEPT.md` Abschnitt 9): der v4.36.0-Zyklus

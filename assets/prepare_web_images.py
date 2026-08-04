@@ -140,6 +140,13 @@ TARGETS = {
     # durch dieses Skript etabliert nur die nicht-destruktive Konvention (Original bleibt
     # unangetastet), skaliert aber nicht tatsaechlich herunter.
     "glossar-cat-toppings.webp": (1496, 496, "WEBP", 85),
+    # Zyklus 4 (Hero/Header, v4.38.0): ersetzt das bisherige Foto assets/header-pizza.jpg.
+    # Vom Nutzer nach Live-Sichtung von 4 generierten Varianten gewaehlt (Variante 1, die
+    # beiden anderen zeigten eine sichtbare Falte/Naht auf der Teigkuppe, entgegen der
+    # eigentlichen Prompt-Vorgabe). 2560x1096 ist bereits die Erzeugungsaufloesung UND die
+    # Zielgroesse (Pass-Through wie glossar-cat-toppings.webp oben), der Lauf durch dieses
+    # Skript etabliert nur die nicht-destruktive Konvention.
+    "header-teig-desktop.webp": (2560, 1096, "WEBP", 85),
 }
 
 

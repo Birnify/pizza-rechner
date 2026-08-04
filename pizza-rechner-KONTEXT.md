@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-03 · Aktuelle Version: v4.37.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-04 · Aktuelle Version: v4.38.0 (Desktop + Mobil, synchron) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -218,23 +218,20 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Glossar-Artikelbilder (v4.37.0) = aktueller Stand
+## Header-Bild ausgetauscht (v4.38.0) = aktueller Stand
 
-33 von 38 Glossar-Artikeln zeigen jetzt beim Aufklappen ihr eigenes 3:2-Bild oberhalb des
-Artikeltexts (Bild-Einbau Zyklus 3, Rest — v4.36.0 hatte nur die Kategorie-Banner
-verdrahtet). 5 Ausnahmen bleiben bildlos: 2 ohne fertige Datei, 3 vom Nutzer während
-dieses Zyklus explizit gesperrt (`GLOSSARY_ARTICLE_BLOCKLIST`, `js/images.js`). Die 33
-Dateien (1200×800, kein Original mehr vorhanden, deshalb bewusst nicht destruktiv
-verkleinert) bekommen ein neues `noStandalone:true`-Registerfeld und werden NICHT in
-`pizza-rechner-mobile-standalone.html` eingebettet (hätten die ~3-MB-Warnschwelle weit
-gerissen) — auf beiden Web-Seiten unverändert sichtbar, lazy-loaded. 2 Bilder
-(`napoletanaVsRomana`, `windowpane`) bekamen nach einem `accessibility-expert`-Review
-einen beschreibenden statt dekorativen Alt-Text (WCAG 1.1.1, zeigen die fachliche
-Kerninformation selbst statt nur zu illustrieren). `tests/test.html`: **1351** grün (1289
-vorher + 62 neu).
+Bild-Einbau Zyklus 4 (Hero/Header) abgeschlossen: `--header-photo` in `css/styles.css`
+zeigt jetzt `assets/img/header-teig-desktop.webp` statt des bisherigen
+`assets/header-pizza.jpg`. Bildwahl aus 4 bereits generierten Varianten, nach eigenem
+Check gegen die Prompt-Vorgabe (2 Varianten mit sichtbarer Naht auf der Teigkuppe nicht
+empfohlen) vom Nutzer getroffen. Einbau nicht-destruktiv (Pass-Through-Eintrag in
+`assets/prepare_web_images.py`, analog `glossar-cat-toppings.webp`), Kontrast live per
+Canvas-Messung gegen die echten Titel-Koordinaten und die tatsächliche Overlay-Deckkraft
+geprüft (6,27:1 Desktop, 5,59:1 Mobil, beide über der 3:1-Großtext-Schwelle). Keine
+Logikänderung, `tests/test.html` unverändert bei **1351** grün.
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-Artikelbilder
-(v4.37.0)".
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Header-Bild
+ausgetauscht (v4.38.0)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 

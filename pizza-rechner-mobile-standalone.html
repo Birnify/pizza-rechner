@@ -312,17 +312,18 @@
   --focus-offset:2px;
 
   /* Header-Foto-Slot (v3.41.0 als Platzhalter-Mechanismus eingeführt, echtes Bild
-     seit v3.44.0 aktiv: assets/header-pizza.jpg, vom Nutzer bereitgestellt — s.
-     Abschnitt "Echtes Header-Foto eingebunden (v3.44.0)" in pizza-rechner-KONTEXT.md
-     und assets/HEADER-FOTO-README.txt für ein künftiges Ersatzfoto). Ohne Foto
-     (--header-photo:none) erzeugen die Fallback-Gradient-Ebenen in header{} eine
-     warme, foto-ähnliche Anmutung ganz ohne Bilddatei. WICHTIG: der Pfad ist relativ
-     zu DIESER CSS-Datei (css/styles.css), nicht zu den HTML-Dateien im Projekt-Root
-     — deshalb "../assets/…", nicht "assets/…" (Bug beim ersten Einbau in v3.44.0,
-     s. HEADER-FOTO-README.txt; build-mobile-standalone.py korrigiert diesen Pfad
-     beim Inlinen automatisch für pizza-rechner-mobile-standalone.html, die im
-     Projekt-Root selbst liegt). */
-  --header-photo:url('assets/header-pizza.jpg');
+     seit v3.44.0 aktiv, seit v4.38.0 assets/img/header-teig-desktop.webp: generiertes
+     Bild aus Zyklus 4 der Bildplanung (BILD-EINBAU-KONZEPT.md), vom Nutzer nach Live-
+     Sichtung mehrerer Varianten gewählt — s. Abschnitt "Header-Bild ausgetauscht
+     (v4.38.0)" in pizza-rechner-KONTEXT.md und assets/HEADER-FOTO-README.txt für ein
+     künftiges Ersatzfoto). Ohne Foto (--header-photo:none) erzeugen die Fallback-
+     Gradient-Ebenen in header{} eine warme, foto-ähnliche Anmutung ganz ohne Bilddatei.
+     WICHTIG: der Pfad ist relativ zu DIESER CSS-Datei (css/styles.css), nicht zu den
+     HTML-Dateien im Projekt-Root — deshalb "../assets/…", nicht "assets/…" (Bug beim
+     ersten Einbau in v3.44.0, s. HEADER-FOTO-README.txt; build-mobile-standalone.py
+     korrigiert diesen Pfad beim Inlinen automatisch für pizza-rechner-mobile-
+     standalone.html, die im Projekt-Root selbst liegt). */
+  --header-photo:url('assets/img/header-teig-desktop.webp');
 
   /* --- Alte Token-Namen als Aliase (Rückwärtskompatibilität, s. Kommentar oben) ---
      Feste, THEMENUNABHÄNGIGE dunkle Fläche für die zwei Fälle, in denen früher
@@ -1941,7 +1942,7 @@ header{position:relative;text-align:center;}
      daneben, ein zweiter Vorlese-Name wäre redundant (analog zum bestehenden
      .card-icon aria-hidden-Muster). -->
 <header>
-  <h1><img src="assets/logo.svg?v=4.37.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
+  <h1><img src="assets/logo.svg?v=4.38.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
 </header>
 
 <!-- Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay analog zum
@@ -2889,7 +2890,7 @@ header{position:relative;text-align:center;}
              hier bewusst NICHT mehr dupliziert. -->
         <div class="nav-divider" role="separator"></div>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.37.0</span>
+        <span class="nav-version" id="appVersion">v4.38.0</span>
 
       </div>
     </details>

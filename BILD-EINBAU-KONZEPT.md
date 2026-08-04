@@ -137,7 +137,7 @@ bis 3 auf, die folgenden nutzen sie nur noch.
 | 1 | Preset-Karten **plus Grundgerüst** plus Fix des kaputten Anleitungsfotos | 8 bis 18 | groß (Fundament) | **erledigt (v4.32.0)** |
 | 2 | Anleitungs-Schrittbilder | 27 bis 45 | mittel | **erledigt (v4.35.0)** |
 | 3 | Glossar (Kategorie-Banner und Artikelbilder) | 46 bis 90 | mittel | **erledigt (v4.36.0 Banner, v4.37.0 Artikelbilder)**, s. Abschnitt 9 |
-| 4 | Hero/Header (ersetzt das heutige Einzelfoto) | 1 bis 7 | klein | offen |
+| 4 | Hero/Header (ersetzt das heutige Einzelfoto) | 1 bis 7 | klein | **teilweise (v4.38.0, nur Block 3 "teig-desktop")** |
 | 5 | Onboarding, Party, Leerzustände | 91 bis 105 | mittel | offen |
 | 6 | Texturen, Marketing, Varianten | 106 bis 128 | offen | **teilweise (v4.34.0)**, s. Abschnitt 7 |
 
@@ -298,4 +298,25 @@ nicht von neuen Bildern).
 `accessibility-expert`-Review einen beschreibenden statt dekorativen Alt-Text (WCAG
 1.1.1) — beide zeigen die fachliche Kerninformation des Artikels selbst (Krustenform-
 Vergleich bzw. Windowpane-Idealzustand), nicht nur eine Illustration. Details, Testzahlen
-und Commit-Hash: `pizza-rechner-KONTEXT.md`, Abschnitt „= aktueller Stand".
+und Commit-Hash: `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-Artikelbilder
+(v4.37.0)".
+
+## 10. Zyklus 4 (Teil): Hero/Header (v4.38.0) — nur Block 3, Rest offen
+
+`--header-photo` in `css/styles.css` zeigt jetzt `assets/img/header-teig-desktop.webp`
+(Block 3 "header-teig-desktop", 21:9) statt des bisherigen `assets/header-pizza.jpg`.
+Bildwahl aus 4 bereits in einer früheren Sitzung generierten Varianten
+(`assets/alt-header-teig-desktop_v1..v4.webp`): eigener Check gegen die Prompt-Vorgabe
+("keine Ritzungen, Kerben, Falten, Nähte" auf der Teigkuppe) zeigte bei Varianten 3 und 4
+eine sichtbare Naht, dem Nutzer deshalb nicht empfohlen. Nutzer wählte Variante 1.
+Einbau nicht-destruktiv (Pass-Through-Eintrag in `assets/prepare_web_images.py`, analog
+`glossar-cat-toppings.webp`), Kontrast per Live-Canvas-Messung gegen die echten Titel-
+Koordinaten und die tatsächliche Overlay-Deckkraft (`rgba(20,9,5,.62)`, nicht der im
+`HEADER-FOTO-README.txt` dokumentierte veraltete Wert 0,55) geprüft: 6,27:1 Desktop
+(1265×142), 5,59:1 Mobil (390×90), beide über der 3:1-Großtext-Schwelle.
+
+**Die anderen 6 Blöcke bleiben offen:** die 4 übrigen Desktop-Konzepte (Margherita,
+Menschen, Abend, Mehl) und die 2 Mobil-Header (4:5, Block 2 + 7) sind weder generiert
+noch eingebaut. Varianten 2 bis 4 von Block 3 bleiben als Dateien liegen (keine Löschung),
+werden aber nicht verwendet. Details, Testzahlen und Commit-Hash:
+`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Header-Bild ausgetauscht (v4.38.0)".
