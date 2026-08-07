@@ -137,7 +137,7 @@ bis 3 auf, die folgenden nutzen sie nur noch.
 | 1 | Preset-Karten **plus Grundgerüst** plus Fix des kaputten Anleitungsfotos | 8 bis 18 | groß (Fundament) | **erledigt (v4.32.0)** |
 | 2 | Anleitungs-Schrittbilder | 27 bis 45 | mittel | **erledigt (v4.35.0)** |
 | 3 | Glossar (Kategorie-Banner und Artikelbilder) | 46 bis 90 | mittel | **erledigt (v4.36.0 Banner, v4.37.0 Artikelbilder)**, s. Abschnitt 9 |
-| 4 | Hero/Header (ersetzt das heutige Einzelfoto) | 1 bis 7 | klein | **teilweise (v4.38.0 Block 3 "teig-desktop", v4.38.2 Block 7 "teig-mobile")** |
+| 4 | Hero/Header (ersetzt das heutige Einzelfoto) | 1 bis 7 | klein | **teilweise (nur Block 3 "teig-desktop" aktiv, s. Abschnitt 10)** |
 | 5 | Onboarding, Party, Leerzustände | 91 bis 105 | mittel | offen |
 | 6 | Texturen, Marketing, Varianten | 106 bis 128 | offen | **teilweise (v4.34.0)**, s. Abschnitt 7 |
 
@@ -314,35 +314,35 @@ Vergleich bzw. Windowpane-Idealzustand), nicht nur eine Illustration. Details, T
 und Commit-Hash: `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Glossar-Artikelbilder
 (v4.37.0)".
 
-## 10. Zyklus 4 (Teil): Hero/Header (v4.38.0 Block 3, v4.38.2 Block 7) — Blöcke 3+7 erledigt, Rest offen
+## 10. Zyklus 4 (Teil): Hero/Header (v4.38.0/v4.38.2/v4.38.3) — nur Block 3 aktiv, Rest offen
 
 `--header-photo` in `css/styles.css` zeigt seit v4.38.0 `assets/img/header-teig-desktop.webp`
-(Block 3 "header-teig-desktop", 21:9) statt des bisherigen `assets/header-pizza.jpg`.
-Bildwahl aus 4 bereits in einer früheren Sitzung generierten Varianten
-(`assets/alt-header-teig-desktop_v1..v4.webp`): eigener Check gegen die Prompt-Vorgabe
-("keine Ritzungen, Kerben, Falten, Nähte" auf der Teigkuppe) zeigte bei Varianten 3 und 4
-eine sichtbare Naht, dem Nutzer deshalb nicht empfohlen. Nutzer wählte Variante 1.
-Einbau nicht-destruktiv (Pass-Through-Eintrag in `assets/prepare_web_images.py`, analog
-`glossar-cat-toppings.webp`), Kontrast per Live-Canvas-Messung gegen die echten Titel-
-Koordinaten und die tatsächliche Overlay-Deckkraft (`rgba(20,9,5,.62)`, nicht der im
-`HEADER-FOTO-README.txt` dokumentierte veraltete Wert 0,55) geprüft: 6,27:1 Desktop
-(1265×142), 5,59:1 Mobil (390×90, damals noch dasselbe Bild wie Desktop), beide über der
-3:1-Großtext-Schwelle.
+(Block 3 "header-teig-desktop", 21:9, sechs ruhende Teiglinge) statt des bisherigen
+`assets/header-pizza.jpg`. Einbau nicht-destruktiv (Pass-Through-Eintrag in
+`assets/prepare_web_images.py`, analog `glossar-cat-toppings.webp`), Kontrast per
+Live-Canvas-Messung geprüft: 6,27:1 Desktop, 5,59:1 Mobil (beide über der 3:1-Schwelle).
+Details: `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Header-Bild ausgetauscht (v4.38.0)".
 
-**Block 7 (eigener Mobil-Header, v4.38.2):** Mobil zeigt jetzt ein eigenes 4:5-Hochformat
-(`assets/img/header-teig-mobile.webp`, Motiv "Hand zieht Teig") statt des bis dahin
-geteilten Desktop-Bilds — Umsetzung über einen neuen `:root`-Override in `css/mobile.css`
-(lädt nach `css/styles.css`, kein Media-Query nötig, Desktop bindet `css/mobile.css` gar
-nicht ein). Bildwahl aus 4 generierten Varianten, Nutzer wählte Variante 1 nach Sichtung per
-Kontaktbogen. Moderate Verkleinerung auf 1200×1495 (statt reinem Pass-Through wie bei
-Block 3), Begründung in `assets/prepare_web_images.py`. Kontrast erneut geprüft (zwei
-unabhängige Methoden): ca. 5,76-5,83:1, weiterhin klar über der 3:1-Schwelle. Details,
-Testzahlen und Commit-Hash: `pizza-rechner-KONTEXT.md`, Abschnitt „= aktueller Stand".
+**Alle 6 verbleibenden Blöcke aus Bild-Einbau Zyklus 4 sind inzwischen generiert** (4
+Varianten je Block, `assets/generate_bilder.py --blocks 1,2,4,5,6,7 --variants 4`): die 4
+übrigen Desktop-Konzepte Margherita (Block 1), Menschen (Block 4), Abend (Block 5), Mehl
+(Block 6), sowie beide Mobil-Konzepte Margherita-Mobil (Block 2) und Teig-Mobil (Block 7).
+Generierung lief spürbar langsamer als die historische ~60-65s/Bild-Baseline (zeitweise bis
+zu 1000s/Bild, GPU-Auslastung des ComfyUI-Prozesses zwischenzeitlich bei 0% trotz
+aktiver CPU-Last, Ursache nicht abschließend geklärt, kein Treiber-Crash im Systemprotokoll).
+Alle 24 Dateien liegen unter `assets/header-<konzept>_v<1-4>.jpg`.
 
-**Die restlichen 5 Blöcke bleiben offen:** die 4 übrigen Desktop-Konzepte (Margherita,
-Menschen, Abend, Mehl) und Block 2 (weiterer Mobil-Header-Entwurf, nicht gewählt) sind
-weder generiert noch eingebaut (Margherita/Menschen/Abend/Mehl noch nicht generiert; die
-4 Mobil-Varianten aus Block 7 wurden bereits generiert, 3 davon bleiben ungenutzt liegen).
-Varianten 2 bis 4 von Block 3 und Block 7 bleiben als Dateien liegen (keine Löschung),
-werden aber nicht verwendet. Details, Testzahlen und Commit-Hash zu Block 3:
-`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Header-Bild ausgetauscht (v4.38.0)".
+**Kurzzeitig aktiv, dann zurückgenommen (v4.38.2 → v4.38.3):** Block 7 Variante 1
+(`assets/img/header-teig-mobile.webp`, Motiv "Hand zieht Teig") war für die Mobil-Seite
+verdrahtet (`:root`-Override in `css/mobile.css`, lädt nach `css/styles.css`, kein
+Media-Query nötig, Desktop bindet `css/mobile.css` gar nicht ein). Der Nutzer verglich es
+direkt mit den ruhigen Teigbällen des Desktop-Headers und bevorzugte Letzteres — der
+Override wurde daraufhin entfernt, Mobil zeigt seither wieder dasselbe Bild wie Desktop.
+Die Datei und ihr Original bleiben liegen, der Mechanismus in `css/mobile.css` ist
+dokumentiert und jederzeit reaktivierbar. Details: `pizza-rechner-KONTEXT-HISTORIE.md`,
+Abschnitte „Eigener Mobil-Header (v4.38.2)" und „Mobil-Header zurückgenommen (v4.38.3)".
+
+**Aktueller Stand:** nur Block 3 (Teig-Desktop, Variante 1) ist aktiv verdrahtet, auf
+Desktop UND Mobil gemeinsam. Die restlichen 23 generierten Dateien (Margherita/Menschen/
+Abend/Mehl-Desktop je 4 Varianten, Margherita-Mobil 4 Varianten, Teig-Mobil Varianten 2-4)
+liegen fertig vor, werden aber nicht verwendet, keine Löschung.

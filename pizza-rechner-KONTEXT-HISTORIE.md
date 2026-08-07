@@ -149,6 +149,55 @@ Cache-Busting + Footer-Version). `pizza-rechner-mobile-standalone.html` neu geba
 `Versionen/v4.38.1 - Glossar-Bilder im Standalone-Build/` enthält den vollständigen
 Schnappschuss.
 
+## Eigener Mobil-Header (v4.38.2)
+
+Bild-Einbau Zyklus 4, Block 7: `pizza-rechner-mobile.html` zeigt jetzt ein eigenes
+4:5-Hochformat-Headerfoto (`assets/img/header-teig-mobile.webp`, "Hand zieht Teig") statt
+des bisherigen, mit Desktop geteilten 21:9-Bilds — per neuem `:root`-Override in
+`css/mobile.css` (überschreibt `--header-photo`, lädt nach `css/styles.css`, kein
+Media-Query, Desktop unberührt). Nicht-destruktiv eingebaut (`assets/originals/`,
+moderat auf 1200×1495 verkleinert statt Pass-Through, Begründung in
+`assets/prepare_web_images.py`). Kontrast per zwei unabhängigen Methoden geprüft (Headless-
+Edge-Screenshot + analytische Gegenprobe aus der Bilddatei): ca. 5,76-5,83:1, klar über der
+3:1-Schwelle. Testsuite unverändert bei **1353** grün (reine Asset-/CSS-Änderung).
+
+**Hinweis: in v4.38.3 (direkt im Anschluss) wieder zurückgenommen**, s. dortiger Abschnitt.
+
+## Mobil-Header zurückgenommen (v4.38.3)
+
+Der Nutzer verglich das neue Mobil-Bild (Hand zieht Teig, v4.38.2) live mit dem
+Desktop-Header (ruhende Teigbälle) und bevorzugte Letzteres deutlich ("Die Teiglinge
+vorher fand ich besser"). Auf Nachfrage bestätigt: gemeint war ein Vergleich Desktop- vs.
+Mobil-Bild, nicht ein Wunsch nach dem ursprünglichen Margherita-Foto von vor v4.38.0.
+
+Vor der Entscheidung zur eigenen Umsetzung wurde geprüft, wie der Desktop-Teig-Ausschnitt
+im schmalen Mobil-Format überhaupt aussähe (`python assets/sim_header_crop.py
+img/header-teig-desktop.webp --mobile`): bei der sehr schmalen Mobil-Header-Box wird mit
+54 % der Bildhöhe deutlich mehr sichtbar als am Desktop (26 %), die Teigbälle kommen dabei
+klar erkennbar rüber — der Crop war also technisch unproblematisch, das Problem war rein
+die Bildwahl (Motiv "Hand zieht Teig" statt ruhende Teiglinge).
+
+**Lösung: der `:root`-Override in `css/mobile.css` aus v4.38.2 wurde vollständig entfernt.**
+Mobil erbt `--header-photo` wieder unverändert aus `css/styles.css` (identisches Bild wie
+Desktop, wie vor v4.38.2). `assets/img/header-teig-mobile.webp` und sein Original in
+`assets/originals/` bleiben unangetastet liegen (keine Löschung), der Override-Mechanismus
+selbst bleibt als Kommentar in `css/mobile.css` dokumentiert und ist jederzeit reaktivierbar,
+falls später ein Hochformat-Motiv mit ruhenden Teiglingen entsteht. `assets/HEADER-FOTO-
+README.txt` und `BILD-EINBAU-KONZEPT.md` Abschnitt 10 entsprechend nachgezogen.
+
+Reines Inline-Vorgehen im Hauptgespräch (kleiner, gut überschaubarer Rückbau einer
+einzelnen CSS-Regel, kein Orchestrator-Zyklus), aber mit denselben Sorgfaltspflichten:
+Live-Verifikation im Browser (`getComputedStyle(header).backgroundImage` auf beiden Seiten
+geprüft, zeigt jetzt wieder `header-teig-desktop.webp` auf Mobil), unabhängige
+Kontrastmessung (5,95:1, im Rahmen der vorherigen 5,76-5,83:1-Messung), unabhängiger
+Headless-Edge-Testlauf (**1353** grün, keine Logikänderung). `?v=` auf `4.38.3` gezogen,
+Standalone-Build neu erzeugt (~3,78 MB).
+
+**Geändert:** `css/mobile.css`, `assets/HEADER-FOTO-README.txt`, `BILD-EINBAU-KONZEPT.md`,
+`pizza-rechner.html`, `pizza-rechner-mobile.html`, `pizza-rechner-mobile-standalone.html`,
+`pizza-rechner-KONTEXT.md`, `pizza-rechner-KONTEXT-HISTORIE.md`.
+`Versionen/v4.38.3 - Mobil-Header zurueckgenommen/` enthält den vollständigen Schnappschuss.
+
 ## Header-Bild ausgetauscht (v4.38.0)
 
 Bild-Einbau Zyklus 4 (Hero/Header, s. `BILD-EINBAU-KONZEPT.md` Blöcke 1 bis 7): der App-

@@ -1,23 +1,25 @@
-Header-Foto (v4.38.2 — Desktop und Mobil zeigen jetzt unterschiedliche Bilder)
+Header-Foto (v4.38.3 — Desktop und Mobil zeigen wieder dasselbe Bild)
 ================================================
 
 Der Header (gemeinsame Markup-/Layout-Regel `header{}` in css/styles.css, gilt
 für Desktop UND Mobil) nutzt die CSS-Variable `--header-photo` als Austausch-
-Slot. Seit v4.38.2 ist das auf Desktop und Mobil NICHT mehr dasselbe Bild:
+Slot. Aktuell (seit v4.38.3) zeigen Desktop UND Mobil wieder dasselbe Bild:
+assets/img/header-teig-desktop.webp (seit v4.38.0, 21:9, sechs ruhende
+Teiglinge auf bemehlter Arbeitsplatte, 2560x1096px WebP, ~144 KB), gesetzt im
+`:root`-Block ganz oben in css/styles.css.
 
-- **Desktop** (pizza-rechner.html, bindet nur css/styles.css ein): weiterhin
-  assets/img/header-teig-desktop.webp (seit v4.38.0, 21:9, sechs Teiglinge auf
-  bemehlter Arbeitsplatte, 2560x1096px WebP, ~144 KB).
-- **Mobil** (pizza-rechner-mobile.html, bindet zusätzlich css/mobile.css NACH
-  css/styles.css ein): seit v4.38.2 assets/img/header-teig-mobile.webp (4:5-
-  Hochformat, Hand zieht Teig, 1200x1495px WebP, ~173 KB, moderat verkleinert
-  aus dem 1400x1744-Original — Begründung s. Kommentar bei TARGETS in
-  assets/prepare_web_images.py). Der Override sitzt als eigener `:root`-Block
-  ganz oben in css/mobile.css (überschreibt den Desktop-Wert dank späterer
-  Ladereihenfolge, KEIN Media-Query — die App hat bewusst zwei getrennte
-  HTML-Seiten statt einer echten responsiven Seite, das bleibt so).
+**Kurzes Zwischenkapitel (v4.38.2, zurückgenommen in v4.38.3):** die Mobil-Seite
+hatte kurzzeitig ein eigenes 4:5-Hochformat-Foto (assets/img/header-teig-mobile.webp,
+Hand zieht einen Teigstrang), gesetzt über einen `:root`-Override in
+css/mobile.css (lädt NACH css/styles.css, spätere Regel gewinnt). Der Nutzer
+fand die ruhigen Teigbälle des Desktop-Bilds beim direkten Vergleich besser als
+das Hand-zieht-Teig-Motiv — deshalb der Override wieder entfernt. Die Bilddatei
+und ihr Original in assets/originals/ bleiben unangetastet liegen, der
+Override-Mechanismus in css/mobile.css ist unten weiter beschrieben und
+jederzeit reaktivierbar, falls später ein Hochformat-Motiv mit ruhenden
+Teiglingen entsteht.
 
-Davor (bis v4.38.1) zeigten Desktop und Mobil dasselbe Bild. Vor v4.38.0 zeigte
+Vor v4.38.0 zeigte
 der Header von v3.44.0 bis v4.37.0 ein einzelnes vom Nutzer bereitgestelltes
 Foto (assets/header-pizza.jpg, Nahaufnahme einer Margherita). Bis v3.43.0 war
 das nur ein rein CSS-basierter Platzhalter (warmer Terrakotta-Verlauf mit zwei
@@ -43,8 +45,9 @@ So wird ein künftiges Ersatzbild eingebunden:
    wird zu
      --header-photo:url('../assets/img/<dateiname>.webp');
 
-   Für ein Bild, das NUR auf Mobil gelten soll (wie header-teig-mobile.webp
-   seit v4.38.2): stattdessen den :root-Block ganz oben in css/mobile.css
+   Für ein Bild, das NUR auf Mobil gelten soll (so wie header-teig-mobile.webp
+   in v4.38.2 kurzzeitig aktiv war, s. Kapitel oben): stattdessen den
+   :root-Block ganz oben in css/mobile.css
    ändern (nicht css/styles.css) — der dortige Wert überschreibt den aus
    styles.css, weil pizza-rechner-mobile.html css/mobile.css NACH
    css/styles.css lädt; pizza-rechner.html (Desktop) bindet css/mobile.css

@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-04 · Aktuelle Version: v4.38.2 (Desktop + Mobil, gleiche App-Version, seit v4.38.2 mit unterschiedlichen Header-Fotos) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-04 · Aktuelle Version: v4.38.3 (Desktop + Mobil, synchron, wieder gemeinsames Header-Foto) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -218,27 +218,52 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Eigener Mobil-Header (v4.38.2) = aktueller Stand
+## Mobil-Header zurückgenommen (v4.38.3) = aktueller Stand
 
-Bild-Einbau Zyklus 4, Block 7: `pizza-rechner-mobile.html` zeigt jetzt ein eigenes
-4:5-Hochformat-Headerfoto (`assets/img/header-teig-mobile.webp`, "Hand zieht Teig") statt
-des bisherigen, mit Desktop geteilten 21:9-Bilds — per neuem `:root`-Override in
-`css/mobile.css` (überschreibt `--header-photo`, lädt nach `css/styles.css`, kein
-Media-Query, Desktop unberührt). Nicht-destruktiv eingebaut (`assets/originals/`,
-moderat auf 1200×1495 verkleinert statt Pass-Through, Begründung in
-`assets/prepare_web_images.py`). Kontrast per zwei unabhängigen Methoden geprüft (Headless-
-Edge-Screenshot + analytische Gegenprobe aus der Bilddatei): ca. 5,76-5,83:1, klar über der
-3:1-Schwelle. Testsuite unverändert bei **1353** grün (reine Asset-/CSS-Änderung).
+Der in v4.38.2 eingeführte eigene Mobil-Header (`header-teig-mobile.webp`, "Hand zieht
+Teig") wurde direkt im Anschluss wieder zurückgenommen: der Nutzer verglich ihn live mit
+dem Desktop-Header (ruhende Teigbälle) und bevorzugte Letzteres. Der `:root`-Override in
+`css/mobile.css` wurde entfernt, Mobil zeigt seither wieder dasselbe Bild wie Desktop
+(`header-teig-desktop.webp`). Die Bilddatei bleibt liegen, der Override-Mechanismus ist
+weiterhin dokumentiert und reaktivierbar. Reines Inline-Vorgehen, live verifiziert (beide
+Seiten zeigen das erwartete Bild, Kontrast 5,95:1, Testsuite unverändert **1353** grün).
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Eigener Mobil-Header
-(v4.38.2)".
+Nebenbei in derselben Sitzung: alle 6 verbleibenden Blöcke aus Bild-Einbau Zyklus 4 wurden
+generiert (24 Dateien, 4 Konzepte × 4 Varianten Desktop + 2 Konzepte × 4 Varianten Mobil),
+liegen aber bis auf den bereits aktiven Teig-Desktop ungenutzt vor. Details zur
+Generierungs-Sitzung (inkl. einer ungeklärten GPU-Verlangsamung) s. Abschnitt „LAUFENDE
+ARBEIT" unten.
+
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitte „Eigener Mobil-Header
+(v4.38.2)" und „Mobil-Header zurückgenommen (v4.38.3)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
-Stand 2026-08-01 (Sitzung 5), **nicht abgeschlossen**, betrifft nur `assets/`, kein
+Stand 2026-08-04 (Sitzung 6), **nicht abgeschlossen**, betrifft nur `assets/`, kein
 App-Code. Ausführliche Vorgeschichte (Prompt-Fehlerklassen, Header-Zuschnitt-Geometrie,
 CFG-1.0-Erkenntnisse) in `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „LAUFENDE ARBEIT
 … Stand bis 2026-08-01, Sitzungen 1–5".
+
+**Neu in Sitzung 6: alle 6 verbleibenden Blöcke aus Bild-Einbau Zyklus 4 (Hero/Header)
+generiert**, je 4 Varianten (`python assets/generate_bilder.py --blocks 1,2,4,5,6,7
+--variants 4`) — Margherita-Desktop, Menschen-Desktop, Abend-Desktop, Mehl-Desktop,
+Margherita-Mobil, Teig-Mobil, zusammen 24 Dateien unter `assets/header-<konzept>_v<1-4>.jpg`.
+Nur Teig-Desktop v1 ist aktiv verdrahtet (s. „= aktueller Stand"), die restlichen 23
+liegen fertig, aber ungenutzt.
+
+**Beobachtung, die eine künftige Sitzung kennen sollte: die Erzeugung war deutlich und
+wiederholt langsamer als die aus Sitzung 5 bekannte ~60–65s/Bild-Baseline**, zeitweise bis
+zu ~1000s/Bild bei den 21:9-Großformaten. Live per Windows-Performance-Countern gemessen:
+der ComfyUI-Prozess (PyTorch/ROCm) zeigte während aktiver Generierung wiederholt **0%
+GPU-Auslastung auf allen Engines** (mehrfach über mehrere Sekunden bestätigt), während die
+CPU durchgehend ~1 Kern beschäftigte — sieht nach einem CPU-gebundenen Pfad statt echter
+GPU-Berechnung aus. Kein Eintrag im Windows-Systemprotokoll (kein Grafiktreiber-Crash/TDR,
+nur 30 Informationsereignisse in 3h, keine Warnungen/Fehler). Ein kompletter Prozess-Neustart
+(nicht nur der eingebaute Job-zu-Job-Neustart) linderte es (~630-650s/Bild danach), behob es
+aber nicht vollständig — die Ursache ist **nicht abschließend geklärt**. Bei künftigen
+Generierungs-Sitzungen mit ähnlich starker Verlangsamung: `Get-Counter '\GPU
+Engine(*)\Utilization Percentage'` gegen den ComfyUI-Prozess prüfen, bevor man auf
+Fragmentierung tippt oder viel Zeit in weitere Neustarts steckt.
 
 **Neu in Sitzung 5: Referenzbild-Workflow.** Nutzer liefert ein Referenzfoto, das per
 `C:\Users\soere\OneDrive\Desktop\KI\Ollama-Essensbeschreibung.ps1 -ImagePath <Bild>`
