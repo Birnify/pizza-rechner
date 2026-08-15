@@ -107,7 +107,11 @@ können bleiben, sie schaden nicht.
 
 ---
 
-## A2. `js/store.js` auf asynchronen Hintergrund vorbereiten
+## A2. `js/store.js` auf asynchronen Hintergrund vorbereiten — ERLEDIGT (v4.39.0, 2026-08-15)
+
+Details: `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Speicher-Zwischenschicht js/store.js
+asynchron vorbereitet (v4.39.0)". Empfohlener nächster Punkt: A3 oder B1 (beide setzen nur
+A1/A2 voraus).
 
 **Aufwand:** 1 Zyklus. Setzt A1 voraus.
 
@@ -441,7 +445,7 @@ zunächst gerne auf Deutschland begrenzt.
 | Punkt | Aufwand | Setzt voraus | Für kleines Modell geeignet |
 |---|---|---|---|
 | A1 Zwischenschicht einziehen | 1 Zyklus | nichts | ja, rein mechanisch |
-| A2 Asynchron vorbereiten | 1 Zyklus | A1 | ja, eng umrissen |
+| A2 Asynchron vorbereiten — **erledigt (v4.39.0)** | 1 Zyklus | A1 | ja, eng umrissen |
 | A3 Sicherung exportieren | 1 bis 2 | A1 | ja |
 | B1 Capacitor einrichten | 1 plus Installationen | Werkzeuge | nein, Einrichtung |
 | B2 Startbildschirm | 1 Zyklus | A2, B1 | ja |
@@ -455,5 +459,5 @@ zunächst gerne auf Deutschland begrenzt.
 | D3 Play Console | 1 Zyklus | D2 | nein, Formulare |
 | D4 Test und Freigabe | 14 Tage Wartezeit | alles | nein |
 
-**A1 erledigt (v4.38.4, 2026-08-15).** Empfohlener nächster Einstieg: A2 oder A3 (beide
-setzen nur A1 voraus, Reihenfolge dazwischen ist nicht zwingend).
+**A1 erledigt (v4.38.4, 2026-08-15). A2 erledigt (v4.39.0, 2026-08-15).** Empfohlener
+nächster Einstieg: A3 oder B1 (beide setzen nur A1/A2 voraus).

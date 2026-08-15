@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-15 · Aktuelle Version: v4.38.4 (Desktop + Mobil, synchron, Speicher-Zwischenschicht js/store.js) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-15 · Aktuelle Version: v4.39.0 (Desktop + Mobil, Speicher-Zwischenschicht js/store.js asynchron vorbereitet) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -218,24 +218,24 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Speicher-Zwischenschicht js/store.js (v4.38.4) = aktueller Stand
+## Speicher-Zwischenschicht js/store.js asynchron vorbereitet (v4.39.0) = aktueller Stand
 
-Play-Store-Vorbereitung, Punkt A1 aus `PLAYSTORE-BACKLOG.md` (Version 1 ohne Konten, alle
-Daten bleiben auf dem Gerät): neue Datei `js/store.js` bündelt alle 11 bekannten
-`localStorage`-Schlüssel hinter `PZ.store.get/set/remove/getJSON/setJSON/KEYS`. In 9
-Dateien (`js/i18n.js`, `js/onboarding.js`, `js/party.js`, `js/settings.js`,
-`js/simplemode.js`, `js/storage.js`, `js/theme.js`, `js/timer.js`, `js/units.js`) wurden
-alle 22 direkten `localStorage`-Aufrufe 1:1 durch `PZ.store` ersetzt — Verhalten bleibt
-exakt identisch, Hintergrund bleibt `localStorage`. `js/store.js` lädt als allererstes
-Skript vor `js/dom.js` (auch in `tests/test.html`). Reiner Mechanik-Refactor, keine
-Fachlogik/Oberfläche berührt. `grep -rn "localStorage\." js/` findet nur noch Treffer in
-`js/store.js` selbst. Testsuite unverändert **1353** grün, live per Playwright auf
-Desktop, Mobil und im Standalone-Build verifiziert (Speichern übersteht Reload, ebenso
-Farbschema/Sprache). `PLAYSTORE-BACKLOG.md` Punkt A1 erledigt, nächster empfohlener Punkt
-A2 oder A3.
+Play-Store-Vorbereitung, Punkt A2 aus `PLAYSTORE-BACKLOG.md`. `js/store.js` bekam einen
+internen `cache` im Arbeitsspeicher: `PZ.store.hydrate()` (async) befüllt ihn aus
+`PZ.store._backend` (weiterhin `localStorage`, Tausch erst B3), `get()` liest ab jetzt NUR
+noch aus dem `cache` (bleibt synchron), `set()`/`remove()` schreiben sofort synchron in den
+`cache` UND (eager, ohne selbst zu awaiten) in `_backend`, `flush()` (async) wartet auf
+angestoßene Hintergrund-Schreibvorgänge. Die 22 bestehenden Aufrufstellen aus A1 unverändert.
+Nebenbefund: rund 60 Stellen in `tests/test.html`, die zur Testisolation direkt an
+`PZ.store` vorbei `localStorage` manipulierten (Backup/Restore echter Nutzerdaten), mussten
+auf `PZ.store.get/set/remove` umgestellt werden, sonst wären sie durch den neuen `cache`
+nicht mehr synchron sichtbar gewesen. Testsuite 1353 → **1393** grün, live per CDP auf
+Desktop, Mobil und im Standalone-Build verifiziert (Speichern übersteht Reload). `js/store.js`
+und `tests/test.html` geändert; `pizza-rechner-mobile-standalone.html` neu gebaut.
+`PLAYSTORE-BACKLOG.md` Punkt A2 erledigt, nächster empfohlener Punkt A3 oder B1.
 
 **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Speicher-Zwischenschicht
-js/store.js (v4.38.4)".
+js/store.js asynchron vorbereitet (v4.39.0)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -552,6 +552,11 @@ fonts/               3 WOFF2-Dateien (Bitter normal/italic, Hanken Grotesk norma
                      400-800), von css/fonts.css referenziert
 assets/logo.svg      App-Icon (v4.0.0, aus dem Design-Import), im Header vor "Teigmeister" --
                      Mobil seit v4.0.0, Desktop seit v4.19.0 (vorher 🍕-Emoji)
+js/store.js          Speicher-Zwischenschicht (v4.38.4 A1, async vorbereitet seit v4.39.0 A2,
+                     s. „= aktueller Stand" oben): PZ.store.get/set/remove/getJSON/setJSON
+                     (synchron, Zwischenspeicher im Arbeitsspeicher) + PZ.store.hydrate()/
+                     flush() (async) + PZ.store._backend (aktuell localStorage). Lädt als
+                     ALLERERSTES Skript, noch vor js/dom.js, hat selbst keine Abhängigkeiten.
 js/dom.js            $-Helfer, legt globalen Namespace window.PZ an + PZ.announce(elementId, text)
                      (v3.58.0, gemeinsamer Live-Region-Helfer — Clear-then-delayed-set mit
                      Generation-Zähler je Element-ID, ersetzt 7+ frühere Einzelkopien) + seit
@@ -678,7 +683,7 @@ in **`BILD-EINBAU-KONZEPT.md`** im Projekt-Root (Ordnerregel, zentrales Bild-Reg
 Markup-Baustein, Reihenfolge der Kategorien, getroffene Entscheidungen). Zyklus 1 (Grundgerüst
 + Preset-Kartengitter) ist seit v4.32.0 erledigt, s. „= aktueller Stand" oben.
 
-**Ladereihenfolge** (Abhängigkeiten): dom → state → i18n-dict → i18n → images → settings → theme →
+**Ladereihenfolge** (Abhängigkeiten): store → dom → state → i18n-dict → i18n → images → settings → theme →
 units → widgets → flour → calc → schedule → guide → timer → ui → simplemode → print → pdf →
 presets → storage → newrecipe → share → party → glossary → main → nav → onboarding. Jedes Modul
 ist eine IIFE, kommuniziert nur über `window.PZ`. `onboarding` MUSS nach `nav` geladen werden

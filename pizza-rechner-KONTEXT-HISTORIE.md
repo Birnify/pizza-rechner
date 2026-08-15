@@ -8,6 +8,114 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Speicher-Zwischenschicht js/store.js asynchron vorbereitet (v4.39.0)
+
+Play-Store-Vorbereitung, Punkt A2 aus `PLAYSTORE-BACKLOG.md`. Setzt A1 voraus (js/store.js
+existiert bereits, s. Abschnitt „Speicher-Zwischenschicht js/store.js (v4.38.4)" unten).
+Mechanischer Auftrag mit fertiger Spezifikation, direkt an einen Orchestrator übergeben
+(Phase 1/Brainstorming entfiel laut Auftrag).
+
+**Ziel:** `js/store.js` sollte einen Zwischenspeicher im Arbeitsspeicher bekommen, damit die
+App später auf einen ASYNCHRONEN nativen Speicher (Punkt B3) umsteigen kann, ohne dass die
+22 bestehenden, synchronen Aufrufstellen aus A1 sich noch einmal ändern müssen.
+
+**Bauweise (`js/store.js`):**
+- Internes `cache`-Objekt hält alle Werte im Arbeitsspeicher, wird beim Laden des Moduls
+  synchron aus `_backend` vorbefüllt (`fillCacheSync()`) — das hält die App unverändert
+  lauffähig, ohne dass irgendwo `hydrate()` abgewartet werden müsste (das ist erst Punkt B2).
+- `PZ.store.hydrate()`: async, liest alle 11 Schlüssel aus `_backend` neu in den `cache`,
+  läuft immer über einen echten Promise-Tick (`Promise.resolve().then(fillCacheSync)`),
+  damit Aufrufer sich nie auf Zufalls-Timing verlassen.
+- `PZ.store.get()`: bleibt synchron, liest NUR noch aus dem `cache` (kein Live-Durchgriff
+  auf den Hintergrund mehr).
+- `PZ.store.set()`/`remove()`: schreiben sofort synchron in den `cache` (ein direkt
+  folgendes `get()` sieht den neuen Wert) UND rufen `_backend.set()`/`remove()` eager auf,
+  ohne selbst zu awaiten (`trackWrite(Promise.resolve(_backend.set(...)))`) — bewusst KEINE
+  künstliche Verzögerung in einen späteren Promise-Tick, weil der Hintergrund in diesem
+  Punkt A2 noch synchron (`localStorage`) ist: bestehender Code, der `cache` UND Hintergrund
+  im selben synchronen Durchlauf konsistent erwartet, bleibt dadurch unverändert lauffähig.
+  Erst wenn `_backend` in B3 auf einen echten asynchronen Speicher wechselt, liefert
+  `_backend.set()` selbst ein Promise, und genau dieses Nicht-Awaiten wird zum spürbaren
+  Fire-and-Forget.
+- `PZ.store.flush()`: async, `Promise.all()` über die aktuell angestoßenen (noch nicht
+  abgeschlossenen) Hintergrund-Schreibvorgänge, erfüllt sich sofort, wenn keine ausstehen.
+- `PZ.store._backend`: der Adapter mit `get`/`set`/`remove`, bleibt in diesem Punkt weiterhin
+  `localStorage` (Tausch auf nativen Speicher erst B3, nicht Teil dieses Auftrags).
+
+**Nebenbefund während der Testverifikation (relevant für künftige Store-Änderungen):** rund
+60 Stellen in `tests/test.html` (Sektionen „Speichern & Laden", „Feature-Flags",
+„Pizza-Party-Planer", „Sprachversion", „Dunkelmodus", „Hefemengen-/Verschwendungs-Anpassung",
+„Einheitensystem") manipulierten zur Testisolation (Backup/Restore echter Nutzerdaten vor/
+nach einem Testlauf) direkt `localStorage` an `PZ.store` vorbei. Mit dem neuen `cache` wäre
+das nicht mehr synchron für `PZ.store.get()`-basierte App-Lesevorgänge sichtbar gewesen
+(z. B. schlug die Migrationsprüfung in Sektion „Speichern & Laden" fehl: `PZ.load()` sah die
+per rohem `localStorage.setItem()` gesetzten Testdaten nicht, weil `PZ.store.get()` nur noch
+den — zu diesem Zeitpunkt leeren — `cache` liest). Alle betroffenen Stellen wurden 1:1 auf
+`PZ.store.get/set/remove` umgestellt (mechanisch, per Skript, dieselbe Semantik). Kein
+App-Code betroffen, nur Test-Scaffolding.
+
+**Neue Testsektion `43 · Speicher-Zwischenschicht (js/store.js)`** (1353 → **1393**, 40
+neue Prüfungen): eigene, von den Testsuite-Modulen unbenutzte Schlüssel (`SIMPLE_MODE`,
+`TIMER_HINT_SHOWN`, `ONBOARDING_DONT_SHOW` — deren Module `js/simplemode.js`/`js/timer.js`/
+`js/onboarding.js` lädt `tests/test.html` bewusst nicht) als Spielwiese. Deckt ab:
+`hydrate()` befüllt den `cache` aus `_backend` (externe Hintergrund-Änderung erst nach
+`hydrate()` sichtbar), `get()` liefert synchron ohne Promise, `set()` ist im direkt
+folgenden `get()` sofort sichtbar (mit künstlich verzögertem `_backend.set`-Stub simuliert,
+um das unabhängig vom heute noch synchronen Backend zu beweisen), `flush()` löst sich erst
+nach dem angestoßenen Schreibvorgang auf, `_backend` hat `get`/`set`/`remove`. Dazu 12
+Randfälle aus einem gezielten `test-generator`-Durchlauf: `getJSON()`/`setJSON()` (fehlender
+Schlüssel, kaputtes JSON, verschachteltes Objekt, `setJSON(key, null)` — String `"null"`
+statt fehlendem Schlüssel), `remove()` (gesetzter und nie gesetzter Schlüssel), mehrere
+schnelle `set()`-Aufrufe auf denselben Schlüssel (letzter gewinnt, in `cache` UND
+Hintergrund), `flush()` ohne ausstehende Schreibvorgänge, `get()` auf einen unbekannten
+Schlüssel (kein Crash, `null`), `PZ.store.KEYS`-Vollständigkeit (11 Einträge). Ein
+Testfall-Vorschlag des `test-generator`-Agenten wurde dabei NICHT ungeprüft übernommen: die
+Annahme, `hydrate()` während eines noch laufenden `set()`-Hintergrundschreibvorgangs bliebe
+„automatisch konsistent mit dem optimistischen `set()`-Wert", stimmt laut eigener
+Nachrechnung der Promise-Microtask- vs. `setTimeout`-Makrotask-Reihenfolge NICHT: `hydrate()`
+läuft als Microtask VOR dem verzögerten Hintergrund-Schreibvorgang durch und überschreibt den
+`cache` mit dem dann noch alten Hintergrundstand. Als dokumentiertes, für die reale App
+aktuell folgenloses Randfall-Verhalten festgehalten (`hydrate()` wird noch nirgends im
+App-Code aufgerufen, erst Punkt B2) statt stillschweigend übernommen oder die Implementierung
+ohne Auftrag dafür komplizierter zu machen.
+
+**Verifikation:** Testsuite 1353 → 1393 grün (Headless-Edge-Dump, `msedge --headless
+--disable-gpu --virtual-time-budget --dump-dom`). Zusätzlich live per Headless-Edge-CDP
+(WebSocket, `--remote-allow-origins=*`) gegen den lokalen Server geprüft: Rezept speichern,
+Seite neu laden, Wert korrekt wiederhergestellt (Desktop UND Mobil), ebenso Sprache und
+Farbschema übersteht Reload; `pizza-rechner-mobile-standalone.html` neu gebaut und identisch
+per `file://` geprüft (Speichern übersteht Reload dort ebenfalls).
+
+**Geändert:** `js/store.js`, `tests/test.html`. `pizza-rechner.html`/`pizza-rechner-
+mobile.html` `?v=`/Logo/Versionsanzeige auf `4.39.0` gezogen (reiner Versionssprung, keine
+inhaltliche HTML-Änderung). `pizza-rechner-mobile-standalone.html` neu gebaut.
+`Versionen/v4.39.0 - Speicher-Zwischenschicht asynchron vorbereitet/` enthält den
+vollständigen Schnappschuss. `PLAYSTORE-BACKLOG.md` Punkt A2 als erledigt markiert,
+nächster empfohlener Punkt A3 oder B1.
+
+**Bewusst NICHT angefasst** (laut Auftrag): die 22 Aufrufstellen aus A1 in den 9 Dateien,
+das Inline-Script im `<head>` (liest `pizzaTheme` weiterhin direkt aus `localStorage`, s.
+B3), die `sessionStorage`-Stellen in `js/presets.js`, jegliche Fachlogik/Oberfläche.
+
+## Speicher-Zwischenschicht js/store.js (v4.38.4)
+
+Play-Store-Vorbereitung, Punkt A1 aus `PLAYSTORE-BACKLOG.md` (Version 1 ohne Konten, alle
+Daten bleiben auf dem Gerät): neue Datei `js/store.js` bündelt alle 11 bekannten
+`localStorage`-Schlüssel hinter `PZ.store.get/set/remove/getJSON/setJSON/KEYS`. In 9
+Dateien (`js/i18n.js`, `js/onboarding.js`, `js/party.js`, `js/settings.js`,
+`js/simplemode.js`, `js/storage.js`, `js/theme.js`, `js/timer.js`, `js/units.js`) wurden
+alle 22 direkten `localStorage`-Aufrufe 1:1 durch `PZ.store` ersetzt — Verhalten bleibt
+exakt identisch, Hintergrund bleibt `localStorage`. `js/store.js` lädt als allererstes
+Skript vor `js/dom.js` (auch in `tests/test.html`). Reiner Mechanik-Refactor, keine
+Fachlogik/Oberfläche berührt. `grep -rn "localStorage\." js/` findet nur noch Treffer in
+`js/store.js` selbst. Testsuite unverändert **1353** grün, live per Playwright auf
+Desktop, Mobil und im Standalone-Build verifiziert (Speichern übersteht Reload, ebenso
+Farbschema/Sprache). `PLAYSTORE-BACKLOG.md` Punkt A1 erledigt, nächster empfohlener Punkt
+A2 oder A3.
+
+**Volle Details:** s. Abschnitt „Speicher-Zwischenschicht js/store.js (v4.38.4)" weiter
+unten in dieser Datei.
+
 ## Speicher-Zwischenschicht js/store.js (v4.38.4)
 
 Play-Store-Vorbereitung, Punkt A1 aus `PLAYSTORE-BACKLOG.md` (Version 1 ohne Konten,

@@ -132,7 +132,7 @@
 
 <script>
 "use strict";
-(function () {
+(async function () {
   const results = document.getElementById('results');
   let passed = 0, failed = 0;
 
@@ -144,7 +144,7 @@
   // Browser-Profil liegender "pizzaLang"-Wert aus einem echten Nutzungslauf hier
   // durchschlagen und praktisch alle Textvergleiche unten zum Flackern bringen. Deshalb
   // hier VOR jedem Testlauf explizit auf Deutsch fixieren, unabhängig vom Browser/Profil.
-  try { localStorage.removeItem('pizzaLang'); } catch (e) { /* ignore */ }
+  try { PZ.store.remove('pizzaLang'); } catch (e) { /* ignore */ }
   if (PZ.setLang) PZ.setLang('de');
 
   // --- Einheitensystem (js/units.js, v3.65.0): identischer Determinismus-Fix wie bei
@@ -152,7 +152,7 @@
   // "en-US" (Test-Browser-Region) alle bestehenden, in Gramm/Celsius formulierten
   // Zahlenvergleiche unten zum Flackern bringen (Ergebnis-Panel/Anleitung zeigen dann
   // oz/lb/°F statt g/°C). Deshalb hier VOR jedem Testlauf explizit auf Metrisch fixieren.
-  try { localStorage.removeItem('pizzaUnits'); } catch (e) { /* ignore */ }
+  try { PZ.store.remove('pizzaUnits'); } catch (e) { /* ignore */ }
   if (PZ.setUnitSystem) PZ.setUnitSystem('metric');
 
   // Basis-Zustand für alle Tests
@@ -1451,19 +1451,19 @@
     // Sichert einen eventuell vorhandenen echten Stand (falls test.html je dieselbe
     // Origin/denselben localStorage wie die App teilt) und stellt ihn am Ende wieder her:
     // die Tests dürfen echte Nutzerdaten niemals überschreiben.
-    const backup = localStorage.getItem(STORAGE_KEY);
+    const backup = PZ.store.get(STORAGE_KEY);
 
     function withCleanStorage(fn) {
-      localStorage.removeItem(STORAGE_KEY);
-      try { fn(); } finally { localStorage.removeItem(STORAGE_KEY); }
+      PZ.store.remove(STORAGE_KEY);
+      try { fn(); } finally { PZ.store.remove(STORAGE_KEY); }
     }
 
     // --- Migration: alter nackter state-Stand -> neues {recipes,activeId}-Format ---
     withCleanStorage(() => {
       const legacy = Object.assign({}, BASE, { balls: 6, hyd: 68 });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(legacy));
+      PZ.store.set(STORAGE_KEY, JSON.stringify(legacy));
       PZ.load(); // liest den alten Stand, migriert automatisch, schreibt zurück
-      const migrated = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      const migrated = JSON.parse(PZ.store.get(STORAGE_KEY));
       const recipes = PZ.listRecipes();
       renderBox('Migration: alter Einzel-Slot-Stand wird automatisch übernommen', [
         { label: 'Neues Format hat recipes[]', ok: Array.isArray(migrated.recipes), actual: Array.isArray(migrated.recipes), expected: true, tol: null },
@@ -1488,7 +1488,7 @@
     withCleanStorage(() => {
       const legacyNoFlourTemp = Object.assign({}, BASE, { balls: 5, hyd: 63 });
       delete legacyNoFlourTemp.flourTemp;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(legacyNoFlourTemp));
+      PZ.store.set(STORAGE_KEY, JSON.stringify(legacyNoFlourTemp));
       Object.assign(PZ.state, BASE, { flourTemp: 17 }); // Sentinel: simuliert vorherigen UI-Stand
       let loadThrew = false, calcThrew = false;
       try { PZ.load(); } catch (e) { loadThrew = true; }
@@ -1514,7 +1514,7 @@
       const legacyNoOilSugar = Object.assign({}, BASE, { balls: 6, hyd: 64 });
       delete legacyNoOilSugar.oil;
       delete legacyNoOilSugar.sugar;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(legacyNoOilSugar));
+      PZ.store.set(STORAGE_KEY, JSON.stringify(legacyNoOilSugar));
       Object.assign(PZ.state, BASE, { oil: 3.5, sugar: 1.5 }); // Sentinel: simuliert vorherigen UI-Stand
       let loadThrew = false, calcThrew = false;
       try { PZ.load(); } catch (e) { loadThrew = true; }
@@ -1539,7 +1539,7 @@
     // nutzt parseFloat, typtolerant) fälschlich weiterhin "Hand"-Anleitungstext gezeigt. ---
     withCleanStorage(() => {
       const legacyNumericKnead = Object.assign({}, BASE, { knead: 6 }); // Number statt String!
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(legacyNumericKnead));
+      PZ.store.set(STORAGE_KEY, JSON.stringify(legacyNumericKnead));
       PZ.load();
       renderBox('state.knead wird beim Laden immer zu String normalisiert (Typ-Fix)', [
         { label: 'PZ.state.knead ist ein String', ok: typeof PZ.state.knead === 'string', actual: typeof PZ.state.knead, expected: 'string', tol: null },
@@ -1733,7 +1733,7 @@
 
     // --- Korruptes JSON im localStorage: darf nicht crashen, wird wie "leer" behandelt ---
     withCleanStorage(() => {
-      localStorage.setItem(STORAGE_KEY, '{ das ist kein gültiges JSON');
+      PZ.store.set(STORAGE_KEY, '{ das ist kein gültiges JSON');
       let threw = false;
       let recipes, activeId;
       try {
@@ -1904,8 +1904,8 @@
     });
 
     // Ursprünglichen Stand (falls vorhanden) wiederherstellen, sonst Testspuren entfernen
-    if (backup !== null) localStorage.setItem(STORAGE_KEY, backup);
-    else localStorage.removeItem(STORAGE_KEY);
+    if (backup !== null) PZ.store.set(STORAGE_KEY, backup);
+    else PZ.store.remove(STORAGE_KEY);
   })();
 
   // ─────────────────────────────────────────────────────────────
@@ -2006,7 +2006,7 @@
     const FLAG_KEY = 'pizzaRechnerFeatureFlags';
     // Wie bei Abschnitt 16/17: einen eventuell vorhandenen echten Stand sichern und am
     // Ende wiederherstellen: Tests dürfen nie echte Nutzereinstellungen überschreiben.
-    const backup = localStorage.getItem(FLAG_KEY);
+    const backup = PZ.store.get(FLAG_KEY);
     const flagsBackup = Object.assign({}, PZ.FLAGS);
 
     // --- Default-Werte exakt wie vom Nutzer festgelegt ---
@@ -2109,10 +2109,10 @@
 
     // --- Persistenz: setFlag() schreibt sofort in localStorage ---
     (function () {
-      localStorage.removeItem(FLAG_KEY);
+      PZ.store.remove(FLAG_KEY);
       PZ.setFlag('timerSystem', true);
       let raw = null, threw = false;
-      try { raw = JSON.parse(localStorage.getItem(FLAG_KEY)); } catch (e) { threw = true; }
+      try { raw = JSON.parse(PZ.store.get(FLAG_KEY)); } catch (e) { threw = true; }
       PZ.setFlag('timerSystem', false); // wieder auf Baseline für die restlichen Checks unten (Default hier: false)
       renderBox('setFlag() persistiert sofort in localStorage', [
         { label: 'Kein Fehler beim Parsen des gespeicherten JSON', ok: !threw, actual: threw, expected: false, tol: null },
@@ -2221,7 +2221,7 @@
     // bereits bestehenden #gSugarRow-Sichtbarkeitstests (identisches Muster).
 
     // --- Aufräumen: echten localStorage-Stand + PZ.FLAGS-Objekt wiederherstellen ---
-    if (backup === null) localStorage.removeItem(FLAG_KEY); else localStorage.setItem(FLAG_KEY, backup);
+    if (backup === null) PZ.store.remove(FLAG_KEY); else PZ.store.set(FLAG_KEY, backup);
     Object.keys(PZ.FLAGS).forEach(k => delete PZ.FLAGS[k]);
     Object.assign(PZ.FLAGS, flagsBackup);
   })();
@@ -2500,11 +2500,11 @@
     const STORAGE_KEY = 'pizzaRechner';
     // Wie Sektion 16: eventuell vorhandenen echten Stand sichern/wiederherstellen:
     // die Tests dürfen echte Nutzerdaten niemals überschreiben.
-    const backup = localStorage.getItem(STORAGE_KEY);
+    const backup = PZ.store.get(STORAGE_KEY);
 
     function withCleanStorage(fn) {
-      localStorage.removeItem(STORAGE_KEY);
-      try { fn(); } finally { localStorage.removeItem(STORAGE_KEY); }
+      PZ.store.remove(STORAGE_KEY);
+      try { fn(); } finally { PZ.store.remove(STORAGE_KEY); }
     }
 
     // --- exportRecipes(): liefert ALLE gespeicherten Rezepte, nicht nur den aktiven state ---
@@ -2640,8 +2640,8 @@
     });
 
     // Ursprünglichen Stand (falls vorhanden) wiederherstellen, sonst Testspuren entfernen
-    if (backup !== null) localStorage.setItem(STORAGE_KEY, backup);
-    else localStorage.removeItem(STORAGE_KEY);
+    if (backup !== null) PZ.store.set(STORAGE_KEY, backup);
+    else PZ.store.remove(STORAGE_KEY);
   })();
 
   // ─────────────────────────────────────────────────────────────
@@ -2759,11 +2759,11 @@
   // Keys unangetastet bleiben.
   (function () {
     const PARTY_KEY = 'pizzaPartyPlanner';
-    const backup = localStorage.getItem(PARTY_KEY);
+    const backup = PZ.store.get(PARTY_KEY);
 
     function withCleanPartyStorage(fn) {
-      localStorage.removeItem(PARTY_KEY);
-      try { fn(); } finally { localStorage.removeItem(PARTY_KEY); }
+      PZ.store.remove(PARTY_KEY);
+      try { fn(); } finally { PZ.store.remove(PARTY_KEY); }
     }
 
     // --- getAllPizzas(): 8 vorgegebene Beispielpizzen, keine eigenen ohne Anlegen ---
@@ -2918,26 +2918,26 @@
     // --- Eigener localStorage-Key, komplett getrennt vom Rezepte-Key ---
     (function () {
       const RECIPE_KEY = 'pizzaRechner';
-      const recipeBackup = localStorage.getItem(RECIPE_KEY);
+      const recipeBackup = PZ.store.get(RECIPE_KEY);
       withCleanPartyStorage(() => {
-        localStorage.removeItem(RECIPE_KEY);
+        PZ.store.remove(RECIPE_KEY);
         try {
           PZ.partyAddCustomPizza('Isolationstest', [{ name: 'X', amount: 1, unit: 'g' }]);
-          const recipeRaw = localStorage.getItem(RECIPE_KEY);
+          const recipeRaw = PZ.store.get(RECIPE_KEY);
           renderBox('Pizza-Party-Daten landen unter einem eigenen localStorage-Key, nicht im Rezepte-Key', [
-            { label: '"pizzaPartyPlanner" enthält jetzt Daten', ok: !!localStorage.getItem(PARTY_KEY), actual: !!localStorage.getItem(PARTY_KEY), expected: true, tol: null },
+            { label: '"pizzaPartyPlanner" enthält jetzt Daten', ok: !!PZ.store.get(PARTY_KEY), actual: !!PZ.store.get(PARTY_KEY), expected: true, tol: null },
             { label: '"pizzaRechner" (Rezepte-Key) bleibt unberührt (weiterhin leer)', ok: recipeRaw === null, actual: recipeRaw, expected: null, tol: null }
           ]);
         } finally {
-          if (recipeBackup !== null) localStorage.setItem(RECIPE_KEY, recipeBackup);
-          else localStorage.removeItem(RECIPE_KEY);
+          if (recipeBackup !== null) PZ.store.set(RECIPE_KEY, recipeBackup);
+          else PZ.store.remove(RECIPE_KEY);
         }
       });
     })();
 
     // --- Robustheit: korruptes JSON im Party-localStorage darf nicht crashen ---
     withCleanPartyStorage(() => {
-      localStorage.setItem(PARTY_KEY, '{ das ist kein gültiges JSON');
+      PZ.store.set(PARTY_KEY, '{ das ist kein gültiges JSON');
       let threw = false;
       let pizzas = [];
       try { pizzas = PZ.partyGetAllPizzas(); } catch (e) { threw = true; }
@@ -2948,8 +2948,8 @@
     });
 
     // Ursprünglichen Party-Stand (falls vorhanden) wiederherstellen, sonst Testspuren entfernen
-    if (backup !== null) localStorage.setItem(PARTY_KEY, backup);
-    else localStorage.removeItem(PARTY_KEY);
+    if (backup !== null) PZ.store.set(PARTY_KEY, backup);
+    else PZ.store.remove(PARTY_KEY);
   })();
 
   // ─────────────────────────────────────────────────────────────
@@ -2962,7 +2962,7 @@
   // Ende wieder Deutsch her (Baseline für alle anderen Sektionen dieser Datei).
   (function () {
     const LANG_KEY = 'pizzaLang';
-    const backup = localStorage.getItem(LANG_KEY);
+    const backup = PZ.store.get(LANG_KEY);
 
     // --- t(): liefert deutschen Text per Default (Baseline dieser Testsuite) ---
     renderBox('t() liefert den deutschen Text für einen bekannten Key', [
@@ -2998,15 +2998,15 @@
 
     // --- getLang()/setLang(): Umschalten + Persistenz ---
     (function () {
-      localStorage.removeItem(LANG_KEY);
+      PZ.store.remove(LANG_KEY);
       const before = PZ.getLang();
       PZ.setLang('en');
       const afterEn = PZ.getLang();
-      const storedEn = localStorage.getItem(LANG_KEY);
+      const storedEn = PZ.store.get(LANG_KEY);
       const textEn = PZ.t('btn.save');
       PZ.setLang('de');
       const afterDe = PZ.getLang();
-      const storedDe = localStorage.getItem(LANG_KEY);
+      const storedDe = PZ.store.get(LANG_KEY);
       const textDe = PZ.t('btn.save');
       renderBox('setLang()/getLang() schalten die Sprache um und persistieren in localStorage', [
         { label: 'Baseline ist Deutsch', ok: before === 'de', actual: before, expected: 'de', tol: null },
@@ -3041,8 +3041,8 @@
 
     // Ursprünglichen Sprach-Stand (falls vorhanden) wiederherstellen, sonst auf Deutsch
     // zurücksetzen: Baseline für alle vorangegangenen Testsektionen in dieser Datei.
-    if (backup !== null) { localStorage.setItem(LANG_KEY, backup); PZ.setLang(backup); }
-    else { localStorage.removeItem(LANG_KEY); PZ.setLang('de'); }
+    if (backup !== null) { PZ.store.set(LANG_KEY, backup); PZ.setLang(backup); }
+    else { PZ.store.remove(LANG_KEY); PZ.setLang('de'); }
   })();
 
   // ─────────────────────────────────────────────────────────────
@@ -3057,7 +3057,7 @@
   // pizza-rechner-KONTEXT.md dokumentiert und per Screenshot-Verifikation geprüft.
   (function () {
     const THEME_KEY = 'pizzaTheme';
-    const backup = localStorage.getItem(THEME_KEY);
+    const backup = PZ.store.get(THEME_KEY);
     const attrBackup = document.documentElement.getAttribute('data-theme');
 
     // --- resolveInitialTheme(): reine Entscheidungsfunktion, kein DOM/localStorage ---
@@ -3071,15 +3071,15 @@
 
     // --- setTheme()/getTheme(): setzt data-theme, persistiert in localStorage ---
     (function () {
-      localStorage.removeItem(THEME_KEY);
+      PZ.store.remove(THEME_KEY);
       PZ.setTheme('dark');
       const afterDark = PZ.getTheme();
       const attrDark = document.documentElement.getAttribute('data-theme');
-      const storedDark = localStorage.getItem(THEME_KEY);
+      const storedDark = PZ.store.get(THEME_KEY);
       PZ.setTheme('light');
       const afterLight = PZ.getTheme();
       const attrLight = document.documentElement.getAttribute('data-theme');
-      const storedLight = localStorage.getItem(THEME_KEY);
+      const storedLight = PZ.store.get(THEME_KEY);
       renderBox('setTheme()/getTheme() schalten das Theme um, setzen data-theme und persistieren', [
         { label: 'setTheme("dark") -> getTheme() liefert "dark"', ok: afterDark === 'dark', actual: afterDark, expected: 'dark', tol: null },
         { label: 'setTheme("dark") setzt data-theme="dark" auf <html>', ok: attrDark === 'dark', actual: attrDark, expected: 'dark', tol: null },
@@ -3128,7 +3128,7 @@
 
     // Ursprünglichen Theme-Stand (falls vorhanden) wiederherstellen, sonst Key entfernen:
     // Baseline für alle vorangegangenen Testsektionen in dieser Datei.
-    if (backup !== null) { localStorage.setItem(THEME_KEY, backup); } else { localStorage.removeItem(THEME_KEY); }
+    if (backup !== null) { PZ.store.set(THEME_KEY, backup); } else { PZ.store.remove(THEME_KEY); }
     if (attrBackup !== null) { document.documentElement.setAttribute('data-theme', attrBackup); } else { document.documentElement.removeAttribute('data-theme'); }
   })();
 
@@ -3138,7 +3138,7 @@
     const ADJUST_KEY = 'pizzaRechnerAdjustments';
     // Wie bei Abschnitt 16/17/18: einen eventuell vorhandenen echten Stand sichern und
     // am Ende wiederherstellen: Tests dürfen nie echte Nutzereinstellungen überschreiben.
-    const backup = localStorage.getItem(ADJUST_KEY);
+    const backup = PZ.store.get(ADJUST_KEY);
     const adjustBackup = Object.assign({}, PZ.ADJUST);
 
     // --- Default-Werte exakt wie vom Nutzer festgelegt ---
@@ -3191,10 +3191,10 @@
 
     // --- Persistenz: setAdjust() klemmt, persistiert sofort, ignoriert unbekannte Keys ---
     (function () {
-      localStorage.removeItem(ADJUST_KEY);
+      PZ.store.remove(ADJUST_KEY);
       PZ.setAdjust('wasteAdjust', 999); // muss auf 15 geklemmt werden
       let raw = null, threw = false;
-      try { raw = JSON.parse(localStorage.getItem(ADJUST_KEY)); } catch (e) { threw = true; }
+      try { raw = JSON.parse(PZ.store.get(ADJUST_KEY)); } catch (e) { threw = true; }
       const before = Object.assign({}, PZ.ADJUST);
       PZ.setAdjust('unbekannterKey', 42);
       renderBox('setAdjust() klemmt & persistiert sofort in localStorage', [
@@ -3321,7 +3321,7 @@
 
     // Ursprünglichen Stand (falls vorhanden) wiederherstellen, sonst Key entfernen:
     // Baseline für alle vorangegangenen Testsektionen in dieser Datei.
-    if (backup !== null) { localStorage.setItem(ADJUST_KEY, backup); } else { localStorage.removeItem(ADJUST_KEY); }
+    if (backup !== null) { PZ.store.set(ADJUST_KEY, backup); } else { PZ.store.remove(ADJUST_KEY); }
     PZ.ADJUST = adjustBackup;
   })();
 
@@ -3337,7 +3337,7 @@
   // Bäckerprozente-/Masseerhaltungs-Prüfungen aus Sektion 1 ff., nur das neue Feature.
   (function () {
     const UNITS_KEY = 'pizzaUnits';
-    const backup = localStorage.getItem(UNITS_KEY);
+    const backup = PZ.store.get(UNITS_KEY);
     const unitsBackup = PZ.getUnitSystem();
 
     // --- resolveInitialUnits(): reine Entscheidungsfunktion, kein DOM/localStorage ---
@@ -3351,13 +3351,13 @@
 
     // --- setUnitSystem()/getUnitSystem(): schaltet um, persistiert in localStorage ---
     (function () {
-      localStorage.removeItem(UNITS_KEY);
+      PZ.store.remove(UNITS_KEY);
       PZ.setUnitSystem('imperial');
       const afterImperial = PZ.getUnitSystem();
-      const storedImperial = localStorage.getItem(UNITS_KEY);
+      const storedImperial = PZ.store.get(UNITS_KEY);
       PZ.setUnitSystem('metric');
       const afterMetric = PZ.getUnitSystem();
-      const storedMetric = localStorage.getItem(UNITS_KEY);
+      const storedMetric = PZ.store.get(UNITS_KEY);
       renderBox('setUnitSystem()/getUnitSystem() schalten um und persistieren in localStorage', [
         { label: 'setUnitSystem("imperial") -> getUnitSystem() liefert "imperial"', ok: afterImperial === 'imperial', actual: afterImperial, expected: 'imperial', tol: null },
         { label: 'setUnitSystem("imperial") persistiert "imperial" in localStorage', ok: storedImperial === 'imperial', actual: storedImperial, expected: 'imperial', tol: null },
@@ -3484,7 +3484,7 @@
 
     // Ursprünglichen Einheiten-Stand (falls vorhanden) wiederherstellen, sonst Key entfernen:
     // Baseline für alle vorangegangenen Testsektionen in dieser Datei.
-    if (backup !== null) { localStorage.setItem(UNITS_KEY, backup); } else { localStorage.removeItem(UNITS_KEY); }
+    if (backup !== null) { PZ.store.set(UNITS_KEY, backup); } else { PZ.store.remove(UNITS_KEY); }
     PZ.setUnitSystem(unitsBackup);
   })();
 
@@ -5562,8 +5562,8 @@
   // Override sofort wieder zerstörte. Jetzt korrekt nur beim echten Methode-Segment-Klick.
   (function () {
     const STORAGE_KEY = 'pizzaRechner';
-    const backup = localStorage.getItem(STORAGE_KEY);
-    localStorage.removeItem(STORAGE_KEY);
+    const backup = PZ.store.get(STORAGE_KEY);
+    PZ.store.remove(STORAGE_KEY);
     try {
       Object.assign(PZ.state, BASE, PRESET_STATES.teglia);
       PZ.calc();
@@ -5582,8 +5582,8 @@
         { label: 'proofMin nach dem Laden korrekt (1620)', ok: f.proofMin === 1620, actual: f.proofMin, expected: 1620, tol: null },
       ]);
     } finally {
-      localStorage.removeItem(STORAGE_KEY);
-      if (backup !== null) localStorage.setItem(STORAGE_KEY, backup);
+      PZ.store.remove(STORAGE_KEY);
+      if (backup !== null) PZ.store.set(STORAGE_KEY, backup);
       Object.assign(PZ.state, BASE);
       PZ.calc();
     }
@@ -6678,6 +6678,250 @@
     })();
 
     resetToShelf();
+  })();
+
+  // ─────────────────────────────────────────────────────────────
+  heading('43 · Speicher-Zwischenschicht (js/store.js, Play-Store-Vorbereitung A2)');
+
+  // Alle vier hier genutzten Schlüssel gehören Modulen, die tests/test.html bewusst NICHT
+  // lädt (js/simplemode.js, js/onboarding.js, js/timer.js — s. Dateistruktur-Abschnitt in
+  // pizza-rechner-KONTEXT.md) und werden sonst nirgends in dieser Testsuite gelesen/
+  // geschrieben — unabhängige Spielwiese, keine Kollision mit anderen Testfällen.
+  await (async function () {
+    const K_HYDRATE = PZ.store.KEYS.TIMER_HINT_SHOWN;
+    const K_SET = PZ.store.KEYS.SIMPLE_MODE;
+
+    // --- hydrate() befüllt den Zwischenspeicher aus dem Hintergrund -------------------
+    (function () {
+      // Schreibt direkt am Zwischenspeicher vorbei in den echten Hintergrund (identisch
+      // dazu, wie ein anderer Tab oder ein künftiger nativer Speicher den Wert ändern
+      // könnte) und prüft, dass PZ.store.get() das NICHT sofort sieht (liest nur noch aus
+      // dem Zwischenspeicher, kein Live-Durchgriff), bis hydrate() explizit neu befüllt.
+      localStorage.removeItem(K_HYDRATE);
+      const beforeHydrate = PZ.store.get(K_HYDRATE);
+      localStorage.setItem(K_HYDRATE, 'hydrate-marker-a2');
+      const stillStale = PZ.store.get(K_HYDRATE);
+      renderBox('hydrate() ist nötig, get() liest NICHT live aus dem Hintergrund durch', [
+        { label: 'get() vor der externen Änderung: kein Wert im Zwischenspeicher', actual: beforeHydrate, expected: null, tol: null, ok: beforeHydrate === null },
+        { label: 'get() sieht die externe Hintergrund-Änderung noch NICHT (Zwischenspeicher ist veraltet)', actual: stillStale, expected: '≠ hydrate-marker-a2', tol: null, ok: stillStale !== 'hydrate-marker-a2' }
+      ]);
+    })();
+
+    const hydrateResult = PZ.store.hydrate();
+    renderBox('PZ.store.hydrate() gibt ein Promise zurück', [
+      { label: 'hydrate() liefert ein Promise', actual: hydrateResult instanceof Promise, expected: true, tol: null, ok: hydrateResult instanceof Promise }
+    ]);
+    await hydrateResult;
+
+    (function () {
+      const afterHydrate = PZ.store.get(K_HYDRATE);
+      renderBox('Nach await hydrate(): Zwischenspeicher ist aus dem Hintergrund befüllt, get() liefert ohne await/Promise', [
+        { label: 'get() liefert jetzt den extern gesetzten Wert', actual: afterHydrate, expected: 'hydrate-marker-a2', tol: null, ok: afterHydrate === 'hydrate-marker-a2' },
+        { label: 'get()-Rückgabewert ist kein Promise (echtes, sofortiges Ergebnis)', actual: afterHydrate && typeof afterHydrate.then === 'function', expected: false, tol: null, ok: !(afterHydrate && typeof afterHydrate.then === 'function') }
+      ]);
+      localStorage.removeItem(K_HYDRATE);
+    })();
+    await PZ.store.hydrate(); // Zwischenspeicher wieder aufräumen (K_HYDRATE zurück auf null)
+
+    // --- set() ist im direkt folgenden get() sofort sichtbar, ohne auf den Hintergrund zu
+    //     warten (fire-and-forget) -------------------------------------------------------
+    // In diesem Punkt A2 ist `_backend` (localStorage) noch synchron, ein set() landet also
+    // im selben Durchlauf auch schon im echten Hintergrund (bewusste Design-Entscheidung,
+    // s. Kommentar bei set() in js/store.js -- hält bestehenden Code, der Zwischenspeicher
+    // UND Hintergrund im selben synchronen Durchlauf konsistent erwartet, unverändert
+    // lauffähig). Um die eigentliche fire-and-forget-Eigenschaft (sichtbar im get(), AUCH
+    // wenn der Hintergrund noch nicht fertig ist) unabhängig vom heutigen synchronen
+    // Backend zu prüfen, wird `_backend.set` hier kurz durch einen künstlich verzögerten
+    // Stub ersetzt (simuliert den künftigen asynchronen nativen Speicher aus B3).
+    localStorage.removeItem(K_SET);
+    const realBackendSet = PZ.store._backend.set;
+    let backendWriteDone = false;
+    PZ.store._backend.set = function (key, value) {
+      return new Promise((resolve) => {
+        setTimeout(() => { backendWriteDone = true; resolve(realBackendSet(key, value)); }, 30);
+      });
+    };
+    try {
+      const setReturn = PZ.store.set(K_SET, 'set-sync-test-a2');
+      const immediateGet = PZ.store.get(K_SET);
+      renderBox('set() schreibt sofort synchron in den Zwischenspeicher (fire-and-forget zum Hintergrund)', [
+        { label: 'set() gibt true zurück', actual: setReturn, expected: true, tol: null, ok: setReturn === true },
+        { label: 'get() sieht den neuen Wert im selben synchronen Durchlauf', actual: immediateGet, expected: 'set-sync-test-a2', tol: null, ok: immediateGet === 'set-sync-test-a2' },
+        { label: 'der (hier künstlich verzögerte) Hintergrund ist in diesem Moment noch NICHT durch', actual: backendWriteDone, expected: false, tol: null, ok: backendWriteDone === false }
+      ]);
+
+      // --- flush() erfüllt sich als Promise, sobald der angestoßene Schreibvorgang durch ist
+      const flushResult = PZ.store.flush();
+      renderBox('PZ.store.flush() gibt ein Promise zurück', [
+        { label: 'flush() liefert ein Promise', actual: flushResult instanceof Promise, expected: true, tol: null, ok: flushResult instanceof Promise }
+      ]);
+      await flushResult;
+      renderBox('Nach await flush(): der angestoßene Hintergrund-Schreibvorgang aus set() ist durch', [
+        { label: 'der (künstlich verzögerte) Hintergrund-Schreibvorgang ist abgeschlossen', actual: backendWriteDone, expected: true, tol: null, ok: backendWriteDone === true },
+        { label: 'der echte Hintergrund (localStorage) hat jetzt den Wert', actual: localStorage.getItem(K_SET), expected: 'set-sync-test-a2', tol: null, ok: localStorage.getItem(K_SET) === 'set-sync-test-a2' }
+      ]);
+    } finally {
+      PZ.store._backend.set = realBackendSet;
+    }
+    localStorage.removeItem(K_SET);
+    await PZ.store.hydrate(); // Zwischenspeicher wieder aufräumen (K_SET zurück auf null)
+
+    // --- PZ.store._backend: der Hintergrund-Adapter mit get/set/remove, bleibt in diesem
+    //     Punkt A2 localStorage (Tausch auf nativen Speicher erst B3) -------------------
+    renderBox('PZ.store._backend ist der Hintergrund-Adapter mit get/set/remove', [
+      { label: '_backend.get ist eine Funktion', actual: typeof PZ.store._backend.get, expected: 'function', tol: null, ok: typeof PZ.store._backend.get === 'function' },
+      { label: '_backend.set ist eine Funktion', actual: typeof PZ.store._backend.set, expected: 'function', tol: null, ok: typeof PZ.store._backend.set === 'function' },
+      { label: '_backend.remove ist eine Funktion', actual: typeof PZ.store._backend.remove, expected: 'function', tol: null, ok: typeof PZ.store._backend.remove === 'function' }
+    ]);
+
+    // --- Ergänzende Randfälle (test-generator-Durchlauf, s. pizza-rechner-KONTEXT.md) ---
+    const K_JSON = PZ.store.KEYS.ONBOARDING_DONT_SHOW; // Modul nicht geladen, s. Kommentar oben
+    PZ.store.remove(K_JSON);
+    await PZ.store.hydrate();
+
+    // 1) getJSON() auf fehlenden Schlüssel: Standard-Fallback (null) und eigener Fallback
+    renderBox('getJSON() auf fehlenden Schlüssel liefert den Fallback (Standard null, oder eigenen)', [
+      { label: 'ohne Fallback-Argument: null', actual: PZ.store.getJSON(K_JSON), expected: null, tol: null, ok: PZ.store.getJSON(K_JSON) === null },
+      { label: 'mit eigenem Fallback-Objekt: genau dieses Objekt', actual: PZ.store.getJSON(K_JSON, { x: 1 }), expected: '{x:1}', tol: null, ok: (function () { const f = PZ.store.getJSON(K_JSON, { x: 1 }); return f && f.x === 1; })() }
+    ]);
+
+    // 2) getJSON() auf kaputtes JSON: Fallback statt Crash
+    PZ.store.set(K_JSON, '{ das ist kein gültiges JSON');
+    renderBox('getJSON() auf kaputtes JSON liefert den Fallback, kein Crash', [
+      { label: 'ohne Fallback-Argument: null', actual: PZ.store.getJSON(K_JSON), expected: null, tol: null, ok: PZ.store.getJSON(K_JSON) === null },
+      { label: 'mit eigenem Fallback: \'FALLBACK\'', actual: PZ.store.getJSON(K_JSON, 'FALLBACK'), expected: 'FALLBACK', tol: null, ok: PZ.store.getJSON(K_JSON, 'FALLBACK') === 'FALLBACK' }
+    ]);
+
+    // 3) setJSON()/getJSON()-Rundtrip mit verschachteltem Objekt, sofort synchron lesbar
+    const nested = { a: 1, b: { c: [1, 2, 3], d: 'text' } };
+    const setJsonReturn = PZ.store.setJSON(K_JSON, nested);
+    const readBack = PZ.store.getJSON(K_JSON);
+    renderBox('setJSON()/getJSON()-Rundtrip mit verschachteltem Objekt, im selben Durchlauf lesbar', [
+      { label: 'setJSON() gibt true zurück', actual: setJsonReturn, expected: true, tol: null, ok: setJsonReturn === true },
+      { label: 'getJSON() liefert 1:1 dasselbe Objekt (JSON-Vergleich)', actual: JSON.stringify(readBack), expected: JSON.stringify(nested), tol: null, ok: JSON.stringify(readBack) === JSON.stringify(nested) }
+    ]);
+
+    // 4) setJSON(key, null): JSON.stringify(null) === "null" (String) -- unterscheidet sich
+    //    von einem fehlenden Schlüssel (get() === null), obwohl getJSON() in beiden Fällen
+    //    null liefert (einmal weil geparst "null" tatsächlich null ergibt, einmal als Fallback).
+    PZ.store.setJSON(K_JSON, null);
+    renderBox('setJSON(key, null): wird als String "null" gespeichert, nicht mit einem fehlenden Schlüssel verwechselt', [
+      { label: 'get() liefert den String "null" (Schlüssel ist gesetzt, nicht leer)', actual: PZ.store.get(K_JSON), expected: 'null', tol: null, ok: PZ.store.get(K_JSON) === 'null' },
+      { label: 'getJSON() mit eigenem Fallback liefert trotzdem null (echter geparster Wert, NICHT der Fallback)', actual: PZ.store.getJSON(K_JSON, 'SENTINEL'), expected: null, tol: null, ok: PZ.store.getJSON(K_JSON, 'SENTINEL') === null }
+    ]);
+    PZ.store.remove(K_JSON);
+    await PZ.store.hydrate();
+
+    // 5) remove() auf einen zuvor gesetzten Schlüssel: cache sofort null, nach flush() auch
+    //    der echte Hintergrund geleert
+    PZ.store.set(K_SET, 'wird-gleich-entfernt');
+    await PZ.store.flush();
+    const removeReturn = PZ.store.remove(K_SET);
+    const cacheAfterRemove = PZ.store.get(K_SET);
+    await PZ.store.flush();
+    renderBox('remove() auf einen zuvor gesetzten Schlüssel: cache sofort null, Hintergrund nach flush() ebenfalls geleert', [
+      { label: 'remove() gibt true zurück', actual: removeReturn, expected: true, tol: null, ok: removeReturn === true },
+      { label: 'get() liefert sofort null', actual: cacheAfterRemove, expected: null, tol: null, ok: cacheAfterRemove === null },
+      { label: 'echter Hintergrund (localStorage) ist nach flush() ebenfalls geleert', actual: localStorage.getItem(K_SET), expected: null, tol: null, ok: localStorage.getItem(K_SET) === null }
+    ]);
+
+    // 6) remove() auf einen nie gesetzten Schlüssel: kein Crash, bleibt null
+    let removeNeverSetThrew = false;
+    let removeNeverSetReturn = null;
+    try { removeNeverSetReturn = PZ.store.remove(K_JSON); } catch (e) { removeNeverSetThrew = true; }
+    renderBox('remove() auf einen nie gesetzten Schlüssel: kein Crash, get() bleibt null', [
+      { label: 'kein Fehler', actual: removeNeverSetThrew, expected: false, tol: null, ok: removeNeverSetThrew === false },
+      { label: 'remove() gibt trotzdem true zurück', actual: removeNeverSetReturn, expected: true, tol: null, ok: removeNeverSetReturn === true },
+      { label: 'get() bleibt null', actual: PZ.store.get(K_JSON), expected: null, tol: null, ok: PZ.store.get(K_JSON) === null }
+    ]);
+
+    // 7) mehrere schnelle set()-Aufrufe auf denselben Schlüssel hintereinander: letzter
+    //    Wert gewinnt, sowohl im cache als auch (nach flush) im echten Hintergrund
+    PZ.store.set(K_SET, 'erst-a');
+    PZ.store.set(K_SET, 'dann-b');
+    PZ.store.set(K_SET, 'zuletzt-c');
+    const lastWriteWinsCache = PZ.store.get(K_SET);
+    await PZ.store.flush();
+    renderBox('mehrere schnelle set()-Aufrufe auf denselben Schlüssel: letzter Wert gewinnt (cache UND Hintergrund)', [
+      { label: 'get() liefert sofort den letzten Wert', actual: lastWriteWinsCache, expected: 'zuletzt-c', tol: null, ok: lastWriteWinsCache === 'zuletzt-c' },
+      { label: 'echter Hintergrund hat nach flush() ebenfalls den letzten Wert', actual: localStorage.getItem(K_SET), expected: 'zuletzt-c', tol: null, ok: localStorage.getItem(K_SET) === 'zuletzt-c' }
+    ]);
+    PZ.store.remove(K_SET);
+    await PZ.store.hydrate();
+
+    // 8) flush() ohne vorherige set()-Aufrufe (keine angestoßenen Schreibvorgänge): löst
+    //    sich trotzdem als Promise auf, hängt nicht
+    const emptyFlushResult = PZ.store.flush();
+    renderBox('flush() ohne vorherige set()-Aufrufe löst sich sofort auf', [
+      { label: 'flush() liefert ein Promise', actual: emptyFlushResult instanceof Promise, expected: true, tol: null, ok: emptyFlushResult instanceof Promise }
+    ]);
+    await emptyFlushResult;
+    renderBox('...und das Promise ist tatsächlich durch (kein Hängenbleiben)', [
+      { label: 'await ist zurückgekehrt', actual: true, expected: true, tol: null, ok: true }
+    ]);
+
+    // 9) get() auf einen Schlüssel außerhalb der 11 bekannten PZ.store.KEYS: kein Crash,
+    //    liefert null (hydrate() befüllt nur die 11 bekannten Schlüssel, s. ALL_KEYS in
+    //    js/store.js -- ein unbekannter Schlüssel landet nie im cache)
+    let unknownKeyThrew = false;
+    let unknownKeyResult = 'not-null-sentinel';
+    try { unknownKeyResult = PZ.store.get('einSchluesselDerNirgendsInKEYSVorkommt'); } catch (e) { unknownKeyThrew = true; }
+    renderBox('get() auf einen Schlüssel außerhalb von PZ.store.KEYS: kein Crash, liefert null', [
+      { label: 'kein Fehler', actual: unknownKeyThrew, expected: false, tol: null, ok: unknownKeyThrew === false },
+      { label: 'liefert null (nicht undefined)', actual: unknownKeyResult, expected: null, tol: null, ok: unknownKeyResult === null }
+    ]);
+
+    // 10) hydrate() während ein set() noch im (künstlich verzögerten) Hintergrund läuft:
+    //     ANDERS als man naiv erwarten könnte, "gewinnt" hier NICHT automatisch der
+    //     optimistische set()-Wert -- hydrate() liest beim Aufruf einmal alle 11 bekannten
+    //     Schlüssel direkt aus dem echten Hintergrund (Microtask, läuft VOR dem verzögerten
+    //     _backend.set-Stub, der über setTimeout als Makrotask erst später feuert) und
+    //     überschreibt den cache dabei mit dem zu diesem Zeitpunkt noch ALTEN Hintergrund-
+    //     Wert. Bewusst als Randfall dokumentiert statt stillschweigend als "unproblematisch"
+    //     angenommen (Vorschlag des test-generator-Agenten ging von einer stets konsistenten
+    //     Koexistenz aus -- das trifft laut eigener Nachrechnung der Promise-Microtask-vs-
+    //     Makrotask-Reihenfolge NICHT zu). Betrifft die reale App nicht: hydrate() wird
+    //     aktuell nirgends aufgerufen (das kommt erst in B2), dieser Test hält die
+    //     tatsächliche Implementierung fest, keine Verhaltensänderung an js/store.js nötig.
+    localStorage.removeItem(K_SET);
+    await PZ.store.hydrate();
+    const realBackendSet2 = PZ.store._backend.set;
+    PZ.store._backend.set = function (key, value) {
+      return new Promise((resolve) => { setTimeout(() => resolve(realBackendSet2(key, value)), 30); });
+    };
+    try {
+      PZ.store.set(K_SET, 'race-value');
+      await PZ.store.hydrate(); // läuft VOR dem verzögerten Hintergrund-Schreiben durch
+      const cacheAfterRaceHydrate = PZ.store.get(K_SET);
+      renderBox('hydrate() während eines noch laufenden set()-Hintergrund-Schreibvorgangs: dokumentiertes Verhalten', [
+        { label: 'cache wird von hydrate() mit dem (noch alten) Hintergrund-Stand überschrieben, NICHT mit dem optimistischen set()-Wert', actual: cacheAfterRaceHydrate, expected: null, tol: null, ok: cacheAfterRaceHydrate === null }
+      ]);
+      await PZ.store.flush(); // wartet den verzögerten Schreibvorgang ab, bevor der Stub zurückgesetzt wird
+    } finally {
+      PZ.store._backend.set = realBackendSet2;
+    }
+    localStorage.removeItem(K_SET);
+    await PZ.store.hydrate();
+
+    // 11) set(key, null): wird als tatsächlicher null-Wert im cache gehalten (nicht als
+    //     fehlender/undefined-Schlüssel), get() liefert also explizit null zurück -- deckt
+    //     sich mit dem bisherigen get()-Vertrag ("fehlender Schlüssel -> null"), ist hier
+    //     aber bewusst über set() explizit herbeigeführt statt nur der Default-Zustand.
+    const setNullReturn = PZ.store.set(K_SET, null);
+    renderBox('set(key, null) wird korrekt gespeichert (kein Crash, kein undefined)', [
+      { label: 'set() gibt true zurück', actual: setNullReturn, expected: true, tol: null, ok: setNullReturn === true },
+      { label: 'get() liefert null', actual: PZ.store.get(K_SET), expected: null, tol: null, ok: PZ.store.get(K_SET) === null }
+    ]);
+    PZ.store.remove(K_SET);
+    await PZ.store.hydrate();
+
+    // 12) PZ.store.KEYS: alle 11 Schlüssel vorhanden, alle nicht-leere Strings
+    const expectedKeyNames = ['RECIPES', 'PARTY', 'FEATURE_FLAGS', 'ADJUSTMENTS', 'LANG', 'THEME', 'UNITS', 'SIMPLE_MODE', 'ONBOARDING_DONT_SHOW', 'TIMERS', 'TIMER_HINT_SHOWN'];
+    renderBox('PZ.store.KEYS enthält alle 11 bekannten Schlüssel, alle nicht-leere Strings', [
+      { label: 'genau 11 Einträge', actual: Object.keys(PZ.store.KEYS).length, expected: 11, tol: null, ok: Object.keys(PZ.store.KEYS).length === 11 },
+      { label: 'alle 11 erwarteten Namen vorhanden', actual: expectedKeyNames.filter((k) => !(k in PZ.store.KEYS)).join(',') || '(keine fehlen)', expected: '(keine fehlen)', tol: null, ok: expectedKeyNames.every((k) => k in PZ.store.KEYS) },
+      { label: 'alle Werte sind nicht-leere Strings', actual: Object.values(PZ.store.KEYS).every((v) => typeof v === 'string' && v.length > 0), expected: true, tol: null, ok: Object.values(PZ.store.KEYS).every((v) => typeof v === 'string' && v.length > 0) }
+    ]);
   })();
 
   // ─────────────────────────────────────────────────────────────
