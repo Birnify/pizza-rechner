@@ -72,7 +72,7 @@
   function readFlags() {
     let stored = {};
     try {
-      const raw = localStorage.getItem(KEY);
+      const raw = PZ.store.get(KEY);
       if (raw) stored = JSON.parse(raw) || {};
     } catch (e) { stored = {}; }
     if (typeof stored !== 'object' || Array.isArray(stored)) stored = {};
@@ -80,7 +80,7 @@
   }
 
   function writeFlags(flags) {
-    try { localStorage.setItem(KEY, JSON.stringify(flags)); } catch (e) { /* ignore */ }
+    try { PZ.store.set(KEY, JSON.stringify(flags)); } catch (e) { /* ignore */ }
   }
 
   PZ.FLAGS = readFlags();
@@ -208,7 +208,7 @@
   function readAdjust() {
     let stored = {};
     try {
-      const raw = localStorage.getItem(ADJUST_KEY);
+      const raw = PZ.store.get(ADJUST_KEY);
       if (raw) stored = JSON.parse(raw) || {};
     } catch (e) { stored = {}; }
     if (typeof stored !== 'object' || Array.isArray(stored)) stored = {};
@@ -217,7 +217,7 @@
     return merged;
   }
   function writeAdjust(a) {
-    try { localStorage.setItem(ADJUST_KEY, JSON.stringify(a)); } catch (e) { /* ignore */ }
+    try { PZ.store.set(ADJUST_KEY, JSON.stringify(a)); } catch (e) { /* ignore */ }
   }
 
   PZ.ADJUST = readAdjust();

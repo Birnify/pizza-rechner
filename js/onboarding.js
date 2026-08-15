@@ -28,10 +28,10 @@
   const DONT_SHOW_KEY = 'pizzaOnboardingDontShow';
 
   function readDontShow() {
-    try { return localStorage.getItem(DONT_SHOW_KEY) === '1'; } catch (e) { return false; }
+    try { return PZ.store.get(DONT_SHOW_KEY) === '1'; } catch (e) { return false; }
   }
   function writeDontShow(v) {
-    try { localStorage.setItem(DONT_SHOW_KEY, v ? '1' : '0'); } catch (e) { /* ignore */ }
+    try { PZ.store.set(DONT_SHOW_KEY, v ? '1' : '0'); } catch (e) { /* ignore */ }
   }
 
   function wire() {

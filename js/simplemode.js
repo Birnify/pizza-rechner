@@ -45,10 +45,10 @@
   function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
 
   function readStored() {
-    try { return localStorage.getItem(SIMPLE_MODE_KEY); } catch (e) { return null; }
+    try { return PZ.store.get(SIMPLE_MODE_KEY); } catch (e) { return null; }
   }
   function writeStored(isSimple) {
-    try { localStorage.setItem(SIMPLE_MODE_KEY, isSimple ? '1' : '0'); } catch (e) { /* ignore */ }
+    try { PZ.store.set(SIMPLE_MODE_KEY, isSimple ? '1' : '0'); } catch (e) { /* ignore */ }
   }
 
   // Default: Einfacher Modus AN (neue Standardansicht) -- außer der Nutzer hat beim

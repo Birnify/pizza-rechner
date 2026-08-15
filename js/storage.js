@@ -14,12 +14,12 @@
 
   // --- Rohdaten lesen/schreiben ---------------------------------------
   function readRaw() {
-    const raw = localStorage.getItem(KEY);
+    const raw = PZ.store.get(KEY);
     if (!raw) return null;
     try { return JSON.parse(raw); } catch (e) { return null; }
   }
   function writeRaw(data) {
-    localStorage.setItem(KEY, JSON.stringify(data));
+    PZ.store.set(KEY, JSON.stringify(data));
   }
 
   // Erkennt das alte Format (nackter state: hat z.B. "balls"/"hyd", aber kein "recipes").

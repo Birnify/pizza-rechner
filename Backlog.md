@@ -13,6 +13,19 @@ inklusive der seit 2026-07-23 geltenden Regel „ein Zyklus/Punkt pro Instanz" (
 eine Dauer-Instanz über mehrere Zyklen erzeugte in einem gemessenen Fall ~196 Mio.
 Cache-Read-Tokens bei nur ~304K echtem Output).
 
+## Aktive Warteschlange seit 2026-08-15: Play Store
+
+Die derzeit laufende Arbeit steht in einer **eigenen Datei: `PLAYSTORE-BACKLOG.md`**
+(Veröffentlichung bei Google Play, Version 1 bewusst **ohne Konten**, alle Daten bleiben
+auf dem Gerät). Dort stehen 14 einzeln abarbeitbare Punkte in verbindlicher Reihenfolge,
+jeweils mit Dateien, Schritten, Abnahmekriterien und Abgrenzung.
+
+Punkt A1 (Speicher-Zwischenschicht `js/store.js`) ist seit v4.38.4 (2026-08-15) erledigt.
+Empfohlener nächster Einstieg dort: A2 oder A3 (beide setzen nur A1 voraus).
+
+Die Punkte A bis J weiter unten sind die abgeschlossene alte Warteschlange und bleiben
+nur zur Dokumentation stehen.
+
 ## Ursprüngliche Warteschlange — beide Punkte erledigt
 
 Ursprünglich zwei Punkte, bereits an eine Orchestrator-Instanz übergeben und von ihr

@@ -1952,7 +1952,7 @@ header{position:relative;text-align:center;}
      daneben, ein zweiter Vorlese-Name wäre redundant (analog zum bestehenden
      .card-icon aria-hidden-Muster). -->
 <header>
-  <h1><img src="assets/logo.svg?v=4.38.3" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
+  <h1><img src="assets/logo.svg?v=4.38.4" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
 </header>
 
 <!-- Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay analog zum
@@ -2900,7 +2900,7 @@ header{position:relative;text-align:center;}
              hier bewusst NICHT mehr dupliziert. -->
         <div class="nav-divider" role="separator"></div>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.38.3</span>
+        <span class="nav-version" id="appVersion">v4.38.4</span>
 
       </div>
     </details>
@@ -3004,6 +3004,78 @@ header{position:relative;text-align:center;}
 </nav>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
+<script>
+/* store.js — Speicher-Zwischenschicht (Play-Store-Vorbereitung, Punkt A1)
+ *
+ * Ein einziger Ort, über den aller Speicherzugriff der App läuft. Verhalten bleibt
+ * exakt identisch zu den bisherigen direkten localStorage-Zugriffen (inkl. try/catch-
+ * Fallback-Verhalten) — dieser Punkt ist reine Vorbereitung, damit ein künftiger
+ * Wechsel des Speicher-Hintergrunds (z. B. nativer Gerätespeicher in einer Android-
+ * WebView, s. PLAYSTORE-BACKLOG.md Punkt B3) nur noch diese eine Datei betrifft statt
+ * 22 Aufrufstellen in 9 Dateien.
+ *
+ * Muss als ALLERERSTES Skript geladen werden, noch vor js/dom.js — alle anderen Module
+ * greifen über PZ.store zu, PZ.store selbst hat keine Abhängigkeiten.
+ *
+ * PZ.store.KEYS listet alle 11 bekannten Speicher-Schlüssel der App (s. Tabelle in
+ * PLAYSTORE-BACKLOG.md, Abschnitt "Kernbefunde"). Bewusst NICHT enthalten:
+ * `pzPresetSwipeHint` (js/presets.js) — nutzt weiterhin bewusst sessionStorage direkt,
+ * bleibt flüchtig, ist kein Teil dieser Zwischenschicht.
+ */
+(function (global) {
+  'use strict';
+  const PZ = global.PZ || (global.PZ = {});
+
+  const KEYS = {
+    RECIPES: 'pizzaRechner',
+    PARTY: 'pizzaPartyPlanner',
+    FEATURE_FLAGS: 'pizzaRechnerFeatureFlags',
+    ADJUSTMENTS: 'pizzaRechnerAdjustments',
+    LANG: 'pizzaLang',
+    THEME: 'pizzaTheme',
+    UNITS: 'pizzaUnits',
+    SIMPLE_MODE: 'pizzaSimpleMode',
+    ONBOARDING_DONT_SHOW: 'pizzaOnboardingDontShow',
+    TIMERS: 'pizzaRechnerTimers',
+    TIMER_HINT_SHOWN: 'pizzaRechnerTimerHintShown'
+  };
+
+  // Rohwert lesen. Gibt bei Fehlschlag (z. B. localStorage nicht verfügbar, Privater
+  // Modus in manchen Browsern) null zurück — identisch zum bisherigen Verhalten, bei
+  // dem ein fehlender/ungültiger Key ebenfalls als "nichts gespeichert" behandelt wurde.
+  function get(key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  }
+
+  // Rohwert schreiben. Gibt bei Erfolg true, bei Fehlschlag false zurück (Aufrufer
+  // ignorierten den Fehler bisher durchgehend per leerem catch-Block — dieses
+  // Rückgabeverhalten ändert daran nichts, macht es aber für künftige Aufrufer prüfbar).
+  function set(key, value) {
+    try { localStorage.setItem(key, value); return true; } catch (e) { return false; }
+  }
+
+  function remove(key) {
+    try { localStorage.removeItem(key); return true; } catch (e) { return false; }
+  }
+
+  // JSON-Komfortfunktionen für die Stellen, die heute selbst JSON.parse/JSON.stringify
+  // aufrufen. getJSON gibt bei fehlendem Wert oder kaputtem JSON den mitgegebenen
+  // fallback zurück (Default: null) — nie einen Crash.
+  function getJSON(key, fallback) {
+    if (fallback === undefined) fallback = null;
+    const raw = get(key);
+    if (!raw) return fallback;
+    try { return JSON.parse(raw); } catch (e) { return fallback; }
+  }
+
+  function setJSON(key, obj) {
+    try { return set(key, JSON.stringify(obj)); } catch (e) { return false; }
+  }
+
+  PZ.store = { KEYS, get, set, remove, getJSON, setJSON };
+})(typeof window !== 'undefined' ? window : this);
+
+</script>
 <script>
 /* dom.js — kleiner DOM-Helfer, gemeinsamer PZ-Namespace */
 (function (global) {
@@ -4664,10 +4736,10 @@ header{position:relative;text-align:center;}
   }
 
   function readStoredLang() {
-    try { return localStorage.getItem(LANG_KEY); } catch (e) { return null; }
+    try { return PZ.store.get(LANG_KEY); } catch (e) { return null; }
   }
   function writeStoredLang(lang) {
-    try { localStorage.setItem(LANG_KEY, lang); } catch (e) { /* ignore */ }
+    try { PZ.store.set(LANG_KEY, lang); } catch (e) { /* ignore */ }
   }
 
   // Manuelle Wahl (falls vorhanden) hat Vorrang vor der Auto-Erkennung — nur beim
@@ -5228,7 +5300,7 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
   function readFlags() {
     let stored = {};
     try {
-      const raw = localStorage.getItem(KEY);
+      const raw = PZ.store.get(KEY);
       if (raw) stored = JSON.parse(raw) || {};
     } catch (e) { stored = {}; }
     if (typeof stored !== 'object' || Array.isArray(stored)) stored = {};
@@ -5236,7 +5308,7 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
   }
 
   function writeFlags(flags) {
-    try { localStorage.setItem(KEY, JSON.stringify(flags)); } catch (e) { /* ignore */ }
+    try { PZ.store.set(KEY, JSON.stringify(flags)); } catch (e) { /* ignore */ }
   }
 
   PZ.FLAGS = readFlags();
@@ -5364,7 +5436,7 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
   function readAdjust() {
     let stored = {};
     try {
-      const raw = localStorage.getItem(ADJUST_KEY);
+      const raw = PZ.store.get(ADJUST_KEY);
       if (raw) stored = JSON.parse(raw) || {};
     } catch (e) { stored = {}; }
     if (typeof stored !== 'object' || Array.isArray(stored)) stored = {};
@@ -5373,7 +5445,7 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
     return merged;
   }
   function writeAdjust(a) {
-    try { localStorage.setItem(ADJUST_KEY, JSON.stringify(a)); } catch (e) { /* ignore */ }
+    try { PZ.store.set(ADJUST_KEY, JSON.stringify(a)); } catch (e) { /* ignore */ }
   }
 
   PZ.ADJUST = readAdjust();
@@ -5480,10 +5552,10 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
   const THEME_KEY = 'pizzaTheme';
 
   function readStoredTheme() {
-    try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; }
+    try { return PZ.store.get(THEME_KEY); } catch (e) { return null; }
   }
   function writeStoredTheme(theme) {
-    try { localStorage.setItem(THEME_KEY, theme); } catch (e) { /* ignore */ }
+    try { PZ.store.set(THEME_KEY, theme); } catch (e) { /* ignore */ }
   }
 
   function systemPrefersDark() {
@@ -5645,10 +5717,10 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
   const UNITS_KEY = 'pizzaUnits';
 
   function readStoredUnits() {
-    try { return localStorage.getItem(UNITS_KEY); } catch (e) { return null; }
+    try { return PZ.store.get(UNITS_KEY); } catch (e) { return null; }
   }
   function writeStoredUnits(units) {
-    try { localStorage.setItem(UNITS_KEY, units); } catch (e) { /* ignore */ }
+    try { PZ.store.set(UNITS_KEY, units); } catch (e) { /* ignore */ }
   }
 
   function systemPrefersImperial() {
@@ -7404,12 +7476,12 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
 
   function readTimers() {
     try {
-      const raw = localStorage.getItem(LS_KEY);
+      const raw = PZ.store.get(LS_KEY);
       return raw ? JSON.parse(raw) : {};
     } catch (e) { return {}; }
   }
   function writeTimers(obj) {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(obj)); } catch (e) { /* ignore */ }
+    try { PZ.store.set(LS_KEY, JSON.stringify(obj)); } catch (e) { /* ignore */ }
   }
   function setTimer(key, data) {
     const all = readTimers();
@@ -7463,7 +7535,7 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
   function showHintOnce(box) {
     if (hintShown) return;
     hintShown = true;
-    try { if (localStorage.getItem(HINT_KEY)) return; localStorage.setItem(HINT_KEY, '1'); } catch (e) { /* ignore */ }
+    try { if (PZ.store.get(HINT_KEY)) return; PZ.store.set(HINT_KEY, '1'); } catch (e) { /* ignore */ }
     const hint = document.createElement('div');
     hint.className = 'timerhint';
     hint.setAttribute('role', 'status');
@@ -7987,10 +8059,10 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
   function t(key, vars) { return PZ.t ? PZ.t(key, vars) : key; }
 
   function readStored() {
-    try { return localStorage.getItem(SIMPLE_MODE_KEY); } catch (e) { return null; }
+    try { return PZ.store.get(SIMPLE_MODE_KEY); } catch (e) { return null; }
   }
   function writeStored(isSimple) {
-    try { localStorage.setItem(SIMPLE_MODE_KEY, isSimple ? '1' : '0'); } catch (e) { /* ignore */ }
+    try { PZ.store.set(SIMPLE_MODE_KEY, isSimple ? '1' : '0'); } catch (e) { /* ignore */ }
   }
 
   // Default: Einfacher Modus AN (neue Standardansicht) -- außer der Nutzer hat beim
@@ -8992,12 +9064,12 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
 
   // --- Rohdaten lesen/schreiben ---------------------------------------
   function readRaw() {
-    const raw = localStorage.getItem(KEY);
+    const raw = PZ.store.get(KEY);
     if (!raw) return null;
     try { return JSON.parse(raw); } catch (e) { return null; }
   }
   function writeRaw(data) {
-    localStorage.setItem(KEY, JSON.stringify(data));
+    PZ.store.set(KEY, JSON.stringify(data));
   }
 
   // Erkennt das alte Format (nackter state: hat z.B. "balls"/"hyd", aber kein "recipes").
@@ -9800,11 +9872,11 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
 
   // --- Storage ---------------------------------------------------------------
   function readRaw() {
-    const raw = localStorage.getItem(KEY);
+    const raw = PZ.store.get(KEY);
     if (!raw) return null;
     try { return JSON.parse(raw); } catch (e) { return null; }
   }
-  function writeRaw(data) { localStorage.setItem(KEY, JSON.stringify(data)); }
+  function writeRaw(data) { PZ.store.set(KEY, JSON.stringify(data)); }
 
   function readStore() {
     let data = readRaw();
@@ -11205,10 +11277,10 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
   const DONT_SHOW_KEY = 'pizzaOnboardingDontShow';
 
   function readDontShow() {
-    try { return localStorage.getItem(DONT_SHOW_KEY) === '1'; } catch (e) { return false; }
+    try { return PZ.store.get(DONT_SHOW_KEY) === '1'; } catch (e) { return false; }
   }
   function writeDontShow(v) {
-    try { localStorage.setItem(DONT_SHOW_KEY, v ? '1' : '0'); } catch (e) { /* ignore */ }
+    try { PZ.store.set(DONT_SHOW_KEY, v ? '1' : '0'); } catch (e) { /* ignore */ }
   }
 
   function wire() {

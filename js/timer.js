@@ -18,12 +18,12 @@
 
   function readTimers() {
     try {
-      const raw = localStorage.getItem(LS_KEY);
+      const raw = PZ.store.get(LS_KEY);
       return raw ? JSON.parse(raw) : {};
     } catch (e) { return {}; }
   }
   function writeTimers(obj) {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(obj)); } catch (e) { /* ignore */ }
+    try { PZ.store.set(LS_KEY, JSON.stringify(obj)); } catch (e) { /* ignore */ }
   }
   function setTimer(key, data) {
     const all = readTimers();
@@ -77,7 +77,7 @@
   function showHintOnce(box) {
     if (hintShown) return;
     hintShown = true;
-    try { if (localStorage.getItem(HINT_KEY)) return; localStorage.setItem(HINT_KEY, '1'); } catch (e) { /* ignore */ }
+    try { if (PZ.store.get(HINT_KEY)) return; PZ.store.set(HINT_KEY, '1'); } catch (e) { /* ignore */ }
     const hint = document.createElement('div');
     hint.className = 'timerhint';
     hint.setAttribute('role', 'status');

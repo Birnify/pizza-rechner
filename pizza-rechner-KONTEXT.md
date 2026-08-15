@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-04 · Aktuelle Version: v4.38.3 (Desktop + Mobil, synchron, wieder gemeinsames Header-Foto) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-15 · Aktuelle Version: v4.38.4 (Desktop + Mobil, synchron, Speicher-Zwischenschicht js/store.js) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -218,24 +218,24 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Mobil-Header zurückgenommen (v4.38.3) = aktueller Stand
+## Speicher-Zwischenschicht js/store.js (v4.38.4) = aktueller Stand
 
-Der in v4.38.2 eingeführte eigene Mobil-Header (`header-teig-mobile.webp`, "Hand zieht
-Teig") wurde direkt im Anschluss wieder zurückgenommen: der Nutzer verglich ihn live mit
-dem Desktop-Header (ruhende Teigbälle) und bevorzugte Letzteres. Der `:root`-Override in
-`css/mobile.css` wurde entfernt, Mobil zeigt seither wieder dasselbe Bild wie Desktop
-(`header-teig-desktop.webp`). Die Bilddatei bleibt liegen, der Override-Mechanismus ist
-weiterhin dokumentiert und reaktivierbar. Reines Inline-Vorgehen, live verifiziert (beide
-Seiten zeigen das erwartete Bild, Kontrast 5,95:1, Testsuite unverändert **1353** grün).
+Play-Store-Vorbereitung, Punkt A1 aus `PLAYSTORE-BACKLOG.md` (Version 1 ohne Konten, alle
+Daten bleiben auf dem Gerät): neue Datei `js/store.js` bündelt alle 11 bekannten
+`localStorage`-Schlüssel hinter `PZ.store.get/set/remove/getJSON/setJSON/KEYS`. In 9
+Dateien (`js/i18n.js`, `js/onboarding.js`, `js/party.js`, `js/settings.js`,
+`js/simplemode.js`, `js/storage.js`, `js/theme.js`, `js/timer.js`, `js/units.js`) wurden
+alle 22 direkten `localStorage`-Aufrufe 1:1 durch `PZ.store` ersetzt — Verhalten bleibt
+exakt identisch, Hintergrund bleibt `localStorage`. `js/store.js` lädt als allererstes
+Skript vor `js/dom.js` (auch in `tests/test.html`). Reiner Mechanik-Refactor, keine
+Fachlogik/Oberfläche berührt. `grep -rn "localStorage\." js/` findet nur noch Treffer in
+`js/store.js` selbst. Testsuite unverändert **1353** grün, live per Playwright auf
+Desktop, Mobil und im Standalone-Build verifiziert (Speichern übersteht Reload, ebenso
+Farbschema/Sprache). `PLAYSTORE-BACKLOG.md` Punkt A1 erledigt, nächster empfohlener Punkt
+A2 oder A3.
 
-Nebenbei in derselben Sitzung: alle 6 verbleibenden Blöcke aus Bild-Einbau Zyklus 4 wurden
-generiert (24 Dateien, 4 Konzepte × 4 Varianten Desktop + 2 Konzepte × 4 Varianten Mobil),
-liegen aber bis auf den bereits aktiven Teig-Desktop ungenutzt vor. Details zur
-Generierungs-Sitzung (inkl. einer ungeklärten GPU-Verlangsamung) s. Abschnitt „LAUFENDE
-ARBEIT" unten.
-
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitte „Eigener Mobil-Header
-(v4.38.2)" und „Mobil-Header zurückgenommen (v4.38.3)".
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Speicher-Zwischenschicht
+js/store.js (v4.38.4)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 

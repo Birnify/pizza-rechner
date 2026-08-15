@@ -67,10 +67,10 @@
   }
 
   function readStoredLang() {
-    try { return localStorage.getItem(LANG_KEY); } catch (e) { return null; }
+    try { return PZ.store.get(LANG_KEY); } catch (e) { return null; }
   }
   function writeStoredLang(lang) {
-    try { localStorage.setItem(LANG_KEY, lang); } catch (e) { /* ignore */ }
+    try { PZ.store.set(LANG_KEY, lang); } catch (e) { /* ignore */ }
   }
 
   // Manuelle Wahl (falls vorhanden) hat Vorrang vor der Auto-Erkennung — nur beim

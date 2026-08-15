@@ -26,10 +26,10 @@
   const THEME_KEY = 'pizzaTheme';
 
   function readStoredTheme() {
-    try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; }
+    try { return PZ.store.get(THEME_KEY); } catch (e) { return null; }
   }
   function writeStoredTheme(theme) {
-    try { localStorage.setItem(THEME_KEY, theme); } catch (e) { /* ignore */ }
+    try { PZ.store.set(THEME_KEY, theme); } catch (e) { /* ignore */ }
   }
 
   function systemPrefersDark() {

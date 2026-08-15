@@ -8,6 +8,76 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Speicher-Zwischenschicht js/store.js (v4.38.4)
+
+Play-Store-Vorbereitung, Punkt A1 aus `PLAYSTORE-BACKLOG.md` (Version 1 ohne Konten,
+alle Daten bleiben auf dem Gerät, Nutzer-Entscheidung 2026-08-15). Reiner Mechanik-
+Refactor mit fertiger Diagnose/Spezifikation, direkt an einen Orchestrator übergeben
+(Brainstorming-Phase bewusst übersprungen).
+
+**Ausgangslage:** 11 Speicher-Schlüssel an 22 Aufrufstellen in 9 Dateien griffen bisher
+direkt auf `localStorage` zu, ohne gemeinsame Zwischenschicht. Das ist Vorbedingung für
+spätere Play-Store-Punkte (A2 asynchroner Zwischenspeicher, B3 nativer Gerätespeicher in
+einer Android-WebView) — dort darf nur noch **eine** Datei getauscht werden müssen statt
+22 Stellen.
+
+**Neu `js/store.js`:** `PZ.store.KEYS` (alle 11 Schlüssel benannt), `PZ.store.get(key)`/
+`PZ.store.set(key, value)`/`PZ.store.remove(key)` (Rohstring, try/catch-geschützt,
+identisches Fallback-Verhalten wie die bisherigen verstreuten try/catch-Blöcke — `null`
+bzw. `false` bei Fehlschlag statt Crash) sowie `PZ.store.getJSON(key, fallback)`/
+`PZ.store.setJSON(key, obj)` als Komfortfunktionen für künftige Aufrufer (aktuell von den
+9 umgestellten Dateien noch nicht genutzt, s. u.). Muss als **allererstes** Skript laden,
+vor `js/dom.js` — hat selbst keine Abhängigkeiten.
+
+**Umgestellt (9 Dateien, 22 Aufrufstellen):** `js/i18n.js` (`pizzaLang`), `js/onboarding.js`
+(`pizzaOnboardingDontShow`), `js/party.js` (`pizzaPartyPlanner`), `js/settings.js`
+(`pizzaRechnerFeatureFlags` + `pizzaRechnerAdjustments`, 2 Schlüssel), `js/simplemode.js`
+(`pizzaSimpleMode`), `js/storage.js` (`pizzaRechner`), `js/theme.js` (`pizzaTheme`),
+`js/timer.js` (`pizzaRechnerTimers` + `pizzaRechnerTimerHintShown`, 2 Schlüssel),
+`js/units.js` (`pizzaUnits`). Jedes `localStorage.getItem(X)`/`localStorage.setItem(X, Y)`
+wurde 1:1 zu `PZ.store.get(X)`/`PZ.store.set(X, Y)` — bewusst **keine** Umstellung auf
+`getJSON`/`setJSON` in diesem Punkt, obwohl mehrere Aufrufer selbst `JSON.parse`/
+`JSON.stringify` aufrufen (Spezifikation in `PLAYSTORE-BACKLOG.md` A1 verlangt nur den
+mechanischen Tausch, die umgebenden try/catch-Blöcke dürfen bleiben, "sie schaden nicht").
+Bewusst NICHT angefasst: das Inline-Script im `<head>` (liest `pizzaTheme` synchron vor
+dem ersten Rendern, Gegenstand von Punkt B3), die beiden `sessionStorage`-Aufrufe in
+`js/presets.js` (`pzPresetSwipeHint`, bleiben bewusst flüchtig außerhalb der
+Zwischenschicht), jegliche Fachlogik/Berechnung/Oberfläche.
+
+**Einbindung:** `<script src="js/store.js">` als erstes Modul vor `js/dom.js` in
+`pizza-rechner.html`, `pizza-rechner-mobile.html` **und** `tests/test.html` (Letzteres war
+nötig, weil `tests/test.html` `js/storage.js`/`js/settings.js`/`js/theme.js`/`js/units.js`/
+`js/i18n.js`/`js/party.js` lädt, die jetzt alle von `PZ.store` abhängen — ohne den
+Script-Tag dort wären diese Module beim Testlauf gebrochen). `python
+build-mobile-standalone.py` neu ausgeführt, `js/store.js` ist jetzt Teil des inline
+eingebetteten Codes der Standalone-Datei.
+
+**Verifikation:** `grep -rn "localStorage\." js/` findet nach der Umstellung nur noch
+Treffer in `js/store.js` selbst (9 Zieldateien sauber). `tests/test.html` per
+Headless-Edge-Dump: **1353/1353** Prüfungen grün, unverändert zur Vorher-Zahl (reiner
+Mechanik-Refactor ohne neue Fachlogik-Testfälle, kein `test-generator`-Lauf nötig). Live
+per Playwright gegen den lokalen Server (`python -m http.server 8137`, Edge-Kanal, da kein
+Chromium-Browser für Playwright vorinstalliert war) auf Desktop **und** Mobil verifiziert:
+Rezept speichern (`PZ.saveAsNew`) übersteht einen vollen `page.reload()`, ebenso
+Farbschema (`PZ.setTheme('dark')`) und Sprache (`PZ.setLang('en')`). Zusätzlich
+`pizza-rechner-mobile-standalone.html` isoliert per `file://`-URL mit Playwright geprüft:
+identisches Verhalten (Speichern übersteht Reload). Kein Spezialisten-Review in Phase 4
+angefordert (keine sichtbare UI-/Markup-/Styling-Änderung, nur zwei neue `<script>`-Tags —
+`accessibility-expert`/`mobile-optimizer`/`performance-profiler` greifen laut Auftragsregel
+nur bei entsprechenden Änderungen).
+
+**Geändert:** `js/i18n.js`, `js/onboarding.js`, `js/party.js`, `js/settings.js`,
+`js/simplemode.js`, `js/storage.js`, `js/theme.js`, `js/timer.js`, `js/units.js`,
+`pizza-rechner.html`, `pizza-rechner-mobile.html`, `tests/test.html`. Neu: `js/store.js`.
+`?v=` auf `4.38.4` gezogen (Desktop + Mobil, Cache-Busting + Footer-Version, 31 bzw. 33
+Fundstellen je Datei). `pizza-rechner-mobile-standalone.html` neu gebaut. SemVer Patch,
+da reiner Refactor ohne Verhaltensänderung (Nutzer-Vorgabe in der Auftragsbeschreibung).
+`Versionen/v4.38.4 - Speicher-Zwischenschicht js-store.js/` enthält den vollständigen
+Schnappschuss. `PLAYSTORE-BACKLOG.md` Punkt A1 als erledigt markiert, nächster
+empfohlener Punkt: A2 (asynchronen Zwischenspeicher vorbereiten) oder A3 (vollständige
+Sicherung export/import) — beide setzen nur A1 voraus, Reihenfolge dazwischen ist laut
+Backlog-Datei nicht zwingend.
+
 ## Eigener Mobil-Header (v4.38.2)
 
 Bild-Einbau Zyklus 4, Block 7 (`BILD-EINBAU-KONZEPT.md` Abschnitt 10): die Mobil-Seite

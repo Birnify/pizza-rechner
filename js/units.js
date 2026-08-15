@@ -37,10 +37,10 @@
   const UNITS_KEY = 'pizzaUnits';
 
   function readStoredUnits() {
-    try { return localStorage.getItem(UNITS_KEY); } catch (e) { return null; }
+    try { return PZ.store.get(UNITS_KEY); } catch (e) { return null; }
   }
   function writeStoredUnits(units) {
-    try { localStorage.setItem(UNITS_KEY, units); } catch (e) { /* ignore */ }
+    try { PZ.store.set(UNITS_KEY, units); } catch (e) { /* ignore */ }
   }
 
   function systemPrefersImperial() {
