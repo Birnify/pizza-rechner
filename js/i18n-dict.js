@@ -647,15 +647,17 @@
   add('main.renamePrompt', 'Neuer Name für dieses Rezept:', 'New name for this recipe:');
   add('main.deleteConfirm', '„{name}“ wirklich löschen?', 'Really delete "{name}"?');
   add('main.recipeFallbackName', 'Rezept', 'Recipe');
-  add('main.noRecipesToExport', 'Noch keine gespeicherten Rezepte zum Sichern vorhanden.', 'No saved recipes to back up yet.');
-  add('main.exportedOne', '1 Rezept als Datei gesichert.', '1 recipe backed up as a file.');
-  add('main.exportedMany', '{n} Rezepte als Datei gesichert.', '{n} recipes backed up as a file.');
+  add('main.noDataToExport', 'Noch keine Daten zum Sichern vorhanden.', 'No data to back up yet.');
+  add('main.fullBackupExported', 'Sicherung als Datei gespeichert.', 'Backup saved as a file.');
   add('main.noValidRecipesFound', 'Keine gültigen Rezepte in dieser Datei gefunden.', 'No valid recipes found in this file.');
   add('main.importedOne', '1 Rezept importiert.', '1 recipe imported.');
   add('main.importedMany', '{n} Rezepte importiert.', '{n} recipes imported.');
   add('main.skippedSuffix', ' {n} übersprungen (ungültig).', ' {n} skipped (invalid).');
-  add('main.importFailedFormat', 'Import fehlgeschlagen: Datei ist kein gültiges Rezepte-Backup.', 'Import failed: file is not a valid recipe backup.');
+  add('main.importFailedFormat', 'Import fehlgeschlagen: Datei ist keine gültige Sicherung.', 'Import failed: file is not a valid backup.');
   add('main.importFailedRead', 'Import fehlgeschlagen: Datei konnte nicht gelesen werden.', 'Import failed: file could not be read.');
+  add('main.fullBackupConfirm', 'Diese Sicherungsdatei einlesen? Rezepte, Party-Planung und alle Einstellungen (Sprache, Farbschema, Einheiten u. a.) werden durch den Stand aus der Datei ersetzt. Die App wird danach neu geladen.', 'Restore this backup file? Recipes, party planning and all settings (language, color scheme, units, etc.) will be replaced with the state from the file. The app will then reload.');
+  add('main.noValidDataInBackup', 'Diese Sicherungsdatei enthält keine wiederherstellbaren Daten.', 'This backup file does not contain any restorable data.');
+  add('main.fullBackupRestored', 'Sicherung eingelesen. Die App wird jetzt neu geladen …', 'Backup restored. The app will now reload…');
 
   // ---- js/share.js: Teilen-Link-Feedback -----------------------------------------
   add('share.linkCopied', 'Link kopiert!', 'Link copied!');
@@ -988,9 +990,9 @@
     'Custom recipes are independent from the presets above: this is where your "Save"d states end up.');
   add('btn.exportFile', 'Als Datei sichern', 'Save as file');
   add('btn.importFile', 'Aus Datei laden', 'Load from file');
-  add('label.importFile', 'Backup-Datei mit Rezepten auswählen', 'Select a backup file with recipes');
-  add('hint.recipeIO', 'Sichert alle gespeicherten Rezepte als Datei (z. B. vor dem Löschen von Websitedaten) oder lädt eine solche Datei wieder ein: importierte Rezepte werden ergänzt, nichts wird überschrieben.',
-    'Backs up all saved recipes as a file (e.g. before clearing site data) or loads such a file back in: imported recipes are added, nothing gets overwritten.');
+  add('label.importFile', 'Sicherungsdatei auswählen', 'Select a backup file');
+  add('hint.recipeIO', 'Sichert die gesamte App (Rezepte, Party-Planung, Einstellungen, Sprache, Farbschema, Einheiten u. a.) als Datei, z. B. vor dem Löschen von Websitedaten oder zum Übertragen auf ein neues Gerät. Eine Sicherungsdatei ersetzt beim Einlesen den aktuellen Stand vollständig. Eine ältere, reine Rezepte-Datei bleibt weiterhin einlesbar: dabei werden nur die Rezepte ergänzt, ohne etwas zu überschreiben.',
+    'Backs up the whole app (recipes, party planning, settings, language, color scheme, units, etc.) as a file, e.g. before clearing site data or to move to a new device. Restoring a backup file completely replaces the current state. An older, recipe-only file remains readable: it only adds recipes, without overwriting anything.');
 
   // -- Card: Neues Rezept anlegen --------------------------------------------------------
   add('card.newRecipe.title', 'Neues Rezept anlegen', 'Create a new recipe');

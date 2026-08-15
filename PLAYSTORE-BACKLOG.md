@@ -145,7 +145,11 @@ der ganze Zweck der Übung.
 
 ---
 
-## A3. Vollständige Sicherung exportieren und einlesen
+## A3. Vollständige Sicherung exportieren und einlesen — ERLEDIGT (v4.40.0, 2026-08-15)
+
+Details: `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Vollständige Sicherung
+exportieren und einlesen (v4.40.0)". Empfohlener nächster Punkt: B1 (Capacitor-
+Grundgerüst, kein Programmierschritt, sollte nicht an ein kleines Modell gegeben werden).
 
 **Aufwand:** 1 bis 2 Zyklen. Setzt A1 voraus.
 
@@ -446,7 +450,7 @@ zunächst gerne auf Deutschland begrenzt.
 |---|---|---|---|
 | A1 Zwischenschicht einziehen | 1 Zyklus | nichts | ja, rein mechanisch |
 | A2 Asynchron vorbereiten — **erledigt (v4.39.0)** | 1 Zyklus | A1 | ja, eng umrissen |
-| A3 Sicherung exportieren | 1 bis 2 | A1 | ja |
+| A3 Sicherung exportieren — **erledigt (v4.40.0)** | 1 bis 2 | A1 | ja |
 | B1 Capacitor einrichten | 1 plus Installationen | Werkzeuge | nein, Einrichtung |
 | B2 Startbildschirm | 1 Zyklus | A2, B1 | ja |
 | B3 Nativer Speicher | 1 bis 2 | A2, B2 | mit Sorgfalt |
@@ -459,5 +463,5 @@ zunächst gerne auf Deutschland begrenzt.
 | D3 Play Console | 1 Zyklus | D2 | nein, Formulare |
 | D4 Test und Freigabe | 14 Tage Wartezeit | alles | nein |
 
-**A1 erledigt (v4.38.4, 2026-08-15). A2 erledigt (v4.39.0, 2026-08-15).** Empfohlener
-nächster Einstieg: A3 oder B1 (beide setzen nur A1/A2 voraus).
+**A1 erledigt (v4.38.4, 2026-08-15). A2 erledigt (v4.39.0, 2026-08-15). A3 erledigt
+(v4.40.0, 2026-08-15).** Empfohlener nächster Einstieg: B1 (Capacitor-Grundgerüst).

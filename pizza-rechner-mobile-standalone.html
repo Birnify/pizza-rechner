@@ -1952,7 +1952,7 @@ header{position:relative;text-align:center;}
      daneben, ein zweiter Vorlese-Name wäre redundant (analog zum bestehenden
      .card-icon aria-hidden-Muster). -->
 <header>
-  <h1><img src="assets/logo.svg?v=4.39.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
+  <h1><img src="assets/logo.svg?v=4.40.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
 </header>
 
 <!-- Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay analog zum
@@ -2517,13 +2517,13 @@ header{position:relative;text-align:center;}
           </div>
           <div class="hint" id="recipeHint" style="margin-top:8px;" data-i18n="hint.myRecipes">Eigene Rezepte sind unabhängig von den Presets oben: hier landen deine per „Speichern" gesicherten Stände.</div>
           <div class="row" style="margin-top:14px;gap:8px;">
-            <button type="button" id="recipeExportBtn" style="flex:1;" data-i18n="btn.exportFile">Als Datei sichern</button>
-            <button type="button" id="recipeImportBtn" style="flex:1;" data-i18n="btn.importFile">Aus Datei laden</button>
-            <label for="recipeImportInput" class="visually-hidden" data-i18n="label.importFile">Backup-Datei mit Rezepten auswählen</label>
-            <input type="file" id="recipeImportInput" accept="application/json,.json" class="visually-hidden" tabindex="-1">
+            <button type="button" id="fullBackupExportBtn" style="flex:1;" data-i18n="btn.exportFile">Als Datei sichern</button>
+            <button type="button" id="fullBackupImportBtn" style="flex:1;" data-i18n="btn.importFile">Aus Datei laden</button>
+            <label for="fullBackupImportInput" class="visually-hidden" data-i18n="label.importFile">Sicherungsdatei auswählen</label>
+            <input type="file" id="fullBackupImportInput" accept="application/json,.json" class="visually-hidden" tabindex="-1">
           </div>
-          <div class="hint" id="recipeIOHint" style="margin-top:8px;" data-i18n="hint.recipeIO">Sichert alle gespeicherten Rezepte als Datei (z. B. vor dem Löschen von Websitedaten) oder lädt eine solche Datei wieder ein: importierte Rezepte werden ergänzt, nichts wird überschrieben.</div>
-          <div id="recipeIOLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
+          <div class="hint" id="fullBackupIOHint" style="margin-top:8px;" data-i18n="hint.recipeIO">Sichert die gesamte App (Rezepte, Party-Planung, Einstellungen, Sprache, Farbschema, Einheiten u. a.) als Datei, z. B. vor dem Löschen von Websitedaten oder zum Übertragen auf ein neues Gerät. Eine Sicherungsdatei ersetzt beim Einlesen den aktuellen Stand vollständig. Eine ältere, reine Rezepte-Datei bleibt weiterhin einlesbar: dabei werden nur die Rezepte ergänzt, ohne etwas zu überschreiben.</div>
+          <div id="fullBackupIOLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
         </div>
       </div>
     </details>
@@ -2900,7 +2900,7 @@ header{position:relative;text-align:center;}
              hier bewusst NICHT mehr dupliziert. -->
         <div class="nav-divider" role="separator"></div>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.39.0</span>
+        <span class="nav-version" id="appVersion">v4.40.0</span>
 
       </div>
     </details>
@@ -3978,15 +3978,17 @@ header{position:relative;text-align:center;}
   add('main.renamePrompt', 'Neuer Name für dieses Rezept:', 'New name for this recipe:');
   add('main.deleteConfirm', '„{name}“ wirklich löschen?', 'Really delete "{name}"?');
   add('main.recipeFallbackName', 'Rezept', 'Recipe');
-  add('main.noRecipesToExport', 'Noch keine gespeicherten Rezepte zum Sichern vorhanden.', 'No saved recipes to back up yet.');
-  add('main.exportedOne', '1 Rezept als Datei gesichert.', '1 recipe backed up as a file.');
-  add('main.exportedMany', '{n} Rezepte als Datei gesichert.', '{n} recipes backed up as a file.');
+  add('main.noDataToExport', 'Noch keine Daten zum Sichern vorhanden.', 'No data to back up yet.');
+  add('main.fullBackupExported', 'Sicherung als Datei gespeichert.', 'Backup saved as a file.');
   add('main.noValidRecipesFound', 'Keine gültigen Rezepte in dieser Datei gefunden.', 'No valid recipes found in this file.');
   add('main.importedOne', '1 Rezept importiert.', '1 recipe imported.');
   add('main.importedMany', '{n} Rezepte importiert.', '{n} recipes imported.');
   add('main.skippedSuffix', ' {n} übersprungen (ungültig).', ' {n} skipped (invalid).');
-  add('main.importFailedFormat', 'Import fehlgeschlagen: Datei ist kein gültiges Rezepte-Backup.', 'Import failed: file is not a valid recipe backup.');
+  add('main.importFailedFormat', 'Import fehlgeschlagen: Datei ist keine gültige Sicherung.', 'Import failed: file is not a valid backup.');
   add('main.importFailedRead', 'Import fehlgeschlagen: Datei konnte nicht gelesen werden.', 'Import failed: file could not be read.');
+  add('main.fullBackupConfirm', 'Diese Sicherungsdatei einlesen? Rezepte, Party-Planung und alle Einstellungen (Sprache, Farbschema, Einheiten u. a.) werden durch den Stand aus der Datei ersetzt. Die App wird danach neu geladen.', 'Restore this backup file? Recipes, party planning and all settings (language, color scheme, units, etc.) will be replaced with the state from the file. The app will then reload.');
+  add('main.noValidDataInBackup', 'Diese Sicherungsdatei enthält keine wiederherstellbaren Daten.', 'This backup file does not contain any restorable data.');
+  add('main.fullBackupRestored', 'Sicherung eingelesen. Die App wird jetzt neu geladen …', 'Backup restored. The app will now reload…');
 
   // ---- js/share.js: Teilen-Link-Feedback -----------------------------------------
   add('share.linkCopied', 'Link kopiert!', 'Link copied!');
@@ -4319,9 +4321,9 @@ header{position:relative;text-align:center;}
     'Custom recipes are independent from the presets above: this is where your "Save"d states end up.');
   add('btn.exportFile', 'Als Datei sichern', 'Save as file');
   add('btn.importFile', 'Aus Datei laden', 'Load from file');
-  add('label.importFile', 'Backup-Datei mit Rezepten auswählen', 'Select a backup file with recipes');
-  add('hint.recipeIO', 'Sichert alle gespeicherten Rezepte als Datei (z. B. vor dem Löschen von Websitedaten) oder lädt eine solche Datei wieder ein: importierte Rezepte werden ergänzt, nichts wird überschrieben.',
-    'Backs up all saved recipes as a file (e.g. before clearing site data) or loads such a file back in: imported recipes are added, nothing gets overwritten.');
+  add('label.importFile', 'Sicherungsdatei auswählen', 'Select a backup file');
+  add('hint.recipeIO', 'Sichert die gesamte App (Rezepte, Party-Planung, Einstellungen, Sprache, Farbschema, Einheiten u. a.) als Datei, z. B. vor dem Löschen von Websitedaten oder zum Übertragen auf ein neues Gerät. Eine Sicherungsdatei ersetzt beim Einlesen den aktuellen Stand vollständig. Eine ältere, reine Rezepte-Datei bleibt weiterhin einlesbar: dabei werden nur die Rezepte ergänzt, ohne etwas zu überschreiben.',
+    'Backs up the whole app (recipes, party planning, settings, language, color scheme, units, etc.) as a file, e.g. before clearing site data or to move to a new device. Restoring a backup file completely replaces the current state. An older, recipe-only file remains readable: it only adds recipes, without overwriting anything.');
 
   // -- Card: Neues Rezept anlegen --------------------------------------------------------
   add('card.newRecipe.title', 'Neues Rezept anlegen', 'Create a new recipe');
@@ -9506,6 +9508,103 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
 
 </script>
 <script>
+/* backup.js — Vollständige Sicherung aller App-Daten exportieren/einlesen
+ * (Play-Store-Vorbereitung, Punkt A3 aus PLAYSTORE-BACKLOG.md).
+ *
+ * Erweitert das bisherige, auf Rezepte beschränkte PZ.exportRecipes()/PZ.importRecipes()
+ * (js/storage.js) auf ALLE 11 Speicher-Schlüssel aus PZ.store.KEYS (Rezepte, Pizza-Party-
+ * Planung, Feature-Flags, Hefemenge-/Verschwendung-Anpassungen, Sprache, Farbschema,
+ * Einheiten, Einfachmodus, Onboarding-Status, laufende Timer, Timer-Hinweis-Status).
+ *
+ * Arbeitet ausschließlich über PZ.store.get()/set() (rohe String-Werte) -- kennt die
+ * interne Struktur der einzelnen Schlüssel bewusst NICHT, genau wie js/store.js selbst.
+ * Jeder Wert landet 1:1 (als String) in der Backup-Datei; das ist robust gegenüber
+ * künftigen Änderungen an der internen Struktur einzelner Module.
+ *
+ * Format:
+ *   { format: 'pizzaRechnerFullBackup', version: 1, exportedAt: <ISO-String>,
+ *     data: { <Speicherschlüssel>: <roher String-Wert>, ... } }
+ * Nur tatsächlich gesetzte Schlüssel (kein null) landen in `data`.
+ *
+ * Abwärtskompatibilität: eine Datei im alten, reinen Rezepte-Format
+ * (PZ.exportRecipes(), erkennbar am `recipes`-Array statt einem `data`-Objekt) bleibt
+ * einlesbar -- js/main.js erkennt dieses Format per PZ.isLegacyRecipesBackup() und ruft
+ * weiterhin unverändert PZ.importRecipes() auf (nur Rezepte werden ergänzt, alles andere
+ * bleibt unangetastet, kein Überschreiben, keine Rückfrage -- exakt wie bisher).
+ *
+ * Restore-Semantik der NEUEN vollen Sicherung ist bewusst ein echtes "Ersetzen" (anders
+ * als das reine Rezepte-"Ergänzen" von PZ.importRecipes()): jeder in der Datei enthaltene
+ * bekannte Schlüssel überschreibt den heutigen Wert 1:1 (auch die Rezepte-Liste als
+ * Ganzes, nicht zusammengeführt). Das entspricht dem Nutzungsfall "Sicherung auf neues
+ * Gerät übertragen" bzw. "App-Stand auf einen Sicherungspunkt zurücksetzen" -- js/main.js
+ * holt deshalb vor dem Aufruf eine Bestätigung ein und lädt die Seite danach neu, damit
+ * jedes Modul (Farbschema, Sprache, Einheiten, Einfachmodus, Party-Planung, Timer, ...)
+ * seinen normalen, bereits getesteten Boot-Pfad durchläuft, statt dass hier künstlich
+ * jedes einzelne Modul einzeln zur Laufzeit neu synchronisiert werden müsste.
+ */
+(function (global) {
+  'use strict';
+  const PZ = global.PZ || (global.PZ = {});
+
+  const FORMAT = 'pizzaRechnerFullBackup';
+  const VERSION = 1;
+
+  // Baut das Backup-Objekt. Reine Datenfunktion, kein DOM-Zugriff -- der Download
+  // (Blob + <a download>) passiert wie beim Rezepte-Export in js/main.js.
+  function exportFullBackup() {
+    const data = {};
+    Object.keys(PZ.store.KEYS).forEach((k) => {
+      const key = PZ.store.KEYS[k];
+      const raw = PZ.store.get(key);
+      if (raw !== null && raw !== undefined) data[key] = raw;
+    });
+    return { format: FORMAT, version: VERSION, exportedAt: new Date().toISOString(), data: data };
+  }
+
+  // Erkennt eine volle Sicherung an format + data-Objekt. Bewusst tolerant gegenüber
+  // einem fehlenden/höheren `version`-Feld (eine künftige, abwärtskompatible
+  // Formatversion soll nicht hart abgelehnt werden) -- verlangt aber format + data.
+  function isFullBackup(parsed) {
+    return !!parsed && typeof parsed === 'object' && parsed.format === FORMAT &&
+      !!parsed.data && typeof parsed.data === 'object' && !Array.isArray(parsed.data);
+  }
+
+  // Erkennt das alte, reine Rezepte-Format (PZ.exportRecipes()) -- identische Prüfung
+  // wie PZ.importRecipes() selbst (Array.isArray(parsed.recipes)); hier nur vorab
+  // genutzt, um in js/main.js zwischen den beiden Einlese-Pfaden zu unterscheiden.
+  function isLegacyRecipesBackup(parsed) {
+    return !!parsed && typeof parsed === 'object' && Array.isArray(parsed.recipes);
+  }
+
+  // Liest eine volle Sicherung ein: jeder bekannte Schlüssel (PZ.store.KEYS) wird 1:1
+  // überschrieben (echtes Ersetzen, s. Datei-Kommentar oben). Unbekannte Schlüssel in
+  // `parsed.data` (z. B. aus einer künftigen App-Version mit mehr Schlüsseln) werden
+  // übersprungen, keine harte Ablehnung der ganzen Datei. Wirft bei offensichtlich
+  // falschem Format einen Error -- der Aufrufer (js/main.js) fängt das ab, analog zum
+  // defensiven Fehlerverhalten von PZ.importRecipes()/js/share.js. Ruft NIE selbst eine
+  // Bestätigung ab und lädt auch nicht selbst die Seite neu -- beides ist Sache des
+  // Aufrufers (js/main.js).
+  function importFullBackup(parsed) {
+    if (!isFullBackup(parsed)) throw new Error('invalid-format');
+    const known = new Set(Object.keys(PZ.store.KEYS).map((k) => PZ.store.KEYS[k]));
+    let restored = 0, skipped = 0;
+    Object.keys(parsed.data).forEach((key) => {
+      const value = parsed.data[key];
+      if (!known.has(key) || typeof value !== 'string') { skipped++; return; }
+      PZ.store.set(key, value);
+      restored++;
+    });
+    return { restored: restored, skipped: skipped, total: Object.keys(parsed.data).length };
+  }
+
+  PZ.exportFullBackup = exportFullBackup;
+  PZ.importFullBackup = importFullBackup;
+  PZ.isFullBackup = isFullBackup;
+  PZ.isLegacyRecipesBackup = isLegacyRecipesBackup;
+})(typeof window !== 'undefined' ? window : this);
+
+</script>
+<script>
 /* newrecipe.js — eigenständiges Mini-Formular "Neues Rezept anlegen" (v3.22.0)
  *
  * Legt ein neues Rezept in der bestehenden Mehrfach-Rezepte-Bibliothek an
@@ -11011,19 +11110,25 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
     };
   }
 
-  // --- Rezepte-Backup: Export/Import als Datei (js/storage.js) ----------
+  // --- Vollständige Sicherung: Export/Import als Datei (js/backup.js, seit A3/v4.40.0)
+  // Bis v4.39.0 sicherten diese beiden Buttons NUR die Rezepte (PZ.exportRecipes()/
+  // PZ.importRecipes(), js/storage.js). Seit A3 sichern sie ALLE 11 Speicher-Schlüssel
+  // (PZ.exportFullBackup()/PZ.importFullBackup(), js/backup.js) -- ein Mechanismus statt
+  // zwei, s. pizza-rechner-KONTEXT.md. Eine ältere, reine Rezepte-Backup-Datei bleibt
+  // beim Einlesen erkannt und wird weiterhin über PZ.importRecipes() (reines Ergänzen,
+  // kein Überschreiben) verarbeitet.
   // Live-Region-Ansage seit v3.58.0 über den gemeinsamen Helfer PZ.announce()
   // (js/dom.js, Clear-then-delayed-set-mit-Generation-Zähler-Muster, s. dort).
   function showRecipeIOMsg(msg) {
-    PZ.announce('recipeIOLiveMsg', msg);
+    PZ.announce('fullBackupIOLiveMsg', msg);
   }
 
-  const recipeExportBtn = $('recipeExportBtn');
-  if (recipeExportBtn) {
-    recipeExportBtn.onclick = () => {
-      const backup = PZ.exportRecipes();
-      if (!backup.recipes.length) {
-        showRecipeIOMsg(t('main.noRecipesToExport'));
+  const fullBackupExportBtn = $('fullBackupExportBtn');
+  if (fullBackupExportBtn) {
+    fullBackupExportBtn.onclick = () => {
+      const backup = PZ.exportFullBackup();
+      if (!Object.keys(backup.data).length) {
+        showRecipeIOMsg(t('main.noDataToExport'));
         return;
       }
       const json = JSON.stringify(backup, null, 2);
@@ -11031,52 +11136,90 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'pizza-rezepte-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+      a.download = 'pizza-teigmeister-sicherung-' + new Date().toISOString().slice(0, 10) + '.json';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      const n = backup.recipes.length;
-      showRecipeIOMsg(n === 1 ? t('main.exportedOne') : t('main.exportedMany', { n: n }));
+      showRecipeIOMsg(t('main.fullBackupExported'));
     };
   }
 
-  const recipeImportBtn = $('recipeImportBtn');
-  const recipeImportInput = $('recipeImportInput');
-  if (recipeImportBtn && recipeImportInput) {
-    // recipeImportInput ist per tabindex="-1" bewusst aus der Tab-Reihenfolge genommen
-    // (unsichtbares Steuerelement, s. .visually-hidden) und wird nur über diesen Button
-    // ausgelöst. Der native Datei-Dialog verschiebt den Fokus dabei technisch auf das
-    // Input selbst; ohne Gegenmaßnahme bliebe er dort stehen — für Tastatur-Nutzer ohne
-    // sichtbaren Fokusring (WCAG 2.4.7). Sobald das Fenster nach dem Schließen des
-    // Dialogs (egal ob Datei gewählt oder abgebrochen) den Fokus zurückbekommt, holen
-    // wir ihn zurück auf den sichtbaren Button.
-    recipeImportBtn.onclick = () => {
-      recipeImportInput.click();
+  const fullBackupImportBtn = $('fullBackupImportBtn');
+  const fullBackupImportInput = $('fullBackupImportInput');
+  if (fullBackupImportBtn && fullBackupImportInput) {
+    // fullBackupImportInput ist per tabindex="-1" bewusst aus der Tab-Reihenfolge
+    // genommen (unsichtbares Steuerelement, s. .visually-hidden) und wird nur über
+    // diesen Button ausgelöst. Der native Datei-Dialog verschiebt den Fokus dabei
+    // technisch auf das Input selbst; ohne Gegenmaßnahme bliebe er dort stehen — für
+    // Tastatur-Nutzer ohne sichtbaren Fokusring (WCAG 2.4.7). Sobald das Fenster nach
+    // dem Schließen des Dialogs (egal ob Datei gewählt oder abgebrochen) den Fokus
+    // zurückbekommt, holen wir ihn zurück auf den sichtbaren Button.
+    fullBackupImportBtn.onclick = () => {
+      fullBackupImportInput.click();
       const restoreFocus = () => {
         window.removeEventListener('focus', restoreFocus);
-        if (document.activeElement === recipeImportInput) recipeImportBtn.focus();
+        if (document.activeElement === fullBackupImportInput) fullBackupImportBtn.focus();
       };
       window.addEventListener('focus', restoreFocus);
     };
-    recipeImportInput.onchange = () => {
-      const file = recipeImportInput.files && recipeImportInput.files[0];
-      recipeImportInput.value = ''; // erlaubt erneutes Auswählen derselben Datei
+    fullBackupImportInput.onchange = () => {
+      const file = fullBackupImportInput.files && fullBackupImportInput.files[0];
+      fullBackupImportInput.value = ''; // erlaubt erneutes Auswählen derselben Datei
       if (!file) return;
       const reader = new FileReader();
       reader.onload = () => {
+        let parsed;
         try {
-          const parsed = JSON.parse(reader.result);
-          const result = PZ.importRecipes(parsed);
-          refreshRecipeSelect();
-          if (result.imported === 0) {
-            showRecipeIOMsg(t('main.noValidRecipesFound'));
-          } else {
-            let msg = result.imported === 1 ? t('main.importedOne') : t('main.importedMany', { n: result.imported });
-            if (result.skipped > 0) msg += t('main.skippedSuffix', { n: result.skipped });
-            showRecipeIOMsg(msg);
-          }
+          parsed = JSON.parse(reader.result);
         } catch (e) {
+          showRecipeIOMsg(t('main.importFailedFormat'));
+          return;
+        }
+        if (PZ.isFullBackup(parsed)) {
+          // Echtes Ersetzen (s. js/backup.js) -- erst eine Bestätigung einholen, danach
+          // die App neu laden, damit jedes Modul (Farbschema, Sprache, Einheiten,
+          // Einfachmodus, Party-Planung, Timer, ...) seinen normalen Boot-Pfad
+          // durchläuft, statt hier jedes einzeln zur Laufzeit nachsynchronisieren zu
+          // müssen. PZ.store.flush() wartet auf angestoßene Hintergrund-Schreibvorgänge,
+          // bevor neu geladen wird (heute mit localStorage synchron irrelevant, macht
+          // diese Stelle aber robust für einen künftigen asynchronen Hintergrund, s.
+          // PLAYSTORE-BACKLOG.md Punkt B3).
+          if (!confirm(t('main.fullBackupConfirm'))) return;
+          try {
+            const result = PZ.importFullBackup(parsed);
+            if (result.restored === 0) {
+              showRecipeIOMsg(t('main.noValidDataInBackup'));
+              return;
+            }
+          } catch (e) {
+            showRecipeIOMsg(t('main.importFailedFormat'));
+            return;
+          }
+          // Live-Region-Ansage VOR dem Reload auslösen (WCAG 4.1.3) -- PZ.announce()
+          // setzt den Text erst nach einem eigenen 50-ms-Tick (s. js/dom.js), ein
+          // sofortiger reload() würde die Ansage sonst nie hörbar machen. Der
+          // zusätzliche Timeout gibt Screenreadern Zeit, die Meldung tatsächlich
+          // vorzulesen, bevor die Seite neu lädt.
+          showRecipeIOMsg(t('main.fullBackupRestored'));
+          PZ.store.flush().then(() => {
+            global.setTimeout(() => { global.location.reload(); }, 1500);
+          });
+        } else if (PZ.isLegacyRecipesBackup(parsed)) {
+          try {
+            const result = PZ.importRecipes(parsed);
+            refreshRecipeSelect();
+            if (result.imported === 0) {
+              showRecipeIOMsg(t('main.noValidRecipesFound'));
+            } else {
+              let msg = result.imported === 1 ? t('main.importedOne') : t('main.importedMany', { n: result.imported });
+              if (result.skipped > 0) msg += t('main.skippedSuffix', { n: result.skipped });
+              showRecipeIOMsg(msg);
+            }
+          } catch (e) {
+            showRecipeIOMsg(t('main.importFailedFormat'));
+          }
+        } else {
           showRecipeIOMsg(t('main.importFailedFormat'));
         }
       };

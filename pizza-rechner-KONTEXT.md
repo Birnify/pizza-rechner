@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-15 · Aktuelle Version: v4.39.0 (Desktop + Mobil, Speicher-Zwischenschicht js/store.js asynchron vorbereitet) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-15 · Aktuelle Version: v4.40.0 (Desktop + Mobil, vollständige Sicherung exportieren und einlesen) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -218,24 +218,28 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Speicher-Zwischenschicht js/store.js asynchron vorbereitet (v4.39.0) = aktueller Stand
+## Vollständige Sicherung exportieren und einlesen (v4.40.0) = aktueller Stand
 
-Play-Store-Vorbereitung, Punkt A2 aus `PLAYSTORE-BACKLOG.md`. `js/store.js` bekam einen
-internen `cache` im Arbeitsspeicher: `PZ.store.hydrate()` (async) befüllt ihn aus
-`PZ.store._backend` (weiterhin `localStorage`, Tausch erst B3), `get()` liest ab jetzt NUR
-noch aus dem `cache` (bleibt synchron), `set()`/`remove()` schreiben sofort synchron in den
-`cache` UND (eager, ohne selbst zu awaiten) in `_backend`, `flush()` (async) wartet auf
-angestoßene Hintergrund-Schreibvorgänge. Die 22 bestehenden Aufrufstellen aus A1 unverändert.
-Nebenbefund: rund 60 Stellen in `tests/test.html`, die zur Testisolation direkt an
-`PZ.store` vorbei `localStorage` manipulierten (Backup/Restore echter Nutzerdaten), mussten
-auf `PZ.store.get/set/remove` umgestellt werden, sonst wären sie durch den neuen `cache`
-nicht mehr synchron sichtbar gewesen. Testsuite 1353 → **1393** grün, live per CDP auf
-Desktop, Mobil und im Standalone-Build verifiziert (Speichern übersteht Reload). `js/store.js`
-und `tests/test.html` geändert; `pizza-rechner-mobile-standalone.html` neu gebaut.
-`PLAYSTORE-BACKLOG.md` Punkt A2 erledigt, nächster empfohlener Punkt A3 oder B1.
+Play-Store-Vorbereitung, Punkt A3 aus `PLAYSTORE-BACKLOG.md`. Neue Datei `js/backup.js`
+(`PZ.exportFullBackup/importFullBackup/isFullBackup/isLegacyRecipesBackup`) erweitert die
+bestehenden Buttons (jetzt `#fullBackupExportBtn`/`#fullBackupImportBtn`, vorher
+`#recipeExportBtn`/`#recipeImportBtn`) in `js/main.js` von reinem Rezepte-Export auf alle
+11 `PZ.store.KEYS` (roher String-Wert je Schlüssel, ein Mechanismus statt zwei). Format:
+`{format:'pizzaRechnerFullBackup', version, exportedAt, data:{...}}`. Restore ist ein
+echtes Ersetzen (nicht Zusammenführen wie beim alten Rezepte-Import): vor dem Einlesen
+eine Bestätigung, danach `PZ.store.flush()` + Live-Region-Ansage + `location.reload()`,
+damit jedes Modul seinen normalen Boot-Pfad durchläuft statt einzeln nachsynchronisiert zu
+werden. Eine Datei im alten, reinen Rezepte-Format bleibt einlesbar (nur Rezepte werden
+ergänzt, Rest bleibt unangetastet, unverändertes `PZ.importRecipes()`). Testsuite 1393 →
+**1442** grün (32 eigene + 17 `test-generator`-Fälle), `accessibility-expert`-Review ergab
+einen Blocker (fehlende Live-Region-Ansage vor dem Reload, WCAG 4.1.3) und einen Major
+(i18n-Text noch nicht an die neue Formulierung angepasst) — beide behoben. `js/backup.js`
+neu, `js/main.js`, `js/i18n-dict.js`, `pizza-rechner.html`, `pizza-rechner-mobile.html`,
+`tests/test.html` geändert; Standalone-Build neu erzeugt. `PLAYSTORE-BACKLOG.md` Punkt A3
+erledigt, nächster empfohlener Punkt B1.
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Speicher-Zwischenschicht
-js/store.js asynchron vorbereitet (v4.39.0)".
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Vollständige Sicherung
+exportieren und einlesen (v4.40.0)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 

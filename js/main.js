@@ -100,19 +100,25 @@
     };
   }
 
-  // --- Rezepte-Backup: Export/Import als Datei (js/storage.js) ----------
+  // --- Vollständige Sicherung: Export/Import als Datei (js/backup.js, seit A3/v4.40.0)
+  // Bis v4.39.0 sicherten diese beiden Buttons NUR die Rezepte (PZ.exportRecipes()/
+  // PZ.importRecipes(), js/storage.js). Seit A3 sichern sie ALLE 11 Speicher-Schlüssel
+  // (PZ.exportFullBackup()/PZ.importFullBackup(), js/backup.js) -- ein Mechanismus statt
+  // zwei, s. pizza-rechner-KONTEXT.md. Eine ältere, reine Rezepte-Backup-Datei bleibt
+  // beim Einlesen erkannt und wird weiterhin über PZ.importRecipes() (reines Ergänzen,
+  // kein Überschreiben) verarbeitet.
   // Live-Region-Ansage seit v3.58.0 über den gemeinsamen Helfer PZ.announce()
   // (js/dom.js, Clear-then-delayed-set-mit-Generation-Zähler-Muster, s. dort).
   function showRecipeIOMsg(msg) {
-    PZ.announce('recipeIOLiveMsg', msg);
+    PZ.announce('fullBackupIOLiveMsg', msg);
   }
 
-  const recipeExportBtn = $('recipeExportBtn');
-  if (recipeExportBtn) {
-    recipeExportBtn.onclick = () => {
-      const backup = PZ.exportRecipes();
-      if (!backup.recipes.length) {
-        showRecipeIOMsg(t('main.noRecipesToExport'));
+  const fullBackupExportBtn = $('fullBackupExportBtn');
+  if (fullBackupExportBtn) {
+    fullBackupExportBtn.onclick = () => {
+      const backup = PZ.exportFullBackup();
+      if (!Object.keys(backup.data).length) {
+        showRecipeIOMsg(t('main.noDataToExport'));
         return;
       }
       const json = JSON.stringify(backup, null, 2);
@@ -120,52 +126,90 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'pizza-rezepte-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+      a.download = 'pizza-teigmeister-sicherung-' + new Date().toISOString().slice(0, 10) + '.json';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      const n = backup.recipes.length;
-      showRecipeIOMsg(n === 1 ? t('main.exportedOne') : t('main.exportedMany', { n: n }));
+      showRecipeIOMsg(t('main.fullBackupExported'));
     };
   }
 
-  const recipeImportBtn = $('recipeImportBtn');
-  const recipeImportInput = $('recipeImportInput');
-  if (recipeImportBtn && recipeImportInput) {
-    // recipeImportInput ist per tabindex="-1" bewusst aus der Tab-Reihenfolge genommen
-    // (unsichtbares Steuerelement, s. .visually-hidden) und wird nur über diesen Button
-    // ausgelöst. Der native Datei-Dialog verschiebt den Fokus dabei technisch auf das
-    // Input selbst; ohne Gegenmaßnahme bliebe er dort stehen — für Tastatur-Nutzer ohne
-    // sichtbaren Fokusring (WCAG 2.4.7). Sobald das Fenster nach dem Schließen des
-    // Dialogs (egal ob Datei gewählt oder abgebrochen) den Fokus zurückbekommt, holen
-    // wir ihn zurück auf den sichtbaren Button.
-    recipeImportBtn.onclick = () => {
-      recipeImportInput.click();
+  const fullBackupImportBtn = $('fullBackupImportBtn');
+  const fullBackupImportInput = $('fullBackupImportInput');
+  if (fullBackupImportBtn && fullBackupImportInput) {
+    // fullBackupImportInput ist per tabindex="-1" bewusst aus der Tab-Reihenfolge
+    // genommen (unsichtbares Steuerelement, s. .visually-hidden) und wird nur über
+    // diesen Button ausgelöst. Der native Datei-Dialog verschiebt den Fokus dabei
+    // technisch auf das Input selbst; ohne Gegenmaßnahme bliebe er dort stehen — für
+    // Tastatur-Nutzer ohne sichtbaren Fokusring (WCAG 2.4.7). Sobald das Fenster nach
+    // dem Schließen des Dialogs (egal ob Datei gewählt oder abgebrochen) den Fokus
+    // zurückbekommt, holen wir ihn zurück auf den sichtbaren Button.
+    fullBackupImportBtn.onclick = () => {
+      fullBackupImportInput.click();
       const restoreFocus = () => {
         window.removeEventListener('focus', restoreFocus);
-        if (document.activeElement === recipeImportInput) recipeImportBtn.focus();
+        if (document.activeElement === fullBackupImportInput) fullBackupImportBtn.focus();
       };
       window.addEventListener('focus', restoreFocus);
     };
-    recipeImportInput.onchange = () => {
-      const file = recipeImportInput.files && recipeImportInput.files[0];
-      recipeImportInput.value = ''; // erlaubt erneutes Auswählen derselben Datei
+    fullBackupImportInput.onchange = () => {
+      const file = fullBackupImportInput.files && fullBackupImportInput.files[0];
+      fullBackupImportInput.value = ''; // erlaubt erneutes Auswählen derselben Datei
       if (!file) return;
       const reader = new FileReader();
       reader.onload = () => {
+        let parsed;
         try {
-          const parsed = JSON.parse(reader.result);
-          const result = PZ.importRecipes(parsed);
-          refreshRecipeSelect();
-          if (result.imported === 0) {
-            showRecipeIOMsg(t('main.noValidRecipesFound'));
-          } else {
-            let msg = result.imported === 1 ? t('main.importedOne') : t('main.importedMany', { n: result.imported });
-            if (result.skipped > 0) msg += t('main.skippedSuffix', { n: result.skipped });
-            showRecipeIOMsg(msg);
-          }
+          parsed = JSON.parse(reader.result);
         } catch (e) {
+          showRecipeIOMsg(t('main.importFailedFormat'));
+          return;
+        }
+        if (PZ.isFullBackup(parsed)) {
+          // Echtes Ersetzen (s. js/backup.js) -- erst eine Bestätigung einholen, danach
+          // die App neu laden, damit jedes Modul (Farbschema, Sprache, Einheiten,
+          // Einfachmodus, Party-Planung, Timer, ...) seinen normalen Boot-Pfad
+          // durchläuft, statt hier jedes einzeln zur Laufzeit nachsynchronisieren zu
+          // müssen. PZ.store.flush() wartet auf angestoßene Hintergrund-Schreibvorgänge,
+          // bevor neu geladen wird (heute mit localStorage synchron irrelevant, macht
+          // diese Stelle aber robust für einen künftigen asynchronen Hintergrund, s.
+          // PLAYSTORE-BACKLOG.md Punkt B3).
+          if (!confirm(t('main.fullBackupConfirm'))) return;
+          try {
+            const result = PZ.importFullBackup(parsed);
+            if (result.restored === 0) {
+              showRecipeIOMsg(t('main.noValidDataInBackup'));
+              return;
+            }
+          } catch (e) {
+            showRecipeIOMsg(t('main.importFailedFormat'));
+            return;
+          }
+          // Live-Region-Ansage VOR dem Reload auslösen (WCAG 4.1.3) -- PZ.announce()
+          // setzt den Text erst nach einem eigenen 50-ms-Tick (s. js/dom.js), ein
+          // sofortiger reload() würde die Ansage sonst nie hörbar machen. Der
+          // zusätzliche Timeout gibt Screenreadern Zeit, die Meldung tatsächlich
+          // vorzulesen, bevor die Seite neu lädt.
+          showRecipeIOMsg(t('main.fullBackupRestored'));
+          PZ.store.flush().then(() => {
+            global.setTimeout(() => { global.location.reload(); }, 1500);
+          });
+        } else if (PZ.isLegacyRecipesBackup(parsed)) {
+          try {
+            const result = PZ.importRecipes(parsed);
+            refreshRecipeSelect();
+            if (result.imported === 0) {
+              showRecipeIOMsg(t('main.noValidRecipesFound'));
+            } else {
+              let msg = result.imported === 1 ? t('main.importedOne') : t('main.importedMany', { n: result.imported });
+              if (result.skipped > 0) msg += t('main.skippedSuffix', { n: result.skipped });
+              showRecipeIOMsg(msg);
+            }
+          } catch (e) {
+            showRecipeIOMsg(t('main.importFailedFormat'));
+          }
+        } else {
           showRecipeIOMsg(t('main.importFailedFormat'));
         }
       };

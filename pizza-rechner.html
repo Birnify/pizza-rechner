@@ -20,7 +20,7 @@
   } catch(e) {}
 })();
 </script>
-<link rel="stylesheet" href="css/styles.css?v=4.39.0">
+<link rel="stylesheet" href="css/styles.css?v=4.40.0">
 </head>
 <body>
 <header>
@@ -28,7 +28,7 @@
     <button type="button" id="navToggle" class="nav-toggle" aria-expanded="false" aria-controls="navMenu" data-i18n-attr="aria-label:nav.menuOpen">
       <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
     </button>
-    <h1><img src="assets/logo.svg?v=4.39.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
+    <h1><img src="assets/logo.svg?v=4.40.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
   </div>
 </header>
 
@@ -56,7 +56,7 @@
     </ul>
     <div class="nav-divider" role="separator"></div>
     <a class="nav-link" id="navMobileLink" href="pizza-rechner-mobile.html" data-i18n="nav.toMobile">Zur Mobil-Ansicht</a>
-    <span class="nav-version" id="appVersion">v4.39.0</span>
+    <span class="nav-version" id="appVersion">v4.40.0</span>
   </div>
 </nav>
 
@@ -611,13 +611,13 @@
         </div>
         <div class="hint" id="recipeHint" style="margin-top:8px;" data-i18n="hint.myRecipes">Eigene Rezepte sind unabhängig von den Presets oben: hier landen deine per „Speichern" gesicherten Stände.</div>
         <div class="row" style="margin-top:14px;gap:8px;">
-          <button type="button" id="recipeExportBtn" style="flex:1;" data-i18n="btn.exportFile">Als Datei sichern</button>
-          <button type="button" id="recipeImportBtn" style="flex:1;" data-i18n="btn.importFile">Aus Datei laden</button>
-          <label for="recipeImportInput" class="visually-hidden" data-i18n="label.importFile">Backup-Datei mit Rezepten auswählen</label>
-          <input type="file" id="recipeImportInput" accept="application/json,.json" class="visually-hidden" tabindex="-1">
+          <button type="button" id="fullBackupExportBtn" style="flex:1;" data-i18n="btn.exportFile">Als Datei sichern</button>
+          <button type="button" id="fullBackupImportBtn" style="flex:1;" data-i18n="btn.importFile">Aus Datei laden</button>
+          <label for="fullBackupImportInput" class="visually-hidden" data-i18n="label.importFile">Sicherungsdatei auswählen</label>
+          <input type="file" id="fullBackupImportInput" accept="application/json,.json" class="visually-hidden" tabindex="-1">
         </div>
-        <div class="hint" id="recipeIOHint" style="margin-top:8px;" data-i18n="hint.recipeIO">Sichert alle gespeicherten Rezepte als Datei (z. B. vor dem Löschen von Websitedaten) oder lädt eine solche Datei wieder ein: importierte Rezepte werden ergänzt, nichts wird überschrieben.</div>
-        <div id="recipeIOLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
+        <div class="hint" id="fullBackupIOHint" style="margin-top:8px;" data-i18n="hint.recipeIO">Sichert die gesamte App (Rezepte, Party-Planung, Einstellungen, Sprache, Farbschema, Einheiten u. a.) als Datei, z. B. vor dem Löschen von Websitedaten oder zum Übertragen auf ein neues Gerät. Eine Sicherungsdatei ersetzt beim Einlesen den aktuellen Stand vollständig. Eine ältere, reine Rezepte-Datei bleibt weiterhin einlesbar: dabei werden nur die Rezepte ergänzt, ohne etwas zu überschreiben.</div>
+        <div id="fullBackupIOLiveMsg" class="visually-hidden" role="status" aria-live="polite"></div>
       </div>
     </div>
 
@@ -1006,35 +1006,36 @@
 <footer aria-hidden="true"></footer>
 
 <!-- Module in Abhängigkeits-Reihenfolge (klassische Scripts → laufen per Doppelklick offline) -->
-<script src="js/store.js?v=4.39.0"></script>
-<script src="js/dom.js?v=4.39.0"></script>
-<script src="js/state.js?v=4.39.0"></script>
-<script src="js/i18n-dict.js?v=4.39.0"></script>
-<script src="js/i18n.js?v=4.39.0"></script>
-<script src="js/images.js?v=4.39.0"></script>
-<script src="js/settings.js?v=4.39.0"></script>
-<script src="js/theme.js?v=4.39.0"></script>
-<script src="js/units.js?v=4.39.0"></script>
-<script src="js/widgets.js?v=4.39.0"></script>
-<script src="js/flour.js?v=4.39.0"></script>
-<script src="js/calc.js?v=4.39.0"></script>
-<script src="js/schedule.js?v=4.39.0"></script>
-<script src="js/guide.js?v=4.39.0"></script>
-<script src="js/timer.js?v=4.39.0"></script>
-<script src="js/ui.js?v=4.39.0"></script>
-<script src="js/simplemode.js?v=4.39.0"></script>
-<script src="js/print.js?v=4.39.0"></script>
-<script src="js/pdf.js?v=4.39.0"></script>
-<script src="js/presets.js?v=4.39.0"></script>
-<script src="js/storage.js?v=4.39.0"></script>
-<script src="js/newrecipe.js?v=4.39.0"></script>
-<script src="js/share.js?v=4.39.0"></script>
-<script src="js/party.js?v=4.39.0"></script>
-<script src="js/glossary.js?v=4.39.0"></script>
-<script src="js/main.js?v=4.39.0"></script>
+<script src="js/store.js?v=4.40.0"></script>
+<script src="js/dom.js?v=4.40.0"></script>
+<script src="js/state.js?v=4.40.0"></script>
+<script src="js/i18n-dict.js?v=4.40.0"></script>
+<script src="js/i18n.js?v=4.40.0"></script>
+<script src="js/images.js?v=4.40.0"></script>
+<script src="js/settings.js?v=4.40.0"></script>
+<script src="js/theme.js?v=4.40.0"></script>
+<script src="js/units.js?v=4.40.0"></script>
+<script src="js/widgets.js?v=4.40.0"></script>
+<script src="js/flour.js?v=4.40.0"></script>
+<script src="js/calc.js?v=4.40.0"></script>
+<script src="js/schedule.js?v=4.40.0"></script>
+<script src="js/guide.js?v=4.40.0"></script>
+<script src="js/timer.js?v=4.40.0"></script>
+<script src="js/ui.js?v=4.40.0"></script>
+<script src="js/simplemode.js?v=4.40.0"></script>
+<script src="js/print.js?v=4.40.0"></script>
+<script src="js/pdf.js?v=4.40.0"></script>
+<script src="js/presets.js?v=4.40.0"></script>
+<script src="js/storage.js?v=4.40.0"></script>
+<script src="js/backup.js?v=4.40.0"></script>
+<script src="js/newrecipe.js?v=4.40.0"></script>
+<script src="js/share.js?v=4.40.0"></script>
+<script src="js/party.js?v=4.40.0"></script>
+<script src="js/glossary.js?v=4.40.0"></script>
+<script src="js/main.js?v=4.40.0"></script>
 <!-- Burger-Menü-Navigation (v3.26.0) war bis v3.53.0 eine eigenständige Inline-Kopie
      hier -- seit v3.54.0 gemeinsames Modul mit der Mobil-Seite, s. js/nav.js. -->
-<script src="js/nav.js?v=4.39.0"></script>
-<script src="js/onboarding.js?v=4.39.0"></script>
+<script src="js/nav.js?v=4.40.0"></script>
+<script src="js/onboarding.js?v=4.40.0"></script>
 </body>
 </html>

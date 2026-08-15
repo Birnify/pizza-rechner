@@ -126,6 +126,7 @@
 <script src="../js/print.js"></script>
 <script src="../js/pdf.js"></script>
 <script src="../js/storage.js"></script>
+<script src="../js/backup.js"></script>
 <script src="../js/share.js"></script>
 <script src="../js/party.js"></script>
 <script src="../js/glossary.js"></script>
@@ -6922,6 +6923,302 @@
       { label: 'alle 11 erwarteten Namen vorhanden', actual: expectedKeyNames.filter((k) => !(k in PZ.store.KEYS)).join(',') || '(keine fehlen)', expected: '(keine fehlen)', tol: null, ok: expectedKeyNames.every((k) => k in PZ.store.KEYS) },
       { label: 'alle Werte sind nicht-leere Strings', actual: Object.values(PZ.store.KEYS).every((v) => typeof v === 'string' && v.length > 0), expected: true, tol: null, ok: Object.values(PZ.store.KEYS).every((v) => typeof v === 'string' && v.length > 0) }
     ]);
+  })();
+
+  heading('44 · Vollständige Sicherung (js/backup.js, Play-Store-Vorbereitung A3)');
+
+  await (async function () {
+    const ALL_KEYS = Object.keys(PZ.store.KEYS).map((k) => PZ.store.KEYS[k]);
+
+    // Alle 11 heutigen Rohwerte sichern, damit dieser Testblock am Ende exakt den
+    // ursprünglichen Zustand wiederherstellen kann -- unabhängig davon, ob ein Schlüssel
+    // vorher gesetzt war oder nicht (dann liefert PZ.store.get() null).
+    const originalValues = {};
+    ALL_KEYS.forEach((key) => { originalValues[key] = PZ.store.get(key); });
+
+    try {
+      // --- exportFullBackup(): Grundform --------------------------------------------
+      (function () {
+        const out = PZ.exportFullBackup();
+        renderBox('exportFullBackup() liefert die erwartete Grundform', [
+          { label: 'format-Feld gesetzt', actual: out.format, expected: 'pizzaRechnerFullBackup', tol: null, ok: out.format === 'pizzaRechnerFullBackup' },
+          { label: 'version-Feld gesetzt', actual: out.version, expected: 1, tol: null, ok: out.version === 1 },
+          { label: 'exportedAt ist ein gültiger ISO-Zeitstempel', actual: !isNaN(Date.parse(out.exportedAt)), expected: true, tol: null, ok: !isNaN(Date.parse(out.exportedAt)) },
+          { label: 'data ist ein Objekt (kein Array)', actual: !!(out.data && typeof out.data === 'object' && !Array.isArray(out.data)), expected: true, tol: null, ok: !!(out.data && typeof out.data === 'object' && !Array.isArray(out.data)) },
+          { label: 'pzPresetSwipeHint (sessionStorage, bewusst nicht Teil der Zwischenschicht) ist NIE in data enthalten', actual: 'pzPresetSwipeHint' in out.data, expected: false, tol: null, ok: !('pzPresetSwipeHint' in out.data) }
+        ]);
+      })();
+
+      // --- Voller Roundtrip über alle 11 Schlüssel: setzen -> exportieren -> Datei-
+      //     Roundtrip (JSON.stringify/parse) -> ALLE 11 Schlüssel löschen (simuliert das
+      //     Abnahmekriterium "App-Daten vollständig löschen") -> einlesen -> alle 11
+      //     tragen wieder exakt ihren vorherigen Wert -----------------------------------
+      ALL_KEYS.forEach((key) => { PZ.store.set(key, 'marker-' + key); });
+      const exported = PZ.exportFullBackup();
+      const reparsed = JSON.parse(JSON.stringify(exported));
+      ALL_KEYS.forEach((key) => { PZ.store.remove(key); });
+      const allNullAfterClear = ALL_KEYS.every((key) => PZ.store.get(key) === null);
+      const roundtripResult = PZ.importFullBackup(reparsed);
+      const allRestoredCorrectly = ALL_KEYS.every((key) => PZ.store.get(key) === 'marker-' + key);
+      renderBox('Voller Roundtrip über alle 11 Schlüssel: löschen, einlesen, alles ist zurück', [
+        { label: 'alle 11 Schlüssel sind nach dem Löschen tatsächlich leer (Testaufbau korrekt)', actual: allNullAfterClear, expected: true, tol: null, ok: allNullAfterClear },
+        { label: 'importFullBackup() meldet restored: 11', actual: roundtripResult.restored, expected: 11, tol: null, ok: roundtripResult.restored === 11 },
+        { label: 'importFullBackup() meldet skipped: 0', actual: roundtripResult.skipped, expected: 0, tol: null, ok: roundtripResult.skipped === 0 },
+        { label: 'importFullBackup() meldet total: 11', actual: roundtripResult.total, expected: 11, tol: null, ok: roundtripResult.total === 11 },
+        { label: 'alle 11 Schlüssel tragen exakt wieder ihren ursprünglichen Marker-Wert', actual: allRestoredCorrectly, expected: true, tol: null, ok: allRestoredCorrectly }
+      ]);
+      ALL_KEYS.forEach((key) => { PZ.store.remove(key); });
+
+      // --- Format-Erkennung: volle Sicherung vs. altes Rezepte-Format vs. Datenmüll ---
+      (function () {
+        const fullBackup = PZ.exportFullBackup();
+        const legacyBackup = { format: 'pizzaRechnerBackup', version: 1, exportedAt: new Date().toISOString(), recipes: [] };
+        renderBox('isFullBackup()/isLegacyRecipesBackup() unterscheiden die beiden Dateiformate korrekt', [
+          { label: 'volle Sicherung: isFullBackup() true', actual: PZ.isFullBackup(fullBackup), expected: true, tol: null, ok: PZ.isFullBackup(fullBackup) === true },
+          { label: 'volle Sicherung: isLegacyRecipesBackup() false', actual: PZ.isLegacyRecipesBackup(fullBackup), expected: false, tol: null, ok: PZ.isLegacyRecipesBackup(fullBackup) === false },
+          { label: 'altes Rezepte-Format: isLegacyRecipesBackup() true', actual: PZ.isLegacyRecipesBackup(legacyBackup), expected: true, tol: null, ok: PZ.isLegacyRecipesBackup(legacyBackup) === true },
+          { label: 'altes Rezepte-Format: isFullBackup() false', actual: PZ.isFullBackup(legacyBackup), expected: false, tol: null, ok: PZ.isFullBackup(legacyBackup) === false },
+          { label: 'Datenmüll (leeres Objekt): beides false', actual: PZ.isFullBackup({}) || PZ.isLegacyRecipesBackup({}), expected: false, tol: null, ok: !(PZ.isFullBackup({}) || PZ.isLegacyRecipesBackup({})) },
+          { label: 'null: beides false, kein Crash', actual: PZ.isFullBackup(null) || PZ.isLegacyRecipesBackup(null), expected: false, tol: null, ok: !(PZ.isFullBackup(null) || PZ.isLegacyRecipesBackup(null)) }
+        ]);
+      })();
+
+      // --- Ein altes, reines Rezepte-Backup (mit echtem Rezept-Eintrag) wird eindeutig
+      //     dem Altformat-Pfad zugeordnet, nicht dem neuen Ersetzen-Pfad -- genau diese
+      //     Weichenstellung nutzt js/main.js beim Einlesen ------------------------------
+      (function () {
+        const legacyWithRecipe = { format: 'pizzaRechnerBackup', version: 1, exportedAt: new Date().toISOString(), recipes: [{ name: 'Altformat-Test', state: Object.assign({}, BASE) }] };
+        const isRecognizedAsLegacy = PZ.isLegacyRecipesBackup(legacyWithRecipe) && !PZ.isFullBackup(legacyWithRecipe);
+        renderBox('eine Sicherung im alten Nur-Rezepte-Format wird eindeutig dem Altformat-Pfad zugeordnet (bleibt über PZ.importRecipes() einlesbar, s. Sektion 20)', [
+          { label: 'wird als Altformat erkannt, nicht als volle Sicherung', actual: isRecognizedAsLegacy, expected: true, tol: null, ok: isRecognizedAsLegacy }
+        ]);
+      })();
+
+      // --- Kaputte/unpassende Eingaben: importFullBackup() wirft, kein stiller no-op --
+      (function () {
+        let threwOnNull = false, threwOnEmptyObj = false, threwOnArray = false, threwOnMissingData = false, threwOnArrayData = false;
+        try { PZ.importFullBackup(null); } catch (e) { threwOnNull = true; }
+        try { PZ.importFullBackup({}); } catch (e) { threwOnEmptyObj = true; }
+        try { PZ.importFullBackup([1, 2, 3]); } catch (e) { threwOnArray = true; }
+        try { PZ.importFullBackup({ format: 'pizzaRechnerFullBackup', version: 1 }); } catch (e) { threwOnMissingData = true; }
+        try { PZ.importFullBackup({ format: 'pizzaRechnerFullBackup', version: 1, data: [1, 2, 3] }); } catch (e) { threwOnArrayData = true; }
+        renderBox('importFullBackup() wirft bei offensichtlich falschem/kaputtem Format (kein stiller Datenverlust durch stillen no-op)', [
+          { label: 'importFullBackup(null) wirft', actual: threwOnNull, expected: true, tol: null, ok: threwOnNull },
+          { label: 'importFullBackup({}) ohne format/data wirft', actual: threwOnEmptyObj, expected: true, tol: null, ok: threwOnEmptyObj },
+          { label: 'importFullBackup([...]) (kein Objekt) wirft', actual: threwOnArray, expected: true, tol: null, ok: threwOnArray },
+          { label: 'richtiges format, aber fehlendes data-Feld wirft', actual: threwOnMissingData, expected: true, tol: null, ok: threwOnMissingData },
+          { label: 'data ist ein Array statt eines Objekts wirft', actual: threwOnArrayData, expected: true, tol: null, ok: threwOnArrayData }
+        ]);
+      })();
+
+      // --- Ein leeres, aber strukturell gültiges data-Objekt: kein Crash, restored: 0 -
+      (function () {
+        const emptyDataBackup = { format: 'pizzaRechnerFullBackup', version: 1, exportedAt: new Date().toISOString(), data: {} };
+        let threw = false;
+        let result = null;
+        try { result = PZ.importFullBackup(emptyDataBackup); } catch (e) { threw = true; }
+        renderBox('ein strukturell gültiges, aber leeres data-Objekt: kein Crash, restored: 0 statt eines Fehlers', [
+          { label: 'kein Fehler', actual: threw, expected: false, tol: null, ok: !threw },
+          { label: 'restored: 0', actual: result && result.restored, expected: 0, tol: null, ok: !!result && result.restored === 0 }
+        ]);
+      })();
+
+      // --- Unbekannte Schlüssel in der Datei werden übersprungen, bekannte trotzdem
+      //     eingelesen -- keine harte Ablehnung der ganzen Datei ------------------------
+      (function () {
+        const K = PZ.store.KEYS.TIMER_HINT_SHOWN;
+        PZ.store.remove(K);
+        const mixedBackup = {
+          format: 'pizzaRechnerFullBackup', version: 1, exportedAt: new Date().toISOString(),
+          data: { einSchluesselDenEsNieGab: 'irgendwas', irgendwasAnderes: '{"foo":1}', [K]: 'bekannter-wert' }
+        };
+        const result = PZ.importFullBackup(mixedBackup);
+        renderBox('unbekannte Schlüssel werden übersprungen, bekannte trotzdem übernommen -- keine harte Ablehnung', [
+          { label: 'restored: 1 (nur der bekannte Schlüssel)', actual: result.restored, expected: 1, tol: null, ok: result.restored === 1 },
+          { label: 'skipped: 2 (beide unbekannten Schlüssel)', actual: result.skipped, expected: 2, tol: null, ok: result.skipped === 2 },
+          { label: 'der bekannte Schlüssel wurde tatsächlich übernommen', actual: PZ.store.get(K), expected: 'bekannter-wert', tol: null, ok: PZ.store.get(K) === 'bekannter-wert' }
+        ]);
+        PZ.store.remove(K);
+      })();
+
+      // --- Fehlende Schlüssel in der Datei bleiben unangetastet (kein Löschen/Nullen) -
+      (function () {
+        const K_TOUCHED = PZ.store.KEYS.SIMPLE_MODE;
+        const K_UNTOUCHED = PZ.store.KEYS.ONBOARDING_DONT_SHOW;
+        PZ.store.set(K_UNTOUCHED, 'canary-bleibt-stehen');
+        const partialBackup = {
+          format: 'pizzaRechnerFullBackup', version: 1, exportedAt: new Date().toISOString(),
+          data: { [K_TOUCHED]: 'neu-gesetzt' }
+        };
+        PZ.importFullBackup(partialBackup);
+        renderBox('ein nicht in der Datei enthaltener Schlüssel bleibt beim Einlesen unangetastet', [
+          { label: 'der in der Datei enthaltene Schlüssel wurde übernommen', actual: PZ.store.get(K_TOUCHED), expected: 'neu-gesetzt', tol: null, ok: PZ.store.get(K_TOUCHED) === 'neu-gesetzt' },
+          { label: 'der NICHT enthaltene Schlüssel ist unverändert stehen geblieben', actual: PZ.store.get(K_UNTOUCHED), expected: 'canary-bleibt-stehen', tol: null, ok: PZ.store.get(K_UNTOUCHED) === 'canary-bleibt-stehen' }
+        ]);
+        PZ.store.remove(K_TOUCHED);
+        PZ.store.remove(K_UNTOUCHED);
+      })();
+
+      // --- Ein Wert, der (in einer manipulierten/kaputten Datei) kein String ist, wird
+      //     übersprungen statt roh übernommen zu werden (Robustheit gegen Fremd-Dateien)
+      (function () {
+        const K = PZ.store.KEYS.TIMER_HINT_SHOWN;
+        PZ.store.remove(K);
+        const badTypeBackup = {
+          format: 'pizzaRechnerFullBackup', version: 1, exportedAt: new Date().toISOString(),
+          data: { [K]: { nicht: 'ein-string' } }
+        };
+        const result = PZ.importFullBackup(badTypeBackup);
+        renderBox('ein Wert, der kein String ist, wird übersprungen statt roh übernommen (skipped, kein Crash)', [
+          { label: 'restored: 0', actual: result.restored, expected: 0, tol: null, ok: result.restored === 0 },
+          { label: 'skipped: 1', actual: result.skipped, expected: 1, tol: null, ok: result.skipped === 1 },
+          { label: 'get() bleibt null (nichts wurde geschrieben)', actual: PZ.store.get(K), expected: null, tol: null, ok: PZ.store.get(K) === null }
+        ]);
+      })();
+
+      // --- Ergänzende Randfälle (test-generator-Durchlauf, s. pizza-rechner-KONTEXT.md) -
+
+      // 1) Sonderzeichen/Unicode überleben den Datei-Roundtrip (JSON.stringify/parse)
+      //    unverändert -- Umlaute, Emoji, Anführungszeichen, Backslash, Zeilenumbruch.
+      (function () {
+        const K = PZ.store.KEYS.TIMER_HINT_SHOWN;
+        PZ.store.remove(K);
+        const tricky = 'Käse & Öl "Anführungszeichen" \\Backslash\\ Zeile1\nZeile2 🍕🔥';
+        PZ.store.set(K, tricky);
+        const exported = PZ.exportFullBackup();
+        const reparsed = JSON.parse(JSON.stringify(exported));
+        PZ.store.remove(K);
+        PZ.importFullBackup(reparsed);
+        renderBox('Sonderzeichen/Unicode (Umlaute, Emoji, Anführungszeichen, Backslash, Zeilenumbruch) überleben den Roundtrip exakt', [
+          { label: 'Wert nach Export -> JSON-Roundtrip -> Import ist unverändert', actual: PZ.store.get(K), expected: tricky, tol: null, ok: PZ.store.get(K) === tricky }
+        ]);
+        PZ.store.remove(K);
+      })();
+
+      // 2) Sehr große Werte (50 simulierte Rezepte + 100 Party-Events als große
+      //    JSON-Strings) gehen beim Roundtrip nicht verloren und werden nicht gekappt.
+      (function () {
+        const K_BIG1 = PZ.store.KEYS.RECIPES;
+        const K_BIG2 = PZ.store.KEYS.PARTY;
+        const bigRecipes = JSON.stringify({ recipes: Array.from({ length: 50 }, function (_, i) { return { id: 'r' + i, name: 'Rezept ' + i, state: Object.assign({}, BASE), savedAt: Date.now() }; }), activeId: 'r0' });
+        const bigParty = JSON.stringify({ events: Array.from({ length: 100 }, function (_, i) { return { id: 'e' + i, name: 'Event ' + i }; }) });
+        PZ.store.set(K_BIG1, bigRecipes);
+        PZ.store.set(K_BIG2, bigParty);
+        const exported = PZ.exportFullBackup();
+        const reparsed = JSON.parse(JSON.stringify(exported));
+        PZ.store.remove(K_BIG1);
+        PZ.store.remove(K_BIG2);
+        const result = PZ.importFullBackup(reparsed);
+        renderBox('große Datenmengen (50 simulierte Rezepte + 100 Party-Events) gehen beim Roundtrip nicht verloren', [
+          { label: 'RECIPES exakt wiederhergestellt (50 Einträge)', actual: PZ.store.get(K_BIG1) === bigRecipes, expected: true, tol: null, ok: PZ.store.get(K_BIG1) === bigRecipes },
+          { label: 'PARTY exakt wiederhergestellt (100 Einträge)', actual: PZ.store.get(K_BIG2) === bigParty, expected: true, tol: null, ok: PZ.store.get(K_BIG2) === bigParty },
+          { label: 'restored zählt mindestens diese beiden Schlüssel mit', actual: result.restored >= 2, expected: true, tol: null, ok: result.restored >= 2 }
+        ]);
+        PZ.store.remove(K_BIG1);
+        PZ.store.remove(K_BIG2);
+      })();
+
+      // 3) Schlüssel-Abgleich ist case-sensitiv (folgt aus dem direkten Set-Vergleich in
+      //    js/backup.js, s. dort) -- eine falsch geschriebene Variante eines echten
+      //    Schlüssels wird als unbekannt übersprungen, nie fälschlich auf den echten
+      //    Schlüssel gematcht. Bewusst dokumentiert (keine fuzzy-Zuordnung vorhanden/
+      //    gewollt), nicht nur Zufall der Sprache.
+      (function () {
+        const correctKey = PZ.store.KEYS.RECIPES; // 'pizzaRechner'
+        const wrongCaseKey = correctKey.toLowerCase(); // 'pizzarechner' -- garantiert ungleich, da KEYS gemischte Schreibung nutzt
+        PZ.store.remove(correctKey);
+        const backup = {
+          format: 'pizzaRechnerFullBackup', version: 1, exportedAt: new Date().toISOString(),
+          data: { [wrongCaseKey]: 'sollte-nicht-ankommen' }
+        };
+        const result = PZ.importFullBackup(backup);
+        renderBox('Schlüssel-Abgleich ist case-sensitiv: eine falsch geschriebene Schlüssel-Variante wird übersprungen, nicht fälschlich auf den echten Schlüssel gematcht', [
+          { label: 'restored: 0 (keine Übereinstimmung)', actual: result.restored, expected: 0, tol: null, ok: result.restored === 0 },
+          { label: 'skipped: 1', actual: result.skipped, expected: 1, tol: null, ok: result.skipped === 1 },
+          { label: 'der echte Schlüssel bleibt unangetastet (weiterhin leer)', actual: PZ.store.get(correctKey), expected: null, tol: null, ok: PZ.store.get(correctKey) === null }
+        ]);
+      })();
+
+      // 4) Eine höhere/unbekannte Formatversion (version: 99, z. B. aus einer künftigen
+      //    App-Version) wird abwärtskompatibel akzeptiert statt hart abgelehnt.
+      (function () {
+        const K = PZ.store.KEYS.SIMPLE_MODE;
+        PZ.store.remove(K);
+        const futureBackup = {
+          format: 'pizzaRechnerFullBackup', version: 99, exportedAt: new Date().toISOString(),
+          data: { [K]: 'aus-zukunftsversion' }
+        };
+        const isFull = PZ.isFullBackup(futureBackup);
+        PZ.importFullBackup(futureBackup);
+        renderBox('eine höhere/unbekannte Formatversion (version: 99) wird abwärtskompatibel akzeptiert statt hart abgelehnt', [
+          { label: 'isFullBackup() erkennt die Datei trotzdem als volle Sicherung', actual: isFull, expected: true, tol: null, ok: isFull === true },
+          { label: 'der enthaltene Schlüssel wird trotzdem korrekt übernommen', actual: PZ.store.get(K), expected: 'aus-zukunftsversion', tol: null, ok: PZ.store.get(K) === 'aus-zukunftsversion' }
+        ]);
+        PZ.store.remove(K);
+      })();
+
+      // 5) Dieselbe Sicherungsdatei zweimal hintereinander einlesen ist idempotent (kein
+      //    Doppel-Effekt, kein sich änderndes Ergebnis beim zweiten Durchlauf).
+      (function () {
+        const K = PZ.store.KEYS.ONBOARDING_DONT_SHOW;
+        PZ.store.remove(K);
+        const backup = {
+          format: 'pizzaRechnerFullBackup', version: 1, exportedAt: new Date().toISOString(),
+          data: { [K]: 'idempotenz-wert' }
+        };
+        const first = PZ.importFullBackup(backup);
+        const afterFirst = PZ.store.get(K);
+        const second = PZ.importFullBackup(backup);
+        const afterSecond = PZ.store.get(K);
+        renderBox('dieselbe Sicherungsdatei zweimal hintereinander einlesen ist idempotent (kein Doppel-Effekt)', [
+          { label: 'erster Import: restored 1', actual: first.restored, expected: 1, tol: null, ok: first.restored === 1 },
+          { label: 'zweiter Import: restored ebenfalls 1 (identisches Ergebnis)', actual: second.restored, expected: 1, tol: null, ok: second.restored === 1 },
+          { label: 'Wert nach beiden Durchläufen identisch', actual: afterFirst === afterSecond && afterSecond === 'idempotenz-wert', expected: true, tol: null, ok: afterFirst === afterSecond && afterSecond === 'idempotenz-wert' }
+        ]);
+        PZ.store.remove(K);
+      })();
+
+      // 6) Ein absichtlich leerer String als Wert bleibt ein leerer String -- wird nicht
+      //    mit "Schlüssel nicht gesetzt" (get() === null) verwechselt.
+      (function () {
+        const K = PZ.store.KEYS.TIMER_HINT_SHOWN;
+        PZ.store.remove(K);
+        const backup = {
+          format: 'pizzaRechnerFullBackup', version: 1, exportedAt: new Date().toISOString(),
+          data: { [K]: '' }
+        };
+        const result = PZ.importFullBackup(backup);
+        renderBox('ein absichtlich leerer String als Wert bleibt ein leerer String, wird nicht mit "Schlüssel nicht gesetzt" (null) verwechselt', [
+          { label: 'restored: 1 (leerer String ist ein gültiger String-Wert)', actual: result.restored, expected: 1, tol: null, ok: result.restored === 1 },
+          { label: 'get() liefert den leeren String, nicht null', actual: PZ.store.get(K), expected: '', tol: null, ok: PZ.store.get(K) === '' }
+        ]);
+        PZ.store.remove(K);
+      })();
+
+      // 7) Ein fehlendes exportedAt-Feld macht die Datei nicht ungültig -- format + data
+      //    reichen für eine strukturell gültige volle Sicherung.
+      (function () {
+        const K = PZ.store.KEYS.SIMPLE_MODE;
+        PZ.store.remove(K);
+        const backupNoDate = { format: 'pizzaRechnerFullBackup', version: 1, data: { [K]: 'ohne-exportedat' } };
+        const isFull = PZ.isFullBackup(backupNoDate);
+        let threw = false;
+        try { PZ.importFullBackup(backupNoDate); } catch (e) { threw = true; }
+        renderBox('ein fehlendes exportedAt-Feld macht die Datei nicht ungültig (format + data reichen)', [
+          { label: 'isFullBackup() weiterhin true', actual: isFull, expected: true, tol: null, ok: isFull === true },
+          { label: 'kein Fehler beim Einlesen', actual: threw, expected: false, tol: null, ok: !threw },
+          { label: 'der Schlüssel wird trotzdem korrekt übernommen', actual: PZ.store.get(K), expected: 'ohne-exportedat', tol: null, ok: PZ.store.get(K) === 'ohne-exportedat' }
+        ]);
+        PZ.store.remove(K);
+      })();
+    } finally {
+      // Ursprünglichen Zustand aller 11 Schlüssel exakt wiederherstellen, egal ob ein
+      // Testfall oben unerwartet geworfen hat.
+      ALL_KEYS.forEach((key) => {
+        if (originalValues[key] !== null) PZ.store.set(key, originalValues[key]);
+        else PZ.store.remove(key);
+      });
+    }
   })();
 
   // ─────────────────────────────────────────────────────────────

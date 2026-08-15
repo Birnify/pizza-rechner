@@ -8,6 +8,161 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Vollständige Sicherung exportieren und einlesen (v4.40.0)
+
+Play-Store-Vorbereitung, Punkt A3 aus `PLAYSTORE-BACKLOG.md`. Neue Datei `js/backup.js`
+(`PZ.exportFullBackup/importFullBackup/isFullBackup/isLegacyRecipesBackup`) erweitert die
+bestehenden Buttons (jetzt `#fullBackupExportBtn`/`#fullBackupImportBtn`, vorher
+`#recipeExportBtn`/`#recipeImportBtn`) in `js/main.js` von reinem Rezepte-Export auf alle
+11 `PZ.store.KEYS` (roher String-Wert je Schlüssel, ein Mechanismus statt zwei). Format:
+`{format:'pizzaRechnerFullBackup', version, exportedAt, data:{...}}`. Restore ist ein
+echtes Ersetzen (nicht Zusammenführen wie beim alten Rezepte-Import): vor dem Einlesen
+eine Bestätigung, danach `PZ.store.flush()` + Live-Region-Ansage + `location.reload()`,
+damit jedes Modul seinen normalen Boot-Pfad durchläuft statt einzeln nachsynchronisiert zu
+werden. Eine Datei im alten, reinen Rezepte-Format bleibt einlesbar (nur Rezepte werden
+ergänzt, Rest bleibt unangetastet, unverändertes `PZ.importRecipes()`). Testsuite 1393 →
+**1442** grün (32 eigene + 17 `test-generator`-Fälle), `accessibility-expert`-Review ergab
+einen Blocker (fehlende Live-Region-Ansage vor dem Reload, WCAG 4.1.3) und einen Major
+(i18n-Text noch nicht an die neue Formulierung angepasst) — beide behoben. `js/backup.js`
+neu, `js/main.js`, `js/i18n-dict.js`, `pizza-rechner.html`, `pizza-rechner-mobile.html`,
+`tests/test.html` geändert; Standalone-Build neu erzeugt. `PLAYSTORE-BACKLOG.md` Punkt A3
+erledigt, nächster empfohlener Punkt B1.
+
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Vollständige Sicherung
+exportieren und einlesen (v4.40.0)".
+
+## Vollständige Sicherung exportieren und einlesen (v4.40.0)
+
+Play-Store-Vorbereitung, Punkt A3 aus `PLAYSTORE-BACKLOG.md` (Version 1 ohne Konten, alle
+Daten bleiben auf dem Gerät). Setzt A1/A2 voraus (`js/store.js` mit `PZ.store.KEYS`/
+`get`/`set`/`remove` existiert bereits). Auftrag lag bereits fertig spezifiziert vor
+(Brainstorming-Phase entfiel laut Auftrag), inklusive der UI-Vorgabe des Nutzers: die
+bestehenden Buttons werden erweitert statt eine zweite Sicherungsfläche daneben
+entstehen zu lassen.
+
+**Ziel:** Bis dahin sicherten `PZ.exportRecipes()`/`PZ.importRecipes()` (`js/storage.js`)
+ausschließlich die Rezepte. Ohne Konten (Nutzer-Entscheidung 2026-08-15) ist eine Datei-
+Sicherung aller Daten die einzige Absicherung gegen Geräteverlust bzw. der Weg auf ein
+neues Handy — Rezepte, Pizza-Party-Planung, Feature-Flags/Einstellungen, Hefemenge-/
+Verschwendung-Anpassungen, Sprache, Farbschema, Einheitensystem, Einfachmodus,
+Onboarding-Status, laufende Timer, Timer-Hinweis-Status (alle 11 `PZ.store.KEYS`).
+
+**Neu `js/backup.js`:** kennt die interne Struktur der einzelnen Schlüssel bewusst NICHT
+(genau wie `js/store.js` selbst) — arbeitet nur mit rohen String-Werten über
+`PZ.store.get()`/`PZ.store.set()`.
+- `exportFullBackup()`: iteriert `PZ.store.KEYS`, nimmt jeden gesetzten (nicht-`null`)
+  Rohwert 1:1 in `data` auf, gibt `{format:'pizzaRechnerFullBackup', version:1,
+  exportedAt:<ISO>, data:{...}}` zurück.
+- `isFullBackup(parsed)`: erkennt das neue Format an `format` + `data` als Objekt (kein
+  Array) — bewusst tolerant gegenüber einem fehlenden/höheren `version`-Feld, damit eine
+  künftige, abwärtskompatible Formatversion nicht hart abgelehnt wird.
+- `isLegacyRecipesBackup(parsed)`: erkennt das alte Format an `Array.isArray(parsed.recipes)`
+  — identische Prüfung wie in `PZ.importRecipes()` selbst.
+- `importFullBackup(parsed)`: wirft bei offensichtlich falschem Format (`invalid-format`,
+  analog zu `PZ.importRecipes()`). Sonst: jeder bekannte Schlüssel in `parsed.data` wird
+  1:1 per `PZ.store.set()` überschrieben (echtes Ersetzen, auch die Rezepte-Liste als
+  Ganzes — anders als das reine Ergänzen von `PZ.importRecipes()`). Unbekannte Schlüssel
+  und Werte, die keine Strings sind, werden übersprungen (`skipped`-Zähler), keine harte
+  Ablehnung der ganzen Datei. Gibt `{restored, skipped, total}` zurück. Ruft nie selbst
+  eine Bestätigung ab und lädt nie selbst neu — beides Sache des Aufrufers.
+
+**`js/main.js` (Buttons umbenannt: `recipeExportBtn`→`fullBackupExportBtn`,
+`recipeImportBtn`→`fullBackupImportBtn`, `recipeImportInput`→`fullBackupImportInput`,
+Live-Region `recipeIOLiveMsg`→`fullBackupIOLiveMsg`):**
+- Export-Button: `PZ.exportFullBackup()`, Download als
+  `pizza-teigmeister-sicherung-<Datum>.json`. Zeigt `main.noDataToExport`, wenn `data`
+  leer ist (alle 11 Schlüssel `null`, z. B. ganz frische Installation).
+- Import: liest die Datei, `JSON.parse` in `try/catch` (kaputte/leere Datei →
+  `main.importFailedFormat`). Danach Weichenstellung:
+  - `PZ.isFullBackup(parsed)` → `confirm(t('main.fullBackupConfirm'))` (nennt explizit,
+    dass Rezepte/Party-Planung/Einstellungen ersetzt werden und die App neu lädt). Bei
+    Zustimmung `PZ.importFullBackup()`, bei `result.restored === 0` (z. B. eine Datei mit
+    nur unbekannten Schlüsseln) `main.noValidDataInBackup` statt eines Reloads. Bei
+    Erfolg: `showRecipeIOMsg(t('main.fullBackupRestored'))` **vor** `PZ.store.flush()`,
+    danach `global.setTimeout(() => location.reload(), 1500)` — der Timeout ist nötig,
+    weil `PZ.announce()` den Live-Region-Text erst nach einem eigenen 50-ms-Tick setzt
+    (s. `js/dom.js`) und ein sofortiger Reload die Ansage sonst nie hörbar gemacht hätte
+    (WCAG 4.1.3, Blocker aus dem `accessibility-expert`-Review, s. u.).
+  - `PZ.isLegacyRecipesBackup(parsed)` → unverändertes Verhalten wie vor diesem Punkt:
+    `PZ.importRecipes()` (reines Ergänzen, keine Bestätigung nötig, da nicht-destruktiv).
+  - Weder noch → `main.importFailedFormat`.
+- Warum ein voller Seiten-Reload statt Modul-für-Modul-Nachsynchronisierung: Farbschema,
+  Sprache, Einheiten, Einfachmodus, Party-Planung, Timer usw. werden jeweils nur beim
+  Boot aus dem Speicher gelesen, nicht reaktiv. Ein Reload lässt jedes Modul seinen
+  normalen, bereits getesteten Boot-Pfad durchlaufen, statt dass hier für jedes einzeln
+  ein Nachzieh-Mechanismus gebaut werden müsste — deutlich robuster gegen künftig neue
+  Speicher-Schlüssel, die sonst leicht vergessen würden.
+
+**HTML (`pizza-rechner.html` + `pizza-rechner-mobile.html`, Card „Meine Rezepte", exakt
+dieselbe Stelle wie zuvor, keine neue UI-Fläche):** IDs umbenannt (s. o.), Label-Text
+(„Sicherungsdatei auswählen" statt „Backup-Datei mit Rezepten auswählen") und Hint-Text
+inhaltlich erweitert und in zwei klare Sätze geteilt: Satz 1 beschreibt die neue volle
+Sicherung inkl. „ersetzt beim Einlesen den aktuellen Stand vollständig", Satz 2 die
+Altformat-Kompatibilität („ergänzt nur die Rezepte, ohne etwas zu überschreiben") — nach
+einem `accessibility-expert`-Minor-Befund getrennt, vorher in einem Satz vermischt.
+`js/i18n-dict.js`: `label.importFile`/`hint.recipeIO` DE+EN angepasst (Major-Befund: die
+Wörterbuch-Texte hinkten den HTML-Änderungen hinterher und behaupteten weiterhin
+fälschlich, es werde nur ergänzt statt ersetzt); `main.exportedOne`/`main.exportedMany`/
+`main.noRecipesToExport` entfernt (Rezepte-spezifisch), ersetzt durch
+`main.fullBackupExported`/`main.noDataToExport`; neu `main.fullBackupConfirm`,
+`main.noValidDataInBackup`, `main.fullBackupRestored`.
+
+**Bewusst NICHT angefasst:** die interne Funktionsweise von `js/store.js` selbst
+(get/set/remove/hydrate/flush) — `js/backup.js` nutzt nur dessen API. Das Rezept-Teilen
+über Link (`js/share.js`, URL-Teilen statt Datei-Export, unabhängiger Mechanismus).
+Jegliche Fachlogik/Berechnung.
+
+**Tests** (`tests/test.html`, Sektion „44 · Vollständige Sicherung (js/backup.js,
+Play-Store-Vorbereitung A3)", 1393 → **1442**): 32 selbst geschriebene Prüfungen
+(`exportFullBackup()`-Grundform inkl. Ausschluss von `pzPresetSwipeHint`, voller
+11-Schlüssel-Roundtrip mit simuliertem „App-Daten vollständig löschen" dazwischen,
+Format-Erkennung volle vs. alte Sicherung vs. Datenmüll, Altformat-Weichenstellung,
+kaputte/fehlende/falsch typisierte Eingaben wirft bzw. wird übersprungen ohne harte
+Ablehnung der ganzen Datei, fehlende Schlüssel bleiben unangetastet) plus 17 vom
+`test-generator`-Agenten vorgeschlagene und nach eigener Prüfung übernommene Randfälle
+(Unicode/Sonderzeichen im Roundtrip, sehr große Werte, Case-Sensitivität beim
+Schlüssel-Abgleich — gegengeprüft, dass `importFullBackup()` echt case-sensitiv matcht
+und der Testfall kein Sprach-Selbstverständlichkeit-Artefakt ist, künftige
+Formatversion `version: 99` bleibt abwärtskompatibel, Idempotenz bei doppeltem Einlesen
+derselben Datei, leerer String unterscheidet sich von `null`, fehlendes `exportedAt`
+macht die Datei nicht ungültig). Alle 1442 Prüfungen grün, verifiziert per
+Headless-Edge-Dump (`msedge --headless --disable-gpu --virtual-time-budget=8000
+--dump-dom`).
+
+**`accessibility-expert`-Review** (Fokus: umbenannte Bedienelemente, neuer
+`confirm()`+Reload-Ablauf, Live-Region): ein Blocker (fehlende Live-Region-Ansage vor dem
+Reload nach erfolgreichem Vollbackup-Import, WCAG 4.1.3 — behoben, s. o.), ein Major
+(i18n-Wörterbücher nicht an die HTML-Änderungen angepasst, sachlich falsche Aussage zu
+destruktivem Verhalten — behoben), ein Minor (Hint-Text vermischte beide
+Verhaltensweisen in einem Satz — behoben durch Satztrennung). Fokus-Rückgabe nach dem
+Datei-Dialog und Label-Verknüpfung waren bereits korrekt (unverändertes Muster, nur
+ID-Referenzen mitgezogen).
+
+`?v=` auf `4.40.0` gezogen (Desktop + Mobil). `pizza-rechner-mobile-standalone.html` neu
+gebaut (`python build-mobile-standalone.py`). `Versionen/v4.40.0 - Vollständige
+Sicherung Export Import/` enthält den vollständigen Schnappschuss. `PLAYSTORE-BACKLOG.md`
+Punkt A3 als erledigt markiert, nächster empfohlener Punkt B1 (Capacitor-Grundgerüst,
+kein Programmierschritt, sollte nicht an ein kleines Modell gegeben werden).
+
+## Speicher-Zwischenschicht js/store.js asynchron vorbereitet (v4.39.0)
+
+Play-Store-Vorbereitung, Punkt A2 aus `PLAYSTORE-BACKLOG.md`. `js/store.js` bekam einen
+internen `cache` im Arbeitsspeicher: `PZ.store.hydrate()` (async) befüllt ihn aus
+`PZ.store._backend` (weiterhin `localStorage`, Tausch erst B3), `get()` liest ab jetzt NUR
+noch aus dem `cache` (bleibt synchron), `set()`/`remove()` schreiben sofort synchron in den
+`cache` UND (eager, ohne selbst zu awaiten) in `_backend`, `flush()` (async) wartet auf
+angestoßene Hintergrund-Schreibvorgänge. Die 22 bestehenden Aufrufstellen aus A1 unverändert.
+Nebenbefund: rund 60 Stellen in `tests/test.html`, die zur Testisolation direkt an
+`PZ.store` vorbei `localStorage` manipulierten (Backup/Restore echter Nutzerdaten), mussten
+auf `PZ.store.get/set/remove` umgestellt werden, sonst wären sie durch den neuen `cache`
+nicht mehr synchron sichtbar gewesen. Testsuite 1353 → **1393** grün, live per CDP auf
+Desktop, Mobil und im Standalone-Build verifiziert (Speichern übersteht Reload). `js/store.js`
+und `tests/test.html` geändert; `pizza-rechner-mobile-standalone.html` neu gebaut.
+`PLAYSTORE-BACKLOG.md` Punkt A2 erledigt, nächster empfohlener Punkt A3 oder B1.
+
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Speicher-Zwischenschicht
+js/store.js asynchron vorbereitet (v4.39.0)".
+
 ## Speicher-Zwischenschicht js/store.js asynchron vorbereitet (v4.39.0)
 
 Play-Store-Vorbereitung, Punkt A2 aus `PLAYSTORE-BACKLOG.md`. Setzt A1 voraus (js/store.js

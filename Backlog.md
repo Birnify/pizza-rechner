@@ -22,7 +22,9 @@ jeweils mit Dateien, Schritten, Abnahmekriterien und Abgrenzung.
 
 Punkt A1 (Speicher-Zwischenschicht `js/store.js`) ist seit v4.38.4 (2026-08-15) erledigt.
 Punkt A2 (asynchroner Hintergrund vorbereitet) ist seit v4.39.0 (2026-08-15) ebenfalls
-erledigt. Empfohlener nächster Einstieg dort: A3 oder B1.
+erledigt. Punkt A3 (vollständige Sicherung exportieren und einlesen) ist seit v4.40.0
+(2026-08-15) ebenfalls erledigt. Empfohlener nächster Einstieg dort: B1 (Capacitor-
+Grundgerüst, kein Programmierschritt, sollte nicht an ein kleines Modell gegeben werden).
 
 Die Punkte A bis J weiter unten sind die abgeschlossene alte Warteschlange und bleiben
 nur zur Dokumentation stehen.
