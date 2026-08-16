@@ -1952,7 +1952,7 @@ header{position:relative;text-align:center;}
      daneben, ein zweiter Vorlese-Name wäre redundant (analog zum bestehenden
      .card-icon aria-hidden-Muster). -->
 <header>
-  <h1><img src="assets/logo.svg?v=4.41.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
+  <h1><img src="assets/logo.svg?v=4.42.0" alt="" class="app-logo"> <span data-i18n="app.title">Teigmeister</span></h1>
 </header>
 
 <!-- Willkommens-Screen / Einführung (v3.63.0): eigenständiges Modal-Overlay analog zum
@@ -2901,7 +2901,7 @@ header{position:relative;text-align:center;}
              hier bewusst NICHT mehr dupliziert. -->
         <div class="nav-divider" role="separator"></div>
         <a class="nav-link" id="navDesktopLink" href="pizza-rechner.html" data-i18n="nav.toDesktop">Zur Desktop-Ansicht</a>
-        <span class="nav-version" id="appVersion">v4.41.0</span>
+        <span class="nav-version" id="appVersion">v4.42.0</span>
 
       </div>
     </details>
@@ -5860,10 +5860,53 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
     if (meta) meta.setAttribute('content', THEME_COLOR[theme] || THEME_COLOR.light);
   }
 
+  // Native Statusleiste/Gestenleiste (Play-Store-Backlog C3): Capacitor 8 bringt dafür
+  // bereits eine gebündelte, edge-to-edge-taugliche "SystemBars"-API in @capacitor/core
+  // selbst mit (kein separates @capacitor/status-bar-Paket nötig -- dessen eigene Doku
+  // empfiehlt SystemBars ausdrücklich für "modern edge to edge use cases", s.
+  // node_modules/@capacitor/core/system-bars.md). `setStyle({style:'DARK'})` heißt
+  // "helle Icons für dunklen Untergrund" (= unser Dunkelmodus), 'LIGHT' das Gegenteil --
+  // steuert nur die Icon-/Text-Farbe der System-Leisten, keinen eigenen Hintergrund
+  // (den liefert ohnehin die App selbst, die Leisten sind im Edge-to-Edge-Modus
+  // transparent über dem eigenen `--bg`). Läuft NUR nativ (identisches
+  // isNativePlatform()-Muster wie js/main.js/js/store.js/js/timer.js/js/nav.js); im
+  // Browser (Desktop und Mobil ohne Capacitor) ein No-op. Ohne diesen Hook würde die
+  // native Statusleiste nur dem GERÄTE-Farbschema folgen (Java-seitiger 'DEFAULT'-Stil,
+  // s. SystemBars.java getStyleForTheme()), nicht der App-eigenen, ggf. manuell
+  // übersteuerten Theme-Wahl -- deshalb hier bei JEDER applyTheme()-Ausführung erneut
+  // gesetzt, nicht nur beim Start (applyTheme läuft sowohl beim initialen Laden als auch
+  // bei jedem manuellen Umschalten und jeder Live-Systemänderung, s. u.).
+  function applyNativeSystemBarStyle(theme) {
+    const isNative = !!(global.Capacitor && global.Capacitor.isNativePlatform && global.Capacitor.isNativePlatform());
+    if (!isNative) return;
+    try {
+      const SystemBars = global.Capacitor.Plugins && global.Capacitor.Plugins.SystemBars;
+      if (SystemBars && SystemBars.setStyle) {
+        SystemBars.setStyle({ style: theme === 'dark' ? 'DARK' : 'LIGHT' });
+      }
+    } catch (e) { /* kein Absturz, falls das Plugin doch fehlt/anders heisst */ }
+    // Ergänzende eigene Brücke (android/.../MainActivity.java, "TeigmeisterNativeBars"):
+    // SystemBars selbst unterstützt bewusst kein setBackgroundColor() mehr
+    // (Edge-to-Edge-Design, s. node_modules/@capacitor/core/system-bars.md) -- auf
+    // WebView-Ständen unter Chromium 140 bleibt die Leiste dadurch ohne diese Ergänzung
+    // eine vom Seiteninhalt unabhängige, IMMER gleich eingefärbte Fläche (live am
+    // Teigmeister_Test-Emulator als dauerhaftes Schwarz bestätigt, das die -- korrekt
+    // gesetzten -- dunklen Icons im Hellmodus unsichtbar machte). Reicht denselben
+    // Farbwert durch, den auch das theme-color-Meta-Tag oben nutzt (THEME_COLOR) --
+    // dieselbe Farbe, die auch ein normaler mobiler Browser für Status-/Adressleiste
+    // verwenden würde.
+    try {
+      if (global.TeigmeisterNativeBars && global.TeigmeisterNativeBars.setBarColor) {
+        global.TeigmeisterNativeBars.setBarColor(THEME_COLOR[theme] || THEME_COLOR.light);
+      }
+    } catch (e) { /* kein Absturz, falls die native Brücke fehlt */ }
+  }
+
   function applyTheme(theme) {
     currentTheme = theme;
     document.documentElement.setAttribute('data-theme', theme);
     applyThemeColorMeta(theme);
+    applyNativeSystemBarStyle(theme);
   }
   // Erstanwendung nicht überspringen, falls das Inline-Script aus irgendeinem Grund fehlte.
   applyTheme(currentTheme);
@@ -12017,6 +12060,59 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
       focusView(view);
     });
   });
+
+  // ==========================================================================
+  // Android-Zurück-Taste (@capacitor/app, Play-Store-Backlog C3) -- NUR in der
+  // nativen App aktiv (identisches Feature-Erkennungsmuster wie js/main.js/js/store.js/
+  // js/timer.js/js/print.js: window.Capacitor?.isNativePlatform()). Im Browser (Desktop
+  // UND Mobil ohne Capacitor) bleibt das Verhalten unverändert -- dort gibt es diesen
+  // Listener schlicht nicht.
+  //
+  // Prioritätenkette (jeder Schritt beendet die Kette, sobald er greift):
+  //   1. Offenes Burgermenü-Overlay schließen (#navMenu) -- auf pizza-rechner-mobile.html
+  //      gibt es das seit v3.67.0 nicht mehr (navOverlay ist dort null, Bottom-Tab-Nav
+  //      ersetzt es vollständig), dieser Zweig ist also praktisch nur ein defensiver
+  //      Rest für den Fall, dass der native Build irgendwann doch anderes Markup lädt.
+  //   2. Offenes Onboarding-Modal schließen (#onboardingOverlay, PZ.closeOnboarding aus
+  //      js/onboarding.js -- schließt inkl. Fokus-Rückgabe/Checkbox-Persistenz, s. dort).
+  //   3. Die aufklappbare "Neues Rezept anlegen"-Karte (#newRecipeCard) einklappen, falls
+  //      der Nutzer sie geöffnet hat -- bewusst NUR diese eine <details>-Karte (nicht alle
+  //      per-default-geschlossenen Akkordeons auf der Seite): sie ist die einzige, die
+  //      wie ein eigenständiger Anlage-Dialog funktioniert (mehrere Eingabefelder, ein
+  //      "Anlegen"-Button), die übrigen (z. B. "Mehr Optionen", "Alle anzeigen" bei den
+  //      Presets) sind normale Detail-Einblendungen, deren Zustand der Zurück-Taste egal
+  //      sein darf.
+  //   4. Ist die aktuell sichtbare [data-view] nicht die Startansicht ("rechner", per
+  //      Live-DOM-Check ermittelt statt fest verdrahtet -- robust gegen künftige
+  //      Reihenfolge-Änderungen im Markup), zurück zur Startansicht (PZ.gotoView).
+  //   5. Auf der Startansicht: App tatsächlich verlassen (App.exitApp()).
+  //
+  // Bewusst NICHT angefasst: activateView()/gotoView() selbst (nur davorgeschaltet),
+  // jegliche weitere <details>-Karte, Desktop (dort ist Capacitor nie aktiv).
+  const START_VIEW = 'rechner';
+  function currentView() {
+    const el = document.querySelector('[data-view]:not([hidden])');
+    return el ? el.getAttribute('data-view') : START_VIEW;
+  }
+  function wireHardwareBackButton() {
+    const isNative = !!(global.Capacitor && global.Capacitor.isNativePlatform && global.Capacitor.isNativePlatform());
+    if (!isNative) return;
+    const CapApp = global.Capacitor.Plugins && global.Capacitor.Plugins.App;
+    if (!CapApp || !CapApp.addListener) return; // Plugin fehlt/anders benannt -- kein Absturz
+    CapApp.addListener('backButton', function () {
+      if (navOverlay && !navOverlay.hidden) { closeNav(); return; }
+      const onboarding = document.getElementById('onboardingOverlay');
+      if (onboarding && !onboarding.hidden) {
+        if (PZ.closeOnboarding) PZ.closeOnboarding(); else onboarding.hidden = true;
+        return;
+      }
+      const newRecipeCard = document.getElementById('newRecipeCard');
+      if (newRecipeCard && newRecipeCard.open) { newRecipeCard.open = false; return; }
+      if (currentView() !== START_VIEW) { gotoView(START_VIEW); return; }
+      CapApp.exitApp();
+    });
+  }
+  wireHardwareBackButton();
 })(window);
 
 </script>
@@ -12114,6 +12210,13 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
       if (checkbox) writeDontShow(checkbox.checked);
       if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
     }
+    // Export für js/nav.js (Play-Store-Backlog C3, Android-Zurück-Taste): schließt das
+    // Modal auf demselben Weg wie Escape/CTA/Hintergrundklick (inkl. Fokus-Rückgabe und
+    // Persistieren der Checkbox), statt dass der Zurück-Tasten-Handler das Overlay per
+    // rohem `overlay.hidden = true` überspringend schließen müsste (würde den
+    // Tab-Trap-Keydown-Listener hängen lassen und den Checkbox-Stand nicht sichern).
+    // No-op, falls kein Onboarding-Overlay im Markup existiert (s. Guard oben in wire()).
+    PZ.closeOnboarding = close;
 
     if (ctaBtn) ctaBtn.addEventListener('click', close);
     overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });

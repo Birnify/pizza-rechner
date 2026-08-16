@@ -71,10 +71,53 @@
     if (meta) meta.setAttribute('content', THEME_COLOR[theme] || THEME_COLOR.light);
   }
 
+  // Native Statusleiste/Gestenleiste (Play-Store-Backlog C3): Capacitor 8 bringt dafür
+  // bereits eine gebündelte, edge-to-edge-taugliche "SystemBars"-API in @capacitor/core
+  // selbst mit (kein separates @capacitor/status-bar-Paket nötig -- dessen eigene Doku
+  // empfiehlt SystemBars ausdrücklich für "modern edge to edge use cases", s.
+  // node_modules/@capacitor/core/system-bars.md). `setStyle({style:'DARK'})` heißt
+  // "helle Icons für dunklen Untergrund" (= unser Dunkelmodus), 'LIGHT' das Gegenteil --
+  // steuert nur die Icon-/Text-Farbe der System-Leisten, keinen eigenen Hintergrund
+  // (den liefert ohnehin die App selbst, die Leisten sind im Edge-to-Edge-Modus
+  // transparent über dem eigenen `--bg`). Läuft NUR nativ (identisches
+  // isNativePlatform()-Muster wie js/main.js/js/store.js/js/timer.js/js/nav.js); im
+  // Browser (Desktop und Mobil ohne Capacitor) ein No-op. Ohne diesen Hook würde die
+  // native Statusleiste nur dem GERÄTE-Farbschema folgen (Java-seitiger 'DEFAULT'-Stil,
+  // s. SystemBars.java getStyleForTheme()), nicht der App-eigenen, ggf. manuell
+  // übersteuerten Theme-Wahl -- deshalb hier bei JEDER applyTheme()-Ausführung erneut
+  // gesetzt, nicht nur beim Start (applyTheme läuft sowohl beim initialen Laden als auch
+  // bei jedem manuellen Umschalten und jeder Live-Systemänderung, s. u.).
+  function applyNativeSystemBarStyle(theme) {
+    const isNative = !!(global.Capacitor && global.Capacitor.isNativePlatform && global.Capacitor.isNativePlatform());
+    if (!isNative) return;
+    try {
+      const SystemBars = global.Capacitor.Plugins && global.Capacitor.Plugins.SystemBars;
+      if (SystemBars && SystemBars.setStyle) {
+        SystemBars.setStyle({ style: theme === 'dark' ? 'DARK' : 'LIGHT' });
+      }
+    } catch (e) { /* kein Absturz, falls das Plugin doch fehlt/anders heisst */ }
+    // Ergänzende eigene Brücke (android/.../MainActivity.java, "TeigmeisterNativeBars"):
+    // SystemBars selbst unterstützt bewusst kein setBackgroundColor() mehr
+    // (Edge-to-Edge-Design, s. node_modules/@capacitor/core/system-bars.md) -- auf
+    // WebView-Ständen unter Chromium 140 bleibt die Leiste dadurch ohne diese Ergänzung
+    // eine vom Seiteninhalt unabhängige, IMMER gleich eingefärbte Fläche (live am
+    // Teigmeister_Test-Emulator als dauerhaftes Schwarz bestätigt, das die -- korrekt
+    // gesetzten -- dunklen Icons im Hellmodus unsichtbar machte). Reicht denselben
+    // Farbwert durch, den auch das theme-color-Meta-Tag oben nutzt (THEME_COLOR) --
+    // dieselbe Farbe, die auch ein normaler mobiler Browser für Status-/Adressleiste
+    // verwenden würde.
+    try {
+      if (global.TeigmeisterNativeBars && global.TeigmeisterNativeBars.setBarColor) {
+        global.TeigmeisterNativeBars.setBarColor(THEME_COLOR[theme] || THEME_COLOR.light);
+      }
+    } catch (e) { /* kein Absturz, falls die native Brücke fehlt */ }
+  }
+
   function applyTheme(theme) {
     currentTheme = theme;
     document.documentElement.setAttribute('data-theme', theme);
     applyThemeColorMeta(theme);
+    applyNativeSystemBarStyle(theme);
   }
   // Erstanwendung nicht überspringen, falls das Inline-Script aus irgendeinem Grund fehlte.
   applyTheme(currentTheme);

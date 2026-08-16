@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-16 · Aktuelle Version: v4.41.0 (Desktop + Mobil, Drucken und PDF über das Teilen-Menü in der nativen App) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-16 · Aktuelle Version: v4.42.0 (Desktop + Mobil, Android-Feinschliff: Zurück-Taste, Statusleiste, Randbereiche) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -218,22 +218,23 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Drucken und PDF über das Teilen-Menü (v4.41.0) = aktueller Stand
+## Android-Feinschliff: Zurück-Taste, Statusleiste, Randbereiche (v4.42.0) = aktueller Stand
 
-Play-Store-Vorbereitung, Punkt C2 aus `PLAYSTORE-BACKLOG.md`. In der nativen App
-(`window.Capacitor?.isNativePlatform()`) lösen „Einkaufsliste drucken"/„Anleitung
-drucken" (`js/print.js`) und „Als PDF speichern" (`js/pdf.js`) jetzt einen
-Datei-schreiben-plus-Teilen-Ablauf aus (`@capacitor/filesystem` + `@capacitor/share`)
-statt der dort wirkungslosen `window.print()`/`a.download`-Wege — im Browser
-unverändert. Neuer Baustein `buildShoppingListPdfBytes()` für die Einkaufsliste,
-wiederverwendet die bestehenden PDF-Layout-Primitiven unangetastet. Testsuite 1486 →
-**1542** grün, ein `accessibility-expert`-Major behoben (irreführender Hinweistext in
-der nativen App). Auf dem Android-Emulator live verifiziert (Teilen-Menü, Datei-Inhalt,
-stiller Cancel-Pfad). `PLAYSTORE-BACKLOG.md` Punkt C2 erledigt, nächster empfohlener
-Punkt C3 oder C4.
+Play-Store-Vorbereitung, Punkt C3 aus `PLAYSTORE-BACKLOG.md`. Native Android-Zurück-Taste
+(`@capacitor/app`) navigiert jetzt sinnvoll statt die App sofort zu verlassen
+(Prioritätenkette in `js/nav.js`: Burgermenü → Onboarding-Modal → offene
+„Neues Rezept anlegen"-Karte → Startansicht → App verlassen). Statusleiste passt sich per
+dem in `@capacitor/core` gebündelten `SystemBars`-Plugin dem Hell-/Dunkelmodus an, auch
+zur Laufzeit — dabei einen echten, live gefundenen Bug behoben (dauerhaft schwarze Leiste
+mangels Hintergrundfarben-Unterstützung von `SystemBars`, per kleiner nativer Brücke in
+`MainActivity.java` gelöst). Randbereiche bei aktivierter Gestensteuerung bereits ohne
+Code-Änderung korrekt. „Bildschirm anlassen" (optionaler 4. Punkt) bewusst ausgelassen
+(kein offizielles Capacitor-Paket dafür). Testsuite unverändert 1542/1542 grün, alles auf
+dem Android-Emulator live verifiziert. `PLAYSTORE-BACKLOG.md` Punkt C3 erledigt, nächster
+empfohlener Punkt C4 oder D1.
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Drucken und PDF über
-das Teilen-Menü (v4.41.0)".
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Android-Feinschliff:
+Zurück-Taste, Statusleiste, Randbereiche (v4.42.0)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 

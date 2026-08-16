@@ -218,4 +218,57 @@
       focusView(view);
     });
   });
+
+  // ==========================================================================
+  // Android-Zurück-Taste (@capacitor/app, Play-Store-Backlog C3) -- NUR in der
+  // nativen App aktiv (identisches Feature-Erkennungsmuster wie js/main.js/js/store.js/
+  // js/timer.js/js/print.js: window.Capacitor?.isNativePlatform()). Im Browser (Desktop
+  // UND Mobil ohne Capacitor) bleibt das Verhalten unverändert -- dort gibt es diesen
+  // Listener schlicht nicht.
+  //
+  // Prioritätenkette (jeder Schritt beendet die Kette, sobald er greift):
+  //   1. Offenes Burgermenü-Overlay schließen (#navMenu) -- auf pizza-rechner-mobile.html
+  //      gibt es das seit v3.67.0 nicht mehr (navOverlay ist dort null, Bottom-Tab-Nav
+  //      ersetzt es vollständig), dieser Zweig ist also praktisch nur ein defensiver
+  //      Rest für den Fall, dass der native Build irgendwann doch anderes Markup lädt.
+  //   2. Offenes Onboarding-Modal schließen (#onboardingOverlay, PZ.closeOnboarding aus
+  //      js/onboarding.js -- schließt inkl. Fokus-Rückgabe/Checkbox-Persistenz, s. dort).
+  //   3. Die aufklappbare "Neues Rezept anlegen"-Karte (#newRecipeCard) einklappen, falls
+  //      der Nutzer sie geöffnet hat -- bewusst NUR diese eine <details>-Karte (nicht alle
+  //      per-default-geschlossenen Akkordeons auf der Seite): sie ist die einzige, die
+  //      wie ein eigenständiger Anlage-Dialog funktioniert (mehrere Eingabefelder, ein
+  //      "Anlegen"-Button), die übrigen (z. B. "Mehr Optionen", "Alle anzeigen" bei den
+  //      Presets) sind normale Detail-Einblendungen, deren Zustand der Zurück-Taste egal
+  //      sein darf.
+  //   4. Ist die aktuell sichtbare [data-view] nicht die Startansicht ("rechner", per
+  //      Live-DOM-Check ermittelt statt fest verdrahtet -- robust gegen künftige
+  //      Reihenfolge-Änderungen im Markup), zurück zur Startansicht (PZ.gotoView).
+  //   5. Auf der Startansicht: App tatsächlich verlassen (App.exitApp()).
+  //
+  // Bewusst NICHT angefasst: activateView()/gotoView() selbst (nur davorgeschaltet),
+  // jegliche weitere <details>-Karte, Desktop (dort ist Capacitor nie aktiv).
+  const START_VIEW = 'rechner';
+  function currentView() {
+    const el = document.querySelector('[data-view]:not([hidden])');
+    return el ? el.getAttribute('data-view') : START_VIEW;
+  }
+  function wireHardwareBackButton() {
+    const isNative = !!(global.Capacitor && global.Capacitor.isNativePlatform && global.Capacitor.isNativePlatform());
+    if (!isNative) return;
+    const CapApp = global.Capacitor.Plugins && global.Capacitor.Plugins.App;
+    if (!CapApp || !CapApp.addListener) return; // Plugin fehlt/anders benannt -- kein Absturz
+    CapApp.addListener('backButton', function () {
+      if (navOverlay && !navOverlay.hidden) { closeNav(); return; }
+      const onboarding = document.getElementById('onboardingOverlay');
+      if (onboarding && !onboarding.hidden) {
+        if (PZ.closeOnboarding) PZ.closeOnboarding(); else onboarding.hidden = true;
+        return;
+      }
+      const newRecipeCard = document.getElementById('newRecipeCard');
+      if (newRecipeCard && newRecipeCard.open) { newRecipeCard.open = false; return; }
+      if (currentView() !== START_VIEW) { gotoView(START_VIEW); return; }
+      CapApp.exitApp();
+    });
+  }
+  wireHardwareBackButton();
 })(window);

@@ -91,6 +91,13 @@
       if (checkbox) writeDontShow(checkbox.checked);
       if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
     }
+    // Export für js/nav.js (Play-Store-Backlog C3, Android-Zurück-Taste): schließt das
+    // Modal auf demselben Weg wie Escape/CTA/Hintergrundklick (inkl. Fokus-Rückgabe und
+    // Persistieren der Checkbox), statt dass der Zurück-Tasten-Handler das Overlay per
+    // rohem `overlay.hidden = true` überspringend schließen müsste (würde den
+    // Tab-Trap-Keydown-Listener hängen lassen und den Checkbox-Stand nicht sichern).
+    // No-op, falls kein Onboarding-Overlay im Markup existiert (s. Guard oben in wire()).
+    PZ.closeOnboarding = close;
 
     if (ctaBtn) ctaBtn.addEventListener('click', close);
     overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });

@@ -517,21 +517,70 @@ Browser), jegliche Fachlogik/Berechnung.
 
 ---
 
-## C3. Android-Feinschliff
+## C3. Android-Feinschliff — ERLEDIGT (v4.42.0, 2026-08-16)
 
-**Aufwand:** 1 Zyklus. Setzt B1 voraus.
+`@capacitor/app` installiert (`npm install`, `npx cap sync android`).
 
-**Umfang:**
-- **Zurück-Taste:** schließt heute die App. Sie soll stattdessen innerhalb der App
-  zurückgehen, also offene Ansicht schließen oder zur vorherigen Ansicht wechseln, und
-  erst auf der Startansicht die App verlassen. Anbindung an `js/nav.js`
-- **Statusleiste:** Farbe passend zum Farbschema, hell und dunkel
-- **Randbereiche:** die vorhandenen `env(safe-area-inset-*)`-Regeln aus dem iOS-Fix
-  gegen echte Android-Geräte gegenprüfen
-- **Bildschirm anlassen** während ein Timer sichtbar läuft, optional
+**Zurück-Taste:** `js/nav.js` bekam einen Listener auf `App.addListener('backButton', ...)`
+(nur nativ, identisches `isNativePlatform()`-Muster wie die übrigen Module), mit einer
+Prioritätenkette: (1) offenes Burgermenü-Overlay schließen — auf `pizza-rechner-mobile.html`
+seit v3.67.0 praktisch nie relevant (Bottom-Tab-Nav statt Burgermenü, `navOverlay` dort
+`null`), rein defensiv erhalten; (2) offenes Onboarding-Modal schließen (`js/onboarding.js`
+exportiert dafür neu `PZ.closeOnboarding`, schließt inkl. Fokus-Rückgabe/Checkbox-Persistenz
+statt rohem `hidden = true`); (3) die aufklappbare `#newRecipeCard`-Karte einklappen, falls
+geöffnet — bewusst nur diese eine `<details>` (funktioniert wie ein Anlage-Dialog), nicht
+alle Akkordeons der Seite; (4) von einer Nicht-Start-Ansicht zurück zur Startansicht
+("rechner", per Live-DOM-Check `[data-view]:not([hidden])` ermittelt); (5) auf der
+Startansicht `App.exitApp()`.
 
-**Abnahme:** Zurück-Taste verhält sich erwartbar, Statusleiste passt in beiden
-Farbschemata, keine überdeckten Bedienelemente auf einem Gerät mit Gestensteuerung.
+**Statusleiste:** bewusst **kein** `@capacitor/status-bar` installiert — stattdessen das in
+`@capacitor/core` 8.5.0 bereits gebündelte, edge-to-edge-taugliche `SystemBars`-Plugin
+genutzt (`js/theme.js`, bei jedem `applyTheme()`-Aufruf `SystemBars.setStyle({style:
+theme==='dark'?'DARK':'LIGHT'})`, läuft sowohl beim Start als auch bei jedem Laufzeit-
+Wechsel). `SystemBars` unterstützt laut eigener Doku bewusst kein `setBackgroundColor()`
+mehr — auf dem Emulator (WebView 113, Android 14, unter der Schwelle für echtes
+Edge-to-Edge-Passthrough) blieb die Leiste dadurch dauerhaft schwarz (Fensterhintergrund
+der Splash-/Launch-Theme), wodurch die korrekt gesetzten dunklen Icons im Hellmodus
+unsichtbar wurden — live per Screenshot gefunden. Behoben durch eine kleine ergänzende
+native Brücke (`android/.../MainActivity.java`, `TeigmeisterNativeBars.setBarColor`,
+klassische `Window.setStatusBarColor()`/`setNavigationBarColor()`-API, auf Android-Versionen
+ohne erzwungenes Edge-to-Edge weiterhin wirksam, auf Android 15+ dokumentiert folgenlos
+ignoriert), die denselben Farbwert nutzt wie das bestehende `theme-color`-Meta-Tag
+(`THEME_COLOR`, `#c4472e` hell / `#151312` dunkel).
+
+**Randbereiche:** keine Code-Änderung nötig — Capacitor 8s gebündeltes `SystemBars` handhabt
+die `env(safe-area-inset-*)`-Werte bereits automatisch (Insets-Listener auf dem
+WebView-Elternelement, inkl. Fallback-Pfad für ältere WebView-Stände). Mit aktivierter
+Gestensteuerung (`adb shell settings put secure navigation_mode 2`) live geprüft: keine
+Überdeckung der Bottom-Tab-Leiste durch die Geräte-Gestenleiste.
+
+**Bildschirm anlassen (Punkt 4) bewusst NICHT umgesetzt:** kein offizielles
+`@capacitor/keep-awake`-Paket (npm bestätigt 404), nur das inoffizielle
+`@capacitor-community/keep-awake@8.0.1` — als einzige Nicht-`@capacitor/*`-Abhängigkeit
+dieses Projekts eine bewusste Scope-Entscheidung für einen künftigen eigenen Punkt, nicht
+für diesen Zyklus (war im Backlog explizit optional, keine eigene Abnahmekriterium-Zeile).
+
+**Tests:** `tests/test.html` unverändert **1542/1542** grün (`js/nav.js`/`js/onboarding.js`
+werden dort wie dokumentiert nicht geladen, `js/theme.js`-Ergänzung ist im Browser durch den
+`isNativePlatform()`-Guard ein No-op). Kein `test-generator`-Lauf (keine Berechnungslogik
+verändert).
+
+**Echte Verifikation auf dem Android-Emulator** (`Teigmeister_Test`, Android 14/API 34,
+nicht nur Code-Review): komplette Zurück-Tasten-Prioritätenkette per `adb shell input
+keyevent 4` durchgeklickt und per Screenshot + `dumpsys activity activities` bestätigt
+(Onboarding schließt zuerst, dann `#newRecipeCard` klappt zu, dann Rezepte-Unteransicht
+zurück zu Rechner, erst danach verlässt die App wirklich — `topResumedActivity` wechselt
+zum Launcher). Statusleiste live in Hell **und** Dunkel geprüft, inkl. Laufzeit-Wechsel ohne
+Neustart. Gestensteuerung aktiviert, keine Überdeckung. Logcat ohne Crashes/Fatal-Exceptions.
+
+**Geändert:** `js/nav.js`, `js/onboarding.js`, `js/theme.js`, `android/app/src/main/java/
+com/teigmeister/app/MainActivity.java`, `package.json`/`package-lock.json` (neue Abhängigkeit
+`@capacitor/app`), `android/app/capacitor.build.gradle` + `android/capacitor.settings.gradle`
+(automatisch von `npx cap sync`), Standalone-Build neu gebaut. `?v=` auf `4.42.0` gezogen
+(Mobil **und** Desktop, wie bei C2 — reines Cache-Busting, Desktop-Verhalten bleibt
+unverändert, da `isNativePlatform()` dort immer `false` ist). **Nicht angefasst:**
+`activateView()`/`gotoView()` selbst, jegliche Fachlogik/Berechnung, Desktop-Verhalten im
+Browser.
 
 ---
 
@@ -654,7 +703,7 @@ zunächst gerne auf Deutschland begrenzt.
 | B3 Nativer Speicher — **erledigt (2026-08-16)** | 1 bis 2 | A2, B2 | mit Sorgfalt |
 | C1 Timer nativ — **erledigt (C1a 2026-08-16, C1b 2026-08-17)** | 2 bis 3 | B1 | nein, anspruchsvollster Punkt |
 | C2 Drucken und PDF — **erledigt (v4.41.0, 2026-08-16)** | 1 Zyklus | B1 | ja |
-| C3 Android-Feinschliff | 1 Zyklus | B1 | ja |
+| C3 Android-Feinschliff — **erledigt (v4.42.0, 2026-08-16)** | 1 Zyklus | B1 | ja |
 | C4 Symbol und Start | 1 Zyklus | B1 | ja |
 | D1 Aufräumen | 1 Zyklus | B1 | ja |
 | D2 Rechtstexte | 1 Zyklus | nichts | Entwurf ja, Freigabe Nutzer |
@@ -669,6 +718,11 @@ Systembenachrichtigungen inkl. Neustart-Persistenz und Doze-Festigkeit, auf dem
 Android-Emulator verifiziert. C2 (Drucken und PDF) erledigt (v4.41.0, 2026-08-16) —
 beide Druckvarianten sowie der bestehende PDF-Button teilen in der nativen App jetzt
 über das System-Teilen-Menü statt der wirkungslosen `window.print()`/`a.download`-Wege,
-auf dem Android-Emulator verifiziert.** Empfohlener nächster Einstieg: C3
-(Android-Feinschliff) oder C4 (Symbol und Startbildschirm), beide 1 Zyklus und für ein
-kleines Modell geeignet.
+auf dem Android-Emulator verifiziert. C3 (Android-Feinschliff) erledigt (v4.42.0,
+2026-08-16) — Zurück-Taste navigiert jetzt sinnvoll statt die App sofort zu verlassen,
+Statusleiste passt sich Hell/Dunkel auch zur Laufzeit an (inkl. eines dabei gefundenen und
+behobenen echten Bugs, dauerhaft schwarze Leiste durch fehlende Hintergrundfarben-
+Unterstützung von Capacitors gebündeltem SystemBars-Plugin), Randbereiche bei aktivierter
+Gestensteuerung bereits korrekt ohne Code-Änderung.** Empfohlener nächster Einstieg: C4
+(Symbol und Startbildschirm) oder D1 (Aufräumen), beide 1 Zyklus und für ein kleines
+Modell geeignet.
