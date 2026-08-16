@@ -287,14 +287,48 @@
     return out;
   }
 
+  // ---- Content-Sammlung für die Einkaufslisten-PDF-Variante (C2, PLAYSTORE-BACKLOG.md) ----
+  // Reine Text-Extraktion aus dem bereits von js/print.js gerenderten #shoppingList-DOM,
+  // identisches Prinzip wie collectGuideContent() oben. Baut bewusst NUR auf den bereits
+  // vorhandenen Block-Typen 'title'/'summary'/'body' auf, die layoutPages() unten schon
+  // kennt — an layoutPages()/buildPdf()/escapePdfString()/wrapText() selbst ändert sich
+  // dadurch nichts, sie werden nur mit anderem Inhalt gefüttert (Scope-Vorgabe C2: diese
+  // Bausteine bleiben unangetastet).
+  function collectShoppingListContent() {
+    if (PZ.buildShoppingList) PZ.buildShoppingList();
+    const blocks = [];
+    const listEl = document.getElementById('shoppingList');
+    if (!listEl) return blocks;
+    const titleText = textOf(listEl.querySelector('h2'));
+    if (titleText) blocks.push({ type: 'title', text: titleText });
+    const big = textOf(listEl.querySelector('.total .big'));
+    const lbl = textOf(listEl.querySelector('.total .lbl'));
+    const totalLine = [big, lbl].filter(Boolean).join(' - ');
+    if (totalLine) blocks.push({ type: 'summary', text: totalLine });
+    Array.prototype.forEach.call(listEl.querySelectorAll('.ing'), function (row) {
+      const name = textOf(row.querySelector('.name'));
+      const amt = textOf(row.querySelector('.amt'));
+      const line = [name, amt].filter(Boolean).join(':  ');
+      if (line) blocks.push({ type: 'body', text: line });
+    });
+    return blocks;
+  }
+
   // ---- Öffentliche API ----
-  function buildGuidePdfBytes() {
-    const blocks = collectGuideContent();
-    const pages = layoutPages(blocks);
-    const pdfString = buildPdf(pages);
+  function bytesFromPdfString(pdfString) {
     const bytes = new Uint8Array(pdfString.length);
     for (let i = 0; i < pdfString.length; i++) bytes[i] = pdfString.charCodeAt(i) & 0xFF;
     return bytes;
+  }
+  function buildGuidePdfBytes() {
+    const blocks = collectGuideContent();
+    const pages = layoutPages(blocks);
+    return bytesFromPdfString(buildPdf(pages));
+  }
+  function buildShoppingListPdfBytes() {
+    const blocks = collectShoppingListContent();
+    const pages = layoutPages(blocks);
+    return bytesFromPdfString(buildPdf(pages));
   }
 
   // Live-Region-Ansage seit v3.58.0 über den gemeinsamen Helfer PZ.announce()
@@ -305,6 +339,79 @@
     PZ.announce('pdfGuideLiveMsg', msg);
   }
 
+  // ---- Nativer Teilen-Weg (C2, PLAYSTORE-BACKLOG.md) -----------------------------
+  // window.print() (js/print.js) und a.download (unten im Browser-Zweig) sind in der
+  // nativen Android-WebView wirkungslos. Identisches Erkennungsmuster wie js/main.js/
+  // js/store.js/js/timer.js: window.Capacitor?.isNativePlatform(). Schreibt die erzeugten
+  // PDF-Bytes über @capacitor/filesystem in eine Datei im App-Cache-Verzeichnis und
+  // übergibt sie über @capacitor/share ans System-Teilen-Menü — von dort kann der Nutzer
+  // drucken, speichern oder direkt verschicken. Im Browser (Desktop und Mobil ohne
+  // Capacitor) bleibt das Verhalten unten exakt wie vorher (Blob + a.download).
+  const isNativeApp = !!(global.Capacitor && global.Capacitor.isNativePlatform && global.Capacitor.isNativePlatform());
+
+  function nativeFilesystemPlugin() {
+    return (global.Capacitor && global.Capacitor.Plugins && global.Capacitor.Plugins.Filesystem) || null;
+  }
+  function nativeSharePlugin() {
+    return (global.Capacitor && global.Capacitor.Plugins && global.Capacitor.Plugins.Share) || null;
+  }
+
+  // accessibility-expert-Review (C2): der bestehende Hinweistext von #pdfGuideBtn
+  // ("...lädt...direkt...herunter") stimmt im Browser weiter, wird in der nativen App aber
+  // irreführend (der Button teilt dort, statt direkt herunterzuladen — WCAG 2.4.4/1.1.1).
+  // Tauscht das data-i18n-Attribut selbst aus (nicht nur textContent): js/i18n.js liest es
+  // erst beim DOMContentLoaded-Event (applyStaticI18n()), also NACH der synchronen
+  // Modul-Ausführung hier — ein späterer Sprachwechsel zieht dadurch ebenfalls den
+  // richtigen, nativen Text. Das direkte textContent-Setzen bleibt als Sicherheitsnetz für
+  // den (aktuell nicht vorkommenden) Fall, dass applyStaticI18n() schon vorher lief.
+  if (isNativeApp) {
+    const hintEl = document.getElementById('pdfGuideHint');
+    if (hintEl) {
+      hintEl.setAttribute('data-i18n', 'hint.savePdfNative');
+      hintEl.textContent = t('hint.savePdfNative');
+    }
+  }
+
+  // Uint8Array -> Base64 in Blöcken statt String.fromCharCode(...bytes) — bei mehrseitigen
+  // Anleitungen würde der Spread-Aufruf sonst das Argument-Stack-Limit sprengen.
+  function bytesToBase64(bytes) {
+    let binary = '';
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return global.btoa(binary);
+  }
+
+  // Schreibt die PDF-Bytes ins Cache-Verzeichnis (Directory.Cache = context.cacheDir,
+  // per res/xml/file_paths.xml bereits als <cache-path> für den vorhandenen FileProvider
+  // freigegeben — keine weitere Manifest-Änderung nötig) und öffnet das Teilen-Menü mit
+  // der geschriebenen Datei. `liveMsgId` ist die Live-Region, über die Erfolg/Fehler
+  // angesagt werden (js/print.js nutzt eine eigene Region für seine beiden Druckbuttons,
+  // s. dort).
+  function shareBytesAsFile(bytes, filename, liveMsgId, successMsg, errorMsg) {
+    const Filesystem = nativeFilesystemPlugin();
+    const Share = nativeSharePlugin();
+    if (!Filesystem || !Share) { PZ.announce(liveMsgId, errorMsg); return; }
+    Filesystem.writeFile({ path: filename, data: bytesToBase64(bytes), directory: 'CACHE' })
+      .then(function (res) { return Share.share({ title: filename, url: res.uri }); })
+      .then(function () { PZ.announce(liveMsgId, successMsg); })
+      .catch(function (err) {
+        // Auf dem Android-Emulator live geprüft (C2): schließt der Nutzer das System-
+        // Teilen-Menü, OHNE ein Ziel zu wählen, lehnt @capacitor/share das Promise mit
+        // genau dieser Meldung ab (SharePlugin.java, activityResult() bei RESULT_CANCELED)
+        // -- das ist kein echter Fehler, sondern eine bewusste Nutzer-Entscheidung. Eine
+        // "PDF konnte nicht geteilt werden"-Ansage wäre hier irreführend (kein Malfunction),
+        // deshalb bleibt dieser Fall bewusst stumm, nur ein echter Fehlschlag (Datei
+        // schreiben/Teilen-Aufruf selbst schlägt fehl) wird angesagt.
+        if (err && err.message === 'Share canceled') return;
+        PZ.announce(liveMsgId, errorMsg);
+      });
+  }
+
+  function guidePdfFilename() { return 'pizza-anleitung-' + new Date().toISOString().slice(0, 10) + '.pdf'; }
+  function shoppingListPdfFilename() { return 'pizza-einkaufsliste-' + new Date().toISOString().slice(0, 10) + '.pdf'; }
+
   // "Als PDF speichern" ist inhaltlich eine dritte Export-Variante der Anleitung neben
   // den beiden Druck-Buttons in js/print.js. Bis v4.5.0 teilte sich der Button hier einen
   // Guard mit dem Feature-Flag "shopping" — das Flag wurde in v4.6.0 entfernt (s.
@@ -314,11 +421,15 @@
     const R = PZ.R;
     if (!R || !R.total) { setPdfMsg(t('pdf.notCalculatedYet')); return; }
     const bytes = buildGuidePdfBytes();
+    if (isNativeApp) {
+      shareBytesAsFile(bytes, guidePdfFilename(), 'pdfGuideLiveMsg', t('pdf.sharedMsg'), t('pdf.shareError'));
+      return;
+    }
     const blob = new Blob([bytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'pizza-anleitung-' + new Date().toISOString().slice(0, 10) + '.pdf';
+    a.download = guidePdfFilename();
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -326,9 +437,27 @@
     setPdfMsg(t('pdf.savedMsg'));
   }
 
+  // Native Gegenstücke der beiden Druck-Buttons aus js/print.js (dort nur aufgerufen, wenn
+  // isNativeApp) — beide erzeugen dieselben PDF-Inhalte wie die Browser-Druckvarianten und
+  // reichen sie über denselben Teilen-Weg wie downloadGuidePDF() weiter.
+  function shareGuidePdfForPrint(liveMsgId) {
+    const R = PZ.R;
+    if (!R || !R.total) { PZ.announce(liveMsgId, t('pdf.notCalculatedYet')); return; }
+    shareBytesAsFile(buildGuidePdfBytes(), guidePdfFilename(), liveMsgId, t('print.guideSharedMsg'), t('pdf.shareError'));
+  }
+  function shareShoppingListPdf(liveMsgId) {
+    const R = PZ.R;
+    if (!R || !R.total) { PZ.announce(liveMsgId, t('pdf.notCalculatedYet')); return; }
+    shareBytesAsFile(buildShoppingListPdfBytes(), shoppingListPdfFilename(), liveMsgId, t('print.shoppingSharedMsg'), t('pdf.shareError'));
+  }
+
   // Für Tests exponiert (reine Datenfunktionen, kein Download/DOM-Seiteneffekt).
   PZ._pdfSanitizeText = sanitizeText;
   PZ._pdfCollectGuideContent = collectGuideContent;
+  PZ._pdfCollectShoppingListContent = collectShoppingListContent;
   PZ.buildGuidePdfBytes = buildGuidePdfBytes;
+  PZ.buildShoppingListPdfBytes = buildShoppingListPdfBytes;
   PZ.downloadGuidePDF = downloadGuidePDF;
+  PZ.shareGuidePdfForPrint = shareGuidePdfForPrint;
+  PZ.shareShoppingListPdf = shareShoppingListPdf;
 })(window);

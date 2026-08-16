@@ -454,27 +454,66 @@ Warnhinweis-Box), der Kalender-Export, jegliche Fachlogik/Berechnung, Desktop.
 
 ---
 
-## C2. Drucken und PDF über das Teilen-Menü
+## C2. Drucken und PDF über das Teilen-Menü — ERLEDIGT (v4.41.0, 2026-08-16)
 
-**Aufwand:** 1 Zyklus. Setzt B1 voraus.
+`@capacitor/filesystem` + `@capacitor/share` installiert (`npm install`, `npx cap sync
+android` — der native `FileProvider` war bereits vorhanden, `res/xml/file_paths.xml`
+deckt `Directory.Cache` per `<cache-path>` bereits ab, keine Manifest-Änderung nötig).
 
-**Ziel:** Anleitung und Einkaufsliste lassen sich wieder ausgeben.
+**`js/pdf.js`:** neuer, kleiner Baustein `buildShoppingListPdfBytes()` +
+`collectShoppingListContent()` (liest das bereits von `js/print.js buildShoppingList()`
+gerenderte `#shoppingList`-DOM, analog zu `collectGuideContent()`) — wiederverwendet
+`layoutPages()`/`buildPdf()` unverändert, nur mit den bereits vorhandenen Blocktypen
+`title`/`summary`/`body` gefüttert (Scope-Vorgabe eingehalten: Layout-Primitiven nicht
+angefasst). Neuer nativer Teilen-Weg `shareBytesAsFile()`: schreibt die PDF-Bytes per
+`Filesystem.writeFile()` ins Cache-Verzeichnis (Base64, kein Font-Embedding/keine
+Fremdbibliothek nötig, s. bestehende Datei-Doku) und öffnet `Share.share()` mit der
+Datei-URI. `downloadGuidePDF()` (Button „Als PDF speichern") verzweigt darüber in der
+nativen App, im Browser exakt unverändert (`Blob` + `a.download`).
 
-**Ausgangslage:** `js/print.js` ruft `window.print()`, wirkungslos in der WebView.
-`js/pdf.js` erzeugt ein Blob und hängt es an `a.download`, ebenfalls wirkungslos. Der
-PDF-Erzeuger ist selbst geschrieben und braucht keine Fremdbibliothek, das erleichtert
-die Sache.
+**`js/print.js`:** `printShoppingList()`/`printGuide()` verzweigen in der nativen App
+(identisches `window.Capacitor?.isNativePlatform()`-Muster wie `js/main.js`/`js/store.js`/
+`js/timer.js`) auf die neuen `PZ.shareShoppingListPdf()`/`PZ.shareGuidePdfForPrint()`
+statt `window.print()` (dort wirkungslos). Im Browser (Desktop und Mobil ohne Capacitor)
+bleibt `window.print()` exakt unverändert.
 
-**Umfang:** Das fertige PDF in eine Datei schreiben und ans System-Teilen-Menü übergeben.
-Von dort kann der Nutzer drucken, speichern oder verschicken. Die beiden
-Druckvarianten aus `js/print.js`, ganze Anleitung und nur Einkaufsliste, bleiben als
-Auswahl erhalten.
+**Verworfener/korrigierter Fall (Android-Share-API):** deklariertes Nutzerverhalten
+„Teilen-Menü ohne Ziel schließen" löst `@capacitor/share` mit `call.reject("Share
+canceled")` auf (`SharePlugin.java`, `activityResult()` bei `RESULT_CANCELED`) — auf dem
+Emulator live reproduziert. `shareBytesAsFile()` behandelt genau diese Meldung bewusst
+als stillen Nicht-Fehler (kein „PDF konnte nicht geteilt werden" bei reinem Abbrechen),
+nur ein echter Fehlschlag (Datei schreiben/Teilen-Aufruf selbst) wird angesagt.
 
-**Abnahme:** Beide Varianten erzeugen eine PDF-Datei, das Teilen-Menü öffnet sich, die
-Datei lässt sich speichern und öffnen und ist inhaltlich vollständig.
+**accessibility-expert-Review (C2):** ein Major behoben — der Hinweistext von
+`#pdfGuideBtn` ("...lädt...direkt...herunter") war in der nativen App irreführend (der
+Button teilt dort, lädt nicht direkt herunter). `js/pdf.js` tauscht dort jetzt das
+`data-i18n`-Attribut selbst gegen den neuen Schlüssel `hint.savePdfNative`, live per
+WebView-CDP verifiziert. Ein Minor (`type="button"` bei den beiden Druckbuttons ergänzt,
+kein WCAG-Pflichtpunkt) mitgenommen.
 
-**Nicht anfassen:** Die PDF-Erzeugung selbst, also Aufbau, Schriften und Layout in
-`js/pdf.js`.
+**Tests:** `tests/test.html` 1486 → **1542** grün (test-generator-Agent lieferte 17 neue
+Testfälle/~56 Prüfungen; beim eigenen Nachprüfen zeigte der erste Headless-Lauf 8 rote
+Prüfungen — der Agent hatte ein nicht existierendes `state.preset`-Feld verwendet (es
+gibt bewusst kein `state.preset`, s. `js/guide.js`) sowie `R.yeast`/`R.sugar`
+(Grammgewicht) fälschlich gegen Bäckerprozente verglichen; alle 8 selbst korrigiert,
+Ursache jeweils dokumentiert).
+
+**Echte Verifikation auf dem Android-Emulator** (`Teigmeister_Test`, nicht nur
+Code-Review): `build-app.py`, `npx cap sync android`, JDK 21, `gradlew assembleDebug`
+(nach erneutem Lösen der bekannten OneDrive-Reparse-Point-Eigenheit, `rm -rf app/build
+build`), `adb install -r`. Alle drei Buttons live angetippt: „Einkaufsliste drucken" und
+„Anleitung drucken" öffnen das System-Teilen-Menü mit `pizza-einkaufsliste-<datum>.pdf`
+bzw. `pizza-anleitung-<datum>.pdf` (inkl. „Drucken" als Ziel), `#pdfGuideBtn` ("Als PDF
+speichern") teilt ebenfalls statt herunterzuladen. Dateien per `run-as`
+aus dem App-Cache gezogen und inhaltlich per Grep bestätigt (alle erwarteten
+Zutaten-/Anleitungstexte enthalten, gültige `%PDF-1.4`-Struktur). Direkt per
+WebView-CDP (`webview_devtools_remote_*`-Socket, `suppress_origin=True` gegen den
+403-Origin-Check) den `data-i18n`/textContent-Tausch von `#pdfGuideHint` sowie den
+stillen Cancel-Pfad (`#printLiveMsg` bleibt leer nach Abbrechen) live bestätigt.
+
+**Nicht angefasst** (wie vorgegeben): `layoutPages()`/`buildPdf()`/`escapePdfString()`/
+`wrapText()` selbst, `buildShoppingList()`, das Browser-Verhalten (Desktop und Mobil im
+Browser), jegliche Fachlogik/Berechnung.
 
 ---
 
@@ -614,7 +653,7 @@ zunächst gerne auf Deutschland begrenzt.
 | B2 Startbildschirm — **erledigt (2026-08-16)** | 1 Zyklus | A2, B1 | ja |
 | B3 Nativer Speicher — **erledigt (2026-08-16)** | 1 bis 2 | A2, B2 | mit Sorgfalt |
 | C1 Timer nativ — **erledigt (C1a 2026-08-16, C1b 2026-08-17)** | 2 bis 3 | B1 | nein, anspruchsvollster Punkt |
-| C2 Drucken und PDF | 1 Zyklus | B1 | ja |
+| C2 Drucken und PDF — **erledigt (v4.41.0, 2026-08-16)** | 1 Zyklus | B1 | ja |
 | C3 Android-Feinschliff | 1 Zyklus | B1 | ja |
 | C4 Symbol und Start | 1 Zyklus | B1 | ja |
 | D1 Aufräumen | 1 Zyklus | B1 | ja |
@@ -627,5 +666,9 @@ zunächst gerne auf Deutschland begrenzt.
 (2026-08-16) — der wichtigste Punkt im ganzen Backlog, Nutzerdaten sind jetzt vor dem
 WebView-Datenverlust geschützt. C1 (Timer nativ, C1a+C1b) erledigt (2026-08-17) — echte
 Systembenachrichtigungen inkl. Neustart-Persistenz und Doze-Festigkeit, auf dem
-Android-Emulator verifiziert.** Empfohlener nächster Einstieg: C2 (Drucken und PDF)
-oder C3 (Android-Feinschliff), beide 1 Zyklus und für ein kleines Modell geeignet.
+Android-Emulator verifiziert. C2 (Drucken und PDF) erledigt (v4.41.0, 2026-08-16) —
+beide Druckvarianten sowie der bestehende PDF-Button teilen in der nativen App jetzt
+über das System-Teilen-Menü statt der wirkungslosen `window.print()`/`a.download`-Wege,
+auf dem Android-Emulator verifiziert.** Empfohlener nächster Einstieg: C3
+(Android-Feinschliff) oder C4 (Symbol und Startbildschirm), beide 1 Zyklus und für ein
+kleines Modell geeignet.

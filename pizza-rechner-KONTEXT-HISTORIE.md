@@ -8,6 +8,80 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Drucken und PDF über das Teilen-Menü (v4.41.0)
+
+Play-Store-Vorbereitung, Punkt C2 aus `PLAYSTORE-BACKLOG.md`. `js/print.js` rief bisher
+`window.print()`, `js/pdf.js` hängte ein erzeugtes PDF-Blob an `a.download` — beides in
+der nativen Android-WebView wirkungslos. `@capacitor/filesystem` + `@capacitor/share`
+installiert (der native `FileProvider` samt `res/xml/file_paths.xml` mit `<cache-path>`
+war bereits vorhanden, keine Manifest-Änderung nötig).
+
+**`js/pdf.js`:** neuer Baustein `buildShoppingListPdfBytes()` +
+`collectShoppingListContent()` (liest das bereits von `js/print.js buildShoppingList()` gerenderte
+`#shoppingList`-DOM, analog zum bestehenden `collectGuideContent()`-Muster für die
+Anleitung) — wiederverwendet `layoutPages()`/`buildPdf()` unverändert, gefüttert mit den
+schon vorhandenen Blocktypen `title`/`summary`/`body` (Scope-Vorgabe: Layout-Primitiven
+`layoutPages`/`buildPdf`/`escapePdfString`/`wrapText` bleiben unangetastet). Neuer
+nativer Teilen-Weg `shareBytesAsFile()`: schreibt die PDF-Bytes per
+`Filesystem.writeFile()` (Base64) ins Cache-Verzeichnis und öffnet `Share.share()` mit
+der Datei-URI. `downloadGuidePDF()` (Button „Als PDF speichern") verzweigt darüber in
+der nativen App, im Browser exakt unverändert (`Blob` + `a.download`).
+
+**`js/print.js`:** `printShoppingList()`/`printGuide()` verzweigen in der nativen App
+(identisches `window.Capacitor?.isNativePlatform()`-Erkennungsmuster wie `js/main.js`/
+`js/store.js`/`js/timer.js`) auf die neuen
+`PZ.shareShoppingListPdf()`/`PZ.shareGuidePdfForPrint()` statt `window.print()`. Im Browser (Desktop und Mobil ohne Capacitor)
+bleibt `window.print()` exakt unverändert. Neue Live-Region `#printLiveMsg` (beide
+HTML-Dateien) sagt Erfolg/Fehler der beiden Druckbuttons in der nativen App an.
+
+**Android-Share-API-Eigenheit (live auf dem Emulator reproduziert):** schließt der
+Nutzer das System-Teilen-Menü ohne ein Ziel zu wählen, lehnt `@capacitor/share` das
+Promise mit exakt der Meldung `"Share canceled"` ab (`SharePlugin.java`,
+`activityResult()` bei `RESULT_CANCELED`). `shareBytesAsFile()` behandelt diesen
+Sonderfall bewusst als stillen Nicht-Fehler (kein „PDF konnte nicht geteilt werden" bei
+reinem Abbrechen) — nur ein echter Fehlschlag (Datei schreiben/Teilen-Aufruf selbst)
+wird über die Live-Region angesagt. Per WebView-CDP (`webview_devtools_remote_*`-Socket,
+`suppress_origin=True` gegen den Origin-403-Check) live bestätigt: `#printLiveMsg`
+bleibt nach einem Abbruch leer.
+
+**`test-generator`-Ergebnis nicht blind übernommen:** der erste eigene Headless-Lauf
+nach dem Einarbeiten der 17 neuen Testfälle (~56 Prüfungen) zeigte 8 rote Prüfungen. Der
+Agent hatte ein in dieser App bewusst nicht existierendes `state.preset`-Feld verwendet
+(Presets werden nie im State selbst gehalten, s. Kommentar in `js/guide.js` — die
+Test-Suite bildet Presets stattdessen über die `PRESET_STATES`-Fixture nach) sowie
+`R.yeast`/`R.sugar` (berechnetes Grammgewicht) fälschlich gegen Bäckerprozent-Werte
+verglichen, dazu zwei ungeprüfte magische Bytes-Schwellwerte. Alle 8 selbst korrigiert
+(PRESET_STATES-Fixture statt `preset`-Feld, `state.yeast`/`state.sugar` statt
+`R.yeast`/`R.sugar`, relative/strukturelle statt magische Byte-Schwellen), Ursache
+jeweils im Test-Kommentar dokumentiert. Testsuite 1486 → **1542** grün.
+
+**`accessibility-expert`-Review:** ein Major behoben — der Hinweistext von
+`#pdfGuideBtn` ("...lädt...direkt...herunter") war in der nativen App irreführend (der
+Button teilt dort, lädt nicht direkt herunter, WCAG 2.4.4/1.1.1). `js/pdf.js` tauscht
+dort beim Modul-Laden das `data-i18n`-Attribut von `#pdfGuideHint` gegen den neuen
+Schlüssel `hint.savePdfNative` (+ sofortiges `textContent`-Setzen als Sicherheitsnetz) —
+live per WebView-CDP verifiziert (`data-i18n` auf `hint.savePdfNative`, korrekter Text).
+Ein Minor (`type="button"` bei den beiden Druckbuttons ergänzt, keine WCAG-Pflicht)
+mitgenommen.
+
+**Echte Verifikation auf dem Android-Emulator** (`Teigmeister_Test`, nicht nur
+Code-Review): `build-app.py`, `npx cap sync android`, JDK 21, `gradlew assembleDebug`
+(erneut die bekannte OneDrive-Reparse-Point-Eigenheit gelöst, `rm -rf app/build build`),
+`adb install -r`. Alle drei Buttons live angetippt: „Einkaufsliste drucken" und
+„Anleitung drucken" öffnen das System-Teilen-Menü mit `pizza-einkaufsliste-<datum>.pdf`
+bzw. `pizza-anleitung-<datum>.pdf` (inkl. „Drucken" als Teilen-Ziel), `#pdfGuideBtn`
+teilt ebenfalls statt herunterzuladen. Dateien per `run-as` aus dem App-Cache-Verzeichnis
+gezogen, Inhalt per Grep bestätigt (alle erwarteten Zutaten-/Anleitungstexte enthalten,
+gültige `%PDF-1.4`-Struktur, `%%EOF`-Ende).
+
+**Geändert:** `js/pdf.js`, `js/print.js`, `js/i18n-dict.js`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`, `tests/test.html`, `package.json`/`package-lock.json` (zwei
+neue Abhängigkeiten), `android/app/capacitor.build.gradle` + `android/capacitor.settings.gradle`
+(automatisch von `npx cap sync`). Standalone-Build neu erzeugt. **Nicht angefasst:**
+`layoutPages()`/`buildPdf()`/`escapePdfString()`/`wrapText()` selbst, `buildShoppingList()`,
+das Browser-Verhalten (Desktop und Mobil im Browser), jegliche Fachlogik/Berechnung.
+`PLAYSTORE-BACKLOG.md` Punkt C2 erledigt, nächster empfohlener Punkt C3 oder C4.
+
 ## Vollständige Sicherung exportieren und einlesen (v4.40.0)
 
 Play-Store-Vorbereitung, Punkt A3 aus `PLAYSTORE-BACKLOG.md`. Neue Datei `js/backup.js`

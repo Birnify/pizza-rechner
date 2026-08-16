@@ -58,13 +58,24 @@
   // wurde in v4.6.0 entfernt (s. pizza-rechner-KONTEXT.md, Backlog Punkt B): die
   // Buttons "Einkaufsliste drucken"/"Anleitung drucken" sind seither permanent in
   // "Weitere Optionen" verfügbar, unabhängig von einem globalen Schalter.
+  //
+  // In der nativen App (C2, PLAYSTORE-BACKLOG.md) ist window.print() wirkungslos (WebView) —
+  // beide Buttons lösen dort stattdessen über js/pdf.js einen Datei-schreiben-plus-Teilen-
+  // Ablauf aus (@capacitor/filesystem + @capacitor/share), identisches Erkennungsmuster wie
+  // js/main.js/js/store.js/js/timer.js. Im Browser (Desktop und Mobil ohne Capacitor) bleibt
+  // das Verhalten unten exakt unverändert.
+  const isNativeApp = !!(global.Capacitor && global.Capacitor.isNativePlatform && global.Capacitor.isNativePlatform());
+  const PRINT_LIVE_MSG_ID = 'printLiveMsg';
+
   function printShoppingList() {
     buildShoppingList();
+    if (isNativeApp) { PZ.shareShoppingListPdf(PRINT_LIVE_MSG_ID); return; }
     document.body.classList.add('print-shopping');
     window.print();
   }
 
   function printGuide() {
+    if (isNativeApp) { PZ.shareGuidePdfForPrint(PRINT_LIVE_MSG_ID); return; }
     document.body.classList.add('print-guide');
     window.print();
   }

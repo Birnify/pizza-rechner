@@ -506,6 +506,11 @@
   add('print.sugar', 'Zucker', 'Sugar');
   add('print.ice', 'Eis (für Schüttwasser)', 'Ice (for mixing water)');
   add('print.totalDough', 'Gesamtteig', 'Total dough');
+  // Native App (C2, PLAYSTORE-BACKLOG.md): beide Druckbuttons teilen dort eine erzeugte
+  // PDF-Datei über das System-Teilen-Menü statt window.print() (wirkungslos in der WebView) —
+  // Erfolgs-/Fehlermeldung der gemeinsamen printLiveMsg-Live-Region, s. js/print.js.
+  add('print.guideSharedMsg', 'Anleitung als PDF geteilt.', 'Guide shared as PDF.');
+  add('print.shoppingSharedMsg', 'Einkaufsliste als PDF geteilt.', 'Shopping list shared as PDF.');
 
   // ---- js/pdf.js: nur die wenigen Strings, die NICHT bereits per DOM aus guide.js
   // kommen (der Rest wird 1:1 aus dem bereits übersetzten, gerenderten Anleitungs-DOM
@@ -514,6 +519,9 @@
   add('pdf.warnPrefix', 'Achtung: ', 'Note: ');
   add('pdf.notCalculatedYet', 'Noch keine Anleitung berechnet.', 'No guide calculated yet.');
   add('pdf.savedMsg', 'Anleitung als PDF gespeichert.', 'Guide saved as PDF.');
+  // Native App (C2): "Als PDF speichern" teilt dort statt herunterzuladen.
+  add('pdf.sharedMsg', 'Anleitung als PDF geteilt.', 'Guide shared as PDF.');
+  add('pdf.shareError', 'PDF konnte nicht geteilt werden.', 'Could not share PDF.');
 
   // ---- js/timer.js: Gärzeit-Timer/Wecker + .ics-Kalendertext --------------------
   add('timer.done', '🔔 Fertig!', '🔔 Done!');
@@ -983,6 +991,10 @@
   add('btn.savePdf', 'Als PDF speichern', 'Save as PDF');
   add('hint.savePdf', 'Lädt die Schritt-für-Schritt-Anleitung direkt als PDF-Datei herunter: ganz ohne Druckdialog.',
     'Downloads the step-by-step guide directly as a PDF file: with no print dialog.');
+  // Native App (C2, accessibility-expert-Review): der Button teilt dort statt herunter-
+  // zuladen, s. js/pdf.js (isNativeApp-Zweig, tauscht das data-i18n-Attribut selbst aus).
+  add('hint.savePdfNative', 'Öffnet die Schritt-für-Schritt-Anleitung als PDF im System-Teilen-Menü: zum Speichern, Drucken oder Verschicken.',
+    'Opens the step-by-step guide as a PDF in the system share menu: to save, print or send.');
   add('btn.copyShareLink', 'Rezept teilen', 'Share recipe');
   add('hint.copyShareLink', 'Kopiert einen Link, der dieses Rezept komplett enthält: zum Teilen, ohne Login oder Server.',
     'Copies a link that contains this entire recipe: for sharing, no login or server needed.');

@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-15 · Aktuelle Version: v4.40.0 (Desktop + Mobil, vollständige Sicherung exportieren und einlesen) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-16 · Aktuelle Version: v4.41.0 (Desktop + Mobil, Drucken und PDF über das Teilen-Menü in der nativen App) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -218,28 +218,22 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Vollständige Sicherung exportieren und einlesen (v4.40.0) = aktueller Stand
+## Drucken und PDF über das Teilen-Menü (v4.41.0) = aktueller Stand
 
-Play-Store-Vorbereitung, Punkt A3 aus `PLAYSTORE-BACKLOG.md`. Neue Datei `js/backup.js`
-(`PZ.exportFullBackup/importFullBackup/isFullBackup/isLegacyRecipesBackup`) erweitert die
-bestehenden Buttons (jetzt `#fullBackupExportBtn`/`#fullBackupImportBtn`, vorher
-`#recipeExportBtn`/`#recipeImportBtn`) in `js/main.js` von reinem Rezepte-Export auf alle
-11 `PZ.store.KEYS` (roher String-Wert je Schlüssel, ein Mechanismus statt zwei). Format:
-`{format:'pizzaRechnerFullBackup', version, exportedAt, data:{...}}`. Restore ist ein
-echtes Ersetzen (nicht Zusammenführen wie beim alten Rezepte-Import): vor dem Einlesen
-eine Bestätigung, danach `PZ.store.flush()` + Live-Region-Ansage + `location.reload()`,
-damit jedes Modul seinen normalen Boot-Pfad durchläuft statt einzeln nachsynchronisiert zu
-werden. Eine Datei im alten, reinen Rezepte-Format bleibt einlesbar (nur Rezepte werden
-ergänzt, Rest bleibt unangetastet, unverändertes `PZ.importRecipes()`). Testsuite 1393 →
-**1442** grün (32 eigene + 17 `test-generator`-Fälle), `accessibility-expert`-Review ergab
-einen Blocker (fehlende Live-Region-Ansage vor dem Reload, WCAG 4.1.3) und einen Major
-(i18n-Text noch nicht an die neue Formulierung angepasst) — beide behoben. `js/backup.js`
-neu, `js/main.js`, `js/i18n-dict.js`, `pizza-rechner.html`, `pizza-rechner-mobile.html`,
-`tests/test.html` geändert; Standalone-Build neu erzeugt. `PLAYSTORE-BACKLOG.md` Punkt A3
-erledigt, nächster empfohlener Punkt B1.
+Play-Store-Vorbereitung, Punkt C2 aus `PLAYSTORE-BACKLOG.md`. In der nativen App
+(`window.Capacitor?.isNativePlatform()`) lösen „Einkaufsliste drucken"/„Anleitung
+drucken" (`js/print.js`) und „Als PDF speichern" (`js/pdf.js`) jetzt einen
+Datei-schreiben-plus-Teilen-Ablauf aus (`@capacitor/filesystem` + `@capacitor/share`)
+statt der dort wirkungslosen `window.print()`/`a.download`-Wege — im Browser
+unverändert. Neuer Baustein `buildShoppingListPdfBytes()` für die Einkaufsliste,
+wiederverwendet die bestehenden PDF-Layout-Primitiven unangetastet. Testsuite 1486 →
+**1542** grün, ein `accessibility-expert`-Major behoben (irreführender Hinweistext in
+der nativen App). Auf dem Android-Emulator live verifiziert (Teilen-Menü, Datei-Inhalt,
+stiller Cancel-Pfad). `PLAYSTORE-BACKLOG.md` Punkt C2 erledigt, nächster empfohlener
+Punkt C3 oder C4.
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Vollständige Sicherung
-exportieren und einlesen (v4.40.0)".
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Drucken und PDF über
+das Teilen-Menü (v4.41.0)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 

@@ -2775,6 +2775,311 @@
       ({ label: c.label, ok: c.ok, actual: c.ok, expected: true, tol: null })));
   })();
 
+  // buildShoppingListPdfBytes() (C2, PLAYSTORE-BACKLOG.md): neuer, kleiner Baustein, der
+  // dieselben Layout-Primitiven (layoutPages()/buildPdf(), oben schon getestet) mit dem
+  // Einkaufslisten-Inhalt aus #shoppingList statt dem Anleitungs-DOM füttert — collect
+  // ShoppingListContent() ruft PZ.buildShoppingList() selbst auf, kein manueller Vorlauf nötig.
+  testCase('Einkaufslisten-PDF: Grundstruktur gültig (buildShoppingListPdfBytes)', {}, R => {
+    const bytes = PZ.buildShoppingListPdfBytes();
+    const str = bytesToStr(bytes);
+    return [
+      ['Bytes vorhanden', bytes.length > 0, true],
+      ['Beginnt mit PDF-Header %PDF-1.4', str.indexOf('%PDF-1.4') === 0, true],
+      ['Catalog-Objekt vorhanden', str.includes('/Type /Catalog'), true],
+      ['Content-Stream vorhanden', str.includes('stream') && str.includes('endstream'), true],
+      ['Trailer + xref vorhanden', str.includes('trailer') && str.includes('startxref'), true],
+      ['Datei endet mit %%EOF', str.slice(-5), '%%EOF'],
+    ];
+  });
+
+  testCase('Einkaufslisten-PDF: enthält reale Zutaten (Klartext-Regressionsanker)', {
+    oil: 3, sugar: 2, hyd: 62
+  }, R => {
+    const bytes = PZ.buildShoppingListPdfBytes();
+    const str = bytesToStr(bytes);
+    return [
+      ['Mehl-Zeile enthalten', str.includes('Mehl'), true],
+      ['Wasser-Zeile enthalten', str.includes('Wasser'), true],
+      ['Öl-Zeile enthalten (3 %)', str.includes('Olivenöl'), true],
+      ['Zucker-Zeile enthalten (2 %)', str.includes('Zucker'), true],
+      ['Gesamtteig-Summe enthalten', str.includes('Gesamtteig'), true],
+    ];
+  });
+
+  testCase('Einkaufslisten-PDF: collectShoppingListContent() liefert nur WinAnsi-taugliche, strukturierte Blöcke', {}, R => {
+    const blocks = PZ._pdfCollectShoppingListContent();
+    return [
+      ['Alle Blöcke WinAnsi-tauglich (kein Emoji-Byte > 0xFF)', blocks.every(b => allLatin1(b.text)), true],
+      ['Erster Block ist der Titel', blocks.length > 0 && blocks[0].type === 'title', true],
+      ['Mindestens ein summary-Block (Gesamtmenge)', blocks.some(b => b.type === 'summary'), true],
+      ['Mindestens ein body-Block (Zutat)', blocks.some(b => b.type === 'body'), true],
+    ];
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // C2-Erweiterung (Play-Store-Backlog, Drucken/PDF über Teilen-Menü): umfassendere
+  // Tests für buildShoppingListPdfBytes() und _pdfCollectShoppingListContent() mit
+  // Edge-Cases (1/20 Teiglinge), allen Presets, Öl-/Zucker-Schwellen, Masseerhaltung.
+  heading('21 Zusatz · PDF-Export der Einkaufsliste - Edge Cases & Presets (C2)');
+
+  // Edge-Case: 1 Teigling
+  testCase('Einkaufslisten-PDF: 1 Teigling (Edge-Case Minimum)', { balls: 1 }, R => {
+    const bytes = PZ.buildShoppingListPdfBytes();
+    const str = bytesToStr(bytes);
+    return [
+      ['PDF erzeugt (nicht leer)', bytes.length > 0, true],
+      ['PDF-Header vorhanden', str.indexOf('%PDF-1.4') === 0, true],
+      ['Gesamtteig-Summe enthält "1 × "', str.includes('1 ×'), true],
+      ['Blöcke WinAnsi-tauglich', PZ._pdfCollectShoppingListContent().every(b => allLatin1(b.text)), true],
+    ];
+  });
+
+  // Edge-Case: 20 Teiglinge. Ursprünglich stand hier ein absoluter Bytes-Schwellwert
+  // (> 1500) -- per Headless-Lauf als falsche Annahme entlarvt (die Zutaten-Zeilenzahl
+  // ändert sich mit balls nicht, nur ein paar Ziffern in den Mengenangaben, das reicht
+  // nicht für +1500 Bytes). Ersetzt durch einen relativen Vergleich gegen das Standard-PDF
+  // (BASE, 4 Teiglinge): 20 Teiglinge dürfen das PDF nicht verkleinern, mehr wird nicht
+  // versprochen.
+  testCase('Einkaufslisten-PDF: 20 Teiglinge (Edge-Case Maximum)', { balls: 20 }, R => {
+    const bytes = PZ.buildShoppingListPdfBytes();
+    const str = bytesToStr(bytes);
+    Object.assign(PZ.state, BASE);
+    PZ.calc();
+    const baseBytes = PZ.buildShoppingListPdfBytes();
+    return [
+      ['PDF erzeugt (nicht leer)', bytes.length > 0, true],
+      ['PDF-Header vorhanden', str.indexOf('%PDF-1.4') === 0, true],
+      ['Gesamtteig-Summe enthält "20 × "', str.includes('20 ×'), true],
+      ['PDF mindestens so groß wie Standard-PDF (4 Teiglinge)', bytes.length >= baseBytes.length, true],
+    ];
+  });
+
+  // Öl-Schwellen-Test: 0 % (unsichtbar)
+  testCase('Einkaufslisten-PDF: Öl 0 % (unter Sichtbarkeitsschwelle)', { oil: 0 }, R => {
+    const blocks = PZ._pdfCollectShoppingListContent();
+    const hasOilBlock = blocks.some(b => b.type === 'body' && b.text.includes('Olivenöl'));
+    return [
+      ['Kein Öl-Block in collectShoppingListContent() (oil < 0.05 g)', hasOilBlock, false],
+      ['Alle Blöcke WinAnsi-tauglich', blocks.every(b => allLatin1(b.text)), true],
+    ];
+  });
+
+  // Öl-Schwellen-Test: 2 % (Standard, sichtbar)
+  testCase('Einkaufslisten-PDF: Öl 2 % (Standard, über Schwelle)', { oil: 2 }, R => {
+    const blocks = PZ._pdfCollectShoppingListContent();
+    const oilBlock = blocks.find(b => b.type === 'body' && b.text.includes('Olivenöl'));
+    const bytes = PZ.buildShoppingListPdfBytes();
+    const str = bytesToStr(bytes);
+    return [
+      ['Öl-Block in collectShoppingListContent() vorhanden', !!oilBlock, true],
+      ['Öl-Menge formatiert im Block', oilBlock && /g|oz/.test(oilBlock.text), true],
+      ['Öl im PDF-Text enthalten', str.includes('Olivenöl'), true],
+    ];
+  });
+
+  // Zucker-Schwellen-Test: 0 % (unsichtbar)
+  testCase('Einkaufslisten-PDF: Zucker 0 % (unter Sichtbarkeitsschwelle)', { sugar: 0 }, R => {
+    const blocks = PZ._pdfCollectShoppingListContent();
+    const hasSugarBlock = blocks.some(b => b.type === 'body' && b.text.includes('Zucker'));
+    return [
+      ['Kein Zucker-Block in collectShoppingListContent() (sugar < 0.05 g)', hasSugarBlock, false],
+    ];
+  });
+
+  // Zucker-Schwellen-Test: 1 % (New York Style, sichtbar)
+  testCase('Einkaufslisten-PDF: Zucker 1 % (New York Style, über Schwelle)', { sugar: 1 }, R => {
+    const blocks = PZ._pdfCollectShoppingListContent();
+    const sugarBlock = blocks.find(b => b.type === 'body' && b.text.includes('Zucker'));
+    const bytes = PZ.buildShoppingListPdfBytes();
+    const str = bytesToStr(bytes);
+    return [
+      ['Zucker-Block in collectShoppingListContent() vorhanden', !!sugarBlock, true],
+      ['Zucker-Menge formatiert im Block', sugarBlock && /g|oz/.test(sugarBlock.text), true],
+      ['Zucker im PDF-Text enthalten', str.includes('Zucker'), true],
+    ];
+  });
+
+  // Öl + Zucker kombiniert
+  testCase('Einkaufslisten-PDF: Öl + Zucker kombiniert (3 % + 2 %)', { oil: 3, sugar: 2 }, R => {
+    const blocks = PZ._pdfCollectShoppingListContent();
+    const oilBlock = blocks.find(b => b.type === 'body' && b.text.includes('Olivenöl'));
+    const sugarBlock = blocks.find(b => b.type === 'body' && b.text.includes('Zucker'));
+    const bytes = PZ.buildShoppingListPdfBytes();
+    const str = bytesToStr(bytes);
+    return [
+      ['Öl-Block vorhanden', !!oilBlock, true],
+      ['Zucker-Block vorhanden', !!sugarBlock, true],
+      ['PDF enthält beide Zutaten', str.includes('Olivenöl') && str.includes('Zucker'), true],
+      ['Alle Blöcke WinAnsi-tauglich', blocks.every(b => allLatin1(b.text)), true],
+    ];
+  });
+
+  // Masseerhaltung mit Öl + Zucker
+  testCase('Einkaufslisten-PDF: Masseerhaltung mit Öl + Zucker kombiniert', { oil: 2.5, sugar: 1.5, balls: 6 }, R => {
+    const sum = round(R.flour + R.water + R.salt + R.yeast + R.oil + R.sugar + (R.ice || 0));
+    const expected = R.total;
+    return [
+      ['flour+water+salt+yeast+oil+sugar+ice = total', sum, expected],
+    ];
+  });
+
+  // Biga + Öl + Zucker + 1 Teigling
+  testCase('Einkaufslisten-PDF: Biga + Öl + Zucker + 1 Teigling kombiniert', {
+    method: 'biga', pref: 70, bhyd: 45, hyd: 65, prefMature: 24, prefStage: 'b_klassisch',
+    oil: 2, sugar: 0.5, balls: 1
+  }, R => {
+    const blocks = PZ._pdfCollectShoppingListContent();
+    const bytes = PZ.buildShoppingListPdfBytes();
+    const str = bytesToStr(bytes);
+    return [
+      ['Blöcke WinAnsi-tauglich', blocks.every(b => allLatin1(b.text)), true],
+      ['PDF gültig', str.indexOf('%PDF-1.4') === 0 && str.slice(-5) === '%%EOF', true],
+      ['Alle Blöcke haben type in [title, summary, body]', blocks.every(b => ['title', 'summary', 'body'].includes(b.type)), true],
+      ['Mindestens 1 body-Block (Zutat)', blocks.filter(b => b.type === 'body').length >= 1, true],
+    ];
+  });
+
+  // Poolish + Öl + Zucker + 20 Teiglinge
+  testCase('Einkaufslisten-PDF: Poolish + Öl + Zucker + 20 Teiglinge kombiniert', {
+    method: 'poolish', pref: 66, hyd: 66, prefMature: 10, prefStage: 'p_warm',
+    oil: 2, sugar: 0.75, balls: 20
+  }, R => {
+    const blocks = PZ._pdfCollectShoppingListContent();
+    const bytes = PZ.buildShoppingListPdfBytes();
+    const str = bytesToStr(bytes);
+    return [
+      ['Blöcke WinAnsi-tauglich', blocks.every(b => allLatin1(b.text)), true],
+      ['Kein warn-Block (nur title/summary/body)', !blocks.some(b => ['warn', 'tip'].includes(b.type)), true],
+      ['PDF enthält Gesamtmenge', str.includes('Gesamtteig'), true],
+      ['20 Teiglinge reflektiert', str.includes('20 ×'), true],
+    ];
+  });
+
+  // Preset napoli_klassisch. Wichtig: es gibt bewusst KEIN state.preset-Feld (s. Kommentar
+  // in js/guide.js) -- ein Preset wird nur über PZ.applyPreset() bzw. hier (wie im Rest der
+  // Suite, s. PRESET_STATES oben) über die 1:1 nachgebildeten Feldwerte aktiviert. Der
+  // ursprüngliche Testfall setzte fälschlich ein wirkungsloses `preset: 'napoli_klassisch'`
+  // in den testCase()-Overrides -- korrigiert auf PRESET_STATES-Fixture (per Headless-Lauf
+  // verifiziert: vorher 8 rote Prüfungen in dieser Sektion, danach 0).
+  testCase('Einkaufslisten-PDF: Preset "napoli_klassisch" mit buildShoppingListPdfBytes()', {
+    ...PRESET_STATES.napoli_klassisch, balls: 4
+  }, R => {
+    const blocks = PZ._pdfCollectShoppingListContent();
+    const bytes = PZ.buildShoppingListPdfBytes();
+    const str = bytesToStr(bytes);
+    return [
+      ['Präset geladen (Mehl = Caputo Pizzeria)', R.flour > 0, true],
+      ['Alle Blöcke WinAnsi-tauglich', blocks.every(b => allLatin1(b.text)), true],
+      ['PDF gültig (Header + Trailer)', str.indexOf('%PDF-1.4') === 0 && str.includes('startxref'), true],
+    ];
+  });
+
+  // Preset napoli_kalt (mit scheduleOverride). Hydration ist ein EINGABE-Bäckerprozent
+  // (state.hyd), kein Feld des berechneten Ergebnis-Objekts R -- die ursprüngliche
+  // Prüfung `R.hyd` griff ins Leere (immer undefined). Ebenso war der absolute
+  // Bytes-Schwellwert (> 1200) eine ungeprüfte Annahme; ersetzt durch eine strukturelle
+  // Prüfung der tatsächlich erwarteten Zutaten-Zeilen (per Headless-Lauf verifiziert).
+  testCase('Einkaufslisten-PDF: Preset "napoli_kalt" mit Kaltgare-Aufteilung', {
+    ...PRESET_STATES.napoli_kalt, balls: 2
+  }, R => {
+    const bytes = PZ.buildShoppingListPdfBytes();
+    const str = bytesToStr(bytes);
+    const blocks = PZ._pdfCollectShoppingListContent();
+    return [
+      ['Präset geladen (Hydration 65 %, state.hyd)', PZ.state.hyd, 65],
+      ['Alle Zutaten-Zeilen WinAnsi-tauglich', blocks.filter(b => b.type === 'body').every(b => allLatin1(b.text)), true],
+      ['PDF enthält alle realen Zutaten (Mehl/Wasser/Salz/Hefe/Öl)', ['Mehl', 'Wasser', 'Salz', 'Hefe', 'Olivenöl'].every(s => str.includes(s)), true],
+    ];
+  });
+
+  // Preset teglia (höchste Hydration, Blechformat)
+  testCase('Einkaufslisten-PDF: Preset "teglia" (hohe Hydration 75 %)', {
+    ...PRESET_STATES.teglia
+  }, R => {
+    const blocks = PZ._pdfCollectShoppingListContent();
+    const bytes = PZ.buildShoppingListPdfBytes();
+    const str = bytesToStr(bytes);
+    return [
+      ['Präset geladen (Mehl = Caputo Nuvola Super, hydMax >= 75)', R.flour > 0, true],
+      ['Öl-Block vorhanden (2.5 % bei teglia)', blocks.some(b => b.type === 'body' && b.text.includes('Olivenöl')), true],
+      ['Blöcke WinAnsi-tauglich', blocks.every(b => allLatin1(b.text)), true],
+    ];
+  });
+
+  // Preset schnell (höchste Hefemenge, direktes Verfahren)
+  // R.yeast ist das berechnete GRAMM-Gewicht (z. B. 17,86 g bei 8 Teiglingen), nicht das
+  // Bäckerprozent -- das Preset-Bäckerprozent steckt in state.yeast (Eingabe). Ursprünglich
+  // verglich der Testfall R.yeast direkt mit 1.5, das schlug fehl (Grammwert statt Prozent).
+  testCase('Einkaufslisten-PDF: Preset "schnell" (Direkt 1.5 % Hefe)', {
+    ...PRESET_STATES.schnell, balls: 8
+  }, R => {
+    const blocks = PZ._pdfCollectShoppingListContent();
+    const yeastBlock = blocks.find(b => b.type === 'body' && /Hefe|yeast/i.test(b.text));
+    return [
+      ['Präset geladen (Hefe 1,5 %, state.yeast)', PZ.state.yeast, 1.5],
+      ['Hefe-Block vorhanden', !!yeastBlock, true],
+      ['Alle Blöcke WinAnsi-tauglich', blocks.every(b => allLatin1(b.text)), true],
+    ];
+  });
+
+  // Preset newyork_style (einziges mit Zucker > 0). R.sugar ist wie R.yeast oben das
+  // berechnete Grammgewicht, nicht das Bäckerprozent -- Vergleich korrekt gegen state.sugar.
+  testCase('Einkaufslisten-PDF: Preset "newyork_style" (mit Zucker 1 %)', {
+    ...PRESET_STATES.newyork_style, balls: 3
+  }, R => {
+    const blocks = PZ._pdfCollectShoppingListContent();
+    const sugarBlock = blocks.find(b => b.type === 'body' && b.text.includes('Zucker'));
+    const bytes = PZ.buildShoppingListPdfBytes();
+    const str = bytesToStr(bytes);
+    return [
+      ['Präset geladen (Zucker 1 %, state.sugar)', PZ.state.sugar, 1],
+      ['Zucker-Block vorhanden', !!sugarBlock, true],
+      ['Zucker im PDF-Text', str.includes('Zucker'), true],
+      ['Alle Blöcke WinAnsi-tauglich', blocks.every(b => allLatin1(b.text)), true],
+    ];
+  });
+
+  // Regressions-Anker: alle sichtbaren Zutaten aus buildShoppingList() im Array
+  testCase('Einkaufslisten-PDF: Regressions-Anker — alle Zutaten aus buildShoppingList() im collectShoppingListContent()-Array', {
+    oil: 2.5, sugar: 1, balls: 6, hyd: 62
+  }, R => {
+    // buildShoppingList() wird von collectShoppingListContent() aufgerufen
+    const blocks = PZ._pdfCollectShoppingListContent();
+    const bodyTexts = blocks.filter(b => b.type === 'body').map(b => b.text).join('|');
+
+    // Alle Zutaten sollten im bodyTexts enthalten sein (je nach Schwellwerten)
+    const hasFlour = bodyTexts.includes('Mehl');
+    const hasWater = bodyTexts.includes('Wasser');
+    const hasOil = R.oil >= 0.05 ? bodyTexts.includes('Olivenöl') : !bodyTexts.includes('Olivenöl');
+    const hasSugar = R.sugar >= 0.05 ? bodyTexts.includes('Zucker') : !bodyTexts.includes('Zucker');
+    const hasSalt = R.salt > 0 ? bodyTexts.includes('Salz') : true; // Salz ist Schwellwert im Preset
+
+    return [
+      ['Mehl-Zeile enthalten', hasFlour, true],
+      ['Wasser-Zeile enthalten', hasWater, true],
+      ['Öl-Zeile sichtbar/unsichtbar korrekt (2.5 % = sichtbar)', hasOil, true],
+      ['Zucker-Zeile sichtbar/unsichtbar korrekt (1 % = sichtbar)', hasSugar, true],
+      ['Salz-Verhalten korrekt', hasSalt, true],
+      ['Alle body-Blöcke WinAnsi-tauglich', blocks.filter(b => b.type === 'body').every(b => allLatin1(b.text)), true],
+    ];
+  });
+
+  // Block-Typ-Validierung: nur title/summary/body, niemals warn/tip
+  testCase('Einkaufslisten-PDF: collectShoppingListContent() nutzt nur Block-Typen title/summary/body (keine warn/tip)', {
+    hyd: 65, oil: 3, sugar: 2
+  }, R => {
+    const blocks = PZ._pdfCollectShoppingListContent();
+    const allowedTypes = ['title', 'summary', 'body'];
+    const allTypesValid = blocks.every(b => allowedTypes.includes(b.type));
+    const invalidBlocks = blocks.filter(b => !allowedTypes.includes(b.type));
+    return [
+      ['Alle Blöcke haben erlaubten Type (title/summary/body)', allTypesValid, true],
+      ['Keine warn-Blöcke enthalten', !blocks.some(b => b.type === 'warn'), true],
+      ['Keine tip-Blöcke enthalten', !blocks.some(b => b.type === 'tip'), true],
+      ['Ungültige Blöcke (falls vorhanden)', invalidBlocks.length === 0 ? 'keine' : invalidBlocks.map(b => b.type).join(','), 'keine'],
+    ];
+  });
+
   // ─────────────────────────────────────────────────────────────
   heading('22 · Pizza-Party-Planer (js/party.js)');
 
