@@ -1,6 +1,6 @@
 {
   "name": "pizza",
-  "version": "1.0.0",
+  "version": "4.44.0",
   "description": "Ein Rechner für neapolitanischen Pizzateig (Direkt / Biga / Poolish) mit adaptiver Schritt-für-Schritt-Anleitung, Zeitplan und Einkaufsliste. Läuft komplett offline im Browser: kein Server, keine Installation, kein Internet, keine KI.",
   "main": "index.js",
   "directories": {

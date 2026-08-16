@@ -8,6 +8,109 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## D1: Aufräumen und Versionierung (v4.44.0)
+
+Play-Store-Vorbereitung, erster Punkt aus Block D (Veröffentlichung) aus
+`PLAYSTORE-BACKLOG.md` — Block C (C1-C4) war zuvor bereits komplett abgeschlossen.
+Nutzer-Auftrag bereits vorab bestätigt, keine Phase-1-Rückfrage nötig.
+
+**1. `?v=`-Cache-Busting entfernt:** alle `?v=X.Y.Z`-Query-Strings an Skript-/CSS-/
+Logo-Pfaden aus `pizza-rechner.html` (31 Treffer) und `pizza-rechner-mobile.html`
+(33 Treffer) entfernt (`index.html` hatte laut Vorprüfung ohnehin keine Treffer). Laut
+Backlog-Wortlaut ausdrücklich „alle drei HTML-Dateien" — geprüft, dass damit wirklich
+auch Desktop gemeint ist, nicht nur die Mobil-/Android-Kette (der Backlog-Text listet
+explizit alle drei). `build-mobile-standalone.py` brauchte **keine** Anpassung: das
+Skript strippt Query-Strings beim Inlinen bereits seit Langem selbst
+(`href.split("?")[0]` bzw. `src.split("?")[0]`) — Gegenprüfung war Teil des Auftrags,
+Ergebnis: robust, `pizza-rechner-mobile-standalone.html` enthält nach dem Rebuild
+ebenfalls 0 `?v=`-Treffer. `build-app.py` kopiert nur ganze Ordner/Dateien und parst
+keine einzelnen Tags — ebenfalls unbetroffen, per Testlauf bestätigt.
+
+**2. `build-app.py` fertiggestellt und dokumentiert:** Docstring erheblich erweitert
+(kompletter Ablauf bis zur installierten APK, wann neu laufen lassen, bekannte
+OneDrive-Eigenheit, Fehlerbehandlung). Neue `require_exists()`-Hilfsfunktion prüft jede
+erwartete Quelle (HTML-Datei, `css/`/`js/`/`fonts/`, `assets/img/`, `assets/logo.svg`)
+einzeln und bricht bei Fehlen mit einer klaren deutschen Meldung ab (statt eines rohen
+`shutil`-Tracebacks) — per Testlauf verifiziert (`fonts/` testweise umbenannt, Skript
+meldete den erwarteten Klartext-Fehler und brach sauber mit Exit-Code 1 ab, statt
+weiterzumachen oder zu crashen). Ruft als allerersten Schritt automatisch
+`sync-version.py` auf (s. u.) und bricht ab, wenn das fehlschlägt.
+
+**3. Versionsnummer zentralisiert (neues `sync-version.py`):** `package.json["version"]`
+ist jetzt die einzige Quelle (vorher `"1.0.0"`, inhaltlich nie an die eigentliche
+App-Version gekoppelt — jetzt auf `4.44.0` gesetzt, `package-lock.json` mitgezogen).
+`sync-version.py`:
+- liest und validiert das SemVer-Format (bricht bei Vorabversionen/fehlendem Feld mit
+  klarer Meldung ab, ändert `package.json` selbst nie),
+- leitet `versionCode` per Schema `major·1 000 000 + minor·1 000 + patch` ab (Details/
+  Begründung der Konstanten-Wahl im Docstring der Funktion `compute_version_code()`;
+  Play Store erlaubt bis 2,1 Mrd., das Schema hat bis weit über major=2000 Luft),
+- schreibt `versionName`/`versionCode` in `android/app/build.gradle` (vorher hart
+  `versionCode 1` / `versionName "1.0"`, unverändert seit dem allerersten
+  B1-Grundgerüst) — mit einem Monotonie-Schutz: bricht ab, falls der neu berechnete
+  `versionCode` KLEINER als der bisherige wäre (Play-Store-Pflicht: bei jeder
+  Einreichung höher, nie niedriger),
+- schreibt dieselbe Versionsnummer in die `#appVersion`-Spans beider HTML-Quellen
+  (`pizza-rechner.html`, `pizza-rechner-mobile.html`) — mit Sicherheitsnetz (bricht ab,
+  wenn 0 oder mehr als 1 Treffer gefunden werden, statt blind zu ersetzen oder still
+  nichts zu tun).
+
+Per Bash getestet: Normallauf, Idempotenz (zweiter Lauf meldet „bereits aktuell" ohne
+erneutes Schreiben), ungültige Versionsnummer (`4.44.0-beta` → sauberer Abbruch mit
+Klartext-Fehler, `package.json` danach wiederhergestellt).
+
+**4. `pizza-rechner-KONTEXT.md` ergänzt:** neuer Abschnitt „Android-App bauen"
+(Kurzfassung der B1-C4-Werkzeugkette: `build-app.py` → `npx cap sync android` →
+JDK 21 → `gradlew assembleDebug` → `adb install -r`), Cache-Busting- und
+Versionsnummer-Absätze im Abschnitt „Dateistruktur" auf den neuen, automatisierten
+Stand umgeschrieben (statt der bisherigen „von Hand mitziehen"-Anleitung), Plattform-
+Bullet in „Entwicklungsweise/Mitarbeit" korrigiert (Node/Build-Tools werden für den
+optionalen nativen App-Bau inzwischen gebraucht, die Webseite selbst weiterhin nicht).
+
+**Tests:** `tests/test.html` unverändert **1542/1542** grün (Headless-Edge-Dump) — reine
+Markup-/Tooling-Änderung, keine Berechnungslogik betroffen, kein `test-generator`-Lauf
+nötig. Kein `accessibility-expert`-/`mobile-optimizer`-Lauf: keine neue/geänderte UI,
+kein ARIA, kein Styling, kein Layout (nur bereits bestehende Attribute/Textinhalte
+geändert plus reine Build-Tooling-Skripte, die nicht Teil der ausgelieferten Seite
+sind). Kein Ruckler beim Testen aufgefallen, kein `performance-profiler`-Lauf.
+
+**Echte Verifikation:** nur per Bash-Testläufen der beiden Python-Skripte (s. o.) und
+Headless-Edge-Testsuite, **kein** frischer `gradlew assembleDebug`/Emulator-Durchlauf in
+dieser Instanz (keine Android-Emulator-/Browser-Werkzeuge zur Verfügung) — das im
+Auftrag als explizites Abnahmekriterium genannte „frischer Bau aus sauberem Zustand
+ergibt eine lauffähige App" wurde daher **nicht** nachgeholt; ehrlich als offen
+vermerkt, statt es zu behaupten. `www/index.html` wurde nach dem Bau stichprobenartig
+per Grep geprüft (0 `?v=`-Treffer, `#appVersion` korrekt auf `v4.44.0`), das ersetzt
+aber keinen echten Gradle-Bau + Geräteinstallation.
+
+**Geändert:** `pizza-rechner.html`, `pizza-rechner-mobile.html`,
+`pizza-rechner-mobile-standalone.html` (neu gebaut), `build-app.py`, `sync-version.py`
+(neu), `package.json`, `package-lock.json`, `android/app/build.gradle`,
+`pizza-rechner-KONTEXT.md`. **Nicht angefasst:** `index.html` (keine `?v=`-Treffer),
+jegliche Fachlogik/Berechnung, Desktop-Verhalten im Browser, die bereits fertige
+Play-Store-Infrastruktur aus B1-C4.
+
+## App-Symbol und Startbildschirm (v4.43.0)
+
+Play-Store-Vorbereitung, Punkt C4 aus `PLAYSTORE-BACKLOG.md` — damit ist **Block C
+(C1-C4) komplett abgeschlossen**. Adaptives Android-Icon (aus
+`teigmeister-icon-optical-center.svg` abgeleitet, korrigierte Skalierung innerhalb der
+66dp-Sicherheitszone) plus heller/dunkler Startbildschirm fertig eingebaut. Dabei einen
+echten, live gefundenen Bug behoben — **bewusst als eigene, vom Hauptagenten getroffene
+Entscheidung markiert** (Nutzer nicht erreichbar, ausdrückliche Vollmacht für diese
+Warteschlange), nicht nur als Nebenbefund: `@capacitor/splash-screen` nutzt ab Android 12
+intern `androidx.core.splashscreen` (`installSplashScreen()`), das NICHT das alte
+`android:background` aus `styles.xml` liest — ohne die dedizierten
+`windowSplashScreenBackground`/`windowSplashScreenAnimatedIcon`-Attribute (jetzt in
+`values/styles.xml` + neu `values-night/styles.xml` gesetzt, bewusst OHNE `android:`-Präfix,
+s. HISTORIE für die Begründung) zeigte jeder zweite und weitere Kaltstart einen komplett
+leeren Bildschirm ohne jede Marke. Auf dem Android-Emulator über mehrere aufeinanderfolgende
+Kaltstarts in Hell **und** Dunkel verifiziert, kein Blank-Screen mehr, Testsuite unverändert
+**1542/1542** grün. Nächster empfohlener Punkt: D1 (Aufräumen und Versionierung).
+
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „App-Symbol und
+Startbildschirm (v4.43.0)".
+
 ## App-Symbol und Startbildschirm (v4.43.0)
 
 Play-Store-Vorbereitung, Punkt C4 aus `PLAYSTORE-BACKLOG.md` — damit ist Block C (C1-C4)

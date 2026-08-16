@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-16 · Aktuelle Version: v4.43.0 (Desktop + Mobil, App-Symbol und Startbildschirm inkl. Splashscreen-Bugfix) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-16 · Aktuelle Version: v4.44.0 (Desktop + Mobil, Aufräumen und Versionierung: `?v=` entfernt, Versionsnummer zentralisiert, build-app.py fertiggestellt) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -218,26 +218,28 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## App-Symbol und Startbildschirm (v4.43.0) = aktueller Stand
+## D1: Aufräumen und Versionierung (v4.44.0) = aktueller Stand
 
-Play-Store-Vorbereitung, Punkt C4 aus `PLAYSTORE-BACKLOG.md` — damit ist **Block C
-(C1-C4) komplett abgeschlossen**. Adaptives Android-Icon (aus
-`teigmeister-icon-optical-center.svg` abgeleitet, korrigierte Skalierung innerhalb der
-66dp-Sicherheitszone) plus heller/dunkler Startbildschirm fertig eingebaut. Dabei einen
-echten, live gefundenen Bug behoben — **bewusst als eigene, vom Hauptagenten getroffene
-Entscheidung markiert** (Nutzer nicht erreichbar, ausdrückliche Vollmacht für diese
-Warteschlange), nicht nur als Nebenbefund: `@capacitor/splash-screen` nutzt ab Android 12
-intern `androidx.core.splashscreen` (`installSplashScreen()`), das NICHT das alte
-`android:background` aus `styles.xml` liest — ohne die dedizierten
-`windowSplashScreenBackground`/`windowSplashScreenAnimatedIcon`-Attribute (jetzt in
-`values/styles.xml` + neu `values-night/styles.xml` gesetzt, bewusst OHNE `android:`-Präfix,
-s. HISTORIE für die Begründung) zeigte jeder zweite und weitere Kaltstart einen komplett
-leeren Bildschirm ohne jede Marke. Auf dem Android-Emulator über mehrere aufeinanderfolgende
-Kaltstarts in Hell **und** Dunkel verifiziert, kein Blank-Screen mehr, Testsuite unverändert
-**1542/1542** grün. Nächster empfohlener Punkt: D1 (Aufräumen und Versionierung).
+Play-Store-Vorbereitung, erster Punkt aus Block D (Veröffentlichung) — Block C (C1-C4)
+war bereits komplett fertig. `?v=`-Cache-Busting-Parameter aus allen Skript-/CSS-/Logo-
+Pfaden in `pizza-rechner.html` und `pizza-rechner-mobile.html` entfernt (im App-Paket
+wirkungslos). Versionsnummer zentralisiert: `package.json`s `version`-Feld (jetzt
+`4.44.0`, vorher irrelevant `1.0.0`) ist die einzige Quelle, neues `sync-version.py`
+schreibt sie automatisch in beide `#appVersion`-Spans **und** `android/app/build.gradle`
+(`versionName` + errechneter `versionCode`, Schema `major·1 000 000 + minor·1 000 +
+patch`, inkl. Monotonie-Schutz). `build-app.py` robustifiziert (ruft `sync-version.py`
+zuerst auf, klare deutsche Fehlermeldungen bei fehlenden Quelldateien statt rohem
+Traceback, ausführlich dokumentiert). Testsuite unverändert **1542/1542** grün (reine
+Markup-/Tooling-Änderung, keine Berechnungslogik betroffen). **Offen:** kein frischer
+`gradlew assembleDebug`/Emulator-Durchlauf in dieser Instanz (keine
+Android-Emulator-/Browser-Werkzeuge verfügbar) — das im Auftrag genannte
+Abnahmekriterium „frischer Bau aus sauberem Zustand ergibt eine lauffähige App" steht
+noch aus, nur die beiden Python-Skripte selbst wurden per Bash getestet. Nächster
+empfohlener Punkt: die Live-Verifikation nachholen, danach D2 (Datenschutzerklärung und
+Impressum, braucht Nutzer-Freigabe für die Adresse).
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „App-Symbol und
-Startbildschirm (v4.43.0)".
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „D1: Aufräumen und
+Versionierung (v4.44.0)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
@@ -697,30 +699,31 @@ PZ.makeLink/makeSeg/makePrefStages/fillFlourSelect, die diese drei Module beim e
 direkt aufrufen). `units` MUSS vor `calc`/`guide`/`print` geladen werden (liefert PZ.formatWeight/formatWeightAuto/
 formatTemp, die diese drei Module beim Rendern direkt aufrufen).
 
-**Cache-Busting:** CSS/JS werden mit `?v=X.Y.Z` geladen. **Bei jeder neuen Version mitziehen.**
-Zwischen v4.0.0 und v4.4.0 bewusst auseinandergelaufen (Design-Import-Zyklen waren
-mobile-only, Desktop-HTML wurde nicht angefasst) — **seit v4.5.0 wieder synchron**, beide
-HTML-Dateien stehen bei `?v=4.25.0`. Bei einem künftigen Zyklus, der nur eine Seite ändert,
-erneut bewusst entscheiden, ob ein Auseinanderlaufen sinnvoll ist oder beide mitgezogen
-werden (v4.17.0 war rein mobil-inhaltlich, `?v=` wurde bewusst trotzdem auf beiden Seiten
-mitgezogen, um die Synchronität zu erhalten — s. Abschnitt „Quick-Bar-Speichern-Button
-entfernen (v4.17.0)" in der HISTORIE-Datei; v4.18.0 betraf inhaltlich wieder beide Seiten;
-v4.19.0 war inhaltlich reines Desktop-Markup, v4.20.0 inhaltlich eine reine i18n-Textkürzung,
-v4.21.0 (`--bg-gradient`-Token in `css/styles.css`, gemeinsam für beide Seiten), v4.22.0
-(Card-Elevation, `css/styles.css`, ebenfalls beide Seiten), v4.23.0 (plattformabhängige
-Feature-Flag-Defaults, `js/settings.js`, funktional nur auf Mobil relevant -- Desktop läuft
-faktisch immer im "Fallback"-Zweig -- `?v=` trotzdem bewusst auf beiden Seiten mitgezogen),
-v4.23.1 (Button-Text `nav.onboarding`, `js/i18n-dict.js`, inhaltlich beide Seiten) und
-v4.23.2 (Logo-Schatten `assets/logo.svg` entfernt, inhaltlich beide Seiten, zusätzlich
-eigenes `?v=4.23.2` an der Logo-`<img>` selbst ergänzt).
+**Cache-Busting (`?v=X.Y.Z`) seit v4.44.0 entfernt:** CSS/JS/Logo-Pfade in
+`pizza-rechner.html` und `pizza-rechner-mobile.html` hatten von v3.x bis v4.43.0 einen
+`?v=X.Y.Z`-Query-String, der bei jeder neuen Version von Hand mitgezogen werden musste
+(Historie dieses Mitziehens bis v4.23.2 s. `pizza-rechner-KONTEXT-HISTORIE.md`, falls
+für eine alte Version relevant). Play-Store-Vorbereitung Punkt D1
+(`PLAYSTORE-BACKLOG.md`) hat den Parameter ersatzlos gestrichen: er löste ausschließlich
+ein Browser-Cache-Problem (erzwungenes Neuladen nach Deploy) und war im gepackten
+Android-App-Bau (kein Browser-Cache) wirkungslos. **Bewusste Nebenwirkung:** falls
+künftig auf dem Desktop/Mobil-Browser (nicht die App) eine veraltete `js`/`css`-Datei aus
+dem Browser-Cache hängen bleibt, gibt es dafür jetzt keinen eingebauten Mechanismus mehr
+— akzeptierter Kompromiss laut Backlog-Entscheidung, im Zweifel hilft ein normales
+Hard-Reload (`Strg`+`F5`).
 
-**Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer):** Im
-Burgermenü (`.nav-panel`) beider HTML-Dateien steht `<span class="nav-version"
-id="appVersion">vX.Y.Z</span>` — rein statischer Text, keine JS-Logik dahinter. Seit v4.5.0
-wieder synchron (beide `v4.25.0`), analog zum Cache-Busting oben. **Bei jedem
-Versionssprung von Hand mitziehen** (zusammen mit `?v=` und der Kontext-Datei — bei allen
-drei HTML-Dateien, also auch `pizza-rechner-mobile-standalone.html` nach dem Rebuild,
-gegenprüfen), sonst zeigt die Live-App die falsche Version an.
+**Sichtbare Versionsnummer (seit v3.7.1, seit v3.46.0 im Menü statt im Footer, seit
+v4.44.0 automatisiert statt von Hand):** Im Burgermenü (`.nav-panel`) beider HTML-Dateien
+steht `<span class="nav-version" id="appVersion">vX.Y.Z</span>` — rein statischer Text,
+keine JS-Logik dahinter, wird aber nicht mehr von Hand gepflegt. **`package.json`s
+`version`-Feld ist seit v4.44.0 die einzige Quelle der App-Versionsnummer** (s. Abschnitt
+„Android-App bauen" unten): `python sync-version.py` liest es aus und schreibt es sowohl
+in diese beiden Spans als auch in `android/app/build.gradle`
+(`versionName`/`versionCode`). Bei jedem Versionssprung: `package.json["version"]`
+erhöhen, dann `python sync-version.py` (oder `python build-app.py`, ruft es automatisch
+zuerst auf) laufen lassen — danach `pizza-rechner-mobile-standalone.html` per
+`python build-mobile-standalone.py` neu bauen (übernimmt die bereits aktualisierte
+Mobil-Quelle) und die Kontext-Datei mitziehen.
 
 ## Wichtige Berechnungs-Details
 
@@ -798,7 +801,12 @@ gegenprüfen), sonst zeigt die Live-App die falsche Version an.
   beide stattdessen manuell bzw. per isoliertem Headless-Aufbau verifiziert. Die Wachstums-
   Historie der Testsuite Version für Version steht in `pizza-rechner-KONTEXT-HISTORIE.md`.
 - **Git:** Repo im Hauptordner, kleine Commits pro Änderungs-Satz. `Versionen/` + `.claude/` gitignored.
-- **Plattform:** Windows / PowerShell. Kein Node, keine Build-Tools.
+- **Plattform:** Windows / PowerShell. Die Desktop-/Mobil-**Webseite** selbst braucht
+  weiterhin kein Node, keine Build-Tools (läuft per Doppelklick, s. oben). Seit Block B
+  des Play-Store-Backlogs (`PLAYSTORE-BACKLOG.md`) gibt es **zusätzlich** eine native
+  Android-App-Kette, die sehr wohl Node/Gradle/JDK braucht — s. Abschnitt „Android-App
+  bauen" unten, betrifft nur den optionalen App-Bau, nicht die normale Weiterarbeit an
+  der Webseite.
 - **Preview-Hinweis:** Das Preview-Tool (localhost-Server) war in mehreren Sessions unzuverlässig
   (Browser lädt `chrome-error://`) — Tests einfach per Doppelklick im echten Browser öffnen lassen.
 - **Hängende Headless-Edge-Instanz beenden — NIEMALS systemweit killen:** Falls ein
@@ -809,6 +817,35 @@ gegenprüfen), sonst zeigt die Live-App die falsche Version an.
   process where "name='msedge.exe' and commandline like '%--headless%'" get processid` zur
   gezielten Identifikation, dann `taskkill /F /PID <nur diese ID>`). Im Zweifel lieber einzelne,
   sich selbst beendende Kurzaufrufe statt eines dauerhaft laufenden Headless-Prozesses.
+
+## Android-App bauen (Kurzfassung, seit Block B/C des Play-Store-Backlogs)
+
+Volle Werkzeugketten-Herleitung/-Fehlersuche steht in `PLAYSTORE-BACKLOG.md`
+(Punkte B1-C4) und `pizza-rechner-KONTEXT-HISTORIE.md` — hier nur die Kurzfassung für
+einen frischen Bau aus sauberem Zustand, damit sie nicht jedes Mal aus dem kompletten
+Backlog zusammengesucht werden muss:
+
+1. `python build-app.py` — ruft zuerst `sync-version.py` auf (zieht `package.json`s
+   `version`-Feld in die HTML-Versionsanzeige + `android/app/build.gradle`), baut dann
+   `www/` aus `pizza-rechner-mobile.html` + `css/`/`js/`/`fonts/`/`assets/img/`/
+   `assets/logo.svg`. `www/` ist gitignored, reines Build-Artefakt.
+2. `npx cap sync android` — kopiert `www/` in das native Android-Projekt
+   (`android/`, versioniert, Teil des Repos).
+3. `JAVA_HOME` auf ein **JDK 21** setzen (nicht 17 — Capacitor/Gradle brauchen 21).
+4. `cd android && .\gradlew assembleDebug` — baut `app-debug.apk`. Bekannte
+   OneDrive-Eigenheit dieses Projektordners: `mergeDebugResources` kann an
+   `ReparsePoint`-Cloud-Platzhaltern scheitern, behoben durch
+   `org.gradle.vfs.watch=false` in `android/gradle.properties` (dauerhaft gesetzt).
+5. `adb install -r <apk-pfad>` auf Emulator (`Teigmeister_Test`) oder echtem Gerät
+   installieren.
+
+**Versionsnummer:** einzige Quelle ist `package.json["version"]` (SemVer X.Y.Z). Bei
+jedem Versionssprung dort erhöhen, dann Schritt 1 oben (oder alleine
+`python sync-version.py`) laufen lassen — verteilt automatisch an die sichtbare
+`#appVersion`-Anzeige (beide HTML-Dateien) und `android/app/build.gradle`
+(`versionName` = derselbe String, `versionCode` = `major·1 000 000 + minor·1 000 +
+patch`, mit eingebautem Schutz gegen einen sinkenden Wert — Play Store verlangt einen
+bei jeder Einreichung steigenden `versionCode`).
 
 ## Einstellungen-Menü für Feature-Flags (v3.16.0, `js/settings.js`)
 

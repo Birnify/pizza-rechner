@@ -615,20 +615,29 @@ Details: `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „App-Symbol und Startb
 
 ---
 
-## D1. Aufräumen und Versionierung
+## D1. Aufräumen und Versionierung — Code erledigt (v4.44.0, 2026-08-16), Live-Bau offen
 
-**Aufwand:** 1 Zyklus.
+**Umgesetzt:** `?v=`-Parameter aus allen Skript-/CSS-/Logo-Pfaden in `pizza-rechner.html`
+(31 Treffer) und `pizza-rechner-mobile.html` (33 Treffer) entfernt — `index.html` hatte
+keine Treffer. `build-app.py` robustifiziert (klare Fehlermeldungen bei fehlenden
+Quelldateien, ausführlich dokumentiert). Versionsnummer zentralisiert: neues
+`sync-version.py` liest `package.json["version"]` (jetzt `4.44.0`) als einzige Quelle
+und schreibt sie automatisch in die `#appVersion`-Spans beider HTML-Dateien **und**
+`android/app/build.gradle` (`versionName` + `versionCode` = `major·1 000 000 +
+minor·1 000 + patch`, mit Monotonie-Schutz gegen einen sinkenden Wert).
+`pizza-rechner-KONTEXT.md` hat einen neuen Abschnitt „Android-App bauen". Testsuite
+unverändert 1542/1542 grün. Details:
+`pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „D1: Aufräumen und Versionierung
+(v4.44.0)".
 
-**Umfang:**
-- Die `?v=`-Parameter an allen Skript- und CSS-Pfaden entfernen. Sie lösen ein reines
-  Browser-Problem und sind im Paket sinnlos. Betrifft alle drei HTML-Dateien
-- `build-app.py` fertigstellen und dokumentieren
-- Versionsnummer an einer Stelle pflegen und daraus die Android-Werte ableiten:
-  `versionName` entspricht der SemVer-Nummer, `versionCode` ist eine ganze Zahl, die
-  bei **jeder** Store-Einreichung steigen muss
-- `pizza-rechner-KONTEXT.md` um einen kurzen Abschnitt zum App-Bau ergänzen
-
-**Abnahme:** Frischer Bau aus sauberem Zustand ergibt eine lauffähige App.
+**Offen — Abnahmekriterium nicht erfüllt:** in der umsetzenden Instanz standen keine
+Android-Emulator-/Browser-Werkzeuge zur Verfügung. Das Abnahmekriterium „frischer Bau
+aus sauberem Zustand ergibt eine lauffähige App" (`build-app.py` → `npx cap sync
+android` → JDK 21 → `gradlew assembleDebug` → `adb install -r` auf `Teigmeister_Test`
+→ App startet und ist bedienbar) wurde **nicht** nachgeholt, nur die beiden
+Python-Skripte selbst per Bash getestet (Normallauf, Idempotenz, Fehlerfälle) und
+`www/index.html` stichprobenartig per Grep geprüft. **Vor D2 nachholen, oder beim
+nächsten ohnehin anstehenden App-Bau mit erledigen.**
 
 ---
 
@@ -719,7 +728,7 @@ zunächst gerne auf Deutschland begrenzt.
 | C2 Drucken und PDF — **erledigt (v4.41.0, 2026-08-16)** | 1 Zyklus | B1 | ja |
 | C3 Android-Feinschliff — **erledigt (v4.42.0, 2026-08-16)** | 1 Zyklus | B1 | ja |
 | C4 Symbol und Start — **erledigt (v4.43.0, 2026-08-16)** | 1 Zyklus | B1 | ja |
-| D1 Aufräumen | 1 Zyklus | B1 | ja |
+| D1 Aufräumen — Code erledigt (v4.44.0), Live-Bau offen | 1 Zyklus | B1 | ja |
 | D2 Rechtstexte | 1 Zyklus | nichts | Entwurf ja, Freigabe Nutzer |
 | D3 Play Console | 1 Zyklus | D2 | nein, Formulare |
 | D4 Test und Freigabe | 14 Tage Wartezeit | alles | nein |
@@ -742,5 +751,10 @@ erledigt (v4.43.0, 2026-08-16) — adaptives Icon + Startbildschirm hell/dunkel 
 inklusive eines dabei gefundenen und behobenen echten Bugs (leerer Bildschirm bei
 wiederholten Kaltstarts ab Android 12 mangels der dedizierten
 `windowSplashScreenBackground`/`windowSplashScreenAnimatedIcon`-Theme-Attribute). Damit
-ist Block C (C1-C4) komplett abgeschlossen.** Empfohlener nächster Einstieg: D1
-(Aufräumen und Versionierung), 1 Zyklus und für ein kleines Modell geeignet.
+ist Block C (C1-C4) komplett abgeschlossen.** D1 (Aufräumen und Versionierung)
+code-seitig erledigt (v4.44.0, 2026-08-16) — `?v=` entfernt, Versionsnummer über
+`package.json` + `sync-version.py` zentralisiert, `build-app.py` robustifiziert; die
+Live-Verifikation (frischer Gradle-Bau + Emulator-Installation) steht noch aus, da der
+umsetzenden Instanz keine Android-/Browser-Werkzeuge zur Verfügung standen. Empfohlener
+nächster Einstieg: D1-Live-Bau nachholen, danach D2 (Datenschutzerklärung und
+Impressum, braucht Nutzer-Freigabe für die Adresse).
