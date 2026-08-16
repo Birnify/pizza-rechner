@@ -545,6 +545,12 @@
   // kein stiller Fehlschlag, s. PLAYSTORE-BACKLOG.md C1.
   add('timer.permissionDenied', '⚠️ Benachrichtigungen sind für diese App nicht erlaubt: dieser Timer meldet sich nur, solange die App geöffnet bleibt. Aktiviere Benachrichtigungen in den Systemeinstellungen des Geräts, um auch bei geschlossener App benachrichtigt zu werden.',
     '⚠️ Notifications are not allowed for this app: this timer will only alert you while the app stays open. Enable notifications in the device system settings to also get notified while the app is closed.');
+  // C1b (PLAYSTORE-BACKLOG.md): nur für lange Timer (js/timer.js EXACT_ALARM_THRESHOLD_MIN)
+  // angezeigt, kurz bevor @capacitor/local-notifications ggf. den System-Dialog "Alarme &
+  // Erinnerungen" öffnet — erklärt den sonst unerwartet wirkenden Sprung in die
+  // Systemeinstellungen, statt ihn kommentarlos aufpoppen zu lassen.
+  add('timer.exactAlarmHint', 'ℹ️ Für so lange Zeiten fragt Android einmalig, ob Teigmeister exakte Alarme stellen darf: bitte erlauben, damit die Erinnerung auch nach einem Geräteneustart pünktlich kommt.',
+    'ℹ️ For a timer this long, Android will ask once whether Teigmeister may set exact alarms: please allow it so the reminder still arrives on time even after a device restart.');
   add('timer.androidDefaultLabel', 'Pizza-Teig', 'Pizza dough');
   add('timer.icsDefaultLabel', 'Pizza-Timer', 'Pizza timer');
   add('timer.icsSummaryPrefix', '🍕 ', '🍕 ');

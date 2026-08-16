@@ -13,7 +13,47 @@
    bleibt in BEIDEN Welten unverändert nur für die Vordergrund-Anzeige zuständig, die
    verbleibende Zeit wird immer aus dem gespeicherten `endAt` neu berechnet (nie aus einem
    mitgezählten Zwischenstand). Identisches Erkennungsmuster wie js/main.js `boot()`/
-   js/store.js: `window.Capacitor?.isNativePlatform()`. */
+   js/store.js: `window.Capacitor?.isNativePlatform()`.
+
+   C1b (Neustart-Persistenz + Energiesparfunktionen, PLAYSTORE-BACKLOG.md): Recherche-Ergebnis
+   (Quelle: `node_modules/@capacitor/local-notifications/android/...`, vollständiger
+   Kotlin-Quelltext liegt lokal vor, kein Vermuten nötig):
+   - **Geräteneustart braucht KEINEN eigenen `BroadcastReceiver`/nativen Java-Code.** Das
+     Plugin registriert bereits selbst einen `LocalNotificationRestoreReceiver` auf
+     `BOOT_COMPLETED`/`LOCKED_BOOT_COMPLETED`/`QUICKBOOT_POWERON` (`directBootAware`,
+     s. `android/src/main/AndroidManifest.xml` des Pakets) und die zugehörigen Berechtigungen
+     (`RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK`) — beides landet automatisch per normalem
+     Android-Manifest-Merge in der App (keine manuelle Ergänzung in `android/app/src/main/
+     AndroidManifest.xml` nötig, per Gradle-Build verifiziert, s. PLAYSTORE-BACKLOG.md C1).
+     Der Receiver liest beim Neustart alle noch nicht abgelaufenen Einträge aus der eigenen,
+     von `LocalNotifications.schedule()` beschriebenen `NotificationStorage` (App-eigene
+     SharedPreferences, getrennt von unserem `PZ.store`/Capacitor Preferences) und plant sie
+     erneut über den `AlarmManager` ein — vollständig headless, ohne WebView/JS-Kontext.
+     `cancelNativeNotification()` (also `stopTimer()`) entfernt den Eintrag dort ebenfalls
+     wieder, ein abgebrochener Timer wird nach einem Neustart also korrekt NICHT wieder
+     aufleben. Diese App muss dafür nichts Eigenes bauen — nur verifizieren, dass es wirklich
+     funktioniert (s. PLAYSTORE-BACKLOG.md, Abschnitt C1, Emulator-Verifikation).
+   - **Doze/Energiesparen:** `allowWhileIdle: true` (bereits seit C1a gesetzt) lässt das Plugin
+     `AlarmManager.setExactAndAllowWhileIdle`/`setAndAllowWhileIdle` verwenden (s.
+     `LocalNotificationManager.kt`), das ist laut Android-Dokumentation genau der vorgesehene
+     Weg, damit ein Alarm auch im Doze-Modus feuert (Einschränkung: max. 1×/9 min pro App —
+     irrelevant für uns, wir planen pro Timer nur einen einzigen Zeitpunkt). Eine zusätzliche
+     Ausnahme von der Akku-Optimierung (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`) wird deshalb
+     bewusst NICHT angefragt: sie ist für einfache, seltene Exact-Alarms nicht nötig (dafür ist
+     `allowWhileIdle` da), gilt bei Google Play als restriktiv geprüfte Berechtigung mit
+     Rechtfertigungspflicht, und würde eine App wie einen Kochtimer eher in Erklärungsnot
+     bringen als Nutzen bringen.
+   - **Separate, plugin-interne "Exakte Alarme"-Berechtigung** (ab Android 12/API 31, unser
+     `targetSdkVersion` 36 verlangt sie ab Android 13 aktiv): Das Plugin ruft bei jedem
+     `schedule()` mit `isExactNotification: true` (Standard) automatisch den System-Dialog
+     "Alarme & Erinnerungen" auf, falls die Berechtigung fehlt (`ACTION_REQUEST_SCHEDULE_
+     EXACT_ALARM`) — bei Ablehnung fällt es non-fatal auf einen ungenauen, aber weiterhin
+     `allowWhileIdle`-fähigen Alarm zurück (`ScheduleResult.warning`). Damit dieser
+     Systemdialog nicht bei JEDEM Timer (auch kurzem Ofen-/Autolyse-Timer) aufpoppt, fragen
+     wir „exakt" nur für lange Timer an (`EXACT_ALARM_THRESHOLD_MIN`, s. u.) — passend zur
+     Vorgabe „sinnvoll platziert, erst wenn wirklich ein langer Timer gestellt wird". Kurze
+     Timer laufen weiterhin `allowWhileIdle`-terminiert, nur ohne Exaktheits-Anspruch (ein paar
+     Minuten Toleranz spielt bei einem 10-Minuten-Backzeit-Timer ohnehin keine Rolle). */
 (function (global) {
   'use strict';
   const PZ = global.PZ || (global.PZ = {});
@@ -34,6 +74,13 @@
   function nativeNotifPlugin() {
     return (global.Capacitor && global.Capacitor.Plugins && global.Capacitor.Plugins.LocalNotifications) || null;
   }
+
+  // C1b: ab dieser Dauer (Minuten) fragt scheduleNativeNotification() eine EXAKTE
+  // Terminierung an (löst ggf. den System-Settings-Dialog "Alarme & Erinnerungen" aus,
+  // s. Datei-Kommentar oben). 180 min = 3 h — deckt die in PLAYSTORE-BACKLOG.md explizit
+  // genannten langen Läufe (17 h Biga, 48 h Kaltgare, auch mehrstündige Stockgare/Poolish-
+  // Reife) ab, lässt kurze Timer (Ofen vorheizen, Autolyse, Backzeit) aber ungefragt.
+  const EXACT_ALARM_THRESHOLD_MIN = 180;
 
   // Capacitor Local Notifications verlangt eine 32-Bit-Ganzzahl-ID (-2147483648..2147483647).
   // Ein einfacher, deterministischer String-Hash reicht: dieselbe Schritt-Key liefert immer
@@ -142,34 +189,56 @@
     if (el) el.remove();
   }
 
+  // C1b: kurzer, transienter Hinweis (analog showHintOnce), NUR für lange Timer, kurz bevor
+  // doScheduleNative() ggf. den Exakte-Alarme-Systemdialog auslöst (s. Datei-Kommentar oben) —
+  // erklärt den Sprung in die Systemeinstellungen, statt ihn kommentarlos aufpoppen zu lassen.
+  // Bewusst NICHT "nur einmal für immer" wie showHintOnce: der Systemdialog kann bei jedem
+  // langen Timer erneut erscheinen (solange der Nutzer die Berechtigung nicht erteilt hat),
+  // der erklärende Hinweis soll dann jedes Mal mitkommen.
+  function showExactAlarmHint(box) {
+    const hint = document.createElement('div');
+    hint.className = 'note note--tip timerexacthint';
+    hint.setAttribute('role', 'status');
+    hint.setAttribute('aria-live', 'polite');
+    hint.innerHTML = t('timer.exactAlarmHint');
+    box.parentNode.insertBefore(hint, box.nextSibling);
+    setTimeout(() => hint.remove(), 12000);
+  }
+
   // Plant die echte, vom setInterval unabhängige Systembenachrichtigung ein (nur native App,
   // s. startTimer). Ruft IMMER zuerst checkPermissions() (README-Empfehlung des Plugins),
   // fragt bei 'prompt'/'prompt-with-rationale' aktiv nach, zeigt bei 'denied' (vor oder nach
   // der Abfrage) einen sichtbaren Hinweis statt eines stillen Fehlschlags.
-  function scheduleNativeNotification(key, endAt, label, box) {
+  function scheduleNativeNotification(key, endAt, label, box, min) {
     const plugin = nativeNotifPlugin();
     if (!plugin) { showNativePermissionWarning(box); return; } // sollte nur bei Build-/Setup-Fehler vorkommen
     clearNativePermissionWarning(box);
     plugin.checkPermissions()
       .then((status) => {
         const display = status && status.display;
-        if (display === 'granted') return doScheduleNative(plugin, key, endAt, label, box);
+        if (display === 'granted') return doScheduleNative(plugin, key, endAt, label, box, min);
         if (display === 'denied') { showNativePermissionWarning(box); return; }
         return plugin.requestPermissions().then((res) => {
-          if (res && res.display === 'granted') return doScheduleNative(plugin, key, endAt, label, box);
+          if (res && res.display === 'granted') return doScheduleNative(plugin, key, endAt, label, box, min);
           showNativePermissionWarning(box);
         });
       })
       .catch(() => showNativePermissionWarning(box));
   }
 
-  function doScheduleNative(plugin, key, endAt, label, box) {
+  function doScheduleNative(plugin, key, endAt, label, box, min) {
+    // "Exakt" nur für lange Timer anfragen (s. EXACT_ALARM_THRESHOLD_MIN-Kommentar oben) —
+    // kurze Timer bekommen isExactNotification:false, bleiben aber weiterhin
+    // allowWhileIdle:true (Doze-fest, nur ohne Exaktheits-Anspruch).
+    const isLong = min >= EXACT_ALARM_THRESHOLD_MIN;
+    if (isLong) showExactAlarmHint(box);
     return plugin.schedule({
       notifications: [{
         id: nativeNotifId(key),
         title: t('timer.notificationTitle'),
         body: label,
-        schedule: { at: new Date(endAt), allowWhileIdle: true }
+        schedule: { at: new Date(endAt), allowWhileIdle: true },
+        isExactNotification: isLong
       }]
     }).then(() => { clearNativePermissionWarning(box); })
       .catch(() => showNativePermissionWarning(box));
@@ -363,7 +432,7 @@
     // Zusätzliche, vom setInterval unabhängige Systembenachrichtigung nur in der nativen App
     // (C1a) — im Browser bleibt das Verhalten exakt wie vorher (Web-Notification via notify()
     // beim Ablauf, s. onExpire()).
-    if (isNativeApp) scheduleNativeNotification(key, endAt, label, box);
+    if (isNativeApp) scheduleNativeNotification(key, endAt, label, box, min);
   }
 
   function stopTimer(key) {

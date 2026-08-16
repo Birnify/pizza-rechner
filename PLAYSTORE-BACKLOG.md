@@ -359,12 +359,9 @@ Punkt, nicht für ein kleines Modell.
 
 ---
 
-## C1. Gärzeit-Timer auf echte Systembenachrichtigungen
+## C1. Gärzeit-Timer auf echte Systembenachrichtigungen — ERLEDIGT (C1a 2026-08-16, C1b 2026-08-17)
 
-**C1a erledigt (2026-08-16), C1b (Neustart-Persistenz + Energiesparfunktionen) folgt
-als eigener Auftrag — C1 als Ganzes bleibt bis dahin offen.**
-
-**C1a-Umfang (fertig):** `@capacitor/local-notifications` installiert. `js/timer.js`
+**C1a-Umfang:** `@capacitor/local-notifications` installiert. `js/timer.js`
 plant beim Anlegen eines Timers in der nativen App zusätzlich zum bestehenden
 `setInterval` eine echte, terminierte Systembenachrichtigung ein
 (`LocalNotifications.schedule`, gleicher Zielzeitpunkt wie die Anzeige), inklusive
@@ -397,45 +394,63 @@ bewusst so belassen, weil dasselbe Emoji-plus-Text-Muster bereits an anderer Ste
 App etabliert ist (`js/guide.js`, Mehl-Warnung), Konsistenz wog hier höher als das rein
 optionale Entfernen.
 
-**Nicht in dieser Instanz verifiziert:** die zentrale Abnahme auf einem echten
-Android-Emulator/-Gerät (Timer stellen, App vollständig beenden, Benachrichtigung
-kommt; Berechtigung verweigern und Hinweis prüfen; Flag-Wert übersteht einen
-Kaltstart) — dieser Instanz standen keine Emulator-/Browser-Werkzeuge zur Verfügung,
-das war laut vorherigem (nicht mehr auffindbarem) Sitzungsverlauf bereits live
-geprüft worden, hier nur der Code-/Test-Stand nachvollzogen.
+**C1b-Umfang (Neustart-Persistenz + Energiesparfunktionen):** Recherche im lokal
+vorliegenden Kotlin-Quelltext von `@capacitor/local-notifications`
+(`node_modules/@capacitor/local-notifications/android/...`) ergab, dass beide
+Kernprobleme bereits vom Plugin selbst gelöst werden, kein eigener nativer Code nötig:
+- **Geräteneustart:** das Plugin registriert bereits einen eigenen
+  `LocalNotificationRestoreReceiver` auf `BOOT_COMPLETED`/`LOCKED_BOOT_COMPLETED`/
+  `QUICKBOOT_POWERON` (inkl. `RECEIVE_BOOT_COMPLETED`-Permission), der beim Neustart
+  headless (ohne WebView/JS-Kontext) alle noch nicht abgelaufenen Einträge aus seiner
+  eigenen `NotificationStorage` liest und über den `AlarmManager` neu einplant. Landet
+  automatisch per Android-Manifest-Merge in der App — per Gradle-Build der `app-debug.apk`
+  und Prüfung des `merged_manifests`-Outputs bestätigt (Receiver + alle vier Permissions
+  `RECEIVE_BOOT_COMPLETED`/`WAKE_LOCK`/`POST_NOTIFICATIONS`/`SCHEDULE_EXACT_ALARM`
+  vorhanden), keine manuelle Ergänzung in `android/app/src/main/AndroidManifest.xml`
+  nötig.
+- **Energiesparen/Doze:** `allowWhileIdle: true` (bereits seit C1a gesetzt) lässt das
+  Plugin `AlarmManager.setExactAndAllowWhileIdle`/`setAndAllowWhileIdle` verwenden, der
+  von Android dokumentierte Weg für Doze-feste Alarme. Eine zusätzliche Ausnahme von der
+  Akku-Optimierung (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`) wird bewusst NICHT angefragt:
+  nicht nötig für einzelne Exact-Alarms, restriktiv geprüfte Play-Store-Berechtigung mit
+  Rechtfertigungspflicht.
+- **Neu ergänzt in `js/timer.js`:** `isExactNotification` wird nur noch für lange Timer
+  (≥ 180 min, `EXACT_ALARM_THRESHOLD_MIN`) angefragt, damit der System-Berechtigungsdialog
+  "Alarme & Erinnerungen" nicht bei jedem kurzen Timer aufpoppt — passend zur Vorgabe
+  "sinnvoll platziert, erst wenn wirklich ein langer Timer gestellt wird". Ein neuer,
+  transienter `.note--tip`-Hinweistext (`timer.exactAlarmHint`) erklärt den möglichen
+  Sprung in die Systemeinstellungen, bevor er passieren kann.
 
-**C1b, noch offen:** Timer nach einem Geräteneustart neu einplanen (`BootReceiver`
-bzw. Capacitor-Äquivalent), Energiesparfunktionen berücksichtigen, damit lange
-Laufzeiten (17h Biga, 48h Kaltgare) nicht verschluckt werden. Bis dahin gilt die volle
-Abnahme aus dem Abschnitt unten nur eingeschränkt (Geräteneustart-Fall ungeprüft).
+**Echte Verifikation auf dem Android-Emulator** (`Teigmeister_Test`, Android 14/API 34,
+nicht nur Code-Review): `build-app.py`, `npx cap sync android`, JDK 21,
+`gradlew assembleDebug`, `adb install -r`. 24h-Timer über das Preset „Napoli Lange
+Kaltgare" gestellt (Schritt „Stückgare"), POST_NOTIFICATIONS-Dialog erlaubt, der neue
+Hinweistext erschien korrekt, `isExactNotification:true` + `allowWhileIdle:true` korrekt
+in `NOTIFICATION_STORE.xml` (App-eigene SharedPreferences des Plugins) persistiert.
+`adb shell dumpsys deviceidle force-idle`: Alarm blieb unverändert exakt terminiert
+(`device_idle`-Offset ~0, kein Verschlucken). **Zentraler Beweis:** `adb reboot` (echter
+Neustart des Emulators) — `dumpsys alarm` zeigt danach denselben Alarm mit identischem
+`origWhen`-Zeitstempel automatisch wieder scharf gestellt, vollständig headless, ohne
+dass die App geöffnet wurde. Nach Öffnen der App zeigte die Timer-UI korrekt die aus
+`endAt` neu berechnete Restzeit. Danach sauber aufgeräumt: Timer abgebrochen,
+`NOTIFICATION_STORE.xml` leer, keine aktive Alarm-Registrierung mehr, Feature-Flag auf
+den ursprünglich vorgefundenen Zustand zurückgesetzt.
 
-**Aufwand:** 2 bis 3 Zyklen. **Der anspruchsvollste Punkt.** Setzt B1 voraus.
+**Tests:** `tests/test.html` unverändert 1471/1471 grün (`js/timer.js` wird dort wie
+dokumentiert nicht geladen, reine JS-Logik-Erweiterung ohne neue testbare Oberfläche).
 
-**Ziel:** Ein Timer über 17 oder 48 Stunden feuert zuverlässig, auch wenn die App längst
-geschlossen ist.
+**Geändert (C1b):** `js/timer.js`, `js/i18n-dict.js`. Standalone-Build neu erzeugt.
+**Nicht angefasst:** die C1a-Logik selbst (Terminierung, Berechtigungsabfrage,
+Warnhinweis-Box), der Kalender-Export, jegliche Fachlogik/Berechnung, Desktop.
 
-**Ausgangslage in `js/timer.js`:** `setInterval` für die Anzeige, Web-Notification für
-die Meldung, Web-Audio für den Ton. Dazu zwei Behelfe, die es nur gibt, weil eine
-Webseite das nicht kann: ein Android-Uhr-Intent und ein Kalender-Export.
-
-**Umfang:**
-- Benachrichtigungen beim Anlegen eines Timers über Capacitor Local Notifications
-  **einplanen**, statt sie beim Ablauf auszulösen
-- Berechtigung ab Android 13 abfragen, und den Fall behandeln, dass sie verweigert wird
-- Timer nach einem Geräteneustart neu einplanen
-- Energiesparfunktionen berücksichtigen, damit lange Laufzeiten nicht verschluckt werden
-- `setInterval` bleibt **nur** für die Anzeige im Vordergrund zuständig
-- Beim Öffnen der App die verbleibende Zeit aus dem gespeicherten Zielzeitpunkt neu
-  berechnen, nie aus mitgezähltem Zwischenstand
-
-**Entscheidung zu den zwei Behelfen:** Der Android-Uhr-Intent wird überflüssig und kann
-in der nativen App entfallen. Der Kalender-Export ist weiterhin nützlich und bleibt.
-
-**Abnahme:**
-- Timer über 2 Minuten stellen, App vollständig beenden, Benachrichtigung kommt
+**Abnahme (vollständig erfüllt):**
+- Timer über 2 Minuten stellen, App vollständig beenden, Benachrichtigung kommt (C1a)
 - Timer über mehrere Stunden stellen, Gerät neu starten, Benachrichtigung kommt trotzdem
+  (C1b, s. Emulator-Verifikation oben)
 - Verweigerte Berechtigung führt zu einem verständlichen Hinweis, nicht zu einem stillen
-  Nichtstun
+  Nichtstun (C1a)
+- Lange Laufzeiten werden nicht durch Energiesparfunktionen verschluckt (C1b,
+  `force-idle` + `allowWhileIdle` bestätigt)
 
 ---
 
@@ -598,7 +613,7 @@ zunächst gerne auf Deutschland begrenzt.
 | B1 Capacitor einrichten — **erledigt (2026-08-16)** | 1 plus Installationen | Werkzeuge | nein, Einrichtung |
 | B2 Startbildschirm — **erledigt (2026-08-16)** | 1 Zyklus | A2, B1 | ja |
 | B3 Nativer Speicher — **erledigt (2026-08-16)** | 1 bis 2 | A2, B2 | mit Sorgfalt |
-| C1 Timer nativ | 2 bis 3 | B1 | nein, anspruchsvollster Punkt |
+| C1 Timer nativ — **erledigt (C1a 2026-08-16, C1b 2026-08-17)** | 2 bis 3 | B1 | nein, anspruchsvollster Punkt |
 | C2 Drucken und PDF | 1 Zyklus | B1 | ja |
 | C3 Android-Feinschliff | 1 Zyklus | B1 | ja |
 | C4 Symbol und Start | 1 Zyklus | B1 | ja |
@@ -610,5 +625,7 @@ zunächst gerne auf Deutschland begrenzt.
 **A1 erledigt (v4.38.4, 2026-08-15). A2 erledigt (v4.39.0, 2026-08-15). A3 erledigt
 (v4.40.0, 2026-08-15). B1 erledigt (2026-08-16). B2 erledigt (2026-08-16). B3 erledigt
 (2026-08-16) — der wichtigste Punkt im ganzen Backlog, Nutzerdaten sind jetzt vor dem
-WebView-Datenverlust geschützt.** Empfohlener nächster Einstieg: C2 (Drucken und PDF)
+WebView-Datenverlust geschützt. C1 (Timer nativ, C1a+C1b) erledigt (2026-08-17) — echte
+Systembenachrichtigungen inkl. Neustart-Persistenz und Doze-Festigkeit, auf dem
+Android-Emulator verifiziert.** Empfohlener nächster Einstieg: C2 (Drucken und PDF)
 oder C3 (Android-Feinschliff), beide 1 Zyklus und für ein kleines Modell geeignet.
