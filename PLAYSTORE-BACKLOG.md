@@ -179,7 +179,40 @@ Programmierschritt**, und sollte nicht an ein kleines Modell gegeben werden.
 
 ---
 
-## B1. Werkzeuge einrichten und Capacitor-Projekt aufsetzen
+## B1. Werkzeuge einrichten und Capacitor-Projekt aufsetzen — ERLEDIGT (2026-08-16)
+
+Alle Werkzeuge installiert (Node.js LTS, Temurin JDK 17 **und** 21 — Capacitor/Gradle
+brauchen JDK 21, nicht 17, das war beim ersten Build-Versuch nicht bekannt —, Android
+Studio, Android SDK headless per `sdkmanager` eingerichtet: platform-tools, Android-14-
+Plattform, Build-Tools 34, Emulator, virtuelles Testgerät `Teigmeister_Test`). Neues
+`build-app.py` baut `www/` aus `pizza-rechner-mobile.html` + `css/`/`js/`/`fonts/`/
+`assets/img/` + `assets/logo.svg` (Root-Datei, wurde im ersten Anlauf vergessen, führte
+zu fehlendem Logo, seither mit ergänzt). `package.json` + Capacitor (`@capacitor/core`,
+`@capacitor/cli`, `@capacitor/android`) installiert, `capacitor.config.json`
+(`appId: com.teigmeister.app`, **Platzhalter, vor der ersten echten Store-Einreichung
+bewusst prüfen/ändern** — danach nicht mehr änderbar ohne neuen Store-Eintrag),
+natives `android/`-Projekt via `npx cap add android` erzeugt. `www/` und generierte
+Android-Build-Artefakte in `.gitignore` aufgenommen, `android/` selbst bleibt
+versioniert.
+
+**Eigenheit dieses Projektordners:** liegt in OneDrive, `shutil.rmtree()` auf `www/`
+schlug wiederholt mit `PermissionError` fehl (OneDrive-Sync-Lock) — `build-app.py`
+löscht `www/` daher nicht mehr, sondern überschreibt nur (`dirs_exist_ok=True`).
+
+**Erster Testbau erfolgreich** (`gradlew assembleDebug`, JDK 21), auf dem Emulator
+installiert und **live per Screenshot + Touch-Simulation (adb) durchgeklickt**, nicht
+nur behauptet: Rechner (Rezeptauswahl, Einstellungen-Stepper, Hefe-Art-Umschalter),
+Schritt-für-Schritt-Anleitung (mit Fotos), Glossar (mit Fotos + Suchfeld), Pizza Party
+(Steppers) — alle vier funktionieren nativ, keine Abstürze, keine Fehler im Logcat außer
+dem behobenen Logo-Pfad. Wie erwartet (s. „Bekannte Baustellen" unten) noch nicht
+geprüft/funktionsfähig: Farbschema-Flackern beim Start, Timer, Drucken, Zurück-Taste —
+das sind B2/C1/C2/C3.
+
+**Nebenbefund, für D3 relevant:** Googles Play-Console-Bestätigung „Zugriff auf ein
+Android-Mobilgerät" verlangt ausdrücklich ein ECHTES physisches Gerät mit der
+Play-Console-App, nicht per Emulator lösbar (bewusste Anti-Fraud-Prüfung von Google).
+Nutzer hat aktuell kein eigenes Android-Handy — entweder kurz eins leihen oder ein
+günstiges Gebrauchtgerät besorgen, bevor D3 ansteht.
 
 **Aufwand:** 1 Zyklus reine Einrichtung, plus Wartezeit für Installationen. **Einmalig.**
 

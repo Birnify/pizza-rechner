@@ -10,3 +10,20 @@ assets/_sim/
 
 # Temporaere Review-Kopien (z. B. entpackte Design-Vorschlaege), kein Ersatz fuer design-import/
 _review/
+
+# Capacitor / Android-App-Grundgeruest (Play-Store-Vorbereitung, PLAYSTORE-BACKLOG.md Punkt B1)
+# www/ ist generiert aus pizza-rechner-mobile.html/css/js/fonts/assets/img per build-app.py,
+# keine Einzelquelle - nach jeder Aenderung an den Quelldateien "python build-app.py" neu laufen
+# lassen. node_modules/ ist npm-Abhaengigkeitscache. android/ (das native Projekt selbst) bleibt
+# versioniert, nur seine generierten Build-Artefakte und die maschinenspezifische
+# local.properties (enthaelt den lokalen Android-SDK-Pfad) sind ausgenommen.
+node_modules/
+www/
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/captures/
+android/.idea/
+android/*.iml
+android/app/release/

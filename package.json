@@ -1,0 +1,29 @@
+{
+  "name": "pizza",
+  "version": "1.0.0",
+  "description": "Ein Rechner für neapolitanischen Pizzateig (Direkt / Biga / Poolish) mit adaptiver Schritt-für-Schritt-Anleitung, Zeitplan und Einkaufsliste. Läuft komplett offline im Browser: kein Server, keine Installation, kein Internet, keine KI.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Birnify/pizza-rechner.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Birnify/pizza-rechner/issues"
+  },
+  "homepage": "https://github.com/Birnify/pizza-rechner#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0"
+  }
+}
