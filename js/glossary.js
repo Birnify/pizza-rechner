@@ -90,6 +90,16 @@
   // die Vorgänger-Fassung vor v4.36.0, die dafür catOpenSnapshot brauchte).
   const state = { cat: null, query: '', openId: null };
 
+  // Regal-Scroll-Position (Nebenbefund v4.36.0, jetzt behoben): "Zurück" aus einer
+  // Kategorie landete bei langen Kategorien nicht mehr an der ursprünglichen
+  // Regal-Position, weil renderShelf() das Regal immer von oben neu aufbaut. Merkt sich
+  // die Fensterposition UNMITTELBAR VOR dem Betreten einer Kategorie und stellt sie beim
+  // "Zurück"-Klick wieder her, nachdem das Regal neu gerendert ist (die anschließende
+  // Fokus-Vergabe auf die vorherige Kachel nutzt bewusst { preventScroll: true }, s. unten,
+  // damit sie diese Wiederherstellung nicht durch einen eigenen Scroll-zu-Fokus wieder
+  // aufhebt). Bleibt 0 (kein Effekt), solange nie eine Kategorie betreten wurde.
+  let shelfScrollY = 0;
+
   function norm(s) { return (s || '').toLowerCase(); }
   function lang() { return PZ.getLang ? PZ.getLang() : undefined; }
 
@@ -233,6 +243,7 @@
       state.cat = null;
       state.openId = null;
       render();
+      window.scrollTo(0, shelfScrollY);
       const prevTile = listEl.querySelector('.glossary-tile[data-cat="' + cat.key + '"]');
       if (prevTile) prevTile.focus({ preventScroll: true });
     });
@@ -286,6 +297,7 @@
   }
 
   function enterCategory(key) {
+    shelfScrollY = window.scrollY;
     state.cat = key;
     state.openId = null;
     render();

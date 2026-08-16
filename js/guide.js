@@ -695,7 +695,20 @@
   // dem Bildband (".step.is-open .step__photo{border-bottom:...}") jetzt seltener/gar
   // nicht mehr auftritt, ohne dass am Deckel selbst etwas geändert werden musste.
   const PHOTO_SRC_H = 448;
-  const PHOTO_MAX_UPSCALE = 1.3;
+  // Nebenbefund-Fix (Zyklus "Nebenbefunde", nach v4.35.2): 1,3 → 1,5. Live-Nachmessung
+  // (Playwright/Chromium headless) über mehrere Presets/Breiten zeigt: der Deckel greift
+  // bei AKTUELL existierenden Inhalten nirgends (größte gemessene geschlossene Bildhöhe
+  // 1280px-Desktop/newyork_style: 139,5px, weit unter dem alten 582,4px-Deckel) -- diese
+  // Anhebung ändert am heutigen Erscheinungsbild also sichtbar NICHTS, sie vergrößert nur
+  // die Sicherheitsmarge für künftige/extremere Inhalte (sehr lange Extras-Texte, noch
+  // schmalere Viewports), bei denen der Deckel laut v4.35.1-Messung bis zu ~11% zur
+  // Bildband/Karten-Lücke beitragen konnte. Bewusst nicht weiter als 1,5 gelockert: bei
+  // 448px-Quellhöhe bliebe der reale Geräte-Skalierungsfaktor (× devicePixelRatio) auf
+  // 3x-Displays noch im selben Rahmen, den v4.35.1 als sichtbar unscharf einstufte, wenn
+  // er deutlich überschritten würde -- 1,5 ist ein Kompromiss (mehr Reserve gegen die
+  // Lücke, ohne die v4.35.1-Schärfeschwelle nennenswert wieder zu strapazieren), keine an
+  // Quellen abgeleitete Zahl.
+  const PHOTO_MAX_UPSCALE = 1.5;
   function openMore(btn) {
     const step = btn.closest('.step');
     const photo = step ? step.querySelector('.step__photo') : null;

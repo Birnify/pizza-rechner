@@ -888,7 +888,7 @@ header p{margin:5px 0 0;opacity:.88;font-size:12.5px;letter-spacing:.3px;}
 .preset-card{
   display:flex;flex-direction:column;align-items:stretch;text-align:left;
   border:1px solid var(--line);background:var(--card);border-radius:var(--radius);
-  overflow:hidden;cursor:pointer;transition:border-color .12s;min-height:44px;font:inherit;padding:0;
+  overflow:hidden;cursor:pointer;transition:border-color .12s;min-height:44px;min-width:44px;font:inherit;padding:0;
 }
 .preset-card:hover{border-color:var(--tomato);}
 .preset-card:focus-visible{outline:2px solid var(--tomato-text);outline-offset:2px;}
@@ -1273,6 +1273,18 @@ input[type=number]:focus{outline:none;border-color:var(--tomato);}
   display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;font-family:var(--font-head);
 }
 .step__title{margin:3px 0 0;flex:1;min-width:0;font-family:var(--font-head);font-size:15.5px;font-weight:700;line-height:1.25;color:var(--ink);}
+/* Nebenbefund-Fix (Zyklus "Nebenbefunde"): "Schüttwasser temperieren"/"Teigtemperatur
+   prüfen" blieben bei 375px zweizeilig, sobald der Schritt ein Bildband hat (dann bleiben
+   dem Titel nur ~168px statt ~245px). Kandidat 2 aus der Backlog-Notiz gewählt (kleinere
+   Titel-Schrift statt schmaleres Bildband) -- per Live-Messung (Playwright/Chromium,
+   Headless, mehrere Presets/Vorteig-Methoden) iterativ ermittelt: 13px ist der kleinste
+   Wert, der BEIDE Titel bei 375px zuverlässig einzeilig hält, ohne das Bildband selbst
+   anzufassen. Bei 320px bleiben beide (wie schon dokumentiert für 11/15 Titel bei dieser
+   Breite) weiterhin zweizeilig -- reines Platzproblem, das eine Schriftgröße allein nicht
+   auflöst -- aber die Gesamtzahl zweizeiliger Titel sinkt live gemessen ebenfalls von
+   11/15 auf 8/15 (napoli_biga_klassisch) bzw. 10/15 auf 8/15 (napoli_klassisch): eine
+   nachweisbare, wenn auch keine vollständige, Verbesserung. */
+@media (max-width:400px){ .step__title{font-size:13px;} }
 /* REGEL (aus der Referenz übernommen): der Zeit-Bereich ist immer das letzte Element der
    Titelzeile, oben ausgerichtet, schrumpft nie und bricht nie um -- unabhängig davon, wie
    lang der Titel ist (behebt die zuvor uneinheitliche Positionierung von Technik-/

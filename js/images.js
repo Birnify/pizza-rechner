@@ -24,22 +24,33 @@
   // assets/prepare_web_images.py aufbereiteten) Datei, fürs <img width/height> --
   // verhindert Layout-Sprung beim Nachladen zusätzlich zur aspect-ratio-Box aus CSS.
   // pending:true markiert ein noch nicht abgenommenes Bild (aktuell keins in diesem Zyklus).
+  // small = optionale 300x200-Zweitfassung fuers srcset (Nebenbefund-Fix, Zyklus
+  // "Nebenbefunde": die Karten waren mit 600x400 aufbereitet, aber nur ~135-166px breit
+  // angezeigt, s. pizza-rechner-KONTEXT.md). Erzeugt per assets/generate_card_srcset.py
+  // aus der bestehenden 600x400-Datei (fuer die Preset-Karten existiert kein Original
+  // mehr, s. dortiger Kommentar). Bewusst NUR bei den 9 preset.*-Eintraegen gesetzt --
+  // andere Kategorien (Glossar-Banner, Schrittbilder, Abschlussfotos) werden schon deutlich
+  // naeher an ihrer tatsaechlichen Anzeigegroesse genutzt bzw. haben eigene, bereits
+  // optimierte Zweitfassungen (s. Glossar-Standalone-Kommentar unten) und sind nicht Teil
+  // dieses Nebenbefund-Fixes. imgHtml() ergaenzt bei vorhandenem small automatisch ein
+  // srcset (300w/600w) + sizes="170px" (deckt die gemessene reale Kartenbreite von
+  // 130-166px ab, s. Kommentar dort) -- Aufrufer muessen dafuer nichts anpassen.
   const IMG = {
-    'preset.napoli_klassisch': { file: 'card-napoli_klassisch.webp', ratio: '3x2', alt: null, w: 600, h: 400 },
-    'preset.napoli_kalt': { file: 'card-napoli_kalt.webp', ratio: '3x2', alt: null, w: 600, h: 400 },
-    'preset.schnell': { file: 'card-schnell.webp', ratio: '3x2', alt: null, w: 600, h: 400 },
+    'preset.napoli_klassisch': { file: 'card-napoli_klassisch.webp', small: 'card-napoli_klassisch-sm.webp', ratio: '3x2', alt: null, w: 600, h: 400 },
+    'preset.napoli_kalt': { file: 'card-napoli_kalt.webp', small: 'card-napoli_kalt-sm.webp', ratio: '3x2', alt: null, w: 600, h: 400 },
+    'preset.schnell': { file: 'card-schnell.webp', small: 'card-schnell-sm.webp', ratio: '3x2', alt: null, w: 600, h: 400 },
     // Biga-/Poolish-Presets teilen sich je EIN Bild zwischen ihrer klassischen/schnellen
     // und ihrer kalten Variante (s. BILD-EINBAU-KONZEPT.md-Auftrag): beide Varianten sind
     // derselbe Teig, unterscheiden sich nur im Gärregime (Zeit/Temperatur), nicht im
     // Erscheinungsbild der fertigen Pizza — ein zweites, nahezu identisches Fotomotiv wäre
     // kein zusätzlicher Informationswert gewesen. Damit sind alle 9 Presets bebildert statt
     // 7 von 9.
-    'preset.napoli_biga_klassisch': { file: 'card-napoli_biga.webp', ratio: '3x2', alt: null, w: 600, h: 400 },
-    'preset.napoli_biga_kalt': { file: 'card-napoli_biga.webp', ratio: '3x2', alt: null, w: 600, h: 400 },
-    'preset.napoli_poolish_schnell': { file: 'card-napoli_poolish.webp', ratio: '3x2', alt: null, w: 600, h: 400 },
-    'preset.napoli_poolish_kalt': { file: 'card-napoli_poolish.webp', ratio: '3x2', alt: null, w: 600, h: 400 },
-    'preset.teglia': { file: 'card-teglia.webp', ratio: '3x2', alt: null, w: 600, h: 400 },
-    'preset.newyork_style': { file: 'card-newyork_style.webp', ratio: '3x2', alt: null, w: 600, h: 400 },
+    'preset.napoli_biga_klassisch': { file: 'card-napoli_biga.webp', small: 'card-napoli_biga-sm.webp', ratio: '3x2', alt: null, w: 600, h: 400 },
+    'preset.napoli_biga_kalt': { file: 'card-napoli_biga.webp', small: 'card-napoli_biga-sm.webp', ratio: '3x2', alt: null, w: 600, h: 400 },
+    'preset.napoli_poolish_schnell': { file: 'card-napoli_poolish.webp', small: 'card-napoli_poolish-sm.webp', ratio: '3x2', alt: null, w: 600, h: 400 },
+    'preset.napoli_poolish_kalt': { file: 'card-napoli_poolish.webp', small: 'card-napoli_poolish-sm.webp', ratio: '3x2', alt: null, w: 600, h: 400 },
+    'preset.teglia': { file: 'card-teglia.webp', small: 'card-teglia-sm.webp', ratio: '3x2', alt: null, w: 600, h: 400 },
+    'preset.newyork_style': { file: 'card-newyork_style.webp', small: 'card-newyork_style-sm.webp', ratio: '3x2', alt: null, w: 600, h: 400 },
     // Foto der fertigen Pizza (Anleitungsende, js/guide.js) — hier TRÄGT das Bild eigene
     // Information (Krustenform), die der umgebende Anleitungstext ("Fertig!") nicht sagt,
     // deshalb ein beschreibender Alt-Text statt alt:null (s. Kommentar in js/guide.js).
@@ -279,8 +290,22 @@
       return `<img${imgCls ? ` class="${imgCls}"` : ''} src="${resolveSrc(e.file)}" alt="${altText}" loading="${loading}" decoding="async">`;
     }
     const dims = (e.w && e.h) ? ` width="${e.w}" height="${e.h}"` : '';
+    // srcset/sizes (Nebenbefund-Fix, s. Kommentar bei e.small im Register oben): nur
+    // gesetzt, wenn das Register fuer diesen Key eine kleinere Zweitfassung kennt. 300w
+    // ist die feste Zielbreite von assets/generate_card_srcset.py, e.w die vorhandene
+    // Originalbreite (aktuell immer 600) -- der Browser waehlt selbst anhand von sizes +
+    // devicePixelRatio. "170px" liegt knapp über der live gemessenen realen Kartenbreite
+    // (130px mobile Swipe-Leiste, bis ~166px Desktop-Gitter je nach Fensterbreite).
+    // Standalone-Build-Sicherung (per Test gefunden, dieselbe Fehlerklasse wie der
+    // v4.32.0-Bugfix oben): im Inline-Modus (PZ._IMG_INLINE gesetzt) nur dann ein srcset
+    // ausgeben, wenn AUCH e.small selbst inlined ist -- sonst würde resolveSrc(e.small)
+    // auf den nicht existenten rohen assets/img/-Pfad zurückfallen, obwohl src (e.file)
+    // bereits korrekt als data-URI aufgelöst ist. Fehlt die Inline-Fassung von e.small,
+    // bleibt das Bild einfach ohne srcset (zeigt weiterhin e.file, kein kaputtes Bild).
+    const smallResolvable = e.small && (!PZ._IMG_INLINE || !!PZ._IMG_INLINE[e.small]);
+    const srcset = smallResolvable ? ` srcset="${resolveSrc(e.small)} 300w, ${resolveSrc(e.file)} ${e.w}w" sizes="170px"` : '';
     const cls = 'media media--' + e.ratio + (opts.extraClass ? ' ' + opts.extraClass : '');
-    return `<span class="${cls}"><img src="${resolveSrc(e.file)}" alt="${altText}"${dims} loading="${loading}" decoding="async"></span>`;
+    return `<span class="${cls}"><img src="${resolveSrc(e.file)}"${srcset} alt="${altText}"${dims} loading="${loading}" decoding="async"></span>`;
   }
 
   // Statische HTML-Platzhalter <span data-img-key="…"></span> (z. B. das Preset-

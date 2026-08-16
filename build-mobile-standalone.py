@@ -113,6 +113,16 @@ def inline_image_files():
         if m and m.group(1) not in seen:
             seen.add(m.group(1))
             files.append((m.group(1), IMG_DIR))
+        # "small" (Nebenbefund-Fix, Zyklus "Nebenbefunde"): optionale 300x200-srcset-
+        # Zweitfassung der 9 preset.*-Karten (js/images.js, imgHtml()). Muss genau wie
+        # "file" oben mit inlineiert werden, sonst zeigt das srcset-Attribut im
+        # Standalone-Build (kein Server, keine Geschwisterdateien ladbar) ins Leere --
+        # derselbe Fehlerklasse wie der in v4.32.0 behobene Bug, der dieser Funktion ihren
+        # obigen Docstring-Hinweis gegeben hat.
+        ms = re.search(r"small\s*:\s*'([^']+)'", entry)
+        if ms and ms.group(1) not in seen:
+            seen.add(ms.group(1))
+            files.append((ms.group(1), IMG_DIR))
     for name in parse_forEach_glossary_files(js):
         if name not in seen:
             seen.add(name)

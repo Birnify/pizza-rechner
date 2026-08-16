@@ -293,6 +293,42 @@
   $('preset').addEventListener('change', syncPresetCardSelection);
   syncPresetCardSelection();
 
+  // A11y-MINOR-1-Härtung (Nebenbefund, v4.32.0-Review): bisher hielt syncPresetCardSelection()
+  // den aria-pressed-Zustand nur an den Stellen aktuell, die ihn selbst aufrufen (das
+  // 'change'-Event oben sowie die beiden Stepper-Feld-Stellen unten) -- strukturelles
+  // Risiko für künftigen Code, der #preset.value an neuer Stelle setzt, ohne diesen Aufruf
+  // mitzudenken (bliebe dann optisch veraltet, kein aktuell bekannter Fehlerfall). Statt
+  // an noch einer weiteren Stelle einzeln zu synchronisieren, wird die 'value'-Property
+  // von #preset hier EINMALIG so überschrieben, dass JEDE Wertänderung per JS (egal von
+  // welcher jetzigen oder künftigen Stelle im Code) automatisch syncPresetCardSelection()
+  // nachzieht -- ein echter zentraler Helfer statt verteilter Einzelaufrufe.
+  // Object.defineProperty auf der ELEMENT-INSTANZ (nicht dem Prototyp) betrifft bewusst
+  // nur dieses eine <select>, liest/schreibt weiterhin über den nativen
+  // HTMLSelectElement-value-Setter (kein eigener Parallel-State) und ruft danach
+  // zusätzlich syncPresetCardSelection() auf. Deckt NICHT den Fall ab, dass der Nutzer
+  // eine Option direkt im nativen Dropdown auswählt (der Browser setzt .value dabei intern,
+  // ruft unseren JS-Setter nicht auf) -- dafür bleibt der bestehende 'change'-Listener oben
+  // zuständig, beide Wege zusammen decken jede Änderungsart ab. Bestehende Einzelaufrufe an
+  // den Stepper-Feld-Stellen (unten) bleiben bewusst zusätzlich bestehen (schaden nicht,
+  // rufen nur doppelt auf) statt entfernt zu werden -- falls defineProperty in einer
+  // untypischen Umgebung fehlschlägt (Guard unten), bleiben sie die einzige Absicherung.
+  (function hardenPresetValueSync() {
+    const sel = $('preset');
+    if (!sel || typeof Object.getOwnPropertyDescriptor !== 'function') return;
+    let desc = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(sel), 'value');
+    if (!desc && global.HTMLSelectElement) desc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+    if (!desc || !desc.set || !desc.get) return; // unbekannte Umgebung -> lieber nichts tun als crashen
+    Object.defineProperty(sel, 'value', {
+      configurable: true,
+      enumerable: desc.enumerable,
+      get: desc.get,
+      set: function (v) {
+        desc.set.call(sel, v);
+        syncPresetCardSelection();
+      }
+    });
+  })();
+
   // Wortgrenzen-sicheres Kürzen der Preset-Beschreibung (v4.33.1, Bugfix "ungleiche
   // Kartenhöhen in der Swipe-Leiste"): css/mobile.css begrenzt .preset-card-fit dort per
   // -webkit-line-clamp auf 4 Zeilen, damit alle Karten der Mobil-Swipe-Leiste gleich hoch

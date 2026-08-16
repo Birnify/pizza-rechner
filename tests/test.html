@@ -4709,17 +4709,19 @@
       ]);
     })();
 
-    // ===== NEUE TESTS (v4.35.1, Zahlen in v4.35.2 an die neue Quellauflösung angepasst):
+    // ===== NEUE TESTS (v4.35.1, Zahlen in v4.35.2 an die neue Quellauflösung angepasst,
+    // PHOTO_MAX_UPSCALE in Zyklus "Nebenbefunde" von 1,3 auf 1,5 angehoben, s.
+    // pizza-rechner-KONTEXT.md/js/guide.js):
     // Bildhöhe einfrieren & Deckelung =====
     // Tests für openMore()/closeMore()-Logik in js/guide.js:
     // - PHOTO_SRC_H = 448 (v4.35.2: 600x448-Quellbilder statt vorher 300x224, s.
-    //   pizza-rechner-KONTEXT.md), PHOTO_MAX_UPSCALE unverändert 1.3 → Deckel = 582,4px
+    //   pizza-rechner-KONTEXT.md), PHOTO_MAX_UPSCALE jetzt 1.5 → Deckel = 672px
     // - openMore() setzt style.height = Math.min(gemessen, Deckel)
     // - closeMore() setzt style.height = '' (Rückbau)
     (function () {
       const PHOTO_SRC_H = 448;
-      const PHOTO_MAX_UPSCALE = 1.3;
-      const CAP_HEIGHT = PHOTO_SRC_H * PHOTO_MAX_UPSCALE; // 582.4
+      const PHOTO_MAX_UPSCALE = 1.5;
+      const CAP_HEIGHT = PHOTO_SRC_H * PHOTO_MAX_UPSCALE; // 672
 
       // Test 1: Unter dem Deckel – gemessene Höhe wird exakt beibehalten
       (function () {
@@ -4754,7 +4756,9 @@
         ]);
       })();
 
-      // Test 2: Über dem Deckel – Höhe wird auf 582,4px gedeckelt
+      // Test 2: Über dem Deckel – Höhe wird auf 672px gedeckelt (Testhöhe auf 750px erhöht,
+      // Zyklus "Nebenbefunde": 650px läge unter dem neuen, gelockerten Deckel von 672px und
+      // würde die Deckelung gar nicht mehr auslösen)
       (function () {
         Object.assign(PZ.state, BASE, { method: 'direct', hyd: 62, yeast: 0.3 });
         PZ.calc();
@@ -4766,7 +4770,7 @@
 
         const stepFound = !!step, photoFound = !!photo, btnFound = !!btn;
         if (!stepFound || !photoFound || !btnFound) {
-          renderBox('Bildhöhe (v4.35.1) · Über dem Deckel: Höhe 650px wird auf 582,4px gedeckelt', [
+          renderBox('Bildhöhe (v4.35.1) · Über dem Deckel: Höhe 750px wird auf 672px gedeckelt', [
             { label: '.step gefunden (Test-Validierung)', ok: stepFound, actual: stepFound, expected: true, tol: null },
             { label: '.step__photo gefunden (Test-Validierung)', ok: photoFound, actual: photoFound, expected: true, tol: null },
             { label: '.step__more Button gefunden (Test-Validierung)', ok: btnFound, actual: btnFound, expected: true, tol: null }
@@ -4774,17 +4778,17 @@
           return;
         }
 
-        photo.style.height = '650px';
+        photo.style.height = '750px';
         const heightBeforeOpen = parseFloat(photo.style.height);
 
         btn.click();
 
         const heightAfterOpen = parseFloat(photo.style.height);
 
-        renderBox('Bildhöhe (v4.35.1) · Über dem Deckel: Höhe 650px wird auf 582,4px gedeckelt', [
-          { label: 'vor Klick: style.height ist 650px (Test-Setup)', ok: heightBeforeOpen === 650, actual: heightBeforeOpen, expected: 650, tol: 0.1 },
-          { label: 'Deckel = PHOTO_SRC_H (448) × PHOTO_MAX_UPSCALE (1.3)', ok: Math.abs(CAP_HEIGHT - 582.4) < 0.01, actual: CAP_HEIGHT, expected: 582.4, tol: 0.1 },
-          { label: 'nach Klick: style.height wird auf Deckel gedeckelt (582,4px, nicht 650px)', ok: Math.abs(heightAfterOpen - CAP_HEIGHT) < 0.1, actual: heightAfterOpen, expected: CAP_HEIGHT, tol: 0.1 }
+        renderBox('Bildhöhe (v4.35.1) · Über dem Deckel: Höhe 750px wird auf 672px gedeckelt', [
+          { label: 'vor Klick: style.height ist 750px (Test-Setup)', ok: heightBeforeOpen === 750, actual: heightBeforeOpen, expected: 750, tol: 0.1 },
+          { label: 'Deckel = PHOTO_SRC_H (448) × PHOTO_MAX_UPSCALE (1.5)', ok: Math.abs(CAP_HEIGHT - 672) < 0.01, actual: CAP_HEIGHT, expected: 672, tol: 0.1 },
+          { label: 'nach Klick: style.height wird auf Deckel gedeckelt (672px, nicht 750px)', ok: Math.abs(heightAfterOpen - CAP_HEIGHT) < 0.1, actual: heightAfterOpen, expected: CAP_HEIGHT, tol: 0.1 }
         ]);
       })();
 
