@@ -257,6 +257,16 @@
     const startOnce = () => {
       if (started) return;
       started = true;
+      // Feature-Flags (js/settings.js) neu einlesen, JETZT wo PZ.store.hydrate() den
+      // nativen Zwischenspeicher gefüllt hat (oder das 4s-Sicherheitsnetz gegriffen hat)
+      // -- der allererste PZ.FLAGS = readFlags()-Aufruf in settings.js lief synchron beim
+      // Skript-Laden, also VOR hydrate(), und sah dort in der nativen App noch einen
+      // leeren Zwischenspeicher (nur Plattform-Defaults). Ohne diesen Re-Sync würde jeder
+      // gespeicherte Flag-Wert (Gärzeit-Timer, System-Wecker, Hinweistexte) bei jedem
+      // Kaltstart der nativen App stillschweigend verloren gehen -- s. js/settings.js
+      // reloadFlags() für die Details. Muss vor boot() laufen, damit der allererste
+      // buildGuide()-Aufruf (in boot()) schon die korrekten Flags sieht.
+      if (PZ.reloadFlags) PZ.reloadFlags();
       boot();
       try {
         const SplashScreen = global.Capacitor.Plugins && global.Capacitor.Plugins.SplashScreen;

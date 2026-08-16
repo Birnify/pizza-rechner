@@ -2099,12 +2099,39 @@
         { label: 'iPhone/iPad(Desktop-Modus)/Windows-Desktop/leerer UA werden NICHT als Android erkannt', ok: nonAndroidDetected, actual: nonAndroidDetected, expected: true, tol: null }
       ]);
       renderBox('PZ._flagDefaultsForAndroid() liefert die vom Nutzer festgelegten Plattform-Zielwerte', [
-        { label: 'Android: timer=false (Aus)', ok: androidDefaults.timer === false, actual: androidDefaults.timer, expected: false, tol: null },
-        { label: 'Android: timerSystem=true (An)', ok: androidDefaults.timerSystem === true, actual: androidDefaults.timerSystem, expected: true, tol: null },
+        // Android "timer": seit C1a (PLAYSTORE-BACKLOG.md, echte Systembenachrichtigungen
+        // statt reinem setInterval) wieder An, wie alle anderen Plattformen -- bis
+        // v4.40.x war das bewusst false (unzuverlässiger Hintergrund-Timer im Browser),
+        // dieser Grund entfällt in der nativen App durch C1a.
+        { label: 'Android: timer=true (An, seit C1a wieder wie alle anderen Plattformen)', ok: androidDefaults.timer === true, actual: androidDefaults.timer, expected: true, tol: null },
+        { label: 'Android: timerSystem=true (An, unverändert)', ok: androidDefaults.timerSystem === true, actual: androidDefaults.timerSystem, expected: true, tol: null },
         { label: 'Android: hints=false (Aus)', ok: androidDefaults.hints === false, actual: androidDefaults.hints, expected: false, tol: null },
-        { label: 'Fallback (iOS/Desktop/Rest): timer=true (An, unverändert zu vor v4.23.0)', ok: fallbackDefaults.timer === true, actual: fallbackDefaults.timer, expected: true, tol: null },
-        { label: 'Fallback (iOS/Desktop/Rest): timerSystem=false (Aus, unverändert zu vor v4.23.0)', ok: fallbackDefaults.timerSystem === false, actual: fallbackDefaults.timerSystem, expected: false, tol: null },
-        { label: 'Fallback (iOS/Desktop/Rest): hints=false (neu seit v4.23.0, vorher true)', ok: fallbackDefaults.hints === false, actual: fallbackDefaults.hints, expected: false, tol: null }
+        { label: 'Fallback (iOS/Desktop/Rest): timer=true (An, unverändert)', ok: fallbackDefaults.timer === true, actual: fallbackDefaults.timer, expected: true, tol: null },
+        { label: 'Fallback (iOS/Desktop/Rest): timerSystem=false (Aus, unverändert)', ok: fallbackDefaults.timerSystem === false, actual: fallbackDefaults.timerSystem, expected: false, tol: null },
+        { label: 'Fallback (iOS/Desktop/Rest): hints=false (unverändert)', ok: fallbackDefaults.hints === false, actual: fallbackDefaults.hints, expected: false, tol: null }
+      ]);
+    })();
+
+    // --- PZ.reloadFlags() (C1a-Nebenbefund-Fix, native Hydration-Race, s. js/main.js/
+    // js/settings.js): liest PZ.FLAGS aus dem (Test-Browser: bereits synchron befüllten)
+    // Speicher neu ein UND mutiert das BESTEHENDE PZ.FLAGS-Objekt in place (kein neues
+    // Objekt) — jeder Code, der `PZ.FLAGS` bereits vorher referenziert hat (z. B. eine
+    // Closure), sieht die neuen Werte ohne eigenen Re-Read. Die native Hydration-Race
+    // selbst kann der Browser-Test naturgemäß nicht nachstellen (kein echtes Capacitor),
+    // geprüft wird nur die reine Merge-/Identitäts-Logik.
+    (function () {
+      const flagsRefBefore = PZ.FLAGS;
+      PZ.store.setJSON(FLAG_KEY, { timer: false, timerSystem: true, hints: true });
+      PZ.reloadFlags();
+      const sameObjectRef = PZ.FLAGS === flagsRefBefore;
+      const pickedUpStoredValue = PZ.FLAGS.timer === false && PZ.FLAGS.hints === true;
+      // Baseline für die restlichen Checks in dieser Datei wiederherstellen.
+      PZ.store.setJSON(FLAG_KEY, { timer: true, timerSystem: false, hints: false });
+      PZ.reloadFlags();
+      renderBox('PZ.reloadFlags() liest Flags neu ein (Fix für die native Hydration-Race aus C1a)', [
+        { label: 'PZ.FLAGS bleibt dasselbe Objekt (in place mutiert, keine Neuzuweisung)', ok: sameObjectRef, actual: sameObjectRef, expected: true, tol: null },
+        { label: 'Zwischenzeitlich im Speicher geänderte Werte werden übernommen', ok: pickedUpStoredValue, actual: pickedUpStoredValue, expected: true, tol: null },
+        { label: 'Baseline (timer=true) nach dem Test wiederhergestellt', ok: PZ.FLAGS.timer === true, actual: PZ.FLAGS.timer, expected: true, tol: null }
       ]);
     })();
 

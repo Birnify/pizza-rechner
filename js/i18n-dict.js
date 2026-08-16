@@ -534,6 +534,17 @@
     'Opens the clock app with a pre-filled timer (Chrome): or download a calendar reminder instead.');
   add('timer.hint.ios', 'iOS bietet keine Web-Schnittstelle für System-Timer: lade stattdessen eine Kalender-Erinnerung herunter (öffnet die Kalender-App mit Alarm zur richtigen Zeit).',
     'iOS has no web interface for system timers: download a calendar reminder instead (opens the calendar app with an alert at the right time).');
+  // Native App (Play-Store-Vorbereitung C1a): startTimer() plant hier bereits eine echte,
+  // vom Tab-Zustand unabhängige Systembenachrichtigung ein — der Android-Uhr-Intent-Behelf
+  // entfällt (s. js/timer.js systemTimerHtml()), nur die Kalender-Erinnerung bleibt als
+  // optionale Zusatzoption.
+  add('timer.hint.native', 'Du bekommst zum Ablauf eine Benachrichtigung, auch wenn die App geschlossen ist: optional lädst du hier zusätzlich eine Kalender-Erinnerung herunter.',
+    'You will get a notification when the timer runs out, even while the app is closed: optionally download a calendar reminder here as well.');
+  // Wird sichtbar, wenn eine echte Terminierung an einer verweigerten/fehlenden
+  // Benachrichtigungs-Berechtigung scheitert (js/timer.js showNativePermissionWarning()) —
+  // kein stiller Fehlschlag, s. PLAYSTORE-BACKLOG.md C1.
+  add('timer.permissionDenied', '⚠️ Benachrichtigungen sind für diese App nicht erlaubt: dieser Timer meldet sich nur, solange die App geöffnet bleibt. Aktiviere Benachrichtigungen in den Systemeinstellungen des Geräts, um auch bei geschlossener App benachrichtigt zu werden.',
+    '⚠️ Notifications are not allowed for this app: this timer will only alert you while the app stays open. Enable notifications in the device system settings to also get notified while the app is closed.');
   add('timer.androidDefaultLabel', 'Pizza-Teig', 'Pizza dough');
   add('timer.icsDefaultLabel', 'Pizza-Timer', 'Pizza timer');
   add('timer.icsSummaryPrefix', '🍕 ', '🍕 ');

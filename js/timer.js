@@ -1,9 +1,19 @@
 /* timer.js — Gärzeit-Timer/Wecker pro Anleitungs-Schritt.
-   Rein clientseitig, kein Server, kein Service-Worker: läuft nur solange dieser Tab/
-   dieses Fenster offen ist (bewusste Grenze, kein Bug — wird im UI kommuniziert).
-   Persistiert nur Start-Zeitpunkt + Zieldauer in localStorage, damit ein versehentlicher
-   Reload den Countdown nicht auf 0 zurückwirft. Mehrere Timer laufen unabhängig
-   nebeneinander (je Schritt-Key ein eigener Eintrag + eigenes Interval). */
+   Im normalen Browser (Desktop und Mobil ohne Capacitor) weiterhin rein clientseitig, kein
+   Server, kein Service-Worker: läuft nur solange dieser Tab/dieses Fenster offen ist
+   (bewusste Grenze, kein Bug — wird im UI kommuniziert). Persistiert nur Start-Zeitpunkt +
+   Zieldauer in localStorage, damit ein versehentlicher Reload den Countdown nicht auf 0
+   zurückwirft. Mehrere Timer laufen unabhängig nebeneinander (je Schritt-Key ein eigener
+   Eintrag + eigenes Interval).
+
+   In der nativen App (Play-Store-Vorbereitung C1a, PLAYSTORE-BACKLOG.md) plant `startTimer()`
+   ZUSÄTZLICH eine echte, vom `setInterval` unabhängige Systembenachrichtigung über
+   `@capacitor/local-notifications` ein (`LocalNotifications.schedule(...)`, Zieltag/-zeit =
+   derselbe `endAt`) — die feuert auch, wenn die App komplett beendet wurde. `setInterval`
+   bleibt in BEIDEN Welten unverändert nur für die Vordergrund-Anzeige zuständig, die
+   verbleibende Zeit wird immer aus dem gespeicherten `endAt` neu berechnet (nie aus einem
+   mitgezählten Zwischenstand). Identisches Erkennungsmuster wie js/main.js `boot()`/
+   js/store.js: `window.Capacitor?.isNativePlatform()`. */
 (function (global) {
   'use strict';
   const PZ = global.PZ || (global.PZ = {});
@@ -15,6 +25,26 @@
   let audioCtx = null;
   let hintShown = false;
   const intervals = {}; // key -> intervalId
+
+  // Feature-Erkennung, identisches Muster wie js/main.js boot() und js/store.js — einmalig
+  // beim Laden dieses Moduls ausgewertet. js/timer.js wird bewusst NICHT in tests/test.html
+  // geladen (s. Kommentar dort), diese Erkennung läuft also nie in der Testsuite.
+  const isNativeApp = !!(global.Capacitor && global.Capacitor.isNativePlatform && global.Capacitor.isNativePlatform());
+
+  function nativeNotifPlugin() {
+    return (global.Capacitor && global.Capacitor.Plugins && global.Capacitor.Plugins.LocalNotifications) || null;
+  }
+
+  // Capacitor Local Notifications verlangt eine 32-Bit-Ganzzahl-ID (-2147483648..2147483647).
+  // Ein einfacher, deterministischer String-Hash reicht: dieselbe Schritt-Key liefert immer
+  // dieselbe ID (wichtig, damit ein erneutes Starten/Canceln denselben Eintrag trifft), Kollisionen
+  // zwischen den wenigen gleichzeitigen Schritt-Timern sind praktisch ausgeschlossen.
+  function nativeNotifId(key) {
+    let h = 0;
+    const s = String(key);
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+    return (Math.abs(h) % 2147483647) + 1; // immer in [1, 2147483647], nie 0
+  }
 
   function readTimers() {
     try {
@@ -87,6 +117,70 @@
     setTimeout(() => hint.remove(), 9000);
   }
 
+  // --- Native Systembenachrichtigung (C1a) — Berechtigungs-Hinweis --------------------
+  // Wird sichtbar (nicht nur einmalig wie showHintOnce), sobald eine echte Terminierung
+  // an einer verweigerten/fehlenden Berechtigung scheitert — orientiert sich am
+  // bestehenden .note/.note--warn-Muster aus js/guide.js (ocker, WCAG-konformer Kontrast
+  // bereits per Design-Token abgesichert), damit kein neues visuelles Muster entsteht.
+  // Lebt bewusst als Geschwister-Element NACH der .timerbox (wie .timerhint), nicht als
+  // Kind — sonst würde ihn render()s box.innerHTML='' bei jedem Neu-Rendern wegwerfen.
+  function nativePermWarnEl(box) {
+    const sib = box.nextSibling;
+    return (sib && sib.nodeType === 1 && sib.classList && sib.classList.contains('timerpermwarn')) ? sib : null;
+  }
+  function showNativePermissionWarning(box) {
+    if (nativePermWarnEl(box)) return;
+    const warn = document.createElement('div');
+    warn.className = 'note note--warn timerpermwarn';
+    warn.setAttribute('role', 'status');
+    warn.setAttribute('aria-live', 'polite');
+    warn.innerHTML = t('timer.permissionDenied');
+    box.parentNode.insertBefore(warn, box.nextSibling);
+  }
+  function clearNativePermissionWarning(box) {
+    const el = nativePermWarnEl(box);
+    if (el) el.remove();
+  }
+
+  // Plant die echte, vom setInterval unabhängige Systembenachrichtigung ein (nur native App,
+  // s. startTimer). Ruft IMMER zuerst checkPermissions() (README-Empfehlung des Plugins),
+  // fragt bei 'prompt'/'prompt-with-rationale' aktiv nach, zeigt bei 'denied' (vor oder nach
+  // der Abfrage) einen sichtbaren Hinweis statt eines stillen Fehlschlags.
+  function scheduleNativeNotification(key, endAt, label, box) {
+    const plugin = nativeNotifPlugin();
+    if (!plugin) { showNativePermissionWarning(box); return; } // sollte nur bei Build-/Setup-Fehler vorkommen
+    clearNativePermissionWarning(box);
+    plugin.checkPermissions()
+      .then((status) => {
+        const display = status && status.display;
+        if (display === 'granted') return doScheduleNative(plugin, key, endAt, label, box);
+        if (display === 'denied') { showNativePermissionWarning(box); return; }
+        return plugin.requestPermissions().then((res) => {
+          if (res && res.display === 'granted') return doScheduleNative(plugin, key, endAt, label, box);
+          showNativePermissionWarning(box);
+        });
+      })
+      .catch(() => showNativePermissionWarning(box));
+  }
+
+  function doScheduleNative(plugin, key, endAt, label, box) {
+    return plugin.schedule({
+      notifications: [{
+        id: nativeNotifId(key),
+        title: t('timer.notificationTitle'),
+        body: label,
+        schedule: { at: new Date(endAt), allowWhileIdle: true }
+      }]
+    }).then(() => { clearNativePermissionWarning(box); })
+      .catch(() => showNativePermissionWarning(box));
+  }
+
+  function cancelNativeNotification(key) {
+    const plugin = nativeNotifPlugin();
+    if (!plugin) return;
+    try { plugin.cancel({ notifications: [{ id: nativeNotifId(key) }] }); } catch (e) { /* ignore */ }
+  }
+
   function render(box) {
     const key = box.dataset.timerKey;
     const defaultMin = parseFloat(box.dataset.timerMin) || 0;
@@ -125,14 +219,22 @@
       btn.addEventListener('click', () => {
         const act = btn.dataset.act;
         if (act === 'start') {
-          if ('Notification' in window && Notification.permission === 'default') {
+          // Native App: die Web-Notification-API ist hier nicht die richtige Schnittstelle
+          // (echte Terminierung läuft über LocalNotifications, s. startTimer) — die Web-
+          // Berechtigungsabfrage bleibt dem Browser vorbehalten, exakt wie bisher.
+          if (!isNativeApp && 'Notification' in window && Notification.permission === 'default') {
             Notification.requestPermission().finally(() => startTimer(key, defaultMin, box));
           } else {
             startTimer(key, defaultMin, box);
           }
-          showHintOnce(box);
+          // Der "läuft nur solange der Tab offen ist"-Hinweis stimmt in der nativen App seit
+          // C1a nicht mehr (das ist ja der ganze Zweck dieses Punkts) — dort bewusst nicht
+          // zeigen, um niemanden mit einer falschen Einschränkung zu verunsichern. Im Browser
+          // exakt unverändert.
+          if (!isNativeApp) showHintOnce(box);
         } else if (act === 'stop' || act === 'dismiss') {
           stopTimer(key);
+          clearNativePermissionWarning(box);
           render(box);
         }
       });
@@ -235,11 +337,18 @@
     // nötig, weil mehrere Timer-Boxen gleichzeitig auf der Seite gerendert werden.
     const hintId = `timersys-hint-${key}`;
     const links = [];
-    if (isAndroid()) {
+    // Der Android-Uhr-Intent-Behelf entfällt in der nativen App (C1a, PLAYSTORE-BACKLOG.md):
+    // startTimer() plant dort bereits eine ECHTE Systembenachrichtigung ein, der Umweg über
+    // die Uhr-App ist überflüssig geworden. Im Browser (Desktop und Mobil ohne Capacitor,
+    // dort gibt es weiterhin keine native Alternative) bleibt der Link unverändert bestehen.
+    if (isAndroid() && !isNativeApp) {
       links.push(`<a class="timerbtn timerbtn-alt" href="${androidTimerUrl(defaultMin, label)}" aria-describedby="${hintId}">${t('timer.androidBtn')}</a>`);
     }
+    // Der Kalender-Export bleibt bewusst unverändert bestehen, auch nativ (PLAYSTORE-
+    // BACKLOG.md-Entscheidung: weiterhin nützlich, z. B. um die Erinnerung auch nach einer
+    // App-Deinstallation im Kalender zu behalten).
     links.push(`<a class="timerbtn timerbtn-alt" href="${icsDataUrl(defaultMin, label)}" download="pizza-timer-${key}.ics" aria-describedby="${hintId}">${t('timer.icsBtn')}</a>`);
-    const hint = isAndroid() ? t('timer.hint.android') : t('timer.hint.ios');
+    const hint = isNativeApp ? t('timer.hint.native') : (isAndroid() ? t('timer.hint.android') : t('timer.hint.ios'));
     return `<div class="timersys">
         <span class="timersys-hint" id="${hintId}">${hint}</span>
         <span class="timersys-links">${links.join(' ')}</span>
@@ -251,11 +360,16 @@
     const endAt = Date.now() + min * 60000;
     setTimer(key, { endAt, label });
     render(box);
+    // Zusätzliche, vom setInterval unabhängige Systembenachrichtigung nur in der nativen App
+    // (C1a) — im Browser bleibt das Verhalten exakt wie vorher (Web-Notification via notify()
+    // beim Ablauf, s. onExpire()).
+    if (isNativeApp) scheduleNativeNotification(key, endAt, label, box);
   }
 
   function stopTimer(key) {
     setTimer(key, null);
     clearTick(key);
+    if (isNativeApp) cancelNativeNotification(key);
   }
 
   function clearTick(key) {

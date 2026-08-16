@@ -21,11 +21,20 @@
 
   const KEY = 'pizzaRechnerFeatureFlags';
 
-  // Plattformabhängige Defaults (v4.23.0): Android bekommt andere Timer-/System-Wecker-
-  // Startwerte als "alles andere" (iOS, Desktop, Rest) -- Motivation: iOS/Android
-  // unterscheiden sich darin, wie zuverlässig Web-Push (in-App-Timer) bzw.
-  // System-Kalender-/Wecker-Links funktionieren, die jeweils verlässlichere Option soll
-  // vorausgewählt sein. Bewusst NUR ein "istAndroid"-Zweig, KEIN eigener "ios"-
+  // Plattformabhängige Defaults (v4.23.0): Android bekam ursprünglich andere Timer-/
+  // System-Wecker-Startwerte als "alles andere" (iOS, Desktop, Rest) -- Motivation
+  // damals: der reine Browser-Timer (setInterval) lief auf Android unzuverlässig im
+  // Hintergrund, deshalb Timer AUS + System-Wecker/Kalender-Links AN als Ersatz.
+  // **Entscheidung des Hauptagenten (Play-Store-Vorbereitung C1a, PLAYSTORE-BACKLOG.md,
+  // in Vollmacht des Nutzers getroffen, da nicht erreichbar):** `timer` bekommt Android
+  // jetzt denselben Default wie alle anderen Plattformen (AN) -- der einzige Grund für
+  // die Ausnahme (unzuverlässiger Hintergrund-Timer) entfällt in der nativen App durch
+  // C1a (echte Systembenachrichtigungen über @capacitor/local-notifications, s.
+  // js/timer.js), ein Beibehalten von AUS hätte die gerade gebaute Funktion für die
+  // meisten nativen Nutzer unsichtbar gemacht. `timerSystem` (Kalender-Erinnerung, in
+  // der nativen App ohne den überflüssig gewordenen Android-Uhr-Intent-Link) bleibt
+  // bewusst unverändert AN -- weiterhin ein sinnvoller Zusatz, unabhängig vom
+  // `timer`-Default. Bewusst NUR ein "istAndroid"-Zweig, KEIN eigener "ios"-
   // Erkennungszweig (z. B. über navigator.platform === "MacIntel" + Touch-Support, um
   // iPadOS im Desktop-Modus von echtem Desktop zu unterscheiden): iOS und die übrigen
   // Plattformen haben in diesem Feature identische Zielwerte, ein eigener Zweig dafür
@@ -49,8 +58,10 @@
   // User-Agent-Spoofing zu brauchen.
   function flagDefaultsForAndroid(isAndroid) {
     return {
-      timer: !isAndroid,        // iOS/Desktop/Rest: An -- Android: Aus
-      timerSystem: !!isAndroid, // iOS/Desktop/Rest: Aus -- Android: An
+      timer: true,               // Alle Plattformen: An (s. Entscheidung oben, C1a) --
+                                  // bis v4.40.x war das für Android bewusst `!isAndroid`
+                                  // (also Aus)
+      timerSystem: !!isAndroid,  // iOS/Desktop/Rest: Aus -- Android: An, unverändert
       hints: false               // Tooltip-/Hinweistexte (erklärende .hint-Kurztexte),
                                   // plattformunabhängig neuer Standard AUS (v4.23.0, vorher
                                   // AN) -- reine Erklärhilfen sollen künftig standardmäßig
@@ -146,6 +157,29 @@
     if (PZ.buildGuide) PZ.buildGuide();
   }
   PZ.applyFlags = applyFlags;
+
+  // Native App (Play-Store-Vorbereitung, Nebenbefund bei C1a entdeckt und auf
+  // ausdrückliche Entscheidung des Hauptagenten hin sofort mitbehoben, s.
+  // PLAYSTORE-BACKLOG.md C1a): `PZ.FLAGS = readFlags()` oben lief synchron beim Laden
+  // dieses Moduls. In der nativen App ist der Zwischenspeicher von js/store.js zu
+  // diesem Zeitpunkt aber noch LEER -- er wird erst durch das asynchrone
+  // `PZ.store.hydrate()` befüllt, das `js/main.js`s nativer `boot()`-Pfad erst danach
+  // abwartet. Ohne diesen Re-Sync fiel deshalb bei JEDEM Kaltstart der nativen App
+  // jedes Feature-Flag (Timer, System-Wecker, Hinweistexte) stillschweigend auf seinen
+  // Plattform-Default zurück, egal was zuvor in den Einstellungen gewählt war -- ein
+  // bereits aktivierter Schalter "vergaß" sich bei jedem Neustart. `reloadFlags()` liest
+  // die Flags nach `hydrate()` einmal neu ein und wendet sie an (`applyFlags()`,
+  // inklusive Checkbox-Sync + `buildGuide()`-Neuaufbau). Im Browser (inkl. Testsuite)
+  // ist der Zwischenspeicher schon beim ersten `readFlags()`-Aufruf synchron befüllt --
+  // ein zweiter Aufruf hier ändert dort nichts (idempotent), betrifft also nur die
+  // native App tatsächlich.
+  function reloadFlags() {
+    const fresh = readFlags();
+    Object.keys(PZ.FLAGS).forEach(function (k) { delete PZ.FLAGS[k]; });
+    Object.assign(PZ.FLAGS, fresh);
+    applyFlags();
+  }
+  PZ.reloadFlags = reloadFlags;
 
   // --- UI-Verdrahtung der Checkboxen (nur falls vorhanden — beide Seiten identisch) ---
   const CHECKBOX_MAP = {

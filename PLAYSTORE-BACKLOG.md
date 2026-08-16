@@ -361,6 +361,54 @@ Punkt, nicht für ein kleines Modell.
 
 ## C1. Gärzeit-Timer auf echte Systembenachrichtigungen
 
+**C1a erledigt (2026-08-16), C1b (Neustart-Persistenz + Energiesparfunktionen) folgt
+als eigener Auftrag — C1 als Ganzes bleibt bis dahin offen.**
+
+**C1a-Umfang (fertig):** `@capacitor/local-notifications` installiert. `js/timer.js`
+plant beim Anlegen eines Timers in der nativen App zusätzlich zum bestehenden
+`setInterval` eine echte, terminierte Systembenachrichtigung ein
+(`LocalNotifications.schedule`, gleicher Zielzeitpunkt wie die Anzeige), inklusive
+Berechtigungsabfrage (`checkPermissions`/`requestPermissions`) und sichtbarem
+`.note.note--warn`-Hinweis bei verweigerter Berechtigung statt stillem Nichtstun. Der
+Android-Uhr-Intent-Button entfällt in der nativen App (überflüssig geworden), der
+Kalender-Export bleibt unverändert bestehen. Im Browser (Desktop und Mobil ohne
+Capacitor) ist das Verhalten exakt unverändert.
+
+Zwei zusätzliche, vom Hauptagenten in Vollmacht des Nutzers getroffene Entscheidungen,
+beim Umsetzen von C1a mitbehoben bzw. mitgezogen:
+1. **Nebenbefund-Fix `PZ.reloadFlags()`:** durch B3 (nativer Speicher, asynchrones
+   `hydrate()`) fielen alle Feature-Flags (Timer, System-Wecker, Hinweistexte) bei
+   jedem nativen Kaltstart stillschweigend auf ihren Plattform-Default zurück, weil der
+   allererste `readFlags()`-Aufruf in `js/settings.js` synchron beim Skript-Laden lief,
+   also vor `hydrate()`. `js/main.js` ruft jetzt `PZ.reloadFlags()` direkt nach
+   `hydrate()` und vor `boot()` auf, das liest die Flags neu ein und mutiert das
+   bestehende `PZ.FLAGS`-Objekt in place.
+2. **Android-Default für den Gärzeit-Timer-Schalter (`timer`) von AUS auf AN
+   umgestellt** (`js/settings.js`, `flagDefaultsForAndroid`): der ursprüngliche Grund
+   für AUS (unzuverlässiger `setInterval`-Hintergrundlauf im Browser) entfällt in der
+   nativen App durch C1a, ein Beibehalten von AUS hätte die neue Funktion für die
+   meisten nativen Nutzer standardmäßig unsichtbar gemacht. `timerSystem`
+   (Kalender-Erinnerung) bleibt unverändert AN.
+
+**Tests:** `tests/test.html` 1442 → **1471** grün (per Headless-Edge-Dump selbst
+nachgeprüft, nicht nur übernommen). `accessibility-expert`-Review ohne Blocker/Major,
+ein optionaler Minor (Emoji im Warn-Hinweistext leicht redundant zu `role="status"`) —
+bewusst so belassen, weil dasselbe Emoji-plus-Text-Muster bereits an anderer Stelle der
+App etabliert ist (`js/guide.js`, Mehl-Warnung), Konsistenz wog hier höher als das rein
+optionale Entfernen.
+
+**Nicht in dieser Instanz verifiziert:** die zentrale Abnahme auf einem echten
+Android-Emulator/-Gerät (Timer stellen, App vollständig beenden, Benachrichtigung
+kommt; Berechtigung verweigern und Hinweis prüfen; Flag-Wert übersteht einen
+Kaltstart) — dieser Instanz standen keine Emulator-/Browser-Werkzeuge zur Verfügung,
+das war laut vorherigem (nicht mehr auffindbarem) Sitzungsverlauf bereits live
+geprüft worden, hier nur der Code-/Test-Stand nachvollzogen.
+
+**C1b, noch offen:** Timer nach einem Geräteneustart neu einplanen (`BootReceiver`
+bzw. Capacitor-Äquivalent), Energiesparfunktionen berücksichtigen, damit lange
+Laufzeiten (17h Biga, 48h Kaltgare) nicht verschluckt werden. Bis dahin gilt die volle
+Abnahme aus dem Abschnitt unten nur eingeschränkt (Geräteneustart-Fall ungeprüft).
+
 **Aufwand:** 2 bis 3 Zyklen. **Der anspruchsvollste Punkt.** Setzt B1 voraus.
 
 **Ziel:** Ein Timer über 17 oder 48 Stunden feuert zuverlässig, auch wenn die App längst
