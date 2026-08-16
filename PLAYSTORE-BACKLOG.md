@@ -295,37 +295,63 @@ B3 (nativer Speicher, der wichtigste Punkt im ganzen Backlog).
 
 ---
 
-## B3. Speicher-Hintergrund auf nativen Gerätespeicher umstellen
+## B3. Speicher-Hintergrund auf nativen Gerätespeicher umstellen — ERLEDIGT (2026-08-16)
 
-**Aufwand:** 1 bis 2 Zyklen. Setzt A2 und B2 voraus. **Der wichtigste Punkt im ganzen
-Backlog.**
+**Der wichtigste Punkt im ganzen Backlog** — ab hier sind Nutzerdaten wirklich vor dem
+WebView-Datenverlust geschützt, den Android jederzeit auslösen darf.
 
-**Ziel:** Ab hier liegen die Daten dauerhaft und sind gegen das Leeren der WebView
-geschützt.
+`@capacitor/preferences` installiert (`npm install`, `npx cap sync android`, Plugin-Name
+bestätigt: `Preferences`). Nur `js/store.js` fachlich geändert (die 22 Aufrufstellen aus A1
+bleiben unangetastet): `PZ.store._backend` zeigt in einer nativen Capacitor-App
+(`window.Capacitor?.isNativePlatform()`, identisches Erkennungsmuster wie `js/main.js
+boot()`) auf Capacitor Preferences statt `localStorage`; im Browser (Desktop, Mobil, die
+gesamte Testsuite) bleibt der Hintergrund unverändert `localStorage`.
 
-**Umfang:** Nur `js/store.js` wird angefasst, `PZ.store._backend` zeigt statt auf
-`localStorage` auf den nativen Speicher (Capacitor Preferences). Die 22 Aufrufstellen
-bleiben unverändert. Das ist der Lohn für A1 und A2.
+**Einmalige Altdaten-Übernahme:** `hydrate()` prüft bei nativer App zuerst eine interne
+Markierung (`pizzaStoreMigratedV1`, kein Teil der 11 offiziellen Schlüssel) im nativen
+Speicher; fehlt sie, werden alle 11 Schlüssel aus `localStorage` in den nativen Speicher
+übernommen und die Markierung gesetzt. Die Altdaten in `localStorage` werden bewusst
+**nicht** gelöscht (Sicherheitsnetz). Läuft nachweislich nur einmal (Idempotenz getestet).
 
-**Einmalige Übernahme der Altdaten:** Beim ersten Start nach der Umstellung alle 11
-Schlüssel aus `localStorage` lesen und in den nativen Speicher schreiben, danach eine
-Markierung setzen, damit das nur einmal passiert. Die Altdaten in `localStorage`
-vorsichtshalber **nicht löschen**.
+**Sonderfall Farbschema:** `set()` spiegelt den Theme-Wert in der nativen App zusätzlich
+synchron nach `localStorage`, das Inline-Script im `<head>` von
+`pizza-rechner-mobile.html` bleibt unangetastet.
 
-**Sonderfall Farbschema, siehe Kernbefund 3:** Das Inline-Script im `<head>` muss
-synchron bleiben. Lösung: `PZ.store.set('pizzaTheme', ...)` schreibt den Wert
-**zusätzlich** weiterhin nach `localStorage`, rein als Spiegel für diesen einen
-Vorab-Zugriff. Das Inline-Script bleibt dadurch unverändert. Falls der Spiegel doch
-einmal geleert wird, greift die vorhandene Systemerkennung, das Schlimmste ist ein
-einmalig falsches Farbschema für den Bruchteil einer Sekunde, kein Datenverlust.
+**Testsuite:** 1442 → **1468** grün (26 neue Prüfungen in Sektion 45 "Nativer
+Speicher-Hintergrund", 16 eigene + 10 vom `test-generator`-Agenten ergänzt, alle selbst per
+Headless-Edge-CDP nachgeprüft, nicht nur übernommen — zwei eigene Bugs beim ersten
+Testentwurf gefunden und behoben, s. Historie). Läuft weiterhin ausschließlich im Browser
+gegen `localStorage` (die veraltete Zahl "1353" in der ursprünglichen Fassung dieses
+Punktes war der Stand bei Erstellung dieser Backlog-Zeile, nicht mehr aktuell).
 
-**Abnahme:**
-- Rezept anlegen, App vollständig beenden, neu starten, Rezept ist da
-- In den Android-Systemeinstellungen den Cache der App leeren, Rezepte überleben das
-- Ein Gerät mit Altdaten aus der Browserversion übernimmt diese beim ersten Start
-- Kein Flackern des Farbschemas beim Start
-- Alle 1353 Prüfungen bleiben grün, die Testsuite läuft weiterhin im Browser gegen den
-  `localStorage`-Hintergrund
+**Echte Verifikation auf dem Android-Emulator** (`Teigmeister_Test`, nicht nur
+Code-Review): `build-app.py`, `npx cap sync android`, JDK 21, `gradlew assembleDebug`
+(nach Lösen einer OneDrive-Reparse-Point-Eigenheit dieses Projektordners — Gradle verweigert
+das Snapshotten von Dateien mit gesetztem `FILE_ATTRIBUTE_REPARSE_POINT`, das OneDrive
+"Files on Demand" auch bei lokal gepinnten Dateien setzt; behoben durch einmaliges
+Neuschreiben der betroffenen Dateien vor dem Build), `adb install -r`. Per direktem
+WebView-CDP (Chrome-DevTools-Protokoll gegen den laufenden `webview_devtools_remote_*`-
+Socket, nicht nur Screenshots) bestätigt: native Erkennung + Preferences-Plugin korrekt
+aktiv; Migration mit echten Alt-Daten byte-identisch übernommen, Marker gesetzt,
+`localStorage`-Altdaten nicht gelöscht; Daten überleben einen vollständigen App-Neustart;
+**Kernszenario bewiesen** — `Storage.clearDataForOrigin` löscht gezielt nur den
+WebView-`localStorage`-Anteil (Capacitor Preferences ist architektonisch davon getrennt,
+präziser als ein pauschaler `pm clear`, der auch die Preferences selbst gelöscht hätte),
+nach Neuladen ist das migrierte Rezept über `PZ.listRecipes()` weiterhin da, per Screenshot
+in der echten UI bestätigt; kein Crash, keine Fehler in Logcat; Farbschema-Fallback bei
+geleertem Spiegel verhält sich wie dokumentiert (Systemerkennung greift, kein Datenverlust).
+
+**Geändert:** `js/store.js`, `tests/test.html`, `package.json`/`package-lock.json` (neue
+Abhängigkeit `@capacitor/preferences`), `android/app/capacitor.build.gradle` +
+`android/capacitor.settings.gradle` (automatisch von `npx cap sync`), Standalone-Build neu
+gebaut. **Nicht angefasst:** die 22 Aufrufstellen aus A1, `PZ.store.get/set/remove/
+getJSON/setJSON/hydrate/flush` selbst (nur `_backend` dahinter getauscht), das Inline-Theme-
+Script im `<head>`, Desktop (`pizza-rechner.html`), jegliche Fachlogik/Berechnung/Oberfläche.
+Reine Infrastruktur ohne App-Versionssprung (wie B1/B2), kein neuer `Versionen/`-Schnappschuss.
+
+Empfohlener nächster Punkt: C2 (Drucken und PDF) oder C3 (Android-Feinschliff) — beide
+1 Zyklus, für ein kleines Modell geeignet. C1 (Timer nativ) bleibt der anspruchsvollste
+Punkt, nicht für ein kleines Modell.
 
 ---
 
@@ -523,7 +549,7 @@ zunächst gerne auf Deutschland begrenzt.
 | A3 Sicherung exportieren — **erledigt (v4.40.0)** | 1 bis 2 | A1 | ja |
 | B1 Capacitor einrichten — **erledigt (2026-08-16)** | 1 plus Installationen | Werkzeuge | nein, Einrichtung |
 | B2 Startbildschirm — **erledigt (2026-08-16)** | 1 Zyklus | A2, B1 | ja |
-| B3 Nativer Speicher | 1 bis 2 | A2, B2 | mit Sorgfalt |
+| B3 Nativer Speicher — **erledigt (2026-08-16)** | 1 bis 2 | A2, B2 | mit Sorgfalt |
 | C1 Timer nativ | 2 bis 3 | B1 | nein, anspruchsvollster Punkt |
 | C2 Drucken und PDF | 1 Zyklus | B1 | ja |
 | C3 Android-Feinschliff | 1 Zyklus | B1 | ja |
@@ -534,5 +560,7 @@ zunächst gerne auf Deutschland begrenzt.
 | D4 Test und Freigabe | 14 Tage Wartezeit | alles | nein |
 
 **A1 erledigt (v4.38.4, 2026-08-15). A2 erledigt (v4.39.0, 2026-08-15). A3 erledigt
-(v4.40.0, 2026-08-15). B1 erledigt (2026-08-16). B2 erledigt (2026-08-16).** Empfohlener
-nächster Einstieg: B3 (nativer Speicher, der wichtigste Punkt im ganzen Backlog).
+(v4.40.0, 2026-08-15). B1 erledigt (2026-08-16). B2 erledigt (2026-08-16). B3 erledigt
+(2026-08-16) — der wichtigste Punkt im ganzen Backlog, Nutzerdaten sind jetzt vor dem
+WebView-Datenverlust geschützt.** Empfohlener nächster Einstieg: C2 (Drucken und PDF)
+oder C3 (Android-Feinschliff), beide 1 Zyklus und für ein kleines Modell geeignet.

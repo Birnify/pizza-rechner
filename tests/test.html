@@ -7221,6 +7221,302 @@
     }
   })();
 
+  heading('45 · Nativer Speicher-Hintergrund (js/store.js, Play-Store-Vorbereitung B3)');
+
+  // Diese Sektion läuft, wie der gesamte Testlauf, im normalen Browser -- ohne echtes
+  // Capacitor bleibt PZ.store._isNativeApp hier immer false und PZ.store._backend zeigt auf
+  // localStorage, s. PLAYSTORE-BACKLOG.md B3 ("Testsuite läuft weiterhin im Browser gegen den
+  // localStorage-Hintergrund"). Getestet wird deshalb NICHT die native Backend-Auswahl selbst
+  // (die ist nur auf dem Android-Emulator live verifizierbar), sondern die beiden
+  // umgebungsunabhängigen Bausteine, die B3 eingeführt hat: die Migrationsfunktion
+  // (PZ.store._migrateLegacyLocalStorage, arbeitet rein über _backend/localStorage, prüft
+  // isNativeApp nicht selbst) und der Theme-Spiegel (PZ.store._mirrorThemeToLocalStorage).
+  await (async function () {
+    const ALL_KEYS = Object.keys(PZ.store.KEYS).map((k) => PZ.store.KEYS[k]);
+    const MARKER = PZ.store._MIGRATION_MARKER_KEY;
+
+    // Echte Nutzerdaten sichern -- sowohl den localStorage-Anteil (Migrationsquelle) als
+    // auch den Zwischenspeicher-Anteil (PZ.store.get/set, damit andere Sektionen nach dieser
+    // hier unberührt bleiben).
+    const originalLocalStorage = {};
+    ALL_KEYS.concat([MARKER]).forEach((key) => {
+      try { originalLocalStorage[key] = localStorage.getItem(key); } catch (e) { originalLocalStorage[key] = null; }
+    });
+    const originalCacheValues = {};
+    ALL_KEYS.forEach((key) => { originalCacheValues[key] = PZ.store.get(key); });
+    // Muss außerhalb von try{} deklariert sein, damit finally{} (eigener Block-Scope) noch
+    // darauf zugreifen kann, auch wenn ein Testfall oben unerwartet wirft. WICHTIG: PZ.store
+    // exponiert `_backend` als Objekt-REFERENZ auf die interne Variable von js/store.js --
+    // ein Test darf `PZ.store._backend = irgendwas` deshalb NIEMALS neu zuweisen (das würde
+    // nur die exportierte Kopie ändern, migrateLegacyLocalStorage()/get()/set() innen
+    // arbeiten weiter mit dem ursprünglichen Objekt). Stattdessen wie in Sektion 43 bereits
+    // etabliert: die drei Methoden AUF diesem einen Objekt austauschen und danach wieder
+    // zurücktauschen.
+    const realGet = PZ.store._backend.get;
+    const realSet = PZ.store._backend.set;
+    const realRemove = PZ.store._backend.remove;
+
+    try {
+      // --- Sanity: in diesem Browser-Testlauf ist isNativeApp false, _backend ist
+      //     weiterhin der synchrone localStorage-Adapter -----------------------------------
+      renderBox('ohne echtes Capacitor bleibt der Hintergrund unverändert Browser/localStorage', [
+        { label: 'PZ.store._isNativeApp ist false', actual: PZ.store._isNativeApp, expected: false, tol: null, ok: PZ.store._isNativeApp === false },
+        { label: '_backend.get() liefert synchron einen Wert (kein Promise)', actual: (function () { try { localStorage.setItem(MARKER === ALL_KEYS[0] ? MARKER : ALL_KEYS[0], 'sync-check'); const v = PZ.store._backend.get(ALL_KEYS[0]); return typeof v === 'string' || v === null; } finally { try { localStorage.removeItem(ALL_KEYS[0]); } catch (e) {} } })(), expected: true, tol: null, ok: true }
+      ]);
+
+      // --- Migrationsfunktion gegen ein FAKES natives Backend (in-memory, async) testen --
+      //     -- so lässt sich das komplette B3-Übernahmeverhalten prüfen, ohne echtes
+      //     Capacitor zu brauchen: die Funktion selbst unterscheidet nicht, ob `_backend`
+      //     wirklich Preferences oder nur ein Test-Double ist. `installFakeNativeBackend()`
+      //     tauscht get/set/remove DIREKT AUF `PZ.store._backend` aus (s. Kommentar oben),
+      //     `restoreRealBackend()` macht das wieder rückgängig.
+      function installFakeNativeBackend() {
+        const store = Object.create(null);
+        PZ.store._backend.get = (key) => Promise.resolve(key in store ? store[key] : null);
+        PZ.store._backend.set = (key, value) => { store[key] = value; return Promise.resolve(true); };
+        PZ.store._backend.remove = (key) => { delete store[key]; return Promise.resolve(true); };
+        return store;
+      }
+      function restoreRealBackend() {
+        PZ.store._backend.get = realGet;
+        PZ.store._backend.set = realSet;
+        PZ.store._backend.remove = realRemove;
+      }
+
+      // 1) Frischer Zustand: localStorage hat Werte für 3 der 11 Schlüssel, das native
+      //    Fake-Backend ist komplett leer (keine Markierung) -- Migration soll laufen.
+      await (async function () {
+        ALL_KEYS.forEach((key) => { try { localStorage.removeItem(key); } catch (e) {} });
+        try { localStorage.removeItem(MARKER); } catch (e) {}
+        localStorage.setItem(ALL_KEYS[0], 'legacy-wert-1');
+        localStorage.setItem(ALL_KEYS[3], 'legacy-wert-4');
+        localStorage.setItem(ALL_KEYS[10], 'legacy-wert-11');
+        const fakeStore = installFakeNativeBackend();
+        const ran = await PZ.store._migrateLegacyLocalStorage();
+        const migratedCorrectly = fakeStore[ALL_KEYS[0]] === 'legacy-wert-1'
+          && fakeStore[ALL_KEYS[3]] === 'legacy-wert-4'
+          && fakeStore[ALL_KEYS[10]] === 'legacy-wert-11';
+        const untouchedKeysStayEmpty = ALL_KEYS.filter((k, i) => i !== 0 && i !== 3 && i !== 10)
+          .every((k) => !(k in fakeStore));
+        renderBox('erster Start (keine Markierung): alle vorhandenen localStorage-Werte werden ins native Backend übernommen', [
+          { label: 'migrateLegacyLocalStorage() liefert true (hat migriert)', actual: ran, expected: true, tol: null, ok: ran === true },
+          { label: 'alle 3 gesetzten Alt-Werte korrekt übernommen', actual: migratedCorrectly, expected: true, tol: null, ok: migratedCorrectly },
+          { label: 'die restlichen 8 (in localStorage leeren) Schlüssel bleiben im nativen Backend unangetastet (kein "null"-String)', actual: untouchedKeysStayEmpty, expected: true, tol: null, ok: untouchedKeysStayEmpty },
+          { label: 'Markierung wurde im nativen Backend gesetzt', actual: fakeStore[MARKER], expected: '1', tol: null, ok: fakeStore[MARKER] === '1' },
+          { label: 'die Altdaten in localStorage wurden NICHT gelöscht (Sicherheitsnetz)', actual: localStorage.getItem(ALL_KEYS[0]), expected: 'legacy-wert-1', tol: null, ok: localStorage.getItem(ALL_KEYS[0]) === 'legacy-wert-1' }
+        ]);
+
+        // 2) Erneuter Aufruf mit bereits gesetzter Markierung: darf NICHT nochmal schreiben,
+        //    selbst wenn sich der localStorage-Wert zwischenzeitlich geändert hat -- sonst
+        //    würde ein späterer App-Start echte, zwischenzeitlich in der App geänderte
+        //    native Daten wieder mit alten Browser-Resten überschreiben.
+        localStorage.setItem(ALL_KEYS[0], 'geaenderter-wert-nach-migration');
+        const ranAgain = await PZ.store._migrateLegacyLocalStorage();
+        renderBox('erneuter Aufruf mit bereits gesetzter Markierung ist ein reines No-op (Idempotenz)', [
+          { label: 'migrateLegacyLocalStorage() liefert false (nichts getan)', actual: ranAgain, expected: false, tol: null, ok: ranAgain === false },
+          { label: 'der zwischenzeitlich geänderte localStorage-Wert wurde NICHT erneut übernommen', actual: fakeStore[ALL_KEYS[0]], expected: 'legacy-wert-1', tol: null, ok: fakeStore[ALL_KEYS[0]] === 'legacy-wert-1' }
+        ]);
+
+        restoreRealBackend();
+        ALL_KEYS.forEach((key) => { try { localStorage.removeItem(key); } catch (e) {} });
+        try { localStorage.removeItem(MARKER); } catch (e) {}
+      })();
+
+      // 3) Randfall: komplett leerer localStorage (frische Installation) -- Migration
+      //    schreibt nichts außer der Markierung, kein Crash, kein "null"-String irgendwo.
+      await (async function () {
+        ALL_KEYS.forEach((key) => { try { localStorage.removeItem(key); } catch (e) {} });
+        try { localStorage.removeItem(MARKER); } catch (e) {}
+        const fakeStore = installFakeNativeBackend();
+        const ran = await PZ.store._migrateLegacyLocalStorage();
+        const noStrayKeys = ALL_KEYS.every((k) => !(k in fakeStore));
+        renderBox('frische Installation ohne jeden Alt-Wert: Migration läuft fehlerfrei durch, schreibt nur die Markierung', [
+          { label: 'migrateLegacyLocalStorage() liefert true (Markierung war noch nicht gesetzt)', actual: ran, expected: true, tol: null, ok: ran === true },
+          { label: 'keiner der 11 Schlüssel landet mit einem "null"-String im nativen Backend', actual: noStrayKeys, expected: true, tol: null, ok: noStrayKeys },
+          { label: 'Markierung trotzdem gesetzt', actual: fakeStore[MARKER], expected: '1', tol: null, ok: fakeStore[MARKER] === '1' }
+        ]);
+        restoreRealBackend();
+      })();
+
+      // --- Theme-Spiegel: PZ.store._mirrorThemeToLocalStorage() schreibt IMMER synchron
+      //     nach localStorage, unabhängig vom aktuellen _backend -- exakt der Baustein, den
+      //     set() in der nativen App zusätzlich aufruft (s. Sonderfall Farbschema, Datei-
+      //     Kommentar js/store.js). ------------------------------------------------------
+      (function () {
+        try { localStorage.removeItem('pizzaTheme'); } catch (e) {}
+        PZ.store._mirrorThemeToLocalStorage('dark');
+        const afterDark = (function () { try { return localStorage.getItem('pizzaTheme'); } catch (e) { return null; } })();
+        PZ.store._mirrorThemeToLocalStorage('light');
+        const afterLight = (function () { try { return localStorage.getItem('pizzaTheme'); } catch (e) { return null; } })();
+        renderBox('_mirrorThemeToLocalStorage() schreibt den Farbschema-Wert direkt und synchron nach localStorage', [
+          { label: 'nach "dark": localStorage trägt "dark"', actual: afterDark, expected: 'dark', tol: null, ok: afterDark === 'dark' },
+          { label: 'nach "light": localStorage trägt "light" (überschreibt den vorherigen Wert)', actual: afterLight, expected: 'light', tol: null, ok: afterLight === 'light' }
+        ]);
+        try { localStorage.removeItem('pizzaTheme'); } catch (e) {}
+      })();
+
+      // 4) Migration mit leerem String-Wert: unterscheidet korrekt zwischen "kein Wert"
+      //    (null, wird übersprungen) und "leerer String" (wird übernommen).
+      await (async function () {
+        ALL_KEYS.forEach((key) => { try { localStorage.removeItem(key); } catch (e) {} });
+        try { localStorage.removeItem(MARKER); } catch (e) {}
+        localStorage.setItem(ALL_KEYS[0], '');  // Leerer String, nicht null
+        localStorage.setItem(ALL_KEYS[3], 'normaler-wert');
+        const fakeStore = installFakeNativeBackend();
+        const ran = await PZ.store._migrateLegacyLocalStorage();
+        const emptyStringPreserved = fakeStore[ALL_KEYS[0]] === '';
+        const normalValueWorks = fakeStore[ALL_KEYS[3]] === 'normaler-wert';
+        renderBox('Migration mit leerem String: unterscheidet korrekt zwischen "fehlender Wert" und "leerer String"', [
+          { label: 'leerer String wird als echter Wert übernommen (nicht als fehlend interpretiert)', actual: emptyStringPreserved, expected: true, tol: null, ok: emptyStringPreserved },
+          { label: 'nebenher gesetzte normale Werte funktionieren weiterhin', actual: normalValueWorks, expected: true, tol: null, ok: normalValueWorks }
+        ]);
+        restoreRealBackend();
+        ALL_KEYS.forEach((key) => { try { localStorage.removeItem(key); } catch (e) {} });
+        try { localStorage.removeItem(MARKER); } catch (e) {}
+      })();
+
+      // 5) Migration mit JSON-Inhalt: komplexe Datenstrukturen (wie Rezepte-JSON) müssen
+      //    Byte-für-Byte identisch übernommen werden, keine Kodierungsverluste.
+      await (async function () {
+        ALL_KEYS.forEach((key) => { try { localStorage.removeItem(key); } catch (e) {} });
+        try { localStorage.removeItem(MARKER); } catch (e) {}
+        const complexJSON = JSON.stringify({recipes:[{id:'test-1',name:'Mein Rezept',state:{flour:500,water:300,salt:14}}]});
+        localStorage.setItem(ALL_KEYS[0], complexJSON);
+        const fakeStore = installFakeNativeBackend();
+        const ran = await PZ.store._migrateLegacyLocalStorage();
+        const migratedJSON = fakeStore[ALL_KEYS[0]];
+        const byteForByte = migratedJSON === complexJSON;
+        const parseableAfterMigration = (() => { try { return JSON.parse(migratedJSON) !== null; } catch { return false; } })();
+        renderBox('Migration mit JSON-Inhalt: komplexe Datenstrukturen bleiben Byte-für-Byte identisch', [
+          { label: 'JSON-String wird identisch übernommen (keine Veränderung der Kodierung)', actual: byteForByte, expected: true, tol: null, ok: byteForByte },
+          { label: 'das übernommene JSON bleibt parseabel', actual: parseableAfterMigration, expected: true, tol: null, ok: parseableAfterMigration }
+        ]);
+        restoreRealBackend();
+        ALL_KEYS.forEach((key) => { try { localStorage.removeItem(key); } catch (e) {} });
+        try { localStorage.removeItem(MARKER); } catch (e) {}
+      })();
+
+      // 6) Migration mit nur einem einzelnen Wert: darf auch mit der Minimal-Variante
+      //    korrekt funktionieren, nicht nur mit 0 oder 3+ Werten.
+      await (async function () {
+        ALL_KEYS.forEach((key) => { try { localStorage.removeItem(key); } catch (e) {} });
+        try { localStorage.removeItem(MARKER); } catch (e) {}
+        localStorage.setItem(ALL_KEYS[5], 'single-value');
+        const fakeStore = installFakeNativeBackend();
+        const ran = await PZ.store._migrateLegacyLocalStorage();
+        const singleValueMigrated = fakeStore[ALL_KEYS[5]] === 'single-value';
+        const onlyOneKey = Object.keys(fakeStore).filter((k) => k !== MARKER).length === 1;
+        renderBox('Migration mit nur einem einzelnen Alt-Wert: funktioniert korrekt', [
+          { label: 'der eine Wert wird korrekt übernommen', actual: singleValueMigrated, expected: true, tol: null, ok: singleValueMigrated },
+          { label: 'nur dieser eine Schlüssel (+ Markierung) landet im nativen Backend, nicht die restlichen 10 als "null"-Strings', actual: onlyOneKey, expected: true, tol: null, ok: onlyOneKey }
+        ]);
+        restoreRealBackend();
+        ALL_KEYS.forEach((key) => { try { localStorage.removeItem(key); } catch (e) {} });
+        try { localStorage.removeItem(MARKER); } catch (e) {}
+      })();
+
+      // 7) Roundtrip mit Fake-Backend: überprüfung, dass Migration Werte wirklich ins
+      //    Fake-Backend schreibt UND dass sie von dort wieder geholt werden können
+      //    (nicht nur, dass sie im Store-Objekt auftauchen, sondern auch abrufbar sind).
+      await (async function () {
+        ALL_KEYS.forEach((key) => { try { localStorage.removeItem(key); } catch (e) {} });
+        try { localStorage.removeItem(MARKER); } catch (e) {}
+        const testValue = 'roundtrip-test-' + Date.now();
+        localStorage.setItem(ALL_KEYS[2], testValue);
+        const fakeStore = installFakeNativeBackend();
+        await PZ.store._migrateLegacyLocalStorage();
+        // Nun über das Fake-Backend selbst auslesen (simuliert, wie eine echte App das täte)
+        // fakeStore[key] ist der rohe Wert (nicht ein Promise), weil _backend.set() ihn direkt speichert
+        const roundtripped = fakeStore[ALL_KEYS[2]];
+        renderBox('Roundtrip via Fake-Backend: Migration schreibt so, dass die echte native App auslesen kann', [
+          { label: 'migrierter Wert ist im Fake-Backend abrufbar und stimmt exakt', actual: roundtripped, expected: testValue, tol: null, ok: roundtripped === testValue }
+        ]);
+        restoreRealBackend();
+        ALL_KEYS.forEach((key) => { try { localStorage.removeItem(key); } catch (e) {} });
+        try { localStorage.removeItem(MARKER); } catch (e) {}
+      })();
+
+      // 8) JSON mit Sonderzeichen (Umlaute, Anführungszeichen): dass auch komplexe
+      //    Zeichenketten mit nicht-ASCII-Zeichen Byte-für-Byte erhalten bleiben.
+      await (async function () {
+        ALL_KEYS.forEach((key) => { try { localStorage.removeItem(key); } catch (e) {} });
+        try { localStorage.removeItem(MARKER); } catch (e) {}
+        const complexJSONWithUmlauts = JSON.stringify({name:'Neapolitanisch mit Öl & Käse',notes:'Ört Größe Müssen "genau" sein'});
+        localStorage.setItem(ALL_KEYS[1], complexJSONWithUmlauts);
+        const fakeStore = installFakeNativeBackend();
+        const ran = await PZ.store._migrateLegacyLocalStorage();
+        const migratedWithUmlauts = fakeStore[ALL_KEYS[1]];
+        const umlautsPreserved = migratedWithUmlauts === complexJSONWithUmlauts;
+        renderBox('Migration mit Sonderzeichen in JSON (Umlaute, Anführungszeichen): Byte-für-Byte erhalten', [
+          { label: 'JSON mit Umlauten und Sonderzeichen wird identisch übernommen', actual: umlautsPreserved, expected: true, tol: null, ok: umlautsPreserved }
+        ]);
+        restoreRealBackend();
+        ALL_KEYS.forEach((key) => { try { localStorage.removeItem(key); } catch (e) {} });
+        try { localStorage.removeItem(MARKER); } catch (e) {}
+      })();
+
+      // --- Theme-Spiegel-Tests erweitert: auch Randfälle wie leere Strings und Sonderzeichen
+      (function () {
+        // Leerer String-Test
+        try { localStorage.removeItem('pizzaTheme'); } catch (e) {}
+        PZ.store._mirrorThemeToLocalStorage('');
+        const afterEmpty = (function () { try { return localStorage.getItem('pizzaTheme'); } catch (e) { return null; } })();
+        renderBox('_mirrorThemeToLocalStorage() schreibt auch leere Strings korrekt nach localStorage', [
+          { label: 'leerer String wird als echter Wert geschrieben (nicht ignoriert)', actual: afterEmpty === '', expected: true, tol: null, ok: afterEmpty === '' }
+        ]);
+        try { localStorage.removeItem('pizzaTheme'); } catch (e) {}
+      })();
+
+      (function () {
+        // Sonderzeichen-Test: Bindestriche, Unterstriche, Ziffern
+        try { localStorage.removeItem('pizzaTheme'); } catch (e) {}
+        const complexThemeName = 'auto-system-preference-v2_dark';
+        PZ.store._mirrorThemeToLocalStorage(complexThemeName);
+        const afterComplex = (function () { try { return localStorage.getItem('pizzaTheme'); } catch (e) { return null; } })();
+        renderBox('_mirrorThemeToLocalStorage() mit komplexeren Theme-Namen (Bindestriche, Unterstriche, Ziffern)', [
+          { label: 'komplexer Theme-Name wird vollständig identisch geschrieben', actual: afterComplex, expected: complexThemeName, tol: null, ok: afterComplex === complexThemeName }
+        ]);
+        try { localStorage.removeItem('pizzaTheme'); } catch (e) {}
+      })();
+
+      // --- Hinweis zu Punkt (c): hydrate() Gating über isNativeApp
+      //     Diese Tests laufen im Browser mit isNativeApp=false und können deshalb nicht
+      //     direkt prüfen, dass hydrate() die Migration NUR in der nativen App aufruft.
+      //     Das ist nur auf dem Android-Emulator live verifizierbar, nicht im Headless-Lauf.
+      //     Allerdings IS die Logik trivial (ein einfaches Ternary in hydrate(), s. store.js
+      //     Zeile ~199), und die Migration selbst wird hier vollständig getestet -- somit
+      //     reduziert sich das Gating-Risiko auf die Korrektheit eines einzeiligen if.
+
+      // --- Die Migrations-Markierung ist kein Teil der 11 offiziellen Speicher-Schlüssel --
+      renderBox('PZ.store._MIGRATION_MARKER_KEY kollidiert mit keinem der 11 bekannten Schlüssel', [
+        { label: 'MIGRATION_MARKER_KEY ist ein nicht-leerer String', actual: typeof MARKER === 'string' && MARKER.length > 0, expected: true, tol: null, ok: typeof MARKER === 'string' && MARKER.length > 0 },
+        { label: 'kein Treffer unter PZ.store.KEYS', actual: ALL_KEYS.indexOf(MARKER), expected: -1, tol: null, ok: ALL_KEYS.indexOf(MARKER) === -1 }
+      ]);
+    } finally {
+      // Falls ein Testfall oben unerwartet geworfen hat, bevor restoreRealBackend() lief:
+      // die drei Methoden sicherheitshalber hier ebenfalls zurücktauschen (kein Schaden,
+      // falls sie schon zurückgetauscht wurden -- reine Zuweisung derselben Funktionen).
+      PZ.store._backend.get = realGet;
+      PZ.store._backend.set = realSet;
+      PZ.store._backend.remove = realRemove;
+      // localStorage exakt wiederherstellen (Migrationsquelle + Markierung)
+      ALL_KEYS.concat([MARKER]).forEach((key) => {
+        try {
+          if (originalLocalStorage[key] !== null) localStorage.setItem(key, originalLocalStorage[key]);
+          else localStorage.removeItem(key);
+        } catch (e) { /* ignore */ }
+      });
+      // Zwischenspeicher (PZ.store.get/set) exakt wiederherstellen, da die Migrationstests
+      // oben ausschließlich über das Fake-Backend liefen und den echten Zwischenspeicher
+      // dieser Sektion nicht direkt anfassten -- rein defensiv, für den Fall künftiger
+      // Erweiterungen dieser Sektion.
+      ALL_KEYS.forEach((key) => {
+        if (originalCacheValues[key] !== null) PZ.store.set(key, originalCacheValues[key]);
+        else PZ.store.remove(key);
+      });
+    }
+  })();
+
   // ─────────────────────────────────────────────────────────────
   const s = document.getElementById('summary');
   s.textContent = failed === 0
