@@ -8,6 +8,102 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Rechtstexte: Datenschutzerklärung und Impressum (D2, 2026-08-16)
+
+Play-Store-Vorbereitung, Punkt D2 aus `PLAYSTORE-BACKLOG.md`. Anders als die
+bisherigen Play-Store-Punkte reine Text-/Konfigurationsaufgabe, kein App-Feature —
+Nutzer-Auftrag bereits vorab bestätigt, keine Phase-1-Rückfrage nötig.
+
+**Umfang:** zwei neue, von der App vollständig unabhängige Seiten unter `docs/`
+(`datenschutz.html`, `impressum.html`) plus gemeinsames `docs/style.css`, gedacht für
+Hosting über GitHub Pages (`docs/`-Ordner auf `master`, kein separater `gh-pages`-Branch
+nötig). Keine App-Code-Datei (js/, css/, HTML der App selbst) angefasst.
+
+**Datenschutzerklärung:** kurz und ehrlich, da keine Konten. Kernaussage: die App erhebt
+keine Daten, überträgt nichts, alles bleibt auf dem Gerät. Erwähnt: lokale Speicherung
+(`localStorage` im Browser, seit B3 nativ über Capacitor Preferences in der Android-App),
+lokale Systembenachrichtigungen für den Gärzeit-Timer (rein lokal terminiert, kein
+Datenversand), ausdrücklich keine Analyse-/Statistik-/Absturzberichte-Dienste, keine
+Werbung, keine Cookies, keine Drittanbieter-Server-Kommunikation.
+
+**Impressum:** nach § 5 Digitale-Dienste-Gesetz. Name, Adresse, E-Mail
+(`Teigmeister@outlook.de`), klare Formulierung "kein Gewerbe/Unternehmen, private App"
+statt Verschleierung.
+
+**⚠️ Adresse ist ein noch nicht final verifizierter Platzhalter** ("Sören Stapelfeldt,
+c/o Autorenglück #56678, Albert-Einstein-Straße 47, 02977 Hoyerswerda") — vom Nutzer im
+Chat als "erstmal als Platzhalter einfügen" bestätigt, aber nie mit einem finalen
+"fertig erstellt"-Beleg des Adress-Dienstes ("Autorenglück") gegengeprüft. Ausdrücklicher
+Vermerk dazu auch in `PLAYSTORE-BACKLOG.md` bei D2 hinterlassen (Nutzer-Anweisung). Muss
+vor einer echten Store-Einreichung (D3) verifiziert werden.
+
+**Design:** eigenständiges, schlankes `docs/style.css`, grob an den Design-Tokens aus
+`css/styles.css` orientiert (warme Cremefarben `--bg:#f2ece2`/`--card:#fdfaf5`,
+Tomatenrot `--tomato:#c4472e` als Akzent), aber kein Pixel-genaues App-Replikat — reine
+Textseiten. Automatischer Hell-/Dunkel-Wechsel über `prefers-color-scheme` (kein
+JS-Toggle, diese Seiten laufen unabhängig von `js/theme.js`).
+
+**GitHub Pages: NICHT automatisiert aktivierbar in diesem Durchlauf.** `gh`-CLI ist auf
+der Maschine nicht installiert. Ein Versuch, stattdessen das vom Git Credential Manager
+bereits gespeicherte OAuth-Token für einen direkten `api.github.com`-Aufruf zu nutzen,
+wurde vom Auto-Mode-Classifier der Umgebung als riskante Aktion blockiert — bewusst nicht
+umgangen. **Offener manueller Schritt:** im GitHub-Repo (`Birnify/pizza-rechner`) unter
+Settings → Pages → "Build and deployment" → Source: "Deploy from a branch" → Branch
+`master`, Ordner `/docs` auswählen und speichern. Danach sollten die Seiten unter
+`https://birnify.github.io/pizza-rechner/datenschutz.html` bzw. `.../impressum.html`
+erreichbar sein (URL noch nicht live verifiziert, da Pages zum Zeitpunkt dieses Zyklus
+noch nicht aktiv war).
+
+**`accessibility-expert`-Review:** keine Blocker/Major/Minor-Pflichtbefunde. Kontraste
+weit über AA (Normaltext 14,83:1 Hell / 13,89:1 Dunkel, Überschriften 17,35:1/14,92:1,
+Links 5,66:1/6,07:1, Rahmen/Fokus-Outline über 3:1), semantisches Markup korrekt
+(`<header>`/`<main>`/`<footer>`/`<nav>`, saubere Überschriftenhierarchie, `lang="de"`),
+Links farblich UND per Unterstreichung erkennbar, voll tastaturbedienbar, responsive
+(`max-width`, `clamp()`-Innenabstände, `flex-wrap`, keine Überläufe auf schmalen
+Viewports). Zwei von drei rein optionalen Vorschlägen übernommen: Skip-to-Content-Link
+(`.skip-link`) und Meta-Description auf beiden Seiten ergänzt. Dritter Vorschlag (Brand
+als Link zur Startseite) bewusst ausgelassen — es gibt keine live gehostete Web-Version
+der App, an die sinnvoll verlinkt werden könnte.
+
+**Tests:** `tests/test.html` per Headless-Edge-Dump zweimal selbst nachgeprüft (vor und
+nach den Härten-Anpassungen), unverändert **1542/1542** grün — reine, von `js/`
+unabhängige neue Dateien, keine Berechnungslogik betroffen. Kein `test-generator`-Lauf
+nötig.
+
+**Geändert:** `docs/datenschutz.html` (neu), `docs/impressum.html` (neu),
+`docs/style.css` (neu), `PLAYSTORE-BACKLOG.md`, `pizza-rechner-KONTEXT.md`. **Nicht
+angefasst:** jegliche Datei unter `js/`, `css/`, `pizza-rechner.html`,
+`pizza-rechner-mobile.html`, `android/`. Kein neuer `Versionen/`-Schnappschuss (analog zu
+B1-B3: reine Infrastruktur-/Textaufgabe ohne App-Versionssprung, App bleibt v4.44.0).
+
+**Bewusst NICHT Teil dieser Abnahme** (wie im Auftrag vorgegeben): eine finale
+inhaltliche Freigabe der Texte durch den Nutzer selbst, sowie ein juristischer Blick vor
+der endgültigen Fassung — beides bleibt offen, ebenso die manuelle GitHub-Pages-
+Aktivierung und die Adressverifizierung (s. o.).
+
+## D1: Aufräumen und Versionierung (v4.44.0)
+
+Play-Store-Vorbereitung, erster Punkt aus Block D (Veröffentlichung) — Block C (C1-C4)
+war bereits komplett fertig. `?v=`-Cache-Busting-Parameter aus allen Skript-/CSS-/Logo-
+Pfaden in `pizza-rechner.html` und `pizza-rechner-mobile.html` entfernt (im App-Paket
+wirkungslos). Versionsnummer zentralisiert: `package.json`s `version`-Feld (jetzt
+`4.44.0`, vorher irrelevant `1.0.0`) ist die einzige Quelle, neues `sync-version.py`
+schreibt sie automatisch in beide `#appVersion`-Spans **und** `android/app/build.gradle`
+(`versionName` + errechneter `versionCode`, Schema `major·1 000 000 + minor·1 000 +
+patch`, inkl. Monotonie-Schutz). `build-app.py` robustifiziert (ruft `sync-version.py`
+zuerst auf, klare deutsche Fehlermeldungen bei fehlenden Quelldateien statt rohem
+Traceback, ausführlich dokumentiert). Testsuite unverändert **1542/1542** grün (reine
+Markup-/Tooling-Änderung, keine Berechnungslogik betroffen). **Offen:** kein frischer
+`gradlew assembleDebug`/Emulator-Durchlauf in dieser Instanz (keine
+Android-Emulator-/Browser-Werkzeuge verfügbar) — das im Auftrag genannte
+Abnahmekriterium „frischer Bau aus sauberem Zustand ergibt eine lauffähige App" steht
+noch aus, nur die beiden Python-Skripte selbst wurden per Bash getestet. Nächster
+empfohlener Punkt: die Live-Verifikation nachholen, danach D2 (Datenschutzerklärung und
+Impressum, braucht Nutzer-Freigabe für die Adresse).
+
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „D1: Aufräumen und
+Versionierung (v4.44.0)".
+
 ## D1: Aufräumen und Versionierung (v4.44.0)
 
 Play-Store-Vorbereitung, erster Punkt aus Block D (Veröffentlichung) aus

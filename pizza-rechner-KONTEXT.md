@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-16 · Aktuelle Version: v4.44.0 (Desktop + Mobil, Aufräumen und Versionierung: `?v=` entfernt, Versionsnummer zentralisiert, build-app.py fertiggestellt) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-16 · Aktuelle Version: v4.44.0 (App-Code unverändert; neu: Rechtstexte-Seiten `docs/datenschutz.html` + `docs/impressum.html` für Play-Store-Punkt D2, GitHub Pages noch manuell zu aktivieren) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -218,28 +218,21 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## D1: Aufräumen und Versionierung (v4.44.0) = aktueller Stand
+## Rechtstexte: Datenschutzerklärung und Impressum (D2, 2026-08-16) = aktueller Stand
 
-Play-Store-Vorbereitung, erster Punkt aus Block D (Veröffentlichung) — Block C (C1-C4)
-war bereits komplett fertig. `?v=`-Cache-Busting-Parameter aus allen Skript-/CSS-/Logo-
-Pfaden in `pizza-rechner.html` und `pizza-rechner-mobile.html` entfernt (im App-Paket
-wirkungslos). Versionsnummer zentralisiert: `package.json`s `version`-Feld (jetzt
-`4.44.0`, vorher irrelevant `1.0.0`) ist die einzige Quelle, neues `sync-version.py`
-schreibt sie automatisch in beide `#appVersion`-Spans **und** `android/app/build.gradle`
-(`versionName` + errechneter `versionCode`, Schema `major·1 000 000 + minor·1 000 +
-patch`, inkl. Monotonie-Schutz). `build-app.py` robustifiziert (ruft `sync-version.py`
-zuerst auf, klare deutsche Fehlermeldungen bei fehlenden Quelldateien statt rohem
-Traceback, ausführlich dokumentiert). Testsuite unverändert **1542/1542** grün (reine
-Markup-/Tooling-Änderung, keine Berechnungslogik betroffen). **Offen:** kein frischer
-`gradlew assembleDebug`/Emulator-Durchlauf in dieser Instanz (keine
-Android-Emulator-/Browser-Werkzeuge verfügbar) — das im Auftrag genannte
-Abnahmekriterium „frischer Bau aus sauberem Zustand ergibt eine lauffähige App" steht
-noch aus, nur die beiden Python-Skripte selbst wurden per Bash getestet. Nächster
-empfohlener Punkt: die Live-Verifikation nachholen, danach D2 (Datenschutzerklärung und
-Impressum, braucht Nutzer-Freigabe für die Adresse).
+Play-Store-Vorbereitung, Punkt D2 aus `PLAYSTORE-BACKLOG.md`. Zwei neue, von der App
+unabhängige Seiten `docs/datenschutz.html` + `docs/impressum.html` (+ `docs/style.css`)
+für GitHub Pages (`docs/`-Ordner auf `master`). Kein App-Code geändert, kein
+Versionssprung. Datenschutz: ehrlich kurz, keine Datenerhebung, lokale Speicherung,
+lokale Timer-Benachrichtigungen, keine Analyse-/Absturzberichte-Dienste. Impressum nach
+§ 5 DDG. **⚠️ Adresse ist noch ein unverifizierter Platzhalter**, s. `PLAYSTORE-
+BACKLOG.md` D2. `accessibility-expert`-Review ohne Pflichtbefund. **GitHub Pages ist
+NOCH NICHT aktiv** — `gh`-CLI fehlt, ein Versuch mit dem gespeicherten Git-Credential-
+Token wurde vom Auto-Mode-Classifier blockiert; manueller Schritt (Settings → Pages →
+Branch `master` /docs) steht noch aus. Tests unverändert **1542/1542** grün.
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „D1: Aufräumen und
-Versionierung (v4.44.0)".
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Rechtstexte:
+Datenschutzerklärung und Impressum (D2, 2026-08-16)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
