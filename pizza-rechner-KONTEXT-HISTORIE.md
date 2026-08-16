@@ -8,6 +8,101 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## App-Symbol und Startbildschirm (v4.43.0)
+
+Play-Store-Vorbereitung, Punkt C4 aus `PLAYSTORE-BACKLOG.md` — damit ist Block C (C1-C4)
+komplett abgeschlossen. Eine vorherige Instanz hatte den größten Teil bereits erledigt
+(Icon-/Splash-Assets erzeugt), war aber wegen eines Sitzungslimits mitten in der letzten
+Phase abgebrochen; diese Instanz setzte dort fort.
+
+**Icon-/Splash-Assets (von der Vorgänger-Instanz erzeugt, in diesem Zyklus unverändert
+übernommen):** aus `teigmeister-icon-optical-center.svg` (Original unangetastet) vier neue
+Root-SVGs abgeleitet — `icon-foreground.svg`, `icon-background.svg`,
+`splash-icon-light.svg`, `splash-icon-dark.svg` — mit rechnerisch korrigierter Skalierung
+(`scale(1)` statt `scale(1.17)`), damit der Icon-Inhalt innerhalb der offiziellen
+66dp-Sicherheitszone für adaptive Icons bleibt. Daraus alle Android-Icon-Größen
+(`mipmap-*`, adaptives Icon mit Vorder-/Hintergrundebene) sowie Startbildschirm-PNGs für
+alle Dichten/Orientierungen inklusive `-night`-Varianten neu erzeugt. Zwei jetzt
+unreferenzierte alte Capacitor-Platzhalter gelöscht: `drawable-v24/
+ic_launcher_foreground.xml`, `drawable/ic_launcher_background.xml`,
+`values/ic_launcher_background.xml`.
+
+**Echter Bug gefunden und behoben — bewusst als eigene, vom Hauptagenten getroffene
+Entscheidung markiert (Nutzer nicht erreichbar, ausdrückliche Vollmacht für diese
+Warteschlange erteilt), nicht nur als Nebenbefund versteckt:** beim Live-Test auf dem
+Emulator fiel auf, dass `@capacitor/splash-screen` auf Android 12+ intern die native
+`androidx.core.splashscreen`-API nutzt (`SplashScreen.installSplashScreen()`, Aufruf im
+Plugin selbst, `node_modules/@capacitor/splash-screen/android/.../SplashScreen.java`), die
+NICHT das alte `android:background`-Attribut aus `AppTheme.NoActionBarLaunch`
+(`values/styles.xml`) liest, sondern dedizierte Theme-Attribute. Ohne sie griffen
+Systemdefaults: beim ersten Kaltstart zufällig ein neutrales Grau + das neue Adaptive-Icon
+(sah zufällig brauchbar aus), bei jedem weiteren Neustart (mehrfach reproduziert, sowohl
+Hell als auch Dunkel) ein komplett leerer Bildschirm ohne jede Marke.
+
+**Fix:** `values/styles.xml` sowie ein neues `values-night/styles.xml` ergänzen
+`AppTheme.NoActionBarLaunch` um `windowSplashScreenBackground` (`#C4472E` hell / `#151312`
+dunkel, identisch zu `THEME_COLOR` in `js/theme.js`) und `windowSplashScreenAnimatedIcon`
+(`@mipmap/ic_launcher_foreground`). **Technisches Detail, das erst durch Quellcode-Prüfung
+der Bibliothek selbst auffiel:** die Attribute werden bewusst OHNE `android:`-Präfix
+gesetzt (`windowSplashScreenBackground`, nicht `android:windowSplashScreenBackground`) —
+Prüfung der `androidx.core:core-splashscreen`-1.2.0-AAR (`attrs.xml` +
+`values-v31/values-v31.xml`) zeigte, dass die Kompatibilitätsbibliothek ihre eigenen,
+nicht-namensraum-gebundenen Attribute erwartet, um sowohl auf `minSdkVersion 24` (dieses
+Projekt) als auch auf API 31+ korrekt zu funktionieren; die native `android:`-Variante
+würde nur auf API 31+ greifen und auf API 24-30 stillschweigend leer bleiben (Rückfall auf
+Bibliotheks-Default `@android:drawable/sym_def_app_icon` + `?android:colorBackground`).
+`values-night/styles.xml` ist eine vollständige Neudeklaration aller drei
+`AppTheme*`-Styles (nicht nur des abweichenden Farbwerts), weil Android-
+Ressourcen-Qualifizierer einen gleichnamigen Style komplett ersetzen statt zu mischen.
+Der B2-Mechanismus (`launchAutoHide`, `SplashScreen.hide()`-Timing) bleibt unberührt — nur
+WELCHES Bild/welche Farbe während des Wartens gezeigt wird, nicht WANN er verschwindet.
+
+**Verifikation:** `gradlew assembleDebug` (dabei wiederholt ein bekanntes
+Windows-/OneDrive-Dateisperren-Problem beim Löschen von `build/intermediates/javac/*`-
+Verzeichnissen umgangen, per gezieltem `rm -rf` vor dem Retry — kein Code-Problem, reine
+Umgebungseigenart des in OneDrive liegenden Projektordners). Live auf dem Android-Emulator
+(`Teigmeister_Test`): mehrere aufeinanderfolgende Kaltstarts (`force-stop` + `am start`) in
+Hell UND Dunkel — durchgehend korrekter markenfarbener Hintergrund + Icon während des
+Ladens, Inhalt lädt danach immer vollständig, kein Blank-/Branding-loser Bildschirm mehr
+über mehr als acht wiederholte Kaltstarts hinweg (auch nicht bei einem einzelnen, durch
+Emulator-Last auf ~3,9s verlängerten Ladevorgang — dort blieb durchgehend Icon+Farbe
+sichtbar statt eines Blanks). Rundes/eckiges/quadratisches Icon-Zuschnitt-Aussehen auf dem
+Emulator-Homescreen-Dock stichprobenartig gegengeprüft (rund, wie von der
+Vorgänger-Instanz bereits bestätigt). Logcat ohne Crashes/Fatal-Exceptions. Kein
+`accessibility-expert`-/`mobile-optimizer`-Lauf: reine native Android-Theme-XML-Änderung,
+kein Web-Markup/CSS in diesem Zyklus berührt. Testsuite unverändert **1542/1542** grün
+(Headless-Edge-Dump) — keine Berechnungslogik angefasst.
+
+**Geändert:** `android/app/src/main/res/values/styles.xml`, neu
+`android/app/src/main/res/values-night/styles.xml`, alle Android-Icon-/Splash-PNGs (von
+der Vorgänger-Instanz erzeugt), 4 neue Root-SVGs, gelöscht: `drawable-v24/
+ic_launcher_foreground.xml`, `drawable/ic_launcher_background.xml`,
+`values/ic_launcher_background.xml`. `?v=` auf `4.43.0` gezogen (Desktop + Mobil, reines
+Cache-Busting + Footer-Version, keine JS/CSS-Logik geändert), `www/` neu gebaut, `npx cap
+sync android`, Standalone-Build neu erzeugt. **Nicht angefasst:** die bereits generierten
+Icon-/Splash-PNGs selbst (nur `styles.xml` ergänzt), `teigmeister-icon-optical-center.svg`,
+jegliche Fachlogik/Berechnung, Desktop-Verhalten im Browser. `PLAYSTORE-BACKLOG.md` Punkt
+C4 erledigt — Block C (C1-C4) komplett. Nächster empfohlener Punkt: D1 (Aufräumen und
+Versionierung).
+
+## Android-Feinschliff: Zurück-Taste, Statusleiste, Randbereiche (v4.42.0)
+
+Play-Store-Vorbereitung, Punkt C3 aus `PLAYSTORE-BACKLOG.md`. Native Android-Zurück-Taste
+(`@capacitor/app`) navigiert jetzt sinnvoll statt die App sofort zu verlassen
+(Prioritätenkette in `js/nav.js`: Burgermenü → Onboarding-Modal → offene
+„Neues Rezept anlegen"-Karte → Startansicht → App verlassen). Statusleiste passt sich per
+dem in `@capacitor/core` gebündelten `SystemBars`-Plugin dem Hell-/Dunkelmodus an, auch
+zur Laufzeit — dabei einen echten, live gefundenen Bug behoben (dauerhaft schwarze Leiste
+mangels Hintergrundfarben-Unterstützung von `SystemBars`, per kleiner nativer Brücke in
+`MainActivity.java` gelöst). Randbereiche bei aktivierter Gestensteuerung bereits ohne
+Code-Änderung korrekt. „Bildschirm anlassen" (optionaler 4. Punkt) bewusst ausgelassen
+(kein offizielles Capacitor-Paket dafür). Testsuite unverändert 1542/1542 grün, alles auf
+dem Android-Emulator live verifiziert. `PLAYSTORE-BACKLOG.md` Punkt C3 erledigt, nächster
+empfohlener Punkt C4 oder D1.
+
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Android-Feinschliff:
+Zurück-Taste, Statusleiste, Randbereiche (v4.42.0)".
+
 ## Android-Feinschliff: Zurück-Taste, Statusleiste, Randbereiche (v4.42.0)
 
 Play-Store-Vorbereitung, Punkt C3 aus `PLAYSTORE-BACKLOG.md`. `@capacitor/app`

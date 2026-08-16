@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<!--
+  Vordergrundebene für das Android-Adaptive-Icon, abgeleitet aus
+  teigmeister-icon-optical-center.svg (nur die <g> mit dem Pizzastück,
+  ohne Hintergrund-Rect). Der Skalierungsfaktor wurde gegenüber dem
+  Original (scale 1.17) bewusst auf scale(1) reduziert: rechnerisch
+  (svgpathtools, Pfad- und Kreis-Sampling inkl. Stroke-Breite) reicht der
+  Inhalt bei scale(1) nur noch auf ca. 51 % des vollen 108dp-Adaptive-Icon-
+  Canvas (Android mappt ein volles quadratisches Vordergrundbild über die
+  Capacitor-Assets-eigene 16.7%-Inset-Konvention auf die inneren 72dp),
+  gegenüber der offiziellen 66dp-„Safe Zone" (61 % des Canvas) mit klarer
+  Sicherheitsmarge. Translate/Rotate (optische Zentrierung) unverändert
+  aus dem Original übernommen.
+-->
+<defs>
+<filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="9" stdDeviation="8" flood-color="#000" flood-opacity="0.28"/></filter>
+</defs>
+<g transform="translate(238.01 281.93) rotate(12) scale(1) translate(-256 -279)" filter="url(#soft)">
+<g fill="none" stroke="#f7f4f0" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M98 172 C160 112 352 112 414 172 L262 424 Q256 431 250 424 Z"/>
+  <path d="M136 216 C196 178 316 178 376 216"/>
+</g>
+<circle cx="216" cy="264" r="25" fill="#f7f4f0"/>
+<circle cx="290" cy="292" r="20" fill="#f7f4f0"/>
+<circle cx="242" cy="348" r="16" fill="#f7f4f0"/>
+</g>
+</svg>

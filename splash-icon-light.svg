@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<!--
+  Startbildschirm-Quelle (Hellmodus): flache Fläche in der App-eigenen
+  THEME_COLOR.light (js/theme.js, identisch zum theme-color-Meta-Tag und
+  zur nativen Statusleisten-Farbe aus C3), zentrierte Pizzastück-Marke.
+  scale(0.5) statt scale(1.17): der Inhalt bleibt damit rechnerisch
+  innerhalb der mittleren ~43 % (Halbdiagonale) des quadratischen Canvas,
+  übersteht so auch den ungünstigsten Zuschnitt, den Capacitor-Assets
+  beim Skalieren auf sehr breite/schmale Bildschirm-Seitenverhältnisse
+  vornimmt (sharp „cover"-Resize, kein Verzerren, aber Beschnitt einer
+  Achse), ohne dass die Marke angeschnitten wirkt.
+-->
+<defs>
+<filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="9" stdDeviation="8" flood-color="#000" flood-opacity="0.28"/></filter>
+</defs>
+<rect width="512" height="512" fill="#c4472e"/>
+<g transform="translate(238.01 281.93) rotate(12) scale(0.5) translate(-256 -279)" filter="url(#soft)">
+<g fill="none" stroke="#f7f4f0" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M98 172 C160 112 352 112 414 172 L262 424 Q256 431 250 424 Z"/>
+  <path d="M136 216 C196 178 316 178 376 216"/>
+</g>
+<circle cx="216" cy="264" r="25" fill="#f7f4f0"/>
+<circle cx="290" cy="292" r="20" fill="#f7f4f0"/>
+<circle cx="242" cy="348" r="16" fill="#f7f4f0"/>
+</g>
+</svg>

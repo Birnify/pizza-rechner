@@ -18,5 +18,15 @@
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <!-- Ab Android 12 (API 31) nutzt @capacitor/splash-screen intern
+             androidx.core.splashscreen (installSplashScreen()), die NICHT das obige
+             android:background liest, sondern diese dedizierten Attribute (bewusst OHNE
+             android:-Praefix - so liest sie auch die Kompatibilitaets-Bibliothek auf
+             API 24-30 korrekt, s. androidx.core:core-splashscreen attrs.xml). Ohne sie
+             griffen Systemdefaults: beim ersten Kaltstart zufaellig ein neutrales Grau,
+             bei jedem weiteren Neustart ein komplett leerer Bildschirm (reproduzierter
+             Bug, C4-Abschluss). Farbwerte identisch zu THEME_COLOR in js/theme.js. -->
+        <item name="windowSplashScreenBackground">#C4472E</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
     </style>
 </resources>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<!--
+  Hintergrundebene für das Android-Adaptive-Icon, abgeleitet aus
+  teigmeister-icon-optical-center.svg (nur das <rect> mit dem
+  Terracotta-Verlauf, OHNE rx-Rundung. Die Rundung/Maskierung
+  übernimmt Androids eigenes Adaptive-Icon-System je nach Geräte-Launcher
+  (rund, eckig, Squircle, ...).
+-->
+<defs>
+<linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#8f3d29"/>
+<stop offset="100%" stop-color="#ea9a6f"/>
+</linearGradient>
+</defs>
+<rect width="512" height="512" fill="url(#bgGrad)"/>
+</svg>

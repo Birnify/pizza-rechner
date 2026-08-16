@@ -1,5 +1,5 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-16 · Aktuelle Version: v4.42.0 (Desktop + Mobil, Android-Feinschliff: Zurück-Taste, Statusleiste, Randbereiche) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-16 · Aktuelle Version: v4.43.0 (Desktop + Mobil, App-Symbol und Startbildschirm inkl. Splashscreen-Bugfix) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -218,23 +218,26 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Android-Feinschliff: Zurück-Taste, Statusleiste, Randbereiche (v4.42.0) = aktueller Stand
+## App-Symbol und Startbildschirm (v4.43.0) = aktueller Stand
 
-Play-Store-Vorbereitung, Punkt C3 aus `PLAYSTORE-BACKLOG.md`. Native Android-Zurück-Taste
-(`@capacitor/app`) navigiert jetzt sinnvoll statt die App sofort zu verlassen
-(Prioritätenkette in `js/nav.js`: Burgermenü → Onboarding-Modal → offene
-„Neues Rezept anlegen"-Karte → Startansicht → App verlassen). Statusleiste passt sich per
-dem in `@capacitor/core` gebündelten `SystemBars`-Plugin dem Hell-/Dunkelmodus an, auch
-zur Laufzeit — dabei einen echten, live gefundenen Bug behoben (dauerhaft schwarze Leiste
-mangels Hintergrundfarben-Unterstützung von `SystemBars`, per kleiner nativer Brücke in
-`MainActivity.java` gelöst). Randbereiche bei aktivierter Gestensteuerung bereits ohne
-Code-Änderung korrekt. „Bildschirm anlassen" (optionaler 4. Punkt) bewusst ausgelassen
-(kein offizielles Capacitor-Paket dafür). Testsuite unverändert 1542/1542 grün, alles auf
-dem Android-Emulator live verifiziert. `PLAYSTORE-BACKLOG.md` Punkt C3 erledigt, nächster
-empfohlener Punkt C4 oder D1.
+Play-Store-Vorbereitung, Punkt C4 aus `PLAYSTORE-BACKLOG.md` — damit ist **Block C
+(C1-C4) komplett abgeschlossen**. Adaptives Android-Icon (aus
+`teigmeister-icon-optical-center.svg` abgeleitet, korrigierte Skalierung innerhalb der
+66dp-Sicherheitszone) plus heller/dunkler Startbildschirm fertig eingebaut. Dabei einen
+echten, live gefundenen Bug behoben — **bewusst als eigene, vom Hauptagenten getroffene
+Entscheidung markiert** (Nutzer nicht erreichbar, ausdrückliche Vollmacht für diese
+Warteschlange), nicht nur als Nebenbefund: `@capacitor/splash-screen` nutzt ab Android 12
+intern `androidx.core.splashscreen` (`installSplashScreen()`), das NICHT das alte
+`android:background` aus `styles.xml` liest — ohne die dedizierten
+`windowSplashScreenBackground`/`windowSplashScreenAnimatedIcon`-Attribute (jetzt in
+`values/styles.xml` + neu `values-night/styles.xml` gesetzt, bewusst OHNE `android:`-Präfix,
+s. HISTORIE für die Begründung) zeigte jeder zweite und weitere Kaltstart einen komplett
+leeren Bildschirm ohne jede Marke. Auf dem Android-Emulator über mehrere aufeinanderfolgende
+Kaltstarts in Hell **und** Dunkel verifiziert, kein Blank-Screen mehr, Testsuite unverändert
+**1542/1542** grün. Nächster empfohlener Punkt: D1 (Aufräumen und Versionierung).
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Android-Feinschliff:
-Zurück-Taste, Statusleiste, Randbereiche (v4.42.0)".
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „App-Symbol und
+Startbildschirm (v4.43.0)".
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 

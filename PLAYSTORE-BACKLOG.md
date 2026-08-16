@@ -584,7 +584,7 @@ Browser.
 
 ---
 
-## C4. App-Symbol und Startbildschirm
+## C4. App-Symbol und Startbildschirm — erledigt (v4.43.0, 2026-08-16)
 
 **Aufwand:** 1 Zyklus.
 
@@ -594,6 +594,20 @@ in hell und dunkel.
 
 **Abnahme:** Symbol sieht auf rundem, eckigem und quadratischem Zuschnitt gut aus,
 Startbildschirm flackert nicht und passt zum Farbschema.
+
+**Ergebnis:** adaptives Icon aus vier neuen Root-SVGs erzeugt (Original-SVG unangetastet,
+Skalierung auf die 66dp-Sicherheitszone korrigiert), alle Mipmap-Größen + Splash-PNGs
+(inkl. `-night`-Varianten) fertig eingebaut. Dabei einen echten, live gefundenen Bug
+behoben — **bewusste Entscheidung des Hauptagenten** (Nutzer nicht erreichbar, Vollmacht
+für diese Warteschlange erteilt), nicht nur Nebenbefund: `@capacitor/splash-screen` nutzt
+ab Android 12 intern `androidx.core.splashscreen`, das nicht das alte `android:background`
+liest — ohne die dedizierten `windowSplashScreenBackground`/
+`windowSplashScreenAnimatedIcon`-Attribute (jetzt in `values/styles.xml` + neu
+`values-night/styles.xml`) zeigte jeder zweite und weitere Kaltstart einen komplett leeren
+Bildschirm ohne Marke. Über mehrere aufeinanderfolgende Kaltstarts in Hell und Dunkel auf
+dem Emulator verifiziert, kein Blank-Screen mehr. Testsuite unverändert 1542/1542 grün.
+Details: `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „App-Symbol und Startbildschirm
+(v4.43.0)". **Damit ist Block C (C1-C4) komplett abgeschlossen.**
 
 ---
 
@@ -704,7 +718,7 @@ zunächst gerne auf Deutschland begrenzt.
 | C1 Timer nativ — **erledigt (C1a 2026-08-16, C1b 2026-08-17)** | 2 bis 3 | B1 | nein, anspruchsvollster Punkt |
 | C2 Drucken und PDF — **erledigt (v4.41.0, 2026-08-16)** | 1 Zyklus | B1 | ja |
 | C3 Android-Feinschliff — **erledigt (v4.42.0, 2026-08-16)** | 1 Zyklus | B1 | ja |
-| C4 Symbol und Start | 1 Zyklus | B1 | ja |
+| C4 Symbol und Start — **erledigt (v4.43.0, 2026-08-16)** | 1 Zyklus | B1 | ja |
 | D1 Aufräumen | 1 Zyklus | B1 | ja |
 | D2 Rechtstexte | 1 Zyklus | nichts | Entwurf ja, Freigabe Nutzer |
 | D3 Play Console | 1 Zyklus | D2 | nein, Formulare |
@@ -723,6 +737,10 @@ auf dem Android-Emulator verifiziert. C3 (Android-Feinschliff) erledigt (v4.42.0
 Statusleiste passt sich Hell/Dunkel auch zur Laufzeit an (inkl. eines dabei gefundenen und
 behobenen echten Bugs, dauerhaft schwarze Leiste durch fehlende Hintergrundfarben-
 Unterstützung von Capacitors gebündeltem SystemBars-Plugin), Randbereiche bei aktivierter
-Gestensteuerung bereits korrekt ohne Code-Änderung.** Empfohlener nächster Einstieg: C4
-(Symbol und Startbildschirm) oder D1 (Aufräumen), beide 1 Zyklus und für ein kleines
-Modell geeignet.
+Gestensteuerung bereits korrekt ohne Code-Änderung. C4 (Symbol und Startbildschirm)
+erledigt (v4.43.0, 2026-08-16) — adaptives Icon + Startbildschirm hell/dunkel fertig,
+inklusive eines dabei gefundenen und behobenen echten Bugs (leerer Bildschirm bei
+wiederholten Kaltstarts ab Android 12 mangels der dedizierten
+`windowSplashScreenBackground`/`windowSplashScreenAnimatedIcon`-Theme-Attribute). Damit
+ist Block C (C1-C4) komplett abgeschlossen.** Empfohlener nächster Einstieg: D1
+(Aufräumen und Versionierung), 1 Zyklus und für ein kleines Modell geeignet.
