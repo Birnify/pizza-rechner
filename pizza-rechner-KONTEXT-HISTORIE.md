@@ -8,6 +8,99 @@
 > konkreten Release hier nachschlagen. Der **aktuelle Stand, die Domänenlogik und das
 > Backlog** stehen weiterhin in `pizza-rechner-KONTEXT.md`.
 
+## Nebenbefunde-Zyklus + Standalone-Rebuild (2026-08-16)
+
+Sechs bereits in früheren Reviews dokumentierte, aber zurückgestellte Nebenbefunde aus
+`pizza-rechner-KONTEXT.md` (Abschnitt „Mögliche nächste Schritte") in einem Zyklus
+behoben — unabhängig vom parallel laufenden Play-Store-Vorhaben (D1/D2), Nutzer-Auftrag
+direkt im Chat, kein `/define-feature` nötig, da alle Punkte bereits aus früheren
+Sub-Agenten-Reviews präzise beschrieben waren. Wichtige Randbedingung: D1 und D2 hatten
+zu diesem Zeitpunkt parallel neun Dateien uncommittet offen (u. a. alle drei App-
+HTML-Dateien, `package.json`, `android/app/build.gradle`,
+`pizza-rechner-KONTEXT.md` selbst) — der Zyklus musste diese Dateien komplett meiden
+und `git status` mehrfach zwischendurch gegenprüfen, um keinen Konflikt zu erzeugen.
+
+1. **Glossar-Regal-Scroll** (`js/glossary.js`): `enterCategory()` merkt `window.scrollY`
+   vor dem Betreten einer Kategorie, der „Zurück"-Button stellt die Position per
+   `window.scrollTo()` wieder her. Vorher landete man bei langen Kategorien nach
+   „Zurück" ggf. an einer anderen Regal-Position als zuvor (Nebenbefund v4.36.0). Live
+   mit Playwright verifiziert.
+2. **Anleitungstitel-Umbruch bei schmalen Bildschirmen** (`css/styles.css`):
+   `@media(max-width:400px){.step__title{font-size:13px}}` (vorher fest 15,5px).
+   Betroffen waren „Schüttwasser temperieren" und „Teigtemperatur prüfen" (beide mit
+   Bildband, dadurch nur ~168px statt ~245px Titelbreite, Nebenbefund v4.35.1). Der
+   Wert wurde nicht geschätzt, sondern per iterativer Playwright-Live-Messung als
+   kleinster Wert ermittelt, der beide Titel bei 375px zuverlässig einzeilig hält, ohne
+   das Bildband selbst zu verkleinern. Bei 320px bleiben beide Titel weiterhin
+   zweizeilig (strukturell zu wenig Platz, das war im KONTEXT bereits für 11/15 Titel
+   dokumentiert), aber die Gesamtzahl umbrechender Titel sank messbar (12/15→8/15 bzw.
+   10/15→8/15) — transparent als Teilverbesserung dokumentiert, nicht als vollständige
+   Lösung verkauft.
+3. **Bildband-Lücke bei hohen Karten** (`js/guide.js`): `PHOTO_MAX_UPSCALE`
+   (Deckel-Faktor für die eingefrorene Bildband-Höhe beim Aufklappen) von 1,3 auf 1,5
+   angehoben (bei 448px Quellhöhe: Deckel jetzt 672px statt 582,4px). Live gemessen:
+   greift bei aktuell vorhandenen Inhalten nirgends (größte gemessene Bildhöhe 139,5px)
+   — reine Vorsorge für künftige, extras-lastigere Karten, ehrlich als „aktuell ohne
+   sichtbaren Effekt" dokumentiert statt fälschlich als wirksamer Fix ausgegeben.
+4. **`.preset-card`-`aria-pressed`-Härtung** (`js/presets.js`): `#preset.value` wird
+   jetzt per `Object.defineProperty` auf der Element-Instanz überschrieben, sodass JEDE
+   künftige Wertänderung automatisch `syncPresetCardSelection()` nachzieht, statt sich
+   auf verteilte Einzelaufrufe an bekannten Stellen zu verlassen (Nebenbefund v4.32.0
+   A11y-Review, MINOR 1 — strukturelles Risiko, kein damals nachweisbarer Fehler). Live
+   verifiziert: eine rohe `.value = ...`-Zuweisung ohne `change`-Event löst jetzt
+   trotzdem den Sync aus.
+5. **Preset-Karten-Touch-Ziel** (`css/styles.css`): `.preset-card` bekommt zusätzlich
+   `min-width:44px` (bestehendes `min-height:44px` unverändert) — WCAG 2.5.5,
+   Nebenbefund v4.32.0 A11y-Review MINOR 2.
+6. **Preset-Kartenbilder-`srcset`** (`js/images.js`, neu `assets/
+   generate_card_srcset.py`): 300×200-Zweitfassungen der 7 einzigartigen
+   Kartenbilder erzeugt (`card-*-sm.webp`), `srcset`/`sizes="170px"` in `imgHtml()`
+   ergänzt (Nebenbefund v4.32.0 Mobile-Review MINOR 4 — Bilder waren mit 600×400
+   aufbereitet, aber nur ~135-150px breit angezeigt). Live verifiziert: 1x-DPR lädt nur
+   noch ~9-10 KB statt ~20-31 KB, 2x-DPR weiterhin die volle Datei, keine fehlgeschlagenen
+   Anfragen.
+
+**Bewusst nicht angefasst:** die neun zu diesem Zeitpunkt von D1/D2 gesperrten Dateien
+(per `git status` mehrfach geprüft, Liste blieb unverändert); die A11y-MAJOR-1-Frage zu
+`.preset-card` `aria-pressed`/`role="group"` vs. `radiogroup`/`role="radio"` (bräuchte
+laut Review auch die `.seg`-Schalter app-weit mit, dafür sehr wahrscheinlich die
+gesperrten HTML-Dateien — bewusst als eigener, künftiger Zyklus zurückgestellt);
+`pizza-rechner-KONTEXT.md` (der Hauptagent hat das nach Abschluss selbst nachgezogen,
+dieser Absatz hier ist das Ergebnis).
+
+**Härten:** `accessibility-expert`-Review über den Hauptagenten angefordert für alle
+sechs Punkte — keine Blocker/Major-Befunde. `mobile-optimizer` bewusst nicht zusätzlich
+angefordert, da die eigene Playwright-Verifikation 320/375/390px bereits abdeckte und
+keine `mobile.css`-spezifischen Markup-Änderungen vorlagen.
+
+**Getestet:** `tests/test.html` per Headless-Chromium (Playwright). Zwei echte
+Regressionen aus den eigenen Änderungen selbst gefunden und behoben, bevor der
+Abschlussstand gemeldet wurde: der bestehende Deckel-Test hatte einen alten
+Erwartungswert (582,4px), der beim neuen 672px-Deckel nicht mehr ausgelöst hätte
+(auf eine Testhöhe angehoben, die den neuen Deckel wirklich greifen lässt); das neue
+`srcset`-Attribut hätte im iPhone-Standalone-Inline-Modus (`PZ._IMG_INLINE` gesetzt)
+einen rohen `assets/img/`-Pfad durchgereicht, wenn die kleine „-sm"-Datei dort nicht
+mitinlined ist — exakt dieselbe Fehlerklasse wie der historische v4.32.0-Bug (fehlende
+Bilder auf dem echten iPhone). Fix: `srcset` wird im Inline-Modus nur noch ausgegeben,
+wenn die kleine Fassung selbst in `PZ._IMG_INLINE` steht, sonst bleibt es beim reinen
+`src` (kein kaputtes Bild). Endstand: **1542/1542** grün.
+
+**Standalone-Rebuild nachgeholt:** `pizza-rechner-mobile-standalone.html` wurde vom
+Nebenbefunde-Zyklus selbst NICHT neu gebaut (die Datei war zu diesem Zeitpunkt durch
+D1 gesperrt). Der Hauptagent hat `python build-mobile-standalone.py` nach Abschluss
+aller drei parallelen Zyklen (D1, D2, Nebenbefunde) einmal nachgeholt, damit die
+iPhone-Standalone-App alle sechs Fixes ebenfalls enthält.
+
+**Commit:** `5e83cfe` — „fix: Nebenbefunde - Glossar-Scroll, Anleitungstitel,
+Preset-Haertung, Karten-Srcset", gepusht nach `origin/master`. Lokaler
+Versions-Schnappschuss `Versionen/v4.44.1 - Nebenbefunde .../` angelegt — **Hinweis:**
+`package.json["version"]` wurde für diesen Zyklus NICHT auf 4.44.1 angehoben (blieb bei
+4.44.0), der Schnappschuss-Ordnername ist daher rein lokal/informell, nicht die
+tatsächlich über `sync-version.py` verteilte App-Version. Falls das künftig stört: vor
+dem nächsten Play-Store-Punkt einmal bewusst nachziehen (`package.json` auf 4.44.1
+setzen + `sync-version.py` laufen lassen) oder als bewusste Ausnahme für reine
+Nebenbefunde-Zyklen (kein App-Feature/-Fix im engeren Sinne) so belassen.
+
 ## Rechtstexte: Datenschutzerklärung und Impressum (D2, 2026-08-16)
 
 Play-Store-Vorbereitung, Punkt D2 aus `PLAYSTORE-BACKLOG.md`. Anders als die

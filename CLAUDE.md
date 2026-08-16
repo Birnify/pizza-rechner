@@ -178,6 +178,34 @@ Orchestrator.
   "getestet" in Bezug auf tatsächliches Gärverhalten schreiben — keiner der aus dieser
   Regel entstandenen Werte wurde je gebacken, die Testsuite prüft nur Rechenwege.
 
+## Datenschutzerklärung/Impressum bei Änderungen mitdenken (docs/)
+
+**Nutzer-Vorgabe (2026-08-16), gilt dauerhaft für dieses Projekt:** Seit D2 des
+Play-Store-Vorhabens gibt es zwei öffentlich gehostete, von der App unabhängige Seiten
+unter `docs/` (`datenschutz.html`, `impressum.html`, per GitHub Pages live unter
+`https://birnify.github.io/pizza-rechner/`). Ihr zentrales Versprechen: **die App
+erhebt keine Daten, überträgt nichts, alles bleibt auf dem Gerät, keine Analyse-/
+Absturzberichte-Dienste** (s. `PLAYSTORE-BACKLOG.md`, Punkt D2). Damit dieses
+Versprechen nie stillschweigend falsch wird, muss **bei jeder Änderung** (egal ob
+inline oder über den Orchestrator) kurz mitgedacht werden, ob `docs/datenschutz.html`
+und/oder `docs/impressum.html` angepasst werden müssen.
+
+- **Auslöser, bei denen ein Abgleich nötig ist:** jede neue Netzwerk-/API-Anbindung,
+  jedes neue Capacitor-Plugin oder jede neue Bibliothek, die Daten sammeln/übertragen
+  könnte (Analytics, Crash-Reporting, Werbe-SDKs, Cloud-Sync), jede neue dauerhafte
+  Kennung (Geräte-ID, Nutzer-ID), sowie jede Änderung an Name/Adresse/Kontakt der
+  verantwortlichen Person.
+- **Kein Auslöser:** reine UI-/Layout-/Fachlogik-Änderungen ohne neue
+  Datenerhebung/-übertragung (die meisten C1-C4-artigen Punkte betreffen das nicht).
+- Bei einem Auftrag an den Orchestrator, der einen der obigen Auslöser berührt: explizit
+  im Auftrag erwähnen, dass `docs/datenschutz.html`/`docs/impressum.html` mitgeprüft
+  und bei Bedarf aktualisiert werden müssen — nicht stillschweigend voraussetzen, dass
+  das automatisch passiert.
+- **Adress-Vorbehalt (Stand 2026-08-16):** Die Impressum-Adresse ist aktuell noch ein
+  unverifizierter Platzhalter (s. `PLAYSTORE-BACKLOG.md`, Punkt D2, dortiger
+  ⚠️-Vermerk) — vor jeder echten Store-Einreichung (D3/D4) muss das mit dem Nutzer final
+  geklärt werden, das ist keine Aufgabe für einen Orchestrator.
+
 ## Kommunikationsstil
 
 - Keinen Gedankenstrich (Em-Dash) in Texten verwenden, die der Nutzer sieht: weder im Chat

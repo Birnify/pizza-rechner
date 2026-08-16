@@ -1,5 +1,7 @@
 # Kontext: Pizzateig-Rechner App
-Stand: 2026-08-16 · Aktuelle Version: v4.44.0 (App-Code unverändert; neu: Rechtstexte-Seiten `docs/datenschutz.html` + `docs/impressum.html` für Play-Store-Punkt D2, GitHub Pages noch manuell zu aktivieren) · Für Fortsetzung in neuer Session (auch mit kleinerem Modell)
+Stand: 2026-08-16 · Aktuelle Version: v4.44.0 (plus unversionierter Nebenbefunde-Zyklus,
+s. u.) · Play Store: Block A-C + D1/D2 erledigt, GitHub Pages live · Für Fortsetzung in
+neuer Session (auch mit kleinerem Modell)
 
 > Diese Datei beschreibt den aktuellen Stand der App, damit eine neue Claude-Session
 > nahtlos weiterarbeiten kann. Einfach diese Datei zu Beginn der neuen Session
@@ -218,21 +220,45 @@ Jedes Mehl: `{ group, name, w, minH, maxH, hydMin, hydMax, dur }`.
 - **Das `#flour`-Dropdown wird komplett aus `PZ.FLOURS` generiert** (optgroups nach `group`) —
   im HTML steht nur `<select id="flour" class="selectbox"></select>`. Keine Duplikation.
 
-## Rechtstexte: Datenschutzerklärung und Impressum (D2, 2026-08-16) = aktueller Stand
+## Nebenbefunde-Zyklus + Standalone-Rebuild (2026-08-16) = aktueller Stand
 
-Play-Store-Vorbereitung, Punkt D2 aus `PLAYSTORE-BACKLOG.md`. Zwei neue, von der App
-unabhängige Seiten `docs/datenschutz.html` + `docs/impressum.html` (+ `docs/style.css`)
-für GitHub Pages (`docs/`-Ordner auf `master`). Kein App-Code geändert, kein
-Versionssprung. Datenschutz: ehrlich kurz, keine Datenerhebung, lokale Speicherung,
-lokale Timer-Benachrichtigungen, keine Analyse-/Absturzberichte-Dienste. Impressum nach
-§ 5 DDG. **⚠️ Adresse ist noch ein unverifizierter Platzhalter**, s. `PLAYSTORE-
-BACKLOG.md` D2. `accessibility-expert`-Review ohne Pflichtbefund. **GitHub Pages ist
-NOCH NICHT aktiv** — `gh`-CLI fehlt, ein Versuch mit dem gespeicherten Git-Credential-
-Token wurde vom Auto-Mode-Classifier blockiert; manueller Schritt (Settings → Pages →
-Branch `master` /docs) steht noch aus. Tests unverändert **1542/1542** grün.
+Sechs unabhängig vom Play-Store-Vorhaben dokumentierte Nebenbefunde aus früheren
+Reviews behoben: Glossar-Regal merkt/stellt die Scroll-Position beim „Zurück" wieder
+her (`js/glossary.js`); zwei Anleitungstitel brechen bei schmalen Bildschirmen seltener
+um (`.step__title` 13px unter 400px, per Live-Messung als kleinster wirksamer Wert
+ermittelt, bei 320px strukturell nicht vollständig lösbar); Bildband-Deckel-Faktor
+(`PHOTO_MAX_UPSCALE`) von 1,3 auf 1,5 angehoben (vorsorglich, aktuell ohne sichtbaren
+Effekt bei bestehenden Inhalten); `syncPresetCardSelection()` über
+`Object.defineProperty` auf `#preset.value` gehärtet, damit `aria-pressed` künftig auch
+bei neuem Code nie mehr veralten kann; `.preset-card` Touch-Ziel auf 44×44px ergänzt;
+Preset-Kartenbilder bekommen eine 300×200-`srcset`-Zweitfassung (spart ~10-20 KB pro
+Karte auf 1x-Displays, neues `assets/generate_card_srcset.py`). `accessibility-expert`-
+Review ohne Pflichtbefund. Zwei echte Regressionen im eigenen Zyklus selbst gefunden
+und behoben (veralteter Deckel-Testwert, `srcset`-Pfadleck im iPhone-Standalone-
+Fallback — dieselbe Fehlerklasse wie der historische v4.32.0-Bug). Tests **1542/1542**
+grün. Danach `pizza-rechner-mobile-standalone.html` neu gebaut (enthielt die sechs
+Fixes vorher noch nicht, Datei war während D1/D2 gesperrt).
 
-**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitt „Rechtstexte:
-Datenschutzerklärung und Impressum (D2, 2026-08-16)".
+**Play-Store-Stand parallel dazu:** D1 (Aufräumen/Versionierung, `?v=`-Parameter
+entfernt, Versionsnummer über neues `sync-version.py` zentralisiert, v4.44.0) und D2
+(Rechtstexte) sind fertig und gepusht. **GitHub Pages ist jetzt aktiv** (vom Nutzer
+manuell in den Repo-Einstellungen aktiviert, per `WebFetch` bestätigt erreichbar):
+https://birnify.github.io/pizza-rechner/datenschutz.html und
+`.../impressum.html`.
+
+**Offen für die nächste Session:** D1s explizite Abnahme „frischer Bau ergibt eine
+lauffähige App" wurde noch nicht live auf dem Emulator nachvollzogen (der zuständigen
+Instanz fehlten Emulator-Werkzeuge) — kurzer Nachhol-Zyklus:
+`build-app.py` → `npx cap sync android` → JDK 21 → `gradlew assembleDebug` →
+`adb install -r` auf `Teigmeister_Test` → App durchklicken. Die Impressum-Adresse ist
+weiterhin ein **unverifizierter Platzhalter** (s. `PLAYSTORE-BACKLOG.md`, Punkt D2) —
+vor D3/D4 zwingend mit dem Nutzer final klären. Nächster regulärer Play-Store-Punkt:
+**D3** (Play Console einrichten, überwiegend Formulare, nicht durch ein Modell
+erledigbar).
+
+**Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitte „Nebenbefunde-Zyklus
++ Standalone-Rebuild (2026-08-16)" und „Rechtstexte: Datenschutzerklärung und Impressum
+(D2, 2026-08-16)" (Details zu D2 dort bereits vorhanden).
 
 ## LAUFENDE ARBEIT (kein App-Release): Bild-Prompts + automatisierte Bilderzeugung
 
