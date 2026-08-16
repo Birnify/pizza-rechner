@@ -1,5 +1,10 @@
 {
   "appId": "com.teigmeister.app",
   "appName": "Teigmeister",
-  "webDir": "www"
+  "webDir": "www",
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false
+    }
+  }
 }

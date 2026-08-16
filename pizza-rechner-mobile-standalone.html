@@ -11228,19 +11228,56 @@ window.PZ = window.PZ || {}; window.PZ._IMG_INLINE = {'card-napoli_klassisch.web
     };
   }
 
-  // Ein gültiger Teilen-Link (?r=…, js/share.js) hat Vorrang vor dem zuletzt
-  // gespeicherten Rezept — wer einen Link öffnet, will das geteilte Rezept sehen.
-  // Bei fehlendem/kaputtem Link (oder falls js/share.js gar nicht geladen ist)
-  // greift ganz normal PZ.load().
-  const sharedApplied = PZ.tryLoadFromShareLink ? PZ.tryLoadFromShareLink() : false;
-  if (!sharedApplied) PZ.load();
-  refreshRecipeSelect();
-  PZ.applyMethod();
-  PZ.calc();
-  // Live-Region-Ansage der Anleitung (v4.31.0, js/guide.js) erst NACH dem allerersten
-  // Boot-Aufbau scharf schalten -- sonst würde der initiale Render (Laden aus
-  // localStorage, applyMethod(), Erstrender oben) fälschlich schon eine Ansage auslösen.
-  if (PZ.enableGuideAnnounce) PZ.enableGuideAnnounce();
+  // Eigentlicher Boot-Aufbau (Laden aus dem Speicher, Erstrender). Unverändert
+  // gegenüber vor v4.41.0 -- nur in eine benannte Funktion gefasst, damit sie sich
+  // (s. u.) sowohl sofort synchron (Browser) als auch erst nach PZ.store.hydrate()
+  // (native App, Play-Store-Vorbereitung B2) auslösen lässt.
+  function boot() {
+    // Ein gültiger Teilen-Link (?r=…, js/share.js) hat Vorrang vor dem zuletzt
+    // gespeicherten Rezept — wer einen Link öffnet, will das geteilte Rezept sehen.
+    // Bei fehlendem/kaputtem Link (oder falls js/share.js gar nicht geladen ist)
+    // greift ganz normal PZ.load().
+    const sharedApplied = PZ.tryLoadFromShareLink ? PZ.tryLoadFromShareLink() : false;
+    if (!sharedApplied) PZ.load();
+    refreshRecipeSelect();
+    PZ.applyMethod();
+    PZ.calc();
+    // Live-Region-Ansage der Anleitung (v4.31.0, js/guide.js) erst NACH dem allerersten
+    // Boot-Aufbau scharf schalten -- sonst würde der initiale Render (Laden aus
+    // localStorage, applyMethod(), Erstrender oben) fälschlich schon eine Ansage auslösen.
+    if (PZ.enableGuideAnnounce) PZ.enableGuideAnnounce();
+  }
+
+  // Nativer Startbildschirm (Play-Store-Vorbereitung B2, PLAYSTORE-BACKLOG.md):
+  // in einer Capacitor-App bleibt der native Startbildschirm sichtbar
+  // (capacitor.config.json: plugins.SplashScreen.launchAutoHide = false), bis
+  // PZ.store.hydrate() fertig ist -- danach erst startet die App UND blendet den
+  // Startbildschirm aus, damit nie ein halb geladener Zustand aufblitzt. Im
+  // normalen Browser (Desktop und Mobil ohne Capacitor, `window.Capacitor` dann
+  // nicht vorhanden) bleibt das Verhalten davon komplett unberührt: boot() läuft
+  // wie bisher sofort synchron, keine neue Wartezeit vor dem ersten Rendern.
+  const isNativeApp = !!(global.Capacitor && global.Capacitor.isNativePlatform && global.Capacitor.isNativePlatform());
+
+  if (isNativeApp) {
+    // Sicherheitsnetz: falls hydrate() ungewöhnlich lange braucht oder nie
+    // aufloest, nach 4 Sekunden trotzdem starten -- die App darf nie dauerhaft im
+    // Startbild kleben bleiben. `started` verhindert einen doppelten Boot-Aufruf,
+    // falls hydrate() UND der Sicherheitsnetz-Timer beide feuern.
+    let started = false;
+    const startOnce = () => {
+      if (started) return;
+      started = true;
+      boot();
+      try {
+        const SplashScreen = global.Capacitor.Plugins && global.Capacitor.Plugins.SplashScreen;
+        if (SplashScreen && SplashScreen.hide) SplashScreen.hide();
+      } catch (e) { /* kein Absturz, falls das Plugin doch fehlt/anders heisst */ }
+    };
+    PZ.store.hydrate().then(startOnce);
+    global.setTimeout(startOnce, 4000);
+  } else {
+    boot();
+  }
 })(window);
 
 </script>

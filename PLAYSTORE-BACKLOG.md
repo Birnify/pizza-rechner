@@ -241,20 +241,57 @@ Zurück-Taste schließt die App (C3).
 
 ---
 
-## B2. Startbildschirm hält, bis der Speicher geladen ist
+## B2. Startbildschirm hält, bis der Speicher geladen ist — ERLEDIGT (2026-08-16)
 
-**Aufwand:** 1 Zyklus. Setzt A2 und B1 voraus.
+`@capacitor/splash-screen` installiert (`npm install`, danach `npx cap sync android` --
+das Plugin registriert sich automatisch, kein manueller Java-Eintrag nötig).
+`capacitor.config.json` bekam `plugins.SplashScreen.launchAutoHide: false`, damit der
+native Startbildschirm NICHT mehr automatisch beim ersten WebView-Rendering verschwindet.
 
-**Ziel:** Der native Startbildschirm bleibt sichtbar, bis `PZ.store.hydrate()` fertig ist.
-Damit sieht der Nutzer nie einen halb geladenen Zustand, und die App darf intern
-asynchron starten, ohne dass es auffällt.
+**`js/main.js`:** der bisherige Boot-Ablauf (Laden aus dem Speicher, `applyMethod()`,
+`calc()`, Live-Region scharfschalten) steckt jetzt in einer Funktion `boot()`.
+Feature-Erkennung `window.Capacitor?.isNativePlatform()` entscheidet den Weg dorthin:
+- **Kein Capacitor (normaler Browser, Desktop und Mobil):** `boot()` läuft weiterhin
+  sofort synchron, exakt wie vorher -- keine neue Wartezeit, kein Promise-Tick.
+- **Native App:** erst `PZ.store.hydrate()` abwarten (oder ein 4-Sekunden-Sicherheitsnetz-
+  Timer, je nachdem was zuerst feuert -- ein `started`-Flag verhindert einen doppelten
+  Boot), danach `boot()` und `Capacitor.Plugins.SplashScreen.hide()` (bewusst der
+  ungebündelte `Capacitor.Plugins.<Name>`-Zugriff, nicht ein ES-Modul-Import -- die App
+  lädt weiterhin klassische `<script src>`-Dateien ohne Bundler).
 
-**Umfang:** `js/main.js` startet die App erst, nachdem `hydrate()` erfüllt ist. Danach
-Startbildschirm ausblenden. Sicherheitsnetz einbauen: falls `hydrate()` hängt, nach
-wenigen Sekunden trotzdem starten, damit die App nie dauerhaft im Startbild klebt.
+**Nebenbefund, für künftige `gradlew`-Aufrufe relevant:** `:app:mergeDebugResources`
+schlug reproduzierbar mit `AccessDeniedException`/„Unable to delete directory" auf einem
+frisch angelegten `app/build/intermediates/merged_res_blame_folder/...`-Ordner fehl --
+weder Gradle-Daemon-Neustart noch manuelles Löschen von `app/build` halfen dauerhaft.
+Ursache: die Ordner tragen laut `Get-ChildItem -Force`-Check das `ReparsePoint`-Attribut
+(OneDrive-Cloud-Platzhalter, obwohl "Pinned"/lokal verfügbar) -- Gradles Dateisystem-
+Watcher (VFS) kollidiert damit beim Erstellen/Löschen kurzlebiger Zwischenordner.
+**Behoben durch `org.gradle.vfs.watch=false` in `android/gradle.properties`**
+(dauerhaft, kommentiert dort), danach lief `gradlew assembleDebug` wiederholt sauber
+durch, auch nach `rm -rf app/build build`.
 
-**Abnahme:** Kein sichtbares Umspringen von Inhalten beim Start. Beim allerersten Start
-ohne gespeicherte Daten startet die App ebenfalls sauber.
+**Echte Verifikation auf dem Emulator (`Teigmeister_Test`, nicht nur Code-Review):**
+`gradlew assembleDebug` (JDK 21) + `adb install -r`. Logcat bestätigt den `SplashScreen.
+hide()`-Aufruf zeitlich NACH dem vollständigen JS-Boot (Anleitungsbilder bereits im
+Netzwerk-Log, bevor `hide()` greift), native Splash-View verschwindet danach sauber
+(`SplashScreenView: remove starting view`), kein Hängenbleiben. Per Screenshot bestätigt:
+normaler Neustart mit vorhandenen Daten zeigt sofort den fertigen Rechner ohne
+Zwischenzustand; `adb shell pm clear` (frische Installation ohne jede gespeicherte
+Einstellung) startet ebenfalls sauber bis zum Onboarding-Screen, kein Kleben im
+Startbild.
+
+**Tests:** `tests/test.html` unverändert 1442/1442 grün (die Datei lädt `js/main.js`
+nicht, s. Dateistruktur -- das Boot-Verhalten ist hier ausschließlich über die native
+Live-Verifikation abgesichert, nicht über die Testsuite).
+
+**Geändert:** `js/main.js`, `capacitor.config.json`, `android/gradle.properties`,
+`package.json`/`package-lock.json` (neue Abhängigkeit), `android/app/capacitor.build.gradle`
++ `android/capacitor.settings.gradle` (automatisch von `npx cap sync` aktualisiert),
+`pizza-rechner-mobile-standalone.html` neu gebaut. **Nicht angefasst:** `pizza-rechner.html`
+(Desktop-Quelle lädt zwar dasselbe `js/main.js`, aber ohne `window.Capacitor` bleibt das
+Verhalten dort unverändert), Inline-Theme-Script im `<head>` (B3), `PZ.store.hydrate()`/
+`flush()` selbst (kommen aus A2, werden hier nur aufgerufen). Empfohlener nächster Punkt:
+B3 (nativer Speicher, der wichtigste Punkt im ganzen Backlog).
 
 ---
 
@@ -484,8 +521,8 @@ zunächst gerne auf Deutschland begrenzt.
 | A1 Zwischenschicht einziehen | 1 Zyklus | nichts | ja, rein mechanisch |
 | A2 Asynchron vorbereiten — **erledigt (v4.39.0)** | 1 Zyklus | A1 | ja, eng umrissen |
 | A3 Sicherung exportieren — **erledigt (v4.40.0)** | 1 bis 2 | A1 | ja |
-| B1 Capacitor einrichten | 1 plus Installationen | Werkzeuge | nein, Einrichtung |
-| B2 Startbildschirm | 1 Zyklus | A2, B1 | ja |
+| B1 Capacitor einrichten — **erledigt (2026-08-16)** | 1 plus Installationen | Werkzeuge | nein, Einrichtung |
+| B2 Startbildschirm — **erledigt (2026-08-16)** | 1 Zyklus | A2, B1 | ja |
 | B3 Nativer Speicher | 1 bis 2 | A2, B2 | mit Sorgfalt |
 | C1 Timer nativ | 2 bis 3 | B1 | nein, anspruchsvollster Punkt |
 | C2 Drucken und PDF | 1 Zyklus | B1 | ja |
@@ -497,4 +534,5 @@ zunächst gerne auf Deutschland begrenzt.
 | D4 Test und Freigabe | 14 Tage Wartezeit | alles | nein |
 
 **A1 erledigt (v4.38.4, 2026-08-15). A2 erledigt (v4.39.0, 2026-08-15). A3 erledigt
-(v4.40.0, 2026-08-15).** Empfohlener nächster Einstieg: B1 (Capacitor-Grundgerüst).
+(v4.40.0, 2026-08-15). B1 erledigt (2026-08-16). B2 erledigt (2026-08-16).** Empfohlener
+nächster Einstieg: B3 (nativer Speicher, der wichtigste Punkt im ganzen Backlog).
