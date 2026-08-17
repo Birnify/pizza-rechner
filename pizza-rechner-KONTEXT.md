@@ -250,11 +250,10 @@ https://birnify.github.io/pizza-rechner/datenschutz.html und
 lauffähige App" wurde noch nicht live auf dem Emulator nachvollzogen (der zuständigen
 Instanz fehlten Emulator-Werkzeuge) — kurzer Nachhol-Zyklus:
 `build-app.py` → `npx cap sync android` → JDK 21 → `gradlew assembleDebug` →
-`adb install -r` auf `Teigmeister_Test` → App durchklicken. Die Impressum-Adresse ist
-weiterhin ein **unverifizierter Platzhalter** (s. `PLAYSTORE-BACKLOG.md`, Punkt D2) —
-vor D3/D4 zwingend mit dem Nutzer final klären. Nächster regulärer Play-Store-Punkt:
-**D3** (Play Console einrichten, überwiegend Formulare, nicht durch ein Modell
-erledigbar).
+`adb install -r` auf `Teigmeister_Test` → App durchklicken. Die Impressum-/Datenschutz-
+Adresse ist seit 2026-08-17 vom Nutzer **final bestätigt** (s. `PLAYSTORE-BACKLOG.md`,
+Punkt D2) — kein offener Punkt mehr. Nächster regulärer Play-Store-Punkt: **D3** (Play
+Console einrichten, überwiegend Formulare, nicht durch ein Modell erledigbar).
 
 **Volle Details:** `pizza-rechner-KONTEXT-HISTORIE.md`, Abschnitte „Nebenbefunde-Zyklus
 + Standalone-Rebuild (2026-08-16)" und „Rechtstexte: Datenschutzerklärung und Impressum

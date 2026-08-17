@@ -641,15 +641,13 @@ nächsten ohnehin anstehenden App-Bau mit erledigen.**
 
 ---
 
-## D2. Datenschutzerklärung und Impressum — Entwurf erledigt (2026-08-16), Freigabe + GitHub-Pages-Aktivierung offen
+## D2. Datenschutzerklärung und Impressum — Entwurf erledigt (2026-08-16), Adresse final bestätigt (2026-08-17)
 
-**⚠️ Wichtiger Vorbehalt zur Adresse (Nutzer-Anweisung, gut sichtbar zu halten):** Die im
-Impressum und in der Datenschutzerklärung verwendete Postadresse ("Sören Stapelfeldt,
-c/o Autorenglück #56678, Albert-Einstein-Straße 47, 02977 Hoyerswerda") wurde vom Nutzer
-im Chat als "erstmal als Platzhalter einfügen" bestätigt ("ohne Kno ist richtig"), aber
-**nie mit einem finalen "fertig erstellt"-Beleg des Adress-Dienstes ("Autorenglück")
-gegengeprüft**. Diese Adresse muss verifiziert werden, bevor die Seiten wirklich
-final/live für eine Store-Einreichung (D3) sind.
+**Adresse final bestätigt (2026-08-17):** Der Nutzer hat die im Impressum und in der
+Datenschutzerklärung verwendete Postadresse ("Sören Stapelfeldt, c/o Autorenglück #56678,
+Albert-Einstein-Straße 47, 02977 Hoyerswerda") im Chat explizit als "finale Adresse"
+bestätigt. Der bisherige Platzhalter-Vorbehalt (unverifizierter Adress-Dienst
+"Autorenglück") ist damit erledigt, keine weitere Prüfung vor D3 nötig.
 
 **Umgesetzt:** zwei neue, von der App unabhängige Seiten `docs/datenschutz.html` +
 `docs/impressum.html`, gemeinsames `docs/style.css` (Design an `css/styles.css`
@@ -672,12 +670,12 @@ Branch `master`, Ordner `/docs` auswählen und speichern. Danach sollten die Sei
 `https://birnify.github.io/pizza-rechner/datenschutz.html` bzw. `.../impressum.html`
 erreichbar sein (URL noch nicht live verifiziert).
 
-**Abnahme:** Beide Seiten sind über eine feste GitHub-Pages-Adresse erreichbar — **noch
-nicht erfüllt**, s. offener manueller Schritt oben. Inhaltlich korrekt und vollständig
-laut Vorgabe — erfüllt. **Explizit weiterhin offen:** der Nutzer hat sie gelesen und
-freigegeben (kann nicht vom Orchestrator selbst erledigt werden), die
-Adressverifizierung (s. Vorbehalt oben) und der juristische Blick vor der endgültigen
-Fassung.
+**Abnahme:** Beide Seiten sind über eine feste GitHub-Pages-Adresse erreichbar — laut
+Kontextdatei (Stand 2026-08-16) vom Nutzer aktiviert und per `WebFetch` erreichbar
+bestätigt. Inhaltlich korrekt und vollständig laut Vorgabe — erfüllt. Adresse final
+bestätigt (s. oben). **Explizit weiterhin offen:** der Nutzer hat die Texte inhaltlich
+gelesen und freigegeben (kann nicht vom Orchestrator selbst erledigt werden), sowie der
+juristische Blick vor der endgültigen Fassung.
 
 ---
 
@@ -778,7 +776,8 @@ Live-Verifikation (frischer Gradle-Bau + Emulator-Installation) steht noch aus, 
 umsetzenden Instanz keine Android-/Browser-Werkzeuge zur Verfügung standen. D2
 (Datenschutzerklärung und Impressum) im Entwurf erledigt (2026-08-16) —
 `docs/datenschutz.html` + `docs/impressum.html` fertig, `accessibility-expert`-geprüft
-ohne Befund; **GitHub Pages ist aber noch nicht aktiv** (fehlender manueller Schritt in
-den Repo-Einstellungen, s. D2) und die verwendete Adresse ist noch ein unverifizierter
-Platzhalter. Empfohlener nächster Einstieg: D1-Live-Bau nachholen, GitHub Pages für D2
-manuell aktivieren, Adresse verifizieren und die Texte vom Nutzer freigeben lassen.
+ohne Befund; GitHub Pages ist inzwischen aktiv (vom Nutzer manuell aktiviert, per
+`WebFetch` erreichbar bestätigt) und die Adresse ist seit 2026-08-17 vom Nutzer final
+bestätigt. Empfohlener nächster Einstieg: D1-Live-Bau nachholen (frischer Gradle-Bau +
+Emulator-Installation) und die Rechtstexte inhaltlich vom Nutzer freigeben lassen, bevor
+es zu D3 (Play Console) geht.
