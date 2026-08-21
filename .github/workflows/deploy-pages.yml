@@ -9,6 +9,15 @@ name: Deploy to GitHub Pages
 #
 # Nach dem Merge dieser Datei einmalig in den Repo-Einstellungen umstellen:
 # Settings -> Pages -> Source -> "GitHub Actions" (statt "Deploy from a branch").
+#
+# WICHTIG (2026-08-21): Diese Einstellung darf nicht auf "Deploy from a branch" zurueck.
+# Waehrend Play-Store-Punkt D2 (Rechtstexte) wurde die Quelle auf Branch master, Ordner
+# /docs umgestellt. Damit lieferte Pages nur noch den Inhalt von docs/ aus, die App selbst
+# war unter https://birnify.github.io/pizza-rechner/ und unter
+# .../pizza-rechner-mobile-standalone.html (iPhone-Startbildschirm) nur noch 404. Der
+# Schritt "Rechtstexte an die Wurzel spiegeln" unten sorgt dafuer, dass die Rechtstext-URLs
+# .../datenschutz.html und .../impressum.html trotzdem unveraendert erreichbar bleiben,
+# obwohl das komplette Repo ausgeliefert wird.
 
 on:
   push:
@@ -35,6 +44,11 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Pages
         uses: actions/configure-pages@v5
+      - name: Rechtstexte an die Wurzel spiegeln
+        # docs/ bleibt die einzige Quelle der Rechtstexte; fuer die Ausgabe werden sie
+        # zusaetzlich in die Wurzel kopiert, damit die bereits veroeffentlichten URLs
+        # .../datenschutz.html und .../impressum.html (Play Store, App-Verweise) gelten.
+        run: cp -R docs/. .
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

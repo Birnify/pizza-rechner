@@ -670,6 +670,16 @@ Branch `master`, Ordner `/docs` auswählen und speichern. Danach sollten die Sei
 `https://birnify.github.io/pizza-rechner/datenschutz.html` bzw. `.../impressum.html`
 erreichbar sein (URL noch nicht live verifiziert).
 
+**Nachtrag 2026-08-21 (wichtig):** Die oben beschriebene Umstellung auf „Deploy from a
+branch → master → /docs" war ein Fehler. Das Repo hatte bereits einen eigenen
+Pages-Workflow (`.github/workflows/deploy-pages.yml`, Quelle „GitHub Actions"), der das
+komplette Repo ausliefert und darüber die App selbst hostet. Mit der /docs-Quelle lieferte
+Pages nur noch die zwei Rechtstexte aus, die App war unter
+`https://birnify.github.io/pizza-rechner/` und unter
+`.../pizza-rechner-mobile-standalone.html` (iPhone-Startbildschirm) nur noch 404. Behoben:
+der Workflow spiegelt `docs/` zusätzlich in die Ausgabe-Wurzel, damit beide URL-Sätze
+gleichzeitig gelten. Die Pages-Quelle muss dauerhaft auf „GitHub Actions" stehen.
+
 **Abnahme:** Beide Seiten sind über eine feste GitHub-Pages-Adresse erreichbar — laut
 Kontextdatei (Stand 2026-08-16) vom Nutzer aktiviert und per `WebFetch` erreichbar
 bestätigt. Inhaltlich korrekt und vollständig laut Vorgabe — erfüllt. Adresse final

@@ -239,6 +239,18 @@ Fallback — dieselbe Fehlerklasse wie der historische v4.32.0-Bug). Tests **154
 grün. Danach `pizza-rechner-mobile-standalone.html` neu gebaut (enthielt die sechs
 Fixes vorher noch nicht, Datei war während D1/D2 gesperrt).
 
+**Pages-Panne und Behebung (2026-08-21):** Die in D2 vorgenommene Umstellung
+Settings → Pages → Source auf „Deploy from a branch → master → /docs" hat den bis dahin
+laufenden Actions-Workflow `.github/workflows/deploy-pages.yml` faktisch ausgehebelt:
+Pages lieferte nur noch den Inhalt von `docs/` aus, damit waren
+`https://birnify.github.io/pizza-rechner/` und vor allem der iPhone-Link
+`.../pizza-rechner-mobile-standalone.html` (Startbildschirm-Verknüpfung) 404. Behoben,
+indem der Workflow die Rechtstexte aus `docs/` zusätzlich in die Ausgabe-Wurzel spiegelt
+(`cp -R docs/. .`), sodass beim Ausliefern des kompletten Repos sowohl die App als auch
+`.../datenschutz.html` und `.../impressum.html` unter ihren bisherigen URLs erreichbar
+sind. **Dauerregel:** Pages-Quelle bleibt „GitHub Actions", nie wieder „Deploy from a
+branch" — sonst verschwindet die App erneut.
+
 **Play-Store-Stand parallel dazu:** D1 (Aufräumen/Versionierung, `?v=`-Parameter
 entfernt, Versionsnummer über neues `sync-version.py` zentralisiert, v4.44.0) und D2
 (Rechtstexte) sind fertig und gepusht. **GitHub Pages ist jetzt aktiv** (vom Nutzer
